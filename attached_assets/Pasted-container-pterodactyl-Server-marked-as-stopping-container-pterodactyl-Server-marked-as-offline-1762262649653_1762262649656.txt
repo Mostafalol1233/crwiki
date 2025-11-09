@@ -1,0 +1,65 @@
+container@pterodactyl~ Server marked as stopping...
+container@pterodactyl~ Server marked as offline...
+[Pterodactyl Daemon]: Checking server disk space usage, this could take a few seconds...
+[Pterodactyl Daemon]: Updating process configuration files...
+[Pterodactyl Daemon]: Ensuring file permissions are set correctly, this could take a few seconds...
+container@pterodactyl~ Server marked as starting...
+[Pterodactyl Daemon]: Pulling Docker container image, this could take a few minutes to complete...
+[Pterodactyl Daemon]: Finished pulling Docker container image
+Node.js Version: v24.11.0
+:/home/container$ npm install nodemon; if [[ -d .git ]] && [[ ${AUTO_UPDATE} == "1" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then /usr/local/bin/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then /usr/local/bin/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install --production; fi; /home/container/node_modules/nodemon/bin/nodemon.js /home/container/${BOT_JS_FILE}
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 89 packages, and audited 588 packages in 3s
+
+97 packages are looking for funding
+  run `npm fund` for details
+
+7 moderate severity vulnerabilities
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+npm warn config production Use `--omit=dev` instead.
+
+removed 89 packages, and audited 499 packages in 1s
+
+86 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node /home/container/index.js`
+MongoDB connection error: Error: MONGODB_URI environment variable is not defined
+    at connectMongoDB (file:///home/container/index.js:218:13)
+    at MongoDBStorage.connect (file:///home/container/index.js:247:13)
+    at new MongoDBStorage (file:///home/container/index.js:243:10)
+    at file:///home/container/index.js:631:15
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+3:33:41 PM [express] 🚀 Backend API server running on port 25539
+3:33:41 PM [express] 📡 Serving API endpoints at /api/*
+3:33:41 PM [express] 🖼️  Serving assets at /assets/*
+3:33:41 PM [express] 🌐 Frontend should be deployed to Netlify
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+Error: MONGODB_URI environment variable is not defined
+    at connectMongoDB (file:///home/container/index.js:218:13)
+    at MongoDBStorage.connect (file:///home/container/index.js:247:13)
+    at new MongoDBStorage (file:///home/container/index.js:243:10)
+    at file:///home/container/index.js:631:15
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.11.0
+[nodemon] app crashed - waiting for file changes before starting..

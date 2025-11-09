@@ -1,0 +1,27 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Replit-specific files (do not push to GitHub)
+replit.md
+.replit
+.replit.nix
+.config/
+.upm/
+.cache/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+/tmp/
+
+# Editor directories
+.vscode/
+.idea/

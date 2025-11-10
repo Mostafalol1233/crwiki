@@ -6,7 +6,7 @@ async function seedDatabase() {
     console.log('🔄 Starting database seeding...');
 
     // Login as admin to get token
-    const authResponse = await fetch('http://localhost:20033/api/auth/login', {
+    const authResponse = await fetch('http://localhost:20032/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: 'admin' })
@@ -24,7 +24,7 @@ async function seedDatabase() {
 
     // Upload weapons in bulk
     console.log('📦 Uploading weapons...');
-    const weaponsResponse = await fetch('http://localhost:20033/api/weapons/bulk-create', {
+    const weaponsResponse = await fetch('http://localhost:20032/api/weapons/bulk-create', {
       method: 'POST',
       headers,
       body: JSON.stringify({ weapons: weaponsData })
@@ -36,7 +36,7 @@ async function seedDatabase() {
     console.log('📦 Uploading game modes...');
     const createdModes = [];
     for (const mode of modesData) {
-      const response = await fetch('http://localhost:20033/api/modes', {
+      const response = await fetch('http://localhost:20032/api/modes', {
         method: 'POST',
         headers,
         body: JSON.stringify(mode)
@@ -50,7 +50,7 @@ async function seedDatabase() {
     console.log('📦 Uploading ranks...');
     const createdRanks = [];
     for (const rank of ranksData) {
-      const response = await fetch('http://localhost:20033/api/ranks', {
+      const response = await fetch('http://localhost:20032/api/ranks', {
         method: 'POST',
         headers,
         body: JSON.stringify(rank)

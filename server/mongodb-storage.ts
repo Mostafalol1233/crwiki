@@ -726,6 +726,7 @@ export class MongoDBStorage implements IStorage {
       reviewVerificationPassphrase: doc.reviewVerificationPassphrase || "",
       reviewVerificationPrompt: doc.reviewVerificationPrompt || "",
       reviewVerificationTimecode: doc.reviewVerificationTimecode || "",
+      reviewVerificationYouTubeChannelUrl: doc.reviewVerificationYouTubeChannelUrl || "",
     };
   }
 
@@ -764,17 +765,11 @@ export class MongoDBStorage implements IStorage {
   // Weapons methods
   async getAllWeapons(): Promise<Weapon[]> {
     await this.connect();
-    const weapons = await WeaponModel.find().sort({ createdAt: -1 }).lean();
+    const weapons = await WeaponModel.find().sort({ createdAt: -1 });
     return weapons.map((w: any) => ({
+      ...w.toObject(),
       id: w._id.toString(),
-      name: w.name,
-      image: w.image,
-      category: w.category || "",
-      description: w.description || "",
-      stats: w.stats || {},
-      createdAt: w.createdAt,
-      updatedAt: w.updatedAt,
-    }));
+    })) as any;
   }
 
   async getWeaponById(id: string): Promise<Weapon | undefined> {
@@ -790,22 +785,24 @@ export class MongoDBStorage implements IStorage {
       stats: weapon.stats || {},
       createdAt: weapon.createdAt,
       updatedAt: weapon.updatedAt,
-    };
+    } as any;
   }
 
   async createWeapon(weapon: InsertWeapon): Promise<Weapon> {
     await this.connect();
     const created = await WeaponModel.create(weapon);
+    const lean = await WeaponModel.findById(created._id).lean();
+    if (!lean) throw new Error('Failed to create weapon');
     return {
-      id: created._id.toString(),
-      name: created.name,
-      image: created.image,
-      category: created.category || "",
-      description: created.description || "",
-      stats: created.stats || {},
-      createdAt: created.createdAt,
-      updatedAt: created.updatedAt,
-    };
+      id: lean._id.toString(),
+      name: lean.name,
+      image: lean.image,
+      category: lean.category || "",
+      description: lean.description || "",
+      stats: lean.stats || {},
+      createdAt: lean.createdAt,
+      updatedAt: lean.updatedAt,
+    } as any;
   }
 
   async updateWeapon(id: string, weapon: Partial<InsertWeapon>): Promise<Weapon | undefined> {
@@ -821,7 +818,7 @@ export class MongoDBStorage implements IStorage {
       stats: updated.stats || {},
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
-    };
+    } as any;
   }
 
   async deleteWeapon(id: string): Promise<boolean> {
@@ -833,16 +830,11 @@ export class MongoDBStorage implements IStorage {
   // Modes methods
   async getAllModes(): Promise<Mode[]> {
     await this.connect();
-    const modes = await ModeModel.find().sort({ createdAt: -1 }).lean();
+    const modes = await ModeModel.find().sort({ createdAt: -1 });
     return modes.map((m: any) => ({
+      ...m.toObject(),
       id: m._id.toString(),
-      name: m.name,
-      image: m.image,
-      description: m.description || "",
-      type: m.type || "",
-      createdAt: m.createdAt,
-      updatedAt: m.updatedAt,
-    }));
+    })) as any;
   }
 
   async getModeById(id: string): Promise<Mode | undefined> {
@@ -857,21 +849,21 @@ export class MongoDBStorage implements IStorage {
       type: mode.type || "",
       createdAt: mode.createdAt,
       updatedAt: mode.updatedAt,
-    };
+    } as any;
   }
 
   async createMode(mode: InsertMode): Promise<Mode> {
     await this.connect();
     const created = await ModeModel.create(mode);
     return {
-      id: created._id.toString(),
+      id: (created as any)._id.toString(),
       name: created.name,
       image: created.image,
       description: created.description || "",
       type: created.type || "",
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
-    };
+    } as any;
   }
 
   async updateMode(id: string, mode: Partial<InsertMode>): Promise<Mode | undefined> {
@@ -886,7 +878,7 @@ export class MongoDBStorage implements IStorage {
       type: updated.type || "",
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
-    };
+    } as any;
   }
 
   async deleteMode(id: string): Promise<boolean> {
@@ -907,7 +899,7 @@ export class MongoDBStorage implements IStorage {
       requirements: r.requirements || "",
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-    }));
+    })) as any;
   }
 
   async getRankById(id: string): Promise<Rank | undefined> {
@@ -922,21 +914,21 @@ export class MongoDBStorage implements IStorage {
       requirements: rank.requirements || "",
       createdAt: rank.createdAt,
       updatedAt: rank.updatedAt,
-    };
+    } as any;
   }
 
   async createRank(rank: InsertRank): Promise<Rank> {
     await this.connect();
     const created = await RankModel.create(rank);
     return {
-      id: created._id.toString(),
+      id: (created as any)._id.toString(),
       name: created.name,
       image: created.image,
       description: created.description || "",
       requirements: created.requirements || "",
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
-    };
+    } as any;
   }
 
   async updateRank(id: string, rank: Partial<InsertRank>): Promise<Rank | undefined> {
@@ -951,7 +943,7 @@ export class MongoDBStorage implements IStorage {
       requirements: updated.requirements || "",
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
-    };
+    } as any;
   }
 
   async deleteRank(id: string): Promise<boolean> {

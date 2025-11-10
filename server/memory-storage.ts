@@ -26,7 +26,17 @@ import type {
   SellerReview,
   SiteSettings,
   SiteSettingsUpdate,
-} from '@shared/mongodb-schema';
+  Tutorial,
+  InsertTutorial,
+  TutorialComment,
+  InsertTutorialComment,
+  Weapon,
+  InsertWeapon,
+  Mode,
+  InsertMode,
+  Rank,
+  InsertRank,
+} from '../shared/mongodb-schema';
 
 // Lightweight, in-memory storage used as a fallback when MongoDB isn't available.
 export class MemoryStorage implements IStorage {

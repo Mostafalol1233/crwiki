@@ -32,4 +32,20 @@ export interface NewsItem {
   createdAt?: Date;
 }
 
+export interface Weapon {
+  name: string;
+  image: string;
+  category: string;
+  description: string;
+  stats: {
+    damage: number;
+    accuracy: number;
+    recoil: string;
+    fireRate: string;
+    mobility: string;
+    magazine?: number;
+    range?: string;
+  };
+  background?: string;
+}
 

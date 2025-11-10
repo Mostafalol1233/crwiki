@@ -1,4 +1,4 @@
-const DEFAULT_IMAGE = '/assets/feature-weap.jpg.jpeg';
+const DEFAULT_IMAGE = '/assets/cfw-weaponbg-vip.png';
 
 const weaponsData = [
   // Assault Rifles

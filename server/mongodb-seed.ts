@@ -186,7 +186,7 @@ async function seedMongoDB() {
           // Ensure all weapons have the cfweapon pg-vip background
           const weaponData = {
             ...weapon,
-            background: weapon.background || '/assets/cfweapon-pg-vip.jpg'
+            background: '/assets/cfweapon-pg-vip.jpg'
           };
           await WeaponModel.create(weaponData);
           console.log(`✅ Created weapon: ${weapon.name}`);

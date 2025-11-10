@@ -24,3 +24,14 @@ try {
 }
 
 export const storage: IStorage = _storage;
+
+// For Vercel serverless functions, ensure MongoDB connection is established
+if (process.env.VERCEL) {
+  // Warm up the connection on cold starts
+  try {
+    await storage.getAllPosts();
+    console.log('MongoDB connection warmed up for Vercel');
+  } catch (err) {
+    console.error('Failed to warm up MongoDB connection:', err);
+  }
+}

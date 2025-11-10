@@ -75,64 +75,70 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  // Try listening on the configured port; if it's in use try the next few ports
-  const maxAttempts = 10;
-  let attempted = 0;
-  const tryListen = (p: number) => new Promise<void>((resolve, reject) => {
-    const onError = (err: any) => {
-      server.off('listening', onListening);
-      server.off('error', onError);
-      reject(err);
-    };
+  // For Vercel deployment, export the app instead of starting a server
+  if (process.env.VERCEL) {
+    // Export for Vercel serverless functions
+    export default app;
+  } else {
+    // Local development: serve the app on the port specified in the environment variable PORT
+    // Other ports are firewalled. Default to 5000 if not specified.
+    // this serves both the API and the client.
+    // It is the only port that is not firewalled.
+    const port = parseInt(process.env.PORT || '5000', 10);
+    // Try listening on the configured port; if it's in use try the next few ports
+    const maxAttempts = 10;
+    let attempted = 0;
+    const tryListen = (p: number) => new Promise<void>((resolve, reject) => {
+      const onError = (err: any) => {
+        server.off('listening', onListening);
+        server.off('error', onError);
+        reject(err);
+      };
 
-    const onListening = () => {
-      server.off('listening', onListening);
-      server.off('error', onError);
-      log(`serving on port ${p}`);
-      resolve();
-    };
+      const onListening = () => {
+        server.off('listening', onListening);
+        server.off('error', onError);
+        log(`serving on port ${p}`);
+        resolve();
+      };
 
-    server.once('error', onError);
-    server.once('listening', onListening);
+      server.once('error', onError);
+      server.once('listening', onListening);
 
-    try {
-      server.listen({ port: p, host: '0.0.0.0', reusePort: true });
-    } catch (err) {
-      onError(err);
-    }
-  });
-
-  (async () => {
-    let currentPort = port;
-    while (attempted < maxAttempts) {
       try {
-        // eslint-disable-next-line no-await-in-loop
-        await tryListen(currentPort);
-        break;
-      } catch (err: any) {
-        if (err && err.code === 'EADDRINUSE') {
-          log(`port ${currentPort} in use, trying port ${currentPort + 1}...`);
-          attempted += 1;
-          currentPort += 1;
-          // small delay before retry
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((r) => setTimeout(r, 200));
-          continue;
-        }
-
-        // Unknown error: rethrow to surface it
-        throw err;
+        server.listen({ port: p, host: '0.0.0.0', reusePort: true });
+      } catch (err) {
+        onError(err);
       }
-    }
+    });
 
-    if (attempted >= maxAttempts) {
-      log(`Failed to bind after ${maxAttempts} attempts. Please free port ${port} or set PORT to a different value.`);
-      process.exit(1);
-    }
-  })();
+    (async () => {
+      let currentPort = port;
+      while (attempted < maxAttempts) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await tryListen(currentPort);
+          break;
+        } catch (err: any) {
+          if (err && err.code === 'EADDRINUSE') {
+            log(`port ${currentPort} in use, trying port ${currentPort + 1}...`);
+            attempted += 1;
+            currentPort += 1;
+            // small delay before retry
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => setTimeout(r, 200));
+            continue;
+          }
+
+          // Unknown error: rethrow to surface it
+          throw err;
+        }
+      }
+
+      if (attempted >= maxAttempts) {
+        log(`Failed to bind after ${maxAttempts} attempts. Please free port ${port} or set PORT to a different value.`);
+        process.exit(1);
+      }
+    })();
+  }
 })();

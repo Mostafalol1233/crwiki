@@ -5,7 +5,9 @@ import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Export for Vercel serverless functions
 const app = express();
+export default app;
 
 declare module 'http' {
   interface IncomingMessage {
@@ -77,8 +79,7 @@ app.use((req, res, next) => {
 
   // For Vercel deployment, export the app instead of starting a server
   if (process.env.VERCEL) {
-    // Export for Vercel serverless functions
-    export default app;
+    // Export for Vercel serverless functions - app is already configured
   } else {
     // Local development: serve the app on the port specified in the environment variable PORT
     // Other ports are firewalled. Default to 5000 if not specified.
@@ -142,3 +143,5 @@ app.use((req, res, next) => {
     })();
   }
 })();
+
+

@@ -1,9 +1,7 @@
 import { connectMongoDB, disconnectMongoDB } from './mongodb';
 import { NewsModel, EventModel, AdminModel } from '@shared/mongodb-schema';
 import bcrypt from 'bcryptjs';
-import { weaponsData } from './data/weapons-seed';
-import { modesData } from './data/modes-seed';
-import { ranksData } from './data/ranks-seed';
+import { weaponsData, modesData, ranksData } from './data/seed-data';
 import { WeaponModel, ModeModel, RankModel } from '@shared/mongodb-schema';
 
 async function seedMongoDB() {
@@ -185,9 +183,10 @@ async function seedMongoDB() {
       for (const weapon of weaponsData) {
         const existing = await WeaponModel.findOne({ name: weapon.name });
         if (!existing) {
+          // Ensure all weapons have the cfweapon pg-vip background
           const weaponData = {
             ...weapon,
-            image: weapon.image || '/assets/cfweapon-pg-vip.jpg'
+            background: weapon.background || '/assets/cfweapon-pg-vip.jpg'
           };
           await WeaponModel.create(weaponData);
           console.log(`✅ Created weapon: ${weapon.name}`);

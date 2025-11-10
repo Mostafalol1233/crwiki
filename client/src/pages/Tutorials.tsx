@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 export default function TutorialsPage() {
   const { data: tutorials, isLoading } = useQuery<Tutorial[]>({
-    queryKey: ["/api/tutorials"],
+    queryKey: ["tutorials"],
   });
 
   if (isLoading) {

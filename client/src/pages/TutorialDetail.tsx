@@ -30,12 +30,12 @@ export default function TutorialDetailPage() {
   const [commentContent, setCommentContent] = useState("");
 
   const { data: tutorial, isLoading: tutorialLoading } = useQuery<Tutorial>({
-    queryKey: [`/api/tutorials/${tutorialId}`],
+    queryKey: [`tutorials/${tutorialId}`],
     enabled: !!tutorialId,
   });
 
   const { data: comments = [] } = useQuery<TutorialComment[]>({
-    queryKey: [`/api/tutorials/${tutorialId}/comments`],
+    queryKey: [`tutorials/${tutorialId}/comments`],
     enabled: !!tutorialId,
   });
 
@@ -44,7 +44,7 @@ export default function TutorialDetailPage() {
       return await apiRequest(`/api/tutorials/${tutorialId}/like`, "POST", {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tutorials/${tutorialId}`] });
+      queryClient.invalidateQueries({ queryKey: [`tutorials/${tutorialId}`] });
       toast({
         title: "Liked!",
         description: "Thank you for your support!",
@@ -57,7 +57,7 @@ export default function TutorialDetailPage() {
       return await apiRequest(`/api/tutorials/${tutorialId}/comments`, "POST", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tutorials/${tutorialId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: [`tutorials/${tutorialId}/comments`] });
       setCommentAuthor("");
       setCommentContent("");
       toast({

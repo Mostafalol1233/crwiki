@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const baseUrl = import.meta.env.VITE_API_URL || '';
+const baseUrl = import.meta.env.VITE_API_URL || 'https://crwiki-green.vercel.app/api';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {

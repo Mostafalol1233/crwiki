@@ -1,7 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const apiPrefix = '/api';
-const baseUrl = import.meta.env.VITE_API_URL || '';
+const baseUrl = '';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -52,8 +51,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const headers = getAuthHeaders();
 
-    const path = queryKey.join("/");
-    const fullUrl = baseUrl ? `${baseUrl}${apiPrefix}/${path}` : `${apiPrefix}/${path}`;
+    const fullUrl = baseUrl ? `${baseUrl}${queryKey.join("/")}` : queryKey.join("/");
 
     const res = await fetch(fullUrl, {
       credentials: "include",

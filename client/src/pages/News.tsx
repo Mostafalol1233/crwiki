@@ -24,11 +24,11 @@ export default function News() {
   const { t } = useLanguage();
 
   const { data: newsItems = [], isLoading: newsLoading } = useQuery<NewsItem[]>({
-    queryKey: ["news"],
+    queryKey: ["/api/news"],
   });
 
   const { data: posts = [], isLoading: postsLoading } = useQuery<any[]>({
-    queryKey: ["posts"],
+    queryKey: ["/api/posts"],
   });
 
   const allNews = useMemo(() => {

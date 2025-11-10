@@ -52,6 +52,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database connection
+  try {
+    const { initializeDatabase } = await import('./db-connect.js');
+    await initializeDatabase();
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+
   const server = await registerRoutes(app);
 
   // Serve static assets from attached_assets folder

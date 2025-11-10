@@ -168,6 +168,7 @@ export interface ISiteSettings extends Document {
 export interface IWeapon extends Document {
   name: string;
   image?: string;
+  background?: string;
   category?: string;
   description?: string;
   stats?: Record<string, any>;
@@ -363,6 +364,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
 const WeaponSchema = new Schema<IWeapon>({
   name: { type: String, required: true },
   image: { type: String, default: "" },
+  background: { type: String, default: "" },
   category: { type: String, default: "" },
   description: { type: String, default: "" },
   stats: { type: Schema.Types.Mixed, default: {} },
@@ -547,6 +549,7 @@ export const insertTutorialCommentSchema = z.object({
 export const insertWeaponSchema = z.object({
   name: z.string().min(1),
   image: z.string().optional(),
+  background: z.string().optional(),
   category: z.string().optional(),
   description: z.string().optional(),
   stats: z.record(z.any()).optional(),

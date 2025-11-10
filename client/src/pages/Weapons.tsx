@@ -25,7 +25,7 @@ export default function Weapons() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const { data: weapons = [], isLoading } = useQuery<Weapon[]>({
-    queryKey: ["/api/weapons"],
+    queryKey: ["weapons"],
     queryFn: async () => {
       const data = await apiRequest("/api/weapons", "GET");
       return data || [];

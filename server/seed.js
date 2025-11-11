@@ -1,20 +1,34 @@
- import { weaponsData, modesData, ranksData } from './data/seed-data.js';
- import fetch from 'node-fetch';
+import { weaponsData, modesData, ranksData } from './data/seed-data.js';
+import fetch from 'node-fetch';
+
+// Use API_BASE_URL (or SEED_API_URL) for serverless deployments (Vercel).
+// Fallback to localhost:20032 for local development.
+const API_BASE = process.env.API_BASE_URL || process.env.SEED_API_URL || 'http://localhost:20032';
+
+// Credentials for seeding: prefer explicit username+password, otherwise password-only
+const SEED_ADMIN_USERNAME = process.env.SEED_ADMIN_USERNAME; // optional
+const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'admin';
 
 async function seedDatabase() {
   try {
     console.log('🔄 Starting database seeding...');
 
     // Login as admin to get token
-    const authResponse = await fetch('http://localhost:20032/api/auth/login', {
+    const authBody = SEED_ADMIN_USERNAME
+      ? { username: SEED_ADMIN_USERNAME, password: SEED_ADMIN_PASSWORD }
+      : { password: SEED_ADMIN_PASSWORD };
+
+    const authResponse = await fetch(`${API_BASE}/api/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'admin' })
+      body: JSON.stringify(authBody)
     });
 
-    const auth = await authResponse.json();
-    if (!auth.token) {
-      throw new Error('Failed to authenticate');
+    const auth = await authResponse.json().catch(() => null);
+    if (!auth || !auth.token) {
+      console.error('Auth response status:', authResponse.status, authResponse.statusText);
+      console.error('Auth response body:', auth);
+      throw new Error('Failed to authenticate - check SEED_ADMIN_USERNAME/SEED_ADMIN_PASSWORD and API_BASE');
     }
 
     const headers = {
@@ -22,21 +36,26 @@ async function seedDatabase() {
       'Authorization': `Bearer ${auth.token}`
     };
 
-    // Upload weapons in bulk
-    console.log('📦 Uploading weapons...');
-    const weaponsResponse = await fetch('http://localhost:20032/api/weapons/bulk-create', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ weapons: weaponsData })
-    });
-    const weaponsResult = await weaponsResponse.json();
-    console.log(`✅ Uploaded ${weaponsResult.count || 0} weapons`);
+    // Upload weapons (POST individually because /api/weapons/bulk-create may not exist on serverless API)
+    console.log('📦 Uploading weapons (individual requests)...');
+    const createdWeapons = [];
+    for (const weapon of weaponsData) {
+      const resp = await fetch(`${API_BASE}/api/weapons`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(weapon)
+      });
+      const result = await resp.json();
+      createdWeapons.push(result);
+    }
+    console.log(`✅ Uploaded ${createdWeapons.length} weapons`);
+    const weaponsResult = { count: createdWeapons.length };
 
     // Upload modes
     console.log('📦 Uploading game modes...');
     const createdModes = [];
     for (const mode of modesData) {
-      const response = await fetch('http://localhost:20032/api/modes', {
+      const response = await fetch(`${API_BASE}/api/modes`, {
         method: 'POST',
         headers,
         body: JSON.stringify(mode)
@@ -50,7 +69,7 @@ async function seedDatabase() {
     console.log('📦 Uploading ranks...');
     const createdRanks = [];
     for (const rank of ranksData) {
-      const response = await fetch('http://localhost:20032/api/ranks', {
+      const response = await fetch(`${API_BASE}/api/ranks`, {
         method: 'POST',
         headers,
         body: JSON.stringify(rank)

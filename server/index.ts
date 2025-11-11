@@ -21,6 +21,21 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Basic CORS middleware for serverless and browser clients
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const allowedOrigin = process.env.PUBLIC_BASE_URL || process.env.VITE_API_URL || '*';
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

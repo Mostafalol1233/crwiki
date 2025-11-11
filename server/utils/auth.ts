@@ -139,7 +139,7 @@ export function requireTutorialManager(req: Request, res: Response, next: NextFu
 export function requireWeaponManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('weapon_manager')) {
+  if (!user || !user.roles || !(['weapon_manager', 'super_admin'].some((r) => user.roles.includes(r)))) {
     return res.status(403).json({ error: "Forbidden: Weapon Manager access required" });
   }
 
@@ -149,7 +149,7 @@ export function requireWeaponManager(req: Request, res: Response, next: NextFunc
 export function requirePostManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('post_manager')) {
+  if (!user || !user.roles || !(['post_manager', 'super_admin'].some((r) => user.roles.includes(r)))) {
     return res.status(403).json({ error: "Forbidden: Post Manager access required" });
   }
 

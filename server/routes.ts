@@ -12,6 +12,7 @@ import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpe
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
 import DOMPurify from 'isomorphic-dompurify';
 import type { ScrapedEvent } from "@shared/types";
+import { weaponsData, modesData, ranksData } from './data/seed-data.js';
 
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -442,6 +443,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error in /api/cf/weapons:', error);
       res.status(500).json({ error: error.message || "Failed to fetch weapons" });
+    }
+  });
+
+  // Seed CF data into MongoDB (one-time utility)
+  app.post("/api/seed/cf-data", requireAuth, requireSuperAdmin, async (_req, res) => {
+    try {
+      // Weapons
+      let createdWeapons = 0;
+      for (const w of weaponsData) {
+        const all = await storage.getAllWeapons();
+        if (!all.find((x: any) => x.name === w.name)) {
+          try {
+            const parsed = insertWeaponSchema.parse(w);
+            await storage.createWeapon(parsed);
+            createdWeapons += 1;
+          } catch {}
+        }
+      }
+
+      // Modes
+      let createdModes = 0;
+      for (const m of modesData) {
+        const all = await storage.getAllModes();
+        if (!all.find((x: any) => x.name === m.name)) {
+          try {
+            const parsed = insertModeSchema.parse(m);
+            await storage.createMode(parsed);
+            createdModes += 1;
+          } catch {}
+        }
+      }
+
+      // Ranks
+      let createdRanks = 0;
+      for (const r of ranksData) {
+        const all = await storage.getAllRanks();
+        if (!all.find((x: any) => x.name === r.name)) {
+          try {
+            const parsed = insertRankSchema.parse(r);
+            await storage.createRank(parsed);
+            createdRanks += 1;
+          } catch {}
+        }
+      }
+
+      res.status(201).json({ success: true, createdWeapons, createdModes, createdRanks });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to seed CF data' });
     }
   });
 

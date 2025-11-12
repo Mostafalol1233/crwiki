@@ -272,6 +272,7 @@ export default function Admin() {
 
   const { data: sellers } = useQuery<any[]>({
     queryKey: ["/api/sellers"],
+    queryFn: () => apiRequest("/api/sellers", "GET"),
   });
 
   const { data: siteSettings } = useQuery<SiteSettings>({
@@ -2896,8 +2897,15 @@ export default function Admin() {
                               description: event.description || "",
                               descriptionAr: event.descriptionAr || "",
                               date: event.date,
-                              type: event.type,
+                              type: (event.type || "upcoming") as "upcoming" | "trending",
                               image: event.image || "",
+                              seoTitle: event.seoTitle || "",
+                              seoDescription: event.seoDescription || "",
+                              seoKeywords: event.seoKeywords || "",
+                              canonicalUrl: event.canonicalUrl || "",
+                              ogImage: event.ogImage || "",
+                              twitterImage: event.twitterImage || "",
+                              schemaType: event.schemaType || "Event",
                             });
                             setIsCreatingEvent(true);
                           }}
@@ -2939,13 +2947,20 @@ export default function Admin() {
                             setNewsForm({
                               title: news.title,
                               titleAr: news.titleAr || "",
-                              dateRange: news.dateRange,
+                              dateRange: news.dateRange || "",
                               image: news.image,
                               category: news.category,
                               content: news.content,
                               contentAr: news.contentAr || "",
                               author: news.author,
                               featured: news.featured,
+                              seoTitle: news.seoTitle || "",
+                              seoDescription: news.seoDescription || "",
+                              seoKeywords: news.seoKeywords || "",
+                              canonicalUrl: news.canonicalUrl || "",
+                              ogImage: news.ogImage || "",
+                              twitterImage: news.twitterImage || "",
+                              schemaType: news.schemaType || "NewsArticle",
                             });
                             setIsCreatingNews(true);
                           }}

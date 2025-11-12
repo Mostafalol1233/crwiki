@@ -155,7 +155,7 @@ export default function CFDataScraper() {
     // Filter items without an image, since server expects a URL
     const withoutImage = payload.filter((p) => !p.image || p.image.length === 0);
     if (withoutImage.length > 0) {
-      toast({ title: 'Some items missing images', description: `Skipping ${withoutImage.length} items without images. Place images in /attached_assets and reload if you want to push them.`, variant: 'warning' });
+      toast({ title: 'Some items missing images', description: `Skipping ${withoutImage.length} items without images. Place images in /attached_assets and reload if you want to push them.`, variant: 'destructive' });
     }
 
     const toSend = payload.filter((p) => !!p.image && p.image.length > 0);

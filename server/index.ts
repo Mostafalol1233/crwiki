@@ -4,6 +4,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from './storage';
+import { weaponsData, modesData, ranksData } from './data/seed-data.js';
+import { insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
 
 // Export for Vercel serverless functions
 const app = express();
@@ -74,6 +77,40 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error('Failed to initialize database:', error);
     process.exit(1);
+  }
+
+  // Optional: auto seed CF data on boot when AUTO_SEED=1
+  if (process.env.AUTO_SEED === '1') {
+    try {
+      const existingWeapons = await storage.getAllWeapons();
+      if (!existingWeapons || existingWeapons.length === 0) {
+        let created = 0;
+        for (const w of weaponsData) {
+          try { await storage.createWeapon(insertWeaponSchema.parse(w)); created++; } catch {}
+        }
+        log(`AUTO_SEED: created ${created} weapons`);
+      }
+
+      const existingModes = await storage.getAllModes();
+      if (!existingModes || existingModes.length === 0) {
+        let created = 0;
+        for (const m of modesData) {
+          try { await storage.createMode(insertModeSchema.parse(m)); created++; } catch {}
+        }
+        log(`AUTO_SEED: created ${created} modes`);
+      }
+
+      const existingRanks = await storage.getAllRanks();
+      if (!existingRanks || existingRanks.length === 0) {
+        let created = 0;
+        for (const r of ranksData) {
+          try { await storage.createRank(insertRankSchema.parse(r)); created++; } catch {}
+        }
+        log(`AUTO_SEED: created ${created} ranks`);
+      }
+    } catch (err) {
+      console.error('AUTO_SEED failed:', err);
+    }
   }
 
   const server = await registerRoutes(app);

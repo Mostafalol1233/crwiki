@@ -84,6 +84,11 @@ export default function Admin() {
   const [editingSeller, setEditingSeller] = useState<any>(null);
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<any>(null);
+  const [isCreatingMerc, setIsCreatingMerc] = useState(false);
+  const [isEditingMerc, setIsEditingMerc] = useState(false);
+  const [editingMerc, setEditingMerc] = useState<any>(null);
+  const [mercForm, setMercForm] = useState({ name: "", role: "", image: "", soundsText: "" });
+  const [createMercForm, setCreateMercForm] = useState({ name: "", image: "", role: "", soundsText: "" });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<string>("");
 
@@ -109,6 +114,9 @@ export default function Admin() {
       setAdminUsername(username || "");
     }
   }, [setLocation]);
+
+  // Controlled active tab so we can provide a responsive selector on small screens
+  const [activeTab, setActiveTab] = useState<string>("dashboard");
 
   const isSuperAdmin = adminRole === "super_admin";
 
@@ -190,6 +198,21 @@ export default function Admin() {
     password: "",
     role: "admin" as "admin" | "super_admin",
   });
+  const [adminPermissionsForm, setAdminPermissionsForm] = useState<Record<string, boolean>>({});
+
+  const AVAILABLE_PERMISSIONS: { key: string; label: string }[] = [
+    { key: "events:add", label: "Events - Add (manual)" },
+    { key: "events:scrape", label: "Events - Scrape (import)" },
+    { key: "news:add", label: "News - Add (manual)" },
+    { key: "news:scrape", label: "News - Scrape (import)" },
+    { key: "posts:manage", label: "Posts - Manage" },
+    { key: "sellers:manage", label: "Sellers - Manage" },
+    { key: "mercenaries:manage", label: "Mercenaries - Manage" },
+    { key: "tickets:manage", label: "Tickets - Manage" },
+    { key: "subscribers:manage", label: "Subscribers - Manage" },
+    { key: "settings:manage", label: "Site Settings" },
+    { key: "tutorials:manage", label: "Tutorials - Manage" },
+  ];
 
   // CF Data forms
   const [weaponForm, setWeaponForm] = useState({
@@ -294,6 +317,12 @@ export default function Admin() {
 
   const { data: ranks } = useQuery<any[]>({
     queryKey: ["/api/ranks"],
+    enabled: isSuperAdmin,
+  });
+
+  const { data: mercenaries } = useQuery<any[]>({
+    queryKey: ["/api/mercenaries"],
+    queryFn: () => apiRequest("/api/mercenaries", "GET"),
     enabled: isSuperAdmin,
   });
 
@@ -552,10 +581,25 @@ export default function Admin() {
 
   const createAdminMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/admins", "POST", data),
-    onSuccess: () => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      // If permissions were set in the form, save them via the admin-permissions API
+      try {
+        const created = data;
+        const adminId = created?.id || created?._id;
+        if (adminId && Object.keys(adminPermissionsForm || {}).length > 0) {
+          await apiRequest(`/api/admin-permissions/${adminId}`, "PUT", { permissions: adminPermissionsForm });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin-permissions"] });
+        }
+      } catch (err) {
+        // swallow — still proceed but notify
+        console.error('Failed to save admin permissions', err);
+        toast({ title: 'Admin created, but failed to save permissions', variant: 'destructive' });
+      }
+
       setIsCreatingAdmin(false);
       resetAdminForm();
+      setAdminPermissionsForm({});
       toast({ title: "Admin created successfully" });
     },
     onError: (error: any) => {
@@ -570,11 +614,23 @@ export default function Admin() {
   const updateAdminMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       apiRequest(`/api/admins/${id}`, "PATCH", data),
-    onSuccess: () => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      const adminId = data?.id || data?._id;
+      try {
+        if (adminId) {
+          await apiRequest(`/api/admin-permissions/${adminId}`, "PUT", { permissions: adminPermissionsForm || {} });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin-permissions"] });
+        }
+      } catch (err) {
+        console.error('Failed to update admin permissions', err);
+        toast({ title: 'Admin updated, but failed to save permissions', variant: 'destructive' });
+      }
+
       setEditingAdmin(null);
       setIsCreatingAdmin(false);
       resetAdminForm();
+      setAdminPermissionsForm({});
       toast({ title: "Admin updated successfully" });
     },
     onError: () => {
@@ -663,6 +719,45 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Failed to delete seller", variant: "destructive" });
+    },
+  });
+
+  const createMercenaryMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/mercenaries", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
+      setIsCreatingMerc(false);
+      setCreateMercForm({ name: "", image: "", role: "", soundsText: "" });
+      toast({ title: "Mercenary created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create mercenary", variant: "destructive" });
+    },
+  });
+
+  const updateMercenaryMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiRequest(`/api/mercenaries/${id}`, "PATCH", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
+      setEditingMerc(null);
+      setIsEditingMerc(false);
+      setMercForm({ name: "", role: "", image: "", soundsText: "" });
+      toast({ title: "Mercenary updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update mercenary", variant: "destructive" });
+    },
+  });
+
+  const deleteMercenaryMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/mercenaries/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
+      toast({ title: "Mercenary deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete mercenary", variant: "destructive" });
     },
   });
 
@@ -813,11 +908,28 @@ export default function Admin() {
     }
   };
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(uploadedImageUrl);
-    setCopied(true);
-    toast({ title: "URL copied to clipboard!" });
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(uploadedImageUrl);
+      setCopied(true);
+      toast({ title: "URL copied to clipboard!" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard API or have permissions issues
+      const textArea = document.createElement('textarea');
+      textArea.value = uploadedImageUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        toast({ title: "URL copied to clipboard!" });
+        setTimeout(() => setCopied(false), 2000);
+      } catch (fallbackError) {
+        toast({ title: "Failed to copy URL", variant: "destructive" });
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const handleLogout = () => {
@@ -861,6 +973,9 @@ export default function Admin() {
       case "ticket":
         deleteTicketMutation.mutate(deleteConfirmId);
         break;
+      case "mercenary":
+        deleteMercenaryMutation.mutate(deleteConfirmId);
+        break;
     }
     
     setDeleteConfirmId(null);
@@ -896,67 +1011,105 @@ export default function Admin() {
           </Button>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-10">
-            <TabsTrigger value="dashboard" data-testid="tab-dashboard">
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="posts" data-testid="tab-posts">
-              <FileText className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Posts</span>
-            </TabsTrigger>
-            <TabsTrigger value="events-news" data-testid="tab-events-news">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Events & News</span>
-            </TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="tutorials" data-testid="tab-tutorials">
-                <FileText className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Tutorials</span>
-              </TabsTrigger>
-            )}
-            {isSuperAdmin && (
-              <TabsTrigger value="sellers" data-testid="tab-sellers">
-                <Store className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Sellers</span>
-              </TabsTrigger>
-            )}
-            {isSuperAdmin && (
-              <TabsTrigger value="cf-data" data-testid="tab-cf-data">
-                <Shield className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">CF Data</span>
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="translations" data-testid="tab-translations">
-              <Languages className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Translations</span>
-            </TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="verification" data-testid="tab-verification">
-                <Shield className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Review Verification</span>
-              </TabsTrigger>
-            )}
-            {isSuperAdmin && (
-              <TabsTrigger value="admins" data-testid="tab-admins">
-                <Users className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Admins</span>
-              </TabsTrigger>
-            )}
-            {isSuperAdmin && (
-              <TabsTrigger value="subscribers" data-testid="tab-subscribers">
-                <Mail className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Subscribers</span>
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="tickets" data-testid="tab-tickets">
-              <LifeBuoy className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Tickets</span>
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="w-full lg:w-56">
+              {/* small screen: select picker */}
+              <div className="block lg:hidden mb-3">
+                <select
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="dashboard">Dashboard</option>
+                  <option value="posts">Posts</option>
+                  <option value="events-news">Events & News</option>
+                  {isSuperAdmin && <option value="tutorials">Tutorials</option>}
+                  {isSuperAdmin && <option value="sellers">Sellers</option>}
+                  {isSuperAdmin && <option value="cf-data">CF Data</option>}
+                  <option value="translations">Translations</option>
+                  {isSuperAdmin && <option value="verification">Review Verification</option>}
+                  {isSuperAdmin && <option value="admins">Admins</option>}
+                  {isSuperAdmin && <option value="subscribers">Subscribers</option>}
+                  <option value="mercenaries">Mercenaries</option>
+                  <option value="tickets">Tickets</option>
+                  {isSuperAdmin && <option value="seller-reviews">Seller Review Verification</option>}
+                </select>
+              </div>
 
-          <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
+              {/* large screen: vertical tabs list */}
+              <TabsList className="hidden lg:flex lg:flex-col lg:space-y-2">
+                <TabsTrigger value="dashboard" data-testid="tab-dashboard">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </TabsTrigger>
+                <TabsTrigger value="posts" data-testid="tab-posts">
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Posts</span>
+                </TabsTrigger>
+                <TabsTrigger value="events-news" data-testid="tab-events-news">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Events & News</span>
+                </TabsTrigger>
+                {isSuperAdmin && (
+                  <TabsTrigger value="tutorials" data-testid="tab-tutorials">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Tutorials</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="sellers" data-testid="tab-sellers">
+                    <Store className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Sellers</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="cf-data" data-testid="tab-cf-data">
+                    <Shield className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">CF Data</span>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="translations" data-testid="tab-translations">
+                  <Languages className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Translations</span>
+                </TabsTrigger>
+                {isSuperAdmin && (
+                  <TabsTrigger value="verification" data-testid="tab-verification">
+                    <Shield className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Review Verification</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="admins" data-testid="tab-admins">
+                    <Users className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Admins</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="subscribers" data-testid="tab-subscribers">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Subscribers</span>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="mercenaries" data-testid="tab-mercenaries">
+                  <Star className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Mercenaries</span>
+                </TabsTrigger>
+                <TabsTrigger value="tickets" data-testid="tab-tickets">
+                  <LifeBuoy className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Tickets</span>
+                </TabsTrigger>
+                {isSuperAdmin && (
+                  <TabsTrigger value="seller-reviews" data-testid="tab-seller-reviews">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Seller Review Verification</span>
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            </div>
+
+            <div className="flex-1">
+              <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
@@ -3035,15 +3188,31 @@ export default function Admin() {
                         <option value="admin">Admin</option>
                         <option value="super_admin">Super Admin</option>
                       </select>
+                      <div className="pt-2">
+                        <p className="text-sm font-medium mb-2">Permissions</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {AVAILABLE_PERMISSIONS.map((p) => (
+                            <label key={p.key} className="flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={!!adminPermissionsForm[p.key]}
+                                onChange={(e) => setAdminPermissionsForm((s) => ({ ...s, [p.key]: e.target.checked }))}
+                              />
+                              <span>{p.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                       <Button
                         onClick={() => {
                           if (editingAdmin) {
                             const updates: any = { role: adminForm.role };
                             if (adminForm.username) updates.username = adminForm.username;
                             if (adminForm.password) updates.password = adminForm.password;
-                            updateAdminMutation.mutate({ id: editingAdmin.id, data: updates });
+                            // include permissions when updating
+                            updateAdminMutation.mutate({ id: editingAdmin.id, data: { ...updates, permissions: adminPermissionsForm } });
                           } else {
-                            createAdminMutation.mutate(adminForm);
+                            createAdminMutation.mutate({ ...adminForm, permissions: adminPermissionsForm });
                           }
                         }}
                         className="w-full"
@@ -3091,7 +3260,19 @@ export default function Admin() {
                                     password: "",
                                     role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
                                   });
-                                  setIsCreatingAdmin(true);
+                                    // load existing permissions for this admin (if any)
+                                    (async () => {
+                                      try {
+                                        const perms = await apiRequest('/api/admin-permissions', 'GET');
+                                        const mapping = perms || {};
+                                        const adminPerms = mapping[admin.id] || {};
+                                        setAdminPermissionsForm(adminPerms || {});
+                                      } catch (err) {
+                                        console.error('Failed to load admin permissions', err);
+                                        setAdminPermissionsForm({});
+                                      }
+                                    })();
+                                    setIsCreatingAdmin(true);
                                 }}
                                 data-testid={`button-edit-admin-${admin.id}`}
                               >
@@ -3171,7 +3352,243 @@ export default function Admin() {
             </TabsContent>
           )}
 
-          <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
+          {isSuperAdmin && (
+            <TabsContent value="mercenaries" className="space-y-6" data-testid="content-mercenaries">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Mercenaries</h2>
+                <Dialog open={isCreatingMerc} onOpenChange={(open) => {
+                  setIsCreatingMerc(open);
+                  if (!open) {
+                    setCreateMercForm({ name: "", image: "", role: "", soundsText: "" });
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-create-merc">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Mercenary
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Mercenary</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input
+                          value={createMercForm.name}
+                          onChange={(e) => setCreateMercForm((s) => ({ ...s, name: e.target.value }))}
+                          placeholder="Mercenary name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Role</Label>
+                        <Input
+                          value={createMercForm.role}
+                          onChange={(e) => setCreateMercForm((s) => ({ ...s, role: e.target.value }))}
+                          placeholder="e.g., Assault, Support"
+                        />
+                      </div>
+                      <div>
+                        <Label>Image URL</Label>
+                        <Input
+                          value={createMercForm.image}
+                          onChange={(e) => setCreateMercForm((s) => ({ ...s, image: e.target.value }))}
+                          placeholder="https://.../image.jpg"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sounds (one URL per line, up to 30)</Label>
+                        <Textarea
+                          value={createMercForm.soundsText}
+                          onChange={(e) => setCreateMercForm((s) => ({ ...s, soundsText: e.target.value }))}
+                          placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
+                          className="h-40"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => {
+                            const first = createMercForm.soundsText.split('\n').map(s=>s.trim()).find(Boolean);
+                            if (first) {
+                              const a = new Audio(first);
+                              a.play().catch(()=>{});
+                            } else {
+                              toast({ title: 'No sound to preview', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const sounds = createMercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
+                            createMercenaryMutation.mutate({
+                              name: createMercForm.name,
+                              image: createMercForm.image,
+                              role: createMercForm.role,
+                              sounds
+                            });
+                          }}
+                        >
+                          Create
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Image</TableHead>
+                        <TableHead>Sounds</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mercenaries?.map((merc: any) => (
+                        <TableRow key={merc.id} data-testid={`merc-row-${merc.id}`}>
+                          <TableCell className="font-medium max-w-xs truncate">{merc.name}</TableCell>
+                          <TableCell>{merc.role}</TableCell>
+                          <TableCell>
+                            {merc.image ? (
+                              <img src={merc.image} alt={merc.name} className="h-12 w-12 object-cover rounded" />
+                            ) : (
+                              <span className="text-sm text-muted-foreground">No image</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{merc.sounds ? merc.sounds.length : 0}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingMerc(merc);
+                                  setMercForm({
+                                    name: merc.name || "",
+                                    role: merc.role || "",
+                                    image: merc.image || "",
+                                    soundsText: (merc.sounds || []).join("\n"),
+                                  });
+                                  setIsEditingMerc(true);
+                                }}
+                                data-testid={`button-edit-merc-${merc.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setDeleteConfirmId(merc.id);
+                                  setDeleteType("mercenary");
+                                }}
+                                data-testid={`button-delete-merc-${merc.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {(!mercenaries || mercenaries.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            No mercenaries found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              <Dialog open={isEditingMerc} onOpenChange={(open) => {
+                if (!open) {
+                  setIsEditingMerc(false);
+                  setEditingMerc(null);
+                  setMercForm({ name: "", role: "", image: "", soundsText: "" });
+                }
+              }}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingMerc ? `Edit ${editingMerc.name}` : "Edit Mercenary"}</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4 pt-4">
+                    <div>
+                      <Label>Name</Label>
+                      <Input
+                        value={mercForm.name}
+                        onChange={(e) => setMercForm((s) => ({ ...s, name: e.target.value }))}
+                        placeholder="Mercenary name"
+                      />
+                    </div>
+                    <div>
+                      <Label>Role</Label>
+                      <Input
+                        value={mercForm.role}
+                        onChange={(e) => setMercForm((s) => ({ ...s, role: e.target.value }))}
+                        placeholder="e.g., Assault, Support"
+                      />
+                    </div>
+                    <div>
+                      <Label>Image URL</Label>
+                      <Input
+                        value={mercForm.image}
+                        onChange={(e) => setMercForm((s) => ({ ...s, image: e.target.value }))}
+                        placeholder="https://.../image.jpg"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Sounds (one URL per line, up to 30)</Label>
+                      <Textarea
+                        value={mercForm.soundsText}
+                        onChange={(e) => setMercForm((s) => ({ ...s, soundsText: e.target.value }))}
+                        placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
+                        className="h-40"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          const first = mercForm.soundsText.split('\n').map(s=>s.trim()).find(Boolean);
+                          if (first) {
+                            const a = new Audio(first);
+                            a.play().catch(()=>{});
+                          } else {
+                            toast({ title: 'No sound to preview', variant: 'destructive' });
+                          }
+                        }}
+                      >
+                        Preview
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (!editingMerc) return;
+                          const sounds = mercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
+                          updateMercenaryMutation.mutate({ id: editingMerc.id, data: { name: mercForm.name, role: mercForm.role, image: mercForm.image, sounds } });
+                        }}
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
+          )}
+            <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
             <h2 className="text-2xl font-semibold">Support Tickets</h2>
             <Card>
               <CardContent className="p-0">
@@ -3260,6 +3677,8 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+            </div>
+          </div>
         </Tabs>
       </div>
 

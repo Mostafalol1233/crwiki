@@ -51,6 +51,8 @@ export function Footer() {
     { label: t("home"), path: "/" },
     { label: t("about"), path: "/about" },
     { label: t("contact"), path: "/contact" },
+    { label: "Terms of Service", path: "/terms" },
+    { label: "Privacy Policy", path: "/privacy" },
   ];
 
   const categories = [

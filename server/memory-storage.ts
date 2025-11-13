@@ -44,7 +44,7 @@ export class MemoryStorage implements IStorage {
   private comments: Comment[] = [] as any;
   private events: Event[] = [] as any;
   private news: NewsItem[] = [] as any;
-  private mercenaries: Mercenary[] = [] as any;
+  private mercenaries: Map<string, Mercenary> = new Map();
   private tickets: Ticket[] = [] as any;
   private ticketReplies: TicketReply[] = [] as any;
   private admins: Admin[] = [] as any;
@@ -76,11 +76,9 @@ export class MemoryStorage implements IStorage {
     };
     this.admins.push(admin);
 
-    this.mercenaries = [
-      { id: '1', name: 'Wolf', image: '/assets/merc-wolf.jpg', role: 'Assault' },
-      { id: '2', name: 'Vipers', image: '/assets/merc-vipers.jpg', role: 'Sniper' },
-      { id: '3', name: 'Sisterhood', image: '/assets/merc-sisterhood.jpg', role: 'Medic' },
-    ];
+    this.mercenaries.set('1', { id: '1', name: 'Wolf', image: '/assets/merc-wolf.jpg', role: 'Assault' });
+    this.mercenaries.set('2', { id: '2', name: 'Vipers', image: '/assets/merc-vipers.jpg', role: 'Sniper' });
+    this.mercenaries.set('3', { id: '3', name: 'Sisterhood', image: '/assets/merc-sisterhood.jpg', role: 'Medic' });
 
     // Seed some sample posts and news so the site has visible content when MongoDB isn't available.
     const now = new Date();
@@ -254,7 +252,27 @@ export class MemoryStorage implements IStorage {
 
   // Mercenaries
   async getAllMercenaries(): Promise<Mercenary[]> {
-    return this.mercenaries;
+    return Array.from(this.mercenaries.values());
+  }
+  async createMercenary(mercenary: Omit<Mercenary, 'id'>): Promise<Mercenary> {
+    const id = String(this.mercenaries.size + 1);
+    const newMercenary = { ...mercenary, id };
+    this.mercenaries.set(id, newMercenary);
+    return newMercenary;
+  }
+  async updateMercenary(id: string, mercenary: Mercenary): Promise<void> {
+    this.mercenaries.set(id, mercenary);
+  }
+  async deleteMercenary(id: string): Promise<boolean> {
+    return this.mercenaries.delete(id);
+  }
+
+  // Admin Permissions
+  async getAllAdminPermissions(): Promise<Record<string, Record<string, boolean>>> {
+    return {}; // In-memory, no permissions stored
+  }
+  async updateAdminPermissions(adminId: string, permissions: Record<string, boolean>): Promise<void> {
+    // No-op for in-memory
   }
 
   // Tickets

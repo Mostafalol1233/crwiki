@@ -1,7 +1,7 @@
 import { connectMongoDB, disconnectMongoDB } from './mongodb';
-import { NewsModel, EventModel, AdminModel } from '@shared/mongodb-schema';
+import { NewsModel, EventModel, AdminModel, MercenaryModel, TutorialModel } from '@shared/mongodb-schema';
 import bcrypt from 'bcryptjs';
-import { weaponsData, modesData, ranksData } from './data/seed-data';
+import { weaponsData, modesData, ranksData, mercenariesData } from './data/seed-data';
 import { WeaponModel, ModeModel, RankModel } from '@shared/mongodb-schema';
 
 async function seedMongoDB() {
@@ -216,6 +216,89 @@ async function seedMongoDB() {
               console.log(`✅ Created rank: ${rank.name}`);
             } else {
               console.log(`⏭️  Rank already exists: ${rank.name}`);
+            }
+          }
+
+          // Seed Tutorials
+          console.log('\n🎥 Seeding tutorials...');
+          const tutorialsData = [
+            {
+              title: "CrossFire Beginner Guide - Getting Started",
+              description: "Complete beginner's guide to CrossFire. Learn the basics, controls, and essential tips to start your journey in the game.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 1250
+            },
+            {
+              title: "Top 10 Best Weapons in CrossFire 2024",
+              description: "Comprehensive review of the best weapons currently available in CrossFire. Performance analysis and recommendations.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 2100
+            },
+            {
+              title: "Advanced Aiming Techniques - Pro Tips",
+              description: "Master advanced aiming techniques used by professional CrossFire players. Improve your accuracy and gameplay.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 890
+            },
+            {
+              title: "CrossFire Game Modes Explained",
+              description: "Detailed explanation of all game modes in CrossFire. Learn strategies for each mode to improve your performance.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 675
+            },
+            {
+              title: "Rank Progression Guide - From Rookie to Legend",
+              description: "Complete guide to ranking up in CrossFire. Tips, strategies, and requirements for each rank level.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 1450
+            },
+            {
+              title: "CrossFire Map Strategies - Dust 2 Domination",
+              description: "Master Dust 2 with these proven strategies. Learn spawn points, common routes, and tactical plays.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 780
+            },
+            {
+              title: "Weapon Customization Guide - Skins & Attachments",
+              description: "Complete guide to weapon customization in CrossFire. Learn about skins, attachments, and performance impacts.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 920
+            },
+            {
+              title: "Team Communication & Coordination Tips",
+              description: "Essential communication and coordination strategies for team-based gameplay in CrossFire.",
+              youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              youtubeId: "dQw4w9WgXcQ",
+              likes: 560
+            }
+          ];
+
+          for (const tutorial of tutorialsData) {
+            const existing = await TutorialModel.findOne({ title: tutorial.title });
+            if (!existing) {
+              await TutorialModel.create(tutorial);
+              console.log(`✅ Created tutorial: ${tutorial.title}`);
+            } else {
+              console.log(`⏭️  Tutorial already exists: ${tutorial.title}`);
+            }
+          }
+
+          // Seed Mercenaries
+          console.log('\n🛡️ Seeding mercenaries...');
+          for (const mercenary of mercenariesData) {
+            const existing = await MercenaryModel.findOne({ name: mercenary.name });
+            if (!existing) {
+              await MercenaryModel.create(mercenary);
+              console.log(`✅ Created mercenary: ${mercenary.name}`);
+            } else {
+              console.log(`⏭️  Mercenary already exists: ${mercenary.name}`);
             }
           }
 

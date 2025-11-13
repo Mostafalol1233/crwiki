@@ -194,6 +194,22 @@ export interface IRank extends Document {
   updatedAt?: Date;
 }
 
+export interface IMercenary extends Document {
+  name: string;
+  image: string;
+  role: string;
+  sounds?: string[]; // MP3 URLs for voice lines (1-30 sounds)
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IAdminPermission extends Document {
+  adminId: string;
+  permissions: Record<string, boolean>;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 const UserSchema = new Schema<IUser>({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -390,6 +406,22 @@ const RankSchema = new Schema<IRank>({
   updatedAt: { type: Date, default: Date.now },
 });
 
+const MercenarySchema = new Schema<IMercenary>({
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  role: { type: String, required: true },
+  sounds: { type: [String], default: [] },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+const AdminPermissionSchema = new Schema<IAdminPermission>({
+  adminId: { type: String, required: true, unique: true },
+  permissions: { type: Schema.Types.Mixed, default: {} },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
 export const PostModel = mongoose.model<IPost>('Post', PostSchema);
 export const CommentModel = mongoose.model<IComment>('Comment', CommentSchema);
@@ -407,6 +439,8 @@ export const SiteSettingsModel = mongoose.model<ISiteSettings>('SiteSettings', S
 export const WeaponModel = mongoose.model<IWeapon>('Weapon', WeaponSchema);
 export const ModeModel = mongoose.model<IMode>('Mode', ModeSchema);
 export const RankModel = mongoose.model<IRank>('Rank', RankSchema);
+export const MercenaryModel = mongoose.model<IMercenary>('Mercenary', MercenarySchema);
+export const AdminPermissionModel = mongoose.model<IAdminPermission>('AdminPermission', AdminPermissionSchema);
 
 export const insertUserSchema = z.object({
   username: z.string(),
@@ -569,6 +603,13 @@ export const insertRankSchema = z.object({
   requirements: z.string().optional(),
 });
 
+export const insertMercenarySchema = z.object({
+  name: z.string().min(1),
+  image: z.string().min(1),
+  role: z.string().min(1),
+  sounds: z.array(z.string()).optional(),
+});
+
 const urlOrEmptyString = z.string().trim().optional().transform((value) => value ?? "").refine((value) => {
   if (!value) return true;
   try {
@@ -637,6 +678,11 @@ export type Mode = IMode;
 
 export type InsertRank = z.infer<typeof insertRankSchema>;
 export type Rank = IRank;
+
+export type InsertMercenary = z.infer<typeof insertMercenarySchema>;
+export type Mercenary = IMercenary;
+
+export type AdminPermission = IAdminPermission;
 
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
 export type SiteSettingsUpdate = z.infer<typeof updateSiteSettingsSchema>;

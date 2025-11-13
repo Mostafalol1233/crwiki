@@ -42,10 +42,17 @@ export interface Weapon {
     accuracy: number;
     recoil: string;
     fireRate: string;
-    mobility: string;
     magazine?: number;
     range?: string;
   };
   background?: string;
+}
+
+export interface Admin {
+  id: string;
+  username: string;
+  password: string;
+  roles: string[];
+  createdAt: Date;
 }
 

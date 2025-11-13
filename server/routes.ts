@@ -54,18 +54,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        const token = generateToken({
+        // load admin permissions (mapping) and include in token payload
+        let permissions: Record<string, boolean> | undefined = undefined;
+        try {
+          const allPerms = await storage.getAllAdminPermissions();
+          permissions = allPerms?.[admin.id] || undefined;
+        } catch (err) {
+          console.error('Failed to load admin permissions during login', err);
+        }
+
+        const tokenPayload: any = {
           id: admin.id,
           username: admin.username,
-          roles: admin.roles
-        });
+          roles: admin.roles,
+        };
+        if (permissions) tokenPayload.permissions = permissions;
+
+        const token = generateToken(tokenPayload);
 
         res.json({
           token,
           admin: {
             id: admin.id,
             username: admin.username,
-            roles: admin.roles
+            roles: admin.roles,
+            permissions: permissions || {},
           }
         });
       } else if (password) {
@@ -1201,7 +1214,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
 
   app.post("/api/admins", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
-      const { username, password, role } = req.body;
+      const { username, password, role, roles: rolesFromBody, permissions } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
@@ -1213,10 +1226,42 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       }
 
       const hashedPassword = await hashPassword(password);
+      // Determine roles to assign. Prefer explicit roles array, else derive from role string or permissions.
+      let finalRoles: string[] = [];
+      if (Array.isArray(rolesFromBody) && rolesFromBody.length > 0) {
+        finalRoles = rolesFromBody;
+      } else if (role) {
+        finalRoles = [role];
+      } else {
+        finalRoles = ["admin"];
+      }
+
+      // If permissions object provided, map those permissions to roles as well.
+      if (permissions && typeof permissions === 'object') {
+        const permToRole: Record<string, string> = {
+          'events:add': 'event_manager',
+          'events:scrape': 'event_scraper',
+          'news:add': 'news_manager',
+          'news:scrape': 'news_scraper',
+          'posts:manage': 'post_manager',
+          'sellers:manage': 'seller_manager',
+          'tutorials:manage': 'tutorial_manager',
+          'tickets:manage': 'ticket_manager',
+          'mercenaries:manage': 'mercenary_manager',
+          'settings:manage': 'settings_manager',
+        };
+
+        for (const [perm, enabled] of Object.entries(permissions)) {
+          if (enabled && permToRole[perm]) {
+            if (!finalRoles.includes(permToRole[perm])) finalRoles.push(permToRole[perm]);
+          }
+        }
+      }
+
       const data = insertAdminSchema.parse({
         username,
         password: hashedPassword,
-        roles: role ? [role] : ["admin"],
+        roles: finalRoles,
       });
       
       const admin = await storage.createAdmin(data);
@@ -1236,7 +1281,32 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       if (req.body.password !== undefined) {
         updates.password = await hashPassword(req.body.password);
       }
+      // Accept roles array or permissions object and map permissions to roles
       if (req.body.roles !== undefined) updates.roles = req.body.roles;
+      else if (req.body.permissions && typeof req.body.permissions === 'object') {
+        const permissions = req.body.permissions as Record<string, boolean>;
+        const permToRole: Record<string, string> = {
+          'events:add': 'event_manager',
+          'events:scrape': 'event_scraper',
+          'news:add': 'news_manager',
+          'news:scrape': 'news_scraper',
+          'posts:manage': 'post_manager',
+          'sellers:manage': 'seller_manager',
+          'tutorials:manage': 'tutorial_manager',
+          'tickets:manage': 'ticket_manager',
+          'mercenaries:manage': 'mercenary_manager',
+          'settings:manage': 'settings_manager',
+        };
+
+        const rolesFromPerms: string[] = [];
+        for (const [perm, enabled] of Object.entries(permissions)) {
+          if (enabled && permToRole[perm]) {
+            rolesFromPerms.push(permToRole[perm]);
+          }
+        }
+
+        if (rolesFromPerms.length > 0) updates.roles = rolesFromPerms;
+      }
 
       const admin = await storage.updateAdmin(req.params.id, updates);
       
@@ -1254,11 +1324,37 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
   app.delete("/api/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const deleted = await storage.deleteAdmin(req.params.id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Admin not found" });
       }
 
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin permissions routes (restricted to super admins only)
+  app.get("/api/admin-permissions", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const permissions = await storage.getAllAdminPermissions();
+      res.json(permissions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/admin-permissions/:adminId", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { adminId } = req.params;
+      const { permissions } = req.body;
+
+      if (!permissions || typeof permissions !== 'object') {
+        return res.status(400).json({ error: "Permissions object is required" });
+      }
+
+      await storage.updateAdminPermissions(adminId, permissions);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

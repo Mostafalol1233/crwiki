@@ -66,10 +66,29 @@ export function requireSuperAdmin(req: Request, res: Response, next: NextFunctio
   next();
 }
 
+function hasPermission(user: any, perm: string | string[]): boolean {
+  if (!user) return false;
+  if (user.roles && Array.isArray(user.roles) && user.roles.includes('super_admin')) return true;
+
+  const perms = user.permissions || {};
+
+  if (Array.isArray(perm)) {
+    return perm.some(p => Boolean(perms[p]));
+  }
+
+  return Boolean(perms[perm]);
+}
+
 export function requireAdminOrTicketManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !['super_admin', 'admin', 'ticket_manager'].some(role => user.roles.includes(role))) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Admin access required" });
+
+  const allowedRoles = ['super_admin', 'admin', 'ticket_manager'];
+  const hasRole = user.roles && Array.isArray(user.roles) && allowedRoles.some(role => user.roles.includes(role));
+  const hasPerm = hasPermission(user, 'tickets:manage');
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Admin access required" });
   }
 
@@ -79,7 +98,12 @@ export function requireAdminOrTicketManager(req: Request, res: Response, next: N
 export function requireEventManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('event_manager')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Event Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('event_manager');
+  const hasPerm = hasPermission(user, ['events:add']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Event Manager access required" });
   }
 
@@ -89,7 +113,12 @@ export function requireEventManager(req: Request, res: Response, next: NextFunct
 export function requireEventScraper(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('event_scraper')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Event Scraper access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('event_scraper');
+  const hasPerm = hasPermission(user, ['events:scrape']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Event Scraper access required" });
   }
 
@@ -99,7 +128,12 @@ export function requireEventScraper(req: Request, res: Response, next: NextFunct
 export function requireNewsManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('news_manager')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: News Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('news_manager');
+  const hasPerm = hasPermission(user, ['news:add']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: News Manager access required" });
   }
 
@@ -109,7 +143,12 @@ export function requireNewsManager(req: Request, res: Response, next: NextFuncti
 export function requireNewsScraper(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('news_scraper')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: News Scraper access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('news_scraper');
+  const hasPerm = hasPermission(user, ['news:scrape']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: News Scraper access required" });
   }
 
@@ -119,7 +158,12 @@ export function requireNewsScraper(req: Request, res: Response, next: NextFuncti
 export function requireSellerManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('seller_manager')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Seller Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('seller_manager');
+  const hasPerm = hasPermission(user, ['sellers:manage']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Seller Manager access required" });
   }
 
@@ -129,7 +173,12 @@ export function requireSellerManager(req: Request, res: Response, next: NextFunc
 export function requireTutorialManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !user.roles.includes('tutorial_manager')) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Tutorial Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('tutorial_manager');
+  const hasPerm = hasPermission(user, ['tutorials:manage']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Tutorial Manager access required" });
   }
 
@@ -139,7 +188,12 @@ export function requireTutorialManager(req: Request, res: Response, next: NextFu
 export function requireWeaponManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !(['weapon_manager', 'super_admin'].some((r) => user.roles.includes(r)))) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Weapon Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && (['weapon_manager', 'super_admin'].some((r) => user.roles.includes(r)));
+  const hasPerm = hasPermission(user, ['weapons:manage']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Weapon Manager access required" });
   }
 
@@ -149,7 +203,12 @@ export function requireWeaponManager(req: Request, res: Response, next: NextFunc
 export function requirePostManager(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 
-  if (!user || !user.roles || !(['post_manager', 'super_admin'].some((r) => user.roles.includes(r)))) {
+  if (!user) return res.status(403).json({ error: "Forbidden: Post Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && (['post_manager', 'super_admin'].some((r) => user.roles.includes(r)));
+  const hasPerm = hasPermission(user, ['posts:manage']);
+
+  if (!hasRole && !hasPerm) {
     return res.status(403).json({ error: "Forbidden: Post Manager access required" });
   }
 

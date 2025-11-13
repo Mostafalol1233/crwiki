@@ -30,6 +30,9 @@ import TutorialDetail from "@/pages/TutorialDetail";
 import Weapons from "@/pages/Weapons";
 import Modes from "@/pages/Modes";
 import Ranks from "@/pages/Ranks";
+import Posts from "@/pages/Posts";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -56,6 +59,9 @@ function Router() {
       <Route path="/weapons" component={Weapons} />
       <Route path="/modes" component={Modes} />
       <Route path="/ranks" component={Ranks} />
+      <Route path="/posts" component={Posts} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />

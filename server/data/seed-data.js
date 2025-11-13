@@ -502,3 +502,68 @@ export const ranksData = [
     };
   })
 ];
+
+export const mercenariesData = [
+  {
+    name: 'Wolf',
+    image: '/assets/merc-wolf.jpg',
+    role: 'Assault',
+    sounds: [
+      "/sounds/merc/wolf-line1.mp3",
+      "/sounds/merc/wolf-line2.mp3",
+      "/sounds/merc/wolf-line3.mp3",
+    ]
+  },
+  {
+    name: 'Vipers',
+    image: '/assets/merc-vipers.jpg',
+    role: 'Sniper',
+    sounds: [
+      "/sounds/merc/vipers-line1.mp3",
+      "/sounds/merc/vipers-line2.mp3",
+    ]
+  },
+  {
+    name: 'Sisterhood',
+    image: '/assets/merc-sisterhood.jpg',
+    role: 'Medic',
+    sounds: [
+      "/sounds/merc/sisterhood-line1.mp3",
+    ]
+  },
+  {
+    name: 'Black Mamba',
+    image: '/assets/merc-blackmamba.jpg',
+    role: 'Scout'
+  },
+  {
+    name: 'Arch Honorary',
+    image: '/assets/merc-archhonorary.jpg',
+    role: 'Tank'
+  },
+  {
+    name: 'Desperado',
+    image: '/assets/merc-desperado.jpg',
+    role: 'Engineer'
+  },
+  {
+    name: 'Ronin',
+    image: '/assets/merc-ronin.jpg',
+    role: 'Samurai'
+  },
+  {
+    name: 'Dean',
+    image: '/assets/merc-dean.jpg',
+    role: 'Specialist'
+  },
+  {
+    name: 'Thoth',
+    image: '/assets/merc-thoth.jpg',
+    role: 'Guardian'
+  },
+  {
+    name: 'SFG',
+    image: '/assets/merc-sfg.jpg',
+    role: 'Special Forces Group'
+  }
+];

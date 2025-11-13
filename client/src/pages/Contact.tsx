@@ -37,7 +37,7 @@ export default function Contact() {
               <Mail className="h-8 w-8 mx-auto mb-3 text-primary" />
               <h3 className="font-semibold mb-2">{t("email")}</h3>
               <p className="text-sm text-muted-foreground">
-                contact@bimora.blog
+                contact@crossfire.wiki
               </p>
             </CardContent>
           </Card>

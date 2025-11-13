@@ -16,6 +16,7 @@ import {
   WeaponModel,
   ModeModel,
   RankModel,
+  AdminPermissionModel,
   type User,
   type InsertUser,
   type Post,
@@ -101,7 +102,12 @@ export interface IStorage {
   deleteNews(id: string): Promise<boolean>;
 
   getAllMercenaries(): Promise<Mercenary[]>;
+  createMercenary(mercenary: Omit<Mercenary, 'id'>): Promise<Mercenary>;
   updateMercenary(id: string, mercenary: Mercenary): Promise<void>;
+  deleteMercenary(id: string): Promise<boolean>;
+
+  getAllAdminPermissions(): Promise<Record<string, Record<string, boolean>>>;
+  updateAdminPermissions(adminId: string, permissions: Record<string, boolean>): Promise<void>;
 
   getAllTickets(): Promise<Ticket[]>;
   getTicketById(id: string): Promise<Ticket | undefined>;
@@ -205,46 +211,62 @@ export class MongoDBStorage implements IStorage {
   }
 
   private initializeMercenaries() {
-    const mercenaries: Mercenary[] = [
-      { 
-        id: "1", 
-        name: "Wolf", 
-        image: "/assets/merc-wolf.jpg", 
-        role: "Assault",
-        sounds: [
-          "/sounds/merc/wolf-line1.mp3",
-          "/sounds/merc/wolf-line2.mp3",
-          "/sounds/merc/wolf-line3.mp3",
-        ]
-      },
-      { 
-        id: "2", 
-        name: "Vipers", 
-        image: "/assets/merc-vipers.jpg", 
-        role: "Sniper",
-        sounds: [
-          "/sounds/merc/vipers-line1.mp3",
-          "/sounds/merc/vipers-line2.mp3",
-        ]
-      },
-      { 
-        id: "3", 
-        name: "Sisterhood", 
-        image: "/assets/merc-sisterhood.jpg", 
-        role: "Medic",
-        sounds: [
-          "/sounds/merc/sisterhood-line1.mp3",
-        ]
-      },
-      { id: "4", name: "Black Mamba", image: "/assets/merc-blackmamba.jpg", role: "Scout" },
-      { id: "5", name: "Arch Honorary", image: "/assets/merc-archhonorary.jpg", role: "Tank" },
-      { id: "6", name: "Desperado", image: "/assets/merc-desperado.jpg", role: "Engineer" },
-      { id: "7", name: "Ronin", image: "/assets/merc-ronin.jpg", role: "Samurai" },
-      { id: "8", name: "Dean", image: "/assets/merc-dean.jpg", role: "Specialist" },
-      { id: "9", name: "Thoth", image: "/assets/merc-thoth.jpg", role: "Guardian" },
-      { id: "10", name: "SFG", image: "/assets/merc-sfg.jpg", role: "Special Forces Group" },
-    ];
-    mercenaries.forEach((merc) => this.mercenaries.set(merc.id, merc));
+    // Import mercenaries from seed data
+    import('./data/seed-data').then(({ mercenariesData }) => {
+      mercenariesData.forEach((merc, index) => {
+        const mercenary: Mercenary = {
+          id: String(index + 1),
+          name: merc.name,
+          image: merc.image,
+          role: merc.role,
+          sounds: merc.sounds
+        };
+        this.mercenaries.set(mercenary.id, mercenary);
+      });
+    }).catch(err => {
+      console.error('Failed to load mercenaries from seed data:', err);
+      // Fallback to hardcoded data if import fails
+      const mercenaries: Mercenary[] = [
+        {
+          id: "1",
+          name: "Wolf",
+          image: "/assets/merc-wolf.jpg",
+          role: "Assault",
+          sounds: [
+            "/sounds/merc/wolf-line1.mp3",
+            "/sounds/merc/wolf-line2.mp3",
+            "/sounds/merc/wolf-line3.mp3",
+          ]
+        },
+        {
+          id: "2",
+          name: "Vipers",
+          image: "/assets/merc-vipers.jpg",
+          role: "Sniper",
+          sounds: [
+            "/sounds/merc/vipers-line1.mp3",
+            "/sounds/merc/vipers-line2.mp3",
+          ]
+        },
+        {
+          id: "3",
+          name: "Sisterhood",
+          image: "/assets/merc-sisterhood.jpg",
+          role: "Medic",
+          sounds: [
+            "/sounds/merc/sisterhood-line1.mp3",
+          ]
+        },
+        { id: "4", name: "Black Mamba", image: "/assets/merc-blackmamba.jpg", role: "Scout" },
+        { id: "5", name: "Arch Honorary", image: "/assets/merc-archhonorary.jpg", role: "Tank" },
+        { id: "6", name: "Desperado", image: "/assets/merc-desperado.jpg", role: "Engineer" },
+        { id: "7", name: "Ronin", image: "/assets/merc-ronin.jpg", role: "Samurai" },
+        { id: "8", name: "Dean", image: "/assets/merc-dean.jpg", role: "Specialist" },
+        { id: "9", name: "Thoth", image: "/assets/merc-thoth.jpg", role: "Guardian" },
+        { id: "10", name: "SFG", image: "/assets/merc-sfg.jpg", role: "Special Forces Group" },
+      ];
+      mercenaries.forEach((merc) => this.mercenaries.set(merc.id, merc));
+    });
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -420,8 +442,48 @@ export class MongoDBStorage implements IStorage {
     return Array.from(this.mercenaries.values());
   }
 
+  async createMercenary(mercenary: Omit<Mercenary, 'id'>): Promise<Mercenary> {
+    const id = String(this.mercenaries.size + 1);
+    const newMercenary = { ...mercenary, id };
+    this.mercenaries.set(id, newMercenary);
+    return newMercenary;
+  }
+
   async updateMercenary(id: string, mercenary: Mercenary): Promise<void> {
     this.mercenaries.set(id, mercenary);
+  }
+
+  async deleteMercenary(id: string): Promise<boolean> {
+    return this.mercenaries.delete(id);
+  }
+
+  async getAllAdminPermissions(): Promise<Record<string, Record<string, boolean>>> {
+    try {
+      const permissions = await AdminPermissionModel.find().lean();
+      const result: Record<string, Record<string, boolean>> = {};
+
+      permissions.forEach(perm => {
+        result[perm.adminId] = perm.permissions;
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Error getting admin permissions:', error);
+      return {};
+    }
+  }
+
+  async updateAdminPermissions(adminId: string, permissions: Record<string, boolean>): Promise<void> {
+    try {
+      await AdminPermissionModel.findOneAndUpdate(
+        { adminId },
+        { permissions, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+    } catch (error) {
+      console.error('Error updating admin permissions:', error);
+      throw error;
+    }
   }
 
   async getAllTickets(): Promise<Ticket[]> {

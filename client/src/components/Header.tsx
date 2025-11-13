@@ -42,7 +42,8 @@ export function Header() {
       label: t("blog"),
       icon: BookOpen,
       dropdown: [
-        { path: "/news", label: t("posts"), icon: BookOpen },
+        { path: "/news", label: t("newsAndUpdates"), icon: BookOpen },
+        { path: "/posts", label: t("posts"), icon: BookOpen },
         { path: "/category/events", label: t("events"), icon: Trophy },
         { path: "/tutorials", label: t("tutorials"), icon: BookOpen },
       ],

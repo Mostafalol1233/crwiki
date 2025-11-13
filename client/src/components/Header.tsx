@@ -46,8 +46,9 @@ export function Header() {
     {
       label: t("support"),
       dropdown: [
-        { path: "/about", label: t("about") },
+        { path: "/support", label: t("createTicket") || "Create Ticket" },
         { path: "/my-tickets", label: t("supportTickets") },
+        { path: "/about", label: t("about") },
         { path: "/contact", label: t("contact") },
       ],
     },
@@ -85,7 +86,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation with Dropdowns */}
-          <nav className="hidden md:flex items-center flex-1 mx-8 space-x-1">
+          <nav className="hidden md:flex items-center justify-center flex-1 space-x-1">
             {menuItems.map((item) => (
               <div key={item.label} className="relative group">
                 {item.dropdown ? (

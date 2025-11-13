@@ -1,21 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/components/LanguageProvider";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX } from "lucide-react";
 
 interface Mercenary {
   id: string;
   name: string;
   image: string;
   role: string;
+  sounds?: string[]; // Array of MP3 URLs for voice lines
 }
 
 export default function Mercenaries() {
   const { t } = useLanguage();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [playingMercId, setPlayingMercId] = useState<string | null>(null);
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
   });
+
+  const playRandomSound = (mercId: string, sounds?: string[]) => {
+    if (!sounds || sounds.length === 0) return;
+
+    // Pick a random sound
+    const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+
+    // Stop current audio if any
+    if (playingMercId && audioRefs.current[playingMercId]) {
+      audioRefs.current[playingMercId].pause();
+      audioRefs.current[playingMercId].currentTime = 0;
+    }
+
+    // Create or get audio element
+    if (!audioRefs.current[mercId]) {
+      audioRefs.current[mercId] = new Audio();
+    }
+
+    const audio = audioRefs.current[mercId];
+    audio.src = randomSound;
+    audio.play().catch((err) => console.error("Audio play error:", err));
+    
+    setPlayingMercId(mercId);
+    
+    // Reset after audio ends
+    audio.onended = () => {
+      setPlayingMercId(null);
+    };
+  };
 
   if (isLoading) {
     return (
@@ -84,9 +118,32 @@ export default function Mercenaries() {
                     }`}
                   >
                     <h3 className="text-xl font-bold mb-2">{merc.name}</h3>
-                    <p className="text-xs text-white/80 uppercase tracking-wider">
+                    <p className="text-xs text-white/80 uppercase tracking-wider mb-3">
                       {merc.role}
                     </p>
+                    
+                    {/* Voice Button - Only show if mercenary has sounds */}
+                    {merc.sounds && merc.sounds.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => playRandomSound(merc.id, merc.sounds)}
+                        disabled={playingMercId === merc.id}
+                        className="w-full h-8 text-xs bg-white/10 border-white/30 hover:bg-white/20 text-white"
+                      >
+                        {playingMercId === merc.id ? (
+                          <>
+                            <VolumeX className="h-3 w-3 mr-1" />
+                            Playing...
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3 w-3 mr-1" />
+                            Voice Line
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
 
                   <div

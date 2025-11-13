@@ -73,6 +73,7 @@ export interface Mercenary {
   name: string;
   image: string;
   role: string;
+  sounds?: string[]; // MP3 URLs for voice lines (1-30 sounds)
 }
 
 export interface IStorage {
@@ -100,6 +101,7 @@ export interface IStorage {
   deleteNews(id: string): Promise<boolean>;
 
   getAllMercenaries(): Promise<Mercenary[]>;
+  updateMercenary(id: string, mercenary: Mercenary): Promise<void>;
 
   getAllTickets(): Promise<Ticket[]>;
   getTicketById(id: string): Promise<Ticket | undefined>;
@@ -204,9 +206,36 @@ export class MongoDBStorage implements IStorage {
 
   private initializeMercenaries() {
     const mercenaries: Mercenary[] = [
-      { id: "1", name: "Wolf", image: "/assets/merc-wolf.jpg", role: "Assault" },
-      { id: "2", name: "Vipers", image: "/assets/merc-vipers.jpg", role: "Sniper" },
-      { id: "3", name: "Sisterhood", image: "/assets/merc-sisterhood.jpg", role: "Medic" },
+      { 
+        id: "1", 
+        name: "Wolf", 
+        image: "/assets/merc-wolf.jpg", 
+        role: "Assault",
+        sounds: [
+          "/sounds/merc/wolf-line1.mp3",
+          "/sounds/merc/wolf-line2.mp3",
+          "/sounds/merc/wolf-line3.mp3",
+        ]
+      },
+      { 
+        id: "2", 
+        name: "Vipers", 
+        image: "/assets/merc-vipers.jpg", 
+        role: "Sniper",
+        sounds: [
+          "/sounds/merc/vipers-line1.mp3",
+          "/sounds/merc/vipers-line2.mp3",
+        ]
+      },
+      { 
+        id: "3", 
+        name: "Sisterhood", 
+        image: "/assets/merc-sisterhood.jpg", 
+        role: "Medic",
+        sounds: [
+          "/sounds/merc/sisterhood-line1.mp3",
+        ]
+      },
       { id: "4", name: "Black Mamba", image: "/assets/merc-blackmamba.jpg", role: "Scout" },
       { id: "5", name: "Arch Honorary", image: "/assets/merc-archhonorary.jpg", role: "Tank" },
       { id: "6", name: "Desperado", image: "/assets/merc-desperado.jpg", role: "Engineer" },
@@ -389,6 +418,10 @@ export class MongoDBStorage implements IStorage {
 
   async getAllMercenaries(): Promise<Mercenary[]> {
     return Array.from(this.mercenaries.values());
+  }
+
+  async updateMercenary(id: string, mercenary: Mercenary): Promise<void> {
+    this.mercenaries.set(id, mercenary);
   }
 
   async getAllTickets(): Promise<Ticket[]> {

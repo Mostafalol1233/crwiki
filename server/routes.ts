@@ -1005,6 +1005,35 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
+  // Admin: Update Mercenary (image and sounds)
+  app.patch("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { image, sounds } = req.body;
+
+      // Get current mercenary data
+      const mercenary = await storage.getAllMercenaries();
+      const current = mercenary.find((m) => m.id === id);
+
+      if (!current) {
+        return res.status(404).json({ error: "Mercenary not found" });
+      }
+
+      // Update mercenary with new image and sounds
+      const updated = {
+        ...current,
+        ...(image && { image }),
+        ...(sounds && { sounds: Array.isArray(sounds) ? sounds.slice(0, 30) : [] }), // Max 30 sounds
+      };
+
+      // For now, update in memory (in production, use database)
+      await storage.updateMercenary(id, updated);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Ticket routes
   app.get("/api/tickets", requireAuth, async (req, res) => {
     try {

@@ -8,7 +8,7 @@
     "build": "npm run build:client && npm run build:server && npm run build:vercel-api",
     "build:client": "vite build",
     "build:server": "cd server && tsc -p tsconfig.json && cd ..",
-    "build:vercel-api": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/server && powershell -Command \"if (Test-Path api/server.js) { Remove-Item api/server.js }; Copy-Item dist/server/index.js api/server.js\"",
+    "build:vercel-api": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/server && powershell -Command \"if (Test-Path api/server.js) { Remove-Item api/server.js }; Copy-Item dist/server/index.js api/server.js ; Write-Host 'Vercel API bundle ready at api/server.js'\"",
     "start": "cross-env NODE_ENV=production node -r dotenv/config dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

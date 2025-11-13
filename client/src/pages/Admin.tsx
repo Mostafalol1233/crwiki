@@ -262,11 +262,13 @@ export default function Admin() {
 
   const { data: admins } = useQuery<any[]>({
     queryKey: ["/api/admins"],
+    queryFn: () => apiRequest("/api/admins", "GET"),
     enabled: isSuperAdmin,
   });
 
   const { data: subscribers } = useQuery<any[]>({
     queryKey: ["/api/newsletter-subscribers"],
+    queryFn: () => apiRequest("/api/newsletter-subscribers", "GET"),
     enabled: isSuperAdmin,
   });
 
@@ -327,6 +329,7 @@ export default function Admin() {
       apiRequest(`/api/posts/${id}`, "PATCH", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       setEditingPost(null);
       setIsCreatingPost(false);
       resetPostForm();
@@ -3069,8 +3072,8 @@ export default function Admin() {
                         <TableRow key={admin.id} data-testid={`admin-row-${admin.id}`}>
                           <TableCell className="font-medium" data-testid={`admin-username-${admin.id}`}>{admin.username}</TableCell>
                           <TableCell>
-                            <Badge variant={admin.role === "super_admin" ? "default" : "secondary"} data-testid={`admin-role-${admin.id}`}>
-                              {admin.role === "super_admin" ? "Super Admin" : "Admin"}
+                            <Badge variant={(Array.isArray(admin.roles) ? admin.roles[0] : admin.role) === "super_admin" ? "default" : "secondary"} data-testid={`admin-role-${admin.id}`}>
+                              {(Array.isArray(admin.roles) ? admin.roles[0] : admin.role) === "super_admin" ? "Super Admin" : "Admin"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
@@ -3086,7 +3089,7 @@ export default function Admin() {
                                   setAdminForm({
                                     username: admin.username,
                                     password: "",
-                                    role: admin.role,
+                                    role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
                                   });
                                   setIsCreatingAdmin(true);
                                 }}

@@ -42,11 +42,13 @@ export default function MyTickets() {
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets/my", searchedEmail],
+    queryFn: () => apiRequest(`/api/tickets/my?email=${searchedEmail}`, "GET"),
     enabled: !!searchedEmail,
   });
 
   const { data: replies = [] } = useQuery<TicketReplyType[]>({
     queryKey: ["/api/tickets", selectedTicket?.id, "replies"],
+    queryFn: () => apiRequest(`/api/tickets/${selectedTicket?.id}/replies`, "GET"),
     enabled: !!selectedTicket,
   });
 

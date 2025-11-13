@@ -39,8 +39,10 @@ export default function AdminLogin() {
 
       const { token, admin } = await response.json();
       localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminRole", admin.role);
-      localStorage.setItem("adminUsername", admin.username);
+      // server returns roles array; store single role for legacy client usage
+      const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin");
+      localStorage.setItem("adminRole", role);
+      localStorage.setItem("adminUsername", admin.username || "");
       setLocation("/admin");
     } catch (error) {
       toast({
@@ -77,7 +79,9 @@ export default function AdminLogin() {
 
       const { token, admin } = await response.json();
       localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminRole", admin.role);
+      // server returns roles array; store single role for legacy client usage
+      const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "super_admin");
+      localStorage.setItem("adminRole", role);
       localStorage.setItem("adminUsername", "super_admin");
       setLocation("/admin");
     } catch (error) {

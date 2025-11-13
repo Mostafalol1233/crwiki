@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, ChevronDown } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, ChevronDown, Home, BookOpen, Users, Trophy, HelpCircle, ShoppingCart, Gamepad2, Target, Award, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
@@ -10,11 +10,13 @@ const logoDarkImage = logoLightImage;
 interface DropdownItem {
   path: string;
   label: string;
+  icon?: any;
 }
 
 interface MenuItem {
   label: string;
   path?: string;
+  icon?: any;
   dropdown?: DropdownItem[];
 }
 
@@ -26,40 +28,44 @@ export function Header() {
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
 
   const menuItems: MenuItem[] = [
-    { path: "/", label: t("home") },
+    { path: "/", label: t("home"), icon: Home },
     {
       label: t("explore"),
+      icon: Gamepad2,
       dropdown: [
-        { path: "/modes", label: t("modes") },
-        { path: "/ranks", label: t("ranks") },
-        { path: "/weapons", label: t("weapons") },
+        { path: "/modes", label: t("modes"), icon: Target },
+        { path: "/ranks", label: t("ranks"), icon: Award },
+        { path: "/weapons", label: t("weapons"), icon: Target },
       ],
     },
     {
       label: t("blog"),
+      icon: BookOpen,
       dropdown: [
-        { path: "/news", label: t("posts") },
-        { path: "/category/events", label: t("events") },
-        { path: "/tutorials", label: t("tutorials") },
+        { path: "/news", label: t("posts"), icon: BookOpen },
+        { path: "/category/events", label: t("events"), icon: Trophy },
+        { path: "/tutorials", label: t("tutorials"), icon: BookOpen },
       ],
     },
     {
       label: t("support"),
+      icon: HelpCircle,
       dropdown: [
-        { path: "/support", label: t("createTicket") || "Create Ticket" },
-        { path: "/my-tickets", label: t("supportTickets") },
-        { path: "/about", label: t("about") },
-        { path: "/contact", label: t("contact") },
+        { path: "/support", label: t("createTicket") || "Create Ticket", icon: HelpCircle },
+        { path: "/my-tickets", label: t("supportTickets"), icon: HelpCircle },
+        { path: "/about", label: t("about"), icon: Users },
+        { path: "/contact", label: t("contact"), icon: Users },
       ],
     },
     {
       label: t("pricing"),
+      icon: ShoppingCart,
       dropdown: [
-        { path: "/sellers", label: t("sellers") },
-        { path: "/reviews", label: t("reviews") },
+        { path: "/sellers", label: t("sellers"), icon: ShoppingCart },
+        { path: "/reviews", label: t("reviews"), icon: BookOpen },
       ],
     },
-    { path: "/mercenaries", label: t("mercenaries") },
+    { path: "/mercenaries", label: t("mercenaries"), icon: Users },
   ];
 
   const isActiveDropdown = (items: DropdownItem[]) => {
@@ -71,66 +77,77 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-background via-background/95 to-background border-border/50 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Desktop Header */}
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 flex-shrink-0" data-testid="link-logo">
-            <img 
-              src={theme === 'dark' ? logoDarkImage : logoLightImage}
-              alt="Bimora Gaming Blog" 
-              className="h-10 md:h-12 w-auto object-contain"
-              data-testid="img-logo"
-            />
+          {/* Logo & Branding */}
+          <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
+            <div className="relative">
+              <img
+                src={theme === 'dark' ? logoDarkImage : logoLightImage}
+                alt="Bimora Gaming - CrossFire Wiki"
+                className="h-10 md:h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                data-testid="img-logo"
+              />
+            </div>
+            <div className="hidden md:flex flex-col">
+              <span className="text-base font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">crossfire.wiki</span>
+              <span className="text-xs text-muted-foreground font-medium">by Bimora Gaming</span>
+            </div>
           </Link>
 
-          {/* Desktop Navigation with Dropdowns */}
-          <nav className="hidden md:flex items-center justify-center flex-1 space-x-1">
+          {/* Desktop Navigation with Premium Dropdowns */}
+          <nav className="hidden md:flex items-center justify-center flex-1 space-x-0.5">
             {menuItems.map((item) => (
               <div key={item.label} className="relative group">
                 {item.dropdown ? (
                   <>
                     <button
-                      className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors rounded-md ${
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-300 rounded-lg group/btn ${
                         isActiveDropdown(item.dropdown)
-                          ? "text-foreground bg-accent/20"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                          ? "text-primary bg-primary/10 shadow-md"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
                       }`}
                       data-testid={`button-dropdown-${item.label.toLowerCase()}`}
                     >
+                      {item.icon && <item.icon className="h-4 w-4 transition-transform" />}
                       {item.label}
-                      <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
+                      <ChevronDown className="h-4 w-4 transition-all duration-300 group-hover/btn:rotate-180" />
                     </button>
                     
-                    {/* Dropdown Menu */}
-                    <div className="absolute left-0 mt-0 w-48 bg-background border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pt-2">
-                      {item.dropdown.map((subitem) => (
-                        <Link
-                          key={subitem.path}
-                          href={subitem.path}
-                          className={`block px-4 py-2.5 text-sm transition-colors ${
-                            location === subitem.path
-                              ? "text-foreground font-medium bg-accent/20"
-                              : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                          }`}
-                          data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
-                        >
-                          {subitem.label}
-                        </Link>
-                      ))}
+                    {/* Premium Dropdown Menu */}
+                    <div className="absolute left-0 mt-1 w-56 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pt-2 -translate-y-1 group-hover:translate-y-0">
+                      <div className="px-2 py-1">
+                        {item.dropdown.map((subitem) => (
+                          <Link
+                            key={subitem.path}
+                            href={subitem.path}
+                            className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                              location === subitem.path
+                                ? "text-foreground font-medium bg-primary/15 border border-primary/30"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                            }`}
+                            data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
+                          >
+                            {subitem.icon && <subitem.icon className="h-4 w-4" />}
+                            <span>{subitem.label}</span>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </>
                 ) : (
                   <Link
                     href={item.path || "#"}
-                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ${
                       location === item.path
-                        ? "text-foreground bg-accent/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                        ? "text-primary bg-primary/10 shadow-md"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
                     }`}
                     data-testid={`link-nav-${item.label.toLowerCase()}`}
                   >
+                    {item.icon && <item.icon className="h-4 w-4" />}
                     {item.label}
                   </Link>
                 )}
@@ -138,14 +155,14 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Theme & Language Toggles */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Premium Theme & Language Toggles */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleLanguage}
               data-testid="button-language-toggle"
-              className="h-9 w-9"
+              className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
               title={language === 'en' ? 'العربية' : 'English'}
             >
               <Globe className="h-5 w-5" />
@@ -157,7 +174,7 @@ export function Header() {
               size="icon"
               onClick={toggleTheme}
               data-testid="button-theme-toggle"
-              className="h-9 w-9"
+              className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
               title={theme === 'light' ? 'Dark mode' : 'Light mode'}
             >
               {theme === "light" ? (
@@ -172,7 +189,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-9 w-9"
+              className="md:hidden h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
               title={mobileMenuOpen ? 'Close menu' : 'Open menu'}

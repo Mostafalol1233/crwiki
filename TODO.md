@@ -28,6 +28,6 @@
 - [ ] Update TODO.md with verification results
 
 ## Issues Found
-- API endpoints returning 500 Internal Server Error (e.g., /api/health) - Fixed CORS origin in /api/health
-- Server bundle may not be available despite successful build
-- Need to investigate Vercel deployment logs or redeploy
+- API endpoints returning 500 Internal Server Error (e.g., /api/health) - Fixed CORS origin in /api/health and removed API routing from vercel.json
+- Server bundle not available - Changes pushed to GitHub, waiting for Vercel redeploy
+- Need to trigger Vercel redeploy or wait for automatic deployment

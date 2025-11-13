@@ -8,7 +8,7 @@
     "build": "npm run build:client && npm run build:server && npm run build:vercel-api",
     "build:client": "vite build",
     "build:server": "cd server && tsc -p tsconfig.json && cd ..",
-    "build:vercel-api": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/server && node -e \"const fs=require('fs'); try{ if(fs.existsSync('api/server.js')) fs.unlinkSync('api/server.js'); fs.copyFileSync('dist/server/index.js','api/server.js'); console.log('Vercel API bundle ready at api/server.js'); }catch(e){ console.error('Failed to copy server bundle',e); process.exit(1);}\"",
+    "build:vercel-api": "esbuild server/index.ts --platform=node --bundle --format=esm --target=node18 --external:lightningcss --external:@babel/preset-typescript --outdir=dist/server && node -e \"const fs=require('fs'); try{ if(fs.existsSync('api/server.js')) fs.unlinkSync('api/server.js'); fs.copyFileSync('dist/server/index.js','api/server.js'); console.log('Vercel API bundle ready at api/server.js'); }catch(e){ console.error('Failed to copy server bundle',e); process.exit(1);}\"",
     "start": "cross-env NODE_ENV=production node -r dotenv/config dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

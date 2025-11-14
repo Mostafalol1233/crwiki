@@ -16,6 +16,17 @@ interface NewsItem {
   content: string;
   author: string;
   featured?: boolean;
+  titleAr?: string;
+  contentAr?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  twitterImage?: string;
+  schemaType?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export default function NewsDetail() {

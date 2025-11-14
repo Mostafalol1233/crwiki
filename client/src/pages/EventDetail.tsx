@@ -13,12 +13,19 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 interface Event {
   id: string;
   title: string;
-  titleAr: string;
+  titleAr?: string;
   description: string;
-  descriptionAr: string;
+  descriptionAr?: string;
   date: string;
-  type: "upcoming" | "trending";
-  image: string;
+  type?: "upcoming" | "trending";
+  image?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  twitterImage?: string;
+  schemaType?: string;
 }
 
 export default function EventDetail() {
@@ -43,7 +50,6 @@ export default function EventDetail() {
       }
       return res.json();
     },
-    onError: (err) => setError(err as Error),
   });
 
   if (isLoading) {

@@ -5,11 +5,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "npm run build:client && npm run build:server && npm run build:vercel-api",
+    "build": "npm run build:client && npm run build:server",
+    "vercel-build": "npm run build",
     "build:client": "vite build",
     "build:server": "cd server && tsc -p tsconfig.json && cd ..",
-    "vercel-build": "npm run build:client && npm run build:server && npm run build:vercel-api",
-    "build:vercel-api": "esbuild server/index.ts --platform=node --bundle --format=esm --target=node18 --external:lightningcss --external:@babel/preset-typescript --outdir=dist/server && node -e \"import { readFileSync, writeFileSync, existsSync, unlinkSync, copyFileSync } from 'fs'; try { if (existsSync('api/server.js')) unlinkSync('api/server.js'); copyFileSync('dist/server/index.js', 'api/server.js'); // Add ESM environment variable loading let content = readFileSync('api/server.js', 'utf8'); if (!content.includes('import.meta.env')) { content = `import 'dotenv/config';\n${content}`; } writeFileSync('api/server.js', content); console.log('Vercel API bundle ready at api/server.js'); } catch(e) { console.error('Failed to prepare server bundle', e); process.exit(1); }\"",
     "start": "cross-env NODE_ENV=production node -r dotenv/config dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

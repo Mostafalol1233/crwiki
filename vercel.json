@@ -9,18 +9,14 @@
       }
     },
     {
-      "src": "api/vercel-server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [".env"],
-        "maxLambdaSize": "15mb"
-      }
+      "src": "api/server.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/vercel-server.js"
+      "dest": "/api/server"
     },
     {
       "handle": "filesystem"

@@ -173,7 +173,7 @@ export default function Home() {
                 <div className="flex flex-col gap-2">
                   {allEvents.slice(3, 7).map((event: any) => (
                     <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-below-${event.id}`}>
-                      <Card className="hover-elevate transition-all duration-300 cursor-pointer h-52 overflow-hidden bg-card border-border/50">
+                      <Card className="hover-elevate transition-all duration-300 cursor-pointer h-36 overflow-hidden bg-card border-border/50">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
                           {event.image && (
                             <img src={event.image} alt={event.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
@@ -193,7 +193,7 @@ export default function Home() {
               <div className="md:col-span-1 flex flex-col gap-4">
                 {allEvents.slice(1, 3).map((event: any) => (
                   <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-right-${event.id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-52">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-36">
                       <div className="relative w-full h-full overflow-hidden rounded-md">
                         {event.image && (
                           <img

@@ -7,20 +7,15 @@
       "config": {
         "distDir": "dist/client"
       }
-    },
+    }
+  ],
+  "rewrites": [
     {
-      "src": "api/server.ts",
-      "use": "@vercel/node"
+      "source": "/api/(.*)",
+      "destination": "http://51.75.118.151:20032/api/$1"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/server"
-    },
-    {
-      "handle": "filesystem"
-    },
     {
       "src": "/(.*)",
       "dest": "/index.html"

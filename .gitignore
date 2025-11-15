@@ -25,3 +25,7 @@ replit.md
 # Editor directories
 .vscode/
 .idea/
+ 
+# Backend files - do not push backend server code
+index (4).js
+server/

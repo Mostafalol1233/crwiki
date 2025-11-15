@@ -72,41 +72,34 @@ export default function News() {
           {allNews.map((item, index) => (
             <div
               key={item.id}
-              className={`${
-                index === 0 ? "md:col-span-2 md:row-span-2" : ""
-              }`}
+              className={`${index === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
             >
               <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
                 <Card
-                  className={`relative overflow-hidden group hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer ${
-                    index === 0 ? "h-full min-h-[400px]" : "h-[300px]"
-                  }`}
+                  className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer border-border/50"
                   data-testid={`card-news-${item.id}`}
                 >
-                  <div className="relative w-full h-full">
+                  <div className={`relative w-full ${index === 0 ? "h-96" : "h-64"} overflow-hidden`}>
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+
                     <div className="absolute top-4 left-4">
-                      <Badge 
-                        variant="secondary" 
-                        className="backdrop-blur-sm bg-background/80"
+                      <Badge
+                        className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30"
                         data-testid={`badge-category-${item.category.toLowerCase()}`}
                       >
                         {item.category}
                       </Badge>
                     </div>
-                    
+
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                       <h3
                         className={`font-bold mb-2 ${
-                          index === 0
-                            ? "text-3xl md:text-4xl"
-                            : "text-xl md:text-2xl"
+                          index === 0 ? "text-3xl md:text-4xl" : "text-xl md:text-2xl"
                         }`}
                       >
                         {item.title}

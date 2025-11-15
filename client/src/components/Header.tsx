@@ -78,12 +78,12 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-background via-background/95 to-background border-border/50 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-background/95 via-background to-background/95 border-primary/40 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/80 shadow-md shadow-primary/20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Desktop Header */}
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
-          {/* Logo & Branding */}
-          <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
+          {/* Logo & Branding (portal-style: direct to Events hub) */}
+          <Link href="/events" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
             <div className="relative">
               <img
                 src={theme === 'dark' ? logoDarkImage : logoLightImage}

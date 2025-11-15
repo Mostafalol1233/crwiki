@@ -141,11 +141,11 @@ export default function EventDetail() {
 
         <Card className="overflow-hidden">
           {event.image && (
-            <div className="w-full h-64 md:h-96 overflow-hidden">
+            <div className="w-full bg-black overflow-hidden flex justify-center">
               <img
                 src={event.image}
                 alt={title}
-                className="w-full h-full object-cover"
+                className="w-full h-auto max-h-[550px] object-contain"
                 data-testid="img-event"
               />
             </div>

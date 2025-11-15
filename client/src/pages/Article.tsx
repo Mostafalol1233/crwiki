@@ -186,12 +186,14 @@ export default function Article() {
             </div>
 
             {article.image && (
-              <img
-                src={article.image}
-                alt={article.title}
-                className="w-full h-[400px] md:h-[550px] lg:h-[650px] object-cover rounded-md mb-8"
-                data-testid="img-article-cover"
-              />
+              <div className="w-full bg-black rounded-md mb-8 overflow-hidden flex justify-center">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  className="w-full h-auto max-h-[650px] object-contain"
+                  data-testid="img-article-cover"
+                />
+              </div>
             )}
           </div>
 

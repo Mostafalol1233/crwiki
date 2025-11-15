@@ -8,43 +8,20 @@ export default function DataSeeder() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const weaponsData = [
-    // Import comprehensive weapons data from seed-data.js
-    ...require('../../server/data/seed-data.js').weaponsData
-  ];
-
-  const modesData = [
-    // Import comprehensive modes data from seed-data.js
-    ...require('../../server/data/seed-data.js').modesData
-  ];
-
-  const ranksData = [
-    // Import comprehensive ranks data from seed-data.js
-    ...require('../../server/data/seed-data.js').ranksData
-  ];
-
   const handleSeedData = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
 
-      // Upload weapons in bulk
-      await apiRequest('/api/weapons/bulk-create', 'POST', { weapons: weaponsData });
+      const res = await apiRequest('/api/seed/cf-data', 'POST', {});
+      const weapons = res?.createdWeapons ?? 0;
+      const modes = res?.createdModes ?? 0;
+      const ranks = res?.createdRanks ?? 0;
 
-      // Upload modes one by one
-      for (const mode of modesData) {
-        await apiRequest('/api/modes', 'POST', mode);
-      }
-
-      // Upload ranks one by one
-      for (const rank of ranksData) {
-        await apiRequest('/api/ranks', 'POST', rank);
-      }
-
-      setSuccess('Successfully seeded weapons, modes, and ranks data!');
+      setSuccess(`Successfully seeded data: ${weapons} weapons, ${modes} modes, ${ranks} ranks.`);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message);
+      setError(err.response?.data?.error || err.message || 'Failed to seed data');
     } finally {
       setLoading(false);
     }

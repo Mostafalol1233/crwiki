@@ -123,11 +123,11 @@ export default function NewsDetail() {
           </div>
         </div>
 
-        <div className="relative w-full h-[600px] md:h-[750px] lg:h-[900px] rounded-xl overflow-hidden mb-8">
+        <div className="w-full bg-black rounded-xl overflow-hidden mb-8 flex justify-center">
           <img
             src={newsItem.image}
             alt={newsItem.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-auto max-h-[900px] object-contain"
             data-testid="img-news-hero"
           />
         </div>

@@ -7,7 +7,7 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { storage } from "./storage";
 import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
 import type { InsertSellerReview } from "@shared/mongodb-schema";
-import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
+import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers";
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
 import DOMPurify from 'isomorphic-dompurify';
@@ -877,8 +877,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
-  // Site settings
-  app.get("/api/settings/site", requireAuth, requireSuperAdmin, async (_req, res) => {
+  // Site settings (Super Admin or Settings Manager)
+  app.get("/api/settings/site", requireAuth, requireSettingsManager, async (_req, res) => {
     try {
       const settings = await storage.getSiteSettings();
       res.json(settings);
@@ -887,7 +887,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
-  app.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.put("/api/settings/site", requireAuth, requireSettingsManager, async (req, res) => {
     try {
       const raw = req.body ?? {};
 
@@ -1018,11 +1018,11 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
-  // Admin: Update Mercenary (image and sounds)
+  // Admin: Update Mercenary (name, role, image and sounds)
   app.patch("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { image, sounds } = req.body;
+      const { name, role, image, sounds } = req.body;
 
       // Get current mercenary data
       const mercenary = await storage.getAllMercenaries();
@@ -1035,8 +1035,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       // Update mercenary with new image and sounds
       const updated = {
         ...current,
-        ...(image && { image }),
-        ...(sounds && { sounds: Array.isArray(sounds) ? sounds.slice(0, 30) : [] }), // Max 30 sounds
+        ...(typeof name === 'string' && name.trim() ? { name: name.trim() } : {}),
+        ...(typeof role === 'string' && role.trim() ? { role: role.trim() } : {}),
+        ...(image ? { image } : {}),
+        ...(Array.isArray(sounds) ? { sounds: sounds.slice(0, 30) } : {}), // Max 30 sounds
       };
 
       // For now, update in memory (in production, use database)
@@ -1276,14 +1278,25 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
   app.patch("/api/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const updates: any = {};
-      
+
       if (req.body.username !== undefined) updates.username = req.body.username;
       if (req.body.password !== undefined) {
         updates.password = await hashPassword(req.body.password);
       }
-      // Accept roles array or permissions object and map permissions to roles
-      if (req.body.roles !== undefined) updates.roles = req.body.roles;
-      else if (req.body.permissions && typeof req.body.permissions === 'object') {
+
+      // Accept role string ("admin" | "super_admin"), roles array and permissions object
+      const baseRoles: string[] = [];
+      if (typeof req.body.role === 'string' && req.body.role.trim()) {
+        baseRoles.push(req.body.role.trim());
+      }
+
+      if (Array.isArray(req.body.roles) && req.body.roles.length > 0) {
+        const rolesArr: string[] = req.body.roles;
+        if (baseRoles.length && !rolesArr.includes(baseRoles[0])) {
+          rolesArr.unshift(baseRoles[0]);
+        }
+        updates.roles = rolesArr;
+      } else if (req.body.permissions && typeof req.body.permissions === 'object') {
         const permissions = req.body.permissions as Record<string, boolean>;
         const permToRole: Record<string, string> = {
           'events:add': 'event_manager',
@@ -1298,14 +1311,20 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
           'settings:manage': 'settings_manager',
         };
 
-        const rolesFromPerms: string[] = [];
+        const rolesFromPerms: string[] = [...baseRoles];
         for (const [perm, enabled] of Object.entries(permissions)) {
           if (enabled && permToRole[perm]) {
-            rolesFromPerms.push(permToRole[perm]);
+            const role = permToRole[perm];
+            if (!rolesFromPerms.includes(role)) rolesFromPerms.push(role);
           }
         }
 
-        if (rolesFromPerms.length > 0) updates.roles = rolesFromPerms;
+        if (rolesFromPerms.length > 0) {
+          updates.roles = rolesFromPerms;
+        }
+      } else if (baseRoles.length > 0) {
+        // Only explicit role was provided
+        updates.roles = baseRoles;
       }
 
       const admin = await storage.updateAdmin(req.params.id, updates);

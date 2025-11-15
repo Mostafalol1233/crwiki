@@ -1,30 +1,27 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { format } from "date-fns";
 import { HeroSection } from "@/components/HeroSection";
 import { ArticleCard, type Article } from "@/components/ArticleCard";
-import { EventsRibbon, type Event } from "@/components/EventsRibbon";
-import { CategoryFilter, type Category } from "@/components/CategoryFilter";
-import { SearchBar } from "@/components/SearchBar";
+import { EventsRibbon } from "@/components/EventsRibbon";
 import { Sidebar } from "@/components/Sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThumbsUp, Calendar, Play, ExternalLink, Flame, TrendingUp, Sparkles } from "lucide-react";
+import { ThumbsUp, Calendar, Play, ExternalLink, Flame, Sparkles } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import type { Tutorial } from "@shared/mongodb-schema";
 
 export default function Home() {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<Category>("all");
 
   const { data: allPosts = [] } = useQuery<Article[]>({
     queryKey: ["/api/posts"],
   });
 
-  const { data: allEvents = [] } = useQuery<Event[]>({
+  const { data: allEvents = [] } = useQuery<any[]>({
     queryKey: ["/api/events"],
   });
 
@@ -38,9 +35,9 @@ export default function Home() {
 
   const heroPost = allPosts.find((p) => p.featured) || {
     id: "1",
-    title: "Welcome to Bimora Gaming Blog",
+    title: "Bimora Gaming — Quick, Simple & Massive",
     summary:
-      "Your source for CrossFire gaming news, character guides, and community updates. Create your first post in the admin dashboard!",
+      "Play CrossFire with the ultimate Bimora hub for news, events, guides and community highlights. Jump in and start exploring now.",
     category: "Tutorials",
     image: tutorialImage,
     author: "Bimora Team",
@@ -50,26 +47,13 @@ export default function Home() {
     tags: ["Welcome", "Getting Started"],
   };
 
-  const filteredArticles = useMemo(() => {
-    return allPosts.filter((article) => {
-      // Category filter
-      const matchesCategory = selectedCategory === "all" || 
-        (selectedCategory === "tutorials" && article.category.toLowerCase() === "tutorials") ||
-        (selectedCategory === "events" && article.category.toLowerCase() === "events") ||
-        (selectedCategory === "news" && article.category.toLowerCase() === "news");
-      
-      // Search filter
-      const matchesSearch =
-        searchQuery === "" ||
-        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        article.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (article.tags && article.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        ));
-      
-      return matchesCategory && matchesSearch;
-    });
-  }, [allPosts, searchQuery, selectedCategory]);
+  const hasFeaturedPost = allPosts.some((p) => p.featured);
+
+  const showPortalSections = false;
+
+  const latestArticles = useMemo(() => {
+    return allPosts.slice(0, 4);
+  }, [allPosts]);
 
   const recentPosts = useMemo(() => {
     return allPosts.slice(0, 3).map((post) => ({
@@ -119,13 +103,354 @@ export default function Home() {
   }, [allPosts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-background/80">
-      <HeroSection post={heroPost} />
+    <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
+      {/* Fire sparks / glow at the edges of the interface */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -left-24 w-72 h-72 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-strong" />
+        <div className="absolute -bottom-32 -right-24 w-80 h-80 bg-[radial-gradient(circle_at_center,rgba(252,211,77,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-soft" />
+        <div className="absolute top-1/2 -right-10 w-40 h-40 bg-[radial-gradient(circle_at_center,rgba(248,250,252,0.45),transparent_70%)] opacity-30 blur-2xl mix-blend-screen fire-glow-flicker" />
+      </div>
+
+      <HeroSection post={heroPost} isPlaceholder={!hasFeaturedPost} />
 
       {allEvents.length > 0 && <EventsRibbon events={allEvents} />}
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-        {/* Featured & Trending Section */}
+        {/* Simple 2D navigation area */}
+        <section className="space-y-4 mb-10">
+          <h2 className="text-3xl md:text-4xl font-semibold text-center">
+            Explore CrossFire Wiki
+          </h2>
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto">
+            Use the links below to quickly jump to news, events, tutorials, mercenaries, weapons, sellers and support pages.
+          </p>
+        </section>
+
+        <section className="space-y-4 mb-12">
+          <div className="flex items-center justify-center">
+            <h3 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
+              <ExternalLink className="h-6 w-6 text-primary" />
+              Quick Links
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/news" className="flex items-center justify-between w-full">
+                <span>News & Patch Notes</span>
+                <Flame className="h-4 w-4 text-red-500" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/events" className="flex items-center justify-between w-full">
+                <span>Events</span>
+                <Calendar className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/tutorials" className="flex items-center justify-between w-full">
+                <span>Guides & Tutorials</span>
+                <Play className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/mercenaries" className="flex items-center justify-between w-full">
+                <span>Mercenaries</span>
+                <ThumbsUp className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/weapons" className="flex items-center justify-between w-full">
+                <span>Weapons & Modes</span>
+                <Sparkles className="h-4 w-4 text-amber-500" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/sellers" className="flex items-center justify-between w-full">
+                <span>Sellers & Reviews</span>
+                <ThumbsUp className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
+            >
+              <Link href="/support" className="flex items-center justify-between w-full">
+                <span>Support & Tickets</span>
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+
+        {allEvents.length > 0 && (
+          <section className="space-y-4 mb-12">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
+                <Calendar className="h-6 w-6" />
+                Featured Events
+              </h2>
+              <Link href="/events">
+                <Button variant="ghost" size="sm" className="hover:text-primary">
+                  View All →
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allEvents.slice(0, 4).map((event: any, index: number) => (
+                <div
+                  key={event.id}
+                  className={index === 0 ? "md:col-span-2 md:row-span-2" : ""}
+                >
+                  <Link href={`/events/${event.id}`} className="block" data-testid={`home-event-${event.id}`}>
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70">
+                      <div
+                        className={`relative w-full ${index === 0 ? "h-80 md:h-96" : "h-56 md:h-64"} overflow-hidden`}
+                      >
+                        {event.image && (
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+                        <div className="absolute top-4 left-4 flex items-center gap-2">
+                          {event.type && (
+                            <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[10px] uppercase">
+                              {event.type === "upcoming" ? "Upcoming" : "Trending"}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px] border-white/40 text-white/90 bg-black/40">
+                            Event
+                          </Badge>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white">
+                          <h3
+                            className={`font-bold mb-2 ${
+                              index === 0 ? "text-2xl md:text-3xl" : "text-lg md:text-xl"
+                            }`}
+                          >
+                            {event.title}
+                          </h3>
+                          {event.date && (
+                            <p className="text-sm text-white/80 flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {event.date}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* CrossFire-style feature strip */}
+        <section className="space-y-6 mb-12">
+          {/* Modes & Weapons feature tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Competitive Modes */}
+            <Link href="/modes" className="block">
+              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage:
+                      "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-comp.jpg)",
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-5 text-white">
+                  <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
+                    COMPETITIVE MODES
+                  </h4>
+                  <button
+                    className="inline-flex items-center border border-white px-4 py-1.5 text-[11px] md:text-xs font-semibold tracking-wide uppercase bg-black/40 group-hover:bg-white/10 transition-colors"
+                  >
+                    Explore Modes
+                  </button>
+                </div>
+              </div>
+            </Link>
+
+            {/* Weapons */}
+            <Link href="/weapons" className="block">
+              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage:
+                      "url(https://z8games.akamaized.net/cfna/web/image/feature-weap.jpg)",
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-5 text-white">
+                  <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
+                    WEAPONS
+                  </h4>
+                  <button
+                    className="inline-flex items-center border border-white px-4 py-1.5 text-[11px] md:text-xs font-semibold tracking-wide uppercase bg-black/40 group-hover:bg-white/10 transition-colors"
+                  >
+                    Explore Weapons
+                  </button>
+                </div>
+              </div>
+            </Link>
+
+            {/* Cooperative Modes */}
+            <Link href="/modes" className="block">
+              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage:
+                      "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-coop.jpg)",
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="relative h-full flex flex-col justify-end p-5 text-white">
+                  <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
+                    COOPERATIVE MODES
+                  </h4>
+                  <button
+                    className="inline-flex items-center border border-white px-4 py-1.5 text-[11px] md:text-xs font-semibold tracking-wide uppercase bg-black/40 group-hover:bg-white/10 transition-colors"
+                  >
+                    Explore Modes
+                  </button>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {showPortalSections && (
+          <>
+        {/* Latest Updates portal-style section */}
+        {(allNews.length > 0 || allEvents.length > 0 || allPosts.length > 0) && (
+          <section className="mb-12 md:mb-16">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-amber-500" />
+                Latest Updates
+              </h2>
+              <div className="hidden md:flex gap-3 text-xs md:text-sm text-muted-foreground">
+                <span className="flex items-center gap-1"><Flame className="h-4 w-4 text-red-500" /> Hot news</span>
+                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> New events</span>
+                <span className="flex items-center gap-1"><ExternalLink className="h-4 w-4" /> Latest articles</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              {allNews[0] && (
+                <Link href={`/news/${allNews[0].id}`} className="block" data-testid="home-latest-news">
+                  <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-primary/20 hover:border-primary/60 transition-all duration-300">
+                    <div className="relative aspect-[3/2] overflow-hidden bg-muted/30">
+                      <img
+                        src={allNews[0].image}
+                        alt={allNews[0].title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
+                        <Badge variant="destructive" className="mb-1 text-[10px] md:text-xs">News</Badge>
+                        <h3 className="font-semibold text-white text-sm md:text-base line-clamp-2">
+                          {allNews[0].title}
+                        </h3>
+                        {allNews[0].dateRange && (
+                          <span className="text-[10px] md:text-xs text-white/80 mt-1 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {allNews[0].dateRange}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )}
+              {allEvents[0] && (
+                <Link href={`/events/${allEvents[0].id}`} className="block" data-testid="home-latest-event">
+                  <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-primary/20 hover:border-primary/60 transition-all duration-300">
+                    <div className="relative aspect-[3/2] overflow-hidden bg-muted/30">
+                      <img
+                        src={allEvents[0].image}
+                        alt={allEvents[0].title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
+                        <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-primary/90 text-primary-foreground">Event</Badge>
+                        <h3 className="font-semibold text-white text-sm md:text-base line-clamp-2">
+                          {allEvents[0].title}
+                        </h3>
+                        {allEvents[0].date && (
+                          <span className="text-[10px] md:text-xs text-white/80 mt-1 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {allEvents[0].date}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )}
+              {allPosts[0] && (
+                <Link href={`/article/${allPosts[0].id}`} className="block" data-testid="home-latest-post">
+                  <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-amber-500/20 hover:border-amber-500/60 transition-all duration-300">
+                    <div className="relative aspect-[3/2] overflow-hidden bg-muted/30">
+                      <img
+                        src={allPosts[0].image}
+                        alt={allPosts[0].title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
+                        <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-amber-500/90 text-white">Article</Badge>
+                        <h3 className="font-semibold text-white text-sm md:text-base line-clamp-2">
+                          {allPosts[0].title}
+                        </h3>
+                        <span className="text-[10px] md:text-xs text-white/80 mt-1 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {allPosts[0].date}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
+        {/* Featured & Trending Section (hidden when showPortalSections is false) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
           {/* Trending News Card */}
           {allNews.length > 0 && (
@@ -149,7 +474,7 @@ export default function Home() {
 
           {/* Top 2 Featured Posts */}
           {allPosts.filter(p => p.featured).slice(0, 2).map((post) => (
-            <Link key={post.id} href={`/posts/${post.id}`} className="block">
+            <Link key={post.id} href={`/article/${post.id}`} className="block">
               <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/50 transition-all duration-300">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -175,40 +500,31 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
           <main className="lg:col-span-8 space-y-8 md:space-y-12">
-            <div className="space-y-6">
+            {/* Latest Articles */}
+            <section className="space-y-4 pt-6 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-6 w-6 text-primary" />
-                  {t("categories")}
+                  <Sparkles className="h-6 w-6 text-amber-500" />
+                  Latest Articles
                 </h2>
+                <Link href="/posts">
+                  <Button variant="ghost" size="sm" className="hover:text-primary">
+                    View All →
+                  </Button>
+                </Link>
               </div>
-
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              {latestArticles.length === 0 ? (
+                <div className="text-muted-foreground text-sm">
+                  No articles have been published yet.
                 </div>
-              </div>
-
-              <CategoryFilter
-                activeCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                useNavigation={false}
-              />
-            </div>
-
-            {filteredArticles.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  No articles found matching your criteria.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                {filteredArticles.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
-                ))}
-              </div>
-            )}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                  {latestArticles.map((article) => (
+                    <ArticleCard key={article.id} article={article} />
+                  ))}
+                </div>
+              )}
+            </section>
 
             {/* News section (show latest news on main page) */}
             {allNews.length > 1 && (
@@ -298,7 +614,7 @@ export default function Home() {
                               {tutorial.createdAt && (
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-4 w-4" />
-                                  <span>{new Date(tutorial.createdAt).toLocaleDateString()}</span>
+                                  <span>{format(new Date(tutorial.createdAt), "MMM d, yyyy")}</span>
                                 </div>
                               )}
                             </div>
@@ -338,6 +654,8 @@ export default function Home() {
             </div>
           </aside>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

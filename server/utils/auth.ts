@@ -56,6 +56,21 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+export function requireSettingsManager(req: Request, res: Response, next: NextFunction) {
+  const user = (req as any).user;
+
+  if (!user) return res.status(403).json({ error: "Forbidden: Settings Manager access required" });
+
+  const hasRole = user.roles && Array.isArray(user.roles) && user.roles.includes('settings_manager');
+  const hasPerm = hasPermission(user, ['settings:manage']);
+
+  if (!hasRole && !hasPerm) {
+    return res.status(403).json({ error: "Forbidden: Settings Manager access required" });
+  }
+
+  next();
+}
+
 export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
   const user = (req as any).user;
 

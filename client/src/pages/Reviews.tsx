@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Star, User } from "lucide-react";
+import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -393,7 +394,7 @@ export default function Reviews() {
                                     <p className="text-sm text-muted-foreground">{review.comment}</p>
                                   )}
                                   <p className="text-xs text-muted-foreground">
-                                    {new Date(review.createdAt).toLocaleDateString()}
+                                    {format(new Date(review.createdAt), "MMM d, yyyy")}
                                   </p>
                                 </CardContent>
                               </Card>

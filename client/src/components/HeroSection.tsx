@@ -21,9 +21,10 @@ interface HeroPost {
 
 interface HeroSectionProps {
   post: HeroPost;
+  isPlaceholder?: boolean;
 }
 
-export function HeroSection({ post }: HeroSectionProps) {
+export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
   const { t } = useLanguage();
 
   return (
@@ -73,15 +74,29 @@ export function HeroSection({ post }: HeroSectionProps) {
             </div>
           </div>
 
-          <Button
-            asChild
-            size="lg"
-            variant="default"
-            className="backdrop-blur-md bg-primary hover:bg-primary/90 border-2 border-primary-foreground/20 text-primary-foreground font-bold shadow-lg"
-            data-testid="button-read-featured"
-          >
-            <Link href={`/article/${post.id}`}>{t("readMore")}</Link>
-          </Button>
+          {isPlaceholder ? (
+            <Button
+              asChild
+              size="lg"
+              variant="default"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold tracking-wide uppercase px-8 py-6 shadow-xl border border-yellow-300"
+              data-testid="button-play-free"
+            >
+              <Link href="/posts">Play Free with Bimora</Link>
+            </Button>
+          ) : (
+            post.id && (
+              <Button
+                asChild
+                size="lg"
+                variant="default"
+                className="backdrop-blur-md bg-primary hover:bg-primary/90 border-2 border-primary-foreground/20 text-primary-foreground font-bold shadow-lg"
+                data-testid="button-read-featured"
+              >
+                <Link href={`/article/${post.id}`}>{t("readMore")}</Link>
+              </Button>
+            )
+          )}
         </div>
       </div>
     </section>

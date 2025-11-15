@@ -3,7 +3,7 @@ import { generateToken, verifyAdminPassword, comparePassword } from '../../serve
 
 export default async function handler(req, res) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://crwiki-4lq833imx-mostafalol1233s-projects.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://crossfire.wiki');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

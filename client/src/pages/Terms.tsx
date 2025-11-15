@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Shield, Users, Mail } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { format } from "date-fns";
 
 export default function Terms() {
   const { t } = useLanguage();
@@ -27,7 +28,7 @@ export default function Terms() {
               Terms of Service
             </h1>
             <p className="text-lg text-muted-foreground">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: {format(new Date(), "MMM d, yyyy")}
             </p>
           </div>
 

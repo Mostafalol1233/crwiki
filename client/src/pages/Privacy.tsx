@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Eye, Lock, Mail } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { format } from "date-fns";
 
 export default function Privacy() {
   const { t } = useLanguage();
@@ -27,7 +28,7 @@ export default function Privacy() {
               Privacy Policy
             </h1>
             <p className="text-lg text-muted-foreground">
-              Last updated: {new Date().toLocaleDateString()}
+              Last updated: {format(new Date(), "MMM d, yyyy")}
             </p>
           </div>
 

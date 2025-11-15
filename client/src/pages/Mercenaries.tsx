@@ -17,6 +17,7 @@ export default function Mercenaries() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const lastSoundRef = useRef<{ [key: string]: string | null }>({});
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
@@ -25,8 +26,17 @@ export default function Mercenaries() {
   const playRandomSound = (mercId: string, sounds?: string[]) => {
     if (!sounds || sounds.length === 0) return;
 
-    // Pick a random sound
-    const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+    // Pick a random sound (avoid repeating the last one when possible)
+    let randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+    const last = lastSoundRef.current[mercId];
+    if (sounds.length > 1 && last) {
+      let attempts = 0;
+      while (randomSound === last && attempts < 5) {
+        randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+        attempts++;
+      }
+    }
+    lastSoundRef.current[mercId] = randomSound;
 
     // Stop current audio if any
     if (playingMercId && audioRefs.current[playingMercId]) {
@@ -128,8 +138,7 @@ export default function Mercenaries() {
                         size="sm"
                         variant="outline"
                         onClick={() => playRandomSound(merc.id, merc.sounds)}
-                        disabled={playingMercId === merc.id}
-                        className="w-full h-8 text-xs bg-white/10 border-white/30 hover:bg-white/20 text-white"
+                        className="w-full h-8 text-xs bg:white/10 border-white/30 hover:bg-white/20 text-white"
                       >
                         {playingMercId === merc.id ? (
                           <>

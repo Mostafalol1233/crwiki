@@ -43,6 +43,12 @@ export default function AdminLogin() {
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin");
       localStorage.setItem("adminRole", role);
       localStorage.setItem("adminUsername", admin.username || "");
+      // persist permissions so Admin page can gate sections per admin
+      try {
+        localStorage.setItem("adminPermissions", JSON.stringify(admin.permissions || {}));
+      } catch {
+        localStorage.setItem("adminPermissions", "{}");
+      }
       setLocation("/admin");
     } catch (error) {
       toast({
@@ -83,6 +89,11 @@ export default function AdminLogin() {
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "super_admin");
       localStorage.setItem("adminRole", role);
       localStorage.setItem("adminUsername", "super_admin");
+      try {
+        localStorage.setItem("adminPermissions", JSON.stringify(admin.permissions || {}));
+      } catch {
+        localStorage.setItem("adminPermissions", "{}");
+      }
       setLocation("/admin");
     } catch (error) {
       toast({

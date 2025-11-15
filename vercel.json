@@ -15,6 +15,10 @@
       "destination": "http://51.75.118.151:20032/api/$1"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "http://51.75.118.151:20032/assets/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -176,7 +176,7 @@ export default function Home() {
                       <Card className="hover-elevate transition-all duration-300 cursor-pointer h-52 overflow-hidden bg-card border-border/50">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
                           {event.image && (
-                            <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <img src={event.image} alt={event.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                           )}
                           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
                           <div className="absolute bottom-3 left-3 right-3 text-white">

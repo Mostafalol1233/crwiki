@@ -130,40 +130,77 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {allEvents.map((event: any, index: number) => (
-                <Link href={`/events/${event.id}`} className="block" data-testid={`home-event-${event.id}`}>
-                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70">
-                    <div className="relative w-full aspect-square overflow-hidden">
-                        {event.image && (
-                          <img
-                            src={event.image}
-                            alt={event.title}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Featured event - larger, takes left column and spans 2 rows */}
+              {allEvents[0] && (
+                <Link href={`/events/${allEvents[0].id}`} className="block md:col-span-2 md:row-span-2" data-testid={`home-event-featured-${allEvents[0].id}`}>
+                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70 h-full">
+                    <div className="relative w-full h-full min-h-96 md:min-h-[500px] overflow-hidden">
+                      {allEvents[0].image && (
+                        <img
+                          src={allEvents[0].image}
+                          alt={allEvents[0].title}
+                          className="absolute inset-0 w-full h-full object-contain bg-black/10 transition-transform duration-500 group-hover:scale-105"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+                      <div className="absolute top-3 left-3 flex items-center gap-1">
+                        {allEvents[0].type && (
+                          <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[10px] uppercase font-bold">
+                            {allEvents[0].type === "upcoming" ? "Upcoming" : "Trending"}
+                          </Badge>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-                        <div className="absolute top-2 left-2 flex items-center gap-1">
-                          {event.type && (
-                            <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[8px] uppercase">
-                              {event.type === "upcoming" ? "Upcoming" : "Trending"}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white">
-                          <h3 className="font-bold mb-1 text-sm md:text-base line-clamp-2">
-                            {event.title}
-                          </h3>
-                          {event.date && (
-                            <p className="text-xs text-white/70 flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {event.date}
-                            </p>
-                          )}
-                        </div>
                       </div>
-                    </Card>
-                  </Link>
+                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white">
+                        <h3 className="font-bold mb-2 text-lg md:text-xl line-clamp-3">
+                          {allEvents[0].title}
+                        </h3>
+                        {allEvents[0].date && (
+                          <p className="text-sm text-white/80 flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {allEvents[0].date}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )}
+
+              {/* Other events - equal-sized cards */}
+              {allEvents.slice(1, 5).map((event: any) => (
+                <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-${event.id}`}>
+                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70 h-full">
+                    <div className="relative w-full aspect-square overflow-hidden">
+                      {event.image && (
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="absolute inset-0 w-full h-full object-contain bg-black/10 transition-transform duration-500 group-hover:scale-105"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+                      <div className="absolute top-2 left-2 flex items-center gap-1">
+                        {event.type && (
+                          <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[8px] uppercase">
+                            {event.type === "upcoming" ? "Upcoming" : "Trending"}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white">
+                        <h3 className="font-bold mb-1 text-sm line-clamp-2">
+                          {event.title}
+                        </h3>
+                        {event.date && (
+                          <p className="text-xs text-white/70 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {event.date}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>

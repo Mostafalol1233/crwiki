@@ -47,15 +47,22 @@ export function Footer() {
     }
   };
 
-  const quickLinks = [
+  const mainLinks = [
     { label: t("home"), path: "/" },
     { label: t("news"), path: "/news" },
     { label: t("events"), path: "/events" },
     { label: t("tutorials"), path: "/tutorials" },
+  ];
+
+  const resourceLinks = [
     { label: t("mercenaries"), path: "/mercenaries" },
-    { label: t("support"), path: "/support" },
+    { label: "Weapons", path: "/weapons" },
     { label: t("sellers"), path: "/sellers" },
     { label: t("reviews"), path: "/reviews" },
+  ];
+
+  const legalLinks = [
+    { label: t("support"), path: "/support" },
     { label: t("about"), path: "/about" },
     { label: t("contact"), path: "/contact" },
     { label: "Terms of Service", path: "/terms" },
@@ -65,22 +72,42 @@ export function Footer() {
   return (
     <footer className="border-t bg-card">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12">
+          <div className="lg:col-span-2">
             <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent mb-4">
               Bimora
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               Your source for CrossFire gaming news and community updates.
             </p>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.youtube.com/@Bemora-site"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-social-youtube"
+              >
+                <SiYoutube className="h-5 w-5" />
+              </a>
+              <a
+                href="https://twitter.com/Bemora_BEMO"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-social-x"
+              >
+                <SiX className="h-5 w-5" />
+              </a>
+            </div>
           </div>
 
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
-              Quick Links
+              Navigate
             </h4>
-            <ul className="space-y-2">
-              {quickLinks.map((link) => (
+            <ul className="space-y-2.5">
+              {mainLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     href={link.path}
@@ -96,58 +123,79 @@ export function Footer() {
 
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
-              Newsletter
+              Resources
             </h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Subscribe to get the latest articles delivered to your inbox.
-            </p>
-            <form onSubmit={handleSubscribe} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-9"
-                data-testid="input-newsletter-email"
-              />
-              <Button 
-                size="sm" 
-                type="submit"
-                disabled={subscribeMutation.isPending}
-                data-testid="button-newsletter-submit"
-              >
-                {subscribeMutation.isPending ? "..." : t("submit")}
-              </Button>
-            </form>
+            <ul className="space-y-2.5">
+              {resourceLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    href={link.path}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid={`link-footer-${link.label.toLowerCase()}`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
+              Support & Legal
+            </h4>
+            <ul className="space-y-2.5">
+              {legalLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    href={link.path}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid={`link-footer-${link.label.toLowerCase()}`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground text-center md:text-left">
-            {t("copyright")}
-          </p>
-
-          <div className="flex items-center gap-4">
-            <a
-                href="https://www.youtube.com/@Bemora-site"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="link-social-youtube"
-            >
-                <SiYoutube className="h-5 w-5" />
-            </a>
-            <a
-                href="https://twitter.com/Bemora_BEMO"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              data-testid="link-social-x"
-            >
-              <SiX className="h-5 w-5" />
-            </a>
+        <div className="mt-12 pt-8 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
+                Newsletter
+              </h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Subscribe to get the latest articles delivered to your inbox.
+              </p>
+              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-9"
+                  data-testid="input-newsletter-email"
+                />
+                <Button 
+                  size="sm" 
+                  type="submit"
+                  disabled={subscribeMutation.isPending}
+                  data-testid="button-newsletter-submit"
+                >
+                  {subscribeMutation.isPending ? "..." : t("submit")}
+                </Button>
+              </form>
+            </div>
           </div>
+        </div>
+
+        <div className="mt-8 pt-8 border-t">
+          <p className="text-sm text-muted-foreground text-center">
+            <span className="italic font-semibold text-foreground">Bimora Gaming - CrossFire Wiki crossfire.wiki by Bimora Gaming</span> — {t("copyright")}
+          </p>
         </div>
       </div>
     </footer>

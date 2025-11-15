@@ -42,7 +42,7 @@ export function Header() {
       label: t("blog"),
       icon: BookOpen,
       dropdown: [
-        { path: "/news", label: t("newsAndUpdates"), icon: BookOpen },
+        { path: "/news", label: t("News&Updates"), icon: BookOpen },
         { path: "/posts", label: t("posts"), icon: BookOpen },
         { path: "/category/events", label: t("events"), icon: Trophy },
         { path: "/tutorials", label: t("tutorials"), icon: BookOpen },
@@ -66,7 +66,7 @@ export function Header() {
         { path: "/reviews", label: t("reviews"), icon: BookOpen },
       ],
     },
-    { path: "/mercenaries", label: t("mercenaries"), icon: Users },
+    { path: "/mercenaries", label: t("Mercenaries"), icon: Users },
   ];
 
   const isActiveDropdown = (items: DropdownItem[]) => {
@@ -93,8 +93,8 @@ export function Header() {
               />
             </div>
             <div className="hidden md:flex flex-col">
-              <span className="text-base font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">crossfire.wiki</span>
-              <span className="text-xs text-muted-foreground font-medium">by Bimora Gaming</span>
+              <span className="text-base font-bold italic bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" style={{ fontFamily: 'serif' }}>CrossFire.Wiki</span>
+              <span className="text-xs text-muted-foreground font-medium italic" style={{ fontFamily: 'serif' }}>by Bimora Gaming</span>
             </div>
           </Link>
 

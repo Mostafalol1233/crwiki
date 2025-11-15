@@ -12,6 +12,7 @@ import Home from "@/pages/Home";
 import Article from "@/pages/Article";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
+import Download from "@/pages/Download";
 import News from "@/pages/News";
 import NewsDetail from "@/pages/NewsDetail";
 import EventDetail from "@/pages/EventDetail";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/my-tickets" component={MyTickets} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/download" component={Download} />
       <Route path="/tutorials" component={Tutorials} />
       <Route path="/tutorials/:id" component={TutorialDetail} />
       <Route path="/weapons" component={Weapons} />

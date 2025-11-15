@@ -115,103 +115,7 @@ export default function Home() {
 
       {allEvents.length > 0 && <EventsRibbon events={allEvents} />}
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-        {/* Simple 2D navigation area */}
-        <section className="space-y-4 mb-10">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center">
-            Explore CrossFire Wiki
-          </h2>
-          <p className="text-muted-foreground text-center max-w-2xl mx-auto">
-            Use the links below to quickly jump to news, events, tutorials, mercenaries, weapons, sellers and support pages.
-          </p>
-        </section>
-
-        <section className="space-y-4 mb-12">
-          <div className="flex items-center justify-center">
-            <h3 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
-              <ExternalLink className="h-6 w-6 text-primary" />
-              Quick Links
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/news" className="flex items-center justify-between w-full">
-                <span>News & Patch Notes</span>
-                <Flame className="h-4 w-4 text-red-500" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/events" className="flex items-center justify-between w-full">
-                <span>Events</span>
-                <Calendar className="h-4 w-4" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/tutorials" className="flex items-center justify-between w-full">
-                <span>Guides & Tutorials</span>
-                <Play className="h-4 w-4" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/mercenaries" className="flex items-center justify-between w-full">
-                <span>Mercenaries</span>
-                <ThumbsUp className="h-4 w-4" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/weapons" className="flex items-center justify-between w-full">
-                <span>Weapons & Modes</span>
-                <Sparkles className="h-4 w-4 text-amber-500" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/sellers" className="flex items-center justify-between w-full">
-                <span>Sellers & Reviews</span>
-                <ThumbsUp className="h-4 w-4" />
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="w-full justify-between text-sm font-semibold bg-background/40 hover:bg-background/80 border-border/70"
-            >
-              <Link href="/support" className="flex items-center justify-between w-full">
-                <span>Support & Tickets</span>
-                <ExternalLink className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </section>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
 
         {allEvents.length > 0 && (
           <section className="space-y-4 mb-12">
@@ -220,23 +124,17 @@ export default function Home() {
                 <Calendar className="h-6 w-6" />
                 Featured Events
               </h2>
-              <Link href="/events">
+              <Link href="/category/events">
                 <Button variant="ghost" size="sm" className="hover:text-primary">
                   View All →
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allEvents.slice(0, 4).map((event: any, index: number) => (
-                <div
-                  key={event.id}
-                  className={index === 0 ? "md:col-span-2 md:row-span-2" : ""}
-                >
-                  <Link href={`/events/${event.id}`} className="block" data-testid={`home-event-${event.id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70">
-                      <div
-                        className={`relative w-full ${index === 0 ? "h-80 md:h-96" : "h-56 md:h-64"} overflow-hidden`}
-                      >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              {allEvents.map((event: any, index: number) => (
+                <Link href={`/events/${event.id}`} className="block" data-testid={`home-event-${event.id}`}>
+                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-gradient-to-b from-card to-card/70 border-border/60 hover:border-primary/70">
+                    <div className="relative w-full aspect-square overflow-hidden">
                         {event.image && (
                           <img
                             src={event.image}
@@ -245,27 +143,20 @@ export default function Home() {
                           />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-                        <div className="absolute top-4 left-4 flex items-center gap-2">
+                        <div className="absolute top-2 left-2 flex items-center gap-1">
                           {event.type && (
-                            <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[10px] uppercase">
+                            <Badge className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30 text-[8px] uppercase">
                               {event.type === "upcoming" ? "Upcoming" : "Trending"}
                             </Badge>
                           )}
-                          <Badge variant="outline" className="text-[10px] border-white/40 text-white/90 bg-black/40">
-                            Event
-                          </Badge>
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white">
-                          <h3
-                            className={`font-bold mb-2 ${
-                              index === 0 ? "text-2xl md:text-3xl" : "text-lg md:text-xl"
-                            }`}
-                          >
+                        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white">
+                          <h3 className="font-bold mb-1 text-sm md:text-base line-clamp-2">
                             {event.title}
                           </h3>
                           {event.date && (
-                            <p className="text-sm text-white/80 flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
+                            <p className="text-xs text-white/70 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
                               {event.date}
                             </p>
                           )}
@@ -273,7 +164,6 @@ export default function Home() {
                       </div>
                     </Card>
                   </Link>
-                </div>
               ))}
             </div>
           </section>
@@ -293,7 +183,7 @@ export default function Home() {
                       "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-comp.jpg)",
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 <div className="relative h-full flex flex-col justify-end p-5 text-white">
                   <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
                     COMPETITIVE MODES
@@ -317,7 +207,7 @@ export default function Home() {
                       "url(https://z8games.akamaized.net/cfna/web/image/feature-weap.jpg)",
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 <div className="relative h-full flex flex-col justify-end p-5 text-white">
                   <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
                     WEAPONS
@@ -341,7 +231,7 @@ export default function Home() {
                       "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-coop.jpg)",
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 <div className="relative h-full flex flex-col justify-end p-5 text-white">
                   <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
                     COOPERATIVE MODES
@@ -364,7 +254,7 @@ export default function Home() {
           <section className="mb-12 md:mb-16">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h2 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-amber-500" />
+                <Sparkles className="h-6 w-6 text-destructive" />
                 Latest Updates
               </h2>
               <div className="hidden md:flex gap-3 text-xs md:text-sm text-muted-foreground">
@@ -426,7 +316,7 @@ export default function Home() {
               )}
               {allPosts[0] && (
                 <Link href={`/article/${allPosts[0].id}`} className="block" data-testid="home-latest-post">
-                  <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-amber-500/20 hover:border-amber-500/60 transition-all duration-300">
+                  <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-destructive/20 hover:border-destructive/60 transition-all duration-300">
                     <div className="relative aspect-[3/2] overflow-hidden bg-muted/30">
                       <img
                         src={allPosts[0].image}
@@ -434,7 +324,7 @@ export default function Home() {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
-                        <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-amber-500/90 text-white">Article</Badge>
+                        <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-destructive/90 text-white">Article</Badge>
                         <h3 className="font-semibold text-white text-sm md:text-base line-clamp-2">
                           {allPosts[0].title}
                         </h3>
@@ -475,12 +365,12 @@ export default function Home() {
           {/* Top 2 Featured Posts */}
           {allPosts.filter(p => p.featured).slice(0, 2).map((post) => (
             <Link key={post.id} href={`/article/${post.id}`} className="block">
-              <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/50 transition-all duration-300">
+                  <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-destructive/20 hover:border-destructive/50 transition-all duration-300">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute top-2 left-2 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-amber-500" />
-                    <Badge variant="secondary" className="text-xs bg-amber-500/80 text-white">Featured</Badge>
+                    <Sparkles className="h-4 w-4 text-destructive" />
+                    <Badge variant="secondary" className="text-xs bg-destructive/80 text-white">Featured</Badge>
                   </div>
                 </div>
                 <CardHeader className="pb-2">

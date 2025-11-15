@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Clock, Eye } from "lucide-react";
+import { /*Clock, Eye*/ } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "./LanguageProvider";
@@ -30,13 +30,13 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
   return (
     <section className="relative min-h-[70vh] md:min-h-[80vh] w-full overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center bg-black/20"
+        className="absolute inset-0 bg-cover bg-center bg-black/10"
         style={{ backgroundImage: `url(${bgImage}), url(${fallbackImage})` }}
         onError={(e: any) => {
           e.target.style.backgroundImage = `url(${fallbackImage})`;
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-transparent" />
       
       <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[70vh] md:min-h-[80vh] flex items-end pb-12 md:pb-20">
         <div className="max-w-3xl">
@@ -56,22 +56,10 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
             {post.summary}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
             <span className="font-medium">{post.author}</span>
             <span>•</span>
             <span>{post.date}</span>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              <span>
-                {post.readingTime} {t("readingTime")}
-              </span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <Eye className="h-4 w-4" />
-              <span>{post.views.toLocaleString()} {t("views")}</span>
-            </div>
           </div>
 
           {isPlaceholder ? (
@@ -79,10 +67,10 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
               asChild
               size="lg"
               variant="default"
-              className="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold tracking-wide uppercase px-8 py-6 shadow-xl border border-yellow-300"
+              className="bg-destructive hover:bg-destructive/90 text-white font-extrabold tracking-wide uppercase px-8 py-6 shadow-xl border border-destructive/30"
               data-testid="button-play-free"
             >
-              <Link href="/posts">Play Free with Bimora</Link>
+              <Link href="/download">Download Now</Link>
             </Button>
           ) : (
             post.id && (

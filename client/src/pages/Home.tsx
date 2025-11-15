@@ -169,17 +169,17 @@ export default function Home() {
                   </Link>
                 )}
 
-                {/* Below the featured: show next few events in a compact grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {allEvents.slice(3, 9).map((event: any) => (
+                {/* Below the featured: show next few events stacked like the right side */}
+                <div className="flex flex-col gap-2">
+                  {allEvents.slice(3, 7).map((event: any) => (
                     <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-below-${event.id}`}>
-                      <Card className="hover-elevate transition-all duration-300 cursor-pointer h-36 overflow-hidden bg-card border-border/50">
+                      <Card className="hover-elevate transition-all duration-300 cursor-pointer h-52 overflow-hidden bg-card border-border/50">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
                           {event.image && (
                             <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                          <div className="absolute bottom-2 left-3 right-3 text-white">
+                          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{event.title}</h4>
                           </div>
                         </div>

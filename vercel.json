@@ -13,12 +13,10 @@
     {
       "source": "/api/(.*)",
       "destination": "http://51.75.118.151:20032/api/$1"
-    }
-  ],
-  "routes": [
+    },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

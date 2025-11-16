@@ -611,3 +611,84 @@ export default function Home() {
                                   )}
                                 </div>
                               </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          <aside className="lg:col-span-4 space-y-6 md:space-y-8">
+            {/* Most Viewed */}
+            {mostViewed.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-red-500" />
+                  Most Viewed
+                </h3>
+                <ul className="space-y-2">
+                  {mostViewed.map((post) => (
+                    <li key={post.id}>
+                      <Link href={`/article/${post.id}`} className="text-sm hover:text-primary transition-colors">
+                        <div className="line-clamp-2">{post.title}</div>
+                        <div className="text-xs text-muted-foreground">{post.views} views</div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Popular Tags */}
+            {popularTags.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Popular Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map((tag) => (
+                    <Link key={tag.name} href={`/posts?tag=${tag.name}`}>
+                      <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors">
+                        {tag.name} <span className="text-xs ml-1">({tag.count})</span>
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Posts */}
+            {recentPosts.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Recent Posts</h3>
+                <ul className="space-y-3">
+                  {recentPosts.map((post) => (
+                    <li key={post.id}>
+                      <Link href={`/article/${post.id}`} className="block group">
+                        <div className="relative aspect-video overflow-hidden rounded-md bg-muted/30 mb-2">
+                          <img
+                            src={post.image}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <h4 className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h4>
+                        <div className="text-xs text-muted-foreground mt-1">{post.date}</div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+        </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

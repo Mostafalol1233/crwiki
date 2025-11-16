@@ -1701,14 +1701,17 @@ app.use(express.urlencoded({ extended: false }));
   if (process.env.AUTO_SEED === 'true') {
     (async () => {
       try {
+        // Wait a bit for server to fully start
+        await new Promise(resolve => setTimeout(resolve, 1000));
         log('🌱 AUTO_SEED enabled: running seed-from-urls...');
         // Import and run seed script
-        const { default: seedDatabase } = await import('./seed-from-urls.js').catch(() => ({ default: null }));
-        if (seedDatabase) {
+        const seedModule = await import('./seed-from-urls.js');
+        const seedDatabase = seedModule.default;
+        if (seedDatabase && typeof seedDatabase === 'function') {
           await seedDatabase();
           log('✅ Seeding completed');
         } else {
-          log('⚠️ seed-from-urls.js not found or failed to import');
+          log('⚠️ seed-from-urls.js default export is not a function');
         }
       } catch (err) {
         log(`⚠️ Auto-seeding error: ${err.message}`);

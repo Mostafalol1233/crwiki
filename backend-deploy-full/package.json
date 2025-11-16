@@ -16,7 +16,8 @@
     "multer": "^1.4.5-lts.1",
     "express-rate-limit": "^6.7.0",
     "dotenv": "^16.0.3",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
   },
   "optionalDependencies": {
     "axios": "^1.6.0",

@@ -45,7 +45,7 @@ const weaponsData = weaponImages.map((img, i) => ({
   image: `${IMAGE_BASE}/weapons/${img}`
 }));
 
-// ALL mode map images (328 files) - sample the most important ones
+// ALL mode map images (328 files) - using verified existing filenames
 const modesData = [
   { name: "Team Deathmatch - Air Force One", image: `${IMAGE_BASE}/modes/TDM_AirForceOne_01.jpg.jpeg` },
   { name: "Team Deathmatch - Alley Market", image: `${IMAGE_BASE}/modes/TDM_AlleyMarket_01.jpg.jpeg` },
@@ -67,14 +67,22 @@ const modesData = [
   { name: "Team Deathmatch - Sewers", image: `${IMAGE_BASE}/modes/TDM_Sewers_01.jpg.jpeg` },
   { name: "Team Deathmatch - Ship", image: `${IMAGE_BASE}/modes/TDM_Ship_01.jpg.jpeg` },
   { name: "Team Deathmatch - Stadium", image: `${IMAGE_BASE}/modes/TDM_Stadium_01.jpg.jpeg` },
+  { name: "Team Deathmatch - Riverside", image: `${IMAGE_BASE}/modes/TDM_Riverside_01.jpg.jpeg` },
+  { name: "Team Deathmatch - Gallery", image: `${IMAGE_BASE}/modes/TDM_Gallery_01.jpg.jpeg` },
+  { name: "Team Deathmatch - Egypt", image: `${IMAGE_BASE}/modes/TDM_Egypt_01.jpg.jpeg` },
   { name: "Mutation - Twisted Mansion", image: `${IMAGE_BASE}/modes/MHMX_TwistedMansion_01.jpg.jpeg` },
   { name: "Mutation - Void", image: `${IMAGE_BASE}/modes/MHMX_Void2_01.jpg.jpeg` },
+  { name: "Mutation - Colony", image: `${IMAGE_BASE}/modes/MHX_Colony_01.jpg.jpeg` },
   { name: "Ghost Mode - Laboratory", image: `${IMAGE_BASE}/modes/GM_Laboratory_04.jpg.jpeg` },
   { name: "Bomb Mode - Ankara", image: `${IMAGE_BASE}/modes/SND_Ankara3_01.jpg.jpeg` },
+  { name: "Bomb Mode - Central Station", image: `${IMAGE_BASE}/modes/SND_CentralStation01.jpg.jpeg` },
+  { name: "Bomb Mode - Port", image: `${IMAGE_BASE}/modes/SND_Port2_01.jpg.jpeg` },
   { name: "Elimination - Shooting Center", image: `${IMAGE_BASE}/modes/ELM_ShootingCenter01.jpg.jpeg` },
   { name: "Free For All - Farm", image: `${IMAGE_BASE}/modes/FFA_Farm.jpg.jpeg` },
   { name: "Zombie Mode - Metal Rage", image: `${IMAGE_BASE}/modes/ZM1_MetalRage_01.jpg.jpeg` },
+  { name: "Zombie Mode - Evil Den", image: `${IMAGE_BASE}/modes/ZM1_EvilDen_01.jpg.jpeg` },
   { name: "Sky Building", image: `${IMAGE_BASE}/modes/KEM_SkyBuilding_01.jpg.jpeg` },
+  { name: "Aim Master", image: `${IMAGE_BASE}/modes/AIM_AimMaster_01.jpg.jpeg` },
 ];
 
 // ALL 100 Ranks with images

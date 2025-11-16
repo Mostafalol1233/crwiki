@@ -130,44 +130,190 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            {/* Uniform grid: all cards same size, wrapping evenly */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {allEvents.slice(0, 9).map((event: any) => (
-                <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-${event.id}`}>
-                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-24 sm:h-28">
-                    <div className="relative w-full h-full overflow-hidden rounded-md">
-                      {event.image && (
-                        <img
-                          src={event.image}
-                          alt={event.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      )}
-                      {/* Bottom gradient overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-                      {/* Badge at top */}
-                      {event.type && (
-                        <div className="absolute top-1 left-1">
-                          <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-[8px] uppercase font-bold px-1.5 py-0.5">
-                            {event.type === "upcoming" ? "Upcoming" : "Trending"}
-                          </Badge>
-                        </div>
-                      )}
-                      {/* Title and date at bottom */}
-                      <div className="absolute bottom-1 left-1.5 right-1.5 text-white">
-                        <h4 className="font-semibold text-[10px] sm:text-xs line-clamp-1">{event.title}</h4>
-                        {event.date && (
-                          <p className="text-[8px] text-white/80 flex items-center gap-0.5 mt-0.5 line-clamp-1">
-                            <Calendar className="h-2 w-2" />
-                            {event.date}
-                          </p>
+            {/* CrossFire style: 1 large right, 2 square left, 2 square bottom left, 1 large bottom right */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Left column: 2 square cards stacked */}
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                {allEvents[0] && (
+                  <Link href={`/events/${allEvents[0].id}`} className="block" key={allEvents[0].id} data-testid={`home-event-left-top-${allEvents[0].id}`}>
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                        {allEvents[0].image && (
+                          <img
+                            src={allEvents[0].image}
+                            alt={allEvents[0].title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         )}
+                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        {allEvents[0].type && (
+                          <div className="absolute top-3 left-3">
+                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
+                              {allEvents[0].type === "upcoming" ? "Upcoming" : "Trending"}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <h4 className="font-semibold text-sm line-clamp-2">{allEvents[0].title}</h4>
+                          {allEvents[0].date && (
+                            <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
+                              <Calendar className="h-3 w-3" />
+                              {allEvents[0].date}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+                    </Card>
+                  </Link>
+                )}
+                
+                {allEvents[1] && (
+                  <Link href={`/events/${allEvents[1].id}`} className="block" key={allEvents[1].id} data-testid={`home-event-left-bottom-${allEvents[1].id}`}>
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                        {allEvents[1].image && (
+                          <img
+                            src={allEvents[1].image}
+                            alt={allEvents[1].title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        {allEvents[1].type && (
+                          <div className="absolute top-3 left-3">
+                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
+                              {allEvents[1].type === "upcoming" ? "Upcoming" : "Trending"}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <h4 className="font-semibold text-sm line-clamp-2">{allEvents[1].title}</h4>
+                          {allEvents[1].date && (
+                            <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
+                              <Calendar className="h-3 w-3" />
+                              {allEvents[1].date}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                )}
+              </div>
+
+              {/* Right column: 1 large card */}
+              <div className="lg:col-span-2">
+                {allEvents[2] && (
+                  <Link href={`/events/${allEvents[2].id}`} className="block" key={allEvents[2].id} data-testid={`home-event-right-featured-${allEvents[2].id}`}>
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px] w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                        {allEvents[2].image && (
+                          <img
+                            src={allEvents[2].image}
+                            alt={allEvents[2].title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                        {allEvents[2].type && (
+                          <div className="absolute top-4 left-4">
+                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-sm uppercase font-bold px-3 py-1">
+                              {allEvents[2].type === "upcoming" ? "Upcoming" : "Featured"}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                          <h3 className="font-bold text-lg md:text-xl line-clamp-3 mb-2">{allEvents[2].title}</h3>
+                          {allEvents[2].date && (
+                            <p className="text-sm text-white/90 flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {allEvents[2].date}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                )}
+              </div>
             </div>
+
+            {/* Bottom row: 2 squares left, 1 large right */}
+            {(allEvents[3] || allEvents[4] || allEvents[5]) && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+                {/* Left: 2 squares */}
+                <div className="lg:col-span-1 flex flex-col gap-4">
+                  {allEvents[3] && (
+                    <Link href={`/events/${allEvents[3].id}`} className="block" key={allEvents[3].id} data-testid={`home-event-bottom-left-top-${allEvents[3].id}`}>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
+                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                          {allEvents[3].image && (
+                            <img
+                              src={allEvents[3].image}
+                              alt={allEvents[3].title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="font-semibold text-sm line-clamp-2">{allEvents[3].title}</h4>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  )}
+                  
+                  {allEvents[4] && (
+                    <Link href={`/events/${allEvents[4].id}`} className="block" key={allEvents[4].id} data-testid={`home-event-bottom-left-bottom-${allEvents[4].id}`}>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
+                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                          {allEvents[4].image && (
+                            <img
+                              src={allEvents[4].image}
+                              alt={allEvents[4].title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="font-semibold text-sm line-clamp-2">{allEvents[4].title}</h4>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  )}
+                </div>
+
+                {/* Right: 1 large */}
+                <div className="lg:col-span-2">
+                  {allEvents[5] && (
+                    <Link href={`/events/${allEvents[5].id}`} className="block" key={allEvents[5].id} data-testid={`home-event-bottom-right-${allEvents[5].id}`}>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px]">
+                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                          {allEvents[5].image && (
+                            <img
+                              src={allEvents[5].image}
+                              alt={allEvents[5].title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4 text-white">
+                            <h3 className="font-bold text-lg md:text-xl line-clamp-3">{allEvents[5].title}</h3>
+                            {allEvents[5].date && (
+                              <p className="text-sm text-white/90 flex items-center gap-2 mt-2">
+                                <Calendar className="h-4 w-4" />
+                                {allEvents[5].date}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         )}
 

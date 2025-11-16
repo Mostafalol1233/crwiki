@@ -131,10 +131,10 @@ export default function Home() {
               </Link>
             </div>
             {/* Uniform grid: all cards same size, wrapping evenly */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {allEvents.slice(0, 9).map((event: any) => (
                 <Link href={`/events/${event.id}`} className="block" key={event.id} data-testid={`home-event-${event.id}`}>
-                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-40">
+                  <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-24 sm:h-28">
                     <div className="relative w-full h-full overflow-hidden rounded-md">
                       {event.image && (
                         <img
@@ -144,21 +144,21 @@ export default function Home() {
                         />
                       )}
                       {/* Bottom gradient overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
                       {/* Badge at top */}
                       {event.type && (
-                        <div className="absolute top-2 left-2">
-                          <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-[10px] uppercase font-bold">
+                        <div className="absolute top-1 left-1">
+                          <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-[8px] uppercase font-bold px-1.5 py-0.5">
                             {event.type === "upcoming" ? "Upcoming" : "Trending"}
                           </Badge>
                         </div>
                       )}
                       {/* Title and date at bottom */}
-                      <div className="absolute bottom-2 left-2 right-2 text-white">
-                        <h4 className="font-semibold text-sm line-clamp-2">{event.title}</h4>
+                      <div className="absolute bottom-1 left-1.5 right-1.5 text-white">
+                        <h4 className="font-semibold text-[10px] sm:text-xs line-clamp-1">{event.title}</h4>
                         {event.date && (
-                          <p className="text-xs text-white/80 flex items-center gap-1 mt-1">
-                            <Calendar className="h-3 w-3" />
+                          <p className="text-[8px] text-white/80 flex items-center gap-0.5 mt-0.5 line-clamp-1">
+                            <Calendar className="h-2 w-2" />
                             {event.date}
                           </p>
                         )}

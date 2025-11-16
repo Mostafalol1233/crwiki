@@ -11,26 +11,38 @@ import fetch from "node-fetch";
 const API_BASE = process.env.API_BASE_URL || "http://localhost:20032";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sasasasa";
 
-// External URLs for mercenary images (point to your image host, CDN, or Vercel frontend)
-const MERCENARY_IMAGE_BASE = process.env.MERCENARY_IMAGE_BASE || "https://crossfire.wiki/assets";
-
+// Weapon data - NO IMAGES (to be added separately)
 const weaponsData = [
-  { name: "AK-47", description: "Assault rifle", category: "Rifle", image: `${MERCENARY_IMAGE_BASE}/merc-wolf.jpg` },
-  { name: "M4A1", description: "Carbine", category: "Rifle", image: `${MERCENARY_IMAGE_BASE}/merc-vipers.jpg` },
-  { name: "AWP Dragon Lore", description: "Sniper rifle", category: "Sniper", image: `${MERCENARY_IMAGE_BASE}/merc-sisterhood.jpg` },
+  { name: "AK-47", description: "Automatic Rifle", category: "Rifle", image: "" },
+  { name: "M4A1", description: "Carbine Rifle", category: "Rifle", image: "" },
+  { name: "AWP Dragon Lore", description: "Sniper Rifle", category: "Sniper", image: "" },
+  { name: "Combat Knife", description: "Melee Weapon", category: "Melee", image: "" },
+  { name: "USP 45", description: "Pistol", category: "Pistol", image: "" },
+  { name: "Grenade", description: "Explosive", category: "Equipment", image: "" },
 ];
 
+// Game modes data - NO IMAGES (to be added separately)
 const modesData = [
-  { name: "Team Deathmatch", description: "Classic 5v5 battle", image: `${MERCENARY_IMAGE_BASE}/merc-blackmamba.jpg` },
-  { name: "Mutation", description: "Infected vs humans", image: `${MERCENARY_IMAGE_BASE}/merc-desperado.jpg` },
-  { name: "Ghost Mode", description: "Stealth gameplay", image: `${MERCENARY_IMAGE_BASE}/merc-ronin.jpg` },
+  { name: "Team Deathmatch", description: "Classic 5v5 battle", image: "" },
+  { name: "Mutation", description: "Infected vs humans", image: "" },
+  { name: "Ghost Mode", description: "Stealth vs Ghost", image: "" },
+  { name: "Elimination", description: "One life per round", image: "" },
+  { name: "Bomb Mode", description: "Plant and defend", image: "" },
+  { name: "Training", description: "Solo practice mode", image: "" },
 ];
 
+// Ranks data - NO EMBLEMS (to be added separately)
 const ranksData = [
-  { name: "Private", tier: 1, emblem: `${MERCENARY_IMAGE_BASE}/merc-sfg.jpg` },
-  { name: "Sergeant", tier: 5, emblem: `${MERCENARY_IMAGE_BASE}/merc-sisterhood.jpg` },
-  { name: "Major", tier: 10, emblem: `${MERCENARY_IMAGE_BASE}/merc-thoth.jpg` },
-  { name: "General", tier: 15, emblem: `${MERCENARY_IMAGE_BASE}/merc-dean.jpg` },
+  { name: "Private", tier: 1, emblem: "" },
+  { name: "Corporal", tier: 2, emblem: "" },
+  { name: "Sergeant", tier: 3, emblem: "" },
+  { name: "Staff Sergeant", tier: 4, emblem: "" },
+  { name: "Sergeant Major", tier: 5, emblem: "" },
+  { name: "Lieutenant", tier: 6, emblem: "" },
+  { name: "Captain", tier: 7, emblem: "" },
+  { name: "Major", tier: 8, emblem: "" },
+  { name: "Colonel", tier: 9, emblem: "" },
+  { name: "General", tier: 10, emblem: "" },
 ];
 
 async function seedDatabase() {

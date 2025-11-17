@@ -3476,20 +3476,49 @@ export default function Admin() {
                           type="file"
                           multiple
                           accept=".mp3,audio/mpeg"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const files = Array.from(e.target.files || []);
                             setAudioFiles(files);
-                            const urls = files.map(f => URL.createObjectURL(f));
-                            setUploadedAudioUrls(urls);
+                            
+                            // Upload files and get URLs
+                            const uploadedUrls: string[] = [];
+                            for (const file of files) {
+                              try {
+                                const formData = new FormData();
+                                formData.append("audio", file);
+                                
+                                const response = await fetch("/api/upload-audio", {
+                                  method: "POST",
+                                  body: formData,
+                                  headers: {
+                                    "Authorization": `Bearer ${localStorage.getItem("auth_token")}`
+                                  }
+                                });
+                                
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  uploadedUrls.push(data.url);
+                                  console.log("✓ Audio uploaded:", file.name, "->", data.url);
+                                } else {
+                                  const error = await response.json();
+                                  toast({ title: `Failed to upload ${file.name}`, description: error.error, variant: "destructive" });
+                                }
+                              } catch (err) {
+                                console.error("Upload error:", err);
+                                toast({ title: `Upload error for ${file.name}`, description: String(err), variant: "destructive" });
+                              }
+                            }
+                            
+                            setUploadedAudioUrls(uploadedUrls);
                             setCreateMercForm(s => ({
                               ...s,
-                              soundsText: urls.join('\n')
+                              soundsText: uploadedUrls.join('\n')
                             }));
                           }}
                         />
                         {audioFiles.length > 0 && (
                           <p className="text-sm text-gray-600 mt-2">
-                            {audioFiles.length} MP3 file(s) selected
+                            {audioFiles.length} MP3 file(s) selected, {uploadedAudioUrls.length} uploaded
                           </p>
                         )}
                       </div>
@@ -3663,20 +3692,49 @@ export default function Admin() {
                         type="file"
                         multiple
                         accept=".mp3,audio/mpeg"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const files = Array.from(e.target.files || []);
                           setAudioFiles(files);
-                          const urls = files.map(f => URL.createObjectURL(f));
-                          setUploadedAudioUrls(urls);
+                          
+                          // Upload files and get URLs
+                          const uploadedUrls: string[] = [];
+                          for (const file of files) {
+                            try {
+                              const formData = new FormData();
+                              formData.append("audio", file);
+                              
+                              const response = await fetch("/api/upload-audio", {
+                                method: "POST",
+                                body: formData,
+                                headers: {
+                                  "Authorization": `Bearer ${localStorage.getItem("auth_token")}`
+                                }
+                              });
+                              
+                              if (response.ok) {
+                                const data = await response.json();
+                                uploadedUrls.push(data.url);
+                                console.log("✓ Audio uploaded:", file.name, "->", data.url);
+                              } else {
+                                const error = await response.json();
+                                toast({ title: `Failed to upload ${file.name}`, description: error.error, variant: "destructive" });
+                              }
+                            } catch (err) {
+                              console.error("Upload error:", err);
+                              toast({ title: `Upload error for ${file.name}`, description: String(err), variant: "destructive" });
+                            }
+                          }
+                          
+                          setUploadedAudioUrls(uploadedUrls);
                           setMercForm(s => ({
                             ...s,
-                            soundsText: urls.join('\n')
+                            soundsText: uploadedUrls.join('\n')
                           }));
                         }}
                       />
                       {audioFiles.length > 0 && (
                         <p className="text-sm text-gray-600 mt-2">
-                          {audioFiles.length} MP3 file(s) selected
+                          {audioFiles.length} MP3 file(s) selected, {uploadedAudioUrls.length} uploaded
                         </p>
                       )}
                     </div>

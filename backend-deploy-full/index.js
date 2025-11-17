@@ -1538,6 +1538,44 @@ async function registerRoutes(app2) {
     }
   });
 
+  // Audio file upload endpoint
+  app2.post("/api/upload-audio", uploadLimiter, requireAuth, upload.single("audio"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+      
+      // Validate audio file type
+      if (!["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"].includes(req.file.mimetype)) {
+        return res.status(400).json({ error: "Invalid audio file type. Supported: MP3, WAV, OGG, WebM" });
+      }
+      
+      const formData = new FormData();
+      formData.append("reqtype", "fileupload");
+      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+      formData.append("fileToUpload", blob, req.file.originalname);
+      
+      console.log("Uploading audio file:", req.file.originalname, "size:", req.file.size, "type:", req.file.mimetype);
+      
+      const response = await fetch("https://catbox.moe/user/api.php", {
+        method: "POST",
+        body: formData
+      });
+      
+      if (!response.ok) {
+        console.error("Catbox upload failed:", response.status);
+        throw new Error("Failed to upload to catbox.moe");
+      }
+      
+      const audioUrl = await response.text();
+      console.log("✓ Audio uploaded successfully:", audioUrl.trim());
+      res.json({ url: audioUrl.trim() });
+    } catch (error) {
+      console.error("✗ Audio upload error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Scraper API key middleware
   const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || "";
 

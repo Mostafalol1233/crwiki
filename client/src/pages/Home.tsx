@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { HeroSection } from "@/components/HeroSection";
+import PageSEO from "@/components/PageSEO";
 import { ArticleCard, type Article } from "@/components/ArticleCard";
 import { EventsRibbon } from "@/components/EventsRibbon";
 import { Sidebar } from "@/components/Sidebar";
@@ -103,7 +104,14 @@ export default function Home() {
   }, [allPosts]);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
+    <>
+      <PageSEO
+        title={"CrossFire Wiki — Guides, Weapons, Modes & Community"}
+        description={"CrossFire Wiki: weapons, modes, tutorials, ranks, and community resources. Master Crossfire with up-to-date guides and maps."}
+        keywords={["CrossFire", "CrossFire wiki", "weapons", "modes", "tutorials"]}
+        canonicalPath="/"
+      />
+      <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
       {/* Fire sparks / glow at the edges of the interface */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 -left-24 w-72 h-72 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-strong" />

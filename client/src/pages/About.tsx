@@ -1,10 +1,17 @@
 import { useLanguage } from "@/components/LanguageProvider";
+import PageSEO from "@/components/PageSEO";
 
 export default function About() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen">
+    <>
+      <PageSEO
+        title={"About — CrossFire Wiki"}
+        description={"About CrossFire Wiki — learn who maintains this site and our mission to provide accurate CrossFire game guides and community resources."}
+        canonicalPath="/about"
+      />
+      <div className="min-h-screen py-12 md:py-20 bg-background">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <h1 className="text-4xl md:text-5xl font-bold mb-8">
           {t("aboutBimora")}

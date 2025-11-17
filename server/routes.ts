@@ -1051,26 +1051,26 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
   app.patch("/api/mercenaries/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, role, image, sounds } = req.body;
+      const { name, role, image, description } = req.body;
 
-      // Get current mercenary data
-      const mercenary = await storage.getAllMercenaries();
-      const current = mercenary.find((m) => m.id === id);
+      // Get all mercenaries and find the one with matching id
+      const allMercenaries = await storage.getAllMercenaries();
+      const current = allMercenaries.find((m) => m.id === id);
 
       if (!current) {
         return res.status(404).json({ error: "Mercenary not found" });
       }
 
-      // Update mercenary with new image and sounds
+      // Build update object with only provided fields
       const updated = {
         ...current,
         ...(typeof name === 'string' && name.trim() ? { name: name.trim() } : {}),
         ...(typeof role === 'string' && role.trim() ? { role: role.trim() } : {}),
+        ...(typeof description === 'string' && description.trim() ? { description: description.trim() } : {}),
         ...(image ? { image } : {}),
-        ...(Array.isArray(sounds) ? { sounds: sounds.slice(0, 30) } : {}), // Max 30 sounds
       };
 
-      // For now, update in memory (in production, use database)
+      // Update mercenary in storage
       await storage.updateMercenary(id, updated);
       res.json(updated);
     } catch (error: any) {

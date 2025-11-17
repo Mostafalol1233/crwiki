@@ -1,4 +1,19 @@
 User-agent: *
+# Allow core public content
 Allow: /
 
+# Disallow admin, API endpoints and developer-only areas
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api
+Disallow: /server
+Disallow: /scripts
+
+# Avoid indexing query pages and session-specific URLs
+Disallow: /*?*
+
+# Sitemap (absolute URL)
 Sitemap: https://crossfire.wiki/sitemap.xml
+
+# If you use staging domains, add separate rules per host
+# Host: crossfire.wiki

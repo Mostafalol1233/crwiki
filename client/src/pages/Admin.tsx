@@ -67,6 +67,7 @@ import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
 import CFDataScraper from "@/components/CFDataScraper";
 import RestorationManager from "@/components/RestorationManager";
+import { PasteFormatter } from "@/components/PasteFormatter";
 import { Switch } from "@/components/ui/switch";
 import type { SiteSettings } from "@/types/site-settings";
 
@@ -97,6 +98,10 @@ export default function Admin() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Paste formatter state
+  const [isPasteFormatterOpen, setIsPasteFormatterOpen] = useState(false);
+  const [pastedContent, setPastedContent] = useState("");
 
   // Reviews management (super_admin only)
   const [reviewsDialogOpen, setReviewsDialogOpen] = useState(false);
@@ -1824,7 +1829,23 @@ export default function Admin() {
                           <option value="Tutorials">Tutorials</option>
                         </select>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Content (English)</label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">Content (English)</label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const text = prompt("Paste your content here:");
+                                if (text) {
+                                  setPastedContent(text);
+                                  setIsPasteFormatterOpen(true);
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              📋 Smart Paste
+                            </Button>
+                          </div>
                           <div data-testid="input-news-content">
                             <ReactQuill
                               theme="snow"
@@ -1846,7 +1867,23 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Content (Arabic) - المحتوى بالعربية</label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">Content (Arabic) - المحتوى بالعربية</label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const text = prompt("Paste your content here:");
+                                if (text) {
+                                  setPastedContent(text);
+                                  setIsPasteFormatterOpen(true);
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              📋 Smart Paste
+                            </Button>
+                          </div>
                           <div data-testid="input-news-content-ar">
                             <ReactQuill
                               theme="snow"
@@ -1968,6 +2005,15 @@ export default function Admin() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  <PasteFormatter
+                    isOpen={isPasteFormatterOpen}
+                    onClose={() => setIsPasteFormatterOpen(false)}
+                    pastedText={pastedContent}
+                    onFormatted={(formattedHtml) => {
+                      setNewsForm({ ...newsForm, content: formattedHtml });
+                      setPastedContent("");
+                    }}
+                  />
                 </div>
 
                 <div className="space-y-3">

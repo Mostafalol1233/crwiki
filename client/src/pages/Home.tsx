@@ -840,9 +840,10 @@ export default function Home() {
             )}
           </aside>
         </div>
-          </>
+        </>
         )}
       </div>
     </div>
+    </>
   );
 }

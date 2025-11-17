@@ -733,14 +733,18 @@ export default function Admin() {
 
   const createMercenaryMutation = useMutation({
     mutationFn: (data: any) => apiRequest("/api/mercenaries", "POST", data),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("Mercenary created:", response);
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setIsCreatingMerc(false);
       setCreateMercForm({ name: "", image: "", role: "", soundsText: "" });
-      toast({ title: "Mercenary created successfully" });
+      setAudioFiles([]);
+      setUploadedAudioUrls([]);
+      toast({ title: "Mercenary created successfully", description: `${response?.sounds?.length || 0} sounds saved` });
     },
-    onError: () => {
-      toast({ title: "Failed to create mercenary", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Failed to create mercenary:", error);
+      toast({ title: "Failed to create mercenary", description: error.message, variant: "destructive" });
     },
   });
 
@@ -3523,6 +3527,7 @@ export default function Admin() {
                               toast({ title: 'Add at least one sound URL or MP3 file', variant: 'destructive' });
                               return;
                             }
+                            console.log("Creating mercenary:", { name: createMercForm.name, sounds, soundsCount: sounds.length });
                             createMercenaryMutation.mutate({
                               name: createMercForm.name,
                               image: createMercForm.image,

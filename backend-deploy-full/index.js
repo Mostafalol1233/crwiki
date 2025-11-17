@@ -1213,17 +1213,25 @@ async function registerRoutes(app2) {
   app2.post("/api/mercenaries", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const { name, role, image, sounds } = req.body;
+      console.log("POST /api/mercenaries - Received:", { name, role, image, soundsType: typeof sounds, soundsIsArray: Array.isArray(sounds), soundsLength: sounds?.length });
+      
       if (!name || !sounds || !Array.isArray(sounds) || sounds.length === 0) {
+        console.error("Validation failed - name:", name, "sounds:", sounds, "isArray:", Array.isArray(sounds));
         return res.status(400).json({ error: "Name and sounds array are required" });
       }
+      
+      console.log("Creating mercenary with sounds:", sounds.slice(0, 3), `...total: ${sounds.length}`);
       const merc = await MercenaryModel.create({
         name,
         role: role || "",
         image: image || "",
         sounds: sounds.slice(0, 30)
       });
+      
+      console.log("✓ Mercenary created successfully:", { id: merc._id, name: merc.name, soundsCount: merc.sounds.length });
       res.status(201).json({ ...merc.toObject(), id: merc._id });
     } catch (error) {
+      console.error("✗ Error creating mercenary:", error);
       res.status(500).json({ error: error.message });
     }
   });

@@ -28,18 +28,73 @@ export function PasteFormatter({
   const [editorContent, setEditorContent] = useState(pastedText);
   const [selectedTab, setSelectedTab] = useState("preview");
 
+  // Strip inline styles from HTML
+  const stripInlineStyles = (html: string): string => {
+    // Create a temporary div to parse HTML
+    const parser = new DOMParser();
+    try {
+      const doc = parser.parseFromString(html, "text/html");
+      
+      // Remove all style attributes from all elements
+      const allElements = doc.querySelectorAll("*");
+      allElements.forEach((el) => {
+        el.removeAttribute("style");
+        el.removeAttribute("class");
+        // Preserve basic formatting tags only
+        if (!["P", "STRONG", "B", "EM", "I", "U", "BR", "DIV", "SPAN", "H1", "H2", "H3"].includes(el.tagName)) {
+          // For other tags, keep content but replace tag with paragraph
+          const parent = el.parentNode;
+          if (parent) {
+            const textContent = el.textContent || "";
+            if (textContent.trim()) {
+              parent.replaceChild(doc.createTextNode(textContent), el);
+            }
+          }
+        }
+      });
+      
+      let result = doc.body.innerHTML;
+      // Clean up empty tags and normalize
+      result = result
+        .replace(/<p[^>]*>/g, "<p>") // Normalize p tags
+        .replace(/<strong[^>]*>/g, "<strong>") // Normalize strong tags
+        .replace(/<em[^>]*>/g, "<em>") // Normalize em tags
+        .replace(/<u[^>]*>/g, "<u>") // Normalize u tags
+        .replace(/<span[^>]*>/g, "") // Remove spans
+        .replace(/<\/span>/g, "") // Remove span closers
+        .replace(/<div>/g, "<p>") // Convert divs to paragraphs
+        .replace(/<\/div>/g, "</p>")
+        .replace(/<br\s*\/?>/gi, "") // Remove br tags
+        .replace(/<p>\s*<\/p>/g, "") // Remove empty paragraphs
+        .replace(/\s+/g, " ") // Normalize whitespace
+        .trim();
+      
+      return result;
+    } catch (e) {
+      // Fallback to regex if DOMParser fails
+      console.warn("DOMParser failed, using regex fallback", e);
+      return html
+        .replace(/\s*style="[^"]*"/gi, "")
+        .replace(/\s*class="[^"]*"/gi, "")
+        .replace(/<(?!\/?(p|strong|b|em|i|u|br|div|span)\b)[^>]*>/gi, "")
+        .replace(/<span[^>]*>/gi, "")
+        .replace(/<\/span>/gi, "")
+        .trim();
+    }
+  };
+
   const handleKeepAsIs = () => {
     // Convert plain text to HTML with line breaks preserved
     const html = pastedText
       .split("\n")
       .map((line) => (line.trim() ? `<p>${line}</p>` : ""))
       .join("");
-    onFormatted(html);
+    onFormatted(stripInlineStyles(html));
     handleClose();
   };
 
   const handleUseEditor = () => {
-    onFormatted(editorContent);
+    onFormatted(stripInlineStyles(editorContent));
     handleClose();
   };
 
@@ -93,7 +148,7 @@ export function PasteFormatter({
       })
       .join("");
 
-    setEditorContent(formatted);
+    setEditorContent(stripInlineStyles(formatted));
     setSelectedTab("editor");
   };
 

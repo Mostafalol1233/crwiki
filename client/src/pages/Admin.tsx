@@ -71,6 +71,7 @@ import { PasteFormatter } from "@/components/PasteFormatter";
 import { AdvancedContentManager } from "@/components/AdvancedContentManager";
 import { Switch } from "@/components/ui/switch";
 import type { SiteSettings } from "@/types/site-settings";
+import type { ScrapedEvent } from "@shared/types";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
@@ -798,6 +799,17 @@ export default function Admin() {
     },
   });
 
+  const scrapeEventsMutation = useMutation({
+    mutationFn: () => apiRequest("/api/scrape-events", "POST", { count: 5 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({ title: "Events scraped and created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to scrape events", description: error.message, variant: "destructive" });
+    },
+  });
+
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -1114,6 +1126,10 @@ export default function Admin() {
                     <span className="hidden sm:inline">Subscribers</span>
                   </TabsTrigger>
                 )}
+                <TabsTrigger value="scraper" data-testid="tab-scraper">
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Scraper</span>
+                </TabsTrigger>
                 <TabsTrigger value="mercenaries" data-testid="tab-mercenaries">
                   <Star className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Mercenaries</span>
@@ -1541,19 +1557,29 @@ export default function Admin() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-semibold">Events</h2>
-                  <Dialog open={isCreatingEvent} onOpenChange={(open) => {
-                    setIsCreatingEvent(open);
-                    if (!open) {
-                      setEditingEvent(null);
-                      resetEventForm();
-                    }
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button data-testid="button-create-event">
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Event
-                      </Button>
-                    </DialogTrigger>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => scrapeEventsMutation.mutate()}
+                      disabled={scrapeEventsMutation.isPending}
+                      data-testid="button-scrape-events"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
+                    </Button>
+                    <Dialog open={isCreatingEvent} onOpenChange={(open) => {
+                      setIsCreatingEvent(open);
+                      if (!open) {
+                        setEditingEvent(null);
+                        resetEventForm();
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-create-event">
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Event
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
                       <DialogHeader>
                         <DialogTitle>

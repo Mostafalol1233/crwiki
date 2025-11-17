@@ -229,3 +229,32 @@ export function requirePostManager(req: Request, res: Response, next: NextFuncti
 
   next();
 }
+
+// Scraper API Key middleware - allows API key or JWT token
+export function requireScraperAuth(req: Request, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-scraper-api-key'] as string || req.headers['x-api-key'] as string;
+  const expectedKey = process.env.SCRAPER_API_KEY;
+
+  // Check if API key provided and matches
+  if (apiKey && expectedKey && apiKey === expectedKey) {
+    // Set user as super_admin if API key is valid
+    (req as any).user = { id: 'scraper-api', roles: ['super_admin'] };
+    return next();
+  }
+
+  // Fall back to JWT token auth
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized: Provide API key via X-Scraper-API-Key header or Bearer token" });
+  }
+
+  const token = authHeader.substring(7);
+  const payload = verifyToken(token);
+
+  if (!payload) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+
+  (req as any).user = payload;
+  next();
+}

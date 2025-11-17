@@ -7,7 +7,7 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { storage } from "./storage";
 import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
 import type { InsertSellerReview } from "@shared/mongodb-schema";
-import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
+import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers";
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
 import DOMPurify from 'isomorphic-dompurify';
@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scraping routes
-  app.get("/api/scrape/forum-list", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.get("/api/scrape/forum-list", requireScraperAuth, async (req, res) => {
     try {
       const posts = await scrapeForumAnnouncements();
       res.json(posts);
@@ -375,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scrape/event-details", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.post("/api/scrape/event-details", requireScraperAuth, async (req, res) => {
     try {
       const { url } = req.body;
       
@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scrape/multiple-events", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.post("/api/scrape/multiple-events", requireScraperAuth, async (req, res) => {
     try {
       const { urls } = req.body;
 
@@ -406,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scrape CrossFire official pages (Admin only)
-  app.get("/api/scrape/ranks", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.get("/api/scrape/ranks", requireScraperAuth, async (req, res) => {
     try {
       const ranks = await scrapeRanks();
       res.json(ranks);
@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/scrape/modes", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.get("/api/scrape/modes", requireScraperAuth, async (req, res) => {
     try {
       const modes = await scrapeModes();
       res.json(modes);
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/scrape/weapons", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.get("/api/scrape/weapons", requireScraperAuth, async (req, res) => {
     try {
       const weapons = await scrapeWeapons();
       res.json(weapons);

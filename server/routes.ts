@@ -366,6 +366,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scraping routes
+  // Super Admin: Scrape forum and auto-create events (easy one-click for admins)
+  app.post("/api/admin/scrape-and-create-events", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      console.log("🔍 Super Admin: Scraping forum announcements and creating events...");
+      
+      // Scrape forum announcements
+      const posts = await scrapeForumAnnouncements();
+      
+      if (!posts || posts.length === 0) {
+        return res.status(400).json({ error: "No announcements found to scrape" });
+      }
+
+      // Create events from scraped posts
+      const createdEvents = [];
+      for (const post of posts) {
+        try {
+          const eventData = {
+            title: post.title.substring(0, 200),
+            description: post.title,
+            date: new Date().toISOString().split('T')[0],
+            type: 'announcement',
+            image: 'https://files.catbox.moe/wof38b.jpeg'
+          };
+          
+          const event = await storage.createEvent(eventData);
+          createdEvents.push(event);
+        } catch (err: any) {
+          console.warn(`Failed to create event from post: ${err.message}`);
+          // Continue with next post
+        }
+      }
+
+      res.json({
+        message: `✅ Scraped and created ${createdEvents.length} events from forum`,
+        events: createdEvents
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/scrape/forum-list", requireScraperAuth, async (req, res) => {
     try {
       const posts = await scrapeForumAnnouncements();

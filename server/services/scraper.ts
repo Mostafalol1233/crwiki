@@ -79,20 +79,22 @@ export async function scrapeForumAnnouncements(): Promise<ScrapedForumPost[]> {
     const $ = cheerio.load(response.data);
     const posts: ScrapedForumPost[] = [];
 
-    $('.ItemDiscussion, .DiscussionRow, .Item-Discussion, .Discussion').each((_, element) => {
+    $('td.DiscussionName, .DiscussionName').each((_, element) => {
       const $el = $(element);
-      
-      const titleLink = $el.find('a.Title, .Title a, .DiscussionName a, a[href*="/discussion/"]').first();
+
+      const titleLink = $el.find('a[href*="/discussion/"]').first();
       const title = titleLink.text().trim();
       const href = titleLink.attr('href');
-      
+
       if (!title || !href) return;
-      
+
       const fullUrl = href.startsWith('http') ? href : `${FORUM_BASE_URL}${href}`;
       const discussionId = href.match(/\/discussion\/(\d+)/)?.[1] || '';
-      
-      const dateEl = $el.find('.MItem-LastCommentDate time, time, .DateCreated, .LastCommentDate').first();
-      const date = dateEl.attr('title') || dateEl.text().trim() || new Date().toLocaleDateString();
+
+      // Try to find date in the same row or nearby
+      const $row = $el.closest('tr');
+      const dateEl = $row.find('time, .DateCreated, .LastCommentDate, [class*="date"]').first();
+      const date = dateEl.attr('datetime') || dateEl.attr('title') || dateEl.text().trim() || new Date().toLocaleDateString();
 
       posts.push({
         url: fullUrl,
@@ -113,17 +115,59 @@ export async function scrapeEventDetails(url: string): Promise<ScrapedEvent> {
   try {
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
       },
-      timeout: 15000
+      timeout: 15000,
+      maxRedirects: 5
     });
 
     const $ = cheerio.load(response.data);
-    
-    const title = $('h1.DiscussionName, h1.PageTitle, h1, .DiscussionHeader h1, .Title h1, [class*="discussion"] h1').first().text().trim() || 'Untitled Event';
-    
-    const dateEl = $('.DateCreated time, .MItem-LastCommentDate time, time[datetime], .CommentInfo time, [class*="date"] time').first();
-    const date = dateEl.attr('datetime') || dateEl.attr('title') || dateEl.text().trim() || new Date().toLocaleDateString();
+
+    // Updated title selectors for current forum structure
+    const titleSelectors = [
+      'h1.DiscussionName',
+      'h1.PageTitle',
+      'h1',
+      '.DiscussionHeader h1',
+      '.Title h1',
+      '[class*="discussion"] h1',
+      '.DiscussionName h1',
+      'td.DiscussionName a'
+    ];
+
+    let title = '';
+    for (const selector of titleSelectors) {
+      const element = $(selector).first();
+      if (element.length > 0) {
+        title = element.text().trim();
+        if (title) break;
+      }
+    }
+    title = title || 'Untitled Event';
+
+    // Updated date selectors
+    const dateSelectors = [
+      '.DateCreated time',
+      '.MItem-LastCommentDate time',
+      'time[datetime]',
+      '.CommentInfo time',
+      '[class*="date"] time',
+      '.DiscussionDate',
+      '.LastCommentDate',
+      'time'
+    ];
+
+    let date = '';
+    for (const selector of dateSelectors) {
+      const element = $(selector).first();
+      if (element.length > 0) {
+        date = element.attr('datetime') || element.attr('title') || element.text().trim();
+        if (date) break;
+      }
+    }
+    date = date || new Date().toLocaleDateString();
     
     const contentSelectors = [
       '.Message.userContent',

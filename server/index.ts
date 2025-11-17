@@ -11,6 +11,9 @@ import { insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/
 const app = express();
 export default app;
 
+// Trust proxy for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown

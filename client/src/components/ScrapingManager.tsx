@@ -52,7 +52,13 @@ export default function ScrapingManager() {
     setIsScraping(true);
     
     try {
-      const listResponse = await fetch("/api/scrape/forum-list");
+      const scraperApiKey = process.env.VITE_SCRAPER_API_KEY || localStorage.getItem('scraperApiKey');
+      const headers: HeadersInit = {};
+      if (scraperApiKey) {
+        headers['X-Scraper-API-Key'] = scraperApiKey;
+      }
+
+      const listResponse = await fetch("/api/scrape/forum-list", { headers });
       const posts = await listResponse.json();
       
       if (!listResponse.ok || !Array.isArray(posts)) {
@@ -78,6 +84,7 @@ export default function ScrapingManager() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...headers,
         },
         body: JSON.stringify({ urls }),
       });

@@ -2,29 +2,28 @@ import { Link } from "wouter";
 import { SiX, SiYoutube } from "react-icons/si";
 
 export function Footer() {
-  const quickLinks = [
+  const mainLinks = [
     { label: "Home", path: "/" },
     { label: "Weapons", path: "/weapons" },
     { label: "Mercenaries", path: "/mercenaries" },
     { label: "Game Modes", path: "/game-modes" },
     { label: "Ranks", path: "/ranks" },
     { label: "Resources", path: "/resources" },
+  ];
+
+  const contentLinks = [
     { label: "News & Updates", path: "/news" },
     { label: "Posts", path: "/posts" },
     { label: "Tutorials", path: "/tutorials" },
     { label: "Events", path: "/events" },
+  ];
+
+  const supportLinks = [
     { label: "Support", path: "/support" },
     { label: "Create Ticket", path: "/create-ticket" },
     { label: "My Tickets", path: "/my-tickets" },
     { label: "About", path: "/about" },
     { label: "Contact", path: "/contact" },
-  ];
-
-  const exploreLinks = [
-    { label: "Weapons", path: "/weapons" },
-    { label: "Mercenaries", path: "/mercenaries" },
-    { label: "Game Modes", path: "/game-modes" },
-    { label: "Ranks", path: "/ranks" },
   ];
 
   return (
@@ -67,7 +66,7 @@ export function Footer() {
               Quick Links
             </h4>
             <ul className="space-y-2.5">
-              {quickLinks.map((link) => (
+              {mainLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     href={link.path}
@@ -83,10 +82,29 @@ export function Footer() {
 
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
-              Explore
+              Content
             </h4>
             <ul className="space-y-2.5">
-              {exploreLinks.map((link) => (
+              {contentLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    href={link.path}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-sm uppercase tracking-wide mb-4">
+              Support
+            </h4>
+            <ul className="space-y-2.5">
+              {supportLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     href={link.path}

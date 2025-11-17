@@ -26,6 +26,5 @@ replit.md
 .vscode/
 .idea/
  
-# Backend files - do not push backend server code
+# Backend files - keep server code tracked on GitHub
 index (4).js
-server/

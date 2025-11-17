@@ -111,6 +111,31 @@ export default function ScrapingManager() {
     }
   };
 
+  // Simple admin scraping (no API key needed, just JWT)
+  const handleAdminQuickScrape = async () => {
+    setIsScraping(true);
+    
+    try {
+      const response = await apiRequest("/api/admin/scrape-and-create-events", "POST", {});
+      
+      toast({
+        title: "Events Created Successfully",
+        description: `✅ Created ${response.events?.length || 0} events from forum announcements`,
+      });
+      
+      // Refresh events display if needed
+      setScrapedEvents([]);
+    } catch (error: any) {
+      toast({
+        title: "Error Creating Events",
+        description: error.message || "Failed to scrape and create events",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScraping(false);
+    }
+  };
+
   const toggleEventSelection = (url: string) => {
     const newSelected = new Set(selectedEvents);
     if (newSelected.has(url)) {
@@ -265,6 +290,24 @@ export default function ScrapingManager() {
                 <>
                   <Download className="h-4 w-4" />
                   Fetch Events from Forum
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleAdminQuickScrape}
+              disabled={isScraping}
+              variant="secondary"
+              className="gap-2"
+            >
+              {isScraping ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating Events...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Quick Scrape & Create
                 </>
               )}
             </Button>

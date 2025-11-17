@@ -92,6 +92,8 @@ export default function Admin() {
   const [editingMerc, setEditingMerc] = useState<any>(null);
   const [mercForm, setMercForm] = useState({ name: "", role: "", image: "", soundsText: "" });
   const [createMercForm, setCreateMercForm] = useState({ name: "", image: "", role: "", soundsText: "" });
+  const [audioFiles, setAudioFiles] = useState<File[]>([]);
+  const [uploadedAudioUrls, setUploadedAudioUrls] = useState<string[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<string>("");
 
@@ -3465,12 +3467,35 @@ export default function Admin() {
                         />
                       </div>
                       <div>
-                        <Label>Sounds (one URL per line, up to 30)</Label>
+                        <Label>MP3 Audio Files</Label>
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".mp3,audio/mpeg"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            setAudioFiles(files);
+                            const urls = files.map(f => URL.createObjectURL(f));
+                            setUploadedAudioUrls(urls);
+                            setCreateMercForm(s => ({
+                              ...s,
+                              soundsText: urls.join('\n')
+                            }));
+                          }}
+                        />
+                        {audioFiles.length > 0 && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            {audioFiles.length} MP3 file(s) selected
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Or paste Sound URLs (one per line, up to 30)</Label>
                         <Textarea
                           value={createMercForm.soundsText}
                           onChange={(e) => setCreateMercForm((s) => ({ ...s, soundsText: e.target.value }))}
                           placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
-                          className="h-40"
+                          className="h-32"
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -3489,14 +3514,25 @@ export default function Admin() {
                         </Button>
                         <Button
                           onClick={() => {
+                            if (!createMercForm.name.trim()) {
+                              toast({ title: 'Mercenary name is required', variant: 'destructive' });
+                              return;
+                            }
                             const sounds = createMercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
+                            if (sounds.length === 0) {
+                              toast({ title: 'Add at least one sound URL or MP3 file', variant: 'destructive' });
+                              return;
+                            }
                             createMercenaryMutation.mutate({
                               name: createMercForm.name,
                               image: createMercForm.image,
                               role: createMercForm.role,
                               sounds
                             });
+                            setAudioFiles([]);
+                            setUploadedAudioUrls([]);
                           }}
+                          disabled={createMercenaryMutation.isPending}
                         >
                           Create
                         </Button>
@@ -3617,12 +3653,36 @@ export default function Admin() {
                     </div>
 
                     <div>
-                      <Label>Sounds (one URL per line, up to 30)</Label>
+                      <Label>MP3 Audio Files</Label>
+                      <Input
+                        type="file"
+                        multiple
+                        accept=".mp3,audio/mpeg"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setAudioFiles(files);
+                          const urls = files.map(f => URL.createObjectURL(f));
+                          setUploadedAudioUrls(urls);
+                          setMercForm(s => ({
+                            ...s,
+                            soundsText: urls.join('\n')
+                          }));
+                        }}
+                      />
+                      {audioFiles.length > 0 && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          {audioFiles.length} MP3 file(s) selected
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Or paste Sound URLs (one per line, up to 30)</Label>
                       <Textarea
                         value={mercForm.soundsText}
                         onChange={(e) => setMercForm((s) => ({ ...s, soundsText: e.target.value }))}
                         placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
-                        className="h-40"
+                        className="h-32"
                       />
                     </div>
 
@@ -3643,9 +3703,20 @@ export default function Admin() {
                       <Button
                         onClick={() => {
                           if (!editingMerc) return;
+                          if (!mercForm.name.trim()) {
+                            toast({ title: 'Mercenary name is required', variant: 'destructive' });
+                            return;
+                          }
                           const sounds = mercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
+                          if (sounds.length === 0) {
+                            toast({ title: 'Add at least one sound URL or MP3 file', variant: 'destructive' });
+                            return;
+                          }
                           updateMercenaryMutation.mutate({ id: editingMerc.id, data: { name: mercForm.name, role: mercForm.role, image: mercForm.image, sounds } });
+                          setAudioFiles([]);
+                          setUploadedAudioUrls([]);
                         }}
+                        disabled={updateMercenaryMutation.isPending}
                       >
                         Save
                       </Button>

@@ -9,7 +9,7 @@ import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSch
 import type { InsertSellerReview } from "@shared/mongodb-schema";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers";
-import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
+import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
 import DOMPurify from 'isomorphic-dompurify';
 import type { ScrapedEvent } from "@shared/types";
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
@@ -366,6 +366,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scraping routes
+  // Super Admin: Scrape first 5 events from forum announcements
+  app.post("/api/admin/scrape-first-five-events", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      console.log("🔍 Super Admin: Scraping first 5 events from forum announcements...");
+      const events = await scrapeFirstFiveEvents();
+      res.json({
+        message: `✅ Scraped ${events.length} events from forum`,
+        events
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Super Admin: Scrape forum and auto-create events (easy one-click for admins)
   app.post("/api/admin/scrape-and-create-events", requireAuth, requireSuperAdmin, async (req, res) => {
     try {

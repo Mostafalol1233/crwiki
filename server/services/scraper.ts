@@ -321,7 +321,7 @@ export async function scrapeEventDetails(url: string): Promise<ScrapedEvent> {
 
 export async function scrapeMultipleEvents(urls: string[]): Promise<ScrapedEvent[]> {
   const events: ScrapedEvent[] = [];
-  
+
   for (const url of urls) {
     try {
       const event = await scrapeEventDetails(url);
@@ -331,8 +331,20 @@ export async function scrapeMultipleEvents(urls: string[]): Promise<ScrapedEvent
       console.error(`Skipping ${url}: ${error.message}`);
     }
   }
-  
+
   return events;
+}
+
+export async function scrapeFirstFiveEvents(): Promise<ScrapedEvent[]> {
+  try {
+    const posts = await scrapeForumAnnouncements();
+    const firstFive = posts.slice(0, 5);
+    const urls = firstFive.map(post => post.url);
+    return await scrapeMultipleEvents(urls);
+  } catch (error: any) {
+    console.error('Error in scrapeFirstFiveEvents:', error.message);
+    throw new Error(`Failed to scrape first five events: ${error.message}`);
+  }
 }
 
 export interface ScrapedRank {

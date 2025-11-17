@@ -1068,6 +1068,7 @@ export class MongoDBStorage implements IStorage {
       name: merc.name,
       image: merc.image,
       role: merc.role,
+      sounds: merc.sounds || [],
       description: merc.description || ""
     });
     return {
@@ -1075,6 +1076,7 @@ export class MongoDBStorage implements IStorage {
       name: created.name,
       image: created.image,
       role: created.role,
+      sounds: created.sounds || [],
       description: created.description || "",
       createdAt: created.createdAt
     };
@@ -1086,6 +1088,7 @@ export class MongoDBStorage implements IStorage {
       name: merc.name,
       image: merc.image,
       role: merc.role,
+      sounds: merc.sounds || [],
       description: merc.description
     });
   }

@@ -58,6 +58,7 @@ import {
   Store,
   Star,
   User,
+  RotateCw,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import ReactQuill from "react-quill";
@@ -65,6 +66,7 @@ import "react-quill/dist/quill.snow.css";
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
 import CFDataScraper from "@/components/CFDataScraper";
+import RestorationManager from "@/components/RestorationManager";
 import { Switch } from "@/components/ui/switch";
 import type { SiteSettings } from "@/types/site-settings";
 
@@ -1067,6 +1069,12 @@ export default function Admin() {
                   <TabsTrigger value="cf-data" data-testid="tab-cf-data">
                     <Shield className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">CF Data</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="restoration" data-testid="tab-restoration">
+                    <RotateCw className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Restore Data</span>
                   </TabsTrigger>
                 )}
                 <TabsTrigger value="translations" data-testid="tab-translations">
@@ -3016,6 +3024,20 @@ export default function Admin() {
           </TabsContent>
           )}
 
+          {isSuperAdmin && (
+            <TabsContent value="restoration" className="space-y-6" data-testid="content-restoration">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-semibold">Database Restoration</h2>
+                  <p className="text-muted-foreground">
+                    Restore all historical events and grave modes from backup data
+                  </p>
+                </div>
+                <RestorationManager />
+              </div>
+            </TabsContent>
+          )}
+
           <TabsContent value="translations" className="space-y-6" data-testid="content-translations">
             <h2 className="text-2xl font-semibold">Translations Management</h2>
             <p className="text-muted-foreground">
@@ -3352,7 +3374,6 @@ export default function Admin() {
             </TabsContent>
           )}
 
-          {isSuperAdmin && (
             <TabsContent value="mercenaries" className="space-y-6" data-testid="content-mercenaries">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Mercenaries</h2>
@@ -3587,7 +3608,7 @@ export default function Admin() {
                 </DialogContent>
               </Dialog>
             </TabsContent>
-          )}
+
             <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
             <h2 className="text-2xl font-semibold">Support Tickets</h2>
             <Card>

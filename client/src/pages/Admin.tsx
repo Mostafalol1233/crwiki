@@ -1539,13 +1539,13 @@ export default function Admin() {
                         New Event
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
                       <DialogHeader>
                         <DialogTitle>
                           {editingEvent ? "Edit Event" : "Create New Event"}
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
                           value={eventForm.title}
@@ -1770,13 +1770,13 @@ export default function Admin() {
                         New News
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
                       <DialogHeader>
                         <DialogTitle>
                           {editingNews ? "Edit News Item" : "Create New News Item"}
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
                           value={newsForm.title}
@@ -3789,6 +3789,80 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <style>{`
+        /* Quill Editor Styling */
+        .ql-container {
+          border-radius: 0.375rem;
+          border: 1px solid #e5e7eb;
+          font-size: 0.875rem;
+        }
+        
+        .ql-editor {
+          min-height: 150px;
+          background-color: #fafafa;
+          padding: 12px;
+          font-family: inherit;
+        }
+        
+        .ql-editor.ql-blank::before {
+          color: #9ca3af;
+          font-style: normal;
+        }
+        
+        .ql-toolbar {
+          border: 1px solid #e5e7eb;
+          border-radius: 0.375rem 0.375rem 0 0;
+          background-color: #f9fafb;
+        }
+        
+        .ql-toolbar button {
+          padding: 4px 8px;
+        }
+        
+        .ql-toolbar.ql-snow {
+          border-radius: 0.375rem 0.375rem 0 0;
+        }
+        
+        .ql-container.ql-snow {
+          border-radius: 0 0 0.375rem 0.375rem;
+        }
+        
+        .ql-editor h1 {
+          font-size: 2rem;
+          margin: 0.5rem 0;
+        }
+        
+        .ql-editor h2 {
+          font-size: 1.5rem;
+          margin: 0.5rem 0;
+        }
+        
+        .ql-editor h3 {
+          font-size: 1.25rem;
+          margin: 0.5rem 0;
+        }
+        
+        .ql-editor p {
+          margin: 0.5rem 0;
+        }
+        
+        .ql-editor ul, .ql-editor ol {
+          padding-left: 1.5rem;
+          margin: 0.5rem 0;
+        }
+        
+        .ql-editor a {
+          color: #0066cc;
+          text-decoration: none;
+        }
+        
+        /* RTL support for Arabic content */
+        .ql-editor[dir="rtl"] {
+          direction: rtl;
+          text-align: right;
+        }
+      `}</style>
     </div>
   );
 }

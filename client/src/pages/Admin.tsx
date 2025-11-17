@@ -68,6 +68,7 @@ import TutorialManager from "@/components/TutorialManager";
 import CFDataScraper from "@/components/CFDataScraper";
 import RestorationManager from "@/components/RestorationManager";
 import { PasteFormatter } from "@/components/PasteFormatter";
+import { AdvancedContentManager } from "@/components/AdvancedContentManager";
 import { Switch } from "@/components/ui/switch";
 import type { SiteSettings } from "@/types/site-settings";
 
@@ -1014,14 +1015,17 @@ export default function Admin() {
               </Badge>
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            data-testid="button-logout"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <AdvancedContentManager />
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">

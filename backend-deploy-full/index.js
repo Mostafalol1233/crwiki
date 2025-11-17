@@ -149,10 +149,20 @@ var MercenarySchema = new Schema({
   sounds: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
+var ContentItemSchema = new Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  type: { type: String, enum: ["mercenary", "post", "event", "news"], required: true },
+  content: { type: Schema.Types.Mixed, required: true },
+  userId: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 var WeaponModel = mongoose.model("Weapon", WeaponSchema);
 var ModeModel = mongoose.model("Mode", ModeSchema);
 var RankModel = mongoose.model("Rank", RankSchema);
 var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
+var ContentItemModel = mongoose.model("ContentItem", ContentItemSchema);
 var insertUserSchema = z.object({
   username: z.string(),
   password: z.string()
@@ -1266,6 +1276,137 @@ async function registerRoutes(app2) {
       }
       res.json({ success: true });
     } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Content Management Endpoints (for advanced content manager)
+  
+  // GET all content items
+  app2.get("/api/content-items", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const items = await ContentItemModel.find({ userId }).sort({ createdAt: -1 });
+      res.json(items);
+    } catch (error) {
+      console.error("Failed to fetch content items:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET content items by type
+  app2.get("/api/content-items/type/:type", requireAuth, async (req, res) => {
+    try {
+      const { type } = req.params;
+      const userId = req.user.id;
+      const items = await ContentItemModel.find({ userId, type }).sort({ createdAt: -1 });
+      res.json(items);
+    } catch (error) {
+      console.error("Failed to fetch content items by type:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST save content item
+  app2.post("/api/content-items", requireAuth, async (req, res) => {
+    try {
+      const { id, name, type, content } = req.body;
+      const userId = req.user.id;
+
+      if (!id || !name || !type || !content) {
+        return res.status(400).json({ error: "Missing required fields: id, name, type, content" });
+      }
+
+      if (!["mercenary", "post", "event", "news"].includes(type)) {
+        return res.status(400).json({ error: "Invalid type. Must be: mercenary, post, event, or news" });
+      }
+
+      // Check if item already exists
+      let item = await ContentItemModel.findOne({ id, userId });
+      if (item) {
+        // Update existing
+        item.name = name;
+        item.content = content;
+        item.updatedAt = new Date();
+        await item.save();
+        console.log(`✓ Content item updated: ${id}`);
+        return res.json({ success: true, action: "updated", ...item.toObject() });
+      }
+
+      // Create new
+      item = await ContentItemModel.create({
+        id,
+        name,
+        type,
+        content,
+        userId
+      });
+
+      console.log(`✓ Content item created: ${id}`);
+      res.status(201).json({ success: true, action: "created", ...item.toObject() });
+    } catch (error) {
+      console.error("Failed to save content item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE content item
+  app2.delete("/api/content-items/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+
+      const item = await ContentItemModel.findOneAndDelete({ id, userId });
+      if (!item) {
+        return res.status(404).json({ error: "Content item not found" });
+      }
+
+      console.log(`✓ Content item deleted: ${id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete content item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // BULK save from local storage
+  app2.post("/api/content-items/bulk-save", requireAuth, async (req, res) => {
+    try {
+      const { items } = req.body;
+      const userId = req.user.id;
+
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ error: "Items must be an array" });
+      }
+
+      let savedCount = 0;
+      let errorCount = 0;
+      const results = [];
+
+      for (const item of items) {
+        try {
+          const result = await ContentItemModel.findOneAndUpdate(
+            { id: item.id, userId },
+            { 
+              name: item.name,
+              type: item.type,
+              content: item.content,
+              updatedAt: new Date()
+            },
+            { upsert: true, new: true }
+          );
+          results.push({ id: item.id, status: "saved" });
+          savedCount++;
+        } catch (itemErr) {
+          results.push({ id: item.id, status: "error", message: itemErr.message });
+          errorCount++;
+        }
+      }
+
+      console.log(`✓ Bulk save completed: ${savedCount} saved, ${errorCount} errors`);
+      res.json({ success: true, savedCount, errorCount, results });
+    } catch (error) {
+      console.error("Failed to bulk save content items:", error);
       res.status(500).json({ error: error.message });
     }
   });

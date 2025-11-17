@@ -142,9 +142,17 @@ var RankSchema = new Schema({
   emblem: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now }
 });
+var MercenarySchema = new Schema({
+  name: { type: String, required: true },
+  role: { type: String, default: "" },
+  image: { type: String, default: "" },
+  sounds: { type: [String], default: [] },
+  createdAt: { type: Date, default: Date.now }
+});
 var WeaponModel = mongoose.model("Weapon", WeaponSchema);
 var ModeModel = mongoose.model("Mode", ModeSchema);
 var RankModel = mongoose.model("Rank", RankSchema);
+var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
 var insertUserSchema = z.object({
   username: z.string(),
   password: z.string()
@@ -1201,6 +1209,59 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  app2.post("/api/mercenaries", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { name, role, image, sounds } = req.body;
+      if (!name || !sounds || !Array.isArray(sounds) || sounds.length === 0) {
+        return res.status(400).json({ error: "Name and sounds array are required" });
+      }
+      const merc = await MercenaryModel.create({
+        name,
+        role: role || "",
+        image: image || "",
+        sounds: sounds.slice(0, 30)
+      });
+      res.status(201).json({ ...merc.toObject(), id: merc._id });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.patch("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { name, role, image, sounds } = req.body;
+      const merc = await MercenaryModel.findByIdAndUpdate(
+        req.params.id,
+        {
+          name: name || undefined,
+          role: role || undefined,
+          image: image || undefined,
+          sounds: sounds && Array.isArray(sounds) ? sounds.slice(0, 30) : undefined
+        },
+        { new: true }
+      );
+      if (!merc) {
+        return res.status(404).json({ error: "Mercenary not found" });
+      }
+      res.json({ ...merc.toObject(), id: merc._id });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.delete("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const merc = await MercenaryModel.findByIdAndDelete(req.params.id);
+      if (!merc) {
+        return res.status(404).json({ error: "Mercenary not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app2.get("/api/tickets", requireAuth, async (req, res) => {
     try {
       const user = req.user;

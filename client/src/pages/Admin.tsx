@@ -1062,7 +1062,6 @@ export default function Admin() {
                   {isSuperAdmin && <option value="subscribers">Subscribers</option>}
                   <option value="mercenaries">Mercenaries</option>
                   <option value="tickets">Tickets</option>
-                  {isSuperAdmin && <option value="seller-reviews">Seller Review Verification</option>}
                 </select>
               </div>
 
@@ -1554,7 +1553,7 @@ export default function Admin() {
               )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
+              <div/>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-semibold">Events</h2>
                   <div className="flex gap-2">

@@ -89,6 +89,8 @@ export function Header() {
                 src={theme === 'dark' ? logoDarkImage : logoLightImage}
                 alt="Bimora Gaming - CrossFire Wiki"
                 className="h-10 md:h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                width="48"
+                height="48"
                 data-testid="img-logo"
               />
             </div>

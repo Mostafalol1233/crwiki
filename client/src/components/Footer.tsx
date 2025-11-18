@@ -46,6 +46,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="link-social-youtube"
+                aria-label="Visit Bimora Gaming YouTube channel"
               >
                 <SiYoutube className="h-5 w-5" />
               </a>
@@ -55,6 +56,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="link-social-x"
+                aria-label="Visit Bimora Gaming X (Twitter) profile"
               >
                 <SiX className="h-5 w-5" />
               </a>

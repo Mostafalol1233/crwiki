@@ -151,6 +151,9 @@ export default function Home() {
                             src={allEvents[0].image}
                             alt={allEvents[0].title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width="400"
+                            height="256"
+                            loading="lazy"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -184,6 +187,9 @@ export default function Home() {
                             src={allEvents[1].image}
                             alt={allEvents[1].title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width="400"
+                            height="256"
+                            loading="lazy"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -220,6 +226,9 @@ export default function Home() {
                             src={allEvents[2].image}
                             alt={allEvents[2].title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            width="800"
+                            height="544"
+                            loading="lazy"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
@@ -255,13 +264,16 @@ export default function Home() {
                     <Link href={`/events/${allEvents[3].id}`} className="block" key={allEvents[3].id} data-testid={`home-event-bottom-left-top-${allEvents[3].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
-                          {allEvents[3].image && (
-                            <img
-                              src={allEvents[3].image}
-                              alt={allEvents[3].title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          )}
+        {allEvents[3].image && (
+          <img
+            src={allEvents[3].image}
+            alt={allEvents[3].title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            width="400"
+            height="256"
+            loading="lazy"
+          />
+        )}
                           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{allEvents[3].title}</h4>
@@ -275,13 +287,16 @@ export default function Home() {
                     <Link href={`/events/${allEvents[4].id}`} className="block" key={allEvents[4].id} data-testid={`home-event-bottom-left-bottom-${allEvents[4].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
-                          {allEvents[4].image && (
-                            <img
-                              src={allEvents[4].image}
-                              alt={allEvents[4].title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          )}
+        {allEvents[4].image && (
+          <img
+            src={allEvents[4].image}
+            alt={allEvents[4].title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            width="400"
+            height="256"
+            loading="lazy"
+          />
+        )}
                           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{allEvents[4].title}</h4>
@@ -298,13 +313,16 @@ export default function Home() {
                     <Link href={`/events/${allEvents[5].id}`} className="block" key={allEvents[5].id} data-testid={`home-event-bottom-right-${allEvents[5].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px]">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
-                          {allEvents[5].image && (
-                            <img
-                              src={allEvents[5].image}
-                              alt={allEvents[5].title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          )}
+        {allEvents[5].image && (
+          <img
+            src={allEvents[5].image}
+            alt={allEvents[5].title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            width="800"
+            height="544"
+            loading="lazy"
+          />
+        )}
                           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                           <div className="absolute bottom-4 left-4 right-4 text-white">
                             <h3 className="font-bold text-lg md:text-xl line-clamp-3">{allEvents[5].title}</h3>
@@ -428,6 +446,9 @@ export default function Home() {
                         src={allNews[0].image}
                         alt={allNews[0].title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        width="400"
+                        height="267"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
                         <Badge variant="destructive" className="mb-1 text-[10px] md:text-xs">News</Badge>
@@ -453,6 +474,9 @@ export default function Home() {
                         src={allEvents[0].image}
                         alt={allEvents[0].title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        width="400"
+                        height="267"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
                         <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-primary/90 text-primary-foreground">Event</Badge>
@@ -478,6 +502,9 @@ export default function Home() {
                         src={allPosts[0].image}
                         alt={allPosts[0].title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        width="400"
+                        height="267"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
                         <Badge variant="secondary" className="mb-1 text-[10px] md:text-xs bg-destructive/90 text-white">Article</Badge>
@@ -504,7 +531,7 @@ export default function Home() {
               <Link href={`/news/${allNews[0]?.id}`} className="block h-full">
                 <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/50 transition-all duration-300">
                   <div className="relative aspect-[3/4] overflow-hidden bg-muted/30">
-                    <img src={allNews[0]?.image} alt={allNews[0]?.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <img src={allNews[0]?.image} alt={allNews[0]?.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" width="300" height="400" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Flame className="h-4 w-4 text-red-500" />
@@ -523,7 +550,7 @@ export default function Home() {
             <Link key={post.id} href={`/article/${post.id}`} className="block">
                   <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-destructive/20 hover:border-destructive/50 transition-all duration-300">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
-                  <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" width="400" height="225" loading="lazy" />
                   <div className="absolute top-2 left-2 flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-destructive" />
                     <Badge variant="secondary" className="text-xs bg-destructive/80 text-white">Featured</Badge>
@@ -588,7 +615,7 @@ export default function Home() {
                     <Link key={item.id} href={`/news/${item.id}`} className="block" data-testid={`home-news-${item.id}`}>
                       <div className="hover-elevate transition-all bg-gradient-to-b from-card to-card/50 rounded-lg overflow-hidden border border-border/50 hover:border-primary/50">
                         <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
-                          <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                          <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" width="400" height="225" loading="lazy" />
                           {item.category && (
                             <div className="absolute top-2 right-2">
                               <Badge variant="secondary" className="text-xs">
@@ -632,6 +659,9 @@ export default function Home() {
                             src={`https://img.youtube.com/vi/${tutorial.youtubeId}/maxresdefault.jpg`}
                             alt={tutorial.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            width="400"
+                            height="225"
+                            loading="lazy"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${tutorial.youtubeId}/default.jpg`;
                             }}
@@ -661,7 +691,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[0].image && (
-                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -682,7 +712,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[195px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[1].image && (
-                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -698,7 +728,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[195px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[2].image && (
-                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -719,7 +749,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[3].image && (
-                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -735,7 +765,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[4].image && (
-                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -753,7 +783,7 @@ export default function Home() {
                                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
                                         <div className="relative w-full h-full overflow-hidden rounded-md">
                                           {allEvents[5].image && (
-                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                           <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
                                           <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -826,6 +856,9 @@ export default function Home() {
                             src={post.image}
                             alt={post.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            width="400"
+                            height="225"
+                            loading="lazy"
                           />
                         </div>
                         <h4 className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">

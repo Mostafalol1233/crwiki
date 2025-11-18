@@ -92,8 +92,20 @@ export default function Admin() {
   const [isCreatingMerc, setIsCreatingMerc] = useState(false);
   const [isEditingMerc, setIsEditingMerc] = useState(false);
   const [editingMerc, setEditingMerc] = useState<any>(null);
-  const [mercForm, setMercForm] = useState({ name: "", role: "", image: "", soundsText: "" });
-  const [createMercForm, setCreateMercForm] = useState({ name: "", image: "", role: "", soundsText: "" });
+  const [mercForm, setMercForm] = useState({ 
+    name: "", 
+    role: "", 
+    image: "", 
+    description: "",
+    voiceLines: [] as string[] 
+  });
+  const [createMercForm, setCreateMercForm] = useState({ 
+    name: "", 
+    image: "", 
+    role: "", 
+    description: "",
+    voiceLines: [] as string[] 
+  });
   const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [uploadedAudioUrls, setUploadedAudioUrls] = useState<string[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -734,15 +746,22 @@ export default function Admin() {
   });
 
   const createMercenaryMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/mercenaries", "POST", data),
+    mutationFn: (data: any) => {
+      // Ensure voiceLines is always an array
+      const cleanData = {
+        ...data,
+        voiceLines: Array.isArray(data.voiceLines) ? data.voiceLines.filter((url: string) => url.trim() !== "") : [],
+        audioUrl: data.audioUrl || "",
+        stats: data.stats || { health: 0, speed: 0, attack: 0, defense: 0 }
+      };
+      return apiRequest("/api/mercenaries", "POST", cleanData);
+    },
     onSuccess: (response) => {
       console.log("Mercenary created:", response);
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setIsCreatingMerc(false);
-      setCreateMercForm({ name: "", image: "", role: "", soundsText: "" });
-      setAudioFiles([]);
-      setUploadedAudioUrls([]);
-      toast({ title: "Mercenary created successfully", description: `${response?.sounds?.length || 0} sounds saved` });
+      setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
+      toast({ title: "Mercenary created successfully", description: `${response?.voiceLines?.length || 0} voice lines saved` });
     },
     onError: (error: any) => {
       console.error("Failed to create mercenary:", error);
@@ -751,13 +770,21 @@ export default function Admin() {
   });
 
   const updateMercenaryMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiRequest(`/api/mercenaries/${id}`, "PATCH", data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => {
+      // Ensure voiceLines is always an array
+      const cleanData = {
+        ...data,
+        voiceLines: Array.isArray(data.voiceLines) ? data.voiceLines.filter((url: string) => url.trim() !== "") : [],
+        audioUrl: data.audioUrl || "",
+        stats: data.stats || { health: 0, speed: 0, attack: 0, defense: 0 }
+      };
+      return apiRequest(`/api/mercenaries/${id}`, "PUT", cleanData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setEditingMerc(null);
       setIsEditingMerc(false);
-      setMercForm({ name: "", role: "", image: "", soundsText: "" });
+      setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
       toast({ title: "Mercenary updated successfully" });
     },
     onError: () => {
@@ -2265,7 +2292,7 @@ export default function Admin() {
           )}
 
           {isSuperAdmin && (
-          <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">
+            <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">
             <TutorialManager />
           </TabsContent>
           )}
@@ -3457,153 +3484,157 @@ export default function Admin() {
 
             <TabsContent value="mercenaries" className="space-y-6" data-testid="content-mercenaries">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">Mercenaries</h2>
+                <h2 className="text-2xl font-semibold">Mercenaries Management</h2>
                 <Dialog open={isCreatingMerc} onOpenChange={(open) => {
                   setIsCreatingMerc(open);
                   if (!open) {
-                    setCreateMercForm({ name: "", image: "", role: "", soundsText: "" });
+                    setEditingMerc(null);
+                    setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
                   }
                 }}>
                   <DialogTrigger asChild>
-                    <Button data-testid="button-create-merc">
+                    <Button data-testid="button-create-mercenary">
                       <Plus className="h-4 w-4 mr-2" />
                       New Mercenary
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Create New Mercenary</DialogTitle>
+                      <DialogTitle>
+                        {editingMerc ? "Edit Mercenary" : "Create New Mercenary"}
+                      </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div>
-                        <Label>Name</Label>
-                        <Input
-                          value={createMercForm.name}
-                          onChange={(e) => setCreateMercForm((s) => ({ ...s, name: e.target.value }))}
-                          placeholder="Mercenary name"
-                        />
-                      </div>
-                      <div>
-                        <Label>Role</Label>
-                        <Input
-                          value={createMercForm.role}
-                          onChange={(e) => setCreateMercForm((s) => ({ ...s, role: e.target.value }))}
-                          placeholder="e.g., Assault, Support"
-                        />
-                      </div>
-                      <div>
-                        <Label>Image URL</Label>
-                        <Input
-                          value={createMercForm.image}
-                          onChange={(e) => setCreateMercForm((s) => ({ ...s, image: e.target.value }))}
-                          placeholder="https://.../image.jpg"
-                        />
-                      </div>
-                      <div>
-                        <Label>MP3 Audio Files</Label>
-                        <Input
-                          type="file"
-                          multiple
-                          accept=".mp3,audio/mpeg"
-                          onChange={async (e) => {
-                            const files = Array.from(e.target.files || []);
-                            setAudioFiles(files);
-                            
-                            // Upload files and get URLs
-                            const uploadedUrls: string[] = [];
-                            for (const file of files) {
-                              try {
-                                const formData = new FormData();
-                                formData.append("audio", file);
-                                
-                                const response = await fetch("/api/upload-audio", {
-                                  method: "POST",
-                                  body: formData,
-                                  headers: {
-                                    "Authorization": `Bearer ${localStorage.getItem("auth_token")}`
-                                  }
-                                });
-                                
-                                if (response.ok) {
-                                  const data = await response.json();
-                                  uploadedUrls.push(data.url);
-                                  console.log("✓ Audio uploaded:", file.name, "->", data.url);
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="Name"
+                        value={editingMerc ? mercForm.name : createMercForm.name}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, name: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, name: e.target.value });
+                          }
+                        }}
+                        data-testid="input-mercenary-name"
+                      />
+                      <Input
+                        placeholder="Role (e.g., Assault, Sniper)"
+                        value={editingMerc ? mercForm.role : createMercForm.role}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, role: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, role: e.target.value });
+                          }
+                        }}
+                        data-testid="input-mercenary-role"
+                      />
+                      <Input
+                        placeholder="Image URL"
+                        value={editingMerc ? mercForm.image : createMercForm.image}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, image: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, image: e.target.value });
+                          }
+                        }}
+                        data-testid="input-mercenary-image"
+                      />
+                      <Textarea
+                        placeholder="Description"
+                        value={editingMerc ? mercForm.description : createMercForm.description}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, description: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, description: e.target.value });
+                          }
+                        }}
+                        rows={3}
+                        data-testid="input-mercenary-description"
+                      />
+
+                      <div className="space-y-2">
+                        <Label>Voice Lines (MP3 URLs)</Label>
+                        {(editingMerc ? mercForm.voiceLines : createMercForm.voiceLines).map((url: string, index: number) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              placeholder={`Voice line ${index + 1} URL`}
+                              value={url}
+                              onChange={(e) => {
+                                const newLines = [...(editingMerc ? mercForm.voiceLines : createMercForm.voiceLines)];
+                                newLines[index] = e.target.value;
+                                if (editingMerc) {
+                                  setMercForm({ ...mercForm, voiceLines: newLines });
                                 } else {
-                                  const error = await response.json();
-                                  toast({ title: `Failed to upload ${file.name}`, description: error.error, variant: "destructive" });
+                                  setCreateMercForm({ ...createMercForm, voiceLines: newLines });
                                 }
-                              } catch (err) {
-                                console.error("Upload error:", err);
-                                toast({ title: `Upload error for ${file.name}`, description: String(err), variant: "destructive" });
-                              }
-                            }
-                            
-                            setUploadedAudioUrls(uploadedUrls);
-                            setCreateMercForm(s => ({
-                              ...s,
-                              soundsText: uploadedUrls.join('\n')
-                            }));
-                          }}
-                        />
-                        {audioFiles.length > 0 && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            {audioFiles.length} MP3 file(s) selected, {uploadedAudioUrls.length} uploaded
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Or paste Sound URLs (one per line, up to 30)</Label>
-                        <Textarea
-                          value={createMercForm.soundsText}
-                          onChange={(e) => setCreateMercForm((s) => ({ ...s, soundsText: e.target.value }))}
-                          placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
-                          className="h-32"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
+                              }}
+                              data-testid={`input-voice-line-${index}`}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newLines = (editingMerc ? mercForm.voiceLines : createMercForm.voiceLines).filter((_: string, i: number) => i !== index);
+                                if (editingMerc) {
+                                  setMercForm({ ...mercForm, voiceLines: newLines });
+                                } else {
+                                  setCreateMercForm({ ...createMercForm, voiceLines: newLines });
+                                }
+                              }}
+                              data-testid={`button-remove-voice-line-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
                         <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
-                            const first = createMercForm.soundsText.split('\n').map(s=>s.trim()).find(Boolean);
-                            if (first) {
-                              const a = new Audio(first);
-                              a.play().catch(()=>{});
+                            if (editingMerc) {
+                              setMercForm({ ...mercForm, voiceLines: [...mercForm.voiceLines, ""] });
                             } else {
-                              toast({ title: 'No sound to preview', variant: 'destructive' });
+                              setCreateMercForm({ ...createMercForm, voiceLines: [...createMercForm.voiceLines, ""] });
                             }
                           }}
+                          className="w-full"
+                          data-testid="button-add-voice-line"
                         >
-                          Preview
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            if (!createMercForm.name.trim()) {
-                              toast({ title: 'Mercenary name is required', variant: 'destructive' });
-                              return;
-                            }
-                            const sounds = createMercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
-                            if (sounds.length === 0) {
-                              toast({ title: 'Add at least one sound URL or MP3 file', variant: 'destructive' });
-                              return;
-                            }
-                            console.log("Creating mercenary:", { name: createMercForm.name, sounds, soundsCount: sounds.length });
-                            createMercenaryMutation.mutate({
-                              name: createMercForm.name,
-                              image: createMercForm.image,
-                              role: createMercForm.role,
-                              sounds
-                            });
-                            setAudioFiles([]);
-                            setUploadedAudioUrls([]);
-                          }}
-                          disabled={createMercenaryMutation.isPending}
-                        >
-                          Create
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Voice Line
                         </Button>
                       </div>
+
+                      <Button
+                        onClick={() => {
+                          const formData = editingMerc ? mercForm : createMercForm;
+                          const data = {
+                            name: formData.name,
+                            role: formData.role,
+                            image: formData.image,
+                            description: formData.description,
+                            voiceLines: formData.voiceLines.filter((url: string) => url.trim() !== ""),
+                          };
+
+                          if (editingMerc) {
+                            updateMercenaryMutation.mutate({ id: editingMerc.id, data });
+                          } else {
+                            createMercenaryMutation.mutate(data);
+                          }
+                        }}
+                        className="w-full"
+                        data-testid="button-submit-mercenary"
+                      >
+                        {editingMerc ? "Update Mercenary" : "Create Mercenary"}
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
+
               <Card>
                 <CardContent className="p-0">
                   <Table>
@@ -3629,7 +3660,7 @@ export default function Admin() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">{merc.sounds ? merc.sounds.length : 0}</Badge>
+                            <Badge variant="outline" className="text-xs">{merc.voiceLines ? merc.voiceLines.length : 0}</Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
@@ -3642,9 +3673,10 @@ export default function Admin() {
                                     name: merc.name || "",
                                     role: merc.role || "",
                                     image: merc.image || "",
-                                    soundsText: (merc.sounds || []).join("\n"),
+                                    description: merc.description || "",
+                                    voiceLines: merc.voiceLines || [],
                                   });
-                                  setIsEditingMerc(true);
+                                  setIsCreatingMerc(true);
                                 }}
                                 data-testid={`button-edit-merc-${merc.id}`}
                               >
@@ -3681,7 +3713,7 @@ export default function Admin() {
                 if (!open) {
                   setIsEditingMerc(false);
                   setEditingMerc(null);
-                  setMercForm({ name: "", role: "", image: "", soundsText: "" });
+                  setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
                 }
               }}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -3714,74 +3746,61 @@ export default function Admin() {
                         placeholder="https://.../image.jpg"
                       />
                     </div>
-
                     <div>
-                      <Label>MP3 Audio Files</Label>
-                      <Input
-                        type="file"
-                        multiple
-                        accept=".mp3,audio/mpeg"
-                        onChange={async (e) => {
-                          const files = Array.from(e.target.files || []);
-                          setAudioFiles(files);
-                          
-                          // Upload files and get URLs
-                          const uploadedUrls: string[] = [];
-                          for (const file of files) {
-                            try {
-                              const formData = new FormData();
-                              formData.append("audio", file);
-                              
-                              const response = await fetch("/api/upload-audio", {
-                                method: "POST",
-                                body: formData,
-                                headers: {
-                                  "Authorization": `Bearer ${localStorage.getItem("auth_token")}`
-                                }
-                              });
-                              
-                              if (response.ok) {
-                                const data = await response.json();
-                                uploadedUrls.push(data.url);
-                                console.log("✓ Audio uploaded:", file.name, "->", data.url);
-                              } else {
-                                const error = await response.json();
-                                toast({ title: `Failed to upload ${file.name}`, description: error.error, variant: "destructive" });
-                              }
-                            } catch (err) {
-                              console.error("Upload error:", err);
-                              toast({ title: `Upload error for ${file.name}`, description: String(err), variant: "destructive" });
-                            }
-                          }
-                          
-                          setUploadedAudioUrls(uploadedUrls);
-                          setMercForm(s => ({
-                            ...s,
-                            soundsText: uploadedUrls.join('\n')
-                          }));
-                        }}
+                      <Label>Description</Label>
+                      <Textarea
+                        value={mercForm.description}
+                        onChange={(e) => setMercForm((s) => ({ ...s, description: e.target.value }))}
+                        placeholder="Mercenary description"
+                        rows={3}
                       />
-                      {audioFiles.length > 0 && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {audioFiles.length} MP3 file(s) selected, {uploadedAudioUrls.length} uploaded
-                        </p>
-                      )}
                     </div>
 
                     <div>
-                      <Label>Or paste Sound URLs (one per line, up to 30)</Label>
-                      <Textarea
-                        value={mercForm.soundsText}
-                        onChange={(e) => setMercForm((s) => ({ ...s, soundsText: e.target.value }))}
-                        placeholder="https://.../line1.mp3\nhttps://.../line2.mp3"
-                        className="h-32"
-                      />
+                      <Label>Voice Lines (MP3 URLs)</Label>
+                      {mercForm.voiceLines.map((url: string, index: number) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <Input
+                            placeholder={`Voice line ${index + 1} URL`}
+                            value={url}
+                            onChange={(e) => {
+                              const newLines = [...mercForm.voiceLines];
+                              newLines[index] = e.target.value;
+                              setMercForm({ ...mercForm, voiceLines: newLines });
+                            }}
+                            data-testid={`input-edit-voice-line-${index}`}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newLines = mercForm.voiceLines.filter((_: string, i: number) => i !== index);
+                              setMercForm({ ...mercForm, voiceLines: newLines });
+                            }}
+                            data-testid={`button-remove-edit-voice-line-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setMercForm({ ...mercForm, voiceLines: [...mercForm.voiceLines, ""] });
+                        }}
+                        className="w-full"
+                        data-testid="button-add-edit-voice-line"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Voice Line
+                      </Button>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => {
-                          const first = mercForm.soundsText.split('\n').map(s=>s.trim()).find(Boolean);
+                          const first = mercForm.voiceLines.map(s=>s.trim()).find(Boolean);
                           if (first) {
                             const a = new Audio(first);
                             a.play().catch(()=>{});
@@ -3799,12 +3818,12 @@ export default function Admin() {
                             toast({ title: 'Mercenary name is required', variant: 'destructive' });
                             return;
                           }
-                          const sounds = mercForm.soundsText.split('\n').map((s) => s.trim()).filter(Boolean).slice(0,30);
+                          const sounds = mercForm.voiceLines.filter((s) => s.trim() !== "").slice(0,30);
                           if (sounds.length === 0) {
-                            toast({ title: 'Add at least one sound URL or MP3 file', variant: 'destructive' });
+                            toast({ title: 'Add at least one sound URL', variant: 'destructive' });
                             return;
                           }
-                          updateMercenaryMutation.mutate({ id: editingMerc.id, data: { name: mercForm.name, role: mercForm.role, image: mercForm.image, sounds } });
+                          updateMercenaryMutation.mutate({ id: editingMerc.id, data: { name: mercForm.name, role: mercForm.role, image: mercForm.image, description: mercForm.description, voiceLines: sounds } });
                           setAudioFiles([]);
                           setUploadedAudioUrls([]);
                         }}
@@ -3851,7 +3870,7 @@ export default function Admin() {
                                 data: { status: e.target.value }
                               });
                             }}
-                            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+                            className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                             data-testid={`select-ticket-status-${ticket.id}`}
                           >
                             <option value="open">Open</option>
@@ -3869,7 +3888,7 @@ export default function Admin() {
                                 data: { priority: e.target.value }
                               });
                             }}
-                            className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+                            className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                             data-testid={`select-ticket-priority-${ticket.id}`}
                           >
                             <option value="low">Low</option>
@@ -3878,7 +3897,7 @@ export default function Admin() {
                           </select>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {ticket.createdAt}
+                          {new Date(ticket.createdAt).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

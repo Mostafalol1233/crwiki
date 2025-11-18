@@ -366,6 +366,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scraping routes
+  
+  // Easy one-click scrape for admins (scrapes and creates events automatically)
+  app.post("/api/scrape-events", requireAuth, async (req, res) => {
+    try {
+      console.log("🔍 Admin: Easy scrape - Getting forum announcements...");
+      const posts = await scrapeForumAnnouncements();
+
+      if (!posts || posts.length === 0) {
+        return res.status(400).json({ error: "No announcements found to scrape" });
+      }
+
+      // Take first 5 posts
+      const postsToCreate = posts.slice(0, 5);
+      const createdEvents = [];
+
+      for (const post of postsToCreate) {
+        try {
+          const eventData = {
+            title: post.title.substring(0, 200),
+            titleAr: '',
+            description: post.content || post.title,
+            descriptionAr: '',
+            date: new Date().toISOString().split('T')[0],
+            type: 'upcoming' as const,
+            image: 'https://files.catbox.moe/wof38b.jpeg'
+          };
+
+          const validated = insertEventSchema.parse(eventData);
+          const event = await storage.createEvent(validated);
+          createdEvents.push(event);
+        } catch (err: any) {
+          console.warn(`Failed to create event: ${err.message}`);
+        }
+      }
+
+      res.json({
+        message: `✅ Created ${createdEvents.length} events from forum`,
+        count: createdEvents.length,
+        events: createdEvents
+      });
+    } catch (error: any) {
+      console.error("Scraping error:", error);
+      res.status(500).json({ error: error.message || "Failed to scrape events" });
+    }
+  });
+
   // Super Admin: Scrape first 5 events from forum announcements
   app.post("/api/admin/scrape-first-five-events", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
@@ -1081,11 +1127,17 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
 
   app.post("/api/mercenaries", async (req, res) => {
     try {
-      const { name, image, role } = req.body;
+      const { name, image, role, description, voiceLines } = req.body;
       if (!name || !image || !role) {
         return res.status(400).json({ error: "name, image, and role required" });
       }
-      const merc = await storage.createMercenary({ name, image, role });
+      const merc = await storage.createMercenary({ 
+        name, 
+        image, 
+        role, 
+        description: description || "",
+        voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url: string) => url.trim() !== "") : []
+      });
       res.status(201).json(merc);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -1106,7 +1158,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
   app.patch("/api/mercenaries/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, role, image, description } = req.body;
+      const { name, role, image, description, voiceLines } = req.body;
 
       // Get all mercenaries and find the one with matching id
       const allMercenaries = await storage.getAllMercenaries();
@@ -1123,6 +1175,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         ...(typeof role === 'string' && role.trim() ? { role: role.trim() } : {}),
         ...(typeof description === 'string' && description.trim() ? { description: description.trim() } : {}),
         ...(image ? { image } : {}),
+        voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url: string) => url.trim() !== "") : current.voiceLines || []
       };
 
       // Update mercenary in storage
@@ -1472,7 +1525,6 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       res.status(500).json({ error: error.message });
     }
   });
-
 
 
   // Newsletter subscriber routes (restricted to super admins only)

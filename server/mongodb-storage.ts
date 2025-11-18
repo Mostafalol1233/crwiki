@@ -75,7 +75,7 @@ export interface Mercenary {
   name: string;
   image: string;
   role: string;
-  sounds?: string[]; // MP3 URLs for voice lines (1-30 sounds)
+  voiceLines?: string[]; // MP3 URLs for voice lines (1-30 sounds)
 }
 
 export interface IStorage {
@@ -221,7 +221,7 @@ export class MongoDBStorage implements IStorage {
           name: merc.name,
           image: merc.image,
           role: merc.role,
-          sounds: merc.sounds
+          voiceLines: merc.voiceLines || merc.sounds || []
         };
         this.mercenaries.set(mercenary.id, mercenary);
       });
@@ -446,7 +446,7 @@ export class MongoDBStorage implements IStorage {
 
   async createMercenary(mercenary: Omit<Mercenary, 'id'>): Promise<Mercenary> {
     const id = String(this.mercenaries.size + 1);
-    const newMercenary = { ...mercenary, id };
+    const newMercenary = { ...mercenary, id, voiceLines: mercenary.voiceLines || [] };
     this.mercenaries.set(id, newMercenary);
     return newMercenary;
   }
@@ -1058,6 +1058,7 @@ export class MongoDBStorage implements IStorage {
       image: m.image,
       role: m.role,
       description: m.description || "",
+      voiceLines: m.voiceLines || [],
       createdAt: m.createdAt
     }));
   }
@@ -1068,7 +1069,7 @@ export class MongoDBStorage implements IStorage {
       name: merc.name,
       image: merc.image,
       role: merc.role,
-      sounds: merc.sounds || [],
+      voiceLines: merc.voiceLines || [],
       description: merc.description || ""
     });
     return {
@@ -1076,7 +1077,7 @@ export class MongoDBStorage implements IStorage {
       name: created.name,
       image: created.image,
       role: created.role,
-      sounds: created.sounds || [],
+      voiceLines: created.voiceLines || [],
       description: created.description || "",
       createdAt: created.createdAt
     };
@@ -1088,7 +1089,7 @@ export class MongoDBStorage implements IStorage {
       name: merc.name,
       image: merc.image,
       role: merc.role,
-      sounds: merc.sounds || [],
+      voiceLines: merc.voiceLines || [],
       description: merc.description
     });
   }

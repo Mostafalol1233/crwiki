@@ -15,18 +15,18 @@ const API_BASE = process.env.API_BASE_URL || "http://localhost:20032";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sasasasa";
 const IMAGE_BASE = process.env.MERCENARY_IMAGE_BASE || "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets";
 
-// MERCENARIES - 10 unique mercenary characters with images
+// MERCENARIES - 10 unique mercenary characters with images and voice lines
 const mercenariesData = [
-  { id: "1", name: "Wolf", image: `${IMAGE_BASE}/merc-wolf.jpg`, role: "Assault", description: "Aggressive assault specialist" },
-  { id: "2", name: "Vipers", image: `${IMAGE_BASE}/merc-vipers.jpg`, role: "Sniper", description: "Precision sniper expert" },
-  { id: "3", name: "Sisterhood", image: `${IMAGE_BASE}/merc-sisterhood.jpg`, role: "Medic", description: "Support and healing specialist" },
-  { id: "4", name: "Black Mamba", image: `${IMAGE_BASE}/merc-blackmamba.jpg`, role: "Scout", description: "Fast reconnaissance scout" },
-  { id: "5", name: "Arch Honorary", image: `${IMAGE_BASE}/merc-archhonorary.jpg`, role: "Tank", description: "Heavy armor tank" },
-  { id: "6", name: "Desperado", image: `${IMAGE_BASE}/merc-desperado.jpg`, role: "Engineer", description: "Technical engineer specialist" },
-  { id: "7", name: "Ronin", image: `${IMAGE_BASE}/merc-ronin.jpg`, role: "Samurai", description: "Melee combat warrior" },
-  { id: "8", name: "Dean", image: `${IMAGE_BASE}/merc-dean.jpg`, role: "Specialist", description: "Specialized tactics expert" },
-  { id: "9", name: "Thoth", image: `${IMAGE_BASE}/merc-thoth.jpg`, role: "Guardian", description: "Protective guardian role" },
-  { id: "10", name: "SFG", image: `${IMAGE_BASE}/merc-sfg.jpg`, role: "Special Forces", description: "Special forces operative" },
+  { id: "1", name: "Wolf", image: `${IMAGE_BASE}/merc-wolf.jpg`, role: "Assault", description: "Aggressive assault specialist", voiceLines: ["/sounds/merc/wolf-line1.mp3", "/sounds/merc/wolf-line2.mp3", "/sounds/merc/wolf-line3.mp3"] },
+  { id: "2", name: "Vipers", image: `${IMAGE_BASE}/merc-vipers.jpg`, role: "Sniper", description: "Precision sniper expert", voiceLines: ["/sounds/merc/vipers-line1.mp3", "/sounds/merc/vipers-line2.mp3"] },
+  { id: "3", name: "Sisterhood", image: `${IMAGE_BASE}/merc-sisterhood.jpg`, role: "Medic", description: "Support and healing specialist", voiceLines: ["/sounds/merc/sisterhood-line1.mp3"] },
+  { id: "4", name: "Black Mamba", image: `${IMAGE_BASE}/merc-blackmamba.jpg`, role: "Scout", description: "Fast reconnaissance scout", voiceLines: ["/sounds/merc/blackmamba-line1.mp3", "/sounds/merc/blackmamba-line2.mp3"] },
+  { id: "5", name: "Arch Honorary", image: `${IMAGE_BASE}/merc-archhonorary.jpg`, role: "Tank", description: "Heavy armor tank", voiceLines: ["/sounds/merc/archhonorary-line1.mp3"] },
+  { id: "6", name: "Desperado", image: `${IMAGE_BASE}/merc-desperado.jpg`, role: "Engineer", description: "Technical engineer specialist", voiceLines: ["/sounds/merc/desperado-line1.mp3", "/sounds/merc/desperado-line2.mp3"] },
+  { id: "7", name: "Ronin", image: `${IMAGE_BASE}/merc-ronin.jpg`, role: "Samurai", description: "Melee combat warrior", voiceLines: ["/sounds/merc/ronin-line1.mp3"] },
+  { id: "8", name: "Dean", image: `${IMAGE_BASE}/merc-dean.jpg`, role: "Specialist", description: "Specialized tactics expert", voiceLines: ["/sounds/merc/dean-line1.mp3", "/sounds/merc/dean-line2.mp3", "/sounds/merc/dean-line3.mp3"] },
+  { id: "9", name: "Thoth", image: `${IMAGE_BASE}/merc-thoth.jpg`, role: "Guardian", description: "Protective guardian role", voiceLines: ["/sounds/merc/thoth-line1.mp3"] },
+  { id: "10", name: "SFG", image: `${IMAGE_BASE}/merc-sfg.jpg`, role: "Special Forces", description: "Special forces operative", voiceLines: ["/sounds/merc/sfg-line1.mp3", "/sounds/merc/sfg-line2.mp3"] },
 ];
 
 // ALL weapon images (44 files)

@@ -62,6 +62,8 @@ export default function CategoryNews() {
                     src={item.image}
                     alt={language === "ar" && item.titleAr ? item.titleAr : item.title}
                     className="w-full h-full object-contain"
+                    width="400"
+                    height="225"
                     loading="lazy"
                   />
                   {item.featured && (

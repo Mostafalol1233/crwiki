@@ -167,6 +167,7 @@ export function Header() {
               data-testid="button-language-toggle"
               className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
               title={language === 'en' ? 'العربية' : 'English'}
+              aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
             >
               <Globe className="h-5 w-5" />
               <span className="sr-only">Toggle language</span>
@@ -179,6 +180,7 @@ export function Header() {
               data-testid="button-theme-toggle"
               className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
               title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
             >
               {theme === "light" ? (
                 <Moon className="h-5 w-5" />
@@ -196,6 +198,7 @@ export function Header() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
               title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5" />

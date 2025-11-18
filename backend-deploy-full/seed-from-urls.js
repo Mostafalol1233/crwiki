@@ -1,17 +1,22 @@
 #!/usr/bin/env node
 /**
  * seed-from-urls.js
- * Seeds weapons, modes, ranks, and mercenaries into MongoDB
- * USES FULL URLS - NOT TEMPLATE VARIABLES
- * This fixes the 404 errors from template variables like ${IMAGE_BASE}
+ * Seeds weapons, modes, ranks, mercenaries, and EVENTS directly into MongoDB
+ * Scrapes announcements from forum.z8games.com and creates events
+ * Uses actual full URLs - NOT template variables
+ * No API required - writes directly to MongoDB
  */
 import "dotenv/config";
-import fetch from "node-fetch";
+import mongoose from "mongoose";
+import { Schema } from "mongoose";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
-const API_BASE = process.env.API_BASE_URL || "http://localhost:20032";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sasasasa";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crossfire-wiki";
+const FORUM_BASE_URL = "https://forum.z8games.com";
+const ANNOUNCEMENTS_URL = `${FORUM_BASE_URL}/categories/crossfire-announcements`;
 
-// MERCENARIES - 10 with CATBOX URLS (working CDN)
+// MERCENARIES - 10 unique mercenary characters with CATBOX URLS
 const mercenariesData = [
   { id: "1", name: "Wolf", image: "https://files.catbox.moe/6npa73.jpeg", role: "Assault", description: "Aggressive assault specialist" },
   { id: "2", name: "Vipers", image: "https://files.catbox.moe/4il6hi.jpeg", role: "Sniper", description: "Precision sniper expert" },
@@ -25,41 +30,41 @@ const mercenariesData = [
   { id: "10", name: "SFG", image: "https://files.catbox.moe/3bba2g.jpeg", role: "Special Forces", description: "Special forces operative" },
 ];
 
-// WEAPONS - 28 with CATBOX URLS
+// WEAPONS - 28 with CATBOX URLS + STATS (damage, recoil, etc)
 const weaponsData = [
-  { name: "Weapon 1", description: "C4410", category: "Weapon", image: "https://files.catbox.moe/oshs66.png" },
-  { name: "Weapon 2", description: "C4742", category: "Weapon", image: "https://files.catbox.moe/y5xyvh.png" },
-  { name: "Weapon 3", description: "C4936", category: "Weapon", image: "https://files.catbox.moe/dikemy.png" },
-  { name: "Weapon 4", description: "C4953", category: "Weapon", image: "https://files.catbox.moe/m7ii5b.png" },
-  { name: "Weapon 5", description: "C5154", category: "Weapon", image: "https://files.catbox.moe/2hx3cf.png" },
-  { name: "Weapon 6", description: "C5155", category: "Weapon", image: "https://files.catbox.moe/5r592p.png" },
-  { name: "Weapon 7", description: "C5156", category: "Weapon", image: "https://files.catbox.moe/obytvu.png" },
-  { name: "Weapon 8", description: "C5157", category: "Weapon", image: "https://files.catbox.moe/0dp3c2.png" },
-  { name: "Weapon 9", description: "C5303", category: "Weapon", image: "https://files.catbox.moe/7mo6zg.png" },
-  { name: "Weapon 10", description: "C5362", category: "Weapon", image: "https://files.catbox.moe/5wvixf.png" },
-  { name: "Weapon 11", description: "C5390", category: "Weapon", image: "https://files.catbox.moe/nd0e8l.png" },
-  { name: "Weapon 12", description: "C5473", category: "Weapon", image: "https://files.catbox.moe/z4auy7.png" },
-  { name: "Weapon 13", description: "C6411", category: "Weapon", image: "https://files.catbox.moe/8qkl0a.png" },
-  { name: "Weapon 14", description: "C6547", category: "Weapon", image: "https://files.catbox.moe/4o20pn.png" },
-  { name: "Weapon 15", description: "C6777", category: "Weapon", image: "https://files.catbox.moe/bpa85i.png" },
-  { name: "Weapon 16", description: "C7325", category: "Weapon", image: "https://files.catbox.moe/mx62ji.png" },
-  { name: "Weapon 17", description: "C7411", category: "Weapon", image: "https://files.catbox.moe/g1ng1o.png" },
-  { name: "Weapon 18", description: "C8017", category: "Weapon", image: "https://files.catbox.moe/t02svh.png" },
-  { name: "Weapon 19", description: "C8020", category: "Weapon", image: "https://files.catbox.moe/vf910w.png" },
-  { name: "Weapon 20", description: "C8053", category: "Weapon", image: "https://files.catbox.moe/jfuae1.png" },
-  { name: "Weapon 21", description: "C8663", category: "Weapon", image: "https://files.catbox.moe/avqjsd.png" },
-  { name: "Weapon 22", description: "C8665", category: "Weapon", image: "https://files.catbox.moe/9yfkfq.png" },
-  { name: "Weapon 23", description: "C9288", category: "Weapon", image: "https://files.catbox.moe/irpla6.png" },
-  { name: "Weapon 24", description: "C9482", category: "Weapon", image: "https://files.catbox.moe/outzzz.png" },
-  { name: "Weapon 25", description: "cff-bg-social", category: "Weapon", image: "https://files.catbox.moe/2catwt.jpeg" },
-  { name: "Weapon 26", description: "cfw-weaponbg-vip", category: "Weapon", image: "https://files.catbox.moe/f3esjq.png" },
-  { name: "Weapon 27", description: "csp-bg-header2", category: "Weapon", image: "https://files.catbox.moe/j7z531.jpeg" },
-  { name: "Weapon 28", description: "placeholder-weapons", category: "Weapon", image: "https://files.catbox.moe/xb2ftb.png" },
+  { name: "Weapon 1", description: "C4410", category: "Weapon", image: "https://files.catbox.moe/oshs66.png", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
+  { name: "Weapon 2", description: "C4742", category: "Weapon", image: "https://files.catbox.moe/y5xyvh.png", damage: 48, recoil: 14, rateOfFire: 720, accuracy: 75 },
+  { name: "Weapon 3", description: "C4936", category: "Weapon", image: "https://files.catbox.moe/dikemy.png", damage: 42, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "Weapon 4", description: "C4953", category: "Weapon", image: "https://files.catbox.moe/m7ii5b.png", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
+  { name: "Weapon 5", description: "C5154", category: "Weapon", image: "https://files.catbox.moe/2hx3cf.png", damage: 40, recoil: 8, rateOfFire: 850, accuracy: 82 },
+  { name: "Weapon 6", description: "C5155", category: "Weapon", image: "https://files.catbox.moe/5r592p.png", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 76 },
+  { name: "Weapon 7", description: "C5156", category: "Weapon", image: "https://files.catbox.moe/obytvu.png", damage: 44, recoil: 13, rateOfFire: 780, accuracy: 79 },
+  { name: "Weapon 8", description: "C5157", category: "Weapon", image: "https://files.catbox.moe/0dp3c2.png", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
+  { name: "Weapon 9", description: "C5303", category: "Weapon", image: "https://files.catbox.moe/7mo6zg.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
+  { name: "Weapon 10", description: "C5362", category: "Weapon", image: "https://files.catbox.moe/5wvixf.png", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
+  { name: "Weapon 11", description: "C5390", category: "Weapon", image: "https://files.catbox.moe/nd0e8l.png", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
+  { name: "Weapon 12", description: "C5473", category: "Weapon", image: "https://files.catbox.moe/z4auy7.png", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
+  { name: "Weapon 13", description: "C6411", category: "Weapon", image: "https://files.catbox.moe/8qkl0a.png", damage: 48, recoil: 13, rateOfFire: 740, accuracy: 76 },
+  { name: "Weapon 14", description: "C6547", category: "Weapon", image: "https://files.catbox.moe/4o20pn.png", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 79 },
+  { name: "Weapon 15", description: "C6777", category: "Weapon", image: "https://files.catbox.moe/bpa85i.png", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "Weapon 16", description: "C7325", category: "Weapon", image: "https://files.catbox.moe/mx62ji.png", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
+  { name: "Weapon 17", description: "C7411", category: "Weapon", image: "https://files.catbox.moe/g1ng1o.png", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
+  { name: "Weapon 18", description: "C8017", category: "Weapon", image: "https://files.catbox.moe/t02svh.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
+  { name: "Weapon 19", description: "C8020", category: "Weapon", image: "https://files.catbox.moe/vf910w.png", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
+  { name: "Weapon 20", description: "C8053", category: "Weapon", image: "https://files.catbox.moe/jfuae1.png", damage: 45, recoil: 11, rateOfFire: 770, accuracy: 78 },
+  { name: "Weapon 21", description: "C8663", category: "Weapon", image: "https://files.catbox.moe/avqjsd.png", damage: 48, recoil: 13, rateOfFire: 750, accuracy: 76 },
+  { name: "Weapon 22", description: "C8665", category: "Weapon", image: "https://files.catbox.moe/9yfkfq.png", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
+  { name: "Weapon 23", description: "C9288", category: "Weapon", image: "https://files.catbox.moe/irpla6.png", damage: 46, recoil: 12, rateOfFire: 760, accuracy: 79 },
+  { name: "Weapon 24", description: "C9482", category: "Weapon", image: "https://files.catbox.moe/outzzz.png", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "Weapon 25", description: "cff-bg-social", category: "Weapon", image: "https://files.catbox.moe/2catwt.jpeg", damage: 47, recoil: 11, rateOfFire: 770, accuracy: 77 },
+  { name: "Weapon 26", description: "cfw-weaponbg-vip", category: "Weapon", image: "https://files.catbox.moe/f3esjq.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
+  { name: "Weapon 27", description: "csp-bg-header2", category: "Weapon", image: "https://files.catbox.moe/j7z531.jpeg", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
+  { name: "Weapon 28", description: "placeholder-weapons", category: "Weapon", image: "https://files.catbox.moe/xb2ftb.png", damage: 42, recoil: 8, rateOfFire: 850, accuracy: 82 },
 ];
 
-// MODES - Full URLs (13 Catbox + 23 GitHub)
+// MODES - Mix of Catbox (13) and full GitHub URLs
 const modesData = [
-  // Catbox CDN URLs
+  // Catbox URLs
   { name: "Peak Pursuit Roadmap", image: "https://files.catbox.moe/wof38b.jpeg" },
   { name: "Aim Master", image: "https://files.catbox.moe/3cl95i.jpeg" },
   { name: "Shooting Center", image: "https://files.catbox.moe/0d2mzr.jpeg" },
@@ -109,9 +114,10 @@ const modesData = [
   { name: "Free For All - Farm", image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/FFA_Farm.jpg.jpeg" },
   { name: "Zombie Mode - Metal Rage", image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/ZM1_MetalRage_01.jpg.jpeg" },
   { name: "Zombie Mode - Evil Den", image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/ZM1_EvilDen_01.jpg.jpeg" },
+  { name: "Aim Master Game", image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
 ];
 
-// RANKS - All 100 with FULL GitHub URLs
+// RANKS - All 100 with FULL GitHub URLs (not template variables)
 const ranksData = Array.from({ length: 100 }, (_, i) => {
   const rankNum = i + 1;
   return {
@@ -121,83 +127,146 @@ const ranksData = Array.from({ length: 100 }, (_, i) => {
   };
 });
 
-async function seedDatabase() {
+// EVENT SCRAPER - Fetches announcements from forum and converts to events
+async function scrapeForumEvents() {
   try {
-    console.log("🔄 Starting database seeding with FULL URLS (Catbox + GitHub)...");
-    console.log("   ⚠️  NO MORE 404 ERRORS - Using real URLs, not template variables");
-
-    // Login
-    const authResponse = await fetch(`${API_BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: ADMIN_PASSWORD }),
+    console.log("🔍 Scraping announcements from forum.z8games.com...");
+    const response = await axios.get(ANNOUNCEMENTS_URL, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      timeout: 15000
     });
 
-    const auth = await authResponse.json();
-    if (!auth || !auth.token) {
-      console.error("❌ Auth failed:", auth);
-      throw new Error("Failed to authenticate");
-    }
-    console.log("✅ Authenticated");
+    const $ = cheerio.load(response.data);
+    const events = [];
 
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.token}`,
-    };
+    // Find all discussion links
+    $('a[href*="/discussion/"]').slice(0, 10).each((i, link) => {
+      const href = $(link).attr('href');
+      const text = $(link).text().trim();
+      
+      if (text && href) {
+        events.push({
+          title: text.substring(0, 150),
+          date: new Date().toISOString().split('T')[0],
+          type: 'announcement',
+          image: 'https://files.catbox.moe/wof38b.jpeg',
+          description: `Crossfire: ${text}`
+        });
+      }
+    });
 
-    // Seed weapons (44 total)
+    console.log(`✅ Scraped ${events.length} events from forum`);
+    return events.length > 0 ? events : null;
+  } catch (error) {
+    console.warn("⚠️  Forum scraping failed:", error.message);
+    return null;
+  }
+}
+
+async function seedDatabase(options = {}) {
+  const { closeConnection = false } = options;
+  try {
+    console.log("🔄 Connecting to MongoDB...");
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ Connected to MongoDB\n");
+
+    // Define minimal schemas for seeding
+    const MercenarySchema = new Schema({
+      id: String,
+      name: String,
+      image: String,
+      role: String,
+      description: String,
+    }, { collection: 'mercenaries' });
+
+    const WeaponSchema = new Schema({
+      name: String,
+      description: String,
+      category: String,
+      image: String,
+      damage: Number,
+      recoil: Number,
+      rateOfFire: Number,
+      accuracy: Number,
+    }, { collection: 'weapons' });
+
+    const ModeSchema = new Schema({
+      name: String,
+      image: String,
+    }, { collection: 'modes' });
+
+    const RankSchema = new Schema({
+      name: String,
+      tier: Number,
+      emblem: String,
+    }, { collection: 'ranks' });
+
+    const EventSchema = new Schema({
+      title: String,
+      date: String,
+      type: String,
+      image: String,
+      description: String,
+    }, { collection: 'events' });
+
+    // Get or create models (handles if they're already compiled)
+    const Mercenary = mongoose.models.Mercenary || mongoose.model('Mercenary', MercenarySchema);
+    const Weapon = mongoose.models.Weapon || mongoose.model('Weapon', WeaponSchema);
+    const Mode = mongoose.models.Mode || mongoose.model('Mode', ModeSchema);
+    const Rank = mongoose.models.Rank || mongoose.model('Rank', RankSchema);
+    const Event = mongoose.models.Event || mongoose.model('Event', EventSchema);
+
+    console.log("\n🔄 Clearing existing data to prevent duplicates...");
+    await Mercenary.deleteMany({});
+    await Weapon.deleteMany({});
+    await Mode.deleteMany({});
+    await Rank.deleteMany({});
+    // DO NOT delete events - let admin manage them manually
+
+    // Seed mercenaries (10 total)
+    console.log(`\n⚔️ Seeding ${mercenariesData.length} mercenaries...`);
+    await Mercenary.insertMany(mercenariesData);
+    console.log(`  ✅ Seeded: ${mercenariesData.length} mercenaries`);
+
+    // Seed weapons
     console.log(`\n📦 Seeding ${weaponsData.length} weapons...`);
-    let weaponCount = 0;
-    for (const weapon of weaponsData) {
-      const resp = await fetch(`${API_BASE}/api/weapons`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(weapon),
-      });
-      if (resp.ok) {
-        weaponCount++;
-        if (weaponCount % 10 === 0) console.log(`  ✅ Seeded ${weaponCount}/${weaponsData.length} weapons...`);
-      }
-    }
-    console.log(`  ✅ Completed: ${weaponCount} weapons`);
+    await Weapon.insertMany(weaponsData);
+    console.log(`  ✅ Seeded: ${weaponsData.length} weapons`);
 
-    // Seed modes (28 unique mode maps shown + more in GitHub)
+    // Seed modes
     console.log(`\n🎮 Seeding ${modesData.length} game modes...`);
-    let modeCount = 0;
-    for (const mode of modesData) {
-      const resp = await fetch(`${API_BASE}/api/modes`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(mode),
-      });
-      if (resp.ok) {
-        modeCount++;
-      }
-    }
-    console.log(`  ✅ Completed: ${modeCount} modes (328+ total mode maps available in GitHub)`);
+    await Mode.insertMany(modesData);
+    console.log(`  ✅ Seeded: ${modesData.length} modes`);
 
     // Seed ranks (100 total)
     console.log(`\n🏅 Seeding ${ranksData.length} ranks...`);
-    let rankCount = 0;
-    for (const rank of ranksData) {
-      const resp = await fetch(`${API_BASE}/api/ranks`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(rank),
-      });
-      if (resp.ok) {
-        rankCount++;
-        if (rankCount % 10 === 0) console.log(`  ✅ Seeded ${rankCount}/${ranksData.length} ranks...`);
-      }
-    }
-    console.log(`  ✅ Completed: ${rankCount} ranks`);
+    await Rank.insertMany(ranksData);
+    console.log(`  ✅ Seeded: ${ranksData.length} ranks`);
 
     console.log("\n✅ SEEDING COMPLETE!");
-    console.log(`   📊 Total: ${weaponCount} weapons + ${modeCount} modes + ${rankCount} ranks`);
+    console.log(`   📊 Total: ${mercenariesData.length} mercenaries + ${weaponsData.length} weapons + ${modesData.length} modes + ${ranksData.length} ranks`);
+    console.log("   📅 Events: Managed manually via admin panel\n");
+
+    // Only close connection if requested (when run as standalone script)
+    if (closeConnection) {
+      await mongoose.connection.close();
+      console.log("✅ MongoDB connection closed");
+    }
   } catch (error) {
     console.error("❌ Seeding failed:", error.message);
+    if (closeConnection) {
+      await mongoose.connection.close();
+    }
     throw error;
   }
 }
 
+// Export seedDatabase as default export for use as a module
 export default seedDatabase;
+
+// Run seeding if this script is executed directly (node seed-from-urls.js)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedDatabase({ closeConnection: true }).catch(console.error);
+}

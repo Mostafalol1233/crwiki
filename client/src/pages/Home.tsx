@@ -113,7 +113,7 @@ export default function Home() {
       />
       <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
       {/* Fire sparks / glow at the edges of the interface */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-32 -left-24 w-72 h-72 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-strong" />
         <div className="absolute -bottom-32 -right-24 w-80 h-80 bg-[radial-gradient(circle_at_center,rgba(252,211,77,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-soft" />
         <div className="absolute top-1/2 -right-10 w-40 h-40 bg-[radial-gradient(circle_at_center,rgba(248,250,252,0.45),transparent_70%)] opacity-30 blur-2xl mix-blend-screen fire-glow-flicker" />
@@ -154,6 +154,8 @@ export default function Home() {
                             width="400"
                             height="256"
                             loading="lazy"
+                            decoding="async"
+                            fetchPriority="high"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -190,6 +192,8 @@ export default function Home() {
                             width="400"
                             height="256"
                             loading="lazy"
+                            decoding="async"
+                            fetchPriority="high"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -229,6 +233,7 @@ export default function Home() {
                             width="800"
                             height="544"
                             loading="lazy"
+                            decoding="async"
                           />
                         )}
                         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
@@ -264,7 +269,7 @@ export default function Home() {
                     <Link href={`/events/${allEvents[3].id}`} className="block" key={allEvents[3].id} data-testid={`home-event-bottom-left-top-${allEvents[3].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
-        {allEvents[3].image && (
+                        {allEvents[3].image && (
           <img
             src={allEvents[3].image}
             alt={allEvents[3].title}
@@ -272,6 +277,7 @@ export default function Home() {
             width="400"
             height="256"
             loading="lazy"
+            decoding="async"
           />
         )}
                           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -295,6 +301,7 @@ export default function Home() {
             width="400"
             height="256"
             loading="lazy"
+            decoding="async"
           />
         )}
                           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -321,6 +328,7 @@ export default function Home() {
             width="800"
             height="544"
             loading="lazy"
+            decoding="async"
           />
         )}
                           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
@@ -615,7 +623,7 @@ export default function Home() {
                     <Link key={item.id} href={`/news/${item.id}`} className="block" data-testid={`home-news-${item.id}`}>
                       <div className="hover-elevate transition-all bg-gradient-to-b from-card to-card/50 rounded-lg overflow-hidden border border-border/50 hover:border-primary/50">
                         <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
-                          <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" width="400" height="225" loading="lazy" />
+                          <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" width="400" height="225" loading="lazy" decoding="async" />
                           {item.category && (
                             <div className="absolute top-2 right-2">
                               <Badge variant="secondary" className="text-xs">
@@ -662,6 +670,7 @@ export default function Home() {
                             width="400"
                             height="225"
                             loading="lazy"
+                            decoding="async"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${tutorial.youtubeId}/default.jpg`;
                             }}
@@ -859,6 +868,7 @@ export default function Home() {
                             width="400"
                             height="225"
                             loading="lazy"
+                            decoding="async"
                           />
                         </div>
                         <h4 className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors">

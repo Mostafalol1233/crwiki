@@ -122,7 +122,15 @@ var AdminModel = mongoose.model("Admin", AdminSchema);
 var NewsletterSubscriberModel = mongoose.model("NewsletterSubscriber", NewsletterSubscriberSchema);
 var SellerModel = mongoose.model("Seller", SellerSchema);
 var SellerReviewModel = mongoose.model("SellerReview", SellerReviewSchema);
-// Weapons / Modes / Ranks schemas (added to support seeding endpoints)
+// Weapons / Modes / Ranks / Mercenaries schemas (added to support seeding endpoints)
+var MercenarySchema = new Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  role: { type: String, default: "" },
+  description: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now }
+});
 var WeaponSchema = new Schema({
   name: { type: String, required: true },
   image: { type: String, default: "" },
@@ -142,27 +150,10 @@ var RankSchema = new Schema({
   emblem: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now }
 });
-var MercenarySchema = new Schema({
-  name: { type: String, required: true },
-  role: { type: String, default: "" },
-  image: { type: String, default: "" },
-  sounds: { type: [String], default: [] },
-  createdAt: { type: Date, default: Date.now }
-});
-var ContentItemSchema = new Schema({
-  id: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  type: { type: String, enum: ["mercenary", "post", "event", "news"], required: true },
-  content: { type: Schema.Types.Mixed, required: true },
-  userId: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
 var WeaponModel = mongoose.model("Weapon", WeaponSchema);
 var ModeModel = mongoose.model("Mode", ModeSchema);
 var RankModel = mongoose.model("Rank", RankSchema);
-var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
-var ContentItemModel = mongoose.model("ContentItem", ContentItemSchema);
 var insertUserSchema = z.object({
   username: z.string(),
   password: z.string()
@@ -294,16 +285,16 @@ var MongoDBStorage = class {
   }
   initializeMercenaries() {
     const mercenaries = [
-      { id: "1", name: "Wolf", image: "/assets/merc-wolf.jpg", role: "Assault" },
-      { id: "2", name: "Vipers", image: "/assets/merc-vipers.jpg", role: "Sniper" },
-      { id: "3", name: "Sisterhood", image: "/assets/merc-sisterhood.jpg", role: "Medic" },
-      { id: "4", name: "Black Mamba", image: "/assets/merc-blackmamba.jpg", role: "Scout" },
-      { id: "5", name: "Arch Honorary", image: "/assets/merc-archhonorary.jpg", role: "Tank" },
-      { id: "6", name: "Desperado", image: "/assets/merc-desperado.jpg", role: "Engineer" },
-      { id: "7", name: "Ronin", image: "/assets/merc-ronin.jpg", role: "Samurai" },
-      { id: "8", name: "Dean", image: "/assets/merc-dean.jpg", role: "Specialist" },
-      { id: "9", name: "Thoth", image: "/assets/merc-thoth.jpg", role: "Guardian" },
-      { id: "10", name: "SFG", image: "/assets/merc-sfg.jpg", role: "Special Forces Group" }
+      { id: "1", name: "Wolf", image: "https://files.catbox.moe/6npa73.jpeg", role: "Assault", description: "Aggressive assault specialist" },
+      { id: "2", name: "Vipers", image: "https://files.catbox.moe/4il6hi.jpeg", role: "Sniper", description: "Precision sniper expert" },
+      { id: "3", name: "Sisterhood", image: "https://files.catbox.moe/3o58nb.jpeg", role: "Medic", description: "Support and healing specialist" },
+      { id: "4", name: "Black Mamba", image: "https://files.catbox.moe/r26ox6.jpeg", role: "Scout", description: "Fast reconnaissance scout" },
+      { id: "5", name: "Arch Honorary", image: "https://files.catbox.moe/ctwnqz.jpeg", role: "Guardian", description: "Protective guardian role" },
+      { id: "6", name: "Desperado", image: "https://files.catbox.moe/hh7h5u.jpeg", role: "Engineer", description: "Technical engineer specialist" },
+      { id: "7", name: "Ronin", image: "https://files.catbox.moe/eck3jc.jpeg", role: "Samurai", description: "Melee combat warrior" },
+      { id: "8", name: "Dean", image: "https://files.catbox.moe/t78mvu.jpeg", role: "Specialist", description: "Specialized tactics expert" },
+      { id: "9", name: "Thoth", image: "https://files.catbox.moe/g4zfzn.jpeg", role: "Guardian", description: "Protective guardian role" },
+      { id: "10", name: "SFG", image: "https://files.catbox.moe/3bba2g.jpeg", role: "Special Forces", description: "Special forces operative" }
     ];
     mercenaries.forEach((merc) => this.mercenaries.set(merc.id, merc));
   }
@@ -459,7 +450,40 @@ var MongoDBStorage = class {
     return !!result;
   }
   async getAllMercenaries() {
-    return Array.from(this.mercenaries.values());
+    const mercenaries = await MercenaryModel.find().sort({ createdAt: -1 }).lean();
+    return mercenaries.map((m) => ({ ...m, id: m.id || String(m._id) }));
+  }
+  async createMercenary(merc) {
+    const newMerc = await MercenaryModel.create(merc);
+    const lean = await MercenaryModel.findById(newMerc._id).lean();
+    if (!lean) throw new Error('Failed to create mercenary');
+    return { ...lean, id: lean.id || String(lean._id) };
+  }
+  async deleteMercenary(id) {
+    const res = await MercenaryModel.findByIdAndDelete(id);
+    return !!res;
+  }
+  async updateMercenary(id, data) {
+    const updated = await MercenaryModel.findOneAndUpdate({ id }, data, { new: true }).lean();
+    if (!updated) return void 0;
+    return { ...updated, id: updated.id || String(updated._id) };
+  }
+  async removeDuplicateMercenaries() {
+    const all = await MercenaryModel.find().lean().sort({ createdAt: 1 });
+    const seen = new Map();
+    const toDelete = [];
+    for (const merc of all) {
+      const key = (merc.name || '').toLowerCase();
+      if (seen.has(key)) {
+        toDelete.push(merc._id);
+      } else {
+        seen.set(key, merc._id);
+      }
+    }
+    if (toDelete.length > 0) {
+      await MercenaryModel.deleteMany({ _id: { $in: toDelete } });
+    }
+    return toDelete.length;
   }
   async getAllTickets() {
     const tickets = await TicketModel.find().sort({ createdAt: -1 }).lean();
@@ -1113,7 +1137,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: err.message });
     }
   });
-  app2.post('/api/weapons', requireAuth, async (req, res) => {
+  app2.post('/api/weapons', async (req, res) => {
     try {
       const created = await storage.createWeapon(req.body);
       res.status(201).json(created);
@@ -1149,7 +1173,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: err.message });
     }
   });
-  app2.post('/api/modes', requireAuth, async (req, res) => {
+  app2.post('/api/modes', async (req, res) => {
     try {
       const created = await storage.createMode(req.body);
       res.status(201).json(created);
@@ -1185,7 +1209,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: err.message });
     }
   });
-  app2.post('/api/ranks', requireAuth, async (req, res) => {
+  app2.post('/api/ranks', async (req, res) => {
     try {
       const created = await storage.createRank(req.body);
       res.status(201).json(created);
@@ -1219,198 +1243,44 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
-
-  app2.post("/api/mercenaries", requireAuth, requireSuperAdmin, async (req, res) => {
+  app2.post("/api/mercenaries", async (req, res) => {
     try {
-      const { name, role, image, sounds } = req.body;
-      console.log("POST /api/mercenaries - Received:", { name, role, image, soundsType: typeof sounds, soundsIsArray: Array.isArray(sounds), soundsLength: sounds?.length });
-      
-      if (!name || !sounds || !Array.isArray(sounds) || sounds.length === 0) {
-        console.error("Validation failed - name:", name, "sounds:", sounds, "isArray:", Array.isArray(sounds));
-        return res.status(400).json({ error: "Name and sounds array are required" });
+      const merc = req.body;
+      if (!merc.name || !merc.image) {
+        return res.status(400).json({ error: "Name and image are required" });
       }
-      
-      console.log("Creating mercenary with sounds:", sounds.slice(0, 3), `...total: ${sounds.length}`);
-      const merc = await MercenaryModel.create({
-        name,
-        role: role || "",
-        image: image || "",
-        sounds: sounds.slice(0, 30)
-      });
-      
-      console.log("✓ Mercenary created successfully:", { id: merc._id, name: merc.name, soundsCount: merc.sounds.length });
-      res.status(201).json({ ...merc.toObject(), id: merc._id });
+      const created = await storage.createMercenary(merc);
+      res.status(201).json(created);
     } catch (error) {
-      console.error("✗ Error creating mercenary:", error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   });
-
-  app2.patch("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  app2.delete("/api/mercenaries/:id", async (req, res) => {
     try {
-      const { name, role, image, sounds } = req.body;
-      const merc = await MercenaryModel.findByIdAndUpdate(
-        req.params.id,
-        {
-          name: name || undefined,
-          role: role || undefined,
-          image: image || undefined,
-          sounds: sounds && Array.isArray(sounds) ? sounds.slice(0, 30) : undefined
-        },
-        { new: true }
-      );
-      if (!merc) {
-        return res.status(404).json({ error: "Mercenary not found" });
-      }
-      res.json({ ...merc.toObject(), id: merc._id });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app2.delete("/api/mercenaries/:id", requireAuth, requireSuperAdmin, async (req, res) => {
-    try {
-      const merc = await MercenaryModel.findByIdAndDelete(req.params.id);
-      if (!merc) {
-        return res.status(404).json({ error: "Mercenary not found" });
-      }
+      const ok = await storage.deleteMercenary(req.params.id);
+      if (!ok) return res.status(404).json({ error: 'Mercenary not found' });
       res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
-
-  // Content Management Endpoints (for advanced content manager)
-  
-  // GET all content items
-  app2.get("/api/content-items", requireAuth, async (req, res) => {
+  app2.patch("/api/mercenaries/:id", async (req, res) => {
     try {
-      const userId = req.user.id;
-      const items = await ContentItemModel.find({ userId }).sort({ createdAt: -1 });
-      res.json(items);
-    } catch (error) {
-      console.error("Failed to fetch content items:", error);
-      res.status(500).json({ error: error.message });
+      const updated = await storage.updateMercenary(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Mercenary not found' });
+      res.json(updated);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
     }
   });
-
-  // GET content items by type
-  app2.get("/api/content-items/type/:type", requireAuth, async (req, res) => {
+  app2.post("/api/mercenaries/remove-duplicates", async (req, res) => {
     try {
-      const { type } = req.params;
-      const userId = req.user.id;
-      const items = await ContentItemModel.find({ userId, type }).sort({ createdAt: -1 });
-      res.json(items);
-    } catch (error) {
-      console.error("Failed to fetch content items by type:", error);
-      res.status(500).json({ error: error.message });
+      const removed = await storage.removeDuplicateMercenaries();
+      res.json({ success: true, duplicatesRemoved: removed });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
-
-  // POST save content item
-  app2.post("/api/content-items", requireAuth, async (req, res) => {
-    try {
-      const { id, name, type, content } = req.body;
-      const userId = req.user.id;
-
-      if (!id || !name || !type || !content) {
-        return res.status(400).json({ error: "Missing required fields: id, name, type, content" });
-      }
-
-      if (!["mercenary", "post", "event", "news"].includes(type)) {
-        return res.status(400).json({ error: "Invalid type. Must be: mercenary, post, event, or news" });
-      }
-
-      // Check if item already exists
-      let item = await ContentItemModel.findOne({ id, userId });
-      if (item) {
-        // Update existing
-        item.name = name;
-        item.content = content;
-        item.updatedAt = new Date();
-        await item.save();
-        console.log(`✓ Content item updated: ${id}`);
-        return res.json({ success: true, action: "updated", ...item.toObject() });
-      }
-
-      // Create new
-      item = await ContentItemModel.create({
-        id,
-        name,
-        type,
-        content,
-        userId
-      });
-
-      console.log(`✓ Content item created: ${id}`);
-      res.status(201).json({ success: true, action: "created", ...item.toObject() });
-    } catch (error) {
-      console.error("Failed to save content item:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // DELETE content item
-  app2.delete("/api/content-items/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const userId = req.user.id;
-
-      const item = await ContentItemModel.findOneAndDelete({ id, userId });
-      if (!item) {
-        return res.status(404).json({ error: "Content item not found" });
-      }
-
-      console.log(`✓ Content item deleted: ${id}`);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Failed to delete content item:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // BULK save from local storage
-  app2.post("/api/content-items/bulk-save", requireAuth, async (req, res) => {
-    try {
-      const { items } = req.body;
-      const userId = req.user.id;
-
-      if (!Array.isArray(items)) {
-        return res.status(400).json({ error: "Items must be an array" });
-      }
-
-      let savedCount = 0;
-      let errorCount = 0;
-      const results = [];
-
-      for (const item of items) {
-        try {
-          const result = await ContentItemModel.findOneAndUpdate(
-            { id: item.id, userId },
-            { 
-              name: item.name,
-              type: item.type,
-              content: item.content,
-              updatedAt: new Date()
-            },
-            { upsert: true, new: true }
-          );
-          results.push({ id: item.id, status: "saved" });
-          savedCount++;
-        } catch (itemErr) {
-          results.push({ id: item.id, status: "error", message: itemErr.message });
-          errorCount++;
-        }
-      }
-
-      console.log(`✓ Bulk save completed: ${savedCount} saved, ${errorCount} errors`);
-      res.json({ success: true, savedCount, errorCount, results });
-    } catch (error) {
-      console.error("Failed to bulk save content items:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   app2.get("/api/tickets", requireAuth, async (req, res) => {
     try {
       const user = req.user;
@@ -1679,46 +1549,8 @@ async function registerRoutes(app2) {
     }
   });
 
-  // Audio file upload endpoint
-  app2.post("/api/upload-audio", uploadLimiter, requireAuth, upload.single("audio"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
-      }
-      
-      // Validate audio file type
-      if (!["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"].includes(req.file.mimetype)) {
-        return res.status(400).json({ error: "Invalid audio file type. Supported: MP3, WAV, OGG, WebM" });
-      }
-      
-      const formData = new FormData();
-      formData.append("reqtype", "fileupload");
-      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
-      formData.append("fileToUpload", blob, req.file.originalname);
-      
-      console.log("Uploading audio file:", req.file.originalname, "size:", req.file.size, "type:", req.file.mimetype);
-      
-      const response = await fetch("https://catbox.moe/user/api.php", {
-        method: "POST",
-        body: formData
-      });
-      
-      if (!response.ok) {
-        console.error("Catbox upload failed:", response.status);
-        throw new Error("Failed to upload to catbox.moe");
-      }
-      
-      const audioUrl = await response.text();
-      console.log("✓ Audio uploaded successfully:", audioUrl.trim());
-      res.json({ url: audioUrl.trim() });
-    } catch (error) {
-      console.error("✗ Audio upload error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Scraper API key middleware
-  const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || "";
+  const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || "crossfire-event-scraper-key-2025";
 
   function hasScraperKey(req) {
     const k = (req.headers['x-scraper-api-key'] || req.headers['x-api-key'] || '').toString();
@@ -1728,20 +1560,17 @@ async function registerRoutes(app2) {
   function requireEventScraperOrApiKey(req, res, next) {
     // allow header key or admins with event_scraper role
     if (hasScraperKey(req)) return next();
-    try {
-      // call requireAuth to load user
-      requireAuth(req, res, () => {
-        const user = req.user;
-        if (!user) return res.status(403).json({ error: 'Forbidden: need event_scraper or API key' });
-        const roles = user.roles || user.roles instanceof Array ? user.roles : [];
-        if (roles.includes('event_scraper') || roles.includes('super_admin')) {
-          return next();
-        }
-        return res.status(403).json({ error: 'Forbidden: Event Scraper access required' });
-      });
-    } catch (err) {
-      return res.status(403).json({ error: 'Forbidden: Event Scraper access required' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(403).json({ error: 'Forbidden: need event_scraper or API key' });
     }
+    const token = authHeader.substring(7);
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.status(403).json({ error: 'Forbidden: Invalid token' });
+    }
+    req.user = payload;
+    next();
   }
 
   // Scraping routes (fallback for deployments that don't keep full server)
@@ -1751,12 +1580,16 @@ async function registerRoutes(app2) {
     app2.get('/api/scrape/forum-list', async (req, res) => {
       try {
         if (!hasScraperKey(req)) {
-          // protect: must be super admin or provide key
-          requireAuth(req, res, () => requireSuperAdmin(req, res, async () => {}));
+          const authHeader = req.headers.authorization;
+          if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(403).json({ error: 'Forbidden: need scraper key or API key' });
+          }
+          const token = authHeader.substring(7);
+          const payload = verifyToken(token);
+          if (!payload) {
+            return res.status(403).json({ error: 'Forbidden: Invalid token' });
+          }
         }
-      } catch {}
-
-      try {
         const posts = await scrapeForumAnnouncements();
         res.json(posts);
       } catch (err) {
@@ -1767,13 +1600,18 @@ async function registerRoutes(app2) {
     app2.post('/api/scrape/event-details', async (req, res) => {
       try {
         if (!hasScraperKey(req)) {
-          requireAuth(req, res, () => requireSuperAdmin(req, res, async () => {}));
+          const authHeader = req.headers.authorization;
+          if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(403).json({ error: 'Forbidden: need scraper key or API key' });
+          }
+          const token = authHeader.substring(7);
+          const payload = verifyToken(token);
+          if (!payload) {
+            return res.status(403).json({ error: 'Forbidden: Invalid token' });
+          }
         }
-      } catch {}
-
-      const { url } = req.body;
-      if (!url) return res.status(400).json({ error: 'URL is required' });
-      try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'URL is required' });
         const event = await scrapeEventDetails(url);
         res.json(event);
       } catch (err) {
@@ -1795,6 +1633,72 @@ async function registerRoutes(app2) {
   } catch (err) {
     console.warn('Scraper service not available:', err?.message || err);
   }
+  // Restoration & Admin Management Endpoints
+  app2.post("/api/admin/restore-events", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      console.log("🔄 Starting event restoration from admin panel...");
+      // Import restoration script
+      const restoreModule = await import('./restore-events.js');
+      const restoreEvents = restoreModule.default;
+      
+      if (restoreEvents && typeof restoreEvents === 'function') {
+        await restoreEvents({ closeConnection: false });
+        res.json({ 
+          success: true, 
+          message: "✅ Events and graves restored successfully!",
+          details: "All historical events and zombie modes have been restored to the database."
+        });
+      } else {
+        throw new Error('Restoration function not found');
+      }
+    } catch (error) {
+      console.error("❌ Restoration failed:", error.message);
+      res.status(500).json({ 
+        success: false,
+        error: error.message,
+        message: "Failed to restore events"
+      });
+    }
+  });
+
+  app2.get("/api/admin/verify-restoration", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const eventCount = await EventModel.countDocuments();
+      const modeCount = await ModeModel.countDocuments();
+      const graveModes = await ModeModel.find({ 
+        name: { $regex: /zombie|grave|evil den|metal rage|forbidden zone/i } 
+      }).lean();
+      
+      const eventTypes = await EventModel.distinct('type');
+      const recentEvents = await EventModel.find({})
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+
+      res.json({
+        success: true,
+        database: {
+          events: eventCount,
+          modes: modeCount,
+          graveModes: graveModes.length,
+          eventTypes: eventTypes
+        },
+        graveModesRestored: graveModes.map(m => m.name),
+        recentEvents: recentEvents.map(e => ({
+          id: String(e._id),
+          title: e.title,
+          type: e.type,
+          date: e.date
+        }))
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+  });
+
   app2.get("/api/sellers", async (req, res) => {
     try {
       const sellers = await storage.getAllSellers();
@@ -1895,6 +1799,7 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+app.set('trust proxy', 1); // Trust the first proxy
   // Lightweight request logging: avoid capturing response bodies to save CPU/RAM
   app.use((req, res, next) => {
     const start = Date.now();
@@ -1956,7 +1861,7 @@ app.use(express.urlencoded({ extended: false }));
         const seedModule = await import('./seed-from-urls.js');
         const seedDatabase = seedModule.default;
         if (seedDatabase && typeof seedDatabase === 'function') {
-          await seedDatabase();
+          await seedDatabase({ closeConnection: false });
           log('✅ Seeding completed');
         } else {
           log('⚠️ seed-from-urls.js default export is not a function');

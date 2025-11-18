@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useState, useRef } from "react";
@@ -9,7 +10,7 @@ interface Mercenary {
   name: string;
   image: string;
   role: string;
-  sounds?: string[]; // Array of MP3 URLs for voice lines
+  voiceLines?: string[]; // Changed from sounds to voiceLines
 }
 
 export default function Mercenaries() {
@@ -23,16 +24,16 @@ export default function Mercenaries() {
     queryKey: ["/api/mercenaries"],
   });
 
-  const playRandomSound = (mercId: string, sounds?: string[]) => {
-    if (!sounds || sounds.length === 0) return;
+  const playRandomSound = (mercId: string, voiceLines?: string[]) => {
+    if (!voiceLines || voiceLines.length === 0) return;
 
     // Pick a random sound (avoid repeating the last one when possible)
-    let randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+    let randomSound = voiceLines[Math.floor(Math.random() * voiceLines.length)];
     const last = lastSoundRef.current[mercId];
-    if (sounds.length > 1 && last) {
+    if (voiceLines.length > 1 && last) {
       let attempts = 0;
       while (randomSound === last && attempts < 5) {
-        randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+        randomSound = voiceLines[Math.floor(Math.random() * voiceLines.length)];
         attempts++;
       }
     }
@@ -132,13 +133,13 @@ export default function Mercenaries() {
                       {merc.role}
                     </p>
                     
-                    {/* Voice Button - Only show if mercenary has sounds */}
-                    {merc.sounds && merc.sounds.length > 0 && (
+                    {/* Voice Button - Only show if mercenary has voiceLines */}
+                    {merc.voiceLines && merc.voiceLines.length > 0 && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => playRandomSound(merc.id, merc.sounds)}
-                        className="w-full h-8 text-xs bg:white/10 border-white/30 hover:bg-white/20 text-white"
+                        onClick={() => playRandomSound(merc.id, merc.voiceLines)}
+                        className="w-full h-8 text-xs bg-white/10 border-white/30 hover:bg-white/20 text-white"
                       >
                         {playingMercId === merc.id ? (
                           <>

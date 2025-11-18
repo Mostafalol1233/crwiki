@@ -1,3 +1,4 @@
+
 #!/usr/bin/env node
 /**
  * seed-from-urls.js
@@ -16,18 +17,108 @@ const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crossfir
 const FORUM_BASE_URL = "https://forum.z8games.com";
 const ANNOUNCEMENTS_URL = `${FORUM_BASE_URL}/categories/crossfire-announcements`;
 
-// MERCENARIES - 10 unique mercenary characters with CATBOX URLS
+// MERCENARIES - 10 unique mercenary characters with CATBOX URLS AND AUDIO
 const mercenariesData = [
-  { id: "1", name: "Wolf", image: "https://files.catbox.moe/6npa73.jpeg", role: "Assault", description: "Aggressive assault specialist" },
-  { id: "2", name: "Vipers", image: "https://files.catbox.moe/4il6hi.jpeg", role: "Sniper", description: "Precision sniper expert" },
-  { id: "3", name: "Sisterhood", image: "https://files.catbox.moe/3o58nb.jpeg", role: "Medic", description: "Support and healing specialist" },
-  { id: "4", name: "Black Mamba", image: "https://files.catbox.moe/r26ox6.jpeg", role: "Scout", description: "Fast reconnaissance scout" },
-  { id: "5", name: "Arch Honorary", image: "https://files.catbox.moe/ctwnqz.jpeg", role: "Guardian", description: "Protective guardian role" },
-  { id: "6", name: "Desperado", image: "https://files.catbox.moe/hh7h5u.jpeg", role: "Engineer", description: "Technical engineer specialist" },
-  { id: "7", name: "Ronin", image: "https://files.catbox.moe/eck3jc.jpeg", role: "Samurai", description: "Melee combat warrior" },
-  { id: "8", name: "Dean", image: "https://files.catbox.moe/t78mvu.jpeg", role: "Specialist", description: "Specialized tactics expert" },
-  { id: "9", name: "Thoth", image: "https://files.catbox.moe/g4zfzn.jpeg", role: "Guardian", description: "Protective guardian role" },
-  { id: "10", name: "SFG", image: "https://files.catbox.moe/3bba2g.jpeg", role: "Special Forces", description: "Special forces operative" },
+  { 
+    id: "1", 
+    name: "Wolf", 
+    image: "https://files.catbox.moe/6npa73.jpeg", 
+    role: "Assault", 
+    description: "Aggressive assault specialist with high damage output and tactical expertise in close combat situations.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 85, speed: 70, attack: 90, defense: 75 }
+  },
+  { 
+    id: "2", 
+    name: "Vipers", 
+    image: "https://files.catbox.moe/4il6hi.jpeg", 
+    role: "Sniper", 
+    description: "Precision sniper expert capable of eliminating targets from extreme distances with deadly accuracy.",
+    audioUrl: "",
+    voiceLines: [],
+    stats: { health: 65, speed: 60, attack: 95, defense: 50 }
+  },
+  { 
+    id: "3", 
+    name: "Sisterhood", 
+    image: "https://files.catbox.moe/3o58nb.jpeg", 
+    role: "Medic", 
+    description: "Support and healing specialist ensuring team survival through medical expertise and tactical support.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 75, speed: 75, attack: 60, defense: 70 }
+  },
+  { 
+    id: "4", 
+    name: "Black Mamba", 
+    image: "https://files.catbox.moe/r26ox6.jpeg", 
+    role: "Scout", 
+    description: "Fast reconnaissance scout with exceptional mobility and intelligence gathering capabilities.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 70, speed: 95, attack: 70, defense: 55 }
+  },
+  { 
+    id: "5", 
+    name: "Arch Honorary", 
+    image: "https://files.catbox.moe/ctwnqz.jpeg", 
+    role: "Guardian", 
+    description: "Protective guardian role specializing in defensive positions and area denial tactics.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 90, speed: 55, attack: 65, defense: 95 }
+  },
+  { 
+    id: "6", 
+    name: "Desperado", 
+    image: "https://files.catbox.moe/hh7h5u.jpeg", 
+    role: "Engineer", 
+    description: "Technical engineer specialist skilled in equipment deployment and tactical modifications.",
+    audioUrl: "",
+    voiceLines: [],
+    stats: { health: 75, speed: 65, attack: 70, defense: 80 }
+  },
+  { 
+    id: "7", 
+    name: "Ronin", 
+    image: "https://files.catbox.moe/eck3jc.jpeg", 
+    role: "Samurai", 
+    description: "Melee combat warrior with exceptional close-quarters combat skills and honor-bound tactics.",
+    audioUrl: "",
+    voiceLines: [],
+    stats: { health: 80, speed: 80, attack: 85, defense: 70 }
+  },
+  { 
+    id: "8", 
+    name: "Dean", 
+    image: "https://files.catbox.moe/t78mvu.jpeg", 
+    role: "Specialist", 
+    description: "Specialized tactics expert with versatile skills adapted to any combat scenario.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 75, speed: 75, attack: 75, defense: 75 }
+  },
+  { 
+    id: "9", 
+    name: "Thoth", 
+    image: "https://files.catbox.moe/g4zfzn.jpeg", 
+    role: "Guardian", 
+    description: "Protective guardian with ancient wisdom and defensive mastery in battlefield control.",
+    audioUrl: "",
+    voiceLines: [],
+    stats: { health: 85, speed: 60, attack: 70, defense: 90 }
+  },
+  { 
+    id: "10", 
+    name: "SFG", 
+    image: "https://files.catbox.moe/3bba2g.jpeg", 
+    role: "Special Forces", 
+    description: "Special forces operative with elite training and multi-role combat capabilities.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: [],
+    stats: { health: 80, speed: 85, attack: 85, defense: 75 }
+  },
 ];
 
 // WEAPONS - 28 with CATBOX URLS + STATS (damage, recoil, etc)
@@ -179,6 +270,14 @@ async function seedDatabase(options = {}) {
       image: String,
       role: String,
       description: String,
+      audioUrl: String,
+      voiceLines: [String],
+      stats: {
+        health: Number,
+        speed: Number,
+        attack: Number,
+        defense: Number,
+      }
     }, { collection: 'mercenaries' });
 
     const WeaponSchema = new Schema({

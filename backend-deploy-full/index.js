@@ -1243,11 +1243,19 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
-  app2.post("/api/mercenaries", async (req, res) => {
+  app2.post("/api/mercenaries", requireAuth, async (req, res) => {
     try {
       const merc = req.body;
       if (!merc.name || !merc.image) {
         return res.status(400).json({ error: "Name and image are required" });
+      }
+      // Ensure stats object exists
+      if (!merc.stats) {
+        merc.stats = { health: 75, speed: 75, attack: 75, defense: 75 };
+      }
+      // Ensure arrays exist
+      if (!merc.voiceLines) {
+        merc.voiceLines = [];
       }
       const created = await storage.createMercenary(merc);
       res.status(201).json(created);
@@ -1255,7 +1263,7 @@ async function registerRoutes(app2) {
       res.status(400).json({ error: error.message });
     }
   });
-  app2.delete("/api/mercenaries/:id", async (req, res) => {
+  app2.delete("/api/mercenaries/:id", requireAuth, async (req, res) => {
     try {
       const ok = await storage.deleteMercenary(req.params.id);
       if (!ok) return res.status(404).json({ error: 'Mercenary not found' });
@@ -1264,13 +1272,32 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: err.message });
     }
   });
-  app2.patch("/api/mercenaries/:id", async (req, res) => {
+  app2.patch("/api/mercenaries/:id", requireAuth, async (req, res) => {
     try {
-      const updated = await storage.updateMercenary(req.params.id, req.body);
+      const updates = req.body;
+      // Validate required fields if provided
+      if (updates.name !== undefined && !updates.name) {
+        return res.status(400).json({ error: 'Name cannot be empty' });
+      }
+      if (updates.image !== undefined && !updates.image) {
+        return res.status(400).json({ error: 'Image URL cannot be empty' });
+      }
+
+      const updated = await storage.updateMercenary(req.params.id, updates);
       if (!updated) return res.status(404).json({ error: 'Mercenary not found' });
       res.json(updated);
     } catch (err) {
       res.status(400).json({ error: err.message });
+    }
+  });
+  app2.get("/api/mercenaries/:id", async (req, res) => {
+    try {
+      const mercenaries = await storage.getAllMercenaries();
+      const merc = mercenaries.find(m => m.id === req.params.id || String(m._id) === req.params.id);
+      if (!merc) return res.status(404).json({ error: 'Mercenary not found' });
+      res.json(merc);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
   app2.post("/api/mercenaries/remove-duplicates", async (req, res) => {

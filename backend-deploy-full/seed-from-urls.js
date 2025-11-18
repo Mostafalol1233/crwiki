@@ -1,5 +1,3 @@
-
-
 /**
  * seed-from-urls.js
  * Seeds weapons, modes, ranks, mercenaries, and EVENTS directly into MongoDB

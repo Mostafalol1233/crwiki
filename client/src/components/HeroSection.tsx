@@ -36,7 +36,7 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
           e.target.style.backgroundImage = `url(${fallbackImage})`;
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-transparent" />
       
       <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[70vh] md:min-h-[80vh] flex items-end pb-12 md:pb-20">
         <div className="max-w-3xl">
@@ -52,7 +52,7 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
             {post.title}
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
+          <p className="text-lg md:text-xl text-foreground mb-6 leading-relaxed">
             {post.summary}
           </p>
 

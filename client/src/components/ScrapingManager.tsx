@@ -52,58 +52,18 @@ export default function ScrapingManager() {
     setIsScraping(true);
     
     try {
-      const scraperApiKey = process.env.VITE_SCRAPER_API_KEY || localStorage.getItem('scraperApiKey');
-      const headers: HeadersInit = {};
-      if (scraperApiKey) {
-        headers['X-Scraper-API-Key'] = scraperApiKey;
-      }
-
-      const listResponse = await fetch("/api/scrape/forum-list", { headers });
-      const posts = await listResponse.json();
+      const response = await apiRequest("/api/admin/scrape-and-create-events", "POST", {});
       
-      if (!listResponse.ok || !Array.isArray(posts)) {
-        throw new Error(posts.error || "Failed to fetch forum list");
-      }
-
-      if (posts.length === 0) {
-        toast({
-          title: "No Events Found",
-          description: "No announcements found on the forum",
-        });
-        setIsScraping(false);
-        return;
-      }
-
       toast({
-        title: "Fetching Event Details",
-        description: `Found ${posts.length} posts. Now fetching full details...`,
+        title: "Events Created Successfully",
+        description: `✅ Created ${response.events?.length || 0} events from forum announcements`,
       });
-
-      const urls = posts.map(post => post.url);
-      const detailsResponse = await fetch("/api/scrape/multiple-events", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...headers,
-        },
-        body: JSON.stringify({ urls }),
-      });
-
-      const fullEvents = await detailsResponse.json();
       
-      if (!detailsResponse.ok || !Array.isArray(fullEvents)) {
-        throw new Error(fullEvents.error || "Failed to fetch event details");
-      }
-
-      setScrapedEvents(fullEvents);
-      toast({
-        title: "Events Fetched Successfully",
-        description: `Successfully fetched ${fullEvents.length} events with full details`,
-      });
+      setScrapedEvents([]);
     } catch (error: any) {
       toast({
-        title: "Error Fetching Events",
-        description: error.message || "Failed to fetch events from forum",
+        title: "Error Creating Events",
+        description: error.message || "Failed to scrape and create events",
         variant: "destructive",
       });
     } finally {

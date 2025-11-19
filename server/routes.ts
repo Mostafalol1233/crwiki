@@ -1305,9 +1305,38 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
-  app.post("/api/tickets", async (req, res) => {
+  app.post("/api/tickets", upload.fields([{ name: "image", maxCount: 1 }, { name: "video", maxCount: 1 }]), async (req, res) => {
     try {
-      const data = insertTicketSchema.parse(req.body);
+      const body = req.body as any;
+      let mediaUrl: string | undefined = body.mediaUrl;
+      let mediaType: string | undefined = body.mediaType;
+
+      const imageFile = (req.files as any)?.image?.[0];
+      const videoFile = (req.files as any)?.video?.[0];
+
+      const file = videoFile || imageFile;
+      if (file) {
+        const formData = new (global as any).FormData();
+        formData.append("reqtype", "fileupload");
+        const blob = new (global as any).Blob([file.buffer], { type: file.mimetype });
+        formData.append("fileToUpload", blob, file.originalname);
+        const response = await fetch("https://catbox.moe/user/api.php", {
+          method: "POST",
+          body: formData as any,
+        });
+        if (!response.ok) {
+          throw new Error("Failed to upload attachment");
+        }
+        const urlText = await response.text();
+        mediaUrl = urlText.trim();
+        mediaType = videoFile ? "video" : "image";
+      }
+
+      const data = insertTicketSchema.parse({
+        ...body,
+        mediaUrl,
+        mediaType,
+      });
       const ticket = await storage.createTicket(data);
       
       const formattedTicket = {
@@ -1372,16 +1401,37 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
-  app.post("/api/tickets/:id/replies", async (req, res) => {
+  app.post("/api/tickets/:id/replies", upload.single("attachment"), async (req, res) => {
     try {
       const { id } = req.params;
-      const { authorName, content, isAdmin } = req.body;
+      const { authorName, content, isAdmin } = req.body as any;
+      let mediaUrl: string | undefined = undefined;
+      let mediaType: string | undefined = undefined;
+
+      if (req.file) {
+        const formData = new (global as any).FormData();
+        formData.append("reqtype", "fileupload");
+        const blob = new (global as any).Blob([req.file.buffer], { type: req.file.mimetype });
+        formData.append("fileToUpload", blob, req.file.originalname);
+        const response = await fetch("https://catbox.moe/user/api.php", {
+          method: "POST",
+          body: formData as any,
+        });
+        if (!response.ok) {
+          throw new Error("Failed to upload attachment");
+        }
+        const urlText = await response.text();
+        mediaUrl = urlText.trim();
+        mediaType = (req.file.mimetype || '').startsWith('video') ? 'video' : 'image';
+      }
       
       const replyData = {
         ticketId: id,
         authorName,
         content,
         isAdmin: isAdmin || false,
+        mediaUrl,
+        mediaType,
       };
       
       const data = insertTicketReplySchema.parse(replyData);

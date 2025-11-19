@@ -89,6 +89,8 @@ export interface ITicket extends Document {
   status: string;
   priority: string;
   category: string;
+  mediaUrl?: string;
+  mediaType?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -98,6 +100,8 @@ export interface ITicketReply extends Document {
   authorName: string;
   content: string;
   isAdmin: boolean;
+  mediaUrl?: string;
+  mediaType?: string;
   createdAt: Date;
 }
 
@@ -299,6 +303,8 @@ const TicketSchema = new Schema<ITicket>({
   status: { type: String, default: 'open' },
   priority: { type: String, default: 'normal' },
   category: { type: String, required: true },
+  mediaUrl: { type: String, default: '' },
+  mediaType: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -308,6 +314,8 @@ const TicketReplySchema = new Schema<ITicketReply>({
   authorName: { type: String, required: true },
   content: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
+  mediaUrl: { type: String, default: '' },
+  mediaType: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -526,6 +534,8 @@ export const insertTicketSchema = z.object({
   status: z.string().optional(),
   priority: z.string().optional(),
   category: z.string(),
+  mediaUrl: z.string().optional(),
+  mediaType: z.string().optional(),
 });
 
 export const insertTicketReplySchema = z.object({
@@ -533,6 +543,8 @@ export const insertTicketReplySchema = z.object({
   authorName: z.string(),
   content: z.string(),
   isAdmin: z.boolean().optional(),
+  mediaUrl: z.string().optional(),
+  mediaType: z.string().optional(),
 });
 
 export const insertAdminSchema = z.object({

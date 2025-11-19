@@ -33,7 +33,7 @@ export default function TutorialManager() {
   const [description, setDescription] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
 
-  const { data: tutorials = [], isLoading } = useQuery<Tutorial[]>({
+  const { data: tutorials = [], isLoading, isError } = useQuery<Tutorial[]>({
     queryKey: ["/api/tutorials"],
   });
 
@@ -189,6 +189,10 @@ export default function TutorialManager() {
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : isError ? (
+            <div className="text-center py-12 text-red-500">
+              Failed to load tutorials
             </div>
           ) : tutorials.length > 0 ? (
             <div className="rounded-md border">

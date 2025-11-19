@@ -1,70 +1,72 @@
-import React, { useRef, useMemo } from "react";
-import { Canvas, useFrame, extend } from "@react-three/fiber";
-import * as THREE from "three";
+import * as THREE from 'three';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
 
-// Extend JSX to include Three.js elements
-extend({ Points: THREE.Points });
+const Sparks = ({ count = 200 }) => {
+  const mesh = useRef<THREE.Points>(null);
+  const light = useRef<THREE.PointLight>(null);
 
-function Sparks() {
-  const sparksRef = useRef<THREE.Points>(null);
-  const count = 400;
-
-  // تحميل صورة الشرر
-  const texture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    return loader.load("https://threejs.org/examples/textures/sprites/spark1.png");
-  }, []);
-
-  // مواقع الشرر
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3);
+  const particles = useMemo(() => {
+    const temp = [];
     for (let i = 0; i < count; i++) {
-      const side = Math.random() > 0.5 ? 1 : -1;
-      arr[i * 3] = side * 5; // X (يمين/شمال)
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 6; // Y
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 2; // Z
+      const time = Math.random() * 100;
+      const factor = 20 + Math.random() * 100;
+      const speed = 0.01 + Math.random() / 200;
+      const x = (Math.random() - 0.5) * 10;
+      const y = (Math.random() - 0.5) * 10;
+      const z = (Math.random() - 0.5) * 10;
+
+      temp.push({ time, factor, speed, x, y, z });
     }
-    return arr;
+    return temp;
   }, [count]);
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    return geo;
-  }, [positions]);
-
-  const material = new THREE.PointsMaterial({
-    map: texture,
-    color: "#ff9933",
-    size: 0.4,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame(() => {
-    if (sparksRef.current) {
-      const pos = sparksRef.current.geometry.attributes.position.array;
-      for (let i = 0; i < count; i++) {
-        pos[i * 3] += (Math.random() - 0.5) * 0.05; // حركة جانبية
-        pos[i * 3 + 1] += 0.1; // الشرر يطلع لفوق
-        if (pos[i * 3 + 1] > 3) {
-          pos[i * 3 + 1] = -3; // إعادة الشرر من تحت
-        }
-      }
-      sparksRef.current.geometry.attributes.position.needsUpdate = true;
-    }
+    if (!mesh.current) return;
+
+    particles.forEach((particle, i) => {
+      let { factor, speed, x, y, z } = particle;
+
+      const t = (particle.time += speed);
+
+      dummy.position.set(
+        x + Math.cos(t) * (factor + Math.sin(t * 1) * factor),
+        y + Math.sin(t) * (factor + Math.cos(t * 2) * factor),
+        z + Math.cos(t) * (factor + Math.sin(t * 3) * factor)
+      );
+
+      const s = Math.cos(t);
+      dummy.scale.set(s, s, s);
+      dummy.rotation.set(s * 5, s * 5, s * 5);
+      dummy.updateMatrix();
+
+      mesh.current!.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.current.instanceMatrix.needsUpdate = true;
   });
 
-  return <points ref={sparksRef} geometry={geometry} material={material} />;
-}
-
-export default function SparksCanvas() {
   return (
-    <Canvas camera={{ position: [0, 0, 10] }}>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[0, 0, 5]} intensity={1.5} color="#ffaa33" />
-      <Sparks />
-    </Canvas>
+    <>
+      <pointLight ref={light} distance={40} intensity={8} color="orange" />
+      <instancedMesh ref={mesh as any} args={[undefined, undefined, count]}>
+        <dodecahedronGeometry args={[0.2, 0]} />
+        <meshStandardMaterial color="#f0f0f0" roughness={0.5} />
+      </instancedMesh>
+    </>
   );
-}
+};
+
+const SparksCanvas = () => {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
+      <Canvas camera={{ fov: 100, position: [0, 0, 30] }}>
+        <ambientLight intensity={0.5} />
+        <Sparks />
+      </Canvas>
+    </div>
+  );
+};
+
+export default SparksCanvas;

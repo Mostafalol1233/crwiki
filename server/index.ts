@@ -96,7 +96,7 @@ app.use((req, res, next) => {
       let created = 0;
       for (const m of mercenariesData) {
         try { 
-          await storage.createMercenary({ name: m.name, image: m.image, role: m.role, description: m.description }); 
+          await storage.createMercenary({ name: m.name, image: m.image, role: m.role, description: (m as any).description || "" }); 
           created++; 
         } catch (e) {
           console.error('Failed to create mercenary:', m.name, e);

@@ -8,14 +8,22 @@ import type { Tutorial } from "@shared/mongodb-schema";
 import { format } from "date-fns";
 
 export default function TutorialsPage() {
-  const { data: tutorials, isLoading } = useQuery<Tutorial[]>({
-    queryKey: ["tutorials"],
+  const { data: tutorials, isLoading, isError } = useQuery<Tutorial[]>({
+    queryKey: ["/api/tutorials"],
   });
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-lg text-muted-foreground">Loading tutorials...</div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-lg text-muted-foreground">Failed to load tutorials</div>
       </div>
     );
   }

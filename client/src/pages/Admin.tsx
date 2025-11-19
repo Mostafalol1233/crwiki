@@ -771,14 +771,11 @@ export default function Admin() {
 
   const updateMercenaryMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => {
-      // Ensure voiceLines is always an array
       const cleanData = {
         ...data,
         voiceLines: Array.isArray(data.voiceLines) ? data.voiceLines.filter((url: string) => url.trim() !== "") : [],
-        audioUrl: data.audioUrl || "",
-        stats: data.stats || { health: 0, speed: 0, attack: 0, defense: 0 }
       };
-      return apiRequest(`/api/mercenaries/${id}`, "PUT", cleanData);
+      return apiRequest(`/api/mercenaries/${id}`, "PATCH", cleanData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });

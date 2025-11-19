@@ -198,7 +198,8 @@ export interface IMercenary extends Document {
   name: string;
   image: string;
   role: string;
-  sounds?: string[]; // MP3 URLs for voice lines (1-30 sounds)
+  description?: string;
+  voiceLines?: string[]; // MP3 URLs for voice lines (1-30 sounds)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -410,7 +411,8 @@ const MercenarySchema = new Schema<IMercenary>({
   name: { type: String, required: true },
   image: { type: String, required: true },
   role: { type: String, required: true },
-  sounds: { type: [String], default: [] },
+  description: { type: String, default: "" },
+  voiceLines: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

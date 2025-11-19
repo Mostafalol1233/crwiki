@@ -75,6 +75,7 @@ export interface Mercenary {
   name: string;
   image: string;
   role: string;
+  description?: string;
   voiceLines?: string[]; // MP3 URLs for voice lines (1-30 sounds)
 }
 
@@ -221,7 +222,8 @@ export class MongoDBStorage implements IStorage {
           name: merc.name,
           image: merc.image,
           role: merc.role,
-          voiceLines: merc.voiceLines || merc.sounds || []
+          description: (merc as any).description || "",
+          voiceLines: (merc as any).voiceLines || (merc as any).sounds || []
         };
         this.mercenaries.set(mercenary.id, mercenary);
       });
@@ -234,7 +236,8 @@ export class MongoDBStorage implements IStorage {
           name: "Wolf",
           image: "/assets/merc-wolf.jpg",
           role: "Assault",
-          sounds: [
+          description: "",
+          voiceLines: [
             "/sounds/merc/wolf-line1.mp3",
             "/sounds/merc/wolf-line2.mp3",
             "/sounds/merc/wolf-line3.mp3",
@@ -245,7 +248,8 @@ export class MongoDBStorage implements IStorage {
           name: "Vipers",
           image: "/assets/merc-vipers.jpg",
           role: "Sniper",
-          sounds: [
+          description: "",
+          voiceLines: [
             "/sounds/merc/vipers-line1.mp3",
             "/sounds/merc/vipers-line2.mp3",
           ]
@@ -255,7 +259,8 @@ export class MongoDBStorage implements IStorage {
           name: "Sisterhood",
           image: "/assets/merc-sisterhood.jpg",
           role: "Medic",
-          sounds: [
+          description: "",
+          voiceLines: [
             "/sounds/merc/sisterhood-line1.mp3",
           ]
         },
@@ -440,24 +445,7 @@ export class MongoDBStorage implements IStorage {
     return !!result;
   }
 
-  async getAllMercenaries(): Promise<Mercenary[]> {
-    return Array.from(this.mercenaries.values());
-  }
-
-  async createMercenary(mercenary: Omit<Mercenary, 'id'>): Promise<Mercenary> {
-    const id = String(this.mercenaries.size + 1);
-    const newMercenary = { ...mercenary, id, voiceLines: mercenary.voiceLines || [] };
-    this.mercenaries.set(id, newMercenary);
-    return newMercenary;
-  }
-
-  async updateMercenary(id: string, mercenary: Mercenary): Promise<void> {
-    this.mercenaries.set(id, mercenary);
-  }
-
-  async deleteMercenary(id: string): Promise<boolean> {
-    return this.mercenaries.delete(id);
-  }
+  // Legacy in-memory mercenary methods removed in favor of MongoDB-backed implementations below
 
   async getAllAdminPermissions(): Promise<Record<string, Record<string, boolean>>> {
     try {
@@ -1049,7 +1037,7 @@ export class MongoDBStorage implements IStorage {
     return !!result;
   }
 
-  async getAllMercenaries(): Promise<any[]> {
+  async getAllMercenaries(): Promise<Mercenary[]> {
     await this.connect();
     const mercs = await MercenaryModel.find().lean();
     return mercs.map(m => ({
@@ -1057,13 +1045,13 @@ export class MongoDBStorage implements IStorage {
       name: m.name,
       image: m.image,
       role: m.role,
-      description: m.description || "",
-      voiceLines: m.voiceLines || [],
+      description: (m as any).description || "",
+      voiceLines: (m as any).voiceLines || [],
       createdAt: m.createdAt
-    }));
+    })) as any;
   }
 
-  async createMercenary(merc: any): Promise<any> {
+  async createMercenary(merc: Omit<Mercenary, 'id'>): Promise<Mercenary> {
     await this.connect();
     const created = await MercenaryModel.create({
       name: merc.name,
@@ -1073,25 +1061,25 @@ export class MongoDBStorage implements IStorage {
       description: merc.description || ""
     });
     return {
-      id: created._id.toString(),
+      id: (created as any)._id.toString(),
       name: created.name,
       image: created.image,
       role: created.role,
-      voiceLines: created.voiceLines || [],
-      description: created.description || "",
+      voiceLines: (created as any).voiceLines || [],
+      description: (created as any).description || "",
       createdAt: created.createdAt
-    };
+    } as any;
   }
 
-  async updateMercenary(id: string, merc: any): Promise<void> {
+  async updateMercenary(id: string, merc: Mercenary): Promise<void> {
     await this.connect();
     await MercenaryModel.findByIdAndUpdate(id, {
       name: merc.name,
       image: merc.image,
       role: merc.role,
       voiceLines: merc.voiceLines || [],
-      description: merc.description
-    });
+      description: merc.description || ""
+    }, { new: true });
   }
 
   async deleteMercenary(id: string): Promise<boolean> {

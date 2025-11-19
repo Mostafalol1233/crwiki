@@ -142,6 +142,8 @@ var ModeSchema = new Schema({
   name: { type: String, required: true },
   image: { type: String, default: "" },
   description: { type: String, default: "" },
+  video: { type: String, default: "" },
+  type: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now }
 });
 var RankSchema = new Schema({

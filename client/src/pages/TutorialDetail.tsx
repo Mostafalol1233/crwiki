@@ -29,13 +29,13 @@ export default function TutorialDetailPage() {
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentContent, setCommentContent] = useState("");
 
-  const { data: tutorial, isLoading: tutorialLoading } = useQuery<Tutorial>({
-    queryKey: [`tutorials/${tutorialId}`],
+  const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<Tutorial>({
+    queryKey: ["/api/tutorials", tutorialId || ""],
     enabled: !!tutorialId,
   });
 
-  const { data: comments = [] } = useQuery<TutorialComment[]>({
-    queryKey: [`tutorials/${tutorialId}/comments`],
+  const { data: comments = [], isError: commentsError } = useQuery<TutorialComment[]>({
+    queryKey: ["/api/tutorials", tutorialId || "", "comments"],
     enabled: !!tutorialId,
   });
 
@@ -44,10 +44,17 @@ export default function TutorialDetailPage() {
       return await apiRequest(`/api/tutorials/${tutorialId}/like`, "POST", {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`tutorials/${tutorialId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", tutorialId || ""] });
       toast({
         title: "Liked!",
         description: "Thank you for your support!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to like tutorial",
+        variant: "destructive",
       });
     },
   });
@@ -57,12 +64,19 @@ export default function TutorialDetailPage() {
       return await apiRequest(`/api/tutorials/${tutorialId}/comments`, "POST", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`tutorials/${tutorialId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", tutorialId || "", "comments"] });
       setCommentAuthor("");
       setCommentContent("");
       toast({
         title: "Comment Posted",
         description: "Your comment has been added!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to post comment",
+        variant: "destructive",
       });
     },
   });
@@ -100,6 +114,20 @@ export default function TutorialDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-lg text-muted-foreground">Loading tutorial...</div>
+      </div>
+    );
+  }
+
+  if (tutorialError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-semibold">Failed to load tutorial</h2>
+          <Button onClick={() => setLocation("/tutorials")} data-testid="button-back-tutorials-error">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tutorials
+          </Button>
+        </div>
       </div>
     );
   }

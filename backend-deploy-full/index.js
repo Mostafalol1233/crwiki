@@ -45,7 +45,14 @@ var EventSchema = new Schema({
   descriptionAr: { type: String, default: "" },
   date: { type: String, required: true },
   type: { type: String, required: true },
-  image: { type: String, default: "" }
+  image: { type: String, default: "" },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "Event" }
 });
 var NewsSchema = new Schema({
   title: { type: String, required: true },
@@ -58,6 +65,28 @@ var NewsSchema = new Schema({
   htmlContent: { type: String, default: "" },
   author: { type: String, required: true },
   featured: { type: Boolean, default: false },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "NewsArticle" },
+  createdAt: { type: Date, default: Date.now }
+});
+var TutorialSchema = new Schema({
+  title: { type: String, required: true },
+  youtubeUrl: { type: String, required: true },
+  youtubeId: { type: String, required: true },
+  description: { type: String, default: "" },
+  likes: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+var TutorialCommentSchema = new Schema({
+  tutorialId: { type: String, required: true },
+  author: { type: String, required: true },
+  content: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 });
 var TicketSchema = new Schema({
@@ -117,6 +146,8 @@ var CommentModel = mongoose.model("Comment", CommentSchema);
 var EventModel = mongoose.model("Event", EventSchema);
 var NewsModel = mongoose.model("News", NewsSchema);
 var TicketModel = mongoose.model("Ticket", TicketSchema);
+var TutorialModel = mongoose.model("Tutorial", TutorialSchema);
+var TutorialCommentModel = mongoose.model("TutorialComment", TutorialCommentSchema);
 var TicketReplyModel = mongoose.model("TicketReply", TicketReplySchema);
 var AdminModel = mongoose.model("Admin", AdminSchema);
 var NewsletterSubscriberModel = mongoose.model("NewsletterSubscriber", NewsletterSubscriberSchema);
@@ -129,6 +160,7 @@ var MercenarySchema = new Schema({
   image: { type: String, required: true },
   role: { type: String, default: "" },
   description: { type: String, default: "" },
+  voiceLines: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now }
 });
 var WeaponSchema = new Schema({
@@ -184,7 +216,14 @@ var insertEventSchema = z.object({
   descriptionAr: z.string().optional(),
   date: z.string(),
   type: z.string(),
-  image: z.string().optional()
+  image: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional()
 });
 var insertNewsSchema = z.object({
   title: z.string(),
@@ -196,7 +235,14 @@ var insertNewsSchema = z.object({
   contentAr: z.string().optional(),
   htmlContent: z.string().optional(),
   author: z.string(),
-  featured: z.boolean().optional()
+  featured: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional()
 });
 var insertTicketSchema = z.object({
   title: z.string(),
@@ -453,7 +499,7 @@ var MongoDBStorage = class {
   }
   async getAllMercenaries() {
     const mercenaries = await MercenaryModel.find().sort({ createdAt: -1 }).lean();
-    return mercenaries.map((m) => ({ ...m, id: m.id || String(m._id) }));
+    return mercenaries.map((m) => ({ ...m, id: m.id || String(m._id), voiceLines: Array.isArray(m.voiceLines) ? m.voiceLines : [] }));
   }
   async createMercenary(merc) {
     const newMerc = await MercenaryModel.create(merc);
@@ -1130,6 +1176,114 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  app2.get("/api/tutorials", async (req, res) => {
+    try {
+      const items = await TutorialModel.find().sort({ createdAt: -1 }).lean();
+      res.json(items.map((it) => ({ ...it, id: String(it._id) })));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.get("/api/tutorials/:id", async (req, res) => {
+    try {
+      const item = await TutorialModel.findById(req.params.id).lean();
+      if (!item) return res.status(404).json({ error: "Tutorial not found" });
+      res.json({ ...item, id: String(item._id) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.post("/api/tutorials", requireAuth, async (req, res) => {
+    try {
+      const body = req.body;
+      const url = String(body.youtubeUrl || "").trim();
+      const patterns = [/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/, /youtube\.com\/embed\/([^&\n?#]+)/];
+      let youtubeId = null;
+      for (const p of patterns) {
+        const m = url.match(p);
+        if (m) { youtubeId = m[1]; break; }
+      }
+      if (!youtubeId) return res.status(400).json({ error: "Invalid YouTube URL" });
+      const created = await TutorialModel.create({
+        title: body.title,
+        youtubeUrl: url,
+        youtubeId,
+        description: body.description || "",
+        likes: 0
+      });
+      const lean = await TutorialModel.findById(created._id).lean();
+      res.status(201).json({ ...lean, id: String(lean._id) });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app2.patch("/api/tutorials/:id", requireAuth, async (req, res) => {
+    try {
+      const body = req.body;
+      const updates = { ...body };
+      if (updates.youtubeUrl) {
+        const url = String(updates.youtubeUrl).trim();
+        const patterns = [/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/, /youtube\.com\/embed\/([^&\n?#]+)/];
+        let youtubeId = null;
+        for (const p of patterns) {
+          const m = url.match(p);
+          if (m) { youtubeId = m[1]; break; }
+        }
+        if (!youtubeId) return res.status(400).json({ error: "Invalid YouTube URL" });
+        updates.youtubeId = youtubeId;
+      }
+      const updated = await TutorialModel.findByIdAndUpdate(req.params.id, updates, { new: true }).lean();
+      if (!updated) return res.status(404).json({ error: "Tutorial not found" });
+      res.json({ ...updated, id: String(updated._id) });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app2.delete("/api/tutorials/:id", requireAuth, async (req, res) => {
+    try {
+      const ok = await TutorialModel.findByIdAndDelete(req.params.id);
+      if (!ok) return res.status(404).json({ error: "Tutorial not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.post("/api/tutorials/:id/like", async (req, res) => {
+    try {
+      const updated = await TutorialModel.findByIdAndUpdate(req.params.id, { $inc: { likes: 1 } }, { new: true }).lean();
+      if (!updated) return res.status(404).json({ error: "Tutorial not found" });
+      res.json({ ...updated, id: String(updated._id) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.get("/api/tutorials/:id/comments", async (req, res) => {
+    try {
+      const comments = await TutorialCommentModel.find({ tutorialId: req.params.id }).sort({ createdAt: -1 }).lean();
+      res.json(comments.map((c) => ({ ...c, id: String(c._id) })));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.post("/api/tutorials/:id/comments", async (req, res) => {
+    try {
+      const { author, content } = req.body;
+      if (!author || !content) return res.status(400).json({ error: "author and content required" });
+      const created = await TutorialCommentModel.create({ tutorialId: req.params.id, author, content });
+      const lean = await TutorialCommentModel.findById(created._id).lean();
+      res.status(201).json({ ...lean, id: String(lean._id) });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
   // Weapons endpoints (used by seeding scripts)
   app2.get('/api/weapons', async (req, res) => {
     try {
@@ -1645,6 +1799,41 @@ async function registerRoutes(app2) {
         res.json(event);
       } catch (err) {
         res.status(500).json({ error: err.message || 'Failed to scrape event details' });
+      }
+    });
+
+    app2.post('/api/admin/scrape-and-create-events', async (req, res) => {
+      try {
+        const posts = await scrapeForumAnnouncements();
+        const urls = posts.map((p) => p.url);
+        const scraped = await scrapeMultipleEvents(urls);
+        const created = [];
+        for (const ev of scraped) {
+          const payload = {
+            title: ev.title || 'Event',
+            titleAr: ev.titleAr || '',
+            description: ev.description || '',
+            descriptionAr: ev.descriptionAr || '',
+            date: ev.date || new Date().toISOString().slice(0, 10),
+            type: ev.type || 'upcoming',
+            image: ev.image || '',
+            seoTitle: ev.seoTitle || '',
+            seoDescription: ev.seoDescription || '',
+            seoKeywords: Array.isArray(ev.seoKeywords) ? ev.seoKeywords : [],
+            canonicalUrl: ev.canonicalUrl || '',
+            ogImage: ev.ogImage || ev.image || '',
+            twitterImage: ev.twitterImage || ev.ogImage || ev.image || '',
+            schemaType: ev.schemaType || 'Event'
+          };
+          const existing = await EventModel.findOne({ title: payload.title }).lean();
+          if (!existing) {
+            const createdEvent = await storage.createEvent(payload);
+            created.push(createdEvent);
+          }
+        }
+        res.json({ events: created });
+      } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to scrape and create events' });
       }
     });
 

@@ -1846,6 +1846,30 @@ async function registerRoutes(app2) {
         res.status(500).json({ error: err.message || 'Failed to scrape and create ranks' });
       }
     });
+
+    app2.post('/api/admin/reset-ranks', async (req, res) => {
+      try {
+        const existing = await storage.getAllRanks();
+        for (const r of existing) {
+          await storage.deleteRank(r.id);
+        }
+        const ranks = await scrapeRanks();
+        const created = [];
+        for (const r of ranks) {
+          const payload = {
+            name: r.name,
+            image: r.image || '',
+            description: r.description || '',
+            requirements: r.requirements || '',
+          };
+          const createdRank = await storage.createRank(payload);
+          created.push(createdRank);
+        }
+        res.json({ message: `Reset ranks and created ${created.length} new ranks`, count: created.length });
+      } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to reset ranks' });
+      }
+    });
     app2.post('/api/scrape/multiple-events', async (req, res) => {
       try {
         const { urls } = req.body;

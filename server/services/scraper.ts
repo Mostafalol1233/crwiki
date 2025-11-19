@@ -379,13 +379,25 @@ export async function scrapeRanks(): Promise<ScrapedRank[]> {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
-      timeout: 15000,
+      timeout: 45000,
       responseType: 'text',
-      validateStatus: (status) => status < 500
+      validateStatus: (status) => status < 600
     });
 
     if (!response.data || typeof response.data !== 'string') {
-      throw new Error('Invalid response from server');
+      const retry = await axios.get(`${CF_BASE_URL}/ranks.html`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        timeout: 45000,
+        responseType: 'text',
+        validateStatus: (status) => status < 600
+      });
+      if (!retry.data || typeof retry.data !== 'string') {
+        throw new Error('Invalid response from server');
+      }
+      (response as any).data = retry.data;
     }
 
   const $ = cheerio.load(response.data);

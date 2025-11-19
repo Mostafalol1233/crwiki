@@ -69,9 +69,23 @@ export async function scrapeForumAnnouncements() {
 export async function scrapeRanks() {
   try {
     const response = await axios.get(`${CF_BASE_URL}/ranks.html`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 15000
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+      timeout: 45000,
+      responseType: 'text',
+      maxRedirects: 5,
+      validateStatus: (s) => s < 600
     });
+    if (!response.data || typeof response.data !== 'string') {
+      const retry = await axios.get(`${CF_BASE_URL}/ranks.html`, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+        timeout: 45000,
+        responseType: 'text',
+        maxRedirects: 5,
+        validateStatus: (s) => s < 600
+      });
+      if (!retry.data || typeof retry.data !== 'string') throw new Error('Invalid response');
+      response.data = retry.data;
+    }
     const $ = cheerio.load(response.data);
     const ranks = [];
     const bonusMap = {

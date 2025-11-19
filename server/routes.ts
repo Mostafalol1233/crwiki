@@ -571,6 +571,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/reset-ranks", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const existing = await storage.getAllRanks();
+      for (const r of existing) {
+        await storage.deleteRank(r.id);
+      }
+      const ranks = await scrapeRanks();
+      const created: any[] = [];
+      for (const r of ranks) {
+        const data = insertRankSchema.parse({
+          name: r.name,
+          image: r.image,
+          description: r.description || '',
+          requirements: r.requirements || '',
+        });
+        const createdRank = await storage.createRank(data);
+        created.push(createdRank);
+      }
+      res.json({ message: `Reset ranks and created ${created.length} new ranks`, count: created.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to reset ranks" });
+    }
+  });
+
   app.get("/api/cf/modes", async (req, res) => {
     try {
       const modes = await scrapeModes();

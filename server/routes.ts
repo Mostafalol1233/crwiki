@@ -547,6 +547,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/scrape-and-create-ranks", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const ranks = await scrapeRanks();
+      const created: any[] = [];
+      for (const r of ranks) {
+        const data = insertRankSchema.parse({
+          name: r.name,
+          image: r.image,
+          description: r.description || '',
+          requirements: r.requirements || '',
+        });
+        const existingList = await storage.getAllRanks?.();
+        const exists = Array.isArray(existingList) ? existingList.find((x: any) => x.name === r.name) : undefined;
+        if (!exists) {
+          const createdRank = await storage.createRank(data);
+          created.push(createdRank);
+        }
+      }
+      res.json({ message: `Created ${created.length} ranks`, count: created.length, ranks: created });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to scrape and create ranks" });
+    }
+  });
+
   app.get("/api/cf/modes", async (req, res) => {
     try {
       const modes = await scrapeModes();

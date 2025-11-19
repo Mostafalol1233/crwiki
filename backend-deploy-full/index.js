@@ -1758,7 +1758,7 @@ async function registerRoutes(app2) {
 
   // Scraping routes (fallback for deployments that don't keep full server)
   try {
-    const { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents } = await import('./services/scraper.js');
+    const { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeRanks } = await import('./services/scraper.js');
 
     app2.get('/api/scrape/forum-list', async (req, res) => {
       try {
@@ -1815,6 +1815,37 @@ async function registerRoutes(app2) {
       }
     });
 
+    app2.get('/api/scrape/ranks', async (req, res) => {
+      try {
+        const ranks = await scrapeRanks();
+        res.json(ranks);
+      } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to scrape ranks' });
+      }
+    });
+
+    app2.post('/api/admin/scrape-and-create-ranks', async (req, res) => {
+      try {
+        const ranks = await scrapeRanks();
+        const created = [];
+        for (const r of ranks) {
+          const payload = {
+            name: r.name,
+            image: r.image || '',
+            description: r.description || '',
+            requirements: r.requirements || '',
+          };
+          const exists = (await storage.getAllRanks()).find((x) => x.name === r.name);
+          if (!exists) {
+            const createdRank = await storage.createRank(payload);
+            created.push(createdRank);
+          }
+        }
+        res.json({ message: `Created ${created.length} ranks`, count: created.length, ranks: created });
+      } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to scrape and create ranks' });
+      }
+    });
     app2.post('/api/scrape/multiple-events', async (req, res) => {
       try {
         const { urls } = req.body;

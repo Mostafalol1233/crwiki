@@ -390,6 +390,24 @@ export async function scrapeRanks(): Promise<ScrapedRank[]> {
 
   const $ = cheerio.load(response.data);
   const ranks: ScrapedRank[] = [];
+  const bonusMap: Record<string, { exp?: number; bonus?: string }> = {
+    'Brigadier General 4': { exp: 8964562, bonus: 'AK-47-K-Yellow Fractal 60 days' },
+    'Brigadier General 6': { exp: 10016212, bonus: '30 x 7th Anniversary Crates' },
+    'Major General 2': { exp: 11186422, bonus: 'G-Yellow Crystal perm' },
+    'Major General 5': { exp: 13174012, bonus: '10 Color Blaze Crates' },
+    'Major General 6': { exp: 13900762, bonus: 'Slaughter Ticket Box' },
+    'Lieutenant General 3': { exp: 16281652, bonus: 'M4A1-S-Yellow Fractal perm' },
+    'Lieutenant General 6': { exp: 18975472, bonus: 'RPK-Infernal Dragon 30 days' },
+    'General 2': { exp: 20952802, bonus: 'AK-47-K-Yellow Fractal perm' },
+    'General 4': { exp: 23080612, bonus: 'AWM-Infernal Dragon 30 days' },
+    'General 6': { exp: 25363462, bonus: 'AK-47 Fury 30 days' },
+    'Grand Marshall': { exp: 100000000, bonus: '30 Free Crate Tickets' },
+  };
+
+  const extractExp = (text: string): number | undefined => {
+    const match = text.replace(/[,\s]/g, '').match(/(\d{6,})/);
+    return match ? Number(match[1]) : undefined;
+  };
   const localList = await getLocalAssetList();
 
     // Try multiple selectors for rank items
@@ -439,6 +457,13 @@ export async function scrapeRanks(): Promise<ScrapedRank[]> {
 
       // Try to find description
       const description = $el.find('.description, .desc, p, [class*="desc"]').first().text().trim();
+      const rawText = $el.text().trim();
+      const exp = extractExp(rawText);
+      const mapped = bonusMap[name] || undefined;
+      const parts: string[] = [];
+      const finalExp = exp ?? mapped?.exp;
+      if (typeof finalExp === 'number') parts.push(`EXP Required: ${finalExp}`);
+      if (mapped?.bonus) parts.push(`Bonus: ${mapped.bonus}`);
 
       const id = `rank-${slugify(name) || index}`;
       const finalImage = imageUrl || findLocalAssetInList(name, localList);
@@ -446,7 +471,8 @@ export async function scrapeRanks(): Promise<ScrapedRank[]> {
         id,
         name,
         image: finalImage,
-        description: description || undefined
+        description: description || undefined,
+        requirements: parts.join(' | ') || undefined,
       });
     });
 
@@ -466,7 +492,11 @@ export async function scrapeRanks(): Promise<ScrapedRank[]> {
         if (name && name.length > 2) {
           const id = `rank-${slugify(name) || index}`;
           const finalImage = fullSrc || findLocalAssetInList(name, localList);
-          ranks.push({ id, name, image: finalImage });
+          const mapped = bonusMap[name] || undefined;
+          const parts: string[] = [];
+          if (mapped?.exp) parts.push(`EXP Required: ${mapped.exp}`);
+          if (mapped?.bonus) parts.push(`Bonus: ${mapped.bonus}`);
+          ranks.push({ id, name, image: finalImage, requirements: parts.join(' | ') || undefined });
         }
       });
     }

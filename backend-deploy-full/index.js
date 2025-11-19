@@ -1762,17 +1762,6 @@ async function registerRoutes(app2) {
 
     app2.get('/api/scrape/forum-list', async (req, res) => {
       try {
-        if (!hasScraperKey(req)) {
-          const authHeader = req.headers.authorization;
-          if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(403).json({ error: 'Forbidden: need scraper key or API key' });
-          }
-          const token = authHeader.substring(7);
-          const payload = verifyToken(token);
-          if (!payload) {
-            return res.status(403).json({ error: 'Forbidden: Invalid token' });
-          }
-        }
         const posts = await scrapeForumAnnouncements();
         res.json(posts);
       } catch (err) {
@@ -1782,17 +1771,6 @@ async function registerRoutes(app2) {
 
     app2.post('/api/scrape/event-details', async (req, res) => {
       try {
-        if (!hasScraperKey(req)) {
-          const authHeader = req.headers.authorization;
-          if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(403).json({ error: 'Forbidden: need scraper key or API key' });
-          }
-          const token = authHeader.substring(7);
-          const payload = verifyToken(token);
-          if (!payload) {
-            return res.status(403).json({ error: 'Forbidden: Invalid token' });
-          }
-        }
         const { url } = req.body;
         if (!url) return res.status(400).json({ error: 'URL is required' });
         const event = await scrapeEventDetails(url);
@@ -1837,7 +1815,7 @@ async function registerRoutes(app2) {
       }
     });
 
-    app2.post('/api/scrape/multiple-events', requireEventScraperOrApiKey, async (req, res) => {
+    app2.post('/api/scrape/multiple-events', async (req, res) => {
       try {
         const { urls } = req.body;
         if (!urls || !Array.isArray(urls)) return res.status(400).json({ error: 'URLs array is required' });

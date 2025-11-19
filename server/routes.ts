@@ -468,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/scrape/forum-list", requireScraperAuth, async (req, res) => {
+  app.get("/api/scrape/forum-list", async (req, res) => {
     try {
       const posts = await scrapeForumAnnouncements();
       res.json(posts);
@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scrape/event-details", requireScraperAuth, async (req, res) => {
+  app.post("/api/scrape/event-details", async (req, res) => {
     try {
       const { url } = req.body;
       
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/scrape/multiple-events", requireScraperAuth, async (req, res) => {
+  app.post("/api/scrape/multiple-events", async (req, res) => {
     try {
       const { urls } = req.body;
 

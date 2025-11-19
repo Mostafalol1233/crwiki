@@ -387,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const eventData = {
             title: post.title.substring(0, 200),
             titleAr: '',
-            description: post.content || post.title,
+            description: (post as any).content || post.title,
             descriptionAr: '',
             date: new Date().toISOString().split('T')[0],
             type: 'upcoming' as const,

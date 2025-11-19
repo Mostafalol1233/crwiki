@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
+import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
@@ -14,13 +15,14 @@ interface NewsItem {
   image: string;
   category: string;
   content: string;
+  htmlContent?: string;
   author: string;
   featured?: boolean;
   titleAr?: string;
   contentAr?: string;
   seoTitle?: string;
   seoDescription?: string;
-  seoKeywords?: string;
+  seoKeywords?: string[];
   canonicalUrl?: string;
   ogImage?: string;
   twitterImage?: string;
@@ -138,85 +140,19 @@ export default function NewsDetail() {
           </p>
         </div>
 
-        <div
-          className="prose prose-lg dark:prose-invert max-w-none"
-          data-testid="text-news-content"
-        >
-          {(() => {
-            const lines = newsItem.content.split("\n");
-            const elements: JSX.Element[] = [];
-            let listItems: string[] = [];
-            let listStartIndex = 0;
-
-            const flushList = (currentIndex: number) => {
-              if (listItems.length > 0) {
-                elements.push(
-                  <ul key={`list-${listStartIndex}`} className="mb-4 ml-6 list-disc space-y-2">
-                    {listItems.map((item, idx) => (
-                      <li key={`${listStartIndex}-${idx}`}>{item}</li>
-                    ))}
-                  </ul>
-                );
-                listItems = [];
-              }
-            };
-
-            lines.forEach((paragraph, index) => {
-              if (paragraph.trim() === "") {
-                flushList(index);
-                return;
-              }
-
-              if (paragraph.startsWith("### ")) {
-                flushList(index);
-                elements.push(
-                  <h3 key={index} className="text-2xl font-bold mt-8 mb-4">
-                    {paragraph.replace("### ", "")}
-                  </h3>
-                );
-                return;
-              }
-
-              if (paragraph.startsWith("## ")) {
-                flushList(index);
-                elements.push(
-                  <h2 key={index} className="text-3xl font-bold mt-10 mb-6">
-                    {paragraph.replace("## ", "")}
-                  </h2>
-                );
-                return;
-              }
-
-              if (paragraph.startsWith("# ")) {
-                flushList(index);
-                elements.push(
-                  <h1 key={index} className="text-4xl font-bold mt-12 mb-6">
-                    {paragraph.replace("# ", "")}
-                  </h1>
-                );
-                return;
-              }
-
-              if (paragraph.startsWith("- ")) {
-                if (listItems.length === 0) {
-                  listStartIndex = index;
-                }
-                listItems.push(paragraph.replace("- ", ""));
-                return;
-              }
-
-              flushList(index);
-              elements.push(
-                <p key={index} className="mb-4 leading-relaxed">
-                  {paragraph}
-                </p>
-              );
-            });
-
-            flushList(lines.length);
-            return elements;
-          })()}
-        </div>
+        {(() => {
+          const html = newsItem.htmlContent && newsItem.htmlContent.trim().length > 0
+            ? newsItem.htmlContent
+            : newsItem.content;
+          const purified = (createDOMPurify as any)(window as any).sanitize(html);
+          return (
+            <div
+              className="prose prose-lg dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: purified }}
+              data-testid="text-news-content"
+            />
+          );
+        })()}
 
         <div className="mt-12 pt-8 border-t">
           <Link href="/news">

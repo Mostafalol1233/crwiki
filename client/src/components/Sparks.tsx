@@ -3,8 +3,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 
 const Sparks = ({ count = 200 }) => {
-  const mesh = useRef<THREE.Points>(null);
-  const light = useRef<THREE.PointLight>(null);
+  const mesh = useRef<any>(null);
+  const light = useRef<any>(null);
 
   const particles = useMemo(() => {
     const temp = [];

@@ -21,7 +21,7 @@ interface Event {
   image?: string;
   seoTitle?: string;
   seoDescription?: string;
-  seoKeywords?: string;
+  seoKeywords?: string[];
   canonicalUrl?: string;
   ogImage?: string;
   twitterImage?: string;
@@ -107,7 +107,7 @@ export default function EventDetail() {
       <SEOHead
         title={event.seoTitle || `${title} | Crossfire Wiki`}
         description={event.seoDescription || description?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
-        keywords={event.seoKeywords || [event.type, "crossfire event"]}
+        keywords={event.seoKeywords || [event.type || "event", "crossfire event"]}
         canonicalUrl={event.canonicalUrl || eventUrl}
         ogImage={event.ogImage || event.image}
         twitterImage={event.twitterImage || event.ogImage || event.image}
@@ -187,7 +187,7 @@ export default function EventDetail() {
                 <div 
                   className="prose prose-lg dark:prose-invert max-w-none"
                   // createDOMPurify returns a DOMPurify instance bound to the window
-                  dangerouslySetInnerHTML={{ __html: createDOMPurify(window as unknown as Window).sanitize(description) }}
+              dangerouslySetInnerHTML={{ __html: (createDOMPurify as any)(window as any).sanitize(description) }}
                   data-testid="text-description"
                 />
               )}

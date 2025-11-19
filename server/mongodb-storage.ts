@@ -1046,7 +1046,7 @@ export class MongoDBStorage implements IStorage {
       image: m.image,
       role: m.role,
       description: (m as any).description || "",
-      voiceLines: (m as any).voiceLines || [],
+      voiceLines: (m as any).voiceLines || (m as any).sounds || [],
       createdAt: m.createdAt
     })) as any;
   }

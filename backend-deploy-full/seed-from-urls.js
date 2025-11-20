@@ -206,15 +206,158 @@ const modesData = [
   { name: "Aim Master Game", image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
 ];
 
-// RANKS - All 100 with FULL GitHub URLs (not template variables)
-const ranksData = Array.from({ length: 100 }, (_, i) => {
-  const rankNum = i + 1;
-  return {
-    name: `Rank ${rankNum}`,
-    tier: rankNum,
-    emblem: `https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/ranks/rank_${rankNum}.jpg.jpeg`,
-  };
-});
+// Scrape ranks directly from CF website (fallback to local assets when possible)
+const CF_BASE_URL = "https://crossfire.z8games.com";
+
+async function scrapeRanks() {
+  try {
+    const response = await axios.get(`${CF_BASE_URL}/ranks.html`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      timeout: 45000,
+      responseType: "text",
+      validateStatus: (status) => status < 600,
+    });
+
+    if (!response.data || typeof response.data !== "string") {
+      const retry = await axios.get(`${CF_BASE_URL}/ranks.html`, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        timeout: 45000,
+        responseType: "text",
+        validateStatus: (status) => status < 600,
+      });
+      if (!retry.data || typeof retry.data !== "string") {
+        throw new Error("Invalid response from server");
+      }
+      response.data = retry.data;
+    }
+
+    const $ = cheerio.load(response.data);
+    const ranks = [];
+
+    const bonusMap = {
+      "Brigadier General 4": { exp: 8964562, bonus: "AK-47-K-Yellow Fractal 60 days" },
+      "Brigadier General 6": { exp: 10016212, bonus: "30 x 7th Anniversary Crates" },
+      "Major General 2": { exp: 11186422, bonus: "G-Yellow Crystal perm" },
+      "Major General 5": { exp: 13174012, bonus: "10 Color Blaze Crates" },
+      "Major General 6": { exp: 13900762, bonus: "Slaughter Ticket Box" },
+      "Lieutenant General 3": { exp: 16281652, bonus: "M4A1-S-Yellow Fractal perm" },
+      "Lieutenant General 6": { exp: 18975472, bonus: "RPK-Infernal Dragon 30 days" },
+      "General 2": { exp: 20952802, bonus: "AK-47-K-Yellow Fractal perm" },
+      "General 4": { exp: 23080612, bonus: "AWM-Infernal Dragon 30 days" },
+      "General 6": { exp: 25363462, bonus: "AK-47 Fury 30 days" },
+      "Grand Marshall": { exp: 100000000, bonus: "30 Free Crate Tickets" },
+    };
+
+    const extractExp = (text) => {
+      const match = text.replace(/[,"\s]/g, "").match(/(\d{6,})/);
+      return match ? Number(match[1]) : undefined;
+    };
+
+    const rankSelectors = [
+      ".rank-item",
+      ".rank",
+      "[class*=\"rank\"]",
+      ".item",
+      "li",
+      "div[class*=\"rank\"]",
+    ];
+
+    let rankElements = $();
+    for (const selector of rankSelectors) {
+      const elements = $(selector);
+      if (elements.length > 0) {
+        rankElements = elements;
+        break;
+      }
+    }
+
+    rankElements.each((index, element) => {
+      const $el = $(element);
+      let name =
+        $el
+          .find("h3, h4, .name, .title, [class*=name], [class*=title]")
+          .first()
+          .text()
+          .trim() || $el.text().trim().split("\n")[0].trim();
+      if (!name || name.length < 2) {
+        const alt = $el.find("img").first().attr("alt") || "";
+        const titleAttr = $el.find("img").first().attr("title") || "";
+        const linkText = $el.find("a").first().text().trim() || "";
+        name = (alt || titleAttr || linkText || name).trim();
+      }
+      if (!name || name.length < 2) return;
+
+      let imageUrl = "";
+      const img = $el.find("img").first();
+      if (img.length > 0) {
+        imageUrl = img.attr("src") || img.attr("data-src") || img.attr("data-lazy-src") || "";
+        if (imageUrl && !imageUrl.startsWith("http")) {
+          imageUrl = imageUrl.startsWith("//") ? `https:${imageUrl}` : `${CF_BASE_URL}${imageUrl}`;
+        }
+      }
+
+      const description = $el.find(".description, .desc, p, [class*=desc]").first().text().trim();
+      const rawText = $el.text().trim();
+      const exp = extractExp(rawText);
+      const mapped = bonusMap[name] || undefined;
+      const parts = [];
+      const finalExp = typeof exp === "number" ? exp : mapped && mapped.exp;
+      if (typeof finalExp === "number") parts.push(`EXP Required: ${finalExp}`);
+      if (mapped && mapped.bonus) parts.push(`Bonus: ${mapped.bonus}`);
+
+      ranks.push({
+        name,
+        image: imageUrl || "",
+        description: description || "",
+        requirements: parts.join(" | ") || "",
+      });
+    });
+
+    if (ranks.length === 0) {
+      $("img").each((index, img) => {
+        const $img = $(img);
+        const src = $img.attr("src") || $img.attr("data-src") || "";
+        if (!src || src.includes("logo") || src.includes("icon") || src.includes("button")) return;
+        const fullSrc = src.startsWith("http") ? src : src.startsWith("//") ? `https:${src}` : `${CF_BASE_URL}${src}`;
+        const parent = $img.parent();
+        const name =
+          parent.find("h3, h4, .name, .title").first().text().trim() ||
+          parent.text().trim().split("\n")[0].trim() ||
+          ($img.attr("alt") || "");
+
+        if (name && name.length > 2) {
+          const mapped = bonusMap[name] || undefined;
+          const parts = [];
+          if (mapped && mapped.exp) parts.push(`EXP Required: ${mapped.exp}`);
+          if (mapped && mapped.bonus) parts.push(`Bonus: ${mapped.bonus}`);
+          ranks.push({ name, image: fullSrc, description: "", requirements: parts.join(" | ") || "" });
+        }
+      });
+    }
+
+    // Limit for safety; seeding will clear previous and insert whatever we scraped
+    return ranks.slice(0, 50);
+  } catch (err) {
+    console.error("❌ Failed to scrape ranks:", err.message);
+    // Fallback to local assets if scraping fails: generate a small default set
+    const fallback = Array.from({ length: 12 }, (_, i) => {
+      const idx = i + 1;
+      return {
+        name: `Rank ${idx}`,
+        image: `/assets/ranks/rank_${idx}.jpg.jpeg`,
+        description: "",
+        requirements: "",
+      };
+    });
+    return fallback;
+  }
+}
 
 // EVENT SCRAPER - Fetches announcements from forum and converts to events
 async function scrapeForumEvents() {
@@ -296,8 +439,9 @@ async function seedDatabase(options = {}) {
 
     const RankSchema = new Schema({
       name: String,
-      tier: Number,
-      emblem: String,
+      image: String,
+      description: String,
+      requirements: String,
     }, { collection: 'ranks' });
 
     const EventSchema = new Schema({
@@ -337,7 +481,8 @@ async function seedDatabase(options = {}) {
     await Mode.insertMany(modesData);
     console.log(`  ✅ Seeded: ${modesData.length} modes`);
 
-    // Seed ranks (100 total)
+    // Scrape and seed ranks
+    const ranksData = await scrapeRanks();
     console.log(`\n🏅 Seeding ${ranksData.length} ranks...`);
     await Rank.insertMany(ranksData);
     console.log(`  ✅ Seeded: ${ranksData.length} ranks`);

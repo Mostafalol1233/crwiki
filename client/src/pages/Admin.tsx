@@ -124,6 +124,11 @@ export default function Admin() {
   const [activeSellerForReviews, setActiveSellerForReviews] = useState<any | null>(null);
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [activeTicket, setActiveTicket] = useState<any | null>(null);
+  const [activeTicketReplies, setActiveTicketReplies] = useState<any[]>([]);
+  const [replyText, setReplyText] = useState("");
+  const [replyFile, setReplyFile] = useState<File | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -3846,6 +3851,7 @@ export default function Admin() {
                       <TableHead>Category</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Priority</TableHead>
+                      <TableHead>Attachment</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -3893,8 +3899,17 @@ export default function Admin() {
                             <option value="high">High</option>
                           </select>
                         </TableCell>
+                        <TableCell className="text-muted-foreground text-xs max-w-xs truncate">
+                          {ticket.mediaUrl ? (
+                            <a href={ticket.mediaUrl} target="_blank" rel="noreferrer" className="underline">
+                              {ticket.mediaUrl}
+                            </a>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {new Date(ticket.createdAt).toLocaleString()}
+                          {ticket.createdAt}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -3908,6 +3923,28 @@ export default function Admin() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setActiveTicket(ticket);
+                              setReplyDialogOpen(true);
+                              (async () => {
+                                try {
+                                  const base = (import.meta as any).env?.VITE_API_URL || "";
+                                  const url = base ? `${base}/api/tickets/${ticket.id}/replies` : `/api/tickets/${ticket.id}/replies`;
+                                  const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
+                                  if (res.ok) {
+                                    const json = await res.json();
+                                    setActiveTicketReplies(json || []);
+                                  }
+                                } catch {}
+                              })();
+                            }}
+                            data-testid={`button-reply-ticket-${ticket.id}`}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -3916,6 +3953,58 @@ export default function Admin() {
                         <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                           No support tickets found
                         </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <h2 className="text-2xl font-semibold">Contact Messages</h2>
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tickets?.filter((t: any) => (t.category || '').toLowerCase() === 'contact').map((ticket: any) => (
+                      <TableRow key={ticket.id}>
+                        <TableCell className="font-medium max-w-xs truncate">{ticket.title}</TableCell>
+                        <TableCell>{ticket.userName}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{ticket.createdAt}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setActiveTicket(ticket);
+                              setReplyDialogOpen(true);
+                              (async () => {
+                                try {
+                                  const base = (import.meta as any).env?.VITE_API_URL || "";
+                                  const url = base ? `${base}/api/tickets/${ticket.id}/replies` : `/api/tickets/${ticket.id}/replies`;
+                                  const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
+                                  if (res.ok) {
+                                    const json = await res.json();
+                                    setActiveTicketReplies(json || []);
+                                  }
+                                } catch {}
+                              })();
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {tickets && tickets.filter((t: any) => (t.category || '').toLowerCase() === 'contact').length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No contact messages</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -3985,6 +4074,70 @@ export default function Admin() {
                 ))}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={replyDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setReplyDialogOpen(false);
+          setActiveTicket(null);
+          setActiveTicketReplies([]);
+          setReplyText("");
+          setReplyFile(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Ticket Replies</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {activeTicketReplies?.map((r: any) => (
+                <div key={r.id} className="border p-3 rounded-md">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{r.isAdmin ? 'Admin' : 'User'}</span>
+                    <span>{r.createdAt}</span>
+                  </div>
+                  <div className="mt-2 text-sm whitespace-pre-wrap">{r.content}</div>
+                  {r.mediaUrl && (
+                    <div className="mt-2 text-xs break-all">{r.mediaUrl}</div>
+                  )}
+                </div>
+              ))}
+              {(!activeTicketReplies || activeTicketReplies.length === 0) && (
+                <div className="text-sm text-muted-foreground">No replies yet</div>
+              )}
+            </div>
+            <div className="space-y-3">
+              <Textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} rows={4} placeholder="Type your reply" />
+              <Input type="file" accept="image/*,video/*" onChange={(e) => setReplyFile(e.target.files?.[0] || null)} />
+              <Button
+                onClick={async () => {
+                  if (!activeTicket || !replyText.trim()) return;
+                  const formData = new FormData();
+                  formData.append('authorName', adminUsername || 'Admin');
+                  formData.append('content', replyText);
+                  formData.append('isAdmin', 'true');
+                  if (replyFile) formData.append('attachment', replyFile);
+                  const base = (import.meta as any).env?.VITE_API_URL || '';
+                  const url = base ? `${base}/api/tickets/${activeTicket.id}/replies` : `/api/tickets/${activeTicket.id}/replies`;
+                  const res = await fetch(url, { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
+                  if (res.ok) {
+                    const created = await res.json();
+                    setActiveTicketReplies([...(activeTicketReplies || []), created]);
+                    setReplyText('');
+                    setReplyFile(null);
+                    toast({ title: 'Reply sent' });
+                  } else {
+                    const text = await res.text();
+                    toast({ title: 'Failed to send reply', description: text, variant: 'destructive' });
+                  }
+                }}
+              >
+                Send Reply
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

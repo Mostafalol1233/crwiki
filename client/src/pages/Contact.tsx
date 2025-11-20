@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,12 +15,29 @@ export default function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
-  const handleSubmit = () => {
-    console.log("Contact form submitted:", { name, email, message });
-    setName("");
-    setEmail("");
-    setMessage("");
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    formData.append("title", `Contact: ${name}`);
+    formData.append("description", message);
+    formData.append("userName", name);
+    formData.append("userEmail", email);
+    formData.append("category", "contact");
+    formData.append("priority", "normal");
+    if (imageFile) formData.append("image", imageFile);
+    if (videoFile) formData.append("video", videoFile);
+    const base = (import.meta as any).env?.VITE_API_URL || "";
+    const url = base ? `${base}/api/tickets` : "/api/tickets";
+    const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
+    if (res.ok) {
+      setName("");
+      setEmail("");
+      setMessage("");
+      setImageFile(null);
+      setVideoFile(null);
+    }
   };
 
   return (
@@ -98,6 +119,17 @@ export default function Contact() {
                 rows={6}
                 data-testid="input-contact-message"
               />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium mb-2 block">Attach Image</label>
+                <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} data-testid="input-contact-image" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium mb-2 block">Attach Video</label>
+                <Input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} data-testid="input-contact-video" />
+              </div>
             </div>
 
             <Button onClick={handleSubmit} className="w-full" data-testid="button-contact-submit">

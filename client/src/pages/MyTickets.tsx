@@ -39,10 +39,11 @@ export default function MyTickets() {
   const [searchedEmail, setSearchedEmail] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [replyAttachment, setReplyAttachment] = useState<File | null>(null);
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets/my", searchedEmail],
-    queryFn: () => apiRequest(`/api/tickets/my?email=${searchedEmail}`, "GET"),
+    queryFn: () => apiRequest(`/api/tickets/my/${searchedEmail}`, "GET"),
     enabled: !!searchedEmail,
   });
 
@@ -54,11 +55,19 @@ export default function MyTickets() {
 
   const addReplyMutation = useMutation({
     mutationFn: async (data: { ticketId: string; content: string; authorName: string }) => {
-      return await apiRequest(`/api/tickets/${data.ticketId}/replies`, "POST", {
-        authorName: data.authorName,
-        content: data.content,
-        isAdmin: false,
-      });
+      const formData = new FormData();
+      formData.append("authorName", data.authorName);
+      formData.append("content", data.content);
+      formData.append("isAdmin", "false");
+      if (replyAttachment) formData.append("attachment", replyAttachment);
+      const base = (import.meta as any).env?.VITE_API_URL || "";
+      const url = base ? `${base}/api/tickets/${data.ticketId}/replies` : `/api/tickets/${data.ticketId}/replies`;
+      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to add reply");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", selectedTicket?.id, "replies"] });
@@ -292,27 +301,28 @@ export default function MyTickets() {
                           </Card>
                         ))}
 
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-base">Add a Reply</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <Textarea
-                              placeholder="Type your reply..."
-                              value={replyContent}
-                              onChange={(e) => setReplyContent(e.target.value)}
-                              rows={4}
-                              data-testid="textarea-ticket-reply"
-                            />
-                            <Button
-                              onClick={handleAddReply}
-                              disabled={!replyContent.trim() || addReplyMutation.isPending}
-                              data-testid="button-add-reply"
-                            >
-                              {addReplyMutation.isPending ? "Sending..." : "Send Reply"}
-                            </Button>
-                          </CardContent>
-                        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Add a Reply</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Textarea
+            placeholder="Type your reply..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            rows={4}
+            data-testid="textarea-ticket-reply"
+          />
+          <Input type="file" accept="image/*,video/*" onChange={(e) => setReplyAttachment(e.target.files?.[0] || null)} data-testid="input-ticket-reply-attachment" />
+          <Button
+            onClick={handleAddReply}
+            disabled={!replyContent.trim() || addReplyMutation.isPending}
+            data-testid="button-add-reply"
+          >
+            {addReplyMutation.isPending ? "Sending..." : "Send Reply"}
+          </Button>
+        </CardContent>
+      </Card>
                       </div>
                     </div>
                   </CardContent>

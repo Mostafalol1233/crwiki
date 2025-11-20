@@ -29,6 +29,8 @@ export default function Support() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   const form = useForm<TicketFormData>({
     resolver: zodResolver(ticketSchema),
@@ -44,7 +46,23 @@ export default function Support() {
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: TicketFormData) => {
-      return await apiRequest("/api/tickets", "POST", data);
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("userName", data.userName);
+      formData.append("userEmail", data.userEmail);
+      formData.append("category", data.category);
+      if (data.priority) formData.append("priority", data.priority);
+      if (imageFile) formData.append("image", imageFile);
+      if (videoFile) formData.append("video", videoFile);
+      const base = (import.meta as any).env?.VITE_API_URL || "";
+      const url = base ? `${base}/api/tickets` : "/api/tickets";
+      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to submit ticket");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -99,8 +117,8 @@ export default function Support() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -235,6 +253,17 @@ export default function Support() {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <FormLabel>Attach Image (optional)</FormLabel>
+                    <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} data-testid="input-ticket-image" />
+                  </div>
+                  <div className="space-y-2">
+                    <FormLabel>Attach Video (optional)</FormLabel>
+                    <Input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} data-testid="input-ticket-video" />
+                  </div>
+                </div>
 
                 <Button
                   type="submit"

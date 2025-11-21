@@ -67,6 +67,7 @@ export interface NewsItem {
   contentAr?: string;
   htmlContent?: string;
   author: string;
+  previewOnHome?: boolean;
   createdAt?: Date;
 }
 
@@ -326,7 +327,8 @@ export class MongoDBStorage implements IStorage {
       tags: lean.tags || [],
       views: lean.views || 0,
       category: lean.category || '',
-      author: lean.author || 'Unknown'
+      author: lean.author || 'Unknown',
+      previewOnHome: (lean as any).previewOnHome,
     } as any;
   }
 
@@ -339,7 +341,8 @@ export class MongoDBStorage implements IStorage {
       tags: updated.tags || [],
       views: updated.views || 0,
       category: updated.category || '',
-      author: updated.author || 'Unknown'
+      author: updated.author || 'Unknown',
+      previewOnHome: (updated as any).previewOnHome,
     } as any;
   }
 
@@ -399,6 +402,7 @@ export class MongoDBStorage implements IStorage {
       htmlContent: item.htmlContent,
       author: item.author,
       featured: item.featured,
+      previewOnHome: (item as any).previewOnHome,
       createdAt: item.createdAt,
     }));
   }
@@ -417,6 +421,7 @@ export class MongoDBStorage implements IStorage {
       htmlContent: newNews.htmlContent,
       author: newNews.author,
       featured: newNews.featured,
+      previewOnHome: (newNews as any).previewOnHome,
       createdAt: newNews.createdAt,
     };
   }
@@ -436,6 +441,7 @@ export class MongoDBStorage implements IStorage {
       htmlContent: updated.htmlContent,
       author: updated.author,
       featured: updated.featured,
+      previewOnHome: (updated as any).previewOnHome,
       createdAt: updated.createdAt,
     };
   }

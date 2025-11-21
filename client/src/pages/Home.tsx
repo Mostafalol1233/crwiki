@@ -34,7 +34,7 @@ export default function Home() {
     queryKey: ["tutorials"],
   });
 
-  const heroPost = allPosts.find((p) => p.featured) || {
+  const heroPost = allPosts.filter((p: any) => p.previewOnHome !== false).find((p) => p.featured) || {
     id: "1",
     title: "Bimora Gaming — Quick, Simple & Massive",
     summary:
@@ -53,7 +53,7 @@ export default function Home() {
   const showPortalSections = false;
 
   const latestArticles = useMemo(() => {
-    return allPosts.slice(0, 4);
+    return allPosts.filter((p: any) => p.previewOnHome !== false).slice(0, 4);
   }, [allPosts]);
 
   const recentPosts = useMemo(() => {
@@ -93,15 +93,22 @@ export default function Home() {
 
   const bimoraPicks = useMemo(() => {
     return allPosts
-      .filter((post) => post.featured)
+      .filter((post: any) => post.featured && post.previewOnHome !== false)
       .slice(0, 2)
-      .map((post) => ({
+      .map((post: any) => ({
         id: post.id,
         title: post.title,
         image: post.image,
         date: post.date,
       }));
   }, [allPosts]);
+
+  const featuredNews = useMemo(() => {
+    return allNews.filter((n: any) => n.featured);
+  }, [allNews]);
+  const featuredNewsHome = useMemo(() => {
+    return allNews.filter((n: any) => n.featured && (n.previewOnHome !== false));
+  }, [allNews]);
 
   return (
     <>
@@ -536,16 +543,16 @@ export default function Home() {
           {/* Trending News Card */}
           {allNews.length > 0 && (
             <div className="lg:col-span-1">
-              <Link href={`/news/${allNews[0]?.id}`} className="block h-full">
+              <Link href={`/news/${(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.id}`} className="block h-full">
                 <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/50 transition-all duration-300">
                   <div className="relative aspect-[3/4] overflow-hidden bg-muted/30">
-                    <img src={allNews[0]?.image} alt={allNews[0]?.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" width="300" height="400" loading="lazy" />
+                    <img src={(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.image} alt={(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" width="300" height="400" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Flame className="h-4 w-4 text-red-500" />
                         <Badge variant="destructive" className="text-xs">Trending</Badge>
                       </div>
-                      <h3 className="font-bold text-white line-clamp-3 text-sm">{allNews[0]?.title}</h3>
+                      <h3 className="font-bold text-white line-clamp-3 text-sm">{(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.title}</h3>
                     </div>
                   </div>
                 </Card>
@@ -554,7 +561,7 @@ export default function Home() {
           )}
 
           {/* Top 2 Featured Posts */}
-          {allPosts.filter(p => p.featured).slice(0, 2).map((post) => (
+          {allPosts.filter((p: any) => p.featured && p.previewOnHome !== false).slice(0, 2).map((post: any) => (
             <Link key={post.id} href={`/article/${post.id}`} className="block">
                   <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-destructive/20 hover:border-destructive/50 transition-all duration-300">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
@@ -619,7 +626,7 @@ export default function Home() {
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {allNews.slice(1, 7).map((item: any) => (
+                  {(featuredNewsHome.length > 0 ? allNews.filter((n: any) => !n.featured) : allNews).filter((n: any) => n.previewOnHome !== false).slice(0, 6).map((item: any) => (
                     <Link key={item.id} href={`/news/${item.id}`} className="block" data-testid={`home-news-${item.id}`}>
                       <div className="hover-elevate transition-all bg-gradient-to-b from-card to-card/50 rounded-lg overflow-hidden border border-border/50 hover:border-primary/50">
                         <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">

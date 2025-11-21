@@ -37,6 +37,76 @@ const apiLimiter = rateLimit({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // SEO: robots.txt
+  app.get('/robots.txt', (_req, res) => {
+    const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+    const robots = [
+      'User-agent: *',
+      'Allow: /',
+      `Sitemap: ${base}/sitemap.xml`,
+    ].join('\n');
+    res.type('text/plain').send(robots);
+  });
+
+  // SEO: sitemap.xml (basic dynamic)
+  app.get('/sitemap.xml', async (_req, res) => {
+    const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+    const urls: { loc: string; priority?: number; changefreq?: string; lastmod?: string }[] = [];
+    const push = (path: string, opt: Partial<typeof urls[number]> = {}) => {
+      urls.push({ loc: `${base}${path}`, priority: opt.priority, changefreq: opt.changefreq, lastmod: opt.lastmod });
+    };
+
+    // Static pages
+    push('/', { priority: 1.0, changefreq: 'daily' });
+    push('/posts', { priority: 0.7, changefreq: 'weekly' });
+    push('/news', { priority: 0.8, changefreq: 'daily' });
+    push('/weapons', { priority: 0.6, changefreq: 'weekly' });
+    push('/modes', { priority: 0.6, changefreq: 'weekly' });
+    push('/ranks', { priority: 0.6, changefreq: 'weekly' });
+    push('/tutorials', { priority: 0.5, changefreq: 'weekly' });
+    push('/sellers', { priority: 0.4, changefreq: 'weekly' });
+    push('/terms', { priority: 0.2, changefreq: 'yearly' });
+    push('/privacy', { priority: 0.2, changefreq: 'yearly' });
+
+    // Dynamic: posts, news, events
+    try {
+      const [posts, news, events] = await Promise.all([
+        storage.getAllPosts().catch(() => []),
+        storage.getAllNews().catch(() => []),
+        storage.getAllEvents().catch(() => []),
+      ]);
+
+      for (const p of posts as any[]) {
+        push(`/article/${p.id}`, { priority: 0.5, changefreq: 'monthly' });
+      }
+      for (const n of news as any[]) {
+        push(`/news/${n.id}`, { priority: 0.6, changefreq: 'weekly' });
+      }
+      for (const e of events as any[]) {
+        push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
+      }
+    } catch {}
+
+    const body = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+      urls.map(u => {
+        return [
+          '  <url>',
+          `    <loc>${u.loc}</loc>`,
+          u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>` : '',
+          u.changefreq ? `    <changefreq>${u.changefreq}</changefreq>` : '',
+          u.priority ? `    <priority>${u.priority.toFixed(1)}</priority>` : '',
+          '  </url>'
+        ].filter(Boolean).join('\n');
+      }).join('\n') +
+      `\n</urlset>`;
+
+    res.type('application/xml').send(body);
+  });
+
+  // Path aliases: 301 redirects to canonical routes
+  app.get(['/terms-of-service', '/terms-of-use'], (_req, res) => res.redirect(301, '/terms'));
+  app.get(['/privacy-policy', '/privacy-pol'], (_req, res) => res.redirect(301, '/privacy'));
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -1429,7 +1499,9 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         ticketId: id,
         authorName,
         content,
-        isAdmin: isAdmin || false,
+        isAdmin: (typeof isAdmin === 'boolean')
+          ? isAdmin
+          : String(isAdmin || '').toLowerCase() === 'true',
         mediaUrl,
         mediaType,
       };

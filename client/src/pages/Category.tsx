@@ -8,6 +8,7 @@ import { CategoryFilter, type Category } from "@/components/CategoryFilter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User } from "lucide-react";
+import PageSEO from "@/components/PageSEO";
 
 export default function Category() {
   const { t } = useLanguage();
@@ -98,7 +99,13 @@ export default function Category() {
   }
 
   return (
-    <div className="min-h-screen">
+    <>
+      <PageSEO
+        title={`Category — ${categoryTitle} | CrossFire Wiki`}
+        description={`Browse ${categoryTitle} articles and updates.`}
+        canonicalPath={`/category/${category || ""}`}
+      />
+      <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
           <main className="lg:col-span-8 space-y-8 md:space-y-12">
@@ -244,5 +251,6 @@ export default function Category() {
         </div>
       </div>
     </div>
+    </>
   );
 }

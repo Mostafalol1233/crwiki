@@ -36,6 +36,7 @@ export function Header() {
         { path: "/modes", label: t("modes"), icon: Target },
         { path: "/ranks", label: t("ranks"), icon: Award },
         { path: "/weapons", label: t("weapons"), icon: Target },
+        { path: "/download", label: t("download"), icon: ExternalLink },
       ],
     },
     {

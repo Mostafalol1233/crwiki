@@ -35,7 +35,8 @@ export function SEOHead({
   noindex = false,
 }: SEOHeadProps) {
   const [location] = useLocation();
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
+  const baseUrl = envBase || (typeof window !== "undefined" ? window.location.origin : "");
   const currentUrl = baseUrl + location;
   const finalCanonical = canonicalUrl || currentUrl;
   const finalOgUrl = ogUrl || currentUrl;

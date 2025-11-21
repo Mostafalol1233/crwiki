@@ -6,9 +6,9 @@ export function Footer() {
     { label: "Home", path: "/" },
     { label: "Weapons", path: "/weapons" },
     { label: "Mercenaries", path: "/mercenaries" },
-    { label: "Game Modes", path: "/game-modes" },
+    { label: "Modes", path: "/modes" },
     { label: "Ranks", path: "/ranks" },
-    { label: "Resources", path: "/resources" },
+    { label: "Download", path: "/download" },
   ];
 
   const contentLinks = [
@@ -20,7 +20,6 @@ export function Footer() {
 
   const supportLinks = [
     { label: "Support", path: "/support" },
-    { label: "Create Ticket", path: "/create-ticket" },
     { label: "My Tickets", path: "/my-tickets" },
     { label: "About", path: "/about" },
     { label: "Contact", path: "/contact" },

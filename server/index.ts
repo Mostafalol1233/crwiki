@@ -41,6 +41,33 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Canonical domain and HTTPS enforcement (production only)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  try {
+    const isDev = app.get('env') === 'development';
+    const canonical = (process.env.PUBLIC_BASE_URL || '').toLowerCase();
+    if (!canonical || isDev) return next();
+
+    const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || '';
+    const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+
+    const urlHost = host.toLowerCase();
+    const wantsHttps = canonical.startsWith('https://');
+    const canonicalHost = canonical.replace(/^https?:\/\//, '');
+
+    const needsHostRedirect = urlHost.startsWith('www.') && !canonicalHost.startsWith('www.')
+      ? true
+      : (!urlHost.startsWith('www.') && canonicalHost.startsWith('www.'));
+    const needsProtoRedirect = wantsHttps && proto !== 'https';
+
+    if (needsHostRedirect || needsProtoRedirect) {
+      const target = canonical.replace(/\/$/, '') + req.originalUrl;
+      return res.redirect(301, target);
+    }
+  } catch {}
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -72,13 +99,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database connection
-  try {
-    const { initializeDatabase } = await import('./db-connect.js');
-    await initializeDatabase();
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-    process.exit(1);
+  const hasMongo = Boolean(process.env.MONGODB_URI);
+  if (hasMongo) {
+    try {
+      const { initializeDatabase } = await import('./db-connect.js');
+      await initializeDatabase();
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+      process.exit(1);
+    }
+  } else {
+    log('Skipping MongoDB initialization; using in-memory storage');
   }
 
   // Optional: auto seed CF data on boot when AUTO_SEED=1

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Link } from "wouter";
 import { useMemo } from "react";
+import PageSEO from "@/components/PageSEO";
 
 interface PostItem {
   id: string;
@@ -56,7 +57,13 @@ export default function Posts() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <>
+      <PageSEO
+        title={"Posts — CrossFire Wiki"}
+        description={"Browse CrossFire posts from our community and editors."}
+        canonicalPath="/posts"
+      />
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
           {t("posts") || "Posts"}
@@ -126,5 +133,6 @@ export default function Posts() {
         </div>
       </div>
     </div>
+    </>
   );
 }

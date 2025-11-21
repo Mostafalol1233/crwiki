@@ -1,6 +1,7 @@
 import { Download, Cpu, Zap, HardDrive, Monitor, CircleDot, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSEO from "@/components/PageSEO";
 
 export default function DownloadPage() {
   const specs = [
@@ -87,7 +88,19 @@ export default function DownloadPage() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80 overflow-hidden">
+    <>
+      <PageSEO
+        title={"Download — CrossFire Wiki"}
+        description={"Official CrossFire downloader and system requirements. Download the game and join the action."}
+        canonicalPath="/download"
+        schemaType="WebPage"
+        schemaData={{
+          name: "CrossFire Download",
+          description: "Official downloader and system requirements for CrossFire.",
+          url: "/download",
+        }}
+      />
+      <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80 overflow-hidden">
       {/* Hero Background */}
       <div className="absolute inset-0 top-0 h-96 w-full overflow-hidden -z-5">
         <div
@@ -191,5 +204,6 @@ export default function DownloadPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

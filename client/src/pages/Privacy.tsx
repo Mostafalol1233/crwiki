@@ -3,12 +3,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield, Eye, Lock, Mail } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { format } from "date-fns";
+import PageSEO from "@/components/PageSEO";
 
 export default function Privacy() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO
+        title={"Privacy Policy — CrossFire Wiki"}
+        description={"Learn how CrossFire Wiki collects, uses, and protects your data."}
+        canonicalPath="/privacy"
+      />
+      <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="mb-6">
           <Link href="/">
@@ -149,5 +156,6 @@ export default function Privacy() {
         </div>
       </div>
     </div>
+    </>
   );
 }

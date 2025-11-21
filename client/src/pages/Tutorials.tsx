@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThumbsUp, Calendar, ArrowLeft } from "lucide-react";
 import type { Tutorial } from "@shared/mongodb-schema";
 import { format } from "date-fns";
+import PageSEO from "@/components/PageSEO";
 
 export default function TutorialsPage() {
   const { data: tutorials, isLoading, isError } = useQuery<Tutorial[]>({
@@ -29,7 +30,13 @@ export default function TutorialsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO
+        title={"Video Tutorials — CrossFire Wiki"}
+        description={"Learn to play CrossFire with our collection of video tutorials."}
+        canonicalPath="/tutorials"
+      />
+      <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="mb-6">
           <Link href="/">
@@ -104,6 +111,7 @@ export default function TutorialsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

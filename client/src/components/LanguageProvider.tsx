@@ -110,6 +110,7 @@ const translations: Record<Language, Record<string, string>> = {
     sellers: "Sellers",
     supportTickets: "Support Tickets",
     createTicket: "Create Ticket",
+    download: "Download",
   },
   ar: {
     home: "الرئيسية",
@@ -212,6 +213,7 @@ const translations: Record<Language, Record<string, string>> = {
     sellers: "البائعون",
     supportTickets: "تذاكر الدعم",
     createTicket: "إنشاء تذكرة",
+    download: "تحميل",
   },
 };
 

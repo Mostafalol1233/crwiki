@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // imports consolidated above
 import { useLanguage } from "@/components/LanguageProvider";
+import PageSEO from "@/components/PageSEO";
 import { Mail, MessageSquare, Send } from "lucide-react";
 
 export default function Contact() {
@@ -38,7 +39,13 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
+      <PageSEO
+        title={"Contact — CrossFire Wiki"}
+        description={"Get in touch with CrossFire Wiki — send us a message, ask questions, or provide feedback."}
+        canonicalPath="/contact"
+      />
+      <div className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -136,5 +143,6 @@ export default function Contact() {
         </Card>
       </div>
     </div>
+    </>
   );
 }

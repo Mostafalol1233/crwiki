@@ -157,6 +157,7 @@ export default function Admin() {
     tags: "",
     author: "Bimora Team",
     featured: false,
+    previewOnHome: true,
     readingTime: 5,
     // SEO fields
     seoTitle: "",
@@ -196,6 +197,7 @@ export default function Admin() {
     contentAr: "",
     author: "Bimora Team",
     featured: false,
+    previewOnHome: true,
     // SEO fields
     seoTitle: "",
     seoDescription: "",
@@ -878,6 +880,7 @@ export default function Admin() {
       tags: "",
       author: "Bimora Team",
       featured: false,
+      previewOnHome: true,
       readingTime: 5,
       // SEO fields
       seoTitle: "",
@@ -921,6 +924,7 @@ export default function Admin() {
       contentAr: "",
       author: "Bimora Team",
       featured: false,
+      previewOnHome: true,
       // SEO fields
       seoTitle: "",
       seoDescription: "",
@@ -1385,6 +1389,20 @@ export default function Admin() {
                       />
                       <span className="text-sm">Featured</span>
                     </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={postForm.previewOnHome}
+                        onChange={(e) =>
+                          setPostForm({
+                            ...postForm,
+                            previewOnHome: e.target.checked,
+                          })
+                        }
+                        data-testid="checkbox-post-preview-home"
+                      />
+                      <span className="text-sm">Show on Home</span>
+                    </label>
                     
                     {/* SEO Fields */}
                     <div className="space-y-4 pt-4 border-t">
@@ -1523,6 +1541,7 @@ export default function Admin() {
                               tags: post.tags.join(", "),
                               author: post.author,
                               featured: post.featured,
+                              previewOnHome: post.previewOnHome !== false,
                               readingTime: post.readingTime,
                               seoTitle: post.seoTitle || "",
                               seoDescription: post.seoDescription || "",
@@ -1990,6 +2009,20 @@ export default function Admin() {
                           />
                           <span className="text-sm">Featured</span>
                         </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={newsForm.previewOnHome}
+                            onChange={(e) =>
+                              setNewsForm({
+                                ...newsForm,
+                                previewOnHome: e.target.checked,
+                              })
+                            }
+                            data-testid="checkbox-news-preview-home"
+                          />
+                          <span className="text-sm">Show on Home</span>
+                        </label>
                         
                         {/* SEO Fields */}
                         <div className="space-y-4 pt-4 border-t">
@@ -2103,24 +2136,25 @@ export default function Admin() {
                               size="icon"
                               onClick={() => {
                                 setEditingNews(news);
-                                setNewsForm({
-                                  title: news.title,
-                                  titleAr: news.titleAr || "",
-                                  dateRange: news.dateRange,
-                                  image: news.image,
-                                  category: news.category,
-                                  content: news.content,
-                                  contentAr: news.contentAr || "",
-                                  author: news.author,
-                                  featured: news.featured,
-                                  seoTitle: news.seoTitle || "",
-                                  seoDescription: news.seoDescription || "",
-                                  seoKeywords: news.seoKeywords?.join(", ") || "",
-                                  canonicalUrl: news.canonicalUrl || "",
-                                  ogImage: news.ogImage || "",
-                                  twitterImage: news.twitterImage || "",
-                                  schemaType: news.schemaType || "NewsArticle",
-                                });
+                          setNewsForm({
+                            title: news.title,
+                            titleAr: news.titleAr || "",
+                            dateRange: news.dateRange,
+                            image: news.image,
+                            category: news.category,
+                            content: news.content,
+                            contentAr: news.contentAr || "",
+                            author: news.author,
+                            featured: news.featured,
+                            previewOnHome: news.previewOnHome !== false,
+                            seoTitle: news.seoTitle || "",
+                            seoDescription: news.seoDescription || "",
+                            seoKeywords: news.seoKeywords?.join(", ") || "",
+                            canonicalUrl: news.canonicalUrl || "",
+                            ogImage: news.ogImage || "",
+                            twitterImage: news.twitterImage || "",
+                            schemaType: news.schemaType || "NewsArticle",
+                          });
                                 setIsCreatingNews(true);
                               }}
                               data-testid={`button-edit-news-${news.id}`}
@@ -3242,6 +3276,7 @@ export default function Admin() {
                               contentAr: news.contentAr || "",
                               author: news.author,
                               featured: news.featured,
+                              previewOnHome: news.previewOnHome !== false,
                               seoTitle: news.seoTitle || "",
                               seoDescription: news.seoDescription || "",
                               seoKeywords: news.seoKeywords || "",

@@ -3,12 +3,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Shield, Users, Mail } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { format } from "date-fns";
+import PageSEO from "@/components/PageSEO";
 
 export default function Terms() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO
+        title={"Terms of Service — CrossFire Wiki"}
+        description={"Read the CrossFire Wiki terms of service and usage guidelines."}
+        canonicalPath="/terms"
+      />
+      <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="mb-6">
           <Link href="/">
@@ -114,5 +121,6 @@ export default function Terms() {
         </div>
       </div>
     </div>
+    </>
   );
 }

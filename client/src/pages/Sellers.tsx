@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { useState } from "react";
+import PageSEO from "@/components/PageSEO";
 
 interface Seller {
   id: string;
@@ -146,7 +147,13 @@ export default function Sellers() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 md:py-20">
+    <>
+      <PageSEO
+        title={"Game Card Sellers — CrossFire Wiki"}
+        description={"Find trusted CrossFire card sellers with ratings and contact info."}
+        canonicalPath="/sellers"
+      />
+      <div className="min-h-screen bg-background py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Game Card Sellers</h1>
@@ -352,5 +359,6 @@ export default function Sellers() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
 import { HelpCircle, Mail, User } from "lucide-react";
+import PageSEO from "@/components/PageSEO";
 
 const ticketSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -87,7 +88,13 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO
+        title={"Support — CrossFire Wiki"}
+        description={"Need help? Submit a support ticket and our team will assist you."}
+        canonicalPath="/support"
+      />
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -307,5 +314,6 @@ export default function Support() {
         </div>
       </div>
     </div>
+    </>
   );
 }

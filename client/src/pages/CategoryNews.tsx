@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
+import PageSEO from "@/components/PageSEO";
 
 interface NewsItem {
   id: string;
@@ -38,7 +39,13 @@ export default function CategoryNews() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 md:py-20">
+    <>
+      <PageSEO
+        title={"News Category — CrossFire Wiki"}
+        description={"Latest CrossFire news and announcements."}
+        canonicalPath="/category/news"
+      />
+      <div className="min-h-screen bg-background py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -121,5 +128,6 @@ export default function CategoryNews() {
         )}
       </div>
     </div>
+    </>
   );
 }

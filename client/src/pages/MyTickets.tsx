@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Ticket, MessageSquare, Clock, Mail } from "lucide-react";
+import PageSEO from "@/components/PageSEO";
 
 interface TicketType {
   id: string;
@@ -129,7 +130,13 @@ export default function MyTickets() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO
+        title={"My Support Tickets — CrossFire Wiki"}
+        description={"View your submitted support tickets and add replies."}
+        canonicalPath="/my-tickets"
+      />
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -340,5 +347,6 @@ export default function MyTickets() {
         )}
       </div>
     </div>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
+import PageSEO from "@/components/PageSEO";
 
 interface Mercenary {
   id: string;
@@ -71,7 +72,13 @@ export default function Mercenaries() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
+    <>
+      <PageSEO
+        title={"Mercenaries — CrossFire Wiki"}
+        description={"Browse CrossFire mercenaries with roles and voice lines."}
+        canonicalPath="/mercenaries"
+      />
+      <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary via-destructive to-primary bg-clip-text text-transparent">
@@ -188,5 +195,6 @@ export default function Mercenaries() {
         </div>
       </div>
     </div>
+    </>
   );
 }

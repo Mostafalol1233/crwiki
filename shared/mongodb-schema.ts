@@ -17,6 +17,7 @@ export interface IPost extends Document {
   views: number;
   readingTime: number;
   featured: boolean;
+  previewOnHome?: boolean;
   createdAt: Date;
   // SEO fields
   seoTitle?: string;
@@ -68,6 +69,7 @@ export interface INews extends Document {
   htmlContent: string;
   author: string;
   featured: boolean;
+  previewOnHome?: boolean;
   createdAt: Date;
   // SEO fields
   seoTitle?: string;
@@ -231,6 +233,7 @@ const PostSchema = new Schema<IPost>({
   views: { type: Number, default: 0 },
   readingTime: { type: Number, required: true },
   featured: { type: Boolean, default: false },
+  previewOnHome: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   // SEO fields
   seoTitle: { type: String, default: "" },
@@ -282,6 +285,7 @@ const NewsSchema = new Schema<INews>({
   htmlContent: { type: String, default: '' },
   author: { type: String, required: true },
   featured: { type: Boolean, default: false },
+  previewOnHome: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   // SEO fields
   seoTitle: { type: String, default: '' },
@@ -467,6 +471,7 @@ export const insertPostSchema = z.object({
   author: z.string(),
   readingTime: z.number(),
   featured: z.boolean().optional(),
+  previewOnHome: z.boolean().optional(),
   // SEO fields
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
@@ -515,6 +520,7 @@ export const insertNewsSchema = z.object({
   htmlContent: z.string().optional(),
   author: z.string(),
   featured: z.boolean().optional(),
+  previewOnHome: z.boolean().optional(),
   // SEO fields
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),

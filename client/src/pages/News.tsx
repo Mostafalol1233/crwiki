@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Link } from "wouter";
 import { useMemo } from "react";
+import PageSEO from "@/components/PageSEO";
 
 interface NewsItem {
   id: string;
@@ -62,7 +63,13 @@ export default function News() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <>
+      <PageSEO
+        title={"News & Updates — CrossFire Wiki"}
+        description={"Latest CrossFire news, posts, and updates from the community and official sources."}
+        canonicalPath="/news"
+      />
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
           {t("newsAndUpdates")}
@@ -128,5 +135,6 @@ export default function News() {
         </div>
       </div>
     </div>
+    </>
   );
 }

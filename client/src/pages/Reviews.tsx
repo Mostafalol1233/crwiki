@@ -20,6 +20,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { ReviewVerificationSettings } from "@/types/site-settings";
+import PageSEO from "@/components/PageSEO";
 
 interface Seller {
   id: string;
@@ -249,7 +250,13 @@ export default function Reviews() {
   const isAdmin = jwtPayload && ['super_admin', 'admin', 'ticket_manager'].includes(jwtPayload.role);
 
   return (
-    <div className="min-h-screen bg-background py-12 md:py-20">
+    <>
+      <PageSEO
+        title={"Seller Reviews — CrossFire Wiki"}
+        description={"Read and submit reviews for CrossFire sellers. Verification supported."}
+        canonicalPath="/reviews"
+      />
+      <div className="min-h-screen bg-background py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Seller Reviews</h1>
@@ -509,5 +516,6 @@ export default function Reviews() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

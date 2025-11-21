@@ -25,7 +25,7 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-export default function TutorialManager() {
+export default function TutorialManager({ canManage: canManageProp }: { canManage?: boolean }) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
@@ -36,6 +36,17 @@ export default function TutorialManager() {
   const { data: tutorials = [], isLoading, isError } = useQuery<Tutorial[]>({
     queryKey: ["/api/tutorials"],
   });
+
+  const role = (typeof window !== 'undefined' ? localStorage.getItem('adminRole') : '') || '';
+  let storedPerms: Record<string, boolean> = {};
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('adminPermissions') || '{}' : '{}';
+    storedPerms = JSON.parse(raw || '{}') || {};
+  } catch {
+    storedPerms = {};
+  }
+  const isSuperAdmin = role === 'super_admin';
+  const canManage = !!canManageProp || isSuperAdmin || !!storedPerms['tutorials:manage'];
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; description: string; youtubeUrl: string; youtubeId: string }) => {
@@ -175,6 +186,7 @@ export default function TutorialManager() {
                 Manage video tutorials for CrossFire players
               </p>
             </div>
+            {canManage && (
             <Button
               onClick={() => handleOpenDialog()}
               data-testid="button-add-tutorial"
@@ -183,6 +195,7 @@ export default function TutorialManager() {
               <Plus className="h-4 w-4" />
               Add Tutorial
             </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -242,6 +255,7 @@ export default function TutorialManager() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {canManage && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -250,6 +264,8 @@ export default function TutorialManager() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManage && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -258,6 +274,7 @@ export default function TutorialManager() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -326,6 +343,7 @@ export default function TutorialManager() {
               >
                 Cancel
               </Button>
+              {canManage && (
               <Button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
@@ -340,6 +358,7 @@ export default function TutorialManager() {
                   <>{editingTutorial ? "Update Tutorial" : "Create Tutorial"}</>
                 )}
               </Button>
+              )}
             </div>
           </form>
         </DialogContent>

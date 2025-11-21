@@ -1777,6 +1777,38 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
+  // Audio upload route with rate limiting
+  app.post("/api/upload-audio", uploadLimiter, requireAuth, upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      // Create form data for catbox.moe
+      const formData = new FormData();
+      formData.append('reqtype', 'fileupload');
+
+      // Convert buffer to blob for FormData
+      const blob = new Blob([new Uint8Array(req.file.buffer)], { type: req.file.mimetype });
+      formData.append('fileToUpload', blob, req.file.originalname);
+
+      // Upload to catbox.moe
+      const response = await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload to catbox.moe');
+      }
+
+      const audioUrl = await response.text();
+      res.json({ url: audioUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to upload audio' });
+    }
+  });
+
   // Seed data from attached_assets on server (super admin only)
   app.post("/api/admin/seed-from-assets", requireAuth, requireWeaponManager, async (_req, res) => {
     try {

@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-const logoLightImage = "/favicon.png";
-const logoDarkImage = "/favicon.png";
+const logoLightImage = "/white-vafcoin.png";
+const logoDarkImage = "/black-vafcon.png";
 
 interface DropdownItem {
   path: string;
@@ -94,6 +94,7 @@ export function Header() {
                 height="48"
                 loading="eager"
                 decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
                 draggable={false}
                 data-testid="img-logo"
               />

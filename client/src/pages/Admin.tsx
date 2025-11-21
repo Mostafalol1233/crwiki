@@ -147,6 +147,79 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
 
   const isSuperAdmin = adminRole === "super_admin";
+  const [adminPerms, setAdminPerms] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("adminPermissions") || "{}";
+      const parsed = JSON.parse(raw);
+      setAdminPerms(parsed || {});
+    } catch {
+      setAdminPerms({});
+    }
+  }, [adminRole]);
+
+  const canPosts = isSuperAdmin || !!adminPerms["posts:manage"];
+  const canEventsNews = isSuperAdmin || !!adminPerms["events:add"] || !!adminPerms["events:scrape"] || !!adminPerms["news:add"] || !!adminPerms["news:scrape"];
+  const canTutorials = isSuperAdmin || !!adminPerms["tutorials:manage"];
+  const canSellers = isSuperAdmin || !!adminPerms["sellers:manage"];
+  const canCFData = isSuperAdmin || !!adminPerms["weapons:manage"];
+  const canRestoration = isSuperAdmin;
+  const canTranslations = true;
+  const canVerification = isSuperAdmin || !!adminPerms["settings:manage"];
+  const canAdmins = isSuperAdmin;
+  const canSubscribers = isSuperAdmin || !!adminPerms["subscribers:manage"];
+  const canScraper = isSuperAdmin || !!adminPerms["events:scrape"] || !!adminPerms["news:scrape"];
+  const canMercenaries = isSuperAdmin || !!adminPerms["mercenaries:manage"];
+  const canTickets = isSuperAdmin || !!adminPerms["tickets:manage"];
+
+  const canManagePosts = canPosts;
+  const canManageEvents = isSuperAdmin || !!adminPerms["events:add"];
+  const canManageNews = isSuperAdmin || !!adminPerms["news:add"];
+  const canManageSellers = canSellers;
+  const canManageCFData = canCFData;
+  const canManageMercenaries = canMercenaries;
+  const canManageSubscribers = canSubscribers;
+  const canUseScraper = canScraper;
+
+  useEffect(() => {
+    const allowed = new Set<string>([
+      "dashboard",
+      ...(canPosts ? ["posts"] : []),
+      ...(canEventsNews ? ["events-news"] : []),
+      ...(canTutorials ? ["tutorials"] : []),
+      ...(canSellers ? ["sellers"] : []),
+      ...(canCFData ? ["cf-data"] : []),
+      ...(canRestoration ? ["restoration"] : []),
+      ...(canTranslations ? ["translations"] : []),
+      ...(canVerification ? ["verification"] : []),
+      ...(canAdmins ? ["admins"] : []),
+      ...(canSubscribers ? ["subscribers"] : []),
+      ...(canScraper ? ["scraper"] : []),
+      ...(canMercenaries ? ["mercenaries"] : []),
+      ...(canTickets ? ["tickets"] : []),
+      ...(isSuperAdmin ? ["seller-reviews"] : []),
+    ]);
+
+    if (!allowed.has(activeTab)) {
+      setActiveTab("dashboard");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    canPosts,
+    canEventsNews,
+    canTutorials,
+    canSellers,
+    canCFData,
+    canRestoration,
+    canTranslations,
+    canVerification,
+    canAdmins,
+    canSubscribers,
+    canScraper,
+    canMercenaries,
+    canTickets,
+    isSuperAdmin,
+  ]);
 
   const [postForm, setPostForm] = useState({
     title: "",
@@ -1000,6 +1073,23 @@ export default function Admin() {
 
   const handleDeleteConfirm = () => {
     if (!deleteConfirmId) return;
+    const allowedForType: Record<string, boolean> = {
+      post: canManagePosts,
+      event: canManageEvents,
+      news: canManageNews,
+      seller: canManageSellers,
+      admin: canAdmins,
+      subscriber: canManageSubscribers,
+      weapon: canManageCFData,
+      mode: canManageCFData,
+      rank: canManageCFData,
+      ticket: canTickets,
+      mercenary: canManageMercenaries,
+    };
+    if (!allowedForType[deleteType]) {
+      toast({ title: "Not allowed", description: "You don't have permission for this action", variant: "destructive" });
+      return;
+    }
     
     switch (deleteType) {
       case "post":
@@ -1036,7 +1126,7 @@ export default function Admin() {
         deleteMercenaryMutation.mutate(deleteConfirmId);
         break;
     }
-    
+
     setDeleteConfirmId(null);
     setDeleteType("");
   };
@@ -1084,17 +1174,18 @@ export default function Admin() {
                   className="w-full h-10 px-3 rounded-md border border-input bg-background"
                 >
                   <option value="dashboard">Dashboard</option>
-                  <option value="posts">Posts</option>
-                  <option value="events-news">Events & News</option>
-                  {isSuperAdmin && <option value="tutorials">Tutorials</option>}
-                  {isSuperAdmin && <option value="sellers">Sellers</option>}
-                  {isSuperAdmin && <option value="cf-data">CF Data</option>}
-                  <option value="translations">Translations</option>
-                  {isSuperAdmin && <option value="verification">Review Verification</option>}
-                  {isSuperAdmin && <option value="admins">Admins</option>}
-                  {isSuperAdmin && <option value="subscribers">Subscribers</option>}
-                  <option value="mercenaries">Mercenaries</option>
-                  <option value="tickets">Tickets</option>
+                  {canPosts && <option value="posts">Posts</option>}
+                  {canEventsNews && <option value="events-news">Events & News</option>}
+                  {canTutorials && <option value="tutorials">Tutorials</option>}
+                  {canSellers && <option value="sellers">Sellers</option>}
+                  {canCFData && <option value="cf-data">CF Data</option>}
+                  {canTranslations && <option value="translations">Translations</option>}
+                  {canVerification && <option value="verification">Review Verification</option>}
+                  {canAdmins && <option value="admins">Admins</option>}
+                  {canSubscribers && <option value="subscribers">Subscribers</option>}
+                  {canScraper && <option value="scraper">Scraper</option>}
+                  {canMercenaries && <option value="mercenaries">Mercenaries</option>}
+                  {canTickets && <option value="tickets">Tickets</option>}
                 </select>
               </div>
 
@@ -1104,72 +1195,84 @@ export default function Admin() {
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </TabsTrigger>
+                {canPosts && (
                 <TabsTrigger value="posts" data-testid="tab-posts">
                   <FileText className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Posts</span>
                 </TabsTrigger>
+                )}
+                {canEventsNews && (
                 <TabsTrigger value="events-news" data-testid="tab-events-news">
                   <Calendar className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Events & News</span>
                 </TabsTrigger>
-                {isSuperAdmin && (
+                )}
+                {canTutorials && (
                   <TabsTrigger value="tutorials" data-testid="tab-tutorials">
                     <FileText className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Tutorials</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {canSellers && (
                   <TabsTrigger value="sellers" data-testid="tab-sellers">
                     <Store className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Sellers</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {canCFData && (
                   <TabsTrigger value="cf-data" data-testid="tab-cf-data">
                     <Shield className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">CF Data</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {canRestoration && (
                   <TabsTrigger value="restoration" data-testid="tab-restoration">
                     <RotateCw className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Restore Data</span>
                   </TabsTrigger>
                 )}
+                {canTranslations && (
                 <TabsTrigger value="translations" data-testid="tab-translations">
                   <Languages className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Translations</span>
                 </TabsTrigger>
-                {isSuperAdmin && (
+                )}
+                {canVerification && (
                   <TabsTrigger value="verification" data-testid="tab-verification">
                     <Shield className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Review Verification</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {canAdmins && (
                   <TabsTrigger value="admins" data-testid="tab-admins">
                     <Users className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Admins</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {canSubscribers && (
                   <TabsTrigger value="subscribers" data-testid="tab-subscribers">
                     <Mail className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Subscribers</span>
                   </TabsTrigger>
                 )}
+                {canScraper && (
                 <TabsTrigger value="scraper" data-testid="tab-scraper">
                   <Upload className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Scraper</span>
                 </TabsTrigger>
+                )}
+                {canMercenaries && (
                 <TabsTrigger value="mercenaries" data-testid="tab-mercenaries">
                   <Star className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Mercenaries</span>
                 </TabsTrigger>
+                )}
+                {canTickets && (
                 <TabsTrigger value="tickets" data-testid="tab-tickets">
                   <LifeBuoy className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Tickets</span>
                 </TabsTrigger>
+                )}
                 {isSuperAdmin && (
                   <TabsTrigger value="seller-reviews" data-testid="tab-seller-reviews">
                     <MessageSquare className="h-4 w-4 mr-2" />
@@ -1276,6 +1379,7 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
+          {canPosts && (
           <TabsContent value="posts" className="space-y-6" data-testid="content-posts">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">Posts Management</h2>
@@ -1287,10 +1391,12 @@ export default function Admin() {
                 }
               }}>
                 <DialogTrigger asChild>
+                  {canManagePosts && (
                   <Button data-testid="button-create-post">
                     <Plus className="h-4 w-4 mr-2" />
                     New Post
                   </Button>
+                  )}
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
@@ -1527,6 +1633,7 @@ export default function Admin() {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        {canManagePosts && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1557,6 +1664,8 @@ export default function Admin() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        )}
+                        {canManagePosts && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1568,6 +1677,7 @@ export default function Admin() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -1575,7 +1685,9 @@ export default function Admin() {
               ))}
             </div>
           </TabsContent>
+          )}
 
+          {canEventsNews && (
           <TabsContent value="events-news" className="space-y-6" data-testid="content-events-news">
             <div className="space-y-6">
               {isSuperAdmin ? (
@@ -1605,6 +1717,7 @@ export default function Admin() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-semibold">Events</h2>
                   <div className="flex gap-2">
+                    {canUseScraper && (
                     <Button
                       variant="outline"
                       onClick={() => scrapeEventsMutation.mutate()}
@@ -1614,6 +1727,7 @@ export default function Admin() {
                       <Upload className="h-4 w-4 mr-2" />
                       {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
                     </Button>
+                    )}
                     <Dialog open={isCreatingEvent} onOpenChange={(open) => {
                       setIsCreatingEvent(open);
                       if (!open) {
@@ -1622,10 +1736,12 @@ export default function Admin() {
                       }
                     }}>
                       <DialogTrigger asChild>
+                        {canManageEvents && (
                         <Button data-testid="button-create-event">
                           <Plus className="h-4 w-4 mr-2" />
                           New Event
                         </Button>
+                        )}
                       </DialogTrigger>
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
                       <DialogHeader>
@@ -1796,6 +1912,7 @@ export default function Admin() {
                             <p className="text-sm text-muted-foreground">{event.date}</p>
                           </div>
                           <div className="flex gap-2">
+                            {canManageEvents && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1823,6 +1940,8 @@ export default function Admin() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            )}
+                            {canManageEvents && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1834,6 +1953,7 @@ export default function Admin() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -1853,10 +1973,12 @@ export default function Admin() {
                     }
                   }}>
                     <DialogTrigger asChild>
+                      {canManageNews && (
                       <Button data-testid="button-create-news">
                         <Plus className="h-4 w-4 mr-2" />
                         New News
                       </Button>
+                      )}
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
                       <DialogHeader>
@@ -2131,11 +2253,12 @@ export default function Admin() {
                             <Badge variant="outline" className="text-xs">{news.category}</Badge>
                           </div>
                           <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setEditingNews(news);
+                          {canManageNews && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingNews(news);
                           setNewsForm({
                             title: news.title,
                             titleAr: news.titleAr || "",
@@ -2155,23 +2278,26 @@ export default function Admin() {
                             twitterImage: news.twitterImage || "",
                             schemaType: news.schemaType || "NewsArticle",
                           });
-                                setIsCreatingNews(true);
-                              }}
-                              data-testid={`button-edit-news-${news.id}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setDeleteConfirmId(news.id);
-                                setDeleteType("news");
-                              }}
-                              data-testid={`button-delete-news-${news.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                              setIsCreatingNews(true);
+                            }}
+                            data-testid={`button-edit-news-${news.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          )}
+                          {canManageNews && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setDeleteConfirmId(news.id);
+                              setDeleteType("news");
+                            }}
+                            data-testid={`button-delete-news-${news.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          )}
                           </div>
                         </div>
                       </CardContent>
@@ -2181,8 +2307,9 @@ export default function Admin() {
               </div>
             </div>
           </TabsContent>
+          )}
 
-          {isSuperAdmin && (
+          {canVerification && (
             <TabsContent value="verification" className="space-y-6" data-testid="content-verification">
               <Card>
                 <CardHeader>
@@ -2327,13 +2454,13 @@ export default function Admin() {
             </TabsContent>
           )}
 
-          {isSuperAdmin && (
+          {canTutorials && (
             <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">
             <TutorialManager />
           </TabsContent>
           )}
 
-          {isSuperAdmin && (
+          {canCFData && (
             <TabsContent value="cf-data" className="space-y-6" data-testid="content-cf-data">
               <div className="space-y-6">
               <h2 className="text-2xl font-semibold">CrossFire Data Management</h2>
@@ -2470,6 +2597,7 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setEditingWeapon(weapon);
                             setWeaponForm({
@@ -2483,12 +2611,15 @@ export default function Admin() {
                           }}>
                             <Edit className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setDeleteConfirmId(weapon.id);
                             setDeleteType("weapon");
                           }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2612,6 +2743,7 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setEditingMode(mode);
                             setModeForm({
@@ -2624,12 +2756,15 @@ export default function Admin() {
                           }}>
                             <Edit className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setDeleteConfirmId(mode.id);
                             setDeleteType("mode");
                           }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2754,6 +2889,7 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setEditingRank(rank);
                             setRankForm({
@@ -2766,12 +2902,15 @@ export default function Admin() {
                           }}>
                             <Edit className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManageCFData && (
                           <Button variant="ghost" size="icon" onClick={() => {
                             setDeleteConfirmId(rank.id);
                             setDeleteType("rank");
                           }}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2782,7 +2921,7 @@ export default function Admin() {
             </TabsContent>
           )}
 
-          {isSuperAdmin && (
+          {canSellers && (
             <TabsContent value="sellers" className="space-y-6" data-testid="content-sellers">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">Sellers Management</h2>
@@ -2793,12 +2932,14 @@ export default function Admin() {
                   resetSellerForm();
                 }
               }}>
-                <DialogTrigger asChild>
-                  <Button data-testid="button-create-seller">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Seller
-                  </Button>
-                </DialogTrigger>
+                    <DialogTrigger asChild>
+                    {canManageSellers && (
+                    <Button data-testid="button-create-seller">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Seller
+                    </Button>
+                    )}
+                    </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -3168,7 +3309,7 @@ export default function Admin() {
           </TabsContent>
           )}
 
-          {isSuperAdmin && (
+          {canRestoration && (
             <TabsContent value="restoration" className="space-y-6" data-testid="content-restoration">
               <div className="space-y-6">
                 <div>
@@ -3182,6 +3323,7 @@ export default function Admin() {
             </TabsContent>
           )}
 
+          {canTranslations && (
           <TabsContent value="translations" className="space-y-6" data-testid="content-translations">
             <h2 className="text-2xl font-semibold">Translations Management</h2>
             <p className="text-muted-foreground">
@@ -3299,8 +3441,9 @@ export default function Admin() {
               </Card>
             </div>
           </TabsContent>
+          )}
 
-          {isSuperAdmin && (
+          {canAdmins && (
             <TabsContent value="admins" className="space-y-6" data-testid="content-admins">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Admins Management</h2>
@@ -3312,10 +3455,12 @@ export default function Admin() {
                   }
                 }}>
                   <DialogTrigger asChild>
+                    {canAdmins && (
                     <Button data-testid="button-create-admin">
                       <Plus className="h-4 w-4 mr-2" />
                       New Admin
                     </Button>
+                    )}
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -3445,6 +3590,7 @@ export default function Admin() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {canAdmins && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -3456,6 +3602,7 @@ export default function Admin() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -3467,7 +3614,7 @@ export default function Admin() {
             </TabsContent>
           )}
 
-          {isSuperAdmin && (
+          {canSubscribers && (
             <TabsContent value="subscribers" className="space-y-6" data-testid="content-subscribers">
               <h2 className="text-2xl font-semibold">Newsletter Subscribers</h2>
 
@@ -3491,6 +3638,7 @@ export default function Admin() {
                             {new Date(subscriber.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
+                            {canManageSubscribers && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -3502,6 +3650,7 @@ export default function Admin() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -3519,6 +3668,7 @@ export default function Admin() {
             </TabsContent>
           )}
 
+            {canMercenaries && (
             <TabsContent value="mercenaries" className="space-y-6" data-testid="content-mercenaries">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Mercenaries Management</h2>
@@ -3594,6 +3744,59 @@ export default function Admin() {
 
                       <div className="space-y-2">
                         <Label>Voice Lines (MP3 URLs)</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="audio/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              setAudioFiles(files as File[]);
+                            }}
+                            data-testid="input-voice-upload"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (!audioFiles || audioFiles.length === 0) {
+                                toast({ title: 'No audio selected', variant: 'destructive' });
+                                return;
+                              }
+                              try {
+                                const uploaded: string[] = [];
+                                for (const f of audioFiles) {
+                                  const formData = new FormData();
+                                  formData.append('audio', f);
+                                  const res = await fetch('/api/upload-audio', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` },
+                                    body: formData,
+                                  });
+                                  if (!res.ok) throw new Error('Upload failed');
+                                  const json = await res.json();
+                                  if (json?.url) uploaded.push(json.url);
+                                }
+                                setUploadedAudioUrls(uploaded);
+                                if (uploaded.length) {
+                                  if (editingMerc) {
+                                    setMercForm({ ...mercForm, voiceLines: [...mercForm.voiceLines, ...uploaded] });
+                                  } else {
+                                    setCreateMercForm({ ...createMercForm, voiceLines: [...createMercForm.voiceLines, ...uploaded] });
+                                  }
+                                  toast({ title: 'Uploaded audio files', description: `${uploaded.length} files added` });
+                                }
+                              } catch (err: any) {
+                                toast({ title: 'Failed to upload audio', description: err?.message, variant: 'destructive' });
+                              }
+                            }}
+                            data-testid="button-upload-voice"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Audio
+                          </Button>
+                        </div>
                         {(editingMerc ? mercForm.voiceLines : createMercForm.voiceLines).map((url: string, index: number) => (
                           <div key={index} className="flex gap-2">
                             <Input
@@ -3701,6 +3904,7 @@ export default function Admin() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
+                              {canManageMercenaries && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -3719,6 +3923,8 @@ export default function Admin() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              )}
+                              {canManageMercenaries && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -3730,6 +3936,7 @@ export default function Admin() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -3873,7 +4080,9 @@ export default function Admin() {
                 </DialogContent>
               </Dialog>
             </TabsContent>
+            )}
 
+            {canTickets && (
             <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
             <h2 className="text-2xl font-semibold">Support Tickets</h2>
             <Card>
@@ -3947,6 +4156,7 @@ export default function Admin() {
                           {ticket.createdAt}
                         </TableCell>
                         <TableCell className="text-right">
+                          {canTickets && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -3958,6 +4168,7 @@ export default function Admin() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -4046,7 +4257,8 @@ export default function Admin() {
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
+            )}
             </div>
           </div>
         </Tabs>

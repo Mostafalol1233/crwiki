@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-import logoLightImage from "@assets/generated_images/Bimora_favicon_icon_f416a2cf.png";
-const logoDarkImage = logoLightImage;
+const logoLightImage = "/favicon.png";
+const logoDarkImage = "/favicon.png";
 
 interface DropdownItem {
   path: string;
@@ -79,7 +79,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-background/95 via-background to-background/95 border-primary/40 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/80 shadow-md shadow-primary/20">
+    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-background/95 via-background to-background/95 border-primary/40 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 shadow">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Desktop Header */}
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
@@ -89,9 +89,12 @@ export function Header() {
               <img
                 src={theme === 'dark' ? logoDarkImage : logoLightImage}
                 alt="Bimora Gaming - CrossFire Wiki"
-                className="h-10 md:h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
                 width="48"
                 height="48"
+                loading="eager"
+                decoding="async"
+                draggable={false}
                 data-testid="img-logo"
               />
             </div>

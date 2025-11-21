@@ -28,17 +28,17 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
   const { t } = useLanguage();
 
   return (
-    <section className="relative min-h-[70vh] md:min-h-[80vh] w-full overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center bg-black/10"
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${bgImage}), url(${fallbackImage})` }}
         onError={(e: any) => {
           e.target.style.backgroundImage = `url(${fallbackImage})`;
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/0 to-transparent" />
       
-      <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[70vh] md:min-h-[80vh] flex items-end pb-12 md:pb-20">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[60vh] md:min-h-[70vh] flex items-end pb-10 md:pb-16">
         <div className="max-w-3xl">
           <Badge
             variant="default"

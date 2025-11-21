@@ -55,6 +55,12 @@ export function Sidebar({
                 src={post.image}
                 alt={post.title}
                 className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                width="80"
+                height="80"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                draggable={false}
               />
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-medium line-clamp-2 mb-1">
@@ -135,6 +141,12 @@ export function Sidebar({
                 src={post.image}
                 alt={post.title}
                 className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                width="80"
+                height="80"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+                draggable={false}
               />
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-medium line-clamp-2 mb-1">

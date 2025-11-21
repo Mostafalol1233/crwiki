@@ -36,6 +36,12 @@ export function ArticleCard({ article }: ArticleCardProps) {
             src={article.image}
             alt={article.title}
             className="w-full h-full object-cover"
+            width="640"
+            height="360"
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            draggable={false}
           />
           {article.featured && (
             <Badge

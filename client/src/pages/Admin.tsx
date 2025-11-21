@@ -114,6 +114,7 @@ export default function Admin() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
   // Paste formatter state
   const [isPasteFormatterOpen, setIsPasteFormatterOpen] = useState(false);
@@ -3769,7 +3770,7 @@ export default function Admin() {
                                 for (const f of audioFiles) {
                                   const formData = new FormData();
                                   formData.append('audio', f);
-                                  const res = await fetch('/api/upload-audio', {
+                                  const res = await fetch(`${apiBase}/api/upload-audio`, {
                                     method: 'POST',
                                     headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` },
                                     body: formData,
@@ -3973,6 +3974,51 @@ export default function Admin() {
                         onChange={(e) => setMercForm((s) => ({ ...s, name: e.target.value }))}
                         placeholder="Mercenary name"
                       />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                          data-testid="input-image-upload"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            if (!imageFile) {
+                              toast({ title: 'No image selected', variant: 'destructive' });
+                              return;
+                            }
+                            try {
+                              const formData = new FormData();
+                              formData.append('image', imageFile);
+                              const res = await fetch(`${apiBase}/api/upload-image`, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` },
+                                body: formData,
+                              });
+                              if (!res.ok) throw new Error('Upload failed');
+                              const url = await res.text();
+                              if (url) {
+                                if (editingMerc) {
+                                  setMercForm({ ...mercForm, image: url });
+                                } else {
+                                  setCreateMercForm({ ...createMercForm, image: url });
+                                }
+                                setUploadedImageUrl(url);
+                                toast({ title: 'Image uploaded', description: 'Image URL updated' });
+                              }
+                            } catch (err: any) {
+                              toast({ title: 'Failed to upload image', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                          data-testid="button-upload-image"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Image
+                        </Button>
+                      </div>
                     </div>
                     <div>
                       <Label>Role</Label>

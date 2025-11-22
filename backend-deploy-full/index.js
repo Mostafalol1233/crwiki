@@ -959,10 +959,14 @@ var apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+  let registrationClosed = false;
   async function registerRoutes(app2) {
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
   app2.post("/api/users/register", authLimiter, async (req, res) => {
     try {
+      if (registrationClosed) {
+        return res.status(403).json({ error: "Registration is closed" });
+      }
       const { username, email, phone, password } = req.body || {};
       if (!username || !email || !phone || !password) {
         return res.status(400).json({ error: "All fields are required" });
@@ -2321,3 +2325,72 @@ app.set('trust proxy', 1); // Trust the first proxy
     log(`\u{1F310} Frontend should be deployed to Netlify`);
   });
 })();
+  // Admin: Users management and registration toggle
+  app2.get("/api/admin/users", requireAuth, requireSuperAdmin, async (_req, res) => {
+    try {
+      const users = await UserModel.find().sort({ createdAt: -1 }).lean();
+      res.json(users.map((u) => ({
+        id: String(u._id),
+        username: u.username,
+        email: u.email,
+        phone: u.phone,
+        verifiedEmail: !!u.verifiedEmail,
+        verifiedPhone: !!u.verifiedPhone,
+        emailVerificationCode: u.emailVerificationCode || "",
+        phoneVerificationCode: u.phoneVerificationCode || "",
+        createdAt: u.createdAt
+      })));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.post("/api/admin/users/:id/generate-phone-code", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const updated = await UserModel.findByIdAndUpdate(id, { phoneVerificationCode: code, verifiedPhone: false }, { new: true }).lean();
+      if (!updated) return res.status(404).json({ error: "User not found" });
+      res.json({ id: String(updated._id), phone: updated.phone, phoneCode: code });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.patch("/api/admin/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { verifiedEmail, verifiedPhone } = req.body || {};
+      const update = {};
+      if (verifiedEmail === true) Object.assign(update, { verifiedEmail: true, emailVerificationCode: "" });
+      if (verifiedPhone === true) Object.assign(update, { verifiedPhone: true, phoneVerificationCode: "" });
+      const updated = await UserModel.findByIdAndUpdate(id, update, { new: true }).lean();
+      if (!updated) return res.status(404).json({ error: "User not found" });
+      res.json({ id: String(updated._id), verifiedEmail: !!updated.verifiedEmail, verifiedPhone: !!updated.verifiedPhone });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.delete("/api/admin/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const result = await UserModel.findByIdAndDelete(id);
+      if (!result) return res.status(404).json({ error: "User not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.get("/api/admin/registration", requireAuth, requireSuperAdmin, (_req, res) => {
+    res.json({ closed: registrationClosed });
+  });
+  app2.post("/api/admin/registration/close", requireAuth, requireSuperAdmin, (_req, res) => {
+    registrationClosed = true;
+    res.json({ closed: true });
+  });
+  app2.post("/api/admin/registration/open", requireAuth, requireSuperAdmin, (_req, res) => {
+    registrationClosed = false;
+    res.json({ closed: false });
+  });

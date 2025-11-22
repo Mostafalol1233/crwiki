@@ -141,6 +141,9 @@ export default function Admin() {
   const [activeTicketReplies, setActiveTicketReplies] = useState<any[]>([]);
   const [replyText, setReplyText] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [registrationClosed, setRegistrationClosed] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -179,6 +182,7 @@ export default function Admin() {
   const canTranslations = true;
   const canVerification = isSuperAdmin || !!adminPerms["settings:manage"];
   const canAdmins = isSuperAdmin;
+  const canUsers = isSuperAdmin;
   const canSubscribers = isSuperAdmin || !!adminPerms["subscribers:manage"];
   const canScraper = isSuperAdmin || !!adminPerms["events:scrape"] || !!adminPerms["news:scrape"];
   const canMercenaries = isSuperAdmin || !!adminPerms["mercenaries:manage"];
@@ -205,6 +209,7 @@ export default function Admin() {
       ...(canTranslations ? ["translations"] : []),
       ...(canVerification ? ["verification"] : []),
       ...(canAdmins ? ["admins"] : []),
+      ...(canUsers ? ["users"] : []),
       ...(canSubscribers ? ["subscribers"] : []),
       ...(canScraper ? ["scraper"] : []),
       ...(canMercenaries ? ["mercenaries"] : []),
@@ -232,6 +237,44 @@ export default function Admin() {
     canTickets,
     isSuperAdmin,
   ]);
+
+  // Users management
+  useEffect(() => {
+    if (!canUsers) return;
+    const fetchUsers = async () => {
+      try {
+        setUsersLoading(true);
+        const data = await apiRequest("/api/admin/users", "GET");
+        setUsers(Array.isArray(data) ? data : []);
+        const reg = await apiRequest("/api/admin/registration", "GET");
+        setRegistrationClosed(!!reg?.closed);
+      } catch (e) {
+        // ignore
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [canUsers]);
+
+  async function generatePhoneCode(id: string) {
+    const res = await apiRequest(`/api/admin/users/${id}/generate-phone-code`, "POST", {});
+    toast({ title: "Phone code generated", description: `Code: ${res?.phoneCode} for ${res?.phone}` });
+    const data = await apiRequest("/api/admin/users", "GET");
+    setUsers(Array.isArray(data) ? data : []);
+  }
+  async function markVerified(id: string, type: "phone" | "email") {
+    const body = type === "phone" ? { verifiedPhone: true } : { verifiedEmail: true };
+    await apiRequest(`/api/admin/users/${id}/verify`, "PATCH", body);
+    const data = await apiRequest("/api/admin/users", "GET");
+    setUsers(Array.isArray(data) ? data : []);
+  }
+  async function kickUser(id: string) {
+    await apiRequest(`/api/admin/users/${id}`, "DELETE");
+    setUsers((u) => u.filter((x) => x.id !== id));
+  }
+  async function closeRegistration() { const r = await apiRequest("/api/admin/registration/close", "POST", {}); setRegistrationClosed(!!r?.closed); }
+  async function openRegistration() { const r = await apiRequest("/api/admin/registration/open", "POST", {}); setRegistrationClosed(!!r?.closed); }
 
   const [postForm, setPostForm] = useState({
     title: "",
@@ -1298,10 +1341,10 @@ export default function Admin() {
                     <span className="hidden sm:inline">Password Reset Codes</span>
                   </TabsTrigger>
                 )}
-              </TabsList>
-            </div>
+            </TabsList>
+          </div>
 
-            <div className="flex-1">
+          <div className="flex-1">
               <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
@@ -1397,6 +1440,71 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {canUsers && (
+          <TabsContent value="users" className="space-y-6" data-testid="content-users">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Users</h2>
+              <div className="flex items-center gap-2">
+                <Badge variant={registrationClosed ? "destructive" : "secondary"} className="text-xs">
+                  {registrationClosed ? "Registration Closed" : "Registration Open"}
+                </Badge>
+                <Button variant="outline" onClick={registrationClosed ? openRegistration : closeRegistration} data-testid="button-toggle-registration">
+                  {registrationClosed ? "Open Registration" : "Close Registration"}
+                </Button>
+              </div>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Registered Users</CardTitle>
+                <CardDescription>{usersLoading ? "Loading..." : `${users.length} users`}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Verified</TableHead>
+                      <TableHead>Codes</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((u) => (
+                      <TableRow key={u.id} data-testid={`row-user-${u.id}`}>
+                        <TableCell className="font-medium">{u.username}</TableCell>
+                        <TableCell>{u.email || "—"}</TableCell>
+                        <TableCell>{u.phone || "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Badge variant={u.verifiedEmail ? "default" : "secondary"}>Email {u.verifiedEmail ? "✔" : "✖"}</Badge>
+                            <Badge variant={u.verifiedPhone ? "default" : "secondary"}>Phone {u.verifiedPhone ? "✔" : "✖"}</Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {u.phoneVerificationCode && <div>Phone Code: <span className="font-mono">{u.phoneVerificationCode}</span></div>}
+                            {u.emailVerificationCode && <div>Email Code: <span className="font-mono">{u.emailVerificationCode}</span></div>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => generatePhoneCode(u.id)} data-testid={`button-gen-phone-${u.id}`}>Gen Phone Code</Button>
+                            <Button variant="ghost" size="sm" onClick={() => markVerified(u.id, "phone")} data-testid={`button-verify-phone-${u.id}`}>Mark Phone Verified</Button>
+                            <Button variant="ghost" size="sm" onClick={() => markVerified(u.id, "email")} data-testid={`button-verify-email-${u.id}`}>Mark Email Verified</Button>
+                            <Button variant="destructive" size="sm" onClick={() => kickUser(u.id)} data-testid={`button-kick-${u.id}`}>Kick</Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          )}
 
           {canPosts && (
           <TabsContent value="posts" className="space-y-6" data-testid="content-posts">

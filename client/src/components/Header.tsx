@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-const logoLightImage = "/white-vafcoin.png";
-const logoDarkImage = "/black-vafcon.png";
+const logoLightImage = "https://screenrec.com/share/tBQJVvqIek";
+const logoDarkImage = "https://screenrec.com/share/tBQJVvqIek";
 
 function CFIconHome(props: any) {
   return (
@@ -244,9 +244,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full">
       <div className="w-full bg-gray-100 text-gray-700">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-4 text-xs md:text-sm">
-          <Link href="/login" className="text-blue-600 hover:text-blue-700">Log In</Link>
-          <Link href="/register" className="hover:underline">Sign Up</Link>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
+          <Link href="/" className="font-bold italic uppercase tracking-wide text-black">CrossFire</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-blue-600 hover:text-blue-700">Log In</Link>
+            <Link href="/register" className="hover:underline">Sign Up</Link>
+          </div>
         </div>
       </div>
 

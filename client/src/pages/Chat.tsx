@@ -65,25 +65,26 @@ export default function Chat() {
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Chat" description="Realtime chat" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="md:col-span-1">
+        <Card className="md:col-span-1 shadow-none border">
           <CardContent className="p-2">
+            <div className="text-xs mb-2">Online</div>
             <div className="space-y-1">
               {onlineUsers.map((u) => (
-                <div key={u} className="px-3 py-2 rounded bg-muted flex items-center justify-between">
-                  <span>{u}</span>
+                <div key={u} className="px-3 py-2 rounded bg-white border flex items-center justify-between">
+                  <span className="text-sm">{u}</span>
                   <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
-        <Card className="md:col-span-3">
+        <Card className="md:col-span-3 shadow-none border">
           <CardContent className="p-4">
             <div className="h-96 overflow-y-auto space-y-2">
               {messages.map((m) => (
-                <div key={m.id} className={`group max-w-[70%] px-3 py-2 rounded ${m.sender === username ? 'bg-blue-600 text-white ml-auto' : 'bg-muted'}`}>
+                <div key={m.id} className={`max-w-[70%] px-4 py-2 rounded ${m.sender === username ? 'bg-blue-500 text-white ml-auto' : 'bg-white text-black border'}`}>
                   <div className="text-xs opacity-80 mb-1">{m.sender}</div>
-                  <div>{m.content}</div>
+                  <div className="leading-relaxed">{m.content}</div>
                   <div className="flex items-center justify-between text-xs opacity-70 mt-1">
                     <span>{new Date(m.createdAt).toLocaleTimeString()}</span>
                   </div>

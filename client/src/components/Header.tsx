@@ -247,8 +247,7 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
           <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-foreground">
             <img src="https://files.catbox.moe/qz9v2h.png" alt="CF" className="h-10 w-10 object-contain" />
-            <span><i>CrossFire<i/></span>
-            
+            <span className="crossfire-pro">CrossFire</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/login" className="hover:text-primary">{t("login")}</Link>

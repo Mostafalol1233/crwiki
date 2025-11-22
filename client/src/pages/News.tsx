@@ -83,7 +83,7 @@ export default function News() {
             >
               <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
                 <Card
-                  className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer border-border/50"
+                  className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none"
                   data-testid={`card-news-${item.id}`}
                 >
                   <div className={`relative w-full ${index === 0 ? "h-96" : "h-64"} overflow-hidden`}>
@@ -95,7 +95,7 @@ export default function News() {
                       height="300"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                    
 
                     <div className="absolute top-4 left-4">
                       <Badge

@@ -79,7 +79,7 @@ export default function Posts() {
             >
               <Link href={`/article/${item.id}`}>
                 <Card
-                  className={`relative overflow-hidden group hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer ${
+                  className={`relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none ${
                     index === 0 ? "h-full min-h-[400px]" : "h-[300px]"
                   }`}
                   data-testid={`card-post-${item.id}`}
@@ -90,7 +90,7 @@ export default function Posts() {
                       alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                    
 
                     <div className="absolute top-4 left-4">
                       <Badge

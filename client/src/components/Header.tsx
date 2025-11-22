@@ -243,9 +243,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="w-full bg-black/95 text-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-6 text-xs md:text-sm">
-          <Link href="/login" className="hover:underline">Log In</Link>
+      <div className="w-full bg-gray-100 text-gray-700">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-4 text-xs md:text-sm">
+          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white h-7 md:h-8 px-3 rounded">
+            <Link href="/login">Log In</Link>
+          </Button>
           <Link href="/register" className="hover:underline">Sign Up</Link>
         </div>
       </div>

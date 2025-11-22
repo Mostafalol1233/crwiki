@@ -243,20 +243,21 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="w-full bg-gray-100 text-gray-700">
+      <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
-          <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-black">
-            <span>CrossFire</span>
-            <img src="https://files.catbox.moe/bf9b41.png" alt="CF" className="h-5 w-5 object-contain" />
+          <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-foreground">
+            <img src="https://files.catbox.moe/qz9v2h.png" alt="CF" className="h-10 w-10 object-contain" />
+            <span><i>CrossFire<i/></span>
+            
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-blue-600 hover:text-blue-700">Log In</Link>
-            <Link href="/register" className="hover:underline">Sign Up</Link>
+            <Link href="/login" className="hover:text-primary">{t("login")}</Link>
+            <Link href="/register" className="hover:underline">{t("signUp")}</Link>
           </div>
         </div>
       </div>
 
-      <div className="w-full border-b shadow bg-white">
+      <div className="w-full border-b shadow bg-card">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex h-14 md:h-16 items-center gap-4">
             <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
@@ -275,26 +276,26 @@ export function Header() {
               />
             </Link>
 
-            <nav className="hidden md:flex items-center justify-center flex-1">
+            <nav className="hidden md:flex items-center justify-center flex-1 text-foreground">
               {menuItems.map((item) => (
                 <div key={item.label} className="relative group">
                   {item.dropdown ? (
                     <>
                       <button
                         className={`px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${
-                          isActiveDropdown(item.dropdown) ? "text-black underline" : "text-black hover:underline"
+                          isActiveDropdown(item.dropdown) ? "text-foreground underline" : "text-foreground hover:underline"
                         }`}
                         data-testid={`button-dropdown-${item.label.toLowerCase()}`}
                       >
                         {item.label}
                       </button>
-                      <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <div className="absolute left-0 mt-1 w-56 bg-card border border-border rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                         <div className="py-2">
                           {item.dropdown.map((subitem) => (
                             <Link
                               key={subitem.path}
                               href={subitem.path}
-                              className={`block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100 ${location === subitem.path ? 'font-semibold text-black' : ''}`}
+                              className={`block px-4 py-2 text-sm italic text-muted-foreground hover:bg-muted ${location === subitem.path ? 'font-semibold text-foreground' : ''}`}
                               data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
                             >
                               {subitem.label}
@@ -306,7 +307,7 @@ export function Header() {
                   ) : (
                     <Link
                       href={item.path || "#"}
-                      className={`px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${location === item.path ? 'text-black underline' : 'text-black hover:underline'}`}
+                      className={`px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${location === item.path ? 'text-foreground underline' : 'text-foreground hover:underline'}`}
                       data-testid={`link-nav-${item.label.toLowerCase()}`}
                     >
                       {item.label}
@@ -326,7 +327,7 @@ export function Header() {
                 size="icon"
                 onClick={toggleLanguage}
                 data-testid="button-language-toggle"
-                className="h-9 w-9 rounded-none hover:bg-gray-100"
+                className="h-9 w-9 rounded-none hover:bg-muted"
                 title={language === 'en' ? 'العربية' : 'English'}
                 aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
               >
@@ -337,7 +338,7 @@ export function Header() {
                 size="icon"
                 onClick={toggleTheme}
                 data-testid="button-theme-toggle"
-                className="h-9 w-9 rounded-none hover:bg-gray-100"
+                className="h-9 w-9 rounded-none hover:bg-muted"
                 title={theme === 'light' ? 'Dark mode' : 'Light mode'}
                 aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
               >
@@ -348,7 +349,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden h-9 w-9 rounded-none hover:bg-gray-100"
+                className="md:hidden h-9 w-9 rounded-none hover:bg-muted"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 data-testid="button-mobile-menu"
                 title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -362,17 +363,17 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="md:hidden border-t py-3 px-4 bg-white">
+          <nav className="md:hidden border-t py-3 px-4 bg-card text-foreground">
             <div className="grid grid-cols-1 gap-1">
-              <Link href="/category/news" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">NEWS</Link>
-              <Link href="/news" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">UPDATES</Link>
-              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">EVENTS</Link>
-              <Link href="/mercenaries" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">RIVAL FACTIONS</Link>
-              <Link href="/modes" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">GAME</Link>
-              <Link href="/ranks" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">RANKING</Link>
-              <Link href="/community" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">COMMUNITY</Link>
-              <Link href="/sellers" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">SHOP</Link>
-              <Link href="/download" className="block px-3 py-2 text-sm uppercase italic font-extrabold text-black bg-yellow-400 text-center">DOWNLOAD</Link>
+              <Link href="/category/news" className="block px-3 py-2 text-sm uppercase italic font-bold">NEWS</Link>
+              <Link href="/news" className="block px-3 py-2 text-sm uppercase italic font-bold">UPDATES</Link>
+              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold">EVENTS</Link>
+              <Link href="/mercenaries" className="block px-3 py-2 text-sm uppercase italic font-bold">RIVAL FACTIONS</Link>
+              <Link href="/modes" className="block px-3 py-2 text-sm uppercase italic font-bold">GAME</Link>
+              <Link href="/ranks" className="block px-3 py-2 text-sm uppercase italic font-bold">RANKING</Link>
+              <Link href="/community" className="block px-3 py-2 text-sm uppercase italic font-bold">COMMUNITY</Link>
+              <Link href="/sellers" className="block px-3 py-2 text-sm uppercase italic font-bold">SHOP</Link>
+              <Link href="/download" className="block px-3 py-2 text-sm uppercase italic font-extrabold bg-yellow-400 text-center">DOWNLOAD</Link>
             </div>
           </nav>
         )}

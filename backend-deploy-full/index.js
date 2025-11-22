@@ -11,7 +11,7 @@ import { createServer } from "http";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
 import wsPkg from "ws";
-const { WebSocketServer } = wsPkg;
+const WebSocketServer = wsPkg.Server || wsPkg.WebSocketServer;
 
 // shared/mongodb-schema.ts
 import mongoose, { Schema } from "mongoose";

@@ -27,7 +27,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
   return (
     <Card
-      className="overflow-hidden hover-elevate active-elevate-2 transition-all duration-300 hover:scale-[1.02]"
+      className="bg-transparent border-0 shadow-none"
       data-testid={`card-article-${article.id}`}
     >
       <Link href={`/article/${article.id}`}>
@@ -61,7 +61,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </Badge>
         </div>
 
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="px-0 pt-3 space-y-2">
           <div className="flex flex-wrap gap-2">
             {article.tags?.slice(0, 3).map((tag) => (
               <Badge
@@ -83,7 +83,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
             {article.summary}
           </p>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="font-medium">{article.author}</span>
             <span>•</span>
             <span>{article.date}</span>

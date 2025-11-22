@@ -245,7 +245,6 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       <div className="w-full bg-black/95 text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-6 text-xs md:text-sm">
-          <Link href="/support" className="hover:underline">Support ▼</Link>
           <Link href="/login" className="hover:underline">Log In</Link>
           <Link href="/register" className="hover:underline">Sign Up</Link>
         </div>
@@ -255,36 +254,29 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex h-14 md:h-16 items-center gap-4">
             <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
-              <div className="relative">
-                <picture>
-                  <source srcSet="/white-vafcoin.webp" type="image/webp" />
-                  <img
-                    src={theme === 'dark' ? logoDarkImage : logoLightImage}
-                    alt="CrossFire"
-                    className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-                    width="48"
-                    height="48"
-                    loading="lazy"
-                    fetchPriority="low"
-                    decoding="async"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
-                    draggable={false}
-                    data-testid="img-logo"
-                  />
-                </picture>
-              </div>
+              <img
+                src={theme === 'dark' ? logoDarkImage : logoLightImage}
+                alt="CrossFire"
+                className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                width="48"
+                height="48"
+                loading="lazy"
+                fetchPriority="low"
+                decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
+                draggable={false}
+                data-testid="img-logo"
+              />
             </Link>
 
-            <nav className="hidden md:flex items-center justify-center flex-1 space-x-0.5">
+            <nav className="hidden md:flex items-center justify-center flex-1">
               {menuItems.map((item) => (
                 <div key={item.label} className="relative group">
                   {item.dropdown ? (
                     <>
                       <button
-                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold italic uppercase tracking-wide transition-all duration-300 rounded-md group/btn border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 shadow-inner ${
-                          isActiveDropdown(item.dropdown)
-                            ? "text-white"
-                            : "text-white/80 hover:text-white"
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${
+                          isActiveDropdown(item.dropdown) ? "text-black underline" : "text-black hover:underline"
                         }`}
                         data-testid={`button-dropdown-${item.label.toLowerCase()}`}
                       >
@@ -292,21 +284,16 @@ export function Header() {
                         {item.label}
                         <ChevronDown className="h-4 w-4 transition-all duration-300 group-hover/btn:rotate-180" />
                       </button>
-                      <div className="absolute left-0 mt-1 w-56 bg-neutral-900/95 backdrop-blur-xl border-2 border-neutral-700 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pt-2 -translate-y-1 group-hover:translate-y-0">
-                        <div className="px-2 py-1">
+                      <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                        <div className="py-2">
                           {item.dropdown.map((subitem) => (
                             <Link
                               key={subitem.path}
                               href={subitem.path}
-                              className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-md transition-all duration-200 ${
-                                location === subitem.path
-                                  ? "text-white font-semibold bg-neutral-800 border border-neutral-700"
-                                  : "text-white/80 hover:text-white hover:bg-neutral-800/70"
-                              }`}
+                              className={`block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100 ${location === subitem.path ? 'font-semibold text-black' : ''}`}
                               data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
                             >
-                              {subitem.icon && <subitem.icon className="h-4 w-4" />}
-                              <span>{subitem.label}</span>
+                              {subitem.label}
                             </Link>
                           ))}
                         </div>
@@ -315,14 +302,9 @@ export function Header() {
                   ) : (
                     <Link
                       href={item.path || "#"}
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold italic uppercase tracking-wide rounded-md transition-all duration-300 border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 ${
-                        location === item.path
-                          ? "text-white"
-                          : "text-white/80 hover:text-white"
-                      }`}
+                      className={`px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${location === item.path ? 'text-black underline' : 'text-black hover:underline'}`}
                       data-testid={`link-nav-${item.label.toLowerCase()}`}
                     >
-                      {item.icon && <item.icon className="h-4 w-4" />}
                       {item.label}
                     </Link>
                   )}

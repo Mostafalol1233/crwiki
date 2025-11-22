@@ -97,7 +97,7 @@ export default function NewsDetail() {
           dateModified: newsItem.updatedAt ? new Date(newsItem.updatedAt).toISOString() : new Date().toISOString(),
         }}
       />
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
           <Breadcrumbs items={breadcrumbs} />
           <Link href="/news">

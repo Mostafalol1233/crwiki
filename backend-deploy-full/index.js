@@ -195,6 +195,13 @@ var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
 var WeaponModel = mongoose.model("Weapon", WeaponSchema);
 var ModeModel = mongoose.model("Mode", ModeSchema);
 var RankModel = mongoose.model("Rank", RankSchema);
+var ChatMessageSchema = new Schema({
+  sender: { type: String, required: true },
+  text: { type: String, required: true },
+  replyTo: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now }
+});
+var ChatMessageModel = mongoose.model("ChatMessage", ChatMessageSchema);
 var insertUserSchema = z.object({
   username: z.string(),
   password: z.string()
@@ -215,6 +222,11 @@ var insertCommentSchema = z.object({
   parentCommentId: z.string().optional(),
   name: z.string(),
   content: z.string()
+});
+var insertChatMessageSchema = z.object({
+  sender: z.string(),
+  text: z.string(),
+  replyTo: z.string().optional()
 });
 var insertEventSchema = z.object({
   title: z.string(),
@@ -1289,6 +1301,29 @@ var apiLimiter = rateLimit({
       res.json({ ...item, id: String(item._id) });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.get("/api/chat/messages", async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(String(req.query.limit || "50"), 10) || 50, 200);
+      const items = await ChatMessageModel.find().sort({ createdAt: -1 }).limit(limit).lean();
+      res.json(items.reverse().map((it) => ({ ...it, id: String(it._id) })));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app2.post("/api/chat/messages", async (req, res) => {
+    try {
+      const data = insertChatMessageSchema.parse(req.body);
+      const saved = await ChatMessageModel.create({ sender: data.sender, text: data.text, replyTo: data.replyTo || "" });
+      const doc = await ChatMessageModel.findById(saved._id).lean();
+      const payload = JSON.stringify({ type: "message", from: doc.sender, text: doc.text, replyTo: doc.replyTo || "" });
+      connectedUsers.forEach((s) => s.forEach((c) => { try { c.send(payload); } catch {} }));
+      res.status(201).json({ ...doc, id: String(doc._id) });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
     }
   });
 

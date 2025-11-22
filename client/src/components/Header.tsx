@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-const logoLightImage = "/white-vafcoin.png";
-const logoDarkImage = "/black-vafcon.png";
 const cfHeaderBg = "https://files.catbox.moe/c1tckc.png";
 
 function CFIconHome(props: any) {
@@ -243,210 +241,116 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary/50 shadow" style={{ backgroundImage: `url(${cfHeaderBg})`, backgroundSize: "cover", backgroundRepeat: "no-repeat", backgroundPosition: "center top" }}>
-      <div className="max-w-7xl mx-auto px-4 md:px-8 bg-black/40">
-        {/* Desktop Header */}
-        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
-          {/* Logo & Branding (portal-style: direct to Events hub) */}
-          <Link href="/events" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
-            <div className="relative">
-              <picture>
-                <source srcSet="/white-vafcoin.webp" type="image/webp" />
-                <img
-                  src={theme === 'dark' ? logoDarkImage : logoLightImage}
-                  alt="Bimora Gaming - CrossFire Wiki"
-                  className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-                  width="48"
-                  height="48"
-                  loading="lazy"
-                  fetchpriority="low"
-                  decoding="async"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
-                  draggable={false}
-                  data-testid="img-logo"
-                />
-              </picture>
-            </div>
-            <div className="hidden md:flex flex-col">
-              <span className="text-base font-bold italic bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" style={{ fontFamily: 'serif' }}>CrossFire.Wiki</span>
-              <span className="text-xs text-muted-foreground font-medium italic" style={{ fontFamily: 'serif' }}>by Bimora Gaming</span>
-            </div>
-          </Link>
+    <header className="sticky top-0 z-50 w-full">
+      {/* Black Top Bar */}
+      <div className="w-full bg-black/95 text-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-6 text-xs md:text-sm">
+          <Link href="/support" className="hover:underline">Support ▼</Link>
+          <Link href="/login" className="hover:underline">Log In</Link>
+          <Link href="/register" className="hover:underline">Sign Up</Link>
+        </div>
+      </div>
 
-          {/* Desktop Navigation with Premium Dropdowns */}
-          <nav className="hidden md:flex items-center justify-center flex-1 space-x-0.5">
-            {menuItems.map((item) => (
-              <div key={item.label} className="relative group">
-                {item.dropdown ? (
-                  <>
-                    <button
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-300 rounded-md group/btn border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 shadow-inner ${
-                        isActiveDropdown(item.dropdown)
-                          ? "text-white"
-                          : "text-white/80 hover:text-white"
-                      }`}
-                      data-testid={`button-dropdown-${item.label.toLowerCase()}`}
-                    >
-                      {item.icon && <item.icon className="h-4 w-4" />}
-                      {item.label}
-                      <ChevronDown className="h-4 w-4 transition-all duration-300 group-hover/btn:rotate-180" />
-                    </button>
-                    
-                    {/* Premium Dropdown Menu */}
-                    <div className="absolute left-0 mt-1 w-56 bg-neutral-900/95 backdrop-blur-xl border-2 border-neutral-700 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pt-2 -translate-y-1 group-hover:translate-y-0">
-                      <div className="px-2 py-1">
-                        {item.dropdown.map((subitem) => (
-                          <Link
-                            key={subitem.path}
-                            href={subitem.path}
-                            className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-md transition-all duration-200 ${
-                              location === subitem.path
-                                ? "text-white font-semibold bg-neutral-800 border border-neutral-700"
-                                : "text-white/80 hover:text-white hover:bg-neutral-800/70"
-                            }`}
-                            data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
-                          >
-                            {subitem.icon && <subitem.icon className="h-4 w-4" />}
-                            <span>{subitem.label}</span>
-                          </Link>
-                        ))}
-                      </div>
+      {/* White Main Bar */}
+      <div className="w-full border-b shadow bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex h-14 md:h-16 items-center gap-4">
+            {/* Left: CrossFire wing emblem */}
+            <Link href="/" className="flex items-center flex-shrink-0" data-testid="link-logo">
+              <svg viewBox="0 0 64 24" width="64" height="24" aria-hidden>
+                <path d="M2 12 L10 4 L28 4 L20 12 L28 20 L10 20 Z" fill="#000" />
+                <path d="M30 4 L62 4 L54 12 L62 20 L30 20 L38 12 Z" fill="#000" />
+              </svg>
+              <span className="sr-only">CrossFire</span>
+            </Link>
+
+            {/* Center: Main navigation items */}
+            <nav className="hidden md:flex items-center justify-center flex-1">
+              <div className="flex items-center gap-1">
+                {/* NEWS with dropdown */}
+                <div className="relative group">
+                  <button className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">
+                    NEWS
+                    <ChevronDown className="inline-block ml-1 h-4 w-4" />
+                  </button>
+                  <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                    <div className="py-2">
+                      <Link href="/category/news" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">NEWS</Link>
+                      <Link href="/news" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">UPDATES</Link>
+                      <Link href="/events" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">EVENTS</Link>
+                      <Link href="/mercenaries" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">RIVAL FACTIONS</Link>
                     </div>
-                  </>
-                ) : (
-                  <Link
-                    href={item.path || "#"}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-md transition-all duration-300 border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 ${
-                      location === item.path
-                        ? "text-white"
-                        : "text-white/80 hover:text-white"
-                    }`}
-                    data-testid={`link-nav-${item.label.toLowerCase()}`}
-                  >
-                    {item.icon && <item.icon className="h-4 w-4" />}
-                    {item.label}
-                  </Link>
-                )}
+                  </div>
+                </div>
+
+                {/* Other items */}
+                <Link href="/modes" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">GAME</Link>
+                <Link href="/ranks" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">RANKING</Link>
+                <Link href="/community" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">COMMUNITY</Link>
+                <Link href="/events" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">E-SPORTS</Link>
+                <Link href="/sellers" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">SHOP</Link>
               </div>
-            ))}
-          </nav>
+            </nav>
 
-          {/* Premium Theme & Language Toggles */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleLanguage}
-              data-testid="button-language-toggle"
-              className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
-              title={language === 'en' ? 'العربية' : 'English'}
-              aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
-            >
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Toggle language</span>
-            </Button>
+            {/* Right: Download button + toggles */}
+            <div className="ml-auto flex items-center gap-2">
+              <Button asChild className="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold uppercase italic tracking-wide px-5 rounded-none">
+                <Link href="/download">Download</Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleLanguage}
+                data-testid="button-language-toggle"
+                className="h-9 w-9 rounded-none hover:bg-gray-100"
+                title={language === 'en' ? 'العربية' : 'English'}
+                aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+              >
+                <Globe className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                data-testid="button-theme-toggle"
+                className="h-9 w-9 rounded-none hover:bg-gray-100"
+                title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+                aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              data-testid="button-theme-toggle"
-              className="h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
-              title={theme === 'light' ? 'Dark mode' : 'Light mode'}
-              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden h-9 w-9 rounded-lg hover:bg-accent/30 transition-all duration-300"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="button-mobile-menu"
-              title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-              <span className="sr-only">Toggle mobile menu</span>
-            </Button>
+              {/* Mobile menu toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden h-9 w-9 rounded-none hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                data-testid="button-mobile-menu"
+                title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+        {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="md:hidden border-t py-4 px-2 space-y-2 max-h-[calc(100vh-80px)] overflow-y-auto">
-            {menuItems.map((item) => (
-              <div key={item.label}>
-                {item.dropdown ? (
-                  <>
-                    <button
-                      onClick={() => toggleMobileSubmenu(item.label)}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        mobileExpandedMenu === item.label
-                          ? "text-foreground bg-accent/20"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                      }`}
-                      data-testid={`button-mobile-dropdown-${item.label.toLowerCase()}`}
-                    >
-                      <span>{item.label}</span>
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
-                          mobileExpandedMenu === item.label ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-                    
-                    {/* Mobile Dropdown Items */}
-                    {mobileExpandedMenu === item.label && (
-                      <div className="ml-4 mt-1 space-y-1 border-l border-border pl-4">
-                        {item.dropdown.map((subitem) => (
-                          <Link
-                            key={subitem.path}
-                            href={subitem.path}
-                            onClick={() => {
-                              setMobileMenuOpen(false);
-                              setMobileExpandedMenu(null);
-                            }}
-                            className={`block px-3 py-2 text-sm rounded-md transition-colors ${
-                              location === subitem.path
-                                ? "text-foreground font-medium bg-accent/20"
-                                : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                            }`}
-                            data-testid={`link-mobile-dropdown-${subitem.label.toLowerCase()}`}
-                          >
-                            {subitem.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <Link
-                    href={item.path || "#"}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      location === item.path
-                        ? "text-foreground bg-accent/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                    }`}
-                    data-testid={`link-mobile-nav-${item.label.toLowerCase()}`}
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </div>
-            ))}
+          <nav className="md:hidden border-t py-3 px-4 bg-white">
+            <div className="grid grid-cols-1 gap-1">
+              <Link href="/category/news" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">NEWS</Link>
+              <Link href="/news" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">UPDATES</Link>
+              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">EVENTS</Link>
+              <Link href="/mercenaries" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">RIVAL FACTIONS</Link>
+              <Link href="/modes" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">GAME</Link>
+              <Link href="/ranks" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">RANKING</Link>
+              <Link href="/community" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">COMMUNITY</Link>
+              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">E-SPORTS</Link>
+              <Link href="/sellers" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">SHOP</Link>
+              <Link href="/download" className="block px-3 py-2 text-sm uppercase italic font-extrabold text-black bg-yellow-400 text-center">DOWNLOAD</Link>
+            </div>
           </nav>
         )}
       </div>

@@ -16,7 +16,14 @@ import mongoose, { Schema } from "mongoose";
 import { z } from "zod";
 var UserSchema = new Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
+  email: { type: String, default: "", unique: true },
+  phone: { type: String, default: "", unique: true },
+  password: { type: String, required: true },
+  verifiedEmail: { type: Boolean, default: false },
+  verifiedPhone: { type: Boolean, default: false },
+  emailVerificationCode: { type: String, default: "" },
+  phoneVerificationCode: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now }
 });
 var PostSchema = new Schema({
   title: { type: String, required: true },
@@ -354,9 +361,22 @@ var MongoDBStorage = class {
     const user = await UserModel.findOne({ username });
     return user || void 0;
   }
+  async getUserByEmail(email) {
+    const user = await UserModel.findOne({ email });
+    return user || void 0;
+  }
+  async getUserByPhone(phone) {
+    const user = await UserModel.findOne({ phone });
+    return user || void 0;
+  }
   async createUser(user) {
     const newUser = await UserModel.create(user);
     return newUser;
+  }
+  async updateUser(id, updates) {
+    const updated = await UserModel.findByIdAndUpdate(id, updates, { new: true }).lean();
+    if (!updated) return void 0;
+    return { ...updated, id: String(updated._id) };
   }
   async getAllPosts() {
     const posts = await PostModel.find().sort({ createdAt: -1 }).lean();
@@ -927,7 +947,83 @@ var apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
-async function registerRoutes(app2) {
+  async function registerRoutes(app2) {
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+  app2.post("/api/users/register", authLimiter, async (req, res) => {
+    try {
+      const { username, email, phone, password } = req.body || {};
+      if (!username || !email || !phone || !password) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+      if (typeof password !== "string" || password.length < 8 || !/[^A-Za-z0-9]/.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and include a special character" });
+      }
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) return res.status(400).json({ error: "Email already registered" });
+      const existingPhone = await storage.getUserByPhone(phone);
+      if (existingPhone) return res.status(400).json({ error: "Phone already registered" });
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) return res.status(400).json({ error: "Username already taken" });
+      const hash = await hashPassword(password);
+      const emailCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const phoneCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const user = await storage.createUser({ username, email, phone, password: hash });
+      const id = (user && (user.id || user._id?.toString?.() || user._id)) || undefined;
+      await storage.updateUser(id, {
+        emailVerificationCode: emailCode,
+        phoneVerificationCode: phoneCode,
+        verifiedEmail: false,
+        verifiedPhone: false
+      });
+      res.status(201).json({ message: "Registered. Verify email and phone.", emailCode, phoneCode });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/users/login", authLimiter, async (req, res) => {
+    try {
+      const { identifier, password } = req.body || {};
+      if (!identifier || !password) return res.status(400).json({ error: "Identifier and password required" });
+      const byEmail = await storage.getUserByEmail(identifier);
+      const byUsername = await storage.getUserByUsername(identifier);
+      const byPhone = await storage.getUserByPhone(identifier);
+      const user = byEmail || byUsername || byPhone;
+      if (!user) return res.status(401).json({ error: "Invalid credentials" });
+      const ok = await comparePassword(password, user.password);
+      if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+      const id = (user && (user.id || user._id?.toString?.() || user._id)) || undefined;
+      const token = generateToken({ id, username: user.username });
+      res.json({ token, user: { id, username: user.username, verifiedEmail: user.verifiedEmail, verifiedPhone: user.verifiedPhone } });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/users/verify-email", authLimiter, async (req, res) => {
+    try {
+      const { email, code } = req.body || {};
+      const user = await storage.getUserByEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.emailVerificationCode !== code) return res.status(400).json({ error: "Invalid code" });
+      const id = (user && (user.id || user._id?.toString?.() || user._id)) || undefined;
+      const updated = await storage.updateUser(id, { verifiedEmail: true, emailVerificationCode: "" });
+      res.json({ success: true, user: { id: updated?.id, verifiedEmail: true } });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/users/verify-phone", authLimiter, async (req, res) => {
+    try {
+      const { phone, code } = req.body || {};
+      const user = await storage.getUserByPhone(phone);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (user.phoneVerificationCode !== code) return res.status(400).json({ error: "Invalid code" });
+      const id = (user && (user.id || user._id?.toString?.() || user._id)) || undefined;
+      const updated = await storage.updateUser(id, { verifiedPhone: true, phoneVerificationCode: "" });
+      res.json({ success: true, user: { id: updated?.id, verifiedPhone: true } });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app2.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;

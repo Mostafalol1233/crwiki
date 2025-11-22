@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
+import { WebSocketServer } from "ws";
 
 // shared/mongodb-schema.ts
 import mongoose, { Schema } from "mongoose";
@@ -2134,6 +2135,7 @@ function log(message, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 var frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+var connectedUsers = new Map();
 app.use(cors({
   origin: frontendUrl === "*" ? "*" : [frontendUrl],
   credentials: true,
@@ -2231,3 +2233,38 @@ app.set('trust proxy', 1); // Trust the first proxy
     log(`\u{1F310} Frontend should be deployed to Netlify`);
   });
 })();
+  const wss = new WebSocketServer({ server, path: "/ws" });
+  function broadcastPresence() {
+    const users = Array.from(connectedUsers.keys());
+    const payload = JSON.stringify({ type: "presence", users });
+    connectedUsers.forEach((set) => {
+      set.forEach((client) => {
+        try { client.send(payload); } catch {}
+      });
+    });
+  }
+  wss.on("connection", (ws, req) => {
+    try {
+      const url = new URL(req.url || "", `http://${req.headers.host}`);
+      const username = url.searchParams.get("username") || "Anonymous";
+      let set = connectedUsers.get(username);
+      if (!set) { set = new Set(); connectedUsers.set(username, set); }
+      set.add(ws);
+      broadcastPresence();
+      ws.on("message", (data) => {
+        let msg = null;
+        try { msg = JSON.parse(String(data)); } catch {}
+        if (!msg) return;
+        const payload = JSON.stringify({ type: "message", from: msg.from || username, text: msg.text || "" });
+        connectedUsers.forEach((s) => s.forEach((c) => { try { c.send(payload); } catch {} }));
+      });
+      ws.on("close", () => {
+        const s = connectedUsers.get(username);
+        if (s) { s.delete(ws); if (s.size === 0) connectedUsers.delete(username); }
+        broadcastPresence();
+      });
+    } catch {}
+  });
+  app.get("/api/online-users", (_req, res) => {
+    res.json(Array.from(connectedUsers.keys()));
+  });

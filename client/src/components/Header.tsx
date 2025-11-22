@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-const cfHeaderBg = "https://files.catbox.moe/c1tckc.png";
+const logoLightImage = "/white-vafcoin.png";
+const logoDarkImage = "/black-vafcon.png";
 
 function CFIconHome(props: any) {
   return (
@@ -242,7 +243,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* Black Top Bar */}
       <div className="w-full bg-black/95 text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-6 text-xs md:text-sm">
           <Link href="/support" className="hover:underline">Support ▼</Link>
@@ -251,50 +251,88 @@ export function Header() {
         </div>
       </div>
 
-      {/* White Main Bar */}
       <div className="w-full border-b shadow bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex h-14 md:h-16 items-center gap-4">
-            {/* Left: CrossFire wing emblem */}
-            <Link href="/" className="flex items-center flex-shrink-0" data-testid="link-logo">
-              <svg viewBox="0 0 64 24" width="64" height="24" aria-hidden>
-                <path d="M2 12 L10 4 L28 4 L20 12 L28 20 L10 20 Z" fill="#000" />
-                <path d="M30 4 L62 4 L54 12 L62 20 L30 20 L38 12 Z" fill="#000" />
-              </svg>
-              <span className="sr-only">CrossFire</span>
+            <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
+              <div className="relative">
+                <picture>
+                  <source srcSet="/white-vafcoin.webp" type="image/webp" />
+                  <img
+                    src={theme === 'dark' ? logoDarkImage : logoLightImage}
+                    alt="CrossFire"
+                    className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    fetchPriority="low"
+                    decoding="async"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
+                    draggable={false}
+                    data-testid="img-logo"
+                  />
+                </picture>
+              </div>
             </Link>
 
-            {/* Center: Main navigation items */}
-            <nav className="hidden md:flex items-center justify-center flex-1">
-              <div className="flex items-center gap-1">
-                {/* NEWS with dropdown */}
-                <div className="relative group">
-                  <button className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">
-                    NEWS
-                    <ChevronDown className="inline-block ml-1 h-4 w-4" />
-                  </button>
-                  <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                    <div className="py-2">
-                      <Link href="/category/news" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">NEWS</Link>
-                      <Link href="/news" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">UPDATES</Link>
-                      <Link href="/events" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">EVENTS</Link>
-                      <Link href="/mercenaries" className="block px-4 py-2 text-sm italic text-gray-600 hover:bg-gray-100">RIVAL FACTIONS</Link>
-                    </div>
-                  </div>
+            <nav className="hidden md:flex items-center justify-center flex-1 space-x-0.5">
+              {menuItems.map((item) => (
+                <div key={item.label} className="relative group">
+                  {item.dropdown ? (
+                    <>
+                      <button
+                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold italic uppercase tracking-wide transition-all duration-300 rounded-md group/btn border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 shadow-inner ${
+                          isActiveDropdown(item.dropdown)
+                            ? "text-white"
+                            : "text-white/80 hover:text-white"
+                        }`}
+                        data-testid={`button-dropdown-${item.label.toLowerCase()}`}
+                      >
+                        {item.icon && <item.icon className="h-4 w-4" />}
+                        {item.label}
+                        <ChevronDown className="h-4 w-4 transition-all duration-300 group-hover/btn:rotate-180" />
+                      </button>
+                      <div className="absolute left-0 mt-1 w-56 bg-neutral-900/95 backdrop-blur-xl border-2 border-neutral-700 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pt-2 -translate-y-1 group-hover:translate-y-0">
+                        <div className="px-2 py-1">
+                          {item.dropdown.map((subitem) => (
+                            <Link
+                              key={subitem.path}
+                              href={subitem.path}
+                              className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-md transition-all duration-200 ${
+                                location === subitem.path
+                                  ? "text-white font-semibold bg-neutral-800 border border-neutral-700"
+                                  : "text-white/80 hover:text-white hover:bg-neutral-800/70"
+                              }`}
+                              data-testid={`link-dropdown-${subitem.label.toLowerCase()}`}
+                            >
+                              {subitem.icon && <subitem.icon className="h-4 w-4" />}
+                              <span>{subitem.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.path || "#"}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold italic uppercase tracking-wide rounded-md transition-all duration-300 border-2 border-neutral-700 bg-gradient-to-b from-neutral-900/70 to-neutral-800/70 ${
+                        location === item.path
+                          ? "text-white"
+                          : "text-white/80 hover:text-white"
+                      }`}
+                      data-testid={`link-nav-${item.label.toLowerCase()}`}
+                    >
+                      {item.icon && <item.icon className="h-4 w-4" />}
+                      {item.label}
+                    </Link>
+                  )}
                 </div>
-
-                {/* Other items */}
-                <Link href="/modes" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">GAME</Link>
-                <Link href="/ranks" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">RANKING</Link>
-                <Link href="/community" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">COMMUNITY</Link>
-                <Link href="/events" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">E-SPORTS</Link>
-                <Link href="/sellers" className="px-4 py-2 text-sm uppercase italic font-extrabold tracking-wide text-black hover:underline">SHOP</Link>
-              </div>
+              ))}
             </nav>
 
             {/* Right: Download button + toggles */}
             <div className="ml-auto flex items-center gap-2">
-              <Button asChild className="bg-yellow-400 hover:bg-yellow-500 text-black font-extrabold uppercase italic tracking-wide px-5 rounded-none">
+              <Button asChild className="bg-red-500 hover:bg-red-600 text-white font-extrabold uppercase italic tracking-wide px-5 rounded-none">
                 <Link href="/download">Download</Link>
               </Button>
               <Button

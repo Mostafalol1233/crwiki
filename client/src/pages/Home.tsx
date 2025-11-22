@@ -464,7 +464,7 @@ export default function Home() {
                         width="400"
                         height="267"
                         loading="eager"
-                        fetchpriority="high"
+                        fetchPriority="high"
                         decoding="async"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">

@@ -19,7 +19,6 @@ const schema = z.object({
 export default function Register() {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
   const [status, setStatus] = useState<string>("");
-  const [codes, setCodes] = useState<{ emailCode?: string; phoneCode?: string } | null>(null);
 
   const onSubmit = async (values: any) => {
     setStatus("Registering...");
@@ -31,8 +30,7 @@ export default function Register() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Registration failed");
-      setCodes({ emailCode: data.emailCode, phoneCode: data.phoneCode });
-      setStatus("Registered. Please verify email and phone.");
+      setStatus("Registered successfully.");
     } catch (e: any) {
       setStatus(e.message);
     }
@@ -70,12 +68,6 @@ export default function Register() {
             </div>
             <Button type="submit" className="w-full">Register</Button>
             {status && <p className="text-sm mt-2">{status}</p>}
-            {codes && (
-              <div className="mt-3 text-sm">
-                <p>Email verification code: <span className="font-mono">{codes.emailCode}</span></p>
-                <p>Phone verification code: <span className="font-mono">{codes.phoneCode}</span></p>
-              </div>
-            )}
           </form>
         </CardContent>
       </Card>

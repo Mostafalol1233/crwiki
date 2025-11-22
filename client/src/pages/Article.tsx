@@ -194,7 +194,7 @@ export default function Article() {
                   width="800"
                   height="544"
                   loading="eager"
-                  fetchpriority="high"
+                  fetchPriority="high"
                   decoding="async"
                   data-testid="img-article-cover"
                 />

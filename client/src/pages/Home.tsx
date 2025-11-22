@@ -546,7 +546,7 @@ export default function Home() {
           {allNews.length > 0 && (
             <div className="lg:col-span-1">
               <Link href={`/news/${(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.id}`} className="block h-full">
-                <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/50 transition-all duration-300">
+                <div className="cursor-pointer h-full overflow-hidden group">
                   <div className="relative aspect-[3/4] overflow-hidden bg-muted/30">
                     <img src={(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.image} alt={(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" width="300" height="400" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
@@ -557,7 +557,7 @@ export default function Home() {
                       <h3 className="font-bold text-white line-clamp-3 text-sm">{(featuredNewsHome[0] || allNews.find((n: any) => n.previewOnHome !== false) || allNews[0])?.title}</h3>
                     </div>
                   </div>
-                </Card>
+                </div>
               </Link>
             </div>
           )}
@@ -565,7 +565,7 @@ export default function Home() {
           {/* Top 2 Featured Posts */}
           {allPosts.filter((p: any) => p.featured && p.previewOnHome !== false).slice(0, 2).map((post: any) => (
             <Link key={post.id} href={`/article/${post.id}`} className="block">
-                  <Card className="hover-elevate cursor-pointer h-full overflow-hidden group bg-gradient-to-br from-card to-card/50 border-destructive/20 hover:border-destructive/50 transition-all duration-300">
+              <div className="cursor-pointer h-full overflow-hidden group">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" width="400" height="225" loading="lazy" />
                   <div className="absolute top-2 left-2 flex items-center gap-2">
@@ -573,17 +573,15 @@ export default function Home() {
                     <Badge variant="secondary" className="text-xs bg-destructive/80 text-white">Featured</Badge>
                   </div>
                 </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="line-clamp-2 text-base group-hover:text-primary transition-colors">{post.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
+                <div className="pt-2">
+                  <h3 className="line-clamp-2 text-base group-hover:text-primary transition-colors">{post.title}</h3>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{post.readingTime} min read</span>
                     <span>•</span>
                     <span>{post.date}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
@@ -630,7 +628,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(featuredNewsHome.length > 0 ? allNews.filter((n: any) => !n.featured) : allNews).filter((n: any) => n.previewOnHome !== false).slice(0, 6).map((item: any) => (
                     <Link key={item.id} href={`/news/${item.id}`} className="block" data-testid={`home-news-${item.id}`}>
-                      <div className="hover-elevate transition-all bg-gradient-to-b from-card to-card/50 rounded-lg overflow-hidden border border-border/50 hover:border-primary/50">
+                      <div className="overflow-hidden">
                         <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
                           <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" width="400" height="225" loading="lazy" decoding="async" />
                           {item.category && (
@@ -670,8 +668,8 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {allTutorials.slice(0, 6).map((tutorial) => (
                     <Link key={tutorial.id} href={`/tutorials/${tutorial.id}`} className="block">
-                      <Card className="hover-elevate cursor-pointer h-full group bg-gradient-to-br from-card to-card/50 border-border/50 hover:border-primary/50 transition-all duration-300">
-                        <div className="aspect-video w-full bg-black rounded-t-lg overflow-hidden relative">
+                      <div className="cursor-pointer h-full group overflow-hidden">
+                        <div className="aspect-video w-full bg-black overflow-hidden relative">
                           <img
                             src={`https://img.youtube.com/vi/${tutorial.youtubeId}/maxresdefault.jpg`}
                             alt={tutorial.title}
@@ -688,12 +686,10 @@ export default function Home() {
                             <Play className="h-12 w-12 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </div>
-                        <CardHeader>
-                          <CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
+                        <div className="p-4">
+                          <h3 className="line-clamp-2 text-lg group-hover:text-primary transition-colors">
                             {tutorial.title}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                          </h3>
                           {tutorial.description && (
                             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                               {tutorial.description}
@@ -702,24 +698,23 @@ export default function Home() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Row 1: left large, right stacked small */}
                                 <div className="md:col-span-2">
                                   {allEvents[0] && (
                                     <Link href={`/events/${allEvents[0].id}`} className="block" data-testid={`home-event-featured-${allEvents[0].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[400px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[0].image && (
                                             <img src={allEvents[0].image} alt={allEvents[0].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-4 left-4 right-4 text-white">
-                                            <h3 className="font-bold mb-1 text-lg md:text-xl line-clamp-3">{allEvents[0].title}</h3>
-                                            {allEvents[0].date && (
-                                              <p className="text-sm text-white/85 inline-flex items-center gap-1"><Calendar className="h-4 w-4" />{allEvents[0].date}</p>
-                                            )}
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                                          <h3 className="font-bold mb-1 text-lg md:text-xl line-clamp-3">{allEvents[0].title}</h3>
+                                          {allEvents[0].date && (
+                                            <p className="text-sm text-white/85 inline-flex items-center gap-1"><Calendar className="h-4 w-4" />{allEvents[0].date}</p>
+                                          )}
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
                                 </div>
@@ -727,70 +722,69 @@ export default function Home() {
                                 <div className="md:col-span-1 flex flex-col gap-4">
                                   {allEvents[1] && (
                                     <Link href={`/events/${allEvents[1].id}`} className="block" data-testid={`home-event-right-top-${allEvents[1].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[195px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[195px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[1].image && (
                                             <img src={allEvents[1].image} alt={allEvents[1].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-3 left-3 right-3 text-white">
-                                            <h4 className="font-semibold text-sm line-clamp-2">{allEvents[1].title}</h4>
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                                          <h4 className="font-semibold text-sm line-clamp-2">{allEvents[1].title}</h4>
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
 
                                   {allEvents[2] && (
                                     <Link href={`/events/${allEvents[2].id}`} className="block" data-testid={`home-event-right-bottom-${allEvents[2].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[195px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[195px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[2].image && (
                                             <img src={allEvents[2].image} alt={allEvents[2].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-3 left-3 right-3 text-white">
-                                            <h4 className="font-semibold text-sm line-clamp-2">{allEvents[2].title}</h4>
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                                          <h4 className="font-semibold text-sm line-clamp-2">{allEvents[2].title}</h4>
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
                                 </div>
                               </div>
 
-                              {/* Row 2: left stacked medium, right large */}
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                   {allEvents[3] && (
                                     <Link href={`/events/${allEvents[3].id}`} className="block" data-testid={`home-event-2-left-1-${allEvents[3].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[400px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[3].image && (
                                             <img src={allEvents[3].image} alt={allEvents[3].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-4 left-4 right-4 text-white">
-                                            <h4 className="font-semibold text-base line-clamp-2">{allEvents[3].title}</h4>
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                                          <h4 className="font-semibold text-base line-clamp-2">{allEvents[3].title}</h4>
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
 
                                   {allEvents[4] && (
                                     <Link href={`/events/${allEvents[4].id}`} className="block" data-testid={`home-event-2-left-2-${allEvents[4].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[400px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[4].image && (
                                             <img src={allEvents[4].image} alt={allEvents[4].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-4 left-4 right-4 text-white">
-                                            <h4 className="font-semibold text-base line-clamp-2">{allEvents[4].title}</h4>
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                                          <h4 className="font-semibold text-base line-clamp-2">{allEvents[4].title}</h4>
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
                                 </div>
@@ -798,25 +792,25 @@ export default function Home() {
                                 <div className="md:col-span-1">
                                   {allEvents[5] && (
                                     <Link href={`/events/${allEvents[5].id}`} className="block" data-testid={`home-event-2-right-large-${allEvents[5].id}`}>
-                                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[400px]">
-                                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                                      <div className="relative overflow-hidden group cursor-pointer h-[400px]">
+                                        <div className="absolute inset-0">
                                           {allEvents[5].image && (
                                             <img src={allEvents[5].image} alt={allEvents[5].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
-                                          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
-                                          <div className="absolute bottom-4 left-4 right-4 text-white">
-                                            <h3 className="font-bold mb-1 text-lg md:text-xl line-clamp-2">{allEvents[5].title}</h3>
-                                          </div>
                                         </div>
-                                      </Card>
+                                        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
+                                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                                          <h3 className="font-bold mb-1 text-lg md:text-xl line-clamp-2">{allEvents[5].title}</h3>
+                                        </div>
+                                      </div>
                                     </Link>
                                   )}
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     </Link>
                   ))}
                 </div>

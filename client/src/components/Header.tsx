@@ -86,18 +86,22 @@ export function Header() {
           {/* Logo & Branding (portal-style: direct to Events hub) */}
           <Link href="/events" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
             <div className="relative">
-              <img
-                src={theme === 'dark' ? logoDarkImage : logoLightImage}
-                alt="Bimora Gaming - CrossFire Wiki"
-                className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-                width="48"
-                height="48"
-                loading="eager"
-                decoding="async"
-                onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
-                draggable={false}
-                data-testid="img-logo"
-              />
+              <picture>
+                <source srcSet="/white-vafcoin.webp" type="image/webp" />
+                <img
+                  src={theme === 'dark' ? logoDarkImage : logoLightImage}
+                  alt="Bimora Gaming - CrossFire Wiki"
+                  className="h-10 md:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                  fetchpriority="low"
+                  decoding="async"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
+                  draggable={false}
+                  data-testid="img-logo"
+                />
+              </picture>
             </div>
             <div className="hidden md:flex flex-col">
               <span className="text-base font-bold italic bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent" style={{ fontFamily: 'serif' }}>CrossFire.Wiki</span>

@@ -169,6 +169,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User auth for chat
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+
+  app.post("/api/users/register", authLimiter, async (req, res) => {
+    try {
+      const { username, email, phone, password } = req.body as any;
+      if (!username || !email || !phone || !password) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+      if (typeof password !== 'string' || password.length < 8 || !/[^A-Za-z0-9]/.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and include a special character" });
+      }
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) return res.status(400).json({ error: "Email already registered" });
+      const existingPhone = await storage.getUserByPhone(phone);
+      if (existingPhone) return res.status(400).json({ error: "Phone already registered" });
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) return res.status(400).json({ error: "Username already taken" });
+
+      const hash = await hashPassword(password);
+      const emailCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const phoneCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const user = await storage.createUser({ username, email, phone, password: hash } as any);
+      await storage.updateUser((user as any).id || (user as any)._id?.toString?.() || (user as any)._id, {
+        emailVerificationCode: emailCode,
+        phoneVerificationCode: phoneCode,
+        verifiedEmail: false,
+        verifiedPhone: false,
+      } as any);
+      res.status(201).json({
+        message: "Registered. Verify email and phone.",
+        emailCode,
+        phoneCode,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/login", authLimiter, async (req, res) => {
+    try {
+      const { identifier, password } = req.body as any;
+      if (!identifier || !password) return res.status(400).json({ error: "Identifier and password required" });
+      const byEmail = await storage.getUserByEmail(identifier);
+      const byUsername = await storage.getUserByUsername(identifier);
+      const byPhone = await storage.getUserByPhone(identifier);
+      const user = byEmail || byUsername || byPhone;
+      if (!user) return res.status(401).json({ error: "Invalid credentials" });
+      const ok = await comparePassword(password, (user as any).password);
+      if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+      const token = generateToken({ id: (user as any).id || (user as any)._id?.toString?.(), username: (user as any).username });
+      res.json({ token, user: { id: (user as any).id || (user as any)._id?.toString?.(), username: (user as any).username, verifiedEmail: (user as any).verifiedEmail, verifiedPhone: (user as any).verifiedPhone } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/verify-email", authLimiter, async (req, res) => {
+    try {
+      const { email, code } = req.body as any;
+      const user = await storage.getUserByEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if ((user as any).emailVerificationCode !== code) return res.status(400).json({ error: "Invalid code" });
+      const updated = await storage.updateUser((user as any).id || (user as any)._id?.toString?.(), { verifiedEmail: true, emailVerificationCode: '' } as any);
+      res.json({ success: true, user: { id: (updated as any).id || (updated as any)._id?.toString?.(), verifiedEmail: true } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/verify-phone", authLimiter, async (req, res) => {
+    try {
+      const { phone, code } = req.body as any;
+      const user = await storage.getUserByPhone(phone);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if ((user as any).phoneVerificationCode !== code) return res.status(400).json({ error: "Invalid code" });
+      const updated = await storage.updateUser((user as any).id || (user as any)._id?.toString?.(), { verifiedPhone: true, phoneVerificationCode: '' } as any);
+      res.json({ success: true, user: { id: (updated as any).id || (updated as any)._id?.toString?.(), verifiedPhone: true } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/request-reset", authLimiter, async (req, res) => {
+    try {
+      const { email } = req.body as any;
+      const user = await storage.getUserByEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      await storage.updateUser((user as any).id || (user as any)._id?.toString?.(), { resetCode: code, resetCodeIssuedAt: new Date() } as any);
+      res.json({ resetCode: code });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/users/reset-code", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { email } = req.body as any;
+      const user = await storage.getUserByEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      await storage.updateUser((user as any).id || (user as any)._id?.toString?.(), { resetCode: code, resetCodeIssuedAt: new Date() } as any);
+      res.json({ resetCode: code });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/users/reset-password", authLimiter, async (req, res) => {
+    try {
+      const { email, code, newPassword } = req.body as any;
+      if (!email || !code || !newPassword) return res.status(400).json({ error: "Email, code and new password required" });
+      if (typeof newPassword !== 'string' || newPassword.length < 8 || !/[^A-Za-z0-9]/.test(newPassword)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters and include a special character" });
+      }
+      const user = await storage.getUserByEmail(email);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if ((user as any).resetCode !== code) return res.status(400).json({ error: "Invalid reset code" });
+      const hash = await hashPassword(newPassword);
+      await storage.updateUser((user as any).id || (user as any)._id?.toString?.(), { password: hash, resetCode: '' } as any);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Chat REST endpoints
+  const messageLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false });
+
+  app.post("/api/conversations", requireAuth, async (req, res) => {
+    try {
+      const { participants } = req.body as any;
+      if (!Array.isArray(participants) || participants.length < 2) return res.status(400).json({ error: "At least two participants required" });
+      const conv = await storage.createConversation({ participants });
+      res.status(201).json(conv);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/conversations/my", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const list = await storage.getConversationsByUser(userId);
+      res.json(list);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/conversations/:id/messages", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const messages = await storage.getMessagesByConversation(id);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/messages", requireAuth, messageLimiter, async (req, res) => {
+    try {
+      const { conversationId, content, replyTo } = req.body as any;
+      if (!conversationId || !content) return res.status(400).json({ error: "conversationId and content required" });
+      const safeContent = DOMPurify.sanitize(String(content));
+      const senderId = (req as any).user.id;
+      const mentions = (safeContent.match(/@([A-Za-z0-9_]+)/g) || []).map((m) => m.substring(1));
+      const msg = await storage.createMessage({ conversationId, senderId, content: safeContent, replyTo, mentions } as any);
+      res.status(201).json(msg);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/messages/:id/read", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user.id;
+      await storage.markMessageRead(id, userId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Post routes
   app.get("/api/posts", async (req, res) => {
     try {

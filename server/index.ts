@@ -2,8 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
+import { WebSocketServer } from "ws";
+import { verifyToken } from "./utils/auth";
+import { storage } from "./storage";
 import { setupVite, serveStatic, log } from "./vite";
-import { storage } from './storage';
 import { weaponsData, modesData, ranksData, mercenariesData } from './data/seed-data.js';
 import { insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
 
@@ -167,6 +169,77 @@ app.use((req, res, next) => {
   }
 
   const server = await registerRoutes(app);
+
+  // WebSocket server for chat
+  const wss = new WebSocketServer({ server, path: "/ws" });
+  const clients = new Map<string, Set<any>>();
+
+  function addClient(userId: string, ws: any) {
+    if (!clients.has(userId)) clients.set(userId, new Set());
+    clients.get(userId)!.add(ws);
+  }
+  function removeClient(userId: string, ws: any) {
+    const set = clients.get(userId);
+    if (set) {
+      set.delete(ws);
+      if (set.size === 0) clients.delete(userId);
+    }
+  }
+  function broadcastToUsers(userIds: string[], payload: any) {
+    const data = JSON.stringify(payload);
+    for (const uid of userIds) {
+      const set = clients.get(uid);
+      if (set) {
+        for (const sock of set) {
+          try { sock.send(data); } catch {}
+        }
+      }
+    }
+  }
+
+  wss.on("connection", async (ws, req) => {
+    try {
+      const url = new URL(req.url || "", `http://${req.headers.host}`);
+      const token = url.searchParams.get("token") || "";
+      const payload: any = token ? verifyToken(token) : null;
+      if (!payload || !payload.id) {
+        ws.close();
+        return;
+      }
+
+      const userId = String(payload.id);
+      addClient(userId, ws);
+
+      ws.on("message", async (raw: any) => {
+        try {
+          const msg = JSON.parse(String(raw || ""));
+          if (msg.type === "message/send") {
+            const { conversationId, content, replyTo } = msg;
+            if (!conversationId || !content) return;
+            const created = await storage.createMessage({ conversationId, senderId: userId, content, replyTo } as any);
+            const conv = await storage.getConversationById(conversationId);
+            const participants = (conv?.participants || []).map(String);
+            broadcastToUsers(participants, { type: "message/new", message: created });
+          } else if (msg.type === "typing") {
+            const { conversationId, isTyping } = msg;
+            const conv = await storage.getConversationById(conversationId);
+            const others = (conv?.participants || []).map(String).filter((p) => p !== userId);
+            broadcastToUsers(others, { type: "typing", conversationId, userId, isTyping: !!isTyping });
+          } else if (msg.type === "read") {
+            const { messageId, conversationId } = msg;
+            if (messageId) await storage.markMessageRead(messageId, userId);
+            const conv = await storage.getConversationById(conversationId);
+            const others = (conv?.participants || []).map(String).filter((p) => p !== userId);
+            broadcastToUsers(others, { type: "read", messageId, userId });
+          }
+        } catch {}
+      });
+
+      ws.on("close", () => {
+        removeClient(userId, ws);
+      });
+    } catch {}
+  });
 
   // Serve static assets from attached_assets folder
   const currentFile = fileURLToPath(import.meta.url);

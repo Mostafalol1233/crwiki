@@ -87,8 +87,11 @@ export default function Sellers() {
                 <img
                   src={image}
                   alt={`${seller.name} ${idx + 1}`}
-                  // center and make the image itself bigger while keeping aspect ratio
                   className="max-h-72 max-w-[360px] w-full object-cover rounded-md bg-muted/30"
+                  width="360"
+                  height="288"
+                  loading="lazy"
+                  decoding="async"
                   data-testid={`img-seller-${seller.id}-${idx}`}
                 />
               </div>
@@ -223,6 +226,10 @@ export default function Sellers() {
                           src={image}
                           alt={`${selectedSeller.name} ${idx + 1}`}
                           className="max-h-[520px] max-w-full object-contain rounded-md bg-muted/30"
+                          width="800"
+                          height="544"
+                          loading="lazy"
+                          decoding="async"
                           data-testid={`dialog-img-seller-${selectedSeller.id}-${idx}`}
                         />
                       </div>

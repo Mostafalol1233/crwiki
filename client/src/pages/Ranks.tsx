@@ -114,6 +114,10 @@ export default function Ranks() {
                         src={rank.image}
                         alt={rank.name}
                         className="w-full h-full object-contain p-4"
+                        width="256"
+                        height="256"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

@@ -336,6 +336,10 @@ export default function CFDataScraper() {
                               src={rank.image}
                               alt={rank.name}
                               className="w-full h-full object-contain"
+                              width="64"
+                              height="64"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <ImageIcon className="h-6 w-6 text-muted-foreground" />
@@ -388,6 +392,10 @@ export default function CFDataScraper() {
                               src={mode.image}
                               alt={mode.name}
                               className="w-full h-full object-contain"
+                              width="64"
+                              height="64"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <ImageIcon className="h-6 w-6 text-muted-foreground" />

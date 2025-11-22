@@ -110,6 +110,17 @@ export default function Admin() {
   const [uploadedAudioUrls, setUploadedAudioUrls] = useState<string[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<string>("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [generatedResetCode, setGeneratedResetCode] = useState<string>("");
+  async function generateResetCode() {
+    try {
+      const data = await apiRequest("/api/admin/users/reset-code", "POST", { email: resetEmail });
+      setGeneratedResetCode(data.resetCode || "");
+      toast({ title: "Reset code generated", description: "Code is ready to send", variant: "default" });
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message || String(e), variant: "destructive" });
+    }
+  }
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
@@ -1186,12 +1197,13 @@ export default function Admin() {
                   {canSubscribers && <option value="subscribers">Subscribers</option>}
                   {canScraper && <option value="scraper">Scraper</option>}
                   {canMercenaries && <option value="mercenaries">Mercenaries</option>}
-                  {canTickets && <option value="tickets">Tickets</option>}
-                </select>
+                {canTickets && <option value="tickets">Tickets</option>}
+                {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
+              </select>
               </div>
 
               {/* large screen: vertical tabs list */}
-              <TabsList className="hidden lg:flex lg:flex-col lg:space-y-2">
+              <TabsList className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-2">
                 <TabsTrigger value="dashboard" data-testid="tab-dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Dashboard</span>
@@ -1278,6 +1290,12 @@ export default function Admin() {
                   <TabsTrigger value="seller-reviews" data-testid="tab-seller-reviews">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Seller Review Verification</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="reset-codes" data-testid="tab-reset-codes">
+                    <Shield className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Password Reset Codes</span>
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -4125,6 +4143,35 @@ export default function Admin() {
                   </div>
                 </DialogContent>
               </Dialog>
+            </TabsContent>
+            )}
+
+            {isSuperAdmin && (
+            <TabsContent value="reset-codes" className="space-y-6" data-testid="content-reset-codes">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Password Reset Codes</CardTitle>
+                  <CardDescription>Generate unique reset codes and copy to send manually.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col md:flex-row gap-2 items-start md:items-end">
+                    <div className="flex-1">
+                      <Label>Email</Label>
+                      <Input value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="user@example.com" />
+                    </div>
+                    <Button onClick={generateResetCode} className="w-full md:w-auto">Generate Code</Button>
+                  </div>
+                  {generatedResetCode && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Input readOnly value={generatedResetCode} />
+                      <Button type="button" onClick={() => navigator.clipboard.writeText(generatedResetCode)}>
+                        Copy
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">Use your email client to send the code to the user.</p>
+                </CardContent>
+              </Card>
             </TabsContent>
             )}
 

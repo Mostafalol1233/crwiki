@@ -18,8 +18,14 @@ import {
   RankModel,
   MercenaryModel,
   AdminPermissionModel,
+  ConversationModel,
+  MessageModel,
   type User,
   type InsertUser,
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
   type Post,
   type InsertPost,
   type Comment,
@@ -84,6 +90,9 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   getAllPosts(): Promise<Post[]>;
   getPostById(id: string): Promise<Post | undefined>;
@@ -180,6 +189,12 @@ export interface IStorage {
 
   getSiteSettings(): Promise<SiteSettings>;
   updateSiteSettings(settings: SiteSettingsUpdate): Promise<SiteSettings>;
+  createConversation(conv: InsertConversation): Promise<Conversation>;
+  getConversationById(id: string): Promise<Conversation | undefined>;
+  getConversationsByUser(userId: string): Promise<Conversation[]>;
+  getMessagesByConversation(conversationId: string): Promise<Message[]>;
+  createMessage(msg: InsertMessage & { mentions?: string[] }): Promise<Message>;
+  markMessageRead(messageId: string, userId: string): Promise<void>;
 }
 
 export class MongoDBStorage implements IStorage {
@@ -290,6 +305,21 @@ export class MongoDBStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const newUser = await UserModel.create(user);
     return newUser;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const user = await UserModel.findOne({ email });
+    return user || undefined;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const user = await UserModel.findOne({ phone });
+    return user || undefined;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = await UserModel.findByIdAndUpdate(id, updates, { new: true });
+    return user || undefined;
   }
 
   async getAllPosts(): Promise<Post[]> {
@@ -851,6 +881,55 @@ export class MongoDBStorage implements IStorage {
     }).lean();
 
     return this.mapSiteSettings(updated);
+  }
+
+  async createConversation(conv: InsertConversation): Promise<Conversation> {
+    await this.connect();
+    const created = await ConversationModel.create({ participants: conv.participants });
+    const lean = await ConversationModel.findById(created._id).lean();
+    if (!lean) throw new Error('Failed to create conversation');
+    return { ...(lean as any), id: String(lean._id) } as any;
+  }
+
+  async getConversationsByUser(userId: string): Promise<Conversation[]> {
+    await this.connect();
+    const list = await ConversationModel.find({ participants: userId }).sort({ lastMessageAt: -1 }).lean();
+    return list.map((c: any) => ({ ...c, id: String(c._id) })) as any;
+  }
+
+  async getConversationById(id: string): Promise<Conversation | undefined> {
+    await this.connect();
+    const c = await ConversationModel.findById(id).lean();
+    if (!c) return undefined;
+    return { ...(c as any), id: String((c as any)._id) } as any;
+  }
+
+  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+    await this.connect();
+    const list = await MessageModel.find({ conversationId }).sort({ createdAt: 1 }).lean();
+    return list.map((m: any) => ({ ...m, id: String(m._id) })) as any;
+  }
+
+  async createMessage(msg: InsertMessage & { mentions?: string[] }): Promise<Message> {
+    await this.connect();
+    const created = await MessageModel.create({
+      conversationId: msg.conversationId,
+      senderId: msg.senderId,
+      content: msg.content,
+      mentions: msg.mentions || [],
+      replyTo: msg.replyTo,
+      status: 'sent',
+      readBy: [],
+    });
+    await ConversationModel.findByIdAndUpdate(msg.conversationId, { lastMessageAt: new Date() });
+    const lean = await MessageModel.findById(created._id).lean();
+    if (!lean) throw new Error('Failed to create message');
+    return { ...(lean as any), id: String(lean._id) } as any;
+  }
+
+  async markMessageRead(messageId: string, userId: string): Promise<void> {
+    await this.connect();
+    await MessageModel.findByIdAndUpdate(messageId, { $addToSet: { readBy: userId }, status: 'read' });
   }
 
   // Weapons methods

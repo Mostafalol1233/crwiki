@@ -56,6 +56,9 @@ export class MemoryStorage implements IStorage {
   private weapons: Weapon[] = [] as any;
   private modes: Mode[] = [] as any;
   private ranks: Rank[] = [] as any;
+  private users: any[] = [];
+  private conversations: any[] = [];
+  private messages: any[] = [];
   private siteSettings = {
     reviewVerificationEnabled: false,
     reviewVerificationVideoUrl: "",
@@ -157,14 +160,31 @@ export class MemoryStorage implements IStorage {
 
   // Users
   async getUser(id: string) {
-    return undefined;
+    const u = this.users.find((x) => x.id === id);
+    return u as any;
   }
   async getUserByUsername(username: string) {
-    return undefined;
+    const u = this.users.find((x) => (x.username || '').toLowerCase() === username.toLowerCase());
+    return u as any;
+  }
+  async getUserByEmail(email: string) {
+    const u = this.users.find((x) => (x.email || '').toLowerCase() === email.toLowerCase());
+    return u as any;
+  }
+  async getUserByPhone(phone: string) {
+    const u = this.users.find((x) => (x.phone || '') === phone);
+    return u as any;
   }
   async createUser(user: any) {
-    const u = { ...user, id: uuidv4(), createdAt: new Date() } as any;
+    const u = { ...user, id: uuidv4(), createdAt: new Date(), verifiedEmail: false, verifiedPhone: false } as any;
+    this.users.push(u);
     return u;
+  }
+  async updateUser(id: string, updates: any) {
+    const idx = this.users.findIndex((x) => x.id === id);
+    if (idx === -1) return undefined as any;
+    this.users[idx] = { ...this.users[idx], ...updates };
+    return this.users[idx] as any;
   }
 
   // Posts
@@ -439,6 +459,40 @@ export class MemoryStorage implements IStorage {
       ...(settings || {}),
     };
     return { ...this.siteSettings };
+  }
+
+  async createConversation(conv: any) {
+    const c = { id: uuidv4(), participants: conv.participants, createdAt: new Date(), lastMessageAt: undefined };
+    this.conversations.push(c);
+    return c as any;
+  }
+
+  async getConversationById(id: string) {
+    return this.conversations.find((c) => c.id === id) as any;
+  }
+
+  async getConversationsByUser(userId: string) {
+    return this.conversations.filter((c) => (c.participants || []).includes(userId)) as any;
+  }
+
+  async getMessagesByConversation(conversationId: string) {
+    return this.messages.filter((m) => m.conversationId === conversationId).sort((a, b) => a.createdAt - b.createdAt) as any;
+  }
+
+  async createMessage(msg: any) {
+    const m = { id: uuidv4(), conversationId: msg.conversationId, senderId: msg.senderId, content: msg.content, mentions: msg.mentions || [], replyTo: msg.replyTo, readBy: [], status: 'sent', createdAt: new Date() };
+    this.messages.push(m);
+    const conv = this.conversations.find((c) => c.id === msg.conversationId);
+    if (conv) conv.lastMessageAt = new Date();
+    return m as any;
+  }
+
+  async markMessageRead(messageId: string, userId: string) {
+    const m = this.messages.find((x) => x.id === messageId);
+    if (m) {
+      if (!m.readBy.includes(userId)) m.readBy.push(userId);
+      m.status = 'read';
+    }
   }
 
   // Tutorials

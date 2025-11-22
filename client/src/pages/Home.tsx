@@ -463,7 +463,9 @@ export default function Home() {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         width="400"
                         height="267"
-                        loading="lazy"
+                        loading="eager"
+                        fetchpriority="high"
+                        decoding="async"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-3 md:p-4">
                         <Badge variant="destructive" className="mb-1 text-[10px] md:text-xs">News</Badge>

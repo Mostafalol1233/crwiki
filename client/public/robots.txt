@@ -2,14 +2,14 @@ User-agent: *
 # Allow core public content
 Allow: /
 
-# Disallow admin, API endpoints and developer-only areas
+# Disallow non-public and runtime paths
 Disallow: /admin
 Disallow: /dashboard
-Disallow: /api
-Disallow: /server
-Disallow: /scripts
+Disallow: /api/
+Disallow: /server/
+Disallow: /scripts/
 
-# Avoid indexing query pages and session-specific URLs
+# Avoid indexing query parameter pages
 Disallow: /*?*
 
 # Sitemap (absolute URL)

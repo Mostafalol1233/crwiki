@@ -19,6 +19,10 @@
       "destination": "http://51.75.118.151:20032/assets/$1"
     },
     {
+      "source": "/ws",
+      "destination": "http://51.75.118.151:20032/ws"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

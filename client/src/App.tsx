@@ -35,6 +35,10 @@ import Posts from "@/pages/Posts";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import NotFound from "@/pages/not-found";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Chat from "@/pages/Chat";
+import ResetPassword from "@/pages/ResetPassword";
 
 function Router() {
   return (
@@ -66,6 +70,10 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/chat" component={Chat} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>
   );

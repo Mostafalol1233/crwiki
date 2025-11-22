@@ -409,6 +409,10 @@ export default function ScrapingManager() {
                                 src={event.image}
                                 alt={event.title}
                                 className="w-full h-full object-cover"
+                                width="64"
+                                height="64"
+                                loading="lazy"
+                                decoding="async"
                                 data-testid="img-event-thumbnail"
                               />
                             ) : (

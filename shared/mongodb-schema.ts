@@ -3,7 +3,15 @@ import { z } from 'zod';
 
 export interface IUser extends Document {
   username: string;
+  email: string;
+  phone: string;
   password: string;
+  verifiedEmail: boolean;
+  verifiedPhone: boolean;
+  emailVerificationCode?: string;
+  phoneVerificationCode?: string;
+  resetCode?: string;
+  resetCodeIssuedAt?: Date;
 }
 
 export interface IPost extends Document {
@@ -219,7 +227,15 @@ export interface IAdminPermission extends Document {
 
 const UserSchema = new Schema<IUser>({
   username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  verifiedEmail: { type: Boolean, default: false },
+  verifiedPhone: { type: Boolean, default: false },
+  emailVerificationCode: { type: String, default: '' },
+  phoneVerificationCode: { type: String, default: '' },
+  resetCode: { type: String, default: '' },
+  resetCodeIssuedAt: { type: Date },
 });
 
 const PostSchema = new Schema<IPost>({
@@ -457,8 +473,10 @@ export const MercenaryModel = mongoose.model<IMercenary>('Mercenary', MercenaryS
 export const AdminPermissionModel = mongoose.model<IAdminPermission>('AdminPermission', AdminPermissionSchema);
 
 export const insertUserSchema = z.object({
-  username: z.string(),
-  password: z.string(),
+  username: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(6),
+  password: z.string().min(8).regex(/[^A-Za-z0-9]/),
 });
 
 export const insertPostSchema = z.object({
@@ -653,6 +671,59 @@ export const updateSiteSettingsSchema = siteSettingsSchema.partial();
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = IUser;
+
+export interface IConversation extends Document {
+  participants: string[];
+  createdAt: Date;
+  lastMessageAt?: Date;
+}
+
+export interface IMessage extends Document {
+  conversationId: string;
+  senderId: string;
+  content: string;
+  mentions?: string[];
+  replyTo?: string;
+  readBy: string[];
+  createdAt: Date;
+  status: string;
+}
+
+const ConversationSchema = new Schema<IConversation>({
+  participants: { type: [String], required: true },
+  createdAt: { type: Date, default: Date.now },
+  lastMessageAt: { type: Date },
+});
+
+const MessageSchema = new Schema<IMessage>({
+  conversationId: { type: String, required: true },
+  senderId: { type: String, required: true },
+  content: { type: String, required: true },
+  mentions: { type: [String], default: [] },
+  replyTo: { type: String },
+  readBy: { type: [String], default: [] },
+  createdAt: { type: Date, default: Date.now },
+  status: { type: String, default: 'sent' },
+});
+
+export const ConversationModel = mongoose.model<IConversation>('Conversation', ConversationSchema);
+export const MessageModel = mongoose.model<IMessage>('Message', MessageSchema);
+
+export const insertConversationSchema = z.object({
+  participants: z.array(z.string()).min(2),
+});
+
+export const insertMessageSchema = z.object({
+  conversationId: z.string(),
+  senderId: z.string(),
+  content: z.string().min(1).max(4000),
+  replyTo: z.string().optional(),
+});
+
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = IConversation;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = IMessage;
 
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = IPost;

@@ -191,6 +191,11 @@ export default function Article() {
                   src={article.image}
                   alt={article.title}
                   className="w-full h-auto max-h-[650px] object-contain"
+                  width="800"
+                  height="544"
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
                   data-testid="img-article-cover"
                 />
               </div>

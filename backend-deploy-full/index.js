@@ -2223,7 +2223,21 @@ app.set('trust proxy', 1); // Trust the first proxy
   const wsModule = await import("ws");
   const WSSCtor = wsModule?.Server || wsModule?.WebSocketServer || wsModule?.default?.Server || wsModule?.default?.WebSocketServer;
   if (typeof WSSCtor === "function") {
-    const wss = new WSSCtor({ server, path: "/ws" });
+    const wss = new WSSCtor({ noServer: true, perMessageDeflate: false });
+    server.on("upgrade", (req, socket, head) => {
+      try {
+        const url = new URL(req.url || "", `http://${req.headers.host}`);
+        if (url.pathname === "/ws") {
+          wss.handleUpgrade(req, socket, head, (ws) => {
+            wss.emit("connection", ws, req);
+          });
+        } else {
+          socket.destroy();
+        }
+      } catch {
+        try { socket.destroy(); } catch {}
+      }
+    });
     function broadcastPresence() {
       const users = Array.from(connectedUsers.keys());
       const payload = JSON.stringify({ type: "presence", users });

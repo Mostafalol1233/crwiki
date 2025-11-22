@@ -245,9 +245,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       <div className="w-full bg-gray-100 text-gray-700">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-4 text-xs md:text-sm">
-          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white h-7 md:h-8 px-3 rounded">
-            <Link href="/login">Log In</Link>
-          </Button>
+          <Link href="/login" className="text-blue-600 hover:text-blue-700">Log In</Link>
           <Link href="/register" className="hover:underline">Sign Up</Link>
         </div>
       </div>
@@ -277,14 +275,12 @@ export function Header() {
                   {item.dropdown ? (
                     <>
                       <button
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${
+                        className={`px-4 py-2 text-sm font-bold italic uppercase tracking-wide transition-colors ${
                           isActiveDropdown(item.dropdown) ? "text-black underline" : "text-black hover:underline"
                         }`}
                         data-testid={`button-dropdown-${item.label.toLowerCase()}`}
                       >
-                        {item.icon && <item.icon className="h-4 w-4" />}
                         {item.label}
-                        <ChevronDown className="h-4 w-4 transition-all duration-300 group-hover/btn:rotate-180" />
                       </button>
                       <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                         <div className="py-2">
@@ -369,7 +365,6 @@ export function Header() {
               <Link href="/modes" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">GAME</Link>
               <Link href="/ranks" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">RANKING</Link>
               <Link href="/community" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">COMMUNITY</Link>
-              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">E-SPORTS</Link>
               <Link href="/sellers" className="block px-3 py-2 text-sm uppercase italic font-bold text-black">SHOP</Link>
               <Link href="/download" className="block px-3 py-2 text-sm uppercase italic font-extrabold text-black bg-yellow-400 text-center">DOWNLOAD</Link>
             </div>

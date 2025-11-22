@@ -28,14 +28,28 @@ export default function Chat() {
 
   useEffect(() => {
     if (!username) { setLocation("/register"); return; }
-    const ws = new WebSocket(`${getWsUrl()}?username=${encodeURIComponent(username)}`);
-    wsRef.current = ws;
-    ws.onmessage = (ev) => {
-      const data = JSON.parse(String(ev.data || "{}"));
-      if (data.type === "presence") setOnlineUsers(Array.isArray(data.users) ? data.users : []);
-      else if (data.type === "message") setMessages((m) => [...m, { id: crypto.randomUUID?.() || String(Date.now()), sender: data.from, content: data.text, createdAt: Date.now() }]);
+    let retry = 0;
+    let closed = false;
+    const connect = () => {
+      if (closed) return;
+      const ws = new WebSocket(`${getWsUrl()}?username=${encodeURIComponent(username)}`);
+      wsRef.current = ws;
+      ws.onopen = () => { retry = 0; };
+      ws.onmessage = (ev) => {
+        const data = JSON.parse(String(ev.data || "{}"));
+        if (data.type === "presence") setOnlineUsers(Array.isArray(data.users) ? data.users : []);
+        else if (data.type === "message") setMessages((m) => [...m, { id: crypto.randomUUID?.() || String(Date.now()), sender: data.from, content: data.text, createdAt: Date.now() }]);
+      };
+      const schedule = () => {
+        retry = Math.min(retry + 1, 5);
+        const delay = Math.min(1000 * Math.pow(2, retry), 10000);
+        setTimeout(() => connect(), delay);
+      };
+      ws.onerror = () => schedule();
+      ws.onclose = () => schedule();
     };
-    return () => { ws.close(); };
+    connect();
+    return () => { closed = true; wsRef.current?.close(); };
   }, [username]);
 
   const sendMessage = () => {

@@ -246,7 +246,7 @@ export function Header() {
       <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
           <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-foreground">
-            <img src="https://files.catbox.moe/cxen8x.png" alt="CF" className="h-25 w-25 object-contain" />
+            <img src="https://files.catbox.moe/cxen8x.png" alt="CF" className="h-15 w-15 object-contain" />
             <span className="crossfire-pro">CrossFire</span>
 
           </Link>

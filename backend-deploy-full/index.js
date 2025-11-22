@@ -10,8 +10,6 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
-import wsPkg from "ws";
-const WebSocketServer = wsPkg.Server || wsPkg.WebSocketServer;
 
 // shared/mongodb-schema.ts
 import mongoose, { Schema } from "mongoose";
@@ -2222,41 +2220,45 @@ app.set('trust proxy', 1); // Trust the first proxy
     })();
   }
 
-  const wss = new WebSocketServer({ server, path: "/ws" });
-  function broadcastPresence() {
-    const users = Array.from(connectedUsers.keys());
-    const payload = JSON.stringify({ type: "presence", users });
-    connectedUsers.forEach((set) => {
-      set.forEach((client) => {
-        try { client.send(payload); } catch {}
+  const wsModule = await import("ws");
+  const WSSCtor = wsModule?.Server || wsModule?.WebSocketServer || wsModule?.default?.Server || wsModule?.default?.WebSocketServer;
+  if (typeof WSSCtor === "function") {
+    const wss = new WSSCtor({ server, path: "/ws" });
+    function broadcastPresence() {
+      const users = Array.from(connectedUsers.keys());
+      const payload = JSON.stringify({ type: "presence", users });
+      connectedUsers.forEach((set) => {
+        set.forEach((client) => {
+          try { client.send(payload); } catch {}
+        });
       });
+    }
+    wss.on("connection", (ws, req) => {
+      try {
+        const url = new URL(req.url || "", `http://${req.headers.host}`);
+        const username = url.searchParams.get("username") || "Anonymous";
+        let set = connectedUsers.get(username);
+        if (!set) { set = new Set(); connectedUsers.set(username, set); }
+        set.add(ws);
+        broadcastPresence();
+        ws.on("message", (data) => {
+          let msg = null;
+          try { msg = JSON.parse(String(data)); } catch {}
+          if (!msg) return;
+          const payload = JSON.stringify({ type: "message", from: msg.from || username, text: msg.text || "" });
+          connectedUsers.forEach((s) => s.forEach((c) => { try { c.send(payload); } catch {} }));
+        });
+        ws.on("close", () => {
+          const s = connectedUsers.get(username);
+          if (s) { s.delete(ws); if (s.size === 0) connectedUsers.delete(username); }
+          broadcastPresence();
+        });
+      } catch {}
+    });
+    app.get("/api/online-users", (_req, res) => {
+      res.json(Array.from(connectedUsers.keys()));
     });
   }
-  wss.on("connection", (ws, req) => {
-    try {
-      const url = new URL(req.url || "", `http://${req.headers.host}`);
-      const username = url.searchParams.get("username") || "Anonymous";
-      let set = connectedUsers.get(username);
-      if (!set) { set = new Set(); connectedUsers.set(username, set); }
-      set.add(ws);
-      broadcastPresence();
-      ws.on("message", (data) => {
-        let msg = null;
-        try { msg = JSON.parse(String(data)); } catch {}
-        if (!msg) return;
-        const payload = JSON.stringify({ type: "message", from: msg.from || username, text: msg.text || "" });
-        connectedUsers.forEach((s) => s.forEach((c) => { try { c.send(payload); } catch {} }));
-      });
-      ws.on("close", () => {
-        const s = connectedUsers.get(username);
-        if (s) { s.delete(ws); if (s.size === 0) connectedUsers.delete(username); }
-        broadcastPresence();
-      });
-    } catch {}
-  });
-  app.get("/api/online-users", (_req, res) => {
-    res.json(Array.from(connectedUsers.keys()));
-  });
 
   const port = parseInt(process.env.PORT || "20032", 10);
   server.listen({

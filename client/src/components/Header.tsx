@@ -246,12 +246,13 @@ export function Header() {
       <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
           <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-foreground">
-            <img src="https://files.catbox.moe/qz9v2h.png" alt="CF" className="h-10 w-10 object-contain" />
+            <img src="https://files.catbox.moe/cxen8x.png" alt="CF" className="h-25 w-25 object-contain" />
             <span className="crossfire-pro">CrossFire</span>
+
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="hover:text-primary">{t("login")}</Link>
-            <Link href="/register" className="hover:underline">{t("signUp")}</Link>
+            <Link href="/login" className="text-white hover:text-white">{t("login")}</Link>
+            <Link href="/register" className="text-white hover:underline hover:text-white">{t("signUp")}</Link>
           </div>
         </div>
       </div>

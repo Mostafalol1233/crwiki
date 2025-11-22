@@ -2326,7 +2326,7 @@ app.set('trust proxy', 1); // Trust the first proxy
   });
 })();
   // Admin: Users management and registration toggle
-  app2.get("/api/admin/users", requireAuth, requireSuperAdmin, async (_req, res) => {
+  app.get("/api/admin/users", requireAuth, requireSuperAdmin, async (_req, res) => {
     try {
       const users = await UserModel.find().sort({ createdAt: -1 }).lean();
       res.json(users.map((u) => ({
@@ -2345,7 +2345,7 @@ app.set('trust proxy', 1); // Trust the first proxy
     }
   });
 
-  app2.post("/api/admin/users/:id/generate-phone-code", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.post("/api/admin/users/:id/generate-phone-code", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const id = req.params.id;
       const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -2357,7 +2357,7 @@ app.set('trust proxy', 1); // Trust the first proxy
     }
   });
 
-  app2.patch("/api/admin/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.patch("/api/admin/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const id = req.params.id;
       const { verifiedEmail, verifiedPhone } = req.body || {};
@@ -2372,7 +2372,7 @@ app.set('trust proxy', 1); // Trust the first proxy
     }
   });
 
-  app2.delete("/api/admin/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+  app.delete("/api/admin/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
     try {
       const id = req.params.id;
       const result = await UserModel.findByIdAndDelete(id);
@@ -2383,14 +2383,14 @@ app.set('trust proxy', 1); // Trust the first proxy
     }
   });
 
-  app2.get("/api/admin/registration", requireAuth, requireSuperAdmin, (_req, res) => {
+  app.get("/api/admin/registration", requireAuth, requireSuperAdmin, (_req, res) => {
     res.json({ closed: registrationClosed });
   });
-  app2.post("/api/admin/registration/close", requireAuth, requireSuperAdmin, (_req, res) => {
+  app.post("/api/admin/registration/close", requireAuth, requireSuperAdmin, (_req, res) => {
     registrationClosed = true;
     res.json({ closed: true });
   });
-  app2.post("/api/admin/registration/open", requireAuth, requireSuperAdmin, (_req, res) => {
+  app.post("/api/admin/registration/open", requireAuth, requireSuperAdmin, (_req, res) => {
     registrationClosed = false;
     res.json({ closed: false });
   });

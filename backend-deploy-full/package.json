@@ -19,10 +19,12 @@
     "mongoose": "^7.3.0",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
+    "ws": "^8.18.0",
     "zod": "^3.21.4"
   },
   "optionalDependencies": {
-    "isomorphic-dompurify": "^0.14.0"
+    "isomorphic-dompurify": "^0.14.0",
+    "bufferutil": "^4.0.8"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

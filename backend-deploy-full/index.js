@@ -2222,18 +2222,6 @@ app.set('trust proxy', 1); // Trust the first proxy
     })();
   }
 
-  const port = parseInt(process.env.PORT || "20032", 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true
-  }, () => {
-    log(`\u{1F680} Backend API server running on port ${port}`);
-    log(`\u{1F4E1} Serving API endpoints at /api/*`);
-    log(`\u{1F5BC}\uFE0F  Serving assets at /assets/*`);
-    log(`\u{1F310} Frontend should be deployed to Netlify`);
-  });
-})();
   const wss = new WebSocketServer({ server, path: "/ws" });
   function broadcastPresence() {
     const users = Array.from(connectedUsers.keys());
@@ -2269,3 +2257,16 @@ app.set('trust proxy', 1); // Trust the first proxy
   app.get("/api/online-users", (_req, res) => {
     res.json(Array.from(connectedUsers.keys()));
   });
+
+  const port = parseInt(process.env.PORT || "20032", 10);
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true
+  }, () => {
+    log(`\u{1F680} Backend API server running on port ${port}`);
+    log(`\u{1F4E1} Serving API endpoints at /api/*`);
+    log(`\u{1F5BC}\uFE0F  Serving assets at /assets/*`);
+    log(`\u{1F310} Frontend should be deployed to Netlify`);
+  });
+})();

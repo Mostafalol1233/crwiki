@@ -10,7 +10,8 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
-import { WebSocketServer } from "ws";
+import wsPkg from "ws";
+const { WebSocketServer } = wsPkg;
 
 // shared/mongodb-schema.ts
 import mongoose, { Schema } from "mongoose";

@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Target } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -98,7 +98,7 @@ export default function NewsDetail() {
         }}
       />
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-        <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
           <Breadcrumbs items={breadcrumbs} />
           <Link href="/news">
             <Button
@@ -111,34 +111,38 @@ export default function NewsDetail() {
             </Button>
           </Link>
 
-        <div className="mb-8">
-          <Badge className="mb-4" data-testid={`badge-category-${newsItem.category.toLowerCase()}`}>
-            {newsItem.category}
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4" data-testid="text-news-title">
+        <section className="mb-10">
+          <div className="mb-3">
+            <Badge className="bg-red-600 text-white rounded-full px-3 py-1" data-testid={`badge-category-${newsItem.category.toLowerCase()}`}>
+              {newsItem.category}
+            </Badge>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-black leading-tight mb-4" data-testid="text-news-title">
             {newsItem.title}
           </h1>
-          <div className="flex items-center gap-4 text-muted-foreground text-sm">
-            <span data-testid="text-news-author">By {newsItem.author}</span>
+          {newsItem.contentAr && (
+            <p className="text-lg md:text-xl text-gray-700 mb-4 flex items-start gap-2">
+              <Target className="h-5 w-5 text-red-600 mt-1" />
+              <span dir="rtl">{newsItem.contentAr.replace(/<[^>]*>?/gm, "").slice(0, 180)}...</span>
+            </p>
+          )}
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <span data-testid="text-news-author">{newsItem.author}</span>
             <span>•</span>
             <span data-testid="text-news-date">{newsItem.dateRange}</span>
           </div>
-        </div>
+        </section>
 
-        <div className="w-full bg-black rounded-xl overflow-hidden mb-8 flex justify-center">
+        <div className="w-full overflow-hidden mb-10">
           <img
             src={newsItem.image}
             alt={newsItem.title}
-            className="w-full h-auto max-h-[900px] object-contain"
+            className="w-full h-auto object-cover"
             data-testid="img-news-hero"
           />
         </div>
 
-        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-8">
-          <p className="text-sm text-muted-foreground">
-            <strong>{t("translationNote")}</strong> {t("translationNoteText")}
-          </p>
-        </div>
+        
 
         {(() => {
           const html = newsItem.htmlContent && newsItem.htmlContent.trim().length > 0
@@ -146,7 +150,7 @@ export default function NewsDetail() {
             : newsItem.content;
           const purified = (createDOMPurify as any)(window as any).sanitize(html);
           return (
-            <div
+            <article
               className="prose prose-lg dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: purified }}
               data-testid="text-news-content"
@@ -154,10 +158,10 @@ export default function NewsDetail() {
           );
         })()}
 
-        <div className="mt-12 pt-8 border-t">
+        <div className="mt-12">
           <Link href="/news">
-            <Button size="lg" data-testid="button-more-news">
-              {t("readMoreNews")}
+            <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" data-testid="button-more-news">
+              {`إقرأ المزيد: ${newsItem.title}`}
             </Button>
           </Link>
         </div>

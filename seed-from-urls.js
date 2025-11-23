@@ -85,15 +85,61 @@ const modesData = [
   { name: "Aim Master", image: `${IMAGE_BASE}/modes/AIM_AimMaster_01.jpg.jpeg` },
 ];
 
-// ALL 100 Ranks with images
-const ranksData = Array.from({ length: 100 }, (_, i) => {
-  const rankNum = i + 1;
-  return {
-    name: `Rank ${rankNum}`,
-    tier: rankNum,
-    emblem: `${IMAGE_BASE}/ranks/rank_${rankNum}.jpg.jpeg`,
-  };
-});
+// CrossFire Ranks with Bonuses ONLY (using real Z8Games images)
+const ranksData = [
+  { name: "Trainee 2", tier: 2, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_2.jpg", bonus: "Smile Grenade 7 days" },
+  { name: "Private", tier: 3, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_3.jpg", bonus: "Boost Box 3 days" },
+  { name: "Private First Class", tier: 4, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_4.jpg", bonus: "Starter Weapon Box 3 days" },
+  { name: "Corporal", tier: 5, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_5.jpg", bonus: "Pottery Boost Box 7 days" },
+  { name: "Sergeant 1", tier: 6, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_6.jpg", bonus: "Camo Box 7 days" },
+  { name: "Sergeant 4", tier: 9, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_9.jpg", bonus: "30,000 GP" },
+  { name: "Staff Sergeant 1", tier: 10, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_10.jpg", bonus: "Red Dragon Box 7 days" },
+  { name: "Staff Sergeant 4", tier: 13, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_13.jpg", bonus: "VIP Weapon Box 3 days" },
+  { name: "Staff Sergeant 6", tier: 15, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_15.jpg", bonus: "Red SMOKE 30 days" },
+  { name: "Sergeant First Class 2", tier: 17, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_17.jpg", bonus: "30,000 GP" },
+  { name: "Sergeant First Class 4", tier: 19, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_19.jpg", bonus: "AK-47-K-Yellow Fractal 14 days" },
+  { name: "Sergeant First Class 6", tier: 21, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_21.jpg", bonus: "B.C-Axe-Ares 7 days" },
+  { name: "Master Sergeant 2", tier: 23, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_23.jpg", bonus: "M4A1-S-Yellow Fractal 14 days" },
+  { name: "Master Sergeant 4", tier: 25, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_25.jpg", bonus: "Barrett M82A1-Royal Dragon 7 days" },
+  { name: "Master Sergeant 6", tier: 27, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_27.jpg", bonus: "Sidearm Box 7 days" },
+  { name: "Second Lieutenant 2", tier: 29, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_29.jpg", bonus: "M4A1-S-Yellow Fractal 30 days" },
+  { name: "Second Lieutenant 4", tier: 31, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_31.jpg", bonus: "Throw Weapon Box 30 days" },
+  { name: "Second Lieutenant 6", tier: 33, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_33.jpg", bonus: "KAC Chainsaw-Ancient Dragon 30 days" },
+  { name: "Second Lieutenant 8", tier: 35, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_35.jpg", bonus: "Kukri-Royal Dragon 30 days" },
+  { name: "First Lieutenant 2", tier: 37, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_37.jpg", bonus: "AK-47-K-Yellow Fractal 30 days" },
+  { name: "First Lieutenant 4", tier: 39, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_39.jpg", bonus: "Bulletproof Package 30 days" },
+  { name: "First Lieutenant 6", tier: 41, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_41.jpg", bonus: "Rifle Box 30 days" },
+  { name: "First Lieutenant 7", tier: 42, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_42.jpg", bonus: "Blue Muzzle Flame 30 days" },
+  { name: "Captain 2", tier: 45, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_45.jpg", bonus: "30,000 GP" },
+  { name: "Captain 4", tier: 47, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_47.jpg", bonus: "CFWE Pistol Ticket 30 days" },
+  { name: "Captain 6", tier: 49, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_49.jpg", bonus: "Yellow Smoke 30 days" },
+  { name: "Captain 8", tier: 51, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_51.jpg", bonus: "Green Muzzle Flame 30 days" },
+  { name: "Major 1", tier: 52, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_52.jpg", bonus: "30,000 GP" },
+  { name: "Major 3", tier: 54, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_54.jpg", bonus: "Mutant Box 30 days" },
+  { name: "Major 6", tier: 57, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_57.jpg", bonus: "CFWE Sniper Ticket 30 days" },
+  { name: "Major 7", tier: 58, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_58.jpg", bonus: "Octane Camo Grenade 30 days" },
+  { name: "Major 8", tier: 59, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_59.jpg", bonus: "CFWE MG Ticket 30 days" },
+  { name: "Lieutenant Colonel 2", tier: 61, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_61.jpg", bonus: "Bulletproof Package 30 days" },
+  { name: "Lieutenant Colonel 3", tier: 62, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_62.jpg", bonus: "CFWE SMG Ticket 30 days" },
+  { name: "Lieutenant Colonel 4", tier: 63, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_63.jpg", bonus: "M4A1 Custom-Octane Camo 30 days" },
+  { name: "Lieutenant Colonel 6", tier: 65, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_65.jpg", bonus: "CFWE Rifle Ticket 30 days" },
+  { name: "Lieutenant Colonel 8", tier: 67, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_67.jpg", bonus: "10 Horus Crates" },
+  { name: "Colonel 3", tier: 70, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_70.jpg", bonus: "M4A1-S-Yellow Fractal 60 days" },
+  { name: "Colonel 5", tier: 72, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_72.jpg", bonus: "BC Axe-Octane Camo 30 days" },
+  { name: "Colonel 7", tier: 74, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_74.jpg", bonus: "Character Box 30 days" },
+  { name: "Colonel 8", tier: 75, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_75.jpg", bonus: "10 Octane Crates" },
+  { name: "Brigadier General 4", tier: 79, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_79.jpg", bonus: "AK-47-K-Yellow Fractal 60 days" },
+  { name: "Brigadier General 6", tier: 81, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_81.jpg", bonus: "30 x 7th Anniversary Crates" },
+  { name: "Major General 2", tier: 83, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_83.jpg", bonus: "G-Yellow Crystal perm" },
+  { name: "Major General 5", tier: 86, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_86.jpg", bonus: "10 Color Blaze Crates" },
+  { name: "Major General 6", tier: 87, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_87.jpg", bonus: "Slaughter Ticket Box" },
+  { name: "Lieutenant General 3", tier: 90, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_90.jpg", bonus: "M4A1-S-Yellow Fractal perm" },
+  { name: "Lieutenant General 6", tier: 93, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_93.jpg", bonus: "RPK-Infernal Dragon 30 days" },
+  { name: "General 2", tier: 95, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_95.jpg", bonus: "AK-47-K-Yellow Fractal perm" },
+  { name: "General 4", tier: 97, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_97.jpg", bonus: "AWM-Infernal Dragon 30 days" },
+  { name: "General 6", tier: 99, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_99.jpg", bonus: "AK-47 Fury 30 days" },
+  { name: "Grand Marshall", tier: 104, emblem: "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_104.jpg", bonus: "30 Free Crate Tickets" }
+];
 
 async function seedDatabase() {
   try {

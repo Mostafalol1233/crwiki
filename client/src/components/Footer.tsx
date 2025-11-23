@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { SiX, SiYoutube } from "react-icons/si";
+import { SiX, SiYoutube, SiWhatsapp } from "react-icons/si";
 
 export function Footer() {
   const mainLinks = [
@@ -58,6 +58,16 @@ export function Footer() {
                 aria-label="Visit Bimora Gaming X (Twitter) profile"
               >
                 <SiX className="h-5 w-5" />
+              </a>
+              <a
+                href="https://chat.whatsapp.com/IQ7DtUTV87w0uISZQETBZe"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-social-whatsapp"
+                aria-label="Join our WhatsApp Community"
+              >
+                <SiWhatsapp className="h-5 w-5" />
               </a>
             </div>
           </div>

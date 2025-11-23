@@ -187,14 +187,13 @@ export default function Weapons() {
                             </p>
                             <div className="space-y-1">
                               {Object.entries(weapon.stats)
-                                .slice(0, 3)
                                 .map(([key, value]) => (
                                   <div
                                     key={key}
                                     className="flex justify-between text-xs"
                                   >
-                                    <span className="text-muted-foreground">
-                                      {key}:
+                                    <span className="text-muted-foreground capitalize">
+                                      {key.replace(/([A-Z])/g, ' $1').trim()}:
                                     </span>
                                     <span className="font-medium">{String(value)}</span>
                                   </div>
@@ -245,6 +244,27 @@ export default function Weapons() {
                         <div>
                           <h3 className="text-lg font-semibold mb-2">Description</h3>
                           <p className="text-muted-foreground">{weapon.description}</p>
+                        </div>
+                      )}
+
+                      {weapon.stats && Object.keys(weapon.stats).length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Weapon Stats</h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            {Object.entries(weapon.stats).map(([key, value]) => (
+                              <div
+                                key={key}
+                                className="p-3 bg-muted rounded-lg"
+                              >
+                                <p className="text-xs text-muted-foreground uppercase mb-1 font-semibold">
+                                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </p>
+                                <p className="text-lg font-bold text-foreground">
+                                  {String(value)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 

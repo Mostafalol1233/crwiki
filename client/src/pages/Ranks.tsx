@@ -12,9 +12,12 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 interface Rank {
   id: string;
   name: string;
-  image: string;
+  tier?: number;
+  emblem?: string;
+  image?: string;
   description?: string;
   requirements?: string;
+  bonus?: string;
 }
 
 export default function Ranks() {
@@ -109,9 +112,9 @@ export default function Ranks() {
                   className="h-full hover-elevate transition-all"
                 >
                   <div className="relative aspect-square overflow-hidden rounded-t-lg bg-muted/30">
-                    {rank.image ? (
+                    {rank.emblem || rank.image ? (
                       <img
-                        src={rank.image}
+                        src={rank.emblem || rank.image}
                         alt={rank.name}
                         className="w-full h-full object-contain p-4"
                         width="256"
@@ -135,6 +138,16 @@ export default function Ranks() {
                       <p className="text-sm text-muted-foreground text-center">
                         {rank.description}
                       </p>
+                    )}
+                    {rank.bonus && (
+                      <div className="pt-2 border-t bg-yellow-500/10 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
+                        <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase mb-1">
+                          🎁 Bonus
+                        </p>
+                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          {rank.bonus}
+                        </p>
+                      </div>
                     )}
                     {rank.requirements && (
                       <div className="pt-2 border-t">

@@ -39,6 +39,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Chat from "@/pages/Chat";
 import ResetPassword from "@/pages/ResetPassword";
+import { SEOHead } from "@/components/SEOHead";
 
 function Router() {
   return (
@@ -104,6 +105,23 @@ function App() {
       <TooltipProvider>
         <ThemeProvider>
           <LanguageProvider>
+            <SEOHead
+              onlySchema
+              schemaType="Organization"
+              schemaData={{
+                name: "CrossFire Wiki",
+                url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
+                logo: "/white-vafcoin.png",
+              }}
+            />
+            <SEOHead
+              onlySchema
+              schemaType="WebSite"
+              schemaData={{
+                name: "CrossFire Wiki",
+                url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
+              }}
+            />
             <Layout />
             <Toaster />
           </LanguageProvider>

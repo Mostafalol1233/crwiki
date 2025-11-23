@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Globe } from "lucide-react";
+import { ArrowLeft, Target, Globe, Languages } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -35,6 +36,7 @@ export default function NewsDetail() {
   const params = useParams();
   const newsId = params.id;
   const { t, language, toggleLanguage } = useLanguage();
+  const [showTranslation, setShowTranslation] = useState(false);
 
   const { data: newsItems = [], isLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
@@ -71,23 +73,28 @@ export default function NewsDetail() {
     { name: newsItem.title, url: newsUrl },
   ];
 
+  const hasTranslation = !!(newsItem.titleAr || newsItem.contentAr);
+
+  const selectedTitle = showTranslation && newsItem.titleAr ? newsItem.titleAr : newsItem.title;
+  const selectedContentRaw = showTranslation && newsItem.contentAr ? newsItem.contentAr : (newsItem.htmlContent && newsItem.htmlContent.trim().length > 0 ? newsItem.htmlContent : newsItem.content);
+
   return (
     <>
       <SEOHead
-        title={newsItem.seoTitle || `${newsItem.title} | Crossfire Wiki`}
-        description={newsItem.seoDescription || newsItem.content?.substring(0, 155) || ""}
+        title={newsItem.seoTitle || `${selectedTitle} | Crossfire Wiki`}
+        description={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         keywords={newsItem.seoKeywords || [newsItem.category]}
         canonicalUrl={newsItem.canonicalUrl || newsUrl}
         ogImage={newsItem.ogImage || newsItem.image}
         twitterImage={newsItem.twitterImage || newsItem.ogImage || newsItem.image}
-        ogTitle={newsItem.seoTitle || newsItem.title}
-        ogDescription={newsItem.seoDescription || newsItem.content?.substring(0, 155) || ""}
+        ogTitle={newsItem.seoTitle || selectedTitle}
+        ogDescription={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         ogType="article"
         ogUrl={newsUrl}
         schemaType={newsItem.schemaType || "NewsArticle"}
         schemaData={{
-          headline: newsItem.title,
-          description: newsItem.content?.substring(0, 200) || "",
+          headline: selectedTitle,
+          description: selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 200) || "",
           image: newsItem.image,
           author: {
             "@type": "Person",
@@ -121,6 +128,18 @@ export default function NewsDetail() {
             >
               <Globe className="h-5 w-5" />
             </Button>
+            {hasTranslation && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTranslation(!showTranslation)}
+                className="ml-2"
+                data-testid="button-toggle-translation-news"
+              >
+                <Languages className="mr-2 h-4 w-4" />
+                {showTranslation ? t("showOriginal") : t("showTranslation")}
+              </Button>
+            )}
           </div>
 
         <section className="mb-10">
@@ -130,7 +149,7 @@ export default function NewsDetail() {
             </Badge>
           </div>
           <h1 className="text-5xl md:text-6xl font-black leading-tight mb-4" data-testid="text-news-title">
-            {newsItem.title}
+            {selectedTitle}
           </h1>
           {newsItem.contentAr && (
             <p className="text-lg md:text-xl text-gray-700 mb-4 flex items-start gap-2">
@@ -157,13 +176,12 @@ export default function NewsDetail() {
         
 
         {(() => {
-          const html = newsItem.htmlContent && newsItem.htmlContent.trim().length > 0
-            ? newsItem.htmlContent
-            : newsItem.content;
+          const html = selectedContentRaw || "";
           const purified = (createDOMPurify as any)(window as any).sanitize(html);
           return (
             <article
               className="prose prose-lg dark:prose-invert max-w-none"
+              dir={showTranslation ? "rtl" : undefined}
               dangerouslySetInnerHTML={{ __html: purified }}
               data-testid="text-news-content"
             />
@@ -173,7 +191,7 @@ export default function NewsDetail() {
         <div className="mt-12">
           <Link href="/news">
             <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" data-testid="button-more-news">
-              {`إقرأ المزيد: ${newsItem.title}`}
+              {showTranslation && newsItem.titleAr ? `إقرأ المزيد: ${newsItem.titleAr}` : `إقرأ المزيد: ${newsItem.title}`}
             </Button>
           </Link>
         </div>

@@ -8,7 +8,7 @@ import { Link } from "wouter";
 import { useMemo } from "react";
 import PageSEO from "@/components/PageSEO";
 
-interface NewsItem {
+type NewsItemBase = {
   id: string;
   title: string;
   dateRange?: string;
@@ -19,8 +19,19 @@ interface NewsItem {
   summary?: string;
   author: string;
   featured?: boolean;
-  type?: 'news' | 'post';
-}
+};
+
+type NewsItemNews = NewsItemBase & {
+  type: 'news';
+  titleAr?: string;
+  contentAr?: string;
+};
+
+type NewsItemPost = NewsItemBase & {
+  type: 'post';
+};
+
+type NewsItem = NewsItemNews | NewsItemPost;
 
 export default function News() {
   const { t, language, toggleLanguage } = useLanguage();
@@ -126,7 +137,7 @@ export default function News() {
                           index === 0 ? "text-3xl md:text-4xl" : "text-xl md:text-2xl"
                         }`}
                       >
-                        {item.title}
+                        {language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title}
                       </h3>
                       <p className="text-sm text-white/80">{item.dateRange}</p>
                     </div>

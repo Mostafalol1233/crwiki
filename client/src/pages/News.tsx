@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/LanguageProvider";
+import { Globe } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo } from "react";
 import PageSEO from "@/components/PageSEO";
@@ -22,7 +23,7 @@ interface NewsItem {
 }
 
 export default function News() {
-  const { t } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
 
   const { data: newsItems = [], isLoading: newsLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
@@ -71,9 +72,22 @@ export default function News() {
       />
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
-          {t("newsAndUpdates")}
-        </h1>
+        <div className="flex items-center justify-between mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold">
+            {t("newsAndUpdates")}
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleLanguage}
+            title={language === "en" ? "العربية" : "English"}
+            aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"}
+            className="rounded-none"
+            data-testid="button-language-toggle-news"
+          >
+            <Globe className="h-5 w-5" />
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {allNews.map((item, index) => (

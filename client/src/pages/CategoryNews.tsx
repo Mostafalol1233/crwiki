@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, Globe } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
@@ -22,7 +23,7 @@ interface NewsItem {
 }
 
 export default function CategoryNews() {
-  const { t, language } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
 
   const { data: news = [], isLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
@@ -48,9 +49,22 @@ export default function CategoryNews() {
       <div className="min-h-screen bg-background py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {t("newsCategory") || "News"}
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              {t("newsCategory") || "News"}
+            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleLanguage}
+              title={language === "en" ? "العربية" : "English"}
+              aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"}
+              className="rounded-none"
+              data-testid="button-language-toggle-categorynews"
+            >
+              <Globe className="h-5 w-5" />
+            </Button>
+          </div>
           <p className="text-lg text-muted-foreground">
             Latest news and announcements from the CrossFire community
           </p>

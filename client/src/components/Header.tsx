@@ -365,15 +365,40 @@ export function Header() {
         {mobileMenuOpen && (
           <nav className="md:hidden border-t py-3 px-4 bg-card text-foreground">
             <div className="grid grid-cols-1 gap-1">
-              <Link href="/category/news" className="block px-3 py-2 text-sm uppercase italic font-bold">NEWS</Link>
-              <Link href="/news" className="block px-3 py-2 text-sm uppercase italic font-bold">UPDATES</Link>
-              <Link href="/events" className="block px-3 py-2 text-sm uppercase italic font-bold">EVENTS</Link>
-              <Link href="/mercenaries" className="block px-3 py-2 text-sm uppercase italic font-bold">RIVAL FACTIONS</Link>
-              <Link href="/modes" className="block px-3 py-2 text-sm uppercase italic font-bold">GAME</Link>
-              <Link href="/ranks" className="block px-3 py-2 text-sm uppercase italic font-bold">RANKING</Link>
-              <Link href="/community" className="block px-3 py-2 text-sm uppercase italic font-bold">COMMUNITY</Link>
-              <Link href="/sellers" className="block px-3 py-2 text-sm uppercase italic font-bold">SHOP</Link>
-              <Link href="/download" className="block px-3 py-2 text-sm uppercase italic font-extrabold bg-yellow-400 text-center">DOWNLOAD</Link>
+              {menuItems.map((item) => (
+                <div key={`mobile-${item.label}`} className="w-full">
+                  {item.dropdown ? (
+                    <>
+                      <button
+                        className="w-full text-left block px-3 py-2 text-sm uppercase italic font-bold"
+                        onClick={() => toggleMobileSubmenu(item.label)}
+                      >
+                        {item.label}
+                      </button>
+                      {mobileExpandedMenu === item.label && (
+                        <div className="pl-3">
+                          {item.dropdown.map((subitem) => (
+                            <Link
+                              key={`mobile-${subitem.path}`}
+                              href={subitem.path}
+                              className="block px-3 py-2 text-sm italic text-muted-foreground hover:text-foreground"
+                            >
+                              {subitem.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      href={item.path || '#'}
+                      className="block px-3 py-2 text-sm uppercase italic font-bold"
+                    >
+                      {item.label}
+                    </Link>
+                  )}
+                </div>
+              ))}
             </div>
           </nav>
         )}

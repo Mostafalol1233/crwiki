@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, ChevronLeft, ChevronRight } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 interface Mercenary {
@@ -20,6 +20,7 @@ export default function Mercenaries() {
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const lastSoundRef = useRef<{ [key: string]: string | null }>({});
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
@@ -63,6 +64,12 @@ export default function Mercenaries() {
     };
   };
 
+  const scrollBy = (dx: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dx, behavior: "smooth" });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -89,8 +96,11 @@ export default function Mercenaries() {
           </p>
         </div>
 
-        <div className="relative overflow-visible">
-          <div className="flex justify-center gap-0">
+        <div className="relative">
+          <div
+            ref={scrollerRef}
+            className="flex justify-start gap-0 overflow-x-auto scroll-smooth"
+          >
             {mercenaries.map((merc) => (
               <div
                 key={merc.id}
@@ -185,6 +195,30 @@ export default function Mercenaries() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="pointer-events-none">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 pl-2 pr-4 pointer-events-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-black/40 hover:bg-black/60 text-white"
+                onClick={() => scrollBy(-400)}
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20 pr-2 pl-4 pointer-events-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-black/40 hover:bg-black/60 text-white"
+                onClick={() => scrollBy(400)}
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 

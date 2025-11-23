@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target } from "lucide-react";
+import { ArrowLeft, Target, Globe } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -34,7 +34,7 @@ interface NewsItem {
 export default function NewsDetail() {
   const params = useParams();
   const newsId = params.id;
-  const { t } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
 
   const { data: newsItems = [], isLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
@@ -100,16 +100,28 @@ export default function NewsDetail() {
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
           <Breadcrumbs items={breadcrumbs} />
-          <Link href="/news">
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/news">
+              <Button
+                variant="ghost"
+                data-testid="button-back-to-news"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t("backToNews")}
+              </Button>
+            </Link>
             <Button
               variant="ghost"
-              className="mb-6"
-              data-testid="button-back-to-news"
+              size="icon"
+              onClick={toggleLanguage}
+              title={language === "en" ? "العربية" : "English"}
+              aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"}
+              className="rounded-none"
+              data-testid="button-language-toggle-newsdetail"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("backToNews")}
+              <Globe className="h-5 w-5" />
             </Button>
-          </Link>
+          </div>
 
         <section className="mb-10">
           <div className="mb-3">

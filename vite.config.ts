@@ -39,12 +39,13 @@ export default defineConfig({
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
           query: ['@tanstack/react-query'],
           utils: ['clsx', 'tailwind-merge', 'date-fns'],
+          icons: ['lucide-react'],
         },
       },
     },
     // Increase chunk size warning limit to accommodate larger bundles
     chunkSizeWarningLimit: 1000,
-    // Enable source maps for production debugging
+    // Disable source maps for production to reduce bundle size
     sourcemap: false,
     // Minify for better performance
     minify: 'terser',
@@ -52,8 +53,14 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
+        passes: 2,
       },
+      mangle: true,
     },
+    // Enable CSS minification
+    cssMinify: true,
+    // Report compressed size
+    reportCompressedSize: true,
   },
   server: {
     host: '0.0.0.0',

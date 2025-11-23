@@ -1341,6 +1341,12 @@ export default function Admin() {
                     <span className="hidden sm:inline">Password Reset Codes</span>
                   </TabsTrigger>
                 )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="chat-settings" data-testid="tab-chat-settings">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Chat Settings</span>
+                  </TabsTrigger>
+                )}
             </TabsList>
           </div>
 
@@ -4458,6 +4464,164 @@ export default function Admin() {
                 </Table>
               </CardContent>
             </Card>
+            </TabsContent>
+            )}
+
+            {isSuperAdmin && (
+            <TabsContent value="chat-settings" className="space-y-6" data-testid="content-chat-settings">
+              <div>
+                <h2 className="text-2xl font-semibold mb-6">Chat Settings & Management</h2>
+                
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Chat Registration Control</CardTitle>
+                    <CardDescription>Control whether users can register for the chat</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">Registration Status</p>
+                        <p className="text-sm text-muted-foreground">
+                          {registrationClosed ? "Chat registration is CLOSED" : "Chat registration is OPEN"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!registrationClosed}
+                        onCheckedChange={(checked) => {
+                          setRegistrationClosed(!checked);
+                          apiRequest("/api/admin/chat/registration", "POST", { 
+                            enabled: checked 
+                          }).then(() => {
+                            toast({ 
+                              title: checked ? "Registration Opened" : "Registration Closed",
+                              description: checked ? "Users can now register for chat" : "Users cannot register for chat"
+                            });
+                          }).catch((err) => {
+                            toast({ 
+                              title: "Error", 
+                              description: err.message,
+                              variant: "destructive"
+                            });
+                          });
+                        }}
+                        data-testid="switch-chat-registration"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Registered Chat Users</CardTitle>
+                    <CardDescription>Manage chat user registrations and verification status</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {usersLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : users.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No chat users registered yet</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Username</TableHead>
+                              <TableHead>Email</TableHead>
+                              <TableHead>Registration Date</TableHead>
+                              <TableHead className="text-center">Verified</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {users.map((user: any) => (
+                              <TableRow key={user.id} data-testid={`user-row-${user.id}`}>
+                                <TableCell className="font-medium">{user.username || user.name || "Unknown"}</TableCell>
+                                <TableCell className="text-sm">{user.email || "No email"}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {user.verified ? (
+                                    <Badge variant="default" className="bg-green-600">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Verified
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-yellow-600">
+                                      Pending
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                  {!user.verified && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        apiRequest(`/api/admin/chat/users/${user.id}/verify`, "POST", {})
+                                          .then(() => {
+                                            setUsers(users.map((u: any) => 
+                                              u.id === user.id ? { ...u, verified: true } : u
+                                            ));
+                                            toast({ title: "User verified" });
+                                          })
+                                          .catch((err) => {
+                                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                                          });
+                                      }}
+                                      data-testid={`button-verify-${user.id}`}
+                                    >
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Verify
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      setDeleteConfirmId(user.id);
+                                      setDeleteType("chat user");
+                                    }}
+                                    data-testid={`button-kick-${user.id}`}
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Kick
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                    <Button
+                      onClick={() => {
+                        setUsersLoading(true);
+                        apiRequest("/api/admin/chat/users", "GET")
+                          .then((data: any) => {
+                            setUsers(data || []);
+                          })
+                          .catch((err) => {
+                            toast({ title: "Error loading users", description: err.message, variant: "destructive" });
+                          })
+                          .finally(() => {
+                            setUsersLoading(false);
+                          });
+                      }}
+                      className="mt-4"
+                      variant="outline"
+                      data-testid="button-refresh-users"
+                    >
+                      <RotateCw className="h-4 w-4 mr-2" />
+                      Refresh User List
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
             )}
             </div>

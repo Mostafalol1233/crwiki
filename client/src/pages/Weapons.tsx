@@ -267,25 +267,6 @@ export default function Weapons() {
                           </div>
                         </div>
                       )}
-
-                      {weapon.stats && Object.keys(weapon.stats).length > 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold mb-3">Weapon Stats</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            {Object.entries(weapon.stats).map(([key, value]) => (
-                              <div
-                                key={key}
-                                className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
-                              >
-                                <span className="font-medium capitalize">
-                                  {key.replace(/([A-Z])/g, ' $1').trim()}:
-                                </span>
-                                <span className="text-lg font-bold">{String(value)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </DialogContent>
                 </Dialog>

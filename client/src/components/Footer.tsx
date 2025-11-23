@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { SiX, SiYoutube, SiWhatsapp } from "react-icons/si";
-import { Mail, Zap, Users, Gamepad2, Award, BookOpen } from "lucide-react";
+import { Mail, Gamepad2, BookOpen } from "lucide-react";
 
 export function Footer() {
   const mainLinks = [
@@ -26,36 +26,8 @@ export function Footer() {
     { label: "Contact", path: "/contact" },
   ];
 
-  const features = [
-    { icon: Zap, label: "Instant Access", desc: "Real-time game data updates" },
-    { icon: Users, label: "Community", desc: "Join thousands of players" },
-    { icon: Award, label: "Expert Guides", desc: "From experienced players" },
-  ];
-
   return (
     <footer className="relative border-t bg-gradient-to-b from-background to-muted/30">
-      {/* Top CTA Section */}
-      <div className="border-b bg-gradient-to-r from-primary/10 to-destructive/10">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div key={feature.label} className="flex items-start gap-4">
-                  <div className="rounded-lg bg-primary/20 p-3 mt-1">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 mb-16">
@@ -166,7 +138,7 @@ export function Footer() {
           {/* Support Links */}
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
+              <Mail className="h-4 w-4 text-primary" />
               Support
             </h4>
             <ul className="space-y-3">

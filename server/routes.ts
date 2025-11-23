@@ -1500,6 +1500,54 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
+  // Chat Admin Routes
+  app.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const chatUsers = await storage.getAllChatUsers?.() || [];
+      res.json(chatUsers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/chat/registration", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { enabled } = req.body;
+      const settings = await storage.getSiteSettings?.() || {};
+      const updated = { ...settings, chatRegistrationEnabled: enabled };
+      await storage.updateSiteSettings?.(updated);
+      res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/chat/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const chatUsers = await storage.getAllChatUsers?.() || [];
+      const user = chatUsers.find((u: any) => u.id === id);
+      if (!user) {
+        return res.status(404).json({ error: "Chat user not found" });
+      }
+      const updated = { ...user, verified: true };
+      await storage.updateChatUser?.(id, updated);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/chat/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteChatUser?.(id);
+      res.json({ success: true, message: "Chat user removed" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Ticket routes
   app.get("/api/tickets", requireAuth, async (req, res) => {
     try {

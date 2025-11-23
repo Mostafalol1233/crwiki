@@ -184,6 +184,7 @@ export default function Admin() {
   const canVerification = isSuperAdmin || !!adminPerms["settings:manage"];
   const canAdmins = isSuperAdmin;
   const canUsers = isSuperAdmin;
+  const canChat = isSuperAdmin;
   const canSubscribers = isSuperAdmin || !!adminPerms["subscribers:manage"];
   const canScraper = isSuperAdmin || !!adminPerms["events:scrape"] || !!adminPerms["news:scrape"];
   const canMercenaries = isSuperAdmin || !!adminPerms["mercenaries:manage"];
@@ -211,6 +212,7 @@ export default function Admin() {
       ...(canVerification ? ["verification"] : []),
       ...(canAdmins ? ["admins"] : []),
       ...(canUsers ? ["users"] : []),
+      ...(canChat ? ["chat-settings"] : []),
       ...(canSubscribers ? ["subscribers"] : []),
       ...(canScraper ? ["scraper"] : []),
       ...(canMercenaries ? ["mercenaries"] : []),
@@ -232,6 +234,7 @@ export default function Admin() {
     canTranslations,
     canVerification,
     canAdmins,
+    canChat,
     canSubscribers,
     canScraper,
     canMercenaries,
@@ -241,7 +244,7 @@ export default function Admin() {
 
   // Users management
   useEffect(() => {
-    if (!canUsers) return;
+    if (!canUsers && !canChat) return;
     const fetchUsers = async () => {
       try {
         setUsersLoading(true);
@@ -256,7 +259,7 @@ export default function Admin() {
       }
     };
     fetchUsers();
-  }, [canUsers]);
+  }, [canUsers, canChat]);
 
   async function generatePhoneCode(id: string) {
     const res = await apiRequest(`/api/admin/users/${id}/generate-phone-code`, "POST", {});

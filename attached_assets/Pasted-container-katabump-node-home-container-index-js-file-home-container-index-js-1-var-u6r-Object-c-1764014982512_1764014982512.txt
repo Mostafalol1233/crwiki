@@ -1,0 +1,17 @@
+container@katabump~ node /home/container/index.js
+file:///home/container/index.js:1
+var u6r=Object.create;var Fee=Object.defineProperty;var l6r=Object.getOwnPropertyDescriptor;var c6r=Object.getOwnPropertyNames;var d6r=Object.getPrototypeOf,h6r=Object.prototype.hasOwnProperty;var O=(e=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(e,{get:(t,r)=>(typeof require<"u"?require:t)[r]}):e)(function(e){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+e+'" is not supported')});var jc=(e,t)=>()=>(e&&(t=e(e=0)),t);var m=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),Rh=(e,t)=>{for(var r in t)Fee(e,r,{get:t[r],enumerable:!0})},xje=(e,t,r,n)=>{if(t&&typeof t=="object"||typeof t=="function")for(let s of c6r(t))!h6r.call(e,s)&&s!==r&&Fee(e,s,{get:()=>t[s],enumerable:!(n=l6r(t,s))||n.enumerable});return e};var na=(e,t,r)=>(r=e!=null?u6r(d6r(e)):{},xje(t||!e||!e.__esModule?Fee(r,"default",{value:e,enumerable:!0}):r,e)),Ije=e=>xje(Fee({},"__esModule",{value:!0}),e);var Y4=m((C5i,Nje)=>{var f6r=O("path").relative;Nje.exports=y6r;var p6r=process.cwd();function Bje(e,t){for(var r=e.split(/[ ,]+/),n=String(t).toLowerCase(),s=0;s<r.length;s++){var i=r[s];if(i&&(i==="*"||i.toLowerCase()===n))return!0}return!1}function m6r(e,t,r){var n=Object.getOwnPropertyDescriptor(e,t),s=n.value;return n.get=function(){return s},n.writable&&(n.set=function(o){return s=o}),delete n.value,delete n.writable,Object.defineProperty(e,t,n),n}function g6r(e){for(var t="",r=0;r<e;r++)t+=", arg"+r;return t.substr(2)}function A6r(e){var t=this.name+": "+this.namespace;this.message&&(t+=" deprecated "+this.message);for(var r=0;r<e.length;r++)t+=`
+                                                                                                                                                                                                                                                                                                                                                                                                   ^
+Error: Dynamic require of "path" is not supported
+    at file:///home/container/index.js:1:388
+    at file:///home/container/index.js:1:970
+    at file:///home/container/index.js:1:500
+    at file:///home/container/index.js:25:33185
+    at file:///home/container/index.js:1:500
+    at file:///home/container/index.js:68:593
+    at file:///home/container/index.js:1:500
+    at file:///home/container/index.js:68:1704
+    at file:///home/container/index.js:1:500
+    at file:///home/container/index.js:390:109819
+Node.js v22.21.1
+container@katabump~ Server marked as offline..

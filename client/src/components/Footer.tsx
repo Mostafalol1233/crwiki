@@ -34,10 +34,12 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="rounded-lg bg-gradient-to-br from-primary to-destructive p-2">
-                  <Gamepad2 className="h-5 w-5 text-white" />
-                </div>
+              <div className="flex items-center gap-3 mb-2">
+                <img 
+                  src="/crossfire-logo.png" 
+                  alt="CrossFire Logo" 
+                  className="h-12 w-12 rounded-lg object-cover shadow-lg"
+                />
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">
                   CrossFire Wiki
                 </h3>

@@ -162,7 +162,44 @@ const modesData = [
   { name: "Christmas Mode 3", image: "https://files.catbox.moe/mew1fr.jpeg" },
   { name: "Christmas Mode 4", image: "https://files.catbox.moe/e6le8o.jpeg" },
   { name: "Christmas Mode 5", image: "https://files.catbox.moe/na316m.jpeg" },
-  { name: "Free For All Farm", image: "https://files.catbox.moe/hb85yf.jpeg" },
+  { name: "Free For /**
+ * seed-from-urls.js
+ * Seeds weapons, modes, ranks, mercenaries, and EVENTS directly into MongoDB
+ * Scrapes announcements from forum.z8games.com and creates events
+ * Uses actual full URLs - NOT template variables
+ * No API required - writes directly to MongoDB
+ */
+import "dotenv/config";
+import mongoose from "mongoose";
+import { Schema } from "mongoose";
+import axios from "axios";
+import * as cheerio from "cheerio";
+
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crossfire-wiki";
+const FORUM_BASE_URL = "https://forum.z8games.com";
+const ANNOUNCEMENTS_URL = `${FORUM_BASE_URL}/categories/crossfire-announcements`;
+
+// MERCENARIES - 10 unique mercenary characters with CATBOX URLS AND AUDIO
+const mercenariesData = [
+  {
+    id: "1",
+    name: "Wolf",
+    image: "/attached_assets/merc-wolf.jpg",
+    role: "Assault",
+    description: "Aggressive assault specialist with high damage output and tactical expertise in close combat situations.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: ["/merc-mp3/wolf-line1.mp3", "/merc-mp3/wolf-line2.mp3", "/merc-mp3/wolf-line3.mp3"],
+    stats: { health: 85, speed: 70, attack: 90, defense: 75 }
+  },
+  {
+    id: "2",
+    name: "Vipers",
+    image: "/attached_assets/merc-vipers.jpg",
+    role: "Sniper",
+    description: "Precision sniper expert capable of eliminating targets from extreme distances with deadly accuracy.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: ["/merc-mp3/vipers-line1.mp3", "/merc-mp3/vipers-line2.mp3"],
+ Farm", image: "https://files.catbox.moe/hb85yf.jpeg" },
   { name: "Ghost Mode Laboratory", image: "https://files.catbox.moe/emnzo0.jpeg" },
   { name: "Dance Party", image: "https://files.catbox.moe/wuo5c0.jpeg" },
   { name: "Sky Building", image: "https://files.catbox.moe/c6r7in.jpeg" },

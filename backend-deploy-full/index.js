@@ -195,6 +195,8 @@ var RankSchema = new Schema({
     name: { type: String, required: true },
     tier: { type: Number, default: 0 },
     emblem: { type: String, default: "" },
+    expRequired: { type: Number, default: 0 },
+    bonus: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
 });
 var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
@@ -2662,18 +2664,43 @@ app.use((req, res, next) => {
             try {
                 // Wait a bit for server to fully start
                 await new Promise((resolve) => setTimeout(resolve, 1000));
-                log("🌱 AUTO_SEED enabled: running seed-from-urls...");
-                // Import and run seed script
-                const seedModule = await import("./seed-from-urls.js");
-                const seedDatabase = seedModule.default;
-                if (seedDatabase && typeof seedDatabase === "function") {
-                    await seedDatabase({ closeConnection: false });
-                    log("✅ Seeding completed");
-                } else {
-                    log(
-                        "⚠️ seed-from-urls.js default export is not a function",
-                    );
-                }
+                log("🌱 AUTO_SEED enabled: seeding ranks...");
+                
+                // Clear existing ranks
+                await RankModel.deleteMany({});
+                
+                // Seed ranks data
+                const ranksData = [
+                  { name: "Brigadier General 1", tier: 1, emblem: "/attached_assets/image_1764015996274.png", expRequired: 7578037, bonus: "" },
+                  { name: "Brigadier General 2", tier: 2, emblem: "/attached_assets/image_1764016002660.png", expRequired: 8026912, bonus: "AK-47-K-Yellow Fractal 60 days" },
+                  { name: "Brigadier General 3", tier: 3, emblem: "/attached_assets/image_1764016002882.png", expRequired: 8481772, bonus: "" },
+                  { name: "Brigadier General 4", tier: 4, emblem: "/attached_assets/image_1764016003060.png", expRequired: 8964562, bonus: "" },
+                  { name: "Brigadier General 5", tier: 5, emblem: "/attached_assets/image_1764016003240.png", expRequired: 9475852, bonus: "" },
+                  { name: "Brigadier General 6", tier: 6, emblem: "/attached_assets/image_1764016006540.png", expRequired: 10016212, bonus: "30 x 7th Anniversary Crates" },
+                  { name: "Major General 1", tier: 7, emblem: "/attached_assets/image_1764016008594.png", expRequired: 10586212, bonus: "" },
+                  { name: "Major General 2", tier: 8, emblem: "/attached_assets/image_1764016010966.png", expRequired: 11186422, bonus: "G-Yellow Crystal perm" },
+                  { name: "Major General 3", tier: 9, emblem: "/attached_assets/image_1764016016004.png", expRequired: 11817412, bonus: "" },
+                  { name: "Major General 4", tier: 10, emblem: "/attached_assets/image_1764016017106.png", expRequired: 12479752, bonus: "" },
+                  { name: "Major General 5", tier: 11, emblem: "/attached_assets/image_1764015996274.png", expRequired: 13174012, bonus: "10 Color Blaze Crates" },
+                  { name: "Major General 6", tier: 12, emblem: "/attached_assets/image_1764016002660.png", expRequired: 13900762, bonus: "Slaughter Ticket Box" },
+                  { name: "Lieutenant General 1", tier: 13, emblem: "/attached_assets/image_1764016002882.png", expRequired: 14660572, bonus: "" },
+                  { name: "Lieutenant General 2", tier: 14, emblem: "/attached_assets/image_1764016003060.png", expRequired: 15454012, bonus: "" },
+                  { name: "Lieutenant General 3", tier: 15, emblem: "/attached_assets/image_1764016003240.png", expRequired: 16281652, bonus: "M4A1-S-Yellow Fractal perm" },
+                  { name: "Lieutenant General 4", tier: 16, emblem: "/attached_assets/image_1764016006540.png", expRequired: 17144062, bonus: "" },
+                  { name: "Lieutenant General 5", tier: 17, emblem: "/attached_assets/image_1764016008594.png", expRequired: 18041812, bonus: "" },
+                  { name: "Lieutenant General 6", tier: 18, emblem: "/attached_assets/image_1764016010966.png", expRequired: 18975472, bonus: "RPK-Infernal Dragon 30 days" },
+                  { name: "General 1", tier: 19, emblem: "/attached_assets/image_1764016016004.png", expRequired: 19945612, bonus: "" },
+                  { name: "General 2", tier: 20, emblem: "/attached_assets/image_1764016017106.png", expRequired: 20952802, bonus: "AK-47-K-Yellow Fractal perm" },
+                  { name: "General 3", tier: 21, emblem: "/attached_assets/image_1764015996274.png", expRequired: 21997612, bonus: "" },
+                  { name: "General 4", tier: 22, emblem: "/attached_assets/image_1764016002660.png", expRequired: 23080612, bonus: "AWM-Infernal Dragon 30 days" },
+                  { name: "General 5", tier: 23, emblem: "/attached_assets/image_1764016002882.png", expRequired: 24202372, bonus: "" },
+                  { name: "General 6", tier: 24, emblem: "/attached_assets/image_1764016003060.png", expRequired: 25363462, bonus: "AK-47 Fury 30 days" },
+                  { name: "Marshall", tier: 25, emblem: "/attached_assets/image_1764016003240.png", expRequired: 26564452, bonus: "" },
+                  { name: "Grand Marshall", tier: 26, emblem: "/attached_assets/image_1764016006540.png", expRequired: 100000000, bonus: "30 Free Crate Tickets" }
+                ];
+                
+                await RankModel.insertMany(ranksData);
+                log("✅ Ranks seeded successfully");
             } catch (err) {
                 log(`⚠️ Auto-seeding error: ${err.message}`);
             }

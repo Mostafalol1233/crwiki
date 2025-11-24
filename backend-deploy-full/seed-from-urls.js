@@ -20,7 +20,7 @@ const mercenariesData = [
   {
     id: "1",
     name: "Wolf",
-    image: "https://files.catbox.moe/6npa73.jpeg",
+    image: "/attached_assets/merc-wolf.jpg",
     role: "Assault",
     description: "Aggressive assault specialist with high damage output and tactical expertise in close combat situations.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -30,7 +30,7 @@ const mercenariesData = [
   {
     id: "2",
     name: "Vipers",
-    image: "https://files.catbox.moe/4il6hi.jpeg",
+    image: "/attached_assets/merc-vipers.jpg",
     role: "Sniper",
     description: "Precision sniper expert capable of eliminating targets from extreme distances with deadly accuracy.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -40,7 +40,7 @@ const mercenariesData = [
   {
     id: "3",
     name: "Sisterhood",
-    image: "https://files.catbox.moe/3o58nb.jpeg",
+    image: "/attached_assets/merc-sisterhood.jpg",
     role: "Medic",
     description: "Support and healing specialist ensuring team survival through medical expertise and tactical support.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -50,7 +50,7 @@ const mercenariesData = [
   {
     id: "4",
     name: "Black Mamba",
-    image: "https://files.catbox.moe/r26ox6.jpeg",
+    image: "/attached_assets/merc-blackmamba.jpg",
     role: "Scout",
     description: "Fast reconnaissance scout with exceptional mobility and intelligence gathering capabilities.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -60,7 +60,7 @@ const mercenariesData = [
   {
     id: "5",
     name: "Arch Honorary",
-    image: "https://files.catbox.moe/ctwnqz.jpeg",
+    image: "/attached_assets/merc-archhonorary.jpg",
     role: "Guardian",
     description: "Protective guardian role specializing in defensive positions and area denial tactics.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -70,7 +70,7 @@ const mercenariesData = [
   {
     id: "6",
     name: "Desperado",
-    image: "https://files.catbox.moe/hh7h5u.jpeg",
+    image: "/attached_assets/merc-desperado.jpg",
     role: "Engineer",
     description: "Technical engineer specialist skilled in equipment deployment and tactical modifications.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -80,7 +80,7 @@ const mercenariesData = [
   {
     id: "7",
     name: "Ronin",
-    image: "https://files.catbox.moe/eck3jc.jpeg",
+    image: "/attached_assets/merc-ronin.jpg",
     role: "Samurai",
     description: "Melee combat warrior with exceptional close-quarters combat skills and honor-bound tactics.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -90,7 +90,7 @@ const mercenariesData = [
   {
     id: "8",
     name: "Dean",
-    image: "https://files.catbox.moe/t78mvu.jpeg",
+    image: "/attached_assets/merc-dean.jpg",
     role: "Specialist",
     description: "Specialized tactics expert with versatile skills adapted to any combat scenario.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -100,7 +100,7 @@ const mercenariesData = [
   {
     id: "9",
     name: "Thoth",
-    image: "https://files.catbox.moe/g4zfzn.jpeg",
+    image: "/attached_assets/merc-thoth.jpg",
     role: "Guardian",
     description: "Protective guardian with ancient wisdom and defensive mastery in battlefield control.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -110,7 +110,7 @@ const mercenariesData = [
   {
     id: "10",
     name: "SFG",
-    image: "https://files.catbox.moe/3bba2g.jpeg",
+    image: "/attached_assets/merc-sfg.jpg",
     role: "Special Forces",
     description: "Special forces operative with elite training and multi-role combat capabilities.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
@@ -119,36 +119,36 @@ const mercenariesData = [
   },
 ];
 
-// WEAPONS - 28 with CATBOX URLS + STATS (damage, recoil, etc)
+// WEAPONS - 28 with real names and stats
 const weaponsData = [
-  { name: "Weapon 1", description: "C4410", category: "Weapon", image: "https://files.catbox.moe/oshs66.png", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
-  { name: "Weapon 2", description: "C4742", category: "Weapon", image: "https://files.catbox.moe/y5xyvh.png", damage: 48, recoil: 14, rateOfFire: 720, accuracy: 75 },
-  { name: "Weapon 3", description: "C4936", category: "Weapon", image: "https://files.catbox.moe/dikemy.png", damage: 42, recoil: 10, rateOfFire: 800, accuracy: 80 },
-  { name: "Weapon 4", description: "C4953", category: "Weapon", image: "https://files.catbox.moe/m7ii5b.png", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
-  { name: "Weapon 5", description: "C5154", category: "Weapon", image: "https://files.catbox.moe/2hx3cf.png", damage: 40, recoil: 8, rateOfFire: 850, accuracy: 82 },
-  { name: "Weapon 6", description: "C5155", category: "Weapon", image: "https://files.catbox.moe/5r592p.png", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 76 },
-  { name: "Weapon 7", description: "C5156", category: "Weapon", image: "https://files.catbox.moe/obytvu.png", damage: 44, recoil: 13, rateOfFire: 780, accuracy: 79 },
-  { name: "Weapon 8", description: "C5157", category: "Weapon", image: "https://files.catbox.moe/0dp3c2.png", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
-  { name: "Weapon 9", description: "C5303", category: "Weapon", image: "https://files.catbox.moe/7mo6zg.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
-  { name: "Weapon 10", description: "C5362", category: "Weapon", image: "https://files.catbox.moe/5wvixf.png", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
-  { name: "Weapon 11", description: "C5390", category: "Weapon", image: "https://files.catbox.moe/nd0e8l.png", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
-  { name: "Weapon 12", description: "C5473", category: "Weapon", image: "https://files.catbox.moe/z4auy7.png", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
-  { name: "Weapon 13", description: "C6411", category: "Weapon", image: "https://files.catbox.moe/8qkl0a.png", damage: 48, recoil: 13, rateOfFire: 740, accuracy: 76 },
-  { name: "Weapon 14", description: "C6547", category: "Weapon", image: "https://files.catbox.moe/4o20pn.png", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 79 },
-  { name: "Weapon 15", description: "C6777", category: "Weapon", image: "https://files.catbox.moe/bpa85i.png", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
-  { name: "Weapon 16", description: "C7325", category: "Weapon", image: "https://files.catbox.moe/mx62ji.png", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
-  { name: "Weapon 17", description: "C7411", category: "Weapon", image: "https://files.catbox.moe/g1ng1o.png", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
-  { name: "Weapon 18", description: "C8017", category: "Weapon", image: "https://files.catbox.moe/t02svh.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
-  { name: "Weapon 19", description: "C8020", category: "Weapon", image: "https://files.catbox.moe/vf910w.png", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
-  { name: "Weapon 20", description: "C8053", category: "Weapon", image: "https://files.catbox.moe/jfuae1.png", damage: 45, recoil: 11, rateOfFire: 770, accuracy: 78 },
-  { name: "Weapon 21", description: "C8663", category: "Weapon", image: "https://files.catbox.moe/avqjsd.png", damage: 48, recoil: 13, rateOfFire: 750, accuracy: 76 },
-  { name: "Weapon 22", description: "C8665", category: "Weapon", image: "https://files.catbox.moe/9yfkfq.png", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
-  { name: "Weapon 23", description: "C9288", category: "Weapon", image: "https://files.catbox.moe/irpla6.png", damage: 46, recoil: 12, rateOfFire: 760, accuracy: 79 },
-  { name: "Weapon 24", description: "C9482", category: "Weapon", image: "https://files.catbox.moe/outzzz.png", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
-  { name: "Weapon 25", description: "cff-bg-social", category: "Weapon", image: "https://files.catbox.moe/2catwt.jpeg", damage: 47, recoil: 11, rateOfFire: 770, accuracy: 77 },
-  { name: "Weapon 26", description: "cfw-weaponbg-vip", category: "Weapon", image: "https://files.catbox.moe/f3esjq.png", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
-  { name: "Weapon 27", description: "csp-bg-header2", category: "Weapon", image: "https://files.catbox.moe/j7z531.jpeg", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
-  { name: "Weapon 28", description: "placeholder-weapons", category: "Weapon", image: "https://files.catbox.moe/xb2ftb.png", damage: 42, recoil: 8, rateOfFire: 850, accuracy: 82 },
+  { name: "AK-47", description: "Assault Rifle", category: "Assault Rifle", image: "/attached_assets/feature-weap.jpg", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
+  { name: "M16A4", description: "Assault Rifle", category: "Assault Rifle", image: "/attached_assets/feature-weap.jpg", damage: 48, recoil: 14, rateOfFire: 720, accuracy: 75 },
+  { name: "M4A1", description: "Carbine", category: "Assault Rifle", image: "/attached_assets/feature-weap.jpg", damage: 42, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "G36", description: "Assault Rifle", category: "Assault Rifle", image: "/attached_assets/feature-weap.jpg", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
+  { name: "M249", description: "Light Machine Gun", category: "Machine Gun", image: "/attached_assets/feature-weap.jpg", damage: 40, recoil: 8, rateOfFire: 850, accuracy: 82 },
+  { name: "MP5", description: "Submachine Gun", category: "SMG", image: "/attached_assets/feature-weap.jpg", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 76 },
+  { name: "UMP45", description: "Submachine Gun", category: "SMG", image: "/attached_assets/feature-weap.jpg", damage: 44, recoil: 13, rateOfFire: 780, accuracy: 79 },
+  { name: "P90", description: "Submachine Gun", category: "SMG", image: "/attached_assets/feature-weap.jpg", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
+  { name: "AWM", description: "Sniper Rifle", category: "Sniper", image: "/attached_assets/feature-weap.jpg", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
+  { name: "DSR-50", description: "Sniper Rifle", category: "Sniper", image: "/attached_assets/feature-weap.jpg", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
+  { name: "M24", description: "Sniper Rifle", category: "Sniper", image: "/attached_assets/feature-weap.jpg", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
+  { name: "Dragunov", description: "Marksman Rifle", category: "Sniper", image: "/attached_assets/feature-weap.jpg", damage: 45, recoil: 12, rateOfFire: 750, accuracy: 78 },
+  { name: "M870", description: "Shotgun", category: "Shotgun", image: "/attached_assets/feature-weap.jpg", damage: 48, recoil: 13, rateOfFire: 740, accuracy: 76 },
+  { name: "SPAS-12", description: "Combat Shotgun", category: "Shotgun", image: "/attached_assets/feature-weap.jpg", damage: 46, recoil: 11, rateOfFire: 760, accuracy: 79 },
+  { name: "Winchester", description: "Pump Shotgun", category: "Shotgun", image: "/attached_assets/feature-weap.jpg", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "Deagle", description: "Hand Cannon", category: "Pistol", image: "/attached_assets/feature-weap.jpg", damage: 50, recoil: 15, rateOfFire: 700, accuracy: 72 },
+  { name: "Glock", description: "Semi-Auto Pistol", category: "Pistol", image: "/attached_assets/feature-weap.jpg", damage: 47, recoil: 12, rateOfFire: 740, accuracy: 77 },
+  { name: "M9", description: "Service Pistol", category: "Pistol", image: "/attached_assets/feature-weap.jpg", damage: 49, recoil: 14, rateOfFire: 730, accuracy: 74 },
+  { name: "Knife", description: "Melee Weapon", category: "Melee", image: "/attached_assets/feature-weap.jpg", damage: 43, recoil: 9, rateOfFire: 820, accuracy: 81 },
+  { name: "Hammer", description: "Melee Weapon", category: "Melee", image: "/attached_assets/feature-weap.jpg", damage: 45, recoil: 11, rateOfFire: 770, accuracy: 78 },
+  { name: "Sword", description: "Melee Weapon", category: "Melee", image: "/attached_assets/feature-weap.jpg", damage: 48, recoil: 13, rateOfFire: 750, accuracy: 76 },
+  { name: "Grenade", description: "Explosive", category: "Grenade", image: "/attached_assets/feature-weap.jpg", damage: 51, recoil: 16, rateOfFire: 680, accuracy: 70 },
+  { name: "C4", description: "Explosive", category: "Grenade", image: "/attached_assets/feature-weap.jpg", damage: 46, recoil: 12, rateOfFire: 760, accuracy: 79 },
+  { name: "Molotov", description: "Incendiary", category: "Grenade", image: "/attached_assets/feature-weap.jpg", damage: 44, recoil: 10, rateOfFire: 800, accuracy: 80 },
+  { name: "Radar", description: "Support Item", category: "Support", image: "/attached_assets/feature-weap.jpg", damage: 0, recoil: 0, rateOfFire: 0, accuracy: 100 },
+  { name: "Armor", description: "Protection Item", category: "Support", image: "/attached_assets/feature-weap.jpg", damage: 0, recoil: 0, rateOfFire: 0, accuracy: 100 },
+  { name: "Airstrike", description: "Tactical Support", category: "Support", image: "/attached_assets/feature-weap.jpg", damage: 55, recoil: 20, rateOfFire: 600, accuracy: 65 },
+  { name: "Helicopter", description: "Air Support", category: "Support", image: "/attached_assets/feature-weap.jpg", damage: 60, recoil: 25, rateOfFire: 500, accuracy: 60 },
 ];
 
 // MODES - Mix of Catbox (13) and full GitHub URLs
@@ -345,16 +345,21 @@ async function scrapeRanks() {
     return ranks.slice(0, 50);
   } catch (err) {
     console.error("❌ Failed to scrape ranks:", err.message);
-    // Fallback to local assets if scraping fails: generate a small default set
-    const fallback = Array.from({ length: 12 }, (_, i) => {
-      const idx = i + 1;
-      return {
-        name: `Rank ${idx}`,
-        image: `/assets/ranks/rank_${idx}.jpg.jpeg`,
-        description: "",
-        requirements: "",
-      };
-    });
+    // Fallback to local assets - use attached_assets images
+    const fallback = [
+      { name: "Recruit", emblem: "/attached_assets/crossfire_images/01fdc72b-6213-43d3-b2b6-e23b6006d7a5.svg", description: "Starting rank", requirements: "" },
+      { name: "Private", emblem: "/attached_assets/crossfire_images/033c4c73-e425-4825-b9a1-cacaee201bf1.svg", description: "Basic rank", requirements: "" },
+      { name: "Corporal", emblem: "/attached_assets/crossfire_images/3af56917-a66e-4759-a703-0f44b57ba25d.svg", description: "Intermediate rank", requirements: "" },
+      { name: "Sergeant", emblem: "/attached_assets/crossfire_images/5388e53b-c456-45a4-8727-82fafe6eafc2.svg", description: "Advanced rank", requirements: "" },
+      { name: "Lieutenant", emblem: "/attached_assets/feature-comp.jpg", description: "Officer rank", requirements: "" },
+      { name: "Captain", emblem: "/attached_assets/feature-coop.jpg", description: "Senior officer", requirements: "" },
+      { name: "Major", emblem: "/attached_assets/feature-crossfire.jpg", description: "High rank", requirements: "" },
+      { name: "Colonel", emblem: "/attached_assets/feature-weap.jpg", description: "Elite rank", requirements: "" },
+      { name: "Brigadier General", emblem: "/attached_assets/highway_1762245049147.jfif", description: "Top rank", requirements: "" },
+      { name: "General", emblem: "/attached_assets/image_1761955590373.png", description: "Ultimate rank", requirements: "" },
+      { name: "Grand Marshal", emblem: "/attached_assets/image_1762045365663.png", description: "Legendary rank", requirements: "" },
+      { name: "Supreme Commander", emblem: "/attached_assets/crossfire-hero-bg.jpg", description: "Supreme rank", requirements: "" },
+    ];
     return fallback;
   }
 }

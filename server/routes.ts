@@ -871,6 +871,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/rank-image/:rankId", async (req, res) => {
+    try {
+      const rankId = req.params.rankId;
+      const rankNum = parseInt(rankId);
+      if (isNaN(rankNum) || rankNum < 1 || rankNum > 104) {
+        return res.status(404).json({ error: "Invalid rank ID" });
+      }
+      const imagePath = path.join(process.cwd(), `attached_assets/ranks/rank_${rankNum}.jpg.jpeg`);
+      res.sendFile(imagePath);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Seed CF data into MongoDB (one-time utility)
   app.post("/api/seed/cf-data", requireAuth, requireSuperAdmin, async (_req, res) => {
     try {

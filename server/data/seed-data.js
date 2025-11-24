@@ -445,10 +445,10 @@ export const modesData = [
 ];
 
 export const ranksData = [
-  // Generate ranks 1-104 with images and requirements
+  // Generate ranks 1-104 with images and requirements from attached_assets
   ...Array.from({ length: 104 }, (_, i) => {
     const rankNum = i + 1;
-    const image = `/assets/ranks/rank_${rankNum}.jpg.jpeg`;
+    const image = `/api/rank-image/${rankNum}`;
     let name = '';
     let description = '';
     let requirements = '';

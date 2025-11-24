@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, ChevronLeft, ChevronRight } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 interface Mercenary {
@@ -16,11 +16,9 @@ interface Mercenary {
 
 export default function Mercenaries() {
   const { t } = useLanguage();
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const lastSoundRef = useRef<{ [key: string]: string | null }>({});
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
@@ -64,12 +62,6 @@ export default function Mercenaries() {
     };
   };
 
-  const scrollBy = (dx: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dx, behavior: "smooth" });
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -96,130 +88,60 @@ export default function Mercenaries() {
           </p>
         </div>
 
-        <div className="relative">
-          <div
-            ref={scrollerRef}
-            className="flex justify-start gap-0 overflow-x-auto scroll-smooth"
-          >
+        <div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 w-full">
             {mercenaries.map((merc) => (
               <div
                 key={merc.id}
-                className="relative group"
-                style={{
-                  width: "140px",
-                  height: "450px",
-                  flexShrink: 0,
-                }}
-                onMouseEnter={() => setHoveredId(merc.id)}
-                onMouseLeave={() => setHoveredId(null)}
+                className="relative group h-96 cursor-pointer"
                 data-testid={`mercenary-${merc.id}`}
               >
                 <div
-                  className="absolute inset-0 overflow-hidden transition-all duration-500"
-                  style={{
-                    transform: hoveredId === merc.id ? "scale(1.8)" : "scale(1)",
-                    transformOrigin: "center center",
-                    zIndex: hoveredId === merc.id ? 10 : 1,
-                  }}
+                  className="absolute inset-0 overflow-hidden transition-all duration-500 rounded-lg"
                 >
                   <img
                     src={merc.image}
                     alt={merc.name}
-                    className={`absolute inset-0 w-full h-full object-cover object-top transition-all duration-500 ${
-                      hoveredId === merc.id
-                        ? "brightness-110"
-                        : "brightness-75 grayscale-[50%]"
-                    }`}
+                    className="w-full h-full object-cover object-center transition-all duration-300 group-hover:scale-110"
                   />
                   
                   <div
-                    className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-opacity duration-500 ${
-                      hoveredId === merc.id ? "opacity-100" : "opacity-70"
-                    }`}
+                    className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-opacity duration-300 group-hover:from-black/80 group-hover:via-black/30"
                   />
 
-                  {/* Sound button - always visible at top */}
+                  {/* Info at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
+                    <h3 className="text-lg font-bold mb-1">{merc.name}</h3>
+                    <p className="text-xs text-white/80 uppercase tracking-wider">
+                      {merc.role}
+                    </p>
+                  </div>
+
+                  {/* Sound button - appears on hover */}
                   {merc.voiceLines && merc.voiceLines.length > 0 && (
-                    <div className="absolute top-3 left-3 right-3 z-20">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
                       <Button
-                        size="sm"
+                        size="lg"
                         onClick={() => playRandomSound(merc.id, merc.voiceLines)}
-                        className="w-full h-9 text-xs bg-primary/90 hover:bg-primary text-white font-semibold transition-all duration-200"
+                        className="bg-primary/95 hover:bg-primary text-white font-semibold transition-all duration-200"
                       >
                         {playingMercId === merc.id ? (
                           <>
-                            <VolumeX className="h-4 w-4 mr-2" />
+                            <VolumeX className="h-5 w-5 mr-2" />
                             Playing...
                           </>
                         ) : (
                           <>
-                            <Volume2 className="h-4 w-4 mr-2" />
+                            <Volume2 className="h-5 w-5 mr-2" />
                             Voice
                           </>
                         )}
                       </Button>
                     </div>
                   )}
-
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 p-6 text-white transition-all duration-500 ${
-                      hoveredId === merc.id
-                        ? "translate-y-0 opacity-100"
-                        : "translate-y-4 opacity-0"
-                    }`}
-                  >
-                    <h3 className="text-xl font-bold mb-2">{merc.name}</h3>
-                    <p className="text-xs text-white/80 uppercase tracking-wider">
-                      {merc.role}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${
-                      hoveredId === merc.id
-                        ? "opacity-0 scale-150"
-                        : "opacity-100 scale-100"
-                    }`}
-                  >
-                    <div
-                      className="text-white text-center"
-                      style={{
-                        writingMode: "vertical-rl",
-                        textOrientation: "mixed",
-                      }}
-                    >
-                      <span className="text-sm font-bold tracking-widest">
-                        {merc.name.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="pointer-events-none">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 pl-2 pr-4 pointer-events-auto">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-black/40 hover:bg-black/60 text-white"
-                onClick={() => scrollBy(-400)}
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20 pr-2 pl-4 pointer-events-auto">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="bg-black/40 hover:bg-black/60 text-white"
-                onClick={() => scrollBy(400)}
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
           </div>
         </div>
 

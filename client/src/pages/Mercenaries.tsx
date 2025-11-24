@@ -110,15 +110,15 @@ export default function Mercenaries() {
 
         <div>
           {layoutStyle === "strip" ? (
-            // Strip layout - compressed, expand on hover
-            <div className="flex gap-1 md:gap-2 overflow-x-auto pb-4 px-2 w-full rounded-lg border border-border/20 bg-black/20 p-3 backdrop-blur-sm">
+            // Strip layout - NO GAPS, characters stick together, fill entire width
+            <div className="flex gap-0 overflow-x-auto w-full rounded-lg border border-border/20 bg-black/20 backdrop-blur-sm" style={{ height: "450px" }}>
               {mercenaries.map((merc) => (
                 <div
                   key={merc.id}
-                  className={`relative flex-shrink-0 group cursor-pointer overflow-hidden rounded-lg transition-all duration-300 ${
+                  className={`relative flex-shrink-0 group cursor-pointer overflow-hidden transition-all duration-300 ${
                     expandedMercId === merc.id
-                      ? "w-80 md:w-96 h-96 md:h-[28rem]"
-                      : "w-20 md:w-24 h-96 md:h-[28rem]"
+                      ? "flex-grow min-w-80"
+                      : "min-w-24"
                   }`}
                   onMouseEnter={() => setExpandedMercId(merc.id)}
                   onMouseLeave={() => setExpandedMercId(null)}
@@ -138,8 +138,8 @@ export default function Mercenaries() {
                   {expandedMercId === merc.id && (
                     <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 text-white z-10 animate-in fade-in duration-200">
                       <div className="mb-4">
-                        <h3 className="text-xl md:text-2xl font-bold mb-1">{merc.name}</h3>
-                        <p className="text-xs md:text-sm text-white/80 uppercase tracking-wider font-semibold">
+                        <h3 className="text-2xl md:text-3xl font-bold mb-1">{merc.name}</h3>
+                        <p className="text-sm md:text-base text-white/80 uppercase tracking-wider font-semibold">
                           {merc.role}
                         </p>
                       </div>

@@ -194,9 +194,12 @@ var ModeSchema = new Schema({
 var RankSchema = new Schema({
     name: { type: String, required: true },
     tier: { type: Number, default: 0 },
+    image: { type: String, default: "" },
     emblem: { type: String, default: "" },
+    description: { type: String, default: "" },
     expRequired: { type: Number, default: 0 },
     bonus: { type: String, default: "" },
+    requirements: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
 });
 var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);

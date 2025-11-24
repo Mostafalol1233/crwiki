@@ -213,7 +213,7 @@ const modesData = [
 ];
 
 // RANKS - 45 Complete Progression System with Catbox URLs
-const ranksData = [
+export const ranksData = [
   { name: "Brigadier General 1", tier: 1, image: "https://files.catbox.moe/s7cki2.jpeg", emblem: "https://files.catbox.moe/s7cki2.jpeg", expRequired: 7578037, bonus: "", description: "First rank in progression" },
   { name: "Brigadier General 2", tier: 2, image: "https://files.catbox.moe/ysfqm5.jpeg", emblem: "https://files.catbox.moe/ysfqm5.jpeg", expRequired: 8026912, bonus: "AK-47-K-Yellow Fractal 60 days", description: "Second brigadier rank" },
   { name: "Brigadier General 3", tier: 3, image: "https://files.catbox.moe/b28ove.jpeg", emblem: "https://files.catbox.moe/b28ove.jpeg", expRequired: 8481772, bonus: "", description: "Third brigadier rank" },

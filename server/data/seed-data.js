@@ -452,66 +452,81 @@ export const ranksData = [
     let name = '';
     let description = '';
     let requirements = '';
+    let bonus = '';
 
     if (rankNum === 1) {
       name = 'Trainee';
       description = 'Starting rank for all new players.';
       requirements = 'New account creation';
+      bonus = 'Welcome Starter Pack - 3 days';
     } else if (rankNum <= 5) {
       name = `Private ${rankNum - 1}`;
       description = 'Basic soldier showing initial combat skills.';
       requirements = `Reach Level ${rankNum * 2} and win ${rankNum * 3} matches`;
+      bonus = `Beginner Reward Box - ${rankNum} days`;
     } else if (rankNum <= 10) {
       name = `Corporal ${rankNum - 5}`;
       description = 'Shows basic understanding of game mechanics.';
       requirements = `Reach Level ${rankNum * 3} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Experience Boost - ${rankNum} days`;
     } else if (rankNum <= 20) {
       name = `Sergeant ${rankNum - 10}`;
       description = 'Demonstrates growing combat expertise.';
       requirements = `Reach Level ${rankNum * 4} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Weapon Box - ${rankNum} days`;
     } else if (rankNum <= 30) {
       name = `Staff Sergeant ${rankNum - 20}`;
       description = 'Experienced soldier with proven skills.';
       requirements = `Reach Level ${rankNum * 5} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Premium Weapon Box - ${rankNum + 5} days`;
     } else if (rankNum <= 40) {
       name = `Warrant Officer ${rankNum - 30}`;
       description = 'Elite player with exceptional performance.';
       requirements = `Reach Level ${rankNum * 6} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Elite Weapon Box - ${rankNum + 10} days`;
     } else if (rankNum <= 50) {
       name = `Second Lieutenant ${rankNum - 40}`;
       description = 'Officer rank for tactical commanders.';
       requirements = `Reach Level ${rankNum * 7} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Officer Reward - ${rankNum + 10} days`;
     } else if (rankNum <= 60) {
       name = `First Lieutenant ${rankNum - 50}`;
       description = 'Senior officer with leadership qualities.';
       requirements = `Reach Level ${rankNum * 8} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Senior Officer Gift - 30 days`;
     } else if (rankNum <= 70) {
       name = `Captain ${rankNum - 60}`;
       description = 'Commanding officer with strategic vision.';
       requirements = `Reach Level ${rankNum * 9} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Captain Package - 30 days`;
     } else if (rankNum <= 80) {
       name = `Major ${rankNum - 70}`;
       description = 'High-ranking officer with extensive experience.';
       requirements = `Reach Level ${rankNum * 10} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Major Exclusive - 30 days`;
     } else if (rankNum <= 90) {
       name = `Lieutenant Colonel ${rankNum - 80}`;
       description = 'Elite commander with mastery of tactics.';
       requirements = `Reach Level ${rankNum * 11} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Elite Commander Gift - 30 days`;
     } else if (rankNum <= 100) {
       name = `Colonel ${rankNum - 90}`;
       description = 'Supreme commander with legendary status.';
       requirements = `Reach Level ${rankNum * 12} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `Colonel Legacy Reward - 30 days`;
     } else {
       name = `General ${rankNum - 100}`;
       description = 'Ultimate rank for the most skilled players.';
       requirements = `Reach Level ${rankNum * 13} and maintain ${(rankNum / 10).toFixed(1)} K/D ratio`;
+      bonus = `General Prestige Pack - 30 days`;
     }
 
     return {
       name,
       image,
       description,
-      requirements
+      requirements,
+      bonus
     };
   })
 ];

@@ -204,6 +204,7 @@ export interface IRank extends Document {
   image: string;
   description?: string;
   requirements?: string;
+  bonus?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -431,6 +432,7 @@ const RankSchema = new Schema<IRank>({
   image: { type: String, default: "" },
   description: { type: String, default: "" },
   requirements: { type: String, default: "" },
+  bonus: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -639,6 +641,7 @@ export const insertRankSchema = z.object({
   image: z.string().optional(),
   description: z.string().optional(),
   requirements: z.string().optional(),
+  bonus: z.string().optional(),
 });
 
 export const insertMercenarySchema = z.object({

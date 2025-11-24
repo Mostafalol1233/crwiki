@@ -397,6 +397,7 @@ export default function Admin() {
     image: "",
     description: "",
     requirements: "",
+    bonus: "",
   });
 
   const [isCreatingWeapon, setIsCreatingWeapon] = useState(false);
@@ -707,7 +708,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ranks"] });
       setIsCreatingRank(false);
-      setRankForm({ name: "", image: "", description: "", requirements: "" });
+      setRankForm({ name: "", image: "", description: "", requirements: "", bonus: "" });
       toast({ title: "Rank created successfully" });
     },
     onError: () => {
@@ -722,7 +723,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/ranks"] });
       setEditingRank(null);
       setIsCreatingRank(false);
-      setRankForm({ name: "", image: "", description: "", requirements: "" });
+      setRankForm({ name: "", image: "", description: "", requirements: "", bonus: "" });
       toast({ title: "Rank updated successfully" });
     },
     onError: () => {
@@ -2918,7 +2919,7 @@ export default function Admin() {
                       setIsCreatingRank(open);
                       if (!open) {
                         setEditingRank(null);
-                        setRankForm({ name: "", image: "", description: "", requirements: "" });
+                        setRankForm({ name: "", image: "", description: "", requirements: "", bonus: "" });
                       }
                     }}>
                       <DialogTrigger asChild>
@@ -2994,6 +2995,12 @@ export default function Admin() {
                             onChange={(e) => setRankForm({ ...rankForm, requirements: e.target.value })}
                             rows={2}
                           />
+                          <Textarea
+                            placeholder="Bonus Content (optional)"
+                            value={rankForm.bonus}
+                            onChange={(e) => setRankForm({ ...rankForm, bonus: e.target.value })}
+                            rows={2}
+                          />
                           <Button
                             onClick={() => {
                               const data = { ...rankForm };
@@ -3015,14 +3022,28 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-3">
                     {ranks?.map((rank: any) => (
-                      <div key={rank.id} className="flex items-center justify-between p-3 border rounded-md">
-                        <div className="flex items-center gap-3">
+                      <div key={rank.id} className="flex items-start justify-between p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition">
+                        <div className="flex items-start gap-3 flex-1">
                           {rank.image && (
-                            <img src={rank.image} alt={rank.name} className="w-16 h-16 object-contain rounded" />
+                            <img src={rank.image} alt={rank.name} className="w-16 h-16 object-contain rounded flex-shrink-0" />
                           )}
-                          <div>
-                            <p className="font-medium">{rank.name}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold">{rank.name}</p>
+                            {rank.image && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                <a href={rank.image} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                  {rank.image.substring(0, 50)}...
+                                </a>
+                              </p>
+                            )}
+                            {rank.description && <p className="text-xs text-muted-foreground mt-1">{rank.description}</p>}
                             {rank.requirements && <p className="text-xs text-muted-foreground">{rank.requirements}</p>}
+                            {rank.bonus && (
+                              <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs">
+                                <p className="font-semibold text-yellow-700 dark:text-yellow-300">🎁 Bonus:</p>
+                                <p className="text-yellow-800 dark:text-yellow-200">{rank.bonus}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -3034,6 +3055,7 @@ export default function Admin() {
                               image: rank.image,
                               description: rank.description || "",
                               requirements: rank.requirements || "",
+                              bonus: rank.bonus || "",
                             });
                             setIsCreatingRank(true);
                           }}>

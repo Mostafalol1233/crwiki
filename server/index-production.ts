@@ -32,6 +32,27 @@ app.use(express.urlencoded({ extended: false }));
 // Trust proxy for rate limiting behind reverse proxy
 app.set('trust proxy', 1);
 
+// Cache Control and Performance Headers
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Set cache headers for static assets
+  if (req.path.startsWith('/assets/')) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+  } else if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.path.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  } else {
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour for HTML
+  }
+  
+  // Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  next();
+});
+
 // Basic CORS middleware for serverless and browser clients
 app.use((req: Request, res: Response, next: NextFunction) => {
   const allowedOrigin = process.env.PUBLIC_BASE_URL || process.env.VITE_API_URL || '*';

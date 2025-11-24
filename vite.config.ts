@@ -41,6 +41,10 @@ export default defineConfig({
           utils: ['clsx', 'tailwind-merge', 'date-fns'],
           icons: ['lucide-react'],
         },
+        // Optimize chunk filenames for better caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
     // Increase chunk size warning limit to accommodate larger bundles
@@ -53,14 +57,19 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        passes: 2,
+        passes: 3,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },
-      mangle: true,
+      mangle: {
+        safari10: true,
+      },
     },
     // Enable CSS minification
     cssMinify: true,
     // Report compressed size
     reportCompressedSize: true,
+    // Target modern browsers for better optimization
+    target: 'es2020',
   },
   server: {
     host: '0.0.0.0',

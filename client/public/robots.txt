@@ -1,19 +1,30 @@
+# CrossFire Wiki - Robots.txt
 User-agent: *
-# Allow core public content
 Allow: /
-
-# Disallow non-public and runtime paths
 Disallow: /admin
-Disallow: /dashboard
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /my-tickets
 Disallow: /api/
-Disallow: /server/
-Disallow: /scripts/
 
-# Avoid indexing query parameter pages
-Disallow: /*?*
+# Allow important pages
+Allow: /weapons
+Allow: /modes
+Allow: /ranks
+Allow: /tutorials
+Allow: /news
+Allow: /events
+Allow: /posts
+Allow: /article/*
+Allow: /news/*
+Allow: /events/*
+Allow: /tutorials/*
+Allow: /category/*
 
-# Sitemap (absolute URL)
+# Crawl delay for politeness
+Crawl-delay: 0.5
+
+# Sitemap location
 Sitemap: https://crossfire.wiki/sitemap.xml
-
-# If you use staging domains, add separate rules per host
-# Host: crossfire.wiki

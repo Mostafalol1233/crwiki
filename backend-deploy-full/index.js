@@ -2565,6 +2565,61 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+
+    // Chat Admin Routes
+    app2.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            res.json([]);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/admin/chat/registration", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { enabled } = req.body;
+            res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/admin/chat/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            res.json({ id, verified: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/admin/chat/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            res.json({ success: true, message: "User removed" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Site Settings Routes
+    app2.get("/api/settings/site", requireAuth, requireSettingsManager, async (_req, res) => {
+        try {
+            res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.put("/api/settings/site", requireAuth, requireSettingsManager, async (req, res) => {
+        try {
+            const { siteTitle, theme } = req.body;
+            res.json({ siteTitle, theme, message: "Settings updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     const httpServer = createServer(app2);
     return httpServer;
 }
@@ -2941,56 +2996,3 @@ app.post(
     },
 );
 
-// Chat Admin Routes
-app.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
-    try {
-        res.json([]);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post("/api/admin/chat/registration", requireAuth, requireSuperAdmin, async (req, res) => {
-    try {
-        const { enabled } = req.body;
-        res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.post("/api/admin/chat/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        res.json({ id, verified: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.delete("/api/admin/chat/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        res.json({ success: true, message: "User removed" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Site Settings Routes
-app.get("/api/settings/site", requireAuth, requireSettingsManager, async (_req, res) => {
-    try {
-        res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.put("/api/settings/site", requireAuth, requireSettingsManager, async (req, res) => {
-    try {
-        const { siteTitle, theme } = req.body;
-        res.json({ siteTitle, theme, message: "Settings updated" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});

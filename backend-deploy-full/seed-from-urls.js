@@ -481,7 +481,10 @@ async function seedDatabase(options = {}) {
 
     const RankSchema = new Schema({
       name: String,
-      image: String,
+      tier: Number,
+      emblem: String,
+      expRequired: Number,
+      bonus: String,
       description: String,
       requirements: String,
     }, { collection: 'ranks' });
@@ -523,14 +526,41 @@ async function seedDatabase(options = {}) {
     await Mode.insertMany(modesData);
     console.log(`  ✅ Seeded: ${modesData.length} modes`);
 
-    // Scrape and seed ranks
-    const ranksData = await scrapeRanks();
-    console.log(`\n🏅 Seeding ${ranksData.length} ranks...`);
-    await Rank.insertMany(ranksData);
-    console.log(`  ✅ Seeded: ${ranksData.length} ranks`);
+    // Seed ranks with complete progression data
+    const ranksDataList = [
+      { name: "Brigadier General 1", tier: 1, emblem: "/attached_assets/image_1764015996274.png", expRequired: 7578037, bonus: "", description: "First rank in progression" },
+      { name: "Brigadier General 2", tier: 2, emblem: "/attached_assets/image_1764016002660.png", expRequired: 8026912, bonus: "AK-47-K-Yellow Fractal 60 days", description: "Second brigadier rank" },
+      { name: "Brigadier General 3", tier: 3, emblem: "/attached_assets/image_1764016002882.png", expRequired: 8481772, bonus: "", description: "Third brigadier rank" },
+      { name: "Brigadier General 4", tier: 4, emblem: "/attached_assets/image_1764016003060.png", expRequired: 8964562, bonus: "", description: "Fourth brigadier rank" },
+      { name: "Brigadier General 5", tier: 5, emblem: "/attached_assets/image_1764016003240.png", expRequired: 9475852, bonus: "", description: "Fifth brigadier rank" },
+      { name: "Brigadier General 6", tier: 6, emblem: "/attached_assets/image_1764016006540.png", expRequired: 10016212, bonus: "30 x 7th Anniversary Crates", description: "Sixth brigadier rank" },
+      { name: "Major General 1", tier: 7, emblem: "/attached_assets/image_1764016008594.png", expRequired: 10586212, bonus: "", description: "First major general rank" },
+      { name: "Major General 2", tier: 8, emblem: "/attached_assets/image_1764016010966.png", expRequired: 11186422, bonus: "G-Yellow Crystal perm", description: "Second major general rank" },
+      { name: "Major General 3", tier: 9, emblem: "/attached_assets/image_1764016016004.png", expRequired: 11817412, bonus: "", description: "Third major general rank" },
+      { name: "Major General 4", tier: 10, emblem: "/attached_assets/image_1764016017106.png", expRequired: 12479752, bonus: "", description: "Fourth major general rank" },
+      { name: "Major General 5", tier: 11, emblem: "/attached_assets/image_1764015996274.png", expRequired: 13174012, bonus: "10 Color Blaze Crates", description: "Fifth major general rank" },
+      { name: "Major General 6", tier: 12, emblem: "/attached_assets/image_1764016002660.png", expRequired: 13900762, bonus: "Slaughter Ticket Box", description: "Sixth major general rank" },
+      { name: "Lieutenant General 1", tier: 13, emblem: "/attached_assets/image_1764016002882.png", expRequired: 14660572, bonus: "", description: "First lieutenant general rank" },
+      { name: "Lieutenant General 2", tier: 14, emblem: "/attached_assets/image_1764016003060.png", expRequired: 15454012, bonus: "", description: "Second lieutenant general rank" },
+      { name: "Lieutenant General 3", tier: 15, emblem: "/attached_assets/image_1764016003240.png", expRequired: 16281652, bonus: "M4A1-S-Yellow Fractal perm", description: "Third lieutenant general rank" },
+      { name: "Lieutenant General 4", tier: 16, emblem: "/attached_assets/image_1764016006540.png", expRequired: 17144062, bonus: "", description: "Fourth lieutenant general rank" },
+      { name: "Lieutenant General 5", tier: 17, emblem: "/attached_assets/image_1764016008594.png", expRequired: 18041812, bonus: "", description: "Fifth lieutenant general rank" },
+      { name: "Lieutenant General 6", tier: 18, emblem: "/attached_assets/image_1764016010966.png", expRequired: 18975472, bonus: "RPK-Infernal Dragon 30 days", description: "Sixth lieutenant general rank" },
+      { name: "General 1", tier: 19, emblem: "/attached_assets/image_1764016016004.png", expRequired: 19945612, bonus: "", description: "First general rank" },
+      { name: "General 2", tier: 20, emblem: "/attached_assets/image_1764016017106.png", expRequired: 20952802, bonus: "AK-47-K-Yellow Fractal perm", description: "Second general rank" },
+      { name: "General 3", tier: 21, emblem: "/attached_assets/image_1764015996274.png", expRequired: 21997612, bonus: "", description: "Third general rank" },
+      { name: "General 4", tier: 22, emblem: "/attached_assets/image_1764016002660.png", expRequired: 23080612, bonus: "AWM-Infernal Dragon 30 days", description: "Fourth general rank" },
+      { name: "General 5", tier: 23, emblem: "/attached_assets/image_1764016002882.png", expRequired: 24202372, bonus: "", description: "Fifth general rank" },
+      { name: "General 6", tier: 24, emblem: "/attached_assets/image_1764016003060.png", expRequired: 25363462, bonus: "AK-47 Fury 30 days", description: "Sixth general rank" },
+      { name: "Marshall", tier: 25, emblem: "/attached_assets/image_1764016003240.png", expRequired: 26564452, bonus: "", description: "Marshall rank" },
+      { name: "Grand Marshall", tier: 26, emblem: "/attached_assets/image_1764016006540.png", expRequired: 100000000, bonus: "30 Free Crate Tickets", description: "Highest rank achievable" }
+    ];
+    console.log(`\n🏅 Seeding ${ranksDataList.length} ranks...`);
+    await Rank.insertMany(ranksDataList);
+    console.log(`  ✅ Seeded: ${ranksDataList.length} ranks`);
 
     console.log("\n✅ SEEDING COMPLETE!");
-    console.log(`   📊 Total: ${mercenariesData.length} mercenaries + ${weaponsData.length} weapons + ${modesData.length} modes + ${ranksData.length} ranks`);
+    console.log(`   📊 Total: ${mercenariesData.length} mercenaries + ${weaponsData.length} weapons + ${modesData.length} modes + ${ranksDataList.length} ranks`);
     console.log("   📅 Events: Managed manually via admin panel\n");
 
     // Only close connection if requested (when run as standalone script)

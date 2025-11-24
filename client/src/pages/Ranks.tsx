@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
-import { Search, Image as ImageIcon, Loader2, Shield } from "lucide-react";
+import { Search, Image as ImageIcon, Loader2, Shield, ArrowUp, ArrowDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
@@ -24,6 +24,7 @@ interface Rank {
 export default function Ranks() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const { data: ranks = [], isLoading } = useQuery<Rank[]>({
     queryKey: ["/api/ranks"],
@@ -35,14 +36,20 @@ export default function Ranks() {
   });
 
   const filteredRanks = useMemo(() => {
-    return ranks.filter((rank) => {
+    const filtered = ranks.filter((rank) => {
       const matchesSearch =
         rank.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         rank.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         rank.requirements?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesSearch;
     });
-  }, [ranks, searchQuery]);
+
+    return filtered.sort((a, b) => {
+      const expA = a.expRequired || 0;
+      const expB = b.expRequired || 0;
+      return sortOrder === 'asc' ? expA - expB : expB - expA;
+    });
+  }, [ranks, searchQuery, sortOrder]);
 
   const breadcrumbs = [
     { name: "Ranks", url: "/ranks" },
@@ -111,7 +118,27 @@ export default function Ranks() {
                 <thead>
                   <tr className="bg-muted/50 border-b-2 border-border">
                     <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">RANK NAME</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">EXP REQUIRED</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>EXP REQUIRED</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setSortOrder('asc')}
+                            className={`p-1 rounded ${sortOrder === 'asc' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                            title="Sort ascending (low to high)"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setSortOrder('desc')}
+                            className={`p-1 rounded ${sortOrder === 'desc' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                            title="Sort descending (high to low)"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">BONUS</th>
                   </tr>
                 </thead>

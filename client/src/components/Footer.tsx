@@ -36,12 +36,12 @@ export function Footer() {
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
                 <img 
-                  src="/crossfire-logo.png" 
-                  alt="CrossFire Logo" 
-                  className="h-12 w-12 rounded-lg object-cover shadow-lg"
+                  src="https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" 
+                  alt="CrossFire Official Logo" 
+                  className="h-10 w-auto object-contain"
                 />
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">
-                  CrossFire Wiki
+                  Wiki
                 </h3>
               </div>
               <p className="text-xs font-semibold text-primary/70 uppercase tracking-widest">

@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
-import { Search, Image as ImageIcon, Loader2, Shield, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Image as ImageIcon, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import rankLogo from "@assets/generated_images/epic_gaming_rank_badge_icon.png";
 
 interface Rank {
   id: string;
@@ -74,7 +75,7 @@ export default function Ranks() {
           
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-10 w-10 text-primary" />
+              <img src={rankLogo} alt="Ranks" className="h-10 w-10" />
               <h1 className="text-4xl md:text-5xl font-bold">
                 {t("ranks") || "Ranks"}
               </h1>

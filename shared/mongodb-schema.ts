@@ -202,6 +202,8 @@ export interface IMode extends Document {
 export interface IRank extends Document {
   name: string;
   image: string;
+  tier?: number;
+  expRequired?: number;
   description?: string;
   requirements?: string;
   bonus?: string;
@@ -430,6 +432,8 @@ const ModeSchema = new Schema<IMode>({
 const RankSchema = new Schema<IRank>({
   name: { type: String, required: true },
   image: { type: String, default: "" },
+  tier: { type: Number, default: 0 },
+  expRequired: { type: Number, default: 0 },
   description: { type: String, default: "" },
   requirements: { type: String, default: "" },
   bonus: { type: String, default: "" },
@@ -639,6 +643,8 @@ export const insertModeSchema = z.object({
 export const insertRankSchema = z.object({
   name: z.string().min(1),
   image: z.string().optional(),
+  tier: z.number().optional(),
+  expRequired: z.number().optional(),
   description: z.string().optional(),
   requirements: z.string().optional(),
   bonus: z.string().optional(),

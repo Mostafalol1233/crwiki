@@ -100,11 +100,18 @@ export default function News() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 auto-rows-[300px]">
           {allNews.map((item, index) => (
             <div
               key={item.id}
-              className={`${index === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
+              className={`
+                ${index === 0 ? "md:col-span-3 lg:col-span-2 row-span-2" : ""}
+                ${index === 1 ? "md:col-span-3 lg:col-span-1" : ""}
+                ${index === 2 ? "md:col-span-3 lg:col-span-2" : ""}
+                ${index === 3 ? "md:col-span-2 lg:col-span-1" : ""}
+                ${index === 4 ? "md:col-span-1 lg:col-span-2 row-span-2" : ""}
+                ${index > 4 ? "md:col-span-1" : ""}
+              `}
             >
               <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
                 <Card

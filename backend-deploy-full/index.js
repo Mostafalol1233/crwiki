@@ -2603,7 +2603,7 @@ async function registerRoutes(app2) {
     });
 
     // Site Settings Routes
-    app2.get("/api/settings/site", requireAuth, requireSettingsManager, async (_req, res) => {
+    app2.get("/api/settings/site", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
             res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
         } catch (error) {
@@ -2611,7 +2611,7 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.put("/api/settings/site", requireAuth, requireSettingsManager, async (req, res) => {
+    app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const { siteTitle, theme } = req.body;
             res.json({ siteTitle, theme, message: "Settings updated" });

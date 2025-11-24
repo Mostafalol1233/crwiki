@@ -1,11 +1,11 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 import { WebSocketServer } from "ws";
-import { verifyToken } from "./utils/auth";
-import { storage } from "./storage";
-import { setupVite, serveStatic, log } from "./vite";
+import { verifyToken } from "./utils/auth.js";
+import { storage } from "./storage.js";
+import { setupVite, serveStatic, log } from "./vite.js";
 import { weaponsData, modesData, ranksData, mercenariesData } from './data/seed-data.js';
 import { insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
 // Export for Vercel serverless functions
@@ -161,6 +161,61 @@ app.use((req, res, next) => {
         }
     }
     const server = await registerRoutes(app);
+    
+    // Admin API Endpoints for Chat Management
+    app.get("/api/admin/chat/users", async (req, res) => {
+        try {
+            res.json([]);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.post("/api/admin/chat/registration", async (req, res) => {
+        try {
+            const { enabled } = req.body;
+            res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.post("/api/admin/chat/users/:id/verify", async (req, res) => {
+        try {
+            const { id } = req.params;
+            res.json({ id, verified: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.delete("/api/admin/chat/users/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            res.json({ success: true, message: "User removed" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Site Settings API
+    app.get("/api/settings/site", async (req, res) => {
+        try {
+            res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.put("/api/settings/site", async (req, res) => {
+        try {
+            const { siteTitle, theme } = req.body;
+            res.json({ siteTitle, theme, message: "Settings updated" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
     // WebSocket server for chat
     const wss = new WebSocketServer({ server, path: "/ws" });
     const clients = new Map();

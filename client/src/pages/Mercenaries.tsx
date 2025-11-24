@@ -138,6 +138,29 @@ export default function Mercenaries() {
                     }`}
                   />
 
+                  {/* Sound button - always visible at top */}
+                  {merc.voiceLines && merc.voiceLines.length > 0 && (
+                    <div className="absolute top-3 left-3 right-3 z-20">
+                      <Button
+                        size="sm"
+                        onClick={() => playRandomSound(merc.id, merc.voiceLines)}
+                        className="w-full h-9 text-xs bg-primary/90 hover:bg-primary text-white font-semibold transition-all duration-200"
+                      >
+                        {playingMercId === merc.id ? (
+                          <>
+                            <VolumeX className="h-4 w-4 mr-2" />
+                            Playing...
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-4 w-4 mr-2" />
+                            Voice
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
                   <div
                     className={`absolute bottom-0 left-0 right-0 p-6 text-white transition-all duration-500 ${
                       hoveredId === merc.id
@@ -146,31 +169,9 @@ export default function Mercenaries() {
                     }`}
                   >
                     <h3 className="text-xl font-bold mb-2">{merc.name}</h3>
-                    <p className="text-xs text-white/80 uppercase tracking-wider mb-3">
+                    <p className="text-xs text-white/80 uppercase tracking-wider">
                       {merc.role}
                     </p>
-                    
-                    {/* Voice Button - Only show if mercenary has voiceLines */}
-                    {merc.voiceLines && merc.voiceLines.length > 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => playRandomSound(merc.id, merc.voiceLines)}
-                        className="w-full h-8 text-xs bg-white/10 border-white/30 hover:bg-white/20 text-white"
-                      >
-                        {playingMercId === merc.id ? (
-                          <>
-                            <VolumeX className="h-3 w-3 mr-1" />
-                            Playing...
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 className="h-3 w-3 mr-1" />
-                            Voice Line
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
 
                   <div

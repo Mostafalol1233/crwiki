@@ -18,6 +18,7 @@ interface Rank {
   description?: string;
   requirements?: string;
   bonus?: string;
+  expRequired?: number;
 }
 
 export default function Ranks() {
@@ -151,5 +152,3 @@ export default function Ranks() {
     </>
   );
 }
-
-export default Ranks;

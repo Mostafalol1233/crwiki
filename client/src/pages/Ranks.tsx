@@ -8,7 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import rankLogo from "@assets/generated_images/epic_gaming_rank_badge_icon.png";
+import rankLogo from "@assets/generated_images/single_golden_rank_badge.png";
 
 interface Rank {
   id: string;

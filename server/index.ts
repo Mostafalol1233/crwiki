@@ -107,8 +107,8 @@ app.use((req, res, next) => {
       const { initializeDatabase } = await import('./db-connect.js');
       await initializeDatabase();
     } catch (error) {
-      console.error('Failed to initialize database:', error);
-      process.exit(1);
+      log('Warning: Failed to initialize database, using in-memory storage');
+      // Don't exit - fall back to in-memory storage
     }
   } else {
     log('Skipping MongoDB initialization; using in-memory storage');

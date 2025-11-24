@@ -100,7 +100,7 @@ export default function News() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8 auto-rows-max">
           {allNews.map((item, index) => (
             <div
               key={item.id}
@@ -108,7 +108,7 @@ export default function News() {
             >
               <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
                 <Card
-                  className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none"
+                  className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none h-full"
                   data-testid={`card-news-${item.id}`}
                 >
                   <div className={`relative w-full ${index === 0 ? "h-96" : "h-64"} overflow-hidden`}>

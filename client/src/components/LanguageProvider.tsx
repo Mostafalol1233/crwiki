@@ -43,7 +43,7 @@ const translations: Record<Language, Record<string, string>> = {
     newsNotFound: "News Not Found",
     backToNews: "Back to News",
     readMoreNews: "Read More News",
-    newsAndUpdates: "& Updates",
+    newsAndUpdates: "News & Updates",
     translationNote: "Translation Note:",
     translationNoteText: "This article will be automatically translated using AI translation API when implemented.",
     mercenaries: "Mercenaries",

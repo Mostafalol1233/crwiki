@@ -105,69 +105,45 @@ export default function Ranks() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredRanks.map((rank) => (
-                <Card
-                  key={rank.id}
-                  className="h-full hover-elevate transition-all"
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-t-lg bg-muted/30">
-                    {rank.emblem || rank.image ? (
-                      <img
-                        src={rank.emblem || rank.image}
-                        alt={rank.name}
-                        className="w-full h-full object-contain p-4"
-                        width="256"
-                        height="256"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Shield className="h-12 w-12 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-center">
-                      {rank.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {rank.description && (
-                      <p className="text-sm text-muted-foreground text-center">
-                        {rank.description}
-                      </p>
-                    )}
-                    {rank.bonus && (
-                      <div className="pt-2 border-t bg-yellow-500/10 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
-                        <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase mb-1">
-                          🎁 Bonus
-                        </p>
-                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                          {rank.bonus}
-                        </p>
-                      </div>
-                    )}
-                    {rank.requirements && (
-                      <div className="pt-2 border-t">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
-                          Requirements
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {rank.requirements}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {filteredRanks.length > 0 && (
-            <div className="mt-8 text-center text-sm text-muted-foreground">
-              Showing {filteredRanks.length} of {ranks.length} ranks
+            <div className="w-full overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-muted/50 border-b-2 border-border">
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">RANK NAME</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">EXP REQUIRED</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">BONUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRanks.map((rank, idx) => (
+                    <tr
+                      key={rank.id}
+                      className="border-b border-border hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="px-6 py-4 flex items-center gap-4">
+                        {rank.emblem || rank.image ? (
+                          <img
+                            src={rank.emblem || rank.image}
+                            alt={rank.name}
+                            className="w-12 h-12 object-contain flex-shrink-0"
+                            width="48"
+                            height="48"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted/50 rounded flex items-center justify-center flex-shrink-0">
+                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="font-bold italic">{rank.name}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">{rank.expRequired?.toLocaleString() || "-"}</td>
+                      <td className="px-6 py-4 text-sm">{rank.bonus || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -176,3 +152,4 @@ export default function Ranks() {
   );
 }
 
+export default Ranks;

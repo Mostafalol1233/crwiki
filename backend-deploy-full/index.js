@@ -2711,6 +2711,11 @@ app.use((req, res, next) => {
     // Serve index.html for all non-API routes (SPA routing)
     app.get("*", (_req, res) => {
         const indexPath = path.join(clientDistPath, "index.html");
+        res.set({
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        });
         res.sendFile(indexPath, (err) => {
             if (err) {
                 res.status(404).json({

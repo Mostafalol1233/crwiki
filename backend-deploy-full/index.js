@@ -2695,16 +2695,29 @@ app.use((req, res, next) => {
             `[assets] No ATTACHED_ASSETS_PATH set. Assets are served as URLs from database.`,
         );
     }
+    
+    // Serve built client files from dist/client
+    const clientDistPath = path.resolve(currentDir, "dist", "client");
+    app.use("/assets", express.static(path.join(clientDistPath, "assets"), { maxAge: "1d" }));
+    app.use(express.static(clientDistPath, { maxAge: "1d" }));
+    
     app.use((err, _req, res, _next) => {
         const status = err.status || err.statusCode || 500;
         const message = err.message || "Internal Server Error";
         res.status(status).json({ message });
         throw err;
     });
+    
+    // Serve index.html for all non-API routes (SPA routing)
     app.get("*", (_req, res) => {
-        res.status(404).json({
-            message: "API endpoint not found. Frontend is hosted on Netlify.",
-            hint: "Make sure your frontend is pointing to this backend URL",
+        const indexPath = path.join(clientDistPath, "index.html");
+        res.sendFile(indexPath, (err) => {
+            if (err) {
+                res.status(404).json({
+                    message: "Frontend not found. Make sure the client is built.",
+                    hint: "Run: npm run build",
+                });
+            }
         });
     });
 

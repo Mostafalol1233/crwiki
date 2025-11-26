@@ -1430,6 +1430,31 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
+    app2.post("/api/events/bulk-create", requireAuth, async (req, res) => {
+        try {
+            const { events } = req.body;
+            if (!Array.isArray(events)) {
+                return res.status(400).json({ error: "Events array is required" });
+            }
+            const createdEvents = [];
+            for (const eventData of events) {
+                try {
+                    const data = insertEventSchema.parse(eventData);
+                    const event = await storage.createEvent(data);
+                    createdEvents.push(event);
+                } catch (err) {
+                    console.warn(`Failed to create event: ${err.message}`);
+                }
+            }
+            res.status(201).json({
+                message: `Created ${createdEvents.length} events`,
+                count: createdEvents.length,
+                events: createdEvents
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
     app2.delete("/api/events/:id", requireAuth, async (req, res) => {
         try {
             const deleted = await storage.deleteEvent(req.params.id);

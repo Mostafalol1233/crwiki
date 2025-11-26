@@ -2497,6 +2497,80 @@ async function registerRoutes(app2) {
         },
     );
 
+    // Mercenary API routes
+    app2.get("/api/mercenaries", async (req, res) => {
+        try {
+            const mercenaries = await storage.getAllMercenaries();
+            res.json(mercenaries);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/mercenaries/:id", async (req, res) => {
+        try {
+            const mercenaries = await storage.getAllMercenaries();
+            const merc = mercenaries.find(m => String(m.id || m._id) === req.params.id);
+            if (!merc) {
+                return res.status(404).json({ error: "Mercenary not found" });
+            }
+            res.json(merc);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/mercenaries", requireAuth, async (req, res) => {
+        try {
+            const { name, image, role, description, voiceLines } = req.body;
+            if (!name || !image || !role) {
+                return res.status(400).json({ error: "name, image, and role required" });
+            }
+            const merc = await storage.createMercenary({
+                name,
+                image,
+                role,
+                description: description || "",
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+            });
+            res.status(201).json(merc);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/mercenaries/:id", requireAuth, async (req, res) => {
+        try {
+            const { name, image, role, description, voiceLines } = req.body;
+            const merc = await storage.updateMercenary(req.params.id, {
+                id: req.params.id,
+                name,
+                image,
+                role,
+                description: description || "",
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+            });
+            if (!merc) {
+                return res.status(404).json({ error: "Mercenary not found" });
+            }
+            res.json(merc);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/mercenaries/:id", requireAuth, async (req, res) => {
+        try {
+            const deleted = await storage.deleteMercenary(req.params.id);
+            if (!deleted) {
+                return res.status(404).json({ error: "Mercenary not found" });
+            }
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app2.get("/api/sellers", async (req, res) => {
         try {
             const sellers = await storage.getAllSellers();

@@ -100,35 +100,23 @@ export default function News() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 auto-rows-[300px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {allNews.map((item, index) => (
-            <div
-              key={item.id}
-              className={`
-                ${index === 0 ? "md:col-span-3 lg:col-span-2 row-span-2" : ""}
-                ${index === 1 ? "md:col-span-3 lg:col-span-1" : ""}
-                ${index === 2 ? "md:col-span-3 lg:col-span-2" : ""}
-                ${index === 3 ? "md:col-span-2 lg:col-span-1" : ""}
-                ${index === 4 ? "md:col-span-1 lg:col-span-2 row-span-2" : ""}
-                ${index > 4 ? "md:col-span-1" : ""}
-              `}
-            >
+            <div key={item.id}>
               <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
                 <Card
                   className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none"
                   data-testid={`card-news-${item.id}`}
                 >
-                  <div className={`relative w-full ${index === 0 ? "h-96" : "h-64"} overflow-hidden flex items-center justify-center`}>
+                  <div className={`relative ${index === 0 ? "aspect-[16/9]" : "aspect-[16/9]"} overflow-hidden rounded-lg bg-muted/30`}>
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       width="400"
                       height="300"
                       loading="lazy"
                     />
-                    
-
                     <div className="absolute top-4 left-4">
                       <Badge
                         className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30"
@@ -138,15 +126,15 @@ export default function News() {
                       </Badge>
                     </div>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <div className="absolute inset-x-0 bottom-0 p-6 text-white bg-gradient-to-t from-black/70 via-black/20 to-transparent">
                       <h3
                         className={`font-bold mb-2 ${
-                          index === 0 ? "text-3xl md:text-4xl" : "text-xl md:text-2xl"
+                          index === 0 ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"
                         }`}
                       >
                         {language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title}
                       </h3>
-                      <p className="text-sm text-white/80">{item.dateRange}</p>
+                      <p className="text-base md:text-lg text-white/85">{item.dateRange}</p>
                     </div>
                   </div>
                 </Card>

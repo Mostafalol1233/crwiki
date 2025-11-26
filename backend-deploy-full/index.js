@@ -1421,37 +1421,59 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/events", requireAuth, async (req, res) => {
+    app2.post("/api/events", async (req, res) => {
         try {
             const data = insertEventSchema.parse(req.body);
             const event = await storage.createEvent(data);
-            res.status(201).json(event);
+            if (!event) {
+                return res.status(400).json({ error: "Failed to create event" });
+            }
+            res.status(201).json({
+                success: true,
+                message: "Event created successfully",
+                data: event
+            });
         } catch (error) {
-            res.status(400).json({ error: error.message });
+            console.error("Event creation error:", error);
+            res.status(400).json({ 
+                error: error.message,
+                details: error.issues ? error.issues : null
+            });
         }
     });
-    app2.post("/api/events/bulk-create", requireAuth, async (req, res) => {
+    app2.post("/api/events/bulk-create", async (req, res) => {
         try {
             const { events } = req.body;
             if (!Array.isArray(events)) {
                 return res.status(400).json({ error: "Events array is required" });
             }
             const createdEvents = [];
+            const failedEvents = [];
             for (const eventData of events) {
                 try {
                     const data = insertEventSchema.parse(eventData);
                     const event = await storage.createEvent(data);
-                    createdEvents.push(event);
+                    if (event) {
+                        createdEvents.push(event);
+                    }
                 } catch (err) {
                     console.warn(`Failed to create event: ${err.message}`);
+                    failedEvents.push({
+                        title: eventData.title,
+                        error: err.message
+                    });
                 }
             }
             res.status(201).json({
-                message: `Created ${createdEvents.length} events`,
+                success: true,
+                message: `Created ${createdEvents.length} events (${failedEvents.length} failed)`,
                 count: createdEvents.length,
-                events: createdEvents
+                failed: failedEvents.length,
+                events: createdEvents,
+                failedEvents: failedEvents
             });
         } catch (error) {
+            console.error("Bulk event creation error:", error);
             res.status(400).json({ error: error.message });
         }
     });

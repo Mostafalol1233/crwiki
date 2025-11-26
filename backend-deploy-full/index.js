@@ -1488,6 +1488,89 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+
+    // Scrape events endpoint for admin panel
+    app2.post("/api/scrape-events", async (req, res) => {
+        try {
+            console.log("🔍 Admin: Easy scrape - Getting forum announcements...");
+            const posts = await scrapeForumAnnouncements();
+            if (!posts || posts.length === 0) {
+                return res.status(400).json({ error: "No announcements found to scrape" });
+            }
+            const postsToCreate = posts.slice(0, 5);
+            const createdEvents = [];
+            for (const post of postsToCreate) {
+                try {
+                    const eventData = {
+                        title: post.title.substring(0, 200),
+                        titleAr: '',
+                        description: post.content || post.title,
+                        descriptionAr: '',
+                        date: new Date().toISOString().split('T')[0],
+                        type: 'upcoming',
+                        image: 'https://files.catbox.moe/wof38b.jpeg'
+                    };
+                    const validated = insertEventSchema.parse(eventData);
+                    const event = await storage.createEvent(validated);
+                    createdEvents.push(event);
+                } catch (err) {
+                    console.warn(`Failed to create event: ${err.message}`);
+                }
+            }
+            res.json({
+                success: true,
+                message: `✅ Created ${createdEvents.length} events from forum`,
+                count: createdEvents.length,
+                events: createdEvents
+            });
+        } catch (error) {
+            console.error("Scraping error:", error);
+            res.status(500).json({ error: error.message || "Failed to scrape events" });
+        }
+    });
+
+    // Bulk create weapons endpoint
+    app2.post("/api/weapons/bulk-create", async (req, res) => {
+        try {
+            const { weapons } = req.body;
+            if (!Array.isArray(weapons)) {
+                return res.status(400).json({ error: "Weapons array is required" });
+            }
+            const createdWeapons = [];
+            const failedWeapons = [];
+            for (const weaponData of weapons) {
+                try {
+                    const weapon = await storage.createWeapon({
+                        name: weaponData.name || "Unknown",
+                        image: weaponData.image || "",
+                        description: weaponData.description || "",
+                        category: weaponData.category || ""
+                    });
+                    if (weapon) {
+                        createdWeapons.push(weapon);
+                    }
+                } catch (err) {
+                    console.warn(`Failed to create weapon: ${err.message}`);
+                    failedWeapons.push({
+                        name: weaponData.name,
+                        error: err.message
+                    });
+                }
+            }
+            res.status(201).json({
+                success: true,
+                message: `Created ${createdWeapons.length} weapons (${failedWeapons.length} failed)`,
+                count: createdWeapons.length,
+                failed: failedWeapons.length,
+                weapons: createdWeapons,
+                failedWeapons: failedWeapons
+            });
+        } catch (error) {
+            console.error("Bulk weapon creation error:", error);
+            res.status(400).json({ error: error.message });
+        }
+    });
+
     app2.get("/api/stats", requireAuth, async (req, res) => {
         try {
             const posts = await storage.getAllPosts();

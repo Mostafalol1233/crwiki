@@ -179,7 +179,11 @@ export default function EventDetail() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowTranslation(!showTranslation)}
+                  onClick={() => {
+                    const next = !showTranslation;
+                    setShowTranslation(next);
+                    setIsRTL(next);
+                  }}
                   data-testid="button-toggle-translation"
                 >
                   <Languages className="mr-2 h-4 w-4" />

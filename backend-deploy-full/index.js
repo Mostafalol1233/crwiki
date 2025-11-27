@@ -26,17 +26,18 @@ var UserSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var PostSchema = new Schema({
-    title: { type: String, required: true },
-    content: { type: String, required: true },
-    summary: { type: String, required: true },
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    tags: { type: [String], required: true },
-    author: { type: String, required: true },
-    views: { type: Number, default: 0 },
-    readingTime: { type: Number, required: true },
-    featured: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  summary: { type: String, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  tags: { type: [String], required: true },
+  author: { type: String, required: true },
+  views: { type: Number, default: 0 },
+  readingTime: { type: Number, required: true },
+  featured: { type: Boolean, default: false },
+  order: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
 });
 var CommentSchema = new Schema({
     postId: { type: String, required: true },
@@ -46,40 +47,42 @@ var CommentSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var EventSchema = new Schema({
-    title: { type: String, required: true },
-    titleAr: { type: String, default: "" },
-    description: { type: String, default: "" },
-    descriptionAr: { type: String, default: "" },
-    date: { type: String, required: true },
-    type: { type: String, required: true },
-    image: { type: String, default: "" },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    seoKeywords: { type: [String], default: [] },
-    canonicalUrl: { type: String, default: "" },
-    ogImage: { type: String, default: "" },
-    twitterImage: { type: String, default: "" },
-    schemaType: { type: String, default: "Event" },
+  title: { type: String, required: true },
+  titleAr: { type: String, default: "" },
+  description: { type: String, default: "" },
+  descriptionAr: { type: String, default: "" },
+  date: { type: String, required: true },
+  type: { type: String, required: true },
+  image: { type: String, default: "" },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "Event" },
+  order: { type: Number, default: 0 },
 });
 var NewsSchema = new Schema({
-    title: { type: String, required: true },
-    titleAr: { type: String, default: "" },
-    dateRange: { type: String, required: true },
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    content: { type: String, required: true },
-    contentAr: { type: String, default: "" },
-    htmlContent: { type: String, default: "" },
-    author: { type: String, required: true },
-    featured: { type: Boolean, default: false },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    seoKeywords: { type: [String], default: [] },
-    canonicalUrl: { type: String, default: "" },
-    ogImage: { type: String, default: "" },
-    twitterImage: { type: String, default: "" },
-    schemaType: { type: String, default: "NewsArticle" },
-    createdAt: { type: Date, default: Date.now },
+  title: { type: String, required: true },
+  titleAr: { type: String, default: "" },
+  dateRange: { type: String, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  content: { type: String, required: true },
+  contentAr: { type: String, default: "" },
+  htmlContent: { type: String, default: "" },
+  author: { type: String, required: true },
+  featured: { type: Boolean, default: false },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "NewsArticle" },
+  order: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
 });
 var TutorialSchema = new Schema({
     title: { type: String, required: true },
@@ -115,10 +118,11 @@ var TicketReplySchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var AdminSchema = new Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: "admin" },
-    createdAt: { type: Date, default: Date.now },
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: "admin" },
+  permissions: { type: Schema.Types.Mixed, default: {} },
+  createdAt: { type: Date, default: Date.now },
 });
 var NewsletterSubscriberSchema = new Schema({
     email: { type: String, required: true, unique: true },
@@ -218,15 +222,16 @@ var insertUserSchema = z.object({
     password: z.string(),
 });
 var insertPostSchema = z.object({
-    title: z.string(),
-    content: z.string(),
-    summary: z.string(),
-    image: z.string(),
-    category: z.string(),
-    tags: z.array(z.string()),
-    author: z.string(),
-    readingTime: z.number(),
-    featured: z.boolean().optional(),
+  title: z.string(),
+  content: z.string(),
+  summary: z.string(),
+  image: z.string(),
+  category: z.string(),
+  tags: z.array(z.string()),
+  author: z.string(),
+  readingTime: z.number(),
+  featured: z.boolean().optional(),
+  order: z.number().optional(),
 });
 var insertCommentSchema = z.object({
     postId: z.string(),
@@ -240,39 +245,41 @@ var insertChatMessageSchema = z.object({
     replyTo: z.string().optional(),
 });
 var insertEventSchema = z.object({
-    title: z.string(),
-    titleAr: z.string().optional(),
-    description: z.string().optional(),
-    descriptionAr: z.string().optional(),
-    date: z.string(),
-    type: z.string(),
-    image: z.string().optional(),
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    seoKeywords: z.array(z.string()).optional(),
-    canonicalUrl: z.string().optional(),
-    ogImage: z.string().optional(),
-    twitterImage: z.string().optional(),
-    schemaType: z.string().optional(),
+  title: z.string(),
+  titleAr: z.string().optional(),
+  description: z.string().optional(),
+  descriptionAr: z.string().optional(),
+  date: z.string(),
+  type: z.string(),
+  image: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional(),
+  order: z.number().optional(),
 });
 var insertNewsSchema = z.object({
-    title: z.string(),
-    titleAr: z.string().optional(),
-    dateRange: z.string(),
-    image: z.string(),
-    category: z.string(),
-    content: z.string(),
-    contentAr: z.string().optional(),
-    htmlContent: z.string().optional(),
-    author: z.string(),
-    featured: z.boolean().optional(),
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    seoKeywords: z.array(z.string()).optional(),
-    canonicalUrl: z.string().optional(),
-    ogImage: z.string().optional(),
-    twitterImage: z.string().optional(),
-    schemaType: z.string().optional(),
+  title: z.string(),
+  titleAr: z.string().optional(),
+  dateRange: z.string(),
+  image: z.string(),
+  category: z.string(),
+  content: z.string(),
+  contentAr: z.string().optional(),
+  htmlContent: z.string().optional(),
+  author: z.string(),
+  featured: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional(),
+  order: z.number().optional(),
 });
 var insertTicketSchema = z.object({
     title: z.string(),
@@ -466,7 +473,7 @@ var MongoDBStorage = class {
         return { ...updated, id: String(updated._id) };
     }
     async getAllPosts() {
-        const posts = await PostModel.find().sort({ createdAt: -1 }).lean();
+        const posts = await PostModel.find().sort({ order: -1, createdAt: -1 }).lean();
         return posts.map((post) => ({
             ...post,
             id: String(post._id),
@@ -474,6 +481,7 @@ var MongoDBStorage = class {
             views: post.views || 0,
             category: post.category || "",
             author: post.author || "Unknown",
+            order: post.order || 0,
         }));
     }
     async getPostById(id) {
@@ -533,10 +541,11 @@ var MongoDBStorage = class {
         return newComment;
     }
     async getAllEvents() {
-        const events = await EventModel.find().lean();
+        const events = await EventModel.find().sort({ order: -1, _id: -1 }).lean();
         return events.map((event) => ({
             ...event,
             id: String(event._id),
+            order: event.order || 0,
         }));
     }
     async createEvent(event) {
@@ -553,7 +562,7 @@ var MongoDBStorage = class {
         return !!result;
     }
     async getAllNews() {
-        const news = await NewsModel.find().sort({ createdAt: -1 });
+        const news = await NewsModel.find().sort({ order: -1, createdAt: -1 });
         return news.map((item) => ({
             id: String(item._id),
             title: item.title,
@@ -566,6 +575,7 @@ var MongoDBStorage = class {
             htmlContent: item.htmlContent,
             author: item.author,
             featured: item.featured,
+            order: item.order || 0,
             createdAt: item.createdAt,
         }));
     }
@@ -718,6 +728,23 @@ var MongoDBStorage = class {
             ...admin,
             id: String(admin._id),
         }));
+    }
+
+    async getAllAdminPermissions() {
+        const admins = await AdminModel.find().select({ permissions: 1 }).lean();
+        const map = {};
+        for (const a of admins) {
+            map[String(a._id)] = a.permissions || {};
+        }
+        return map;
+    }
+
+    async updateAdminPermissions(adminId, permissions) {
+        await AdminModel.findByIdAndUpdate(
+            adminId,
+            { permissions: permissions || {} },
+            { new: true }
+        );
     }
     async getAdminById(id) {
         const admin = await AdminModel.findById(id).lean();
@@ -2133,6 +2160,40 @@ async function registerRoutes(app2) {
                 res.status(500).json({ error: error.message });
             }
         },
+    );
+
+    // Admin permissions (Super Admin only)
+    app2.get(
+        "/api/admin-permissions",
+        requireAuth,
+        requireSuperAdmin,
+        async (_req, res) => {
+            try {
+                const permissions = await storage.getAllAdminPermissions();
+                res.json(permissions);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    );
+
+    app2.put(
+        "/api/admin-permissions/:adminId",
+        requireAuth,
+        requireSuperAdmin,
+        async (req, res) => {
+            try {
+                const { adminId } = req.params;
+                const { permissions } = req.body;
+                if (!permissions || typeof permissions !== "object") {
+                    return res.status(400).json({ error: "Permissions object is required" });
+                }
+                await storage.updateAdminPermissions(adminId, permissions);
+                res.json({ success: true });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        }
     );
     app2.get("/api/events/:id", async (req, res) => {
         try {

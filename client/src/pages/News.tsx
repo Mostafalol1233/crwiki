@@ -84,7 +84,7 @@ export default function News() {
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="flex items-center justify-between mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold">
+          <h1 className="text-3xl md:text-4xl font-bold">
             {t("newsAndUpdates")}
           </h1>
           <Button

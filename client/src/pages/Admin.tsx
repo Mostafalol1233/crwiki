@@ -1816,6 +1816,43 @@ export default function Admin() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         )}
+                        {canManagePosts && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const max = Math.max(...(posts?.map((p: any) => p.order || 0) || [0]));
+                              updatePostMutation.mutate({ id: post.id, data: { order: max + 1 } });
+                            }}
+                            data-testid={`button-post-first-${post.id}`}
+                          >
+                            First
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const next = (post.order || 0) + 1;
+                              updatePostMutation.mutate({ id: post.id, data: { order: next } });
+                            }}
+                            data-testid={`button-post-up-${post.id}`}
+                          >
+                            Up
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const next = Math.max(0, (post.order || 0) - 1);
+                              updatePostMutation.mutate({ id: post.id, data: { order: next } });
+                            }}
+                            data-testid={`button-post-down-${post.id}`}
+                          >
+                            Down
+                          </Button>
+                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -2077,26 +2114,63 @@ export default function Admin() {
                               data-testid={`button-edit-event-${event.id}`}
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            )}
-                            {canManageEvents && (
+                          </Button>
+                          )}
+                          {canManageEvents && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setDeleteConfirmId(event.id);
+                              setDeleteType("event");
+                            }}
+                            data-testid={`button-delete-event-${event.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          )}
+                          {canManageEvents && (
+                          <div className="flex gap-1">
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => {
-                                setDeleteConfirmId(event.id);
-                                setDeleteType("event");
+                                const max = Math.max(...(events?.map((e: any) => e.order || 0) || [0]));
+                                updateEventMutation.mutate({ id: event.id, data: { order: max + 1 } });
                               }}
-                              data-testid={`button-delete-event-${event.id}`}
+                              data-testid={`button-event-first-${event.id}`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              First
                             </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = (event.order || 0) + 1;
+                                updateEventMutation.mutate({ id: event.id, data: { order: next } });
+                              }}
+                              data-testid={`button-event-up-${event.id}`}
+                            >
+                              Up
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = Math.max(0, (event.order || 0) - 1);
+                                updateEventMutation.mutate({ id: event.id, data: { order: next } });
+                              }}
+                              data-testid={`button-event-down-${event.id}`}
+                            >
+                              Down
+                            </Button>
                           </div>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
                 </div>
               </div>
 
@@ -2435,6 +2509,43 @@ export default function Admin() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManageNews && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const max = Math.max(...(newsItems?.map((n: any) => n.order || 0) || [0]));
+                                updateNewsMutation.mutate({ id: news.id, data: { order: max + 1 } });
+                              }}
+                              data-testid={`button-news-first-${news.id}`}
+                            >
+                              First
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = (news.order || 0) + 1;
+                                updateNewsMutation.mutate({ id: news.id, data: { order: next } });
+                              }}
+                              data-testid={`button-news-up-${news.id}`}
+                            >
+                              Up
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = Math.max(0, (news.order || 0) - 1);
+                                updateNewsMutation.mutate({ id: news.id, data: { order: next } });
+                              }}
+                              data-testid={`button-news-down-${news.id}`}
+                            >
+                              Down
+                            </Button>
+                          </div>
                           )}
                           </div>
                         </div>

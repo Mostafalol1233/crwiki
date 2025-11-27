@@ -1,6 +1,6 @@
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Clock, Eye, ArrowLeft } from "lucide-react";
+import { Clock, Eye, ArrowLeft, Languages } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,10 +11,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
+import { useState } from "react";
 
 export default function Article() {
   const { id } = useParams();
   const { t } = useLanguage();
+  const [isRTL, setIsRTL] = useState(false);
 
   const { data: article, isLoading } = useQuery<any>({
     queryKey: [`/api/posts/${id}`],
@@ -129,19 +131,29 @@ export default function Article() {
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
           <Breadcrumbs items={breadcrumbs} />
-          <Button
-            variant="ghost"
-            asChild
-            className="mb-6"
-            data-testid="button-back-home"
-          >
-            <Link href="/">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t("backToHome")}
-            </Link>
-          </Button>
+          <div className="flex items-center gap-3 mb-6">
+            <Button
+              variant="ghost"
+              asChild
+              data-testid="button-back-home"
+            >
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t("backToHome")}
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRTL(!isRTL)}
+              data-testid="button-toggle-rtl-article"
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              {isRTL ? "LTR" : "Translate"}
+            </Button>
+          </div>
 
-        <article>
+        <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
           <div className="mb-8 md:mb-12">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <Badge variant="default" data-testid="badge-category">
@@ -155,7 +167,7 @@ export default function Article() {
             </div>
 
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6"
+              className={`text-3xl md:text-4xl lg:text-5xl font-bold mb-6 ${isRTL ? "text-right" : ""}`}
               data-testid="text-article-title"
             >
               {article.title}
@@ -203,15 +215,16 @@ export default function Article() {
           </div>
 
           {article.summary && (
-            <div className="bg-card border border-border rounded-md p-6 mb-8">
-              <p className="text-lg text-foreground font-medium" data-testid="text-summary">
+            <div className="bg-card border border-border rounded-md p-6 mb-8" dir={isRTL ? "rtl" : undefined}>
+              <p className={`text-lg text-foreground font-medium ${isRTL ? "text-right" : ""}`} data-testid="text-summary">
                 {article.summary}
               </p>
             </div>
           )}
 
           <div
-            className="prose prose-lg dark:prose-invert max-w-none mb-12"
+            className={`prose prose-lg dark:prose-invert max-w-none mb-12 ${isRTL ? "text-right" : ""}`}
+            dir={isRTL ? "rtl" : undefined}
             dangerouslySetInnerHTML={{
               __html: article.content ? article.content.replace(/\n/g, "<br />") : '',
             }}

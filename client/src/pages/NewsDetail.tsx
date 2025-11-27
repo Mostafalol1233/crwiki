@@ -37,6 +37,7 @@ export default function NewsDetail() {
   const newsId = params.id;
   const { t, language, toggleLanguage } = useLanguage();
   const [showTranslation, setShowTranslation] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
 
   const { data: newsItems = [], isLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
@@ -128,6 +129,16 @@ export default function NewsDetail() {
             >
               <Globe className="h-5 w-5" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRTL(!isRTL)}
+              className="ml-2"
+              data-testid="button-toggle-rtl-news"
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              {isRTL ? "LTR" : "Translate"}
+            </Button>
             {hasTranslation && (
               <Button
                 variant="outline"
@@ -180,8 +191,8 @@ export default function NewsDetail() {
           const purified = (createDOMPurify as any)(window as any).sanitize(html);
           return (
             <article
-              className="prose prose-lg dark:prose-invert max-w-none"
-              dir={showTranslation ? "rtl" : undefined}
+              className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+              dir={isRTL ? "rtl" : undefined}
               dangerouslySetInnerHTML={{ __html: purified }}
               data-testid="text-news-content"
             />

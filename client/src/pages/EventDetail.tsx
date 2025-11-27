@@ -36,6 +36,7 @@ export default function EventDetail() {
   const { t } = useLanguage();
   const [error, setError] = useState<Error | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
 
   const { data: event, isLoading } = useQuery<Event>({
     queryKey: ["event", id],
@@ -128,7 +129,7 @@ export default function EventDetail() {
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
           <Breadcrumbs items={breadcrumbs} />
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => setLocation("/")}
@@ -136,6 +137,15 @@ export default function EventDetail() {
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("back")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRTL(!isRTL)}
+              data-testid="button-toggle-rtl-event"
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              {isRTL ? "LTR" : "Translate"}
             </Button>
           </div>
 
@@ -179,15 +189,15 @@ export default function EventDetail() {
             </div>
 
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-title">
+              <h1 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? "text-right" : ""}`} data-testid="text-title">
                 {title}
               </h1>
 
               {description && (
                 <div 
-                  className="prose prose-lg dark:prose-invert max-w-none"
-                  // createDOMPurify returns a DOMPurify instance bound to the window
-              dangerouslySetInnerHTML={{ __html: (createDOMPurify as any)(window as any).sanitize(description) }}
+                  className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+                  dir={isRTL ? "rtl" : undefined}
+                  dangerouslySetInnerHTML={{ __html: (createDOMPurify as any)(window as any).sanitize(description) }}
                   data-testid="text-description"
                 />
               )}

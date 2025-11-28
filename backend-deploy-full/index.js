@@ -2621,7 +2621,7 @@ async function registerRoutes(app2) {
 
     app2.post("/api/mercenaries", requireAuth, async (req, res) => {
         try {
-            const { name, image, role, description, voiceLines } = req.body;
+            const { name, image, role, description, voiceLines, order } = req.body;
             if (!name || !image || !role) {
                 return res.status(400).json({ error: "name, image, and role required" });
             }
@@ -2630,7 +2630,8 @@ async function registerRoutes(app2) {
                 image,
                 role,
                 description: description || "",
-                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : [],
+                order: typeof order === "number" ? order : (typeof order === "string" && order.trim() ? parseInt(order.trim(), 10) : undefined),
             });
             res.status(201).json(merc);
         } catch (error) {
@@ -2640,14 +2641,15 @@ async function registerRoutes(app2) {
 
     app2.patch("/api/mercenaries/:id", requireAuth, async (req, res) => {
         try {
-            const { name, image, role, description, voiceLines } = req.body;
+            const { name, image, role, description, voiceLines, order } = req.body;
             const merc = await storage.updateMercenary(req.params.id, {
                 id: req.params.id,
                 name,
                 image,
                 role,
                 description: description || "",
-                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : [],
+                order: typeof order === "number" ? order : (typeof order === "string" && order.trim() ? parseInt(order.trim(), 10) : undefined),
             });
             if (!merc) {
                 return res.status(404).json({ error: "Mercenary not found" });

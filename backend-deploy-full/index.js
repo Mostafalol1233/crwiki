@@ -1292,6 +1292,7 @@ async function registerRoutes(app2) {
                         id: admin.id,
                         username: admin.username,
                         role: admin.role,
+                        permissions: admin.permissions || {},
                     },
                 });
             } else if (password) {
@@ -1300,7 +1301,7 @@ async function registerRoutes(app2) {
                     return res.status(401).json({ error: "Invalid password" });
                 }
                 const token = generateToken({ role: "super_admin" });
-                res.json({ token, admin: { role: "super_admin" } });
+                res.json({ token, admin: { role: "super_admin", permissions: {} } });
             } else {
                 return res
                     .status(400)

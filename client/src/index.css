@@ -244,7 +244,7 @@
     html, body {
       overflow-x: auto;
       overscroll-behavior-x: contain;
-      touch-action: pan-x;
+      touch-action: pan-y pan-x;
     }
   }
 }

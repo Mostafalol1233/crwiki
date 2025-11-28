@@ -1980,6 +1980,84 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+
+    app2.get("/robots.txt", async (_req, res) => {
+        try {
+            res.set("Cache-Control", "no-transform, max-age=0, must-revalidate");
+            res.type("text/plain");
+            res.send(`# CrossFire Wiki - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /my-tickets
+Disallow: /api/
+
+# Allow important pages
+Allow: /weapons
+Allow: /modes
+Allow: /ranks
+Allow: /tutorials
+Allow: /news
+Allow: /events
+Allow: /posts
+Allow: /article/*
+Allow: /news/*
+Allow: /events/*
+Allow: /tutorials/*
+Allow: /category/*
+
+# Crawl delay for politeness
+Crawl-delay: 0.5
+
+# Sitemap location
+Sitemap: https://crossfire.wiki/sitemap.xml
+`);
+        } catch (error) {
+            res.status(500).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: https://crossfire.wiki/sitemap.xml\n");
+        }
+    });
+
+    app2.get("/favicon.ico", async (_req, res) => {
+        try {
+            res.set("Cache-Control", "no-transform, max-age=0, must-revalidate");
+            res.redirect(302, "/favicon.png?v=20251128");
+        } catch (error) {
+            res.redirect(302, "/favicon.png");
+        }
+    });
+
+    app2.post("/api/admin/indexnow", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const body = req.body || {};
+            const urlList = Array.isArray(body.urlList) ? body.urlList : [];
+            if (!urlList.length) {
+                return res.status(400).json({ error: "urlList is required and must be a non-empty array" });
+            }
+            const KEY = body.key || process.env.INDEXNOW_KEY || "7fb6f19aa8e6478fb6dce57412beeeb3";
+            const HOST = body.host || process.env.SITE_HOST || "crossfire.wiki";
+            const KEY_LOC = body.keyLocation || `https://${HOST}/${KEY}.txt`;
+
+            const payload = {
+                host: HOST,
+                key: KEY,
+                keyLocation: KEY_LOC,
+                urlList,
+            };
+            const resp = await fetch("https://api.indexnow.org/IndexNow", {
+                method: "POST",
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                body: JSON.stringify(payload),
+            });
+            const text = await resp.text();
+            res.status(resp.status).type("text/plain").send(text);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app2.get("/api/tickets/my/:email", async (req, res) => {
         try {
             const { email } = req.params;
@@ -2010,10 +2088,46 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/tickets", async (req, res) => {
+    app2.post("/api/tickets", upload.fields([{ name: "image", maxCount: 1 }, { name: "video", maxCount: 1 }]), async (req, res) => {
         try {
-            const data = insertTicketSchema.parse(req.body);
-            const ticket = await storage.createTicket(data);
+            const body = req.body || {};
+            let mediaUrl = body.mediaUrl || "";
+            let mediaType = body.mediaType || "";
+
+            const imageFile = req.files && Array.isArray(req.files.image) ? req.files.image[0] : undefined;
+            const videoFile = req.files && Array.isArray(req.files.video) ? req.files.video[0] : undefined;
+
+            async function uploadToCatbox(file) {
+                const fd = new FormData();
+                fd.append("reqtype", "fileupload");
+                const blob = new Blob([file.buffer], { type: file.mimetype });
+                fd.append("fileToUpload", blob, file.originalname);
+                const resp = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: fd });
+                if (!resp.ok) throw new Error("Failed to upload media");
+                const url = await resp.text();
+                return url.trim();
+            }
+
+            if (videoFile) {
+                mediaUrl = await uploadToCatbox(videoFile);
+                mediaType = "video";
+            } else if (imageFile) {
+                mediaUrl = await uploadToCatbox(imageFile);
+                mediaType = "image";
+            }
+
+            const payload = insertTicketSchema.parse({
+                title: body.title,
+                description: body.description,
+                userName: body.userName,
+                userEmail: body.userEmail,
+                status: body.status,
+                priority: body.priority,
+                category: body.category,
+                mediaUrl,
+                mediaType,
+            });
+            const ticket = await storage.createTicket(payload);
             const formattedTicket = {
                 ...ticket,
                 createdAt: formatDate(ticket.createdAt),

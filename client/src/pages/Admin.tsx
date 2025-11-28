@@ -1241,15 +1241,17 @@ export default function Admin() {
                   {canTutorials && <option value="tutorials">Tutorials</option>}
                   {canSellers && <option value="sellers">Sellers</option>}
                   {canCFData && <option value="cf-data">CF Data</option>}
+                  {canRestoration && <option value="restoration">Restore Data</option>}
                   {canTranslations && <option value="translations">Translations</option>}
                   {canVerification && <option value="verification">Review Verification</option>}
                   {canAdmins && <option value="admins">Admins</option>}
                   {canSubscribers && <option value="subscribers">Subscribers</option>}
                   {canScraper && <option value="scraper">Scraper</option>}
                   {canMercenaries && <option value="mercenaries">Mercenaries</option>}
-                {canTickets && <option value="tickets">Tickets</option>}
-                {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
-              </select>
+                  {canTickets && <option value="tickets">Tickets</option>}
+                  {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
+                  {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
+                </select>
               </div>
 
               {/* large screen: vertical tabs list */}

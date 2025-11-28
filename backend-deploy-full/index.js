@@ -897,6 +897,12 @@ var MongoDBStorage = class {
             id: String(lean._id),
         };
     }
+    async deleteSellerReview(sellerId, reviewId) {
+        const result = await SellerReviewModel.findByIdAndDelete(reviewId);
+        if (!result) return false;
+        await this.updateSellerRating(sellerId);
+        return true;
+    }
     async updateSellerRating(sellerId) {
         const reviews = await SellerReviewModel.find({ sellerId });
         const totalReviews = reviews.length;
@@ -2721,11 +2727,22 @@ async function registerRoutes(app2) {
     });
     app2.post("/api/sellers/:id/reviews", async (req, res) => {
         try {
-            const data = insertSellerReviewSchema.parse({
+            const payload = insertSellerReviewSchema.parse({
                 ...req.body,
                 sellerId: req.params.id,
             });
-            const review = await storage.createSellerReview(data);
+            const existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
+            if (existing) {
+                return res.status(400).json({ error: "You have already submitted a review for this seller." });
+            }
+            const secret = process.env.REVIEW_VERIFICATION_SECRET || "";
+            if (secret && req.body && typeof req.body.verificationAnswer === "string") {
+                const answer = String(req.body.verificationAnswer || "").trim().toLowerCase();
+                if (answer !== secret.trim().toLowerCase()) {
+                    return res.status(403).json({ error: "Verification failed" });
+                }
+            }
+            const review = await storage.createSellerReview(payload);
             res.json(review);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -2736,6 +2753,21 @@ async function registerRoutes(app2) {
     app2.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
             res.json([]);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/public/settings/review-verification", async (_req, res) => {
+        try {
+            const enabled = Boolean(process.env.REVIEW_VERIFICATION_SECRET);
+            res.json({
+                reviewVerificationEnabled: enabled,
+                reviewVerificationVideoUrl: "",
+                reviewVerificationTimecode: "",
+                reviewVerificationPrompt: enabled ? "Enter the secret word from the video." : "",
+                reviewVerificationYouTubeChannelUrl: "",
+            });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3154,4 +3186,17 @@ app.post(
         res.json({ closed: false });
     },
 );
+
+    app2.delete("/api/sellers/:id/reviews/:reviewId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id, reviewId } = req.params;
+            const success = await storage.deleteSellerReview(id, reviewId);
+            if (!success) {
+                return res.status(404).json({ error: "Review not found" });
+            }
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
 

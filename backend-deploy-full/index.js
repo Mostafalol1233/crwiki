@@ -142,6 +142,7 @@ var SellerSchema = new Schema({
     promotionText: { type: String, default: "" },
     averageRating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
+    rank: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
 });
 var SellerReviewSchema = new Schema({
@@ -318,6 +319,7 @@ var insertSellerSchema = z.object({
     website: z.string().optional(),
     featured: z.boolean().optional(),
     promotionText: z.string().optional(),
+    rank: z.number().optional(),
 });
 var insertSellerReviewSchema = z.object({
     sellerId: z.string(),
@@ -822,7 +824,7 @@ var MongoDBStorage = class {
         return !!result;
     }
     async getAllSellers() {
-        const sellers = await SellerModel.find().sort({ createdAt: -1 }).lean();
+        const sellers = await SellerModel.find().sort({ rank: 1, createdAt: -1 }).lean();
         return sellers.map((seller) => ({
             ...seller,
             id: String(seller._id),

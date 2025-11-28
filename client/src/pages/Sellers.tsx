@@ -23,6 +23,7 @@ interface Seller {
   promotionText: string;
   averageRating: number;
   totalReviews: number;
+  rank?: number;
 }
 
 export default function Sellers() {
@@ -33,8 +34,17 @@ export default function Sellers() {
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const featuredSellers = sellers.filter(s => s.featured);
-  const regularSellers = sellers.filter(s => !s.featured);
+  const sortByRankThenRating = (a: Seller, b: Seller) => {
+    const ra = typeof a.rank === 'number' ? a.rank! : 9999;
+    const rb = typeof b.rank === 'number' ? b.rank! : 9999;
+    if (ra !== rb) return ra - rb;
+    const ar = a.averageRating || 0;
+    const br = b.averageRating || 0;
+    return br - ar;
+  };
+
+  const featuredSellers = sellers.filter(s => s.featured).slice().sort(sortByRankThenRating);
+  const regularSellers = sellers.filter(s => !s.featured).slice().sort(sortByRankThenRating);
 
   const openSellerDialog = (seller: Seller) => {
     setSelectedSeller(seller);

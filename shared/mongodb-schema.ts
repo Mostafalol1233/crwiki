@@ -141,6 +141,7 @@ export interface ISeller extends Document {
   promotionText: string;
   averageRating: number;
   totalReviews: number;
+  rank?: number;
   createdAt: Date;
 }
 
@@ -368,6 +369,7 @@ const SellerSchema = new Schema<ISeller>({
   promotionText: { type: String, default: '' },
   averageRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
+  rank: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -599,6 +601,7 @@ export const insertSellerSchema = z.object({
   website: z.string().optional(),
   featured: z.boolean().optional(),
   promotionText: z.string().optional(),
+  rank: z.number().optional(),
 });
 
 export const insertSellerReviewSchema = z.object({

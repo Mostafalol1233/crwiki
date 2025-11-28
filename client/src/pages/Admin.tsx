@@ -353,6 +353,7 @@ export default function Admin() {
     website: "",
     featured: false,
     promotionText: "",
+    rank: "",
   });
 
   const [adminForm, setAdminForm] = useState({
@@ -1083,6 +1084,7 @@ export default function Admin() {
       website: "",
       featured: false,
       promotionText: "",
+      rank: "",
     });
   };
 
@@ -3255,6 +3257,18 @@ export default function Admin() {
                         data-testid="input-seller-promotion"
                       />
                     </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="seller-rank">Rank Position (1 = top)</Label>
+                      <Input
+                        id="seller-rank"
+                        placeholder="e.g., 1"
+                        value={sellerForm.rank}
+                        onChange={(e) =>
+                          setSellerForm({ ...sellerForm, rank: e.target.value })
+                        }
+                        data-testid="input-seller-rank"
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="seller-images">Image URLs</Label>
                       <Textarea
@@ -3427,6 +3441,7 @@ export default function Admin() {
                           discord: sellerForm.discord,
                           website: sellerForm.website,
                           featured: sellerForm.featured,
+                          rank: sellerForm.rank.trim() ? parseInt(sellerForm.rank.trim(), 10) : undefined,
                         };
                         if (editingSeller) {
                           updateSellerMutation.mutate({ id: editingSeller.id, data });
@@ -3448,16 +3463,17 @@ export default function Admin() {
               <CardContent className="pt-6">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Images</TableHead>
-                      <TableHead>Prices</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Featured</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Images</TableHead>
+                    <TableHead>Prices</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sellers?.map((seller: any) => (
@@ -3493,6 +3509,9 @@ export default function Admin() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="outline" className="text-xs">{typeof seller.rank === 'number' ? seller.rank : '—'}</Badge>
+                        </TableCell>
+                        <TableCell>
                           {seller.featured && <Badge variant="default" className="text-xs">Featured</Badge>}
                         </TableCell>
                         <TableCell className="text-right">
@@ -3500,27 +3519,28 @@ export default function Admin() {
                             <Button
                               variant="ghost"
                               size="icon"
-                                  onClick={() => {
-                                    setEditingSeller(seller);
-                                    setSellerForm({
-                                      name: seller.name,
-                                      description: seller.description || "",
-                                      images: seller.images?.join(', ') || "",
-                                      prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
-                                      priceItems: seller.prices?.map((p: any) => ({
-                                        item: p.item || "",
-                                        price: String(p.price || "")
-                                      })) || [],
-                                      email: seller.email || "",
-                                      phone: seller.phone || "",
-                                      whatsapp: seller.whatsapp || "",
-                                      discord: seller.discord || "",
-                                      website: seller.website || "",
-                                      featured: seller.featured || false,
-                                      promotionText: seller.promotionText || "",
-                                    });
-                                    setIsCreatingSeller(true);
-                                  }}
+                                onClick={() => {
+                                  setEditingSeller(seller);
+                                  setSellerForm({
+                                    name: seller.name,
+                                    description: seller.description || "",
+                                    images: seller.images?.join(', ') || "",
+                                    prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
+                                    priceItems: seller.prices?.map((p: any) => ({
+                                      item: p.item || "",
+                                      price: String(p.price || "")
+                                    })) || [],
+                                    email: seller.email || "",
+                                    phone: seller.phone || "",
+                                    whatsapp: seller.whatsapp || "",
+                                    discord: seller.discord || "",
+                                    website: seller.website || "",
+                                    featured: seller.featured || false,
+                                    promotionText: seller.promotionText || "",
+                                    rank: typeof seller.rank === 'number' ? String(seller.rank) : "",
+                                  });
+                                  setIsCreatingSeller(true);
+                                }}
                               data-testid={`button-edit-seller-${seller.id}`}
                             >
                               <Edit className="h-4 w-4" />

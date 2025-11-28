@@ -606,10 +606,17 @@ export default function Home() {
                   No articles have been published yet.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                  {latestArticles.map((article) => (
-                    <ArticleCard key={article.id} article={article} />
-                  ))}
+                <div
+                  className="overflow-x-auto -mx-4 md:mx-0"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  <div className="flex gap-6 md:gap-8 px-4">
+                    {latestArticles.map((article) => (
+                      <div key={article.id} className="min-w-[280px] sm:min-w-[320px] lg:min-w-[360px]">
+                        <ArticleCard article={article} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </section>

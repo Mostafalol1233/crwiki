@@ -662,7 +662,7 @@ export class MongoDBStorage implements IStorage {
   }
 
   async getAllSellers(): Promise<Seller[]> {
-    const sellers = await SellerModel.find().sort({ createdAt: -1 }).lean();
+    const sellers = await SellerModel.find().sort({ rank: 1, createdAt: -1 }).lean();
     return sellers.map(seller => ({
       ...seller,
       id: String(seller._id),
@@ -670,6 +670,7 @@ export class MongoDBStorage implements IStorage {
       prices: seller.prices || [],
       averageRating: seller.averageRating || 0,
       totalReviews: seller.totalReviews || 0,
+      rank: typeof (seller as any).rank === 'number' ? (seller as any).rank : 9999,
     })) as any;
   }
 
@@ -683,6 +684,7 @@ export class MongoDBStorage implements IStorage {
       prices: seller.prices || [],
       averageRating: seller.averageRating || 0,
       totalReviews: seller.totalReviews || 0,
+      rank: typeof (seller as any).rank === 'number' ? (seller as any).rank : 9999,
     } as any;
   }
 
@@ -697,6 +699,7 @@ export class MongoDBStorage implements IStorage {
       prices: lean.prices || [],
       averageRating: lean.averageRating || 0,
       totalReviews: lean.totalReviews || 0,
+      rank: typeof (lean as any).rank === 'number' ? (lean as any).rank : 9999,
     } as any;
   }
 
@@ -710,6 +713,7 @@ export class MongoDBStorage implements IStorage {
       prices: updated.prices || [],
       averageRating: updated.averageRating || 0,
       totalReviews: updated.totalReviews || 0,
+      rank: typeof (updated as any).rank === 'number' ? (updated as any).rank : 9999,
     } as any;
   }
 

@@ -149,6 +149,7 @@ var SellerSchema = new Schema({
 var SellerReviewSchema = new Schema({
     sellerId: { type: String, required: true },
     userName: { type: String, required: true },
+    userPhone: { type: String, default: "" },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
@@ -180,6 +181,7 @@ var MercenarySchema = new Schema({
     role: { type: String, default: "" },
     description: { type: String, default: "" },
     voiceLines: { type: [String], default: [] },
+    order: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
 });
 var WeaponSchema = new Schema({
@@ -625,7 +627,7 @@ var MongoDBStorage = class {
     }
     async getAllMercenaries() {
         const mercenaries = await MercenaryModel.find()
-            .sort({ createdAt: -1 })
+            .sort({ order: 1, createdAt: -1 })
             .lean();
         return mercenaries.map((m) => ({
             ...m,
@@ -2733,7 +2735,9 @@ async function registerRoutes(app2) {
                 ...req.body,
                 sellerId: req.params.id,
             });
-            const existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
+            const existing = payload.userPhone
+                ? await SellerReviewModel.findOne({ sellerId: payload.sellerId, userPhone: payload.userPhone })
+                : await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
             if (existing) {
                 return res.status(400).json({ error: "You have already submitted a review for this seller." });
             }

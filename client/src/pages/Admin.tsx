@@ -98,14 +98,16 @@ export default function Admin() {
     role: "", 
     image: "", 
     description: "",
-    voiceLines: [] as string[] 
+    voiceLines: [] as string[],
+    order: ""
   });
   const [createMercForm, setCreateMercForm] = useState({ 
     name: "", 
     image: "", 
     role: "", 
     description: "",
-    voiceLines: [] as string[] 
+    voiceLines: [] as string[],
+    order: ""
   });
   const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [uploadedAudioUrls, setUploadedAudioUrls] = useState<string[]>([]);
@@ -901,7 +903,7 @@ export default function Admin() {
       console.log("Mercenary created:", response);
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setIsCreatingMerc(false);
-      setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
+      setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [], order: "" });
       toast({ title: "Mercenary created successfully", description: `${response?.voiceLines?.length || 0} voice lines saved` });
     },
     onError: (error: any) => {
@@ -922,7 +924,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setEditingMerc(null);
       setIsEditingMerc(false);
-      setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
+      setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [], order: "" });
       toast({ title: "Mercenary updated successfully" });
     },
     onError: () => {
@@ -3968,7 +3970,7 @@ export default function Admin() {
                   setIsCreatingMerc(open);
                   if (!open) {
                     setEditingMerc(null);
-                    setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
+                    setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [], order: "" });
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -4032,6 +4034,19 @@ export default function Admin() {
                         }}
                         rows={3}
                         data-testid="input-mercenary-description"
+                      />
+
+                      <Input
+                        placeholder="Order (1 = first)"
+                        value={editingMerc ? mercForm.order : createMercForm.order}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, order: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, order: e.target.value });
+                          }
+                        }}
+                        data-testid="input-mercenary-order"
                       />
 
                       <div className="space-y-2">
@@ -4149,6 +4164,7 @@ export default function Admin() {
                             image: formData.image,
                             description: formData.description,
                             voiceLines: formData.voiceLines.filter((url: string) => url.trim() !== ""),
+                            order: String((formData as any).order || "").trim() ? parseInt(String((formData as any).order).trim(), 10) : undefined,
                           };
 
                           if (editingMerc) {
@@ -4208,6 +4224,7 @@ export default function Admin() {
                                     image: merc.image || "",
                                     description: merc.description || "",
                                     voiceLines: merc.voiceLines || [],
+                                    order: typeof merc.order === 'number' ? String(merc.order) : "",
                                   });
                                   setIsCreatingMerc(true);
                                 }}
@@ -4249,7 +4266,7 @@ export default function Admin() {
                 if (!open) {
                   setIsEditingMerc(false);
                   setEditingMerc(null);
-                  setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
+                  setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [], order: "" });
                 }
               }}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

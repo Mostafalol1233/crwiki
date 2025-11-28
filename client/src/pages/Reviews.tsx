@@ -43,6 +43,7 @@ interface Review {
 
 const REVIEW_FORM_DEFAULT = {
   userName: "",
+  userPhone: "",
   rating: 5,
   comment: "",
 };
@@ -149,7 +150,7 @@ export default function Reviews() {
   };
 
   const createReviewMutation = useMutation({
-    mutationFn: async (data: { sellerId: string; userName: string; rating: number; comment: string; verificationAnswer?: string }) => {
+    mutationFn: async (data: { sellerId: string; userName: string; userPhone?: string; rating: number; comment: string; verificationAnswer?: string }) => {
       return apiRequest(`/api/sellers/${data.sellerId}/reviews`, "POST", data);
     },
     onSuccess: () => {
@@ -193,6 +194,14 @@ export default function Reviews() {
       });
       return;
     }
+    if (!reviewForm.userPhone.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your phone number",
+        variant: "destructive",
+      });
+      return;
+    }
     if (verificationSettings?.reviewVerificationEnabled && !verifiedCode.trim()) {
       toast({
         title: "Verification required",
@@ -204,6 +213,7 @@ export default function Reviews() {
     createReviewMutation.mutate({
       sellerId: selectedSeller.id,
       userName: reviewForm.userName.trim(),
+      userPhone: reviewForm.userPhone.trim(),
       rating: reviewForm.rating,
       comment: reviewForm.comment.trim(),
       verificationAnswer: verificationSettings?.reviewVerificationEnabled ? verifiedCode.trim() : undefined,
@@ -350,6 +360,17 @@ export default function Reviews() {
                             onChange={(e) => setReviewForm({ ...reviewForm, userName: e.target.value })}
                             placeholder="Enter your name"
                             data-testid="input-reviewer-name"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="reviewer-phone" className="text-sm font-medium">Your Phone Number</Label>
+                          <Input
+                            id="reviewer-phone"
+                            value={reviewForm.userPhone}
+                            onChange={(e) => setReviewForm({ ...reviewForm, userPhone: e.target.value })}
+                            placeholder="Enter your phone number"
+                            data-testid="input-reviewer-phone"
                           />
                         </div>
 

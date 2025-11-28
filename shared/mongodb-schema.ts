@@ -159,6 +159,7 @@ export interface ITutorial extends Document {
   youtubeUrl: string;
   youtubeId: string;
   likes?: number;
+  order?: number;
   createdAt?: Date;
 }
 
@@ -387,6 +388,7 @@ const TutorialSchema = new Schema<ITutorial>({
   youtubeUrl: { type: String, required: true },
   youtubeId: { type: String, required: true },
   likes: { type: Number, default: 0 },
+  order: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -617,6 +619,7 @@ export const insertTutorialSchema = z.object({
   description: z.string().optional(),
   youtubeUrl: z.string().url(),
   youtubeId: z.string().min(1),
+  order: z.number().optional(),
 });
 
 export const updateTutorialSchema = insertTutorialSchema.partial();

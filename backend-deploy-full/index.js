@@ -90,6 +90,7 @@ var TutorialSchema = new Schema({
     youtubeId: { type: String, required: true },
     description: { type: String, default: "" },
     likes: { type: Number, default: 0 },
+    order: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
@@ -1567,7 +1568,7 @@ async function registerRoutes(app2) {
     app2.get("/api/tutorials", async (req, res) => {
         try {
             const items = await TutorialModel.find()
-                .sort({ createdAt: -1 })
+                .sort({ order: 1, createdAt: -1 })
                 .lean();
             res.json(items.map((it) => ({ ...it, id: String(it._id) })));
         } catch (error) {
@@ -1656,6 +1657,7 @@ async function registerRoutes(app2) {
                 youtubeId,
                 description: body.description || "",
                 likes: 0,
+                order: typeof body.order === "number" ? body.order : 9999,
             });
             const lean = await TutorialModel.findById(created._id).lean();
             res.status(201).json({ ...lean, id: String(lean._id) });
@@ -2749,6 +2751,19 @@ async function registerRoutes(app2) {
         }
     });
 
+    app2.delete("/api/sellers/:id/reviews/:reviewId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id, reviewId } = req.params;
+            const success = await storage.deleteSellerReview(id, reviewId);
+            if (!success) {
+                return res.status(404).json({ error: "Review not found" });
+            }
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Chat Admin Routes
     app2.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
@@ -3186,17 +3201,4 @@ app.post(
         res.json({ closed: false });
     },
 );
-
-    app2.delete("/api/sellers/:id/reviews/:reviewId", requireAuth, requireSuperAdmin, async (req, res) => {
-        try {
-            const { id, reviewId } = req.params;
-            const success = await storage.deleteSellerReview(id, reviewId);
-            if (!success) {
-                return res.status(404).json({ error: "Review not found" });
-            }
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
 

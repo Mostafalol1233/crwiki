@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -31,8 +31,10 @@ export default function Home() {
   });
 
   const { data: allTutorials = [] } = useQuery<Tutorial[]>({
-    queryKey: ["tutorials"],
+    queryKey: ["/api/tutorials"],
   });
+
+  const [zoom, setZoom] = useState(1);
 
   const heroPost = allPosts.filter((p: any) => p.previewOnHome !== false).find((p) => p.featured) || {
     id: "1",
@@ -587,7 +589,11 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
-          <main className="lg:col-span-8 space-y-8 md:space-y-12">
+          <div className="flex items-center justify-end gap-2 mb-4 lg:col-span-12">
+            <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.max(0.7, z - 0.1))} data-testid="button-zoom-out">−</Button>
+            <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.min(1.5, z + 0.1))} data-testid="button-zoom-in">+</Button>
+          </div>
+          <main className="lg:col-span-8 space-y-8 md:space-y-12" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
             {/* Latest Articles */}
             <section className="space-y-4 pt-6 border-t border-border/50">
               <div className="flex items-center justify-between">

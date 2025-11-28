@@ -32,6 +32,7 @@ export default function TutorialManager({ canManage: canManageProp }: { canManag
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [order, setOrder] = useState<string>("");
 
   const { data: tutorials = [], isLoading, isError } = useQuery<Tutorial[]>({
     queryKey: ["/api/tutorials"],
@@ -116,11 +117,13 @@ export default function TutorialManager({ canManage: canManageProp }: { canManag
       setTitle(tutorial.title);
       setDescription(tutorial.description || "");
       setYoutubeUrl(tutorial.youtubeUrl);
+      setOrder(typeof tutorial.order === 'number' ? String(tutorial.order) : "");
     } else {
       setEditingTutorial(null);
       setTitle("");
       setDescription("");
       setYoutubeUrl("");
+      setOrder("");
     }
     setIsDialogOpen(true);
   };
@@ -160,6 +163,7 @@ export default function TutorialManager({ canManage: canManageProp }: { canManag
       description: description.trim(),
       youtubeUrl: youtubeUrl.trim(),
       youtubeId,
+      order: order.trim() ? parseInt(order.trim(), 10) : undefined,
     };
 
     if (editingTutorial) {
@@ -331,6 +335,16 @@ export default function TutorialManager({ canManage: canManageProp }: { canManag
                 placeholder="Enter tutorial description (optional)"
                 rows={4}
                 data-testid="textarea-description"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Order (1 = first)</label>
+              <Input
+                value={order}
+                onChange={(e) => setOrder(e.target.value)}
+                placeholder="e.g., 1"
+                data-testid="input-order"
               />
             </div>
 

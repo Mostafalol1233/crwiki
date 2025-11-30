@@ -158,16 +158,17 @@ var SellerSchema = new Schema({
     verified: { type: Boolean, default: false },
 });
 var SellerReviewSchema = new Schema({
-    sellerId: { type: String, required: true },
-    userName: { type: String, required: true },
-    userPhoneEncrypted: { type: String, default: "" },
-    phoneCountryCode: { type: String, default: "" },
-    phoneLast4: { type: String, default: "" },
-    phoneVerified: { type: Boolean, default: false },
-    helpfulVotes: { type: Number, default: 0 },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, default: "" },
-    createdAt: { type: Date, default: Date.now },
+  sellerId: { type: String, required: true },
+  userId: { type: String, default: "" },
+  userName: { type: String, required: true },
+  userPhoneEncrypted: { type: String, default: "" },
+  phoneCountryCode: { type: String, default: "" },
+  phoneLast4: { type: String, default: "" },
+  phoneVerified: { type: Boolean, default: false },
+  helpfulVotes: { type: Number, default: 0 },
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  comment: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
 });
 var UserModel = mongoose.model("User", UserSchema);
 var PostModel = mongoose.model("Post", PostSchema);
@@ -206,6 +207,7 @@ SellerSchema.index({ name: 1 });
 SellerSchema.index({ seller_name_slug: 1 }, { unique: true });
 EventSchema.index({ event_name_slug: 1 }, { unique: true });
 PostSchema.index({ post_slug: 1 }, { unique: true });
+SellerReviewSchema.index({ sellerId: 1, userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "string" } } });
 var AdminAuditLogSchema = new Schema({
     action: { type: String, required: true },
     reviewId: { type: String, required: true },
@@ -372,11 +374,12 @@ var insertSellerSchema = z.object({
     rank: z.number().optional(),
 });
 var insertSellerReviewSchema = z.object({
-    sellerId: z.string(),
-    userName: z.string(),
-    userPhone: z.string().optional(),
-    rating: z.number().min(1).max(5),
-    comment: z.string().optional(),
+  sellerId: z.string(),
+  userId: z.string().optional(),
+  userName: z.string(),
+  userPhone: z.string().optional(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
 });
 
 // server/mongodb.ts
@@ -613,6 +616,10 @@ var MongoDBStorage = class {
     async createComment(comment) {
         const newComment = await CommentModel.create(comment);
         return newComment;
+    }
+    async deleteComment(commentId) {
+        const result = await CommentModel.findByIdAndDelete(commentId);
+        return !!result;
     }
     async getAllEvents() {
         const events = await EventModel.find().sort({ order: -1, _id: -1 }).lean();
@@ -1047,6 +1054,7 @@ var MongoDBStorage = class {
         return {
             id: String(lean._id),
             sellerId: lean.sellerId,
+            userId: lean.userId || "",
             userName: lean.userName,
             rating: lean.rating,
             comment: lean.comment || "",
@@ -1710,10 +1718,25 @@ async function registerRoutes(app2) {
         try {
             const comments = await storage.getCommentsByPostId(req.params.id);
             const formattedComments = comments.map((comment) => ({
-                ...comment,
+                id: String(comment._id),
+                name: comment.name,
+                content: comment.content,
                 date: formatDate(comment.createdAt),
+                parentCommentId: comment.parentCommentId || null,
             }));
             res.json(formattedComments);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.delete("/api/posts/:id/comments/:commentId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id, commentId } = req.params;
+            const ok = await storage.deleteComment(commentId);
+            if (!ok) return res.status(404).json({ error: "Comment not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("delete_post_comment", commentId, adminId, { postId: id });
+            res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3162,12 +3185,18 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             const payload = insertSellerReviewSchema.parse({
                 ...req.body,
                 sellerId: req.params.id,
+                userId: req.user?.id || "",
             });
-            const existing = payload.userPhone
-                ? await SellerReviewModel.findOne({ sellerId: payload.sellerId, phoneLast4: maskLast4(payload.userPhone) })
-                : await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
+            let existing = null;
+            if (payload.userId) {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userId: payload.userId });
+            } else if (payload.userPhone) {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, phoneLast4: maskLast4(payload.userPhone) });
+            } else {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
+            }
             if (existing) {
-                return res.status(400).json({ error: "You have already submitted a review for this seller." });
+                return res.status(409).json({ error: "You have already submitted a review for this seller." });
             }
             const review = await storage.createSellerReview(payload);
             res.json(review);
@@ -3781,4 +3810,33 @@ app.post(
         res.json({ closed: false });
     },
 );
+
+    app2.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            let eventsUpdated = 0;
+            let postsUpdated = 0;
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const events = await EventModel.find().lean();
+            for (const ev of events) {
+                const slug = ev.event_name_slug || slugifyEventName(ev.title || "");
+                const canonical = `${base}/events/${slug}`;
+                if (!ev.event_name_slug || !ev.canonicalUrl) {
+                    await EventModel.updateOne({ _id: ev._id }, { $set: { event_name_slug: slug, canonicalUrl: canonical } });
+                    eventsUpdated++;
+                }
+            }
+            const posts = await PostModel.find().lean();
+            for (const p of posts) {
+                const slug = p.post_slug || slugifyEventName(p.title || "");
+                const canonical = `${base}/article/${slug}`;
+                if (!p.post_slug || !p.canonicalUrl) {
+                    await PostModel.updateOne({ _id: p._id }, { $set: { post_slug: slug, canonicalUrl: canonical } });
+                    postsUpdated++;
+                }
+            }
+            res.json({ success: true, eventsUpdated, postsUpdated });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
 

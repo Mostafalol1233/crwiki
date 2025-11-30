@@ -62,6 +62,15 @@ export default function Article() {
     },
   });
 
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => apiRequest(`/api/posts/${(article as any)?.id || id}/comments/${commentId}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/posts/${(article as any)?.id || id}/comments`],
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -268,6 +277,8 @@ export default function Article() {
             <CommentSection
               comments={comments}
               onCommentSubmit={handleCommentSubmit}
+              isAdmin={Boolean(localStorage.getItem("adminToken"))}
+              onDeleteComment={(cid) => deleteCommentMutation.mutate(cid)}
             />
           </div>
         </article>

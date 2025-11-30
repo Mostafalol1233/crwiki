@@ -1000,6 +1000,18 @@ export default function Admin() {
     },
   });
 
+  const migrateSlugsMutation = useMutation({
+    mutationFn: () => apiRequest("/api/admin/migrate-slugs", "POST"),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({ title: "Slugs migrated", description: `Events: ${data?.eventsUpdated || 0}, Posts: ${data?.postsUpdated || 0}` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to migrate slugs", description: error.message, variant: "destructive" });
+    },
+  });
+
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -1936,6 +1948,16 @@ export default function Admin() {
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
+                    </Button>
+                    )}
+                    {isSuperAdmin && (
+                    <Button
+                      variant="outline"
+                      onClick={() => migrateSlugsMutation.mutate()}
+                      disabled={migrateSlugsMutation.isPending}
+                      data-testid="button-migrate-slugs"
+                    >
+                      {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
                     </Button>
                     )}
                     <Dialog open={isCreatingEvent} onOpenChange={(open) => {

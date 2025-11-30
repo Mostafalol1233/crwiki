@@ -167,7 +167,7 @@ export default function Reviews() {
   };
 
   const createReviewMutation = useMutation({
-    mutationFn: async (data: { sellerId: string; userName: string; userPhone?: string; rating: number; comment: string; verificationAnswer?: string }) => {
+    mutationFn: async (data: { sellerId: string; userId?: string; userName: string; userPhone?: string; rating: number; comment: string; verificationAnswer?: string }) => {
       return apiRequest(`/api/sellers/${data.sellerId}/reviews`, "POST", data);
     },
     onSuccess: () => {
@@ -203,6 +203,15 @@ export default function Reviews() {
 
   const handleSubmitReview = () => {
     if (!selectedSeller) return;
+    const userToken = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+    if (!userToken) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in or sign up to submit a review.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!reviewForm.userName.trim()) {
       toast({
         title: "Error",
@@ -214,6 +223,7 @@ export default function Reviews() {
     // Phone optional during open submission; CSRF disabled server-side
     createReviewMutation.mutate({
       sellerId: selectedSeller.id,
+      userId: typeof window !== 'undefined' ? (localStorage.getItem('userId') || '') : '',
       userName: reviewForm.userName.trim(),
       userPhone: reviewForm.userPhone.trim(),
       rating: reviewForm.rating,

@@ -18,6 +18,8 @@ export interface Comment {
 interface CommentSectionProps {
   comments: Comment[];
   onCommentSubmit?: (author: string, content: string, parentCommentId?: string) => void;
+  isAdmin?: boolean;
+  onDeleteComment?: (id: string) => void;
 }
 
 interface CommentItemProps {
@@ -86,6 +88,17 @@ function CommentItem({
                   Reply
                 </Button>
               )}
+              {typeof (allComments as any)._isAdmin !== 'undefined' && (allComments as any)._isAdmin && (allComments as any)._onDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => (allComments as any)._onDelete(comment.id)}
+                  data-testid={`button-delete-comment-${comment.id}`}
+                  className="h-8 ml-2"
+                >
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
 
@@ -150,7 +163,7 @@ function CommentItem({
   );
 }
 
-export function CommentSection({ comments, onCommentSubmit }: CommentSectionProps) {
+export function CommentSection({ comments, onCommentSubmit, isAdmin = false, onDeleteComment }: CommentSectionProps) {
   const { t } = useLanguage();
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
@@ -187,6 +200,9 @@ export function CommentSection({ comments, onCommentSubmit }: CommentSectionProp
     setReplyingTo(null);
   };
 
+  const flaggedComments = comments as any;
+  flaggedComments._isAdmin = isAdmin;
+  flaggedComments._onDelete = onDeleteComment;
   const topLevelComments = comments.filter(c => !c.parentCommentId);
 
   return (
@@ -224,7 +240,7 @@ export function CommentSection({ comments, onCommentSubmit }: CommentSectionProp
           <CommentItem
             key={comment.id}
             comment={comment}
-            allComments={comments}
+            allComments={flaggedComments}
             onReply={setReplyingTo}
             replyingTo={replyingTo}
             replyName={replyName}

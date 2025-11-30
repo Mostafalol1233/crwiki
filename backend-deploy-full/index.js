@@ -192,6 +192,14 @@ var UrlMatchFailureSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var UrlMatchFailureModel = mongoose.model("UrlMatchFailure", UrlMatchFailureSchema);
+var UrlGenerationAuditSchema = new Schema({
+    type: { type: String, required: true },
+    source: { type: String, required: true },
+    slug: { type: String, required: true },
+    ok: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+});
+var UrlGenerationAuditModel = mongoose.model("UrlGenerationAudit", UrlGenerationAuditSchema);
 SellerSchema.index({ name: 1 });
 EventSchema.index({ event_name_slug: 1 }, { unique: true });
 var AdminAuditLogSchema = new Schema({
@@ -603,6 +611,7 @@ var MongoDBStorage = class {
         const payload = { ...event };
         const src = payload.title || payload.seoTitle || "";
         payload.event_name_slug = slugifyEventName(src);
+        await this.logUrlGeneration("event", src, payload.event_name_slug, !!payload.event_name_slug);
         const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
         if (!payload.seoTitle) payload.seoTitle = payload.title || "";
         const plainDescEv = String(payload.description || "").replace(/<[^>]*>/g, "");
@@ -1025,6 +1034,9 @@ var MongoDBStorage = class {
     }
     async logUrlMatchFailure(type, value) {
         await UrlMatchFailureModel.create({ type, value });
+    }
+    async logUrlGeneration(type, source, slug, ok) {
+        await UrlGenerationAuditModel.create({ type, source, slug, ok: !!ok });
     }
     async auditAdminAction(action, reviewId, adminId, details) {
         await AdminAuditLogModel.create({ action, reviewId, adminId, details: details || {} });
@@ -3076,7 +3088,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
     const reviewLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
-    app2.post("/api/sellers/:id/reviews", reviewLimiter, requireCsrf, async (req, res) => {
+    app2.post("/api/sellers/:id/reviews", reviewLimiter, async (req, res) => {
         try {
             const payload = insertSellerReviewSchema.parse({
                 ...req.body,
@@ -3087,13 +3099,6 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 : await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
             if (existing) {
                 return res.status(400).json({ error: "You have already submitted a review for this seller." });
-            }
-            const secret = process.env.REVIEW_VERIFICATION_SECRET || "";
-            if (secret && req.body && typeof req.body.verificationAnswer === "string") {
-                const answer = String(req.body.verificationAnswer || "").trim().toLowerCase();
-                if (answer !== secret.trim().toLowerCase()) {
-                    return res.status(403).json({ error: "Verification failed" });
-                }
             }
             const review = await storage.createSellerReview(payload);
             res.json(review);
@@ -3237,7 +3242,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 
     app2.get("/api/public/settings/review-verification", async (_req, res) => {
         try {
-            const enabled = Boolean(process.env.REVIEW_VERIFICATION_SECRET);
+            const enabled = false;
             res.json({
                 reviewVerificationEnabled: enabled,
                 reviewVerificationVideoUrl: "",

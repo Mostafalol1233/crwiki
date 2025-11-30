@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowLeft, Languages } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import createDOMPurify from "dompurify";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -26,6 +26,7 @@ interface Event {
   ogImage?: string;
   twitterImage?: string;
   schemaType?: string;
+  event_name_slug?: string;
 }
 
 export default function EventDetail() {
@@ -61,6 +62,15 @@ export default function EventDetail() {
       return res.json();
     },
   });
+
+  useEffect(() => {
+    if (id && event?.event_name_slug) {
+      const slugUrl = `/event/${event.event_name_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
+        setLocation(slugUrl);
+      }
+    }
+  }, [id, event?.event_name_slug]);
 
   if (isLoading) {
     return (

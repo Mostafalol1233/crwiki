@@ -211,29 +211,14 @@ export default function Reviews() {
       });
       return;
     }
-    if (!reviewForm.userPhone.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your phone number",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (verificationSettings?.reviewVerificationEnabled && !verifiedCode.trim()) {
-      toast({
-        title: "Verification required",
-        description: "Please complete the verification step before submitting your review.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Phone optional during open submission; CSRF disabled server-side
     createReviewMutation.mutate({
       sellerId: selectedSeller.id,
       userName: reviewForm.userName.trim(),
       userPhone: reviewForm.userPhone.trim(),
       rating: reviewForm.rating,
       comment: reviewForm.comment.trim(),
-      verificationAnswer: verificationSettings?.reviewVerificationEnabled ? verifiedCode.trim() : undefined,
+      verificationAnswer: undefined,
     });
   };
 
@@ -311,6 +296,36 @@ export default function Reviews() {
               <Button variant={sort === "newest" ? "default" : "outline"} size="sm" onClick={()=> setSort("newest")}>Newest</Button>
               <Button variant={sort === "highest" ? "default" : "outline"} size="sm" onClick={()=> setSort("highest")}>Highest</Button>
               <Button variant={sort === "helpful" ? "default" : "outline"} size="sm" onClick={()=> setSort("helpful")}>Most Helpful</Button>
+              <Dialog open={isReviewDialogOpen} onOpenChange={(open)=> { if (!open) closeReviewDialog(); }}>
+                <DialogTrigger asChild>
+                  <Button variant="default" size="sm" onClick={()=> { setSelectedSeller({ id: sellerByName.seller.id, name: sellerByName.seller.name, description: "", images: [], prices: [], averageRating: 0, totalReviews: 0 }); setIsReviewDialogOpen(true); }}>Write Review</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Review {sellerByName.seller.name}</DialogTitle>
+                    <DialogDescription>Share your experience with the community. Helpful, honest feedback keeps everyone safe.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="reviewer-name">Your Name</Label>
+                      <Input id="reviewer-name" value={reviewForm.userName} onChange={(e)=> setReviewForm({ ...reviewForm, userName: e.target.value })} placeholder="Enter your name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reviewer-phone">Your Phone Number</Label>
+                      <Input id="reviewer-phone" value={reviewForm.userPhone} onChange={(e)=> setReviewForm({ ...reviewForm, userPhone: e.target.value })} placeholder="Enter your phone number" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rating</Label>
+                      {renderStars(reviewForm.rating, true)}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="review-comment">Comment (Optional)</Label>
+                      <Textarea id="review-comment" value={reviewForm.comment} onChange={(e)=> setReviewForm({ ...reviewForm, comment: e.target.value })} rows={4} placeholder="Share your experience..." />
+                    </div>
+                    <Button onClick={handleSubmitReview} disabled={createReviewMutation.isPending}>{createReviewMutation.isPending ? "Submitting..." : "Submit Review"}</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div className="space-y-4 mt-6">

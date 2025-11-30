@@ -4902,6 +4902,9 @@ export default function Admin() {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           <span className="font-medium">{review.userName}</span>
+                          {!review.phoneVerified && (
+                            <Badge variant="outline" className="text-xs">Unverified</Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">{Array.from({length: review.rating}).map((_,i)=> (<Star key={i} className="h-4 w-4 text-yellow-400 inline-block"/>))} <span className="ml-2 text-xs">{review.rating}</span></div>
                         {review.phoneCountryCode && <p className="text-xs mt-1">+{review.phoneCountryCode} • {review.phoneMasked || '****'}</p>}

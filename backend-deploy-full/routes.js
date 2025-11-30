@@ -71,7 +71,12 @@ export async function registerRoutes(app) {
                 push(`/news/${n.id}`, { priority: 0.6, changefreq: 'weekly' });
             }
             for (const e of events) {
-                push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
+                const slug = e.event_name_slug || '';
+                if (slug) {
+                    push(`/event/${slug}`, { priority: 0.4, changefreq: 'monthly' });
+                } else {
+                    push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
+                }
             }
         }
         catch { }

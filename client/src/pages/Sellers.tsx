@@ -400,7 +400,7 @@ export default function Sellers() {
                     variant="default"
                     className="w-full"
                     onClick={() => {
-                      window.location.href = `/reviews?seller=${selectedSeller.id}`;
+                      window.location.href = `/reviews/seller/${encodeURIComponent(selectedSeller.name)}`;
                     }}
                   >
                     View All Reviews

@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Clock, Eye, ArrowLeft, Languages } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -11,17 +11,25 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Article() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = (params as any)?.id as string | undefined;
+  const slug = (params as any)?.slug as string | undefined;
+  const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [isRTL, setIsRTL] = useState(false);
 
   const { data: article, isLoading } = useQuery<any>({
-    queryKey: [`/api/posts/${id}`],
-    enabled: !!id,
+    queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${id}`],
+    enabled: !!(id || slug),
     queryFn: async () => {
+      if (slug) {
+        const res = await fetch(`/api/posts/slug/${slug}`);
+        if (!res.ok) throw new Error('Failed to fetch article');
+        return res.json();
+      }
       if (!id) return null;
       const res = await fetch(`/api/posts/${id}`);
       if (!res.ok) throw new Error('Failed to fetch article');
@@ -30,11 +38,11 @@ export default function Article() {
   });
 
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: [`/api/posts/${id}/comments`],
-    enabled: !!id,
+    queryKey: [`/api/posts/${(article as any)?.id || id}/comments`],
+    enabled: !!((article as any)?.id || id),
     queryFn: async () => {
-      if (!id) return [];
-      const res = await fetch(`/api/posts/${id}/comments`);
+      const postId = (article as any)?.id || id;
+      const res = await fetch(`/api/posts/${postId}/comments`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -49,7 +57,7 @@ export default function Article() {
       apiRequest(`/api/posts/${id}/comments`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [`/api/posts/${id}/comments`],
+        queryKey: [slug ? `/api/posts/slug/${slug}/comments` : `/api/posts/${id}/comments`],
       });
     },
   });
@@ -92,7 +100,16 @@ export default function Article() {
   };
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const articleUrl = `${baseUrl}/article/${id}`;
+  const articleUrl = `${baseUrl}/article/${slug || article?.post_slug || id}`;
+
+  useEffect(() => {
+    if (!slug && id && (article as any)?.post_slug) {
+      const target = `/article/${(article as any).post_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== target) {
+        setLocation(target);
+      }
+    }
+  }, [slug, id, (article as any)?.post_slug]);
   const breadcrumbs = [
     { name: article.category, url: `/category/${article.category.toLowerCase()}` },
     { name: article.title, url: articleUrl },

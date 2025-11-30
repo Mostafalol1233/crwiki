@@ -152,7 +152,7 @@ export default function Home() {
               {/* Left column: 2 square cards stacked */}
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {allEvents[0] && (
-                  <Link href={allEvents[0].event_name_slug ? `/event/${allEvents[0].event_name_slug}` : `/events/${allEvents[0].id}`} className="block" key={allEvents[0].id} data-testid={`home-event-left-top-${allEvents[0].id}`}>
+                  <Link href={allEvents[0].event_name_slug ? `/events/${allEvents[0].event_name_slug}` : `/events/${allEvents[0].id}`} className="block" key={allEvents[0].id} data-testid={`home-event-left-top-${allEvents[0].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
                       <div className="relative w-full h-full overflow-hidden rounded-md">
                         {allEvents[0].image && (
@@ -190,7 +190,7 @@ export default function Home() {
                 )}
                 
                 {allEvents[1] && (
-                  <Link href={allEvents[1].event_name_slug ? `/event/${allEvents[1].event_name_slug}` : `/events/${allEvents[1].id}`} className="block" key={allEvents[1].id} data-testid={`home-event-left-bottom-${allEvents[1].id}`}>
+                  <Link href={allEvents[1].event_name_slug ? `/events/${allEvents[1].event_name_slug}` : `/events/${allEvents[1].id}`} className="block" key={allEvents[1].id} data-testid={`home-event-left-bottom-${allEvents[1].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
                       <div className="relative w-full h-full overflow-hidden rounded-md">
                         {allEvents[1].image && (
@@ -231,7 +231,7 @@ export default function Home() {
               {/* Right column: 1 large card */}
               <div className="lg:col-span-2">
                 {allEvents[2] && (
-                  <Link href={allEvents[2].event_name_slug ? `/event/${allEvents[2].event_name_slug}` : `/events/${allEvents[2].id}`} className="block" key={allEvents[2].id} data-testid={`home-event-right-featured-${allEvents[2].id}`}>
+                  <Link href={allEvents[2].event_name_slug ? `/events/${allEvents[2].event_name_slug}` : `/events/${allEvents[2].id}`} className="block" key={allEvents[2].id} data-testid={`home-event-right-featured-${allEvents[2].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px] w-full">
                       <div className="relative w-full h-full overflow-hidden rounded-md">
                         {allEvents[2].image && (
@@ -275,7 +275,7 @@ export default function Home() {
                 {/* Left: 2 squares */}
                 <div className="lg:col-span-1 flex flex-col gap-4">
                   {allEvents[3] && (
-                    <Link href={allEvents[3].event_name_slug ? `/event/${allEvents[3].event_name_slug}` : `/events/${allEvents[3].id}`} className="block" key={allEvents[3].id} data-testid={`home-event-bottom-left-top-${allEvents[3].id}`}>
+                    <Link href={allEvents[3].event_name_slug ? `/events/${allEvents[3].event_name_slug}` : `/events/${allEvents[3].id}`} className="block" key={allEvents[3].id} data-testid={`home-event-bottom-left-top-${allEvents[3].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
                         {allEvents[3].image && (
@@ -299,7 +299,7 @@ export default function Home() {
                   )}
                   
                   {allEvents[4] && (
-                    <Link href={allEvents[4].event_name_slug ? `/event/${allEvents[4].event_name_slug}` : `/events/${allEvents[4].id}`} className="block" key={allEvents[4].id} data-testid={`home-event-bottom-left-bottom-${allEvents[4].id}`}>
+                    <Link href={allEvents[4].event_name_slug ? `/events/${allEvents[4].event_name_slug}` : `/events/${allEvents[4].id}`} className="block" key={allEvents[4].id} data-testid={`home-event-bottom-left-bottom-${allEvents[4].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
         {allEvents[4].image && (
@@ -326,7 +326,7 @@ export default function Home() {
                 {/* Right: 1 large */}
                 <div className="lg:col-span-2">
                   {allEvents[5] && (
-                    <Link href={allEvents[5].event_name_slug ? `/event/${allEvents[5].event_name_slug}` : `/events/${allEvents[5].id}`} className="block" key={allEvents[5].id} data-testid={`home-event-bottom-right-${allEvents[5].id}`}>
+                    <Link href={allEvents[5].event_name_slug ? `/events/${allEvents[5].event_name_slug}` : `/events/${allEvents[5].id}`} className="block" key={allEvents[5].id} data-testid={`home-event-bottom-right-${allEvents[5].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px]">
                         <div className="relative w-full h-full overflow-hidden rounded-md">
         {allEvents[5].image && (
@@ -713,7 +713,7 @@ export default function Home() {
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="md:col-span-2">
                                   {allEvents[0] && (
-                                    <Link href={`/events/${allEvents[0].id}`} className="block" data-testid={`home-event-featured-${allEvents[0].id}`}>
+                                    <Link href={`/events/${allEvents[0].event_name_slug || allEvents[0].id}`} className="block" data-testid={`home-event-featured-${allEvents[0].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0">
                                           {allEvents[0].image && (
@@ -734,7 +734,7 @@ export default function Home() {
 
                                 <div className="md:col-span-1 flex flex-col gap-4">
                                   {allEvents[1] && (
-                                    <Link href={`/events/${allEvents[1].id}`} className="block" data-testid={`home-event-right-top-${allEvents[1].id}`}>
+                                    <Link href={`/events/${allEvents[1].event_name_slug || allEvents[1].id}`} className="block" data-testid={`home-event-right-top-${allEvents[1].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
                                         <div className="absolute inset-0">
                                           {allEvents[1].image && (
@@ -750,7 +750,7 @@ export default function Home() {
                                   )}
 
                                   {allEvents[2] && (
-                                    <Link href={`/events/${allEvents[2].id}`} className="block" data-testid={`home-event-right-bottom-${allEvents[2].id}`}>
+                                    <Link href={`/events/${allEvents[2].event_name_slug || allEvents[2].id}`} className="block" data-testid={`home-event-right-bottom-${allEvents[2].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
                                         <div className="absolute inset-0">
                                           {allEvents[2].image && (
@@ -770,7 +770,7 @@ export default function Home() {
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                   {allEvents[3] && (
-                                    <Link href={`/events/${allEvents[3].id}`} className="block" data-testid={`home-event-2-left-1-${allEvents[3].id}`}>
+                                    <Link href={`/events/${allEvents[3].event_name_slug || allEvents[3].id}`} className="block" data-testid={`home-event-2-left-1-${allEvents[3].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0">
                                           {allEvents[3].image && (
@@ -786,7 +786,7 @@ export default function Home() {
                                   )}
 
                                   {allEvents[4] && (
-                                    <Link href={`/events/${allEvents[4].id}`} className="block" data-testid={`home-event-2-left-2-${allEvents[4].id}`}>
+                                    <Link href={`/events/${allEvents[4].event_name_slug || allEvents[4].id}`} className="block" data-testid={`home-event-2-left-2-${allEvents[4].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0">
                                           {allEvents[4].image && (
@@ -804,7 +804,7 @@ export default function Home() {
 
                                 <div className="md:col-span-1">
                                   {allEvents[5] && (
-                                    <Link href={`/events/${allEvents[5].id}`} className="block" data-testid={`home-event-2-right-large-${allEvents[5].id}`}>
+                                    <Link href={`/events/${allEvents[5].event_name_slug || allEvents[5].id}`} className="block" data-testid={`home-event-2-right-large-${allEvents[5].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0">
                                           {allEvents[5].image && (

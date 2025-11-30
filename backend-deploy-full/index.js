@@ -38,6 +38,7 @@ var PostSchema = new Schema({
   readingTime: { type: Number, required: true },
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
+  post_slug: { type: String, default: "", unique: true },
   createdAt: { type: Date, default: Date.now },
 });
 var CommentSchema = new Schema({
@@ -133,6 +134,7 @@ var NewsletterSubscriberSchema = new Schema({
 });
 var SellerSchema = new Schema({
     name: { type: String, required: true },
+    seller_name_slug: { type: String, default: "" },
     description: { type: String, default: "" },
     images: { type: [String], default: [] },
     prices: { type: [{ item: String, price: Number }], default: [] },
@@ -201,7 +203,9 @@ var UrlGenerationAuditSchema = new Schema({
 });
 var UrlGenerationAuditModel = mongoose.model("UrlGenerationAudit", UrlGenerationAuditSchema);
 SellerSchema.index({ name: 1 });
+SellerSchema.index({ seller_name_slug: 1 }, { unique: true });
 EventSchema.index({ event_name_slug: 1 }, { unique: true });
+PostSchema.index({ post_slug: 1 }, { unique: true });
 var AdminAuditLogSchema = new Schema({
     action: { type: String, required: true },
     reviewId: { type: String, required: true },
@@ -548,11 +552,14 @@ var MongoDBStorage = class {
     async createPost(post) {
         const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
         const payload = { ...post };
+        const src = payload.title || payload.seoTitle || "";
+        payload.post_slug = slugifyEventName(src);
+        await this.logUrlGeneration("post", src, payload.post_slug, !!payload.post_slug);
         if (!payload.seoTitle) payload.seoTitle = payload.title || "";
         const plainDesc = String(payload.summary || "").replace(/<[^>]*>/g, "");
         if (!payload.seoDescription) payload.seoDescription = plainDesc.substring(0, 155);
         if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
-        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/article/${slugifyEventName(payload.title || "")}`;
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/article/${payload.post_slug}`;
         if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
         if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
         if (!payload.schemaType) payload.schemaType = "Article";
@@ -569,7 +576,15 @@ var MongoDBStorage = class {
         };
     }
     async updatePost(id, post) {
-        const updated = await PostModel.findByIdAndUpdate(id, post, {
+        const updates = { ...post };
+        if (updates.title) {
+            const src = updates.title || updates.seoTitle || "";
+            updates.post_slug = slugifyEventName(src);
+            const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            updates.canonicalUrl = `${baseUrl}/article/${updates.post_slug}`;
+            await this.logUrlGeneration("post", src, updates.post_slug, !!updates.post_slug);
+        }
+        const updated = await PostModel.findByIdAndUpdate(id, updates, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -617,7 +632,7 @@ var MongoDBStorage = class {
         const plainDescEv = String(payload.description || "").replace(/<[^>]*>/g, "");
         if (!payload.seoDescription) payload.seoDescription = plainDescEv.substring(0, 155);
         if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
-        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/event/${payload.event_name_slug}`;
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/events/${payload.event_name_slug}`;
         if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
         if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
         if (!payload.schemaType) payload.schemaType = "Event";
@@ -637,6 +652,18 @@ var MongoDBStorage = class {
         const ev = await EventModel.findOne({ event_name_slug: slug }).lean();
         if (!ev) return void 0;
         return { ...ev, id: String(ev._id) };
+    }
+    async getPostBySlug(slug) {
+        const post = await PostModel.findOne({ post_slug: slug }).lean();
+        if (!post) return void 0;
+        return {
+            ...post,
+            id: String(post._id),
+            tags: post.tags || [],
+            views: post.views || 0,
+            category: post.category || "",
+            author: post.author || "Unknown",
+        };
     }
     async getAllNews() {
         const news = await NewsModel.find().sort({ order: -1, createdAt: -1 });
@@ -880,7 +907,15 @@ var MongoDBStorage = class {
         };
     }
     async updateEvent(id, event) {
-        const updated = await EventModel.findByIdAndUpdate(id, event, {
+        const updates = { ...event };
+        if (updates.title) {
+            const src = updates.title || updates.seoTitle || "";
+            updates.event_name_slug = slugifyEventName(src);
+            const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            updates.canonicalUrl = `${baseUrl}/events/${updates.event_name_slug}`;
+            await this.logUrlGeneration("event", src, updates.event_name_slug, !!updates.event_name_slug);
+        }
+        const updated = await EventModel.findByIdAndUpdate(id, updates, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -944,7 +979,9 @@ var MongoDBStorage = class {
         };
     }
     async createSeller(seller) {
-        const newSeller = await SellerModel.create(seller);
+        const payload = { ...seller };
+        payload.seller_name_slug = slugifyEventName(String(seller.name || ""));
+        const newSeller = await SellerModel.create(payload);
         const lean = await SellerModel.findById(newSeller._id).lean();
         if (!lean) throw new Error("Failed to create seller");
         return {
@@ -957,7 +994,11 @@ var MongoDBStorage = class {
         };
     }
     async updateSeller(id, seller) {
-        const updated = await SellerModel.findByIdAndUpdate(id, seller, {
+        const payload = { ...seller };
+        if (typeof payload.name === "string" && payload.name.trim().length > 0) {
+            payload.seller_name_slug = slugifyEventName(payload.name);
+        }
+        const updated = await SellerModel.findByIdAndUpdate(id, payload, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -1592,6 +1633,34 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+    app2.get("/api/posts/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            const post = await storage.getPostBySlug(slug);
+            if (!post) {
+                await storage.logUrlMatchFailure("post", slug);
+                return res.status(404).json({ error: "Post not found" });
+            }
+            const formattedPost = {
+                ...post,
+                date: formatDate(post.createdAt),
+            };
+            res.json(formattedPost);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/posts/:id/redirect", async (req, res) => {
+        try {
+            const p = await storage.getPostById(req.params.id);
+            if (!p) return res.status(404).json({ error: "Post not found" });
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const target = `${base}/article/${p.post_slug || slugifyEventName(p.title || "")}`;
+            res.status(302).set("Location", target).send("Found");
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app2.post("/api/posts", requireAuth, async (req, res) => {
         try {
             const data = insertPostSchema.parse(req.body);
@@ -1696,7 +1765,7 @@ async function registerRoutes(app2) {
             const ev = await storage.getEventById(req.params.id);
             if (!ev) return res.status(404).json({ error: "Event not found" });
             const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
-            const target = `${base}/event/${ev.event_name_slug || slugifyEventName(ev.title || "")}`;
+            const target = `${base}/events/${ev.event_name_slug || slugifyEventName(ev.title || "")}`;
             res.status(302).set("Location", target).send("Found");
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -3088,7 +3157,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
     const reviewLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
-    app2.post("/api/sellers/:id/reviews", reviewLimiter, async (req, res) => {
+    app2.post("/api/sellers/:id/reviews", reviewLimiter, requireAuth, async (req, res) => {
         try {
             const payload = insertSellerReviewSchema.parse({
                 ...req.body,
@@ -3131,6 +3200,48 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             const items = await q.skip((page - 1) * pageSize).limit(pageSize).lean();
             const reviews = items.map((r) => ({ id: String(r._id), userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt, helpfulVotes: r.helpfulVotes || 0 }));
             res.json({ seller: { id: seller.id, name: seller.name, verified: !!seller.verified, averageRating: seller.averageRating || 0, totalReviews: seller.totalReviews || 0 }, reviews, pageInfo: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/reviews/seller/by-slug/:slug", async (req, res) => {
+        try {
+            const raw = req.params.slug;
+            const slug = String(raw || "").trim().toLowerCase();
+            if (!slug) {
+                await storage.logUrlMatchFailure("seller_slug", raw || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const seller = await storage.getSellerBySlug(slug);
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller_slug", slug);
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const page = parseInt(String(req.query.page || "1"), 10) || 1;
+            const pageSize = 20;
+            const sortOpt = String(req.query.sort || "newest");
+            let sort = { createdAt: -1 };
+            if (sortOpt === "highest") sort = { rating: -1, createdAt: -1 };
+            if (sortOpt === "helpful") sort = { helpfulVotes: -1, createdAt: -1 };
+            const q = SellerReviewModel.find({ sellerId: seller.id }).sort(sort);
+            const total = await SellerReviewModel.countDocuments({ sellerId: seller.id });
+            const items = await q.skip((page - 1) * pageSize).limit(pageSize).lean();
+            const reviews = items.map((r) => ({ id: String(r._id), userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt, helpfulVotes: r.helpfulVotes || 0 }));
+            res.json({ seller: { id: seller.id, name: seller.name, verified: !!seller.verified, images: seller.images || [], description: seller.description || "", averageRating: seller.averageRating || 0, totalReviews: seller.totalReviews || 0 }, reviews, pageInfo: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/sellers/slug/:slug", async (req, res) => {
+        try {
+            const seller = await storage.getSellerBySlug(String(req.params.slug || "").trim().toLowerCase());
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller_slug", req.params.slug || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            res.json(seller);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3225,6 +3336,8 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             if (!success) {
                 return res.status(404).json({ error: "Review not found" });
             }
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("delete_review", reviewId, adminId, { sellerId: id });
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });

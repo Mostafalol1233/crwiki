@@ -77,7 +77,7 @@ export default function Posts() {
                 index === 0 ? "md:col-span-2 md:row-span-2" : ""
               }`}
             >
-              <Link href={`/article/${item.id}`}>
+              <Link href={`/article/${(item as any).post_slug || item.id}`}>
                 <Card
                   className={`relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none ${
                     index === 0 ? "h-full min-h-[400px]" : "h-[300px]"

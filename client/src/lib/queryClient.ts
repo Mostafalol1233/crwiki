@@ -10,12 +10,15 @@ async function throwIfResNotOk(res: Response) {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("adminToken");
+  const adminToken = localStorage.getItem("adminToken");
+  const userToken = localStorage.getItem("userToken");
   const csrf = localStorage.getItem("csrfToken") || '';
   const headers: Record<string, string> = {};
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (adminToken) {
+    headers["Authorization"] = `Bearer ${adminToken}`;
+  } else if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
   }
   if (csrf) {
     headers["X-CSRF-Token"] = csrf;

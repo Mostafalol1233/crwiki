@@ -65,7 +65,7 @@ export default function EventDetail() {
 
   useEffect(() => {
     if (id && event?.event_name_slug) {
-      const slugUrl = `/event/${event.event_name_slug}`;
+      const slugUrl = `/events/${event.event_name_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
         setLocation(slugUrl);
       }
@@ -114,7 +114,7 @@ export default function EventDetail() {
   const hasTranslation = event.titleAr || event.descriptionAr;
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const eventUrl = slug ? `${baseUrl}/event/${slug}` : `${baseUrl}/events/${id}`;
+  const eventUrl = slug ? `${baseUrl}/events/${slug}` : `${baseUrl}/events/${id}`;
   const breadcrumbs = [
     { name: "Events", url: "/category/events" },
     { name: title, url: eventUrl },

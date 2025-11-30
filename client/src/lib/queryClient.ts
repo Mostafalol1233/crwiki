@@ -11,10 +11,14 @@ async function throwIfResNotOk(res: Response) {
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("adminToken");
+  const csrf = localStorage.getItem("csrfToken") || '';
   const headers: Record<string, string> = {};
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (csrf) {
+    headers["X-CSRF-Token"] = csrf;
   }
 
   return headers;

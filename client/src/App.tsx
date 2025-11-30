@@ -49,10 +49,12 @@ function Router() {
   <Route path="/events" component={Category} />
   <Route path="/category/:category" component={Category} />
       <Route path="/reviews" component={Reviews} />
+      <Route path="/reviews/seller/:sellerName" component={Reviews} />
       <Route path="/sellers" component={Sellers} />
       <Route path="/news" component={News} />
       <Route path="/news/:id" component={NewsDetail} />
       <Route path="/events/:id" component={EventDetail} />
+      <Route path="/event/:slug" component={EventDetail} />
       <Route path="/mercenaries" component={Mercenaries} />
       <Route path="/grave-games" component={GraveGames} />
       <Route path="/article/:id" component={Article} />

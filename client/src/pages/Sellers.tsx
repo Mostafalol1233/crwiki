@@ -19,6 +19,12 @@ interface Seller {
   whatsapp: string;
   discord: string;
   website: string;
+  facebook?: string;
+  twitter?: string;
+  instagram?: string;
+  youtube?: string;
+  tiktok?: string;
+  telegram?: string;
   featured: boolean;
   promotionText: string;
   averageRating: number;
@@ -352,6 +358,36 @@ export default function Sellers() {
                       <Globe className="h-4 w-4 mr-2" />
                       Visit Website
                       <ExternalLink className="h-3 w-3 ml-auto" />
+                    </Button>
+                  )}
+                  {selectedSeller.facebook && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.facebook!, '_blank'); }}>
+                      Facebook
+                    </Button>
+                  )}
+                  {selectedSeller.twitter && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.twitter!, '_blank'); }}>
+                      Twitter/X
+                    </Button>
+                  )}
+                  {selectedSeller.instagram && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.instagram!, '_blank'); }}>
+                      Instagram
+                    </Button>
+                  )}
+                  {selectedSeller.youtube && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.youtube!, '_blank'); }}>
+                      YouTube
+                    </Button>
+                  )}
+                  {selectedSeller.tiktok && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.tiktok!, '_blank'); }}>
+                      TikTok
+                    </Button>
+                  )}
+                  {selectedSeller.telegram && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.telegram!, '_blank'); }}>
+                      Telegram
                     </Button>
                   )}
                   {!selectedSeller.email && !selectedSeller.phone && !selectedSeller.whatsapp && !selectedSeller.discord && !selectedSeller.website && (

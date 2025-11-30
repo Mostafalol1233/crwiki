@@ -32,6 +32,7 @@ export default function EventDetail() {
   // wouter's useParams can be untyped in some versions; read params then cast safely
   const params = useParams();
   const id = params?.id as string | undefined;
+  const slug = params?.slug as string | undefined;
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [error, setError] = useState<Error | null>(null);
@@ -39,11 +40,19 @@ export default function EventDetail() {
   const [isRTL, setIsRTL] = useState(false);
 
   const { data: event, isLoading } = useQuery<Event>({
-    queryKey: ["event", id],
-    enabled: !!id,
+    queryKey: ["event", id || slug],
+    enabled: !!(id || slug),
     retry: 1,
     queryFn: async () => {
-      if (!id) throw new Error("No event ID provided");
+      if (slug) {
+        const res = await fetch(`/api/events/slug/${slug}`);
+        if (!res.ok) {
+          const errorText = await res.text().catch(() => "Unknown error");
+          throw new Error(`Failed to load event: ${res.status} ${errorText}`);
+        }
+        return res.json();
+      }
+      if (!id) throw new Error("No event ID or slug provided");
       const res = await fetch(`/api/events/${id}`);
       if (!res.ok) {
         const errorText = await res.text().catch(() => "Unknown error");
@@ -95,7 +104,7 @@ export default function EventDetail() {
   const hasTranslation = event.titleAr || event.descriptionAr;
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const eventUrl = `${baseUrl}/events/${id}`;
+  const eventUrl = slug ? `${baseUrl}/event/${slug}` : `${baseUrl}/events/${id}`;
   const breadcrumbs = [
     { name: "Events", url: "/category/events" },
     { name: title, url: eventUrl },

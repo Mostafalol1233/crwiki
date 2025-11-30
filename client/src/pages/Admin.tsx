@@ -139,6 +139,7 @@ export default function Admin() {
   const [activeSellerForReviews, setActiveSellerForReviews] = useState<any | null>(null);
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [csrfToken, setCsrfToken] = useState("");
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [activeTicket, setActiveTicket] = useState<any | null>(null);
   const [activeTicketReplies, setActiveTicketReplies] = useState<any[]>([]);
@@ -160,6 +161,22 @@ export default function Admin() {
       setAdminUsername(username || "");
     }
   }, [setLocation]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const base = (import.meta as any).env?.VITE_API_URL || '';
+        const url = base ? `${base}/api/security/csrf-token` : `/api/security/csrf-token`;
+        const res = await fetch(url, { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          const token = data?.csrfToken || "";
+          setCsrfToken(token);
+          if (token) localStorage.setItem('csrfToken', token);
+        }
+      } catch {}
+    })();
+  }, []);
 
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -353,6 +370,12 @@ export default function Admin() {
     whatsapp: "",
     discord: "",
     website: "",
+    facebook: "",
+    twitter: "",
+    instagram: "",
+    youtube: "",
+    tiktok: "",
+    telegram: "",
     featured: false,
     promotionText: "",
     rank: "",
@@ -1084,6 +1107,12 @@ export default function Admin() {
       whatsapp: "",
       discord: "",
       website: "",
+      facebook: "",
+      twitter: "",
+      instagram: "",
+      youtube: "",
+      tiktok: "",
+      telegram: "",
       featured: false,
       promotionText: "",
       rank: "",
@@ -3406,6 +3435,30 @@ export default function Admin() {
                             data-testid="input-seller-website"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-facebook">Facebook</Label>
+                          <Input id="seller-facebook" placeholder="https://facebook.com/username" value={sellerForm.facebook} onChange={(e)=> setSellerForm({ ...sellerForm, facebook: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-twitter">Twitter/X</Label>
+                          <Input id="seller-twitter" placeholder="https://x.com/username" value={sellerForm.twitter} onChange={(e)=> setSellerForm({ ...sellerForm, twitter: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-instagram">Instagram</Label>
+                          <Input id="seller-instagram" placeholder="https://instagram.com/username" value={sellerForm.instagram} onChange={(e)=> setSellerForm({ ...sellerForm, instagram: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-youtube">YouTube</Label>
+                          <Input id="seller-youtube" placeholder="https://youtube.com/@channel" value={sellerForm.youtube} onChange={(e)=> setSellerForm({ ...sellerForm, youtube: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-tiktok">TikTok</Label>
+                          <Input id="seller-tiktok" placeholder="https://tiktok.com/@username" value={sellerForm.tiktok} onChange={(e)=> setSellerForm({ ...sellerForm, tiktok: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-telegram">Telegram</Label>
+                          <Input id="seller-telegram" placeholder="https://t.me/username" value={sellerForm.telegram} onChange={(e)=> setSellerForm({ ...sellerForm, telegram: e.target.value })} />
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -3444,6 +3497,12 @@ export default function Admin() {
                           whatsapp: sellerForm.whatsapp,
                           discord: sellerForm.discord,
                           website: sellerForm.website,
+                          facebook: sellerForm.facebook,
+                          twitter: sellerForm.twitter,
+                          instagram: sellerForm.instagram,
+                          youtube: sellerForm.youtube,
+                          tiktok: sellerForm.tiktok,
+                          telegram: sellerForm.telegram,
                           featured: sellerForm.featured,
                           rank: sellerForm.rank.trim() ? parseInt(sellerForm.rank.trim(), 10) : undefined,
                         };
@@ -3491,6 +3550,12 @@ export default function Admin() {
                             {seller.whatsapp && <Badge variant="outline" className="text-xs">WhatsApp</Badge>}
                             {seller.discord && <Badge variant="outline" className="text-xs">Discord</Badge>}
                             {seller.website && <Badge variant="outline" className="text-xs">Website</Badge>}
+                            {seller.facebook && <Badge variant="outline" className="text-xs">Facebook</Badge>}
+                            {seller.twitter && <Badge variant="outline" className="text-xs">Twitter</Badge>}
+                            {seller.instagram && <Badge variant="outline" className="text-xs">Instagram</Badge>}
+                            {seller.youtube && <Badge variant="outline" className="text-xs">YouTube</Badge>}
+                            {seller.tiktok && <Badge variant="outline" className="text-xs">TikTok</Badge>}
+                            {seller.telegram && <Badge variant="outline" className="text-xs">Telegram</Badge>}
                             {!seller.email && !seller.phone && !seller.whatsapp && !seller.discord && !seller.website && (
                               <span className="text-xs text-muted-foreground">None</span>
                             )}
@@ -3539,6 +3604,12 @@ export default function Admin() {
                                     whatsapp: seller.whatsapp || "",
                                     discord: seller.discord || "",
                                     website: seller.website || "",
+                                    facebook: seller.facebook || "",
+                                    twitter: seller.twitter || "",
+                                    instagram: seller.instagram || "",
+                                    youtube: seller.youtube || "",
+                                    tiktok: seller.tiktok || "",
+                                    telegram: seller.telegram || "",
                                     featured: seller.featured || false,
                                     promotionText: seller.promotionText || "",
                                     rank: typeof seller.rank === 'number' ? String(seller.rank) : "",
@@ -3559,7 +3630,7 @@ export default function Admin() {
                                       setReviewsDialogOpen(true);
                                       setLoadingReviews(true);
                                       try {
-                                        const data = await apiRequest(`/api/sellers/${seller.id}/reviews`, 'GET');
+                                        const data = await apiRequest(`/api/admin/reviews?sellerId=${seller.id}`, 'GET');
                                         setSellerReviews(data || []);
                                       } catch (err: any) {
                                         toast({ title: 'Failed to load reviews', description: err?.message, variant: 'destructive' });
@@ -4833,10 +4904,56 @@ export default function Admin() {
                           <span className="font-medium">{review.userName}</span>
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">{Array.from({length: review.rating}).map((_,i)=> (<Star key={i} className="h-4 w-4 text-yellow-400 inline-block"/>))} <span className="ml-2 text-xs">{review.rating}</span></div>
-                        {review.comment && <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>}
+                        {review.phoneCountryCode && <p className="text-xs mt-1">+{review.phoneCountryCode} • {review.phoneMasked || '****'}</p>}
                         <p className="text-xs text-muted-foreground mt-2">{new Date(review.createdAt).toLocaleString()}</p>
                       </div>
                       <div className="flex items-start">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const base = (import.meta as any).env?.VITE_API_URL || '';
+                              const url = base ? `${base}/api/admin/reviews/${review.id}/phone` : `/api/admin/reviews/${review.id}/phone`;
+                              const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'X-CSRF-Token': csrfToken } });
+                              if (res.ok) {
+                                const data = await res.json();
+                                toast({ title: 'Phone Revealed', description: `${data.phone} (+${data.countryCode})` });
+                              } else {
+                                const text = await res.text();
+                                toast({ title: 'Reveal failed', description: text, variant: 'destructive' });
+                              }
+                            } catch (err: any) {
+                              toast({ title: 'Reveal failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Reveal</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/api/admin/reviews/${review.id}/verify-phone`, 'PATCH', { csrfToken });
+                              setSellerReviews((prev) => prev.map((r) => r.id === review.id ? { ...r, phoneVerified: true } : r));
+                              toast({ title: 'Verified' });
+                            } catch (err: any) {
+                              toast({ title: 'Verify failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Verify</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/api/admin/reviews/${review.id}/anonymize-phone`, 'PATCH', { csrfToken });
+                              setSellerReviews((prev) => prev.map((r) => r.id === review.id ? { ...r, phoneMasked: '', phoneCountryCode: '', phoneVerified: false } : r));
+                              toast({ title: 'Anonymized' });
+                            } catch (err: any) {
+                              toast({ title: 'Anonymize failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Anonymize</Button>
                         <Button
                           variant="ghost"
                           size="icon"

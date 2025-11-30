@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,13 +61,29 @@ export default function Reviews() {
   const [verificationError, setVerificationError] = useState("");
   const [verifiedCode, setVerifiedCode] = useState("");
 
+  const [match, params] = useRoute("/reviews/seller/:sellerName");
+  const sellerNameParam = match ? params?.sellerName as string : "";
+  const [sort, setSort] = useState<"newest" | "highest" | "helpful">("newest");
+  const [page, setPage] = useState(1);
+
   const { data: sellers = [] } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
+    enabled: !match,
   });
 
   const { data: reviews = [] } = useQuery<Review[]>({
     queryKey: [`/api/sellers/${selectedSeller?.id}/reviews`],
-    enabled: !!selectedSeller,
+    enabled: !!selectedSeller && !match,
+  });
+
+  const { data: sellerByName } = useQuery<{ seller: Seller & { verified: boolean }, reviews: Review[], pageInfo: { page: number; pageSize: number; total: number; totalPages: number } }>({
+    queryKey: ["/api/reviews/seller/by-name", sellerNameParam, sort, page],
+    enabled: !!match && !!sellerNameParam,
+    queryFn: async () => {
+      const res = await fetch(`/api/reviews/seller/by-name/${encodeURIComponent(sellerNameParam)}?sort=${sort}&page=${page}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
   });
 
   const { data: verificationSettings } = useQuery<ReviewVerificationSettings>({
@@ -262,19 +279,75 @@ export default function Reviews() {
   return (
     <>
       <PageSEO
-        title={"Seller Reviews — CrossFire Wiki"}
-        description={"Read and submit reviews for CrossFire sellers. Verification supported."}
-        canonicalPath="/reviews"
+        title={match ? `${sellerByName?.seller?.name || "Seller"} Reviews — CrossFire Wiki` : "Seller Reviews — CrossFire Wiki"}
+        description={match ? `Reviews for ${sellerByName?.seller?.name || "Seller"}.` : "Read and submit reviews for CrossFire sellers. Verification supported."}
+        canonicalPath={match ? `/reviews/seller/${sellerNameParam}` : "/reviews"}
       />
       <div className="min-h-screen bg-background py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Seller Reviews</h1>
-          <p className="text-lg text-muted-foreground">
-            Browse game card sellers and read reviews from other players
-          </p>
-        </div>
+        {!match && (
+          <div className="mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Seller Reviews</h1>
+            <p className="text-lg text-muted-foreground">
+              Browse game card sellers and read reviews from other players
+            </p>
+          </div>
+        )}
 
+        {match && sellerByName && (
+          <div className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-2">
+              {sellerByName.seller.name}
+              {sellerByName.seller.verified && (
+                <Badge variant="default" className="text-xs">Verified</Badge>
+              )}
+            </h1>
+            <div className="flex items-center gap-2 mt-2">
+              {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
+              <span className="text-sm">{(sellerByName.seller.averageRating || 0).toFixed(1)} ({sellerByName.seller.totalReviews || 0})</span>
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <Label>Sort:</Label>
+              <Button variant={sort === "newest" ? "default" : "outline"} size="sm" onClick={()=> setSort("newest")}>Newest</Button>
+              <Button variant={sort === "highest" ? "default" : "outline"} size="sm" onClick={()=> setSort("highest")}>Highest</Button>
+              <Button variant={sort === "helpful" ? "default" : "outline"} size="sm" onClick={()=> setSort("helpful")}>Most Helpful</Button>
+            </div>
+
+            <div className="space-y-4 mt-6">
+              {sellerByName.reviews.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No reviews yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sellerByName.reviews.map((review) => (
+                    <Card key={review.id}>
+                      <CardContent className="pt-6 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span className="font-medium">{review.userName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">{renderStars(review.rating)}</div>
+                        </div>
+                        {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                        <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt), "MMM d, yyyy")}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {sellerByName.pageInfo.totalPages > 1 && (
+              <div className="flex items-center gap-2 mt-6">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={()=> setPage((p)=> Math.max(1, p-1))}>Prev</Button>
+                <span className="text-sm">Page {page} of {sellerByName.pageInfo.totalPages}</span>
+                <Button variant="outline" size="sm" disabled={page >= sellerByName.pageInfo.totalPages} onClick={()=> setPage((p)=> Math.min(sellerByName.pageInfo.totalPages, p+1))}>Next</Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!match && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sellers.map((seller) => (
             <Card key={seller.id} className="hover-elevate" data-testid={`card-seller-${seller.id}`}>
@@ -437,8 +510,9 @@ export default function Reviews() {
             </Card>
           ))}
         </div>
+        )}
 
-        {sellers.length === 0 && (
+        {!match && sellers.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">No sellers available yet.</p>

@@ -5,6 +5,7 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 
 // server/routes.ts
 import { createServer } from "http";
@@ -62,6 +63,7 @@ var EventSchema = new Schema({
   twitterImage: { type: String, default: "" },
   schemaType: { type: String, default: "Event" },
   order: { type: Number, default: 0 },
+  event_name_slug: { type: String, default: "", unique: true },
 });
 var NewsSchema = new Schema({
   title: { type: String, required: true },
@@ -139,17 +141,28 @@ var SellerSchema = new Schema({
     whatsapp: { type: String, default: "" },
     discord: { type: String, default: "" },
     website: { type: String, default: "" },
+    facebook: { type: String, default: "" },
+    twitter: { type: String, default: "" },
+    instagram: { type: String, default: "" },
+    youtube: { type: String, default: "" },
+    tiktok: { type: String, default: "" },
+    telegram: { type: String, default: "" },
     featured: { type: Boolean, default: false },
     promotionText: { type: String, default: "" },
     averageRating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
     rank: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
+    verified: { type: Boolean, default: false },
 });
 var SellerReviewSchema = new Schema({
     sellerId: { type: String, required: true },
     userName: { type: String, required: true },
-    userPhone: { type: String, default: "" },
+    userPhoneEncrypted: { type: String, default: "" },
+    phoneCountryCode: { type: String, default: "" },
+    phoneLast4: { type: String, default: "" },
+    phoneVerified: { type: Boolean, default: false },
+    helpfulVotes: { type: Number, default: 0 },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
@@ -173,6 +186,22 @@ var NewsletterSubscriberModel = mongoose.model(
 );
 var SellerModel = mongoose.model("Seller", SellerSchema);
 var SellerReviewModel = mongoose.model("SellerReview", SellerReviewSchema);
+var UrlMatchFailureSchema = new Schema({
+    type: { type: String, required: true },
+    value: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+});
+var UrlMatchFailureModel = mongoose.model("UrlMatchFailure", UrlMatchFailureSchema);
+SellerSchema.index({ name: 1 });
+EventSchema.index({ event_name_slug: 1 }, { unique: true });
+var AdminAuditLogSchema = new Schema({
+    action: { type: String, required: true },
+    reviewId: { type: String, required: true },
+    adminId: { type: String, required: true },
+    details: { type: Schema.Types.Mixed, default: {} },
+    createdAt: { type: Date, default: Date.now },
+});
+var AdminAuditLogModel = mongoose.model("AdminAuditLog", AdminAuditLogSchema);
 // Weapons / Modes / Ranks / Mercenaries schemas (added to support seeding endpoints)
 var MercenarySchema = new Schema({
     id: { type: String, required: true },
@@ -320,6 +349,12 @@ var insertSellerSchema = z.object({
     whatsapp: z.string().optional(),
     discord: z.string().optional(),
     website: z.string().optional(),
+    facebook: z.string().optional(),
+    twitter: z.string().optional(),
+    instagram: z.string().optional(),
+    youtube: z.string().optional(),
+    tiktok: z.string().optional(),
+    telegram: z.string().optional(),
     featured: z.boolean().optional(),
     promotionText: z.string().optional(),
     rank: z.number().optional(),
@@ -327,6 +362,7 @@ var insertSellerSchema = z.object({
 var insertSellerReviewSchema = z.object({
     sellerId: z.string(),
     userName: z.string(),
+    userPhone: z.string().optional(),
     rating: z.number().min(1).max(5),
     comment: z.string().optional(),
 });
@@ -502,7 +538,17 @@ var MongoDBStorage = class {
         };
     }
     async createPost(post) {
-        const newPost = await PostModel.create(post);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        const payload = { ...post };
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDesc = String(payload.summary || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDesc.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/article/${slugifyEventName(payload.title || "")}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "Article";
+        const newPost = await PostModel.create(payload);
         const lean = await PostModel.findById(newPost._id).lean();
         if (!lean) throw new Error("Failed to create post");
         return {
@@ -554,7 +600,19 @@ var MongoDBStorage = class {
         }));
     }
     async createEvent(event) {
-        const newEvent = await EventModel.create(event);
+        const payload = { ...event };
+        const src = payload.title || payload.seoTitle || "";
+        payload.event_name_slug = slugifyEventName(src);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDescEv = String(payload.description || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDescEv.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/event/${payload.event_name_slug}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "Event";
+        const newEvent = await EventModel.create(payload);
         const lean = await EventModel.findById(newEvent._id).lean();
         if (!lean) throw new Error("Failed to create event");
         return {
@@ -565,6 +623,11 @@ var MongoDBStorage = class {
     async deleteEvent(id) {
         const result = await EventModel.findByIdAndDelete(id);
         return !!result;
+    }
+    async getEventBySlug(slug) {
+        const ev = await EventModel.findOne({ event_name_slug: slug }).lean();
+        if (!ev) return void 0;
+        return { ...ev, id: String(ev._id) };
     }
     async getAllNews() {
         const news = await NewsModel.find().sort({ order: -1, createdAt: -1 });
@@ -585,7 +648,17 @@ var MongoDBStorage = class {
         }));
     }
     async createNews(news) {
-        const newNews = await NewsModel.create(news);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        const payload = { ...news };
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDescNews = String(payload.content || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDescNews.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/news/${slugifyEventName(payload.title || "")}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "NewsArticle";
+        const newNews = await NewsModel.create(payload);
         return {
             id: String(newNews._id),
             title: newNews.title,
@@ -837,6 +910,18 @@ var MongoDBStorage = class {
             totalReviews: seller.totalReviews || 0,
         }));
     }
+    async getSellerByExactName(name) {
+        const sel = await SellerModel.findOne({ name }).lean();
+        if (!sel) return void 0;
+        return {
+            ...sel,
+            id: String(sel._id),
+            images: sel.images || [],
+            prices: sel.prices || [],
+            averageRating: sel.averageRating || 0,
+            totalReviews: sel.totalReviews || 0,
+        };
+    }
     async getSellerById(id) {
         const seller = await SellerModel.findById(id).lean();
         if (!seller) return void 0;
@@ -886,18 +971,37 @@ var MongoDBStorage = class {
             .sort({ createdAt: -1 })
             .lean();
         return reviews.map((review) => ({
-            ...review,
             id: String(review._id),
+            sellerId: review.sellerId,
+            userName: review.userName,
+            rating: review.rating,
+            comment: review.comment || "",
+            createdAt: review.createdAt,
+            helpfulVotes: review.helpfulVotes || 0,
         }));
     }
     async createSellerReview(review) {
-        const newReview = await SellerReviewModel.create(review);
+        const payload = { ...review };
+        if (review.userPhone) {
+            if (!validatePhoneNumber(review.userPhone)) {
+                throw new Error("Invalid phone number format");
+            }
+            payload.userPhoneEncrypted = encryptPhoneNumber(review.userPhone);
+            payload.phoneCountryCode = extractCountryCode(review.userPhone);
+            payload.phoneLast4 = maskLast4(review.userPhone);
+        }
+        const newReview = await SellerReviewModel.create(payload);
         await this.updateSellerRating(review.sellerId);
         const lean = await SellerReviewModel.findById(newReview._id).lean();
         if (!lean) throw new Error("Failed to create review");
         return {
-            ...lean,
             id: String(lean._id),
+            sellerId: lean.sellerId,
+            userName: lean.userName,
+            rating: lean.rating,
+            comment: lean.comment || "",
+            createdAt: lean.createdAt,
+            helpfulVotes: lean.helpfulVotes || 0,
         };
     }
     async deleteSellerReview(sellerId, reviewId) {
@@ -918,6 +1022,12 @@ var MongoDBStorage = class {
             averageRating: Math.round(averageRating * 10) / 10,
             totalReviews,
         });
+    }
+    async logUrlMatchFailure(type, value) {
+        await UrlMatchFailureModel.create({ type, value });
+    }
+    async auditAdminAction(action, reviewId, adminId, details) {
+        await AdminAuditLogModel.create({ action, reviewId, adminId, details: details || {} });
     }
     // Weapons
     async getAllWeapons() {
@@ -1062,6 +1172,102 @@ function requireSuperAdmin(req, res, next) {
         return res
             .status(403)
             .json({ error: "Forbidden: Super Admin access required" });
+    }
+    next();
+}
+
+function slugifyEventName(input) {
+    if (!input) return "";
+    const base = input
+        .toString()
+        .normalize("NFKD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]+/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+    return base.substring(0, 60);
+}
+
+function sanitizeSellerNameParam(name) {
+    const n = String(name || "").trim();
+    if (!/^[A-Za-z0-9 _-]{1,100}$/.test(n)) return null;
+    return n;
+}
+
+function getPhoneKey() {
+    const key = process.env.PHONE_ENC_KEY || "";
+    if (!key || key.length < 32) return null;
+    return Buffer.from(key.substring(0, 32));
+}
+
+function encryptPhoneNumber(plain) {
+    const key = getPhoneKey();
+    if (!key || !plain) return "";
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+    const enc = Buffer.concat([
+        cipher.update(String(plain), "utf8"),
+        cipher.final(),
+    ]);
+    const tag = cipher.getAuthTag();
+    return Buffer.concat([iv, tag, enc]).toString("base64");
+}
+
+function decryptPhoneNumber(enc) {
+    const key = getPhoneKey();
+    if (!key || !enc) return "";
+    const buf = Buffer.from(enc, "base64");
+    const iv = buf.subarray(0, 12);
+    const tag = buf.subarray(12, 28);
+    const data = buf.subarray(28);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+    return dec.toString("utf8");
+}
+
+function extractCountryCode(phone) {
+    const s = String(phone || "").trim();
+    if (!s.startsWith("+")) return "";
+    const digits = s.substring(1);
+    const m = digits.match(/^(\d{1,3})/);
+    return m ? m[1] : "";
+}
+
+function validatePhoneNumber(phone) {
+    const s = String(phone || "").trim();
+    if (!/^\+\d{6,15}$/.test(s)) return false;
+    const cc = extractCountryCode(s);
+    if (!cc) return false;
+    const len = s.replace(/\D/g, "").length;
+    const ranges = {
+        "1": [10, 11],
+        "44": [10, 10],
+        "49": [10, 11],
+        "33": [9, 10],
+        "966": [9, 10],
+        "971": [9, 10],
+    };
+    const r = ranges[cc];
+    if (!r) return len >= 8 && len <= 15;
+    return len >= r[0] && len <= r[1];
+}
+
+function maskLast4(phone) {
+    const s = String(phone || "").replace(/\D/g, "");
+    if (s.length < 4) return "";
+    return s.slice(-4);
+}
+
+function requireCsrf(req, res, next) {
+    const method = String(req.method || "").toUpperCase();
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        const token = req.headers["x-csrf-token"] || req.body?.csrfToken;
+        const base = process.env.CSRF_SECRET || "";
+        if (!base || !token || String(token) !== base) {
+            return res.status(403).json({ error: "CSRF validation failed" });
+        }
     }
     next();
 }
@@ -1456,6 +1662,30 @@ async function registerRoutes(app2) {
         try {
             const events = await storage.getAllEvents();
             res.json(events);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/events/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            const ev = await storage.getEventBySlug(slug);
+            if (!ev) {
+                await storage.logUrlMatchFailure("event", slug);
+                return res.status(404).json({ error: "Event not found" });
+            }
+            res.json(ev);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/events/:id/redirect", async (req, res) => {
+        try {
+            const ev = await storage.getEventById(req.params.id);
+            if (!ev) return res.status(404).json({ error: "Event not found" });
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const target = `${base}/event/${ev.event_name_slug || slugifyEventName(ev.title || "")}`;
+            res.status(302).set("Location", target).send("Found");
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2845,14 +3075,15 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/sellers/:id/reviews", async (req, res) => {
+    const reviewLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
+    app2.post("/api/sellers/:id/reviews", reviewLimiter, requireCsrf, async (req, res) => {
         try {
             const payload = insertSellerReviewSchema.parse({
                 ...req.body,
                 sellerId: req.params.id,
             });
             const existing = payload.userPhone
-                ? await SellerReviewModel.findOne({ sellerId: payload.sellerId, userPhone: payload.userPhone })
+                ? await SellerReviewModel.findOne({ sellerId: payload.sellerId, phoneLast4: maskLast4(payload.userPhone) })
                 : await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
             if (existing) {
                 return res.status(400).json({ error: "You have already submitted a review for this seller." });
@@ -2866,6 +3097,117 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
             const review = await storage.createSellerReview(payload);
             res.json(review);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/reviews/seller/by-name/:sellerName", async (req, res) => {
+        try {
+            const raw = req.params.sellerName;
+            const sellerName = sanitizeSellerNameParam(raw);
+            if (!sellerName) {
+                await storage.logUrlMatchFailure("seller", raw || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const seller = await storage.getSellerByExactName(sellerName);
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller", sellerName);
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const page = parseInt(String(req.query.page || "1"), 10) || 1;
+            const pageSize = 20;
+            const sortOpt = String(req.query.sort || "newest");
+            let sort = { createdAt: -1 };
+            if (sortOpt === "highest") sort = { rating: -1, createdAt: -1 };
+            if (sortOpt === "helpful") sort = { helpfulVotes: -1, createdAt: -1 };
+            const q = SellerReviewModel.find({ sellerId: seller.id }).sort(sort);
+            const total = await SellerReviewModel.countDocuments({ sellerId: seller.id });
+            const items = await q.skip((page - 1) * pageSize).limit(pageSize).lean();
+            const reviews = items.map((r) => ({ id: String(r._id), userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt, helpfulVotes: r.helpfulVotes || 0 }));
+            res.json({ seller: { id: seller.id, name: seller.name, verified: !!seller.verified, averageRating: seller.averageRating || 0, totalReviews: seller.totalReviews || 0 }, reviews, pageInfo: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/security/csrf-token", (req, res) => {
+        const token = process.env.CSRF_SECRET || "";
+        res.json({ csrfToken: token });
+    });
+
+    app2.get("/api/admin/reviews", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const cc = String(req.query.countryCode || "").trim();
+            const verified = String(req.query.verified || "").trim();
+            const start = String(req.query.startDate || "").trim();
+            const end = String(req.query.endDate || "").trim();
+            const sellerId = String(req.query.sellerId || "").trim();
+            const filter = {};
+            if (cc) filter.phoneCountryCode = cc;
+            if (verified === "true") filter.phoneVerified = true;
+            if (verified === "false") filter.phoneVerified = false;
+            if (sellerId) filter.sellerId = sellerId;
+            const range = {};
+            if (start) range.$gte = new Date(start);
+            if (end) range.$lte = new Date(end);
+            if (Object.keys(range).length) filter.createdAt = range;
+            const rows = await SellerReviewModel.find(filter).sort({ createdAt: -1 }).limit(200).lean();
+            const out = rows.map((r) => ({ id: String(r._id), sellerId: r.sellerId, userName: r.userName, phoneMasked: r.phoneLast4 ? `****${r.phoneLast4}` : "", phoneCountryCode: r.phoneCountryCode || "", phoneVerified: !!r.phoneVerified, rating: r.rating, createdAt: r.createdAt }));
+            res.json(out);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/admin/reviews/:id/verify-phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const upd = await SellerReviewModel.findByIdAndUpdate(id, { phoneVerified: true }, { new: true }).lean();
+            if (!upd) return res.status(404).json({ error: "Review not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("verify_phone", id, adminId, {});
+            res.json({ id: String(upd._id), phoneVerified: !!upd.phoneVerified });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/admin/reviews/:id/anonymize-phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const upd = await SellerReviewModel.findByIdAndUpdate(id, { userPhoneEncrypted: "", phoneLast4: "", phoneCountryCode: "", phoneVerified: false }, { new: true }).lean();
+            if (!upd) return res.status(404).json({ error: "Review not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("anonymize_phone", id, adminId, {});
+            res.json({ id: String(upd._id), phoneMasked: "", phoneVerified: false });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/reviews/:id/phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const rev = await SellerReviewModel.findById(id).lean();
+            if (!rev) return res.status(404).json({ error: "Review not found" });
+            const enc = rev.userPhoneEncrypted || "";
+            const key = process.env.PHONE_ENC_KEY || "";
+            if (!enc || !key) return res.status(400).json({ error: "Phone not available" });
+            const phone = decryptPhoneNumber(enc);
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("reveal_phone", id, adminId, { sellerId: rev.sellerId });
+            res.json({ phone, countryCode: rev.phoneCountryCode || "", last4: rev.phoneLast4 || "" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/reviews/backup", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const rows = await SellerReviewModel.find().sort({ createdAt: -1 }).lean();
+            const out = rows.map((r) => ({ id: String(r._id), sellerId: r.sellerId, userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt }));
+            res.json({ count: out.length, reviews: out });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

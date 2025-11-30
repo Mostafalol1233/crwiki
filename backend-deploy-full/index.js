@@ -1237,6 +1237,40 @@ function requireSuperAdmin(req, res, next) {
     next();
 }
 
+async function requireSellerEditPermission(req, res, next) {
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (user.role === "super_admin") return next();
+    const sellerId = String(req.params.id || "");
+    if (!sellerId) return res.status(400).json({ error: "Missing seller id" });
+    try {
+        const allowedFromToken = ((user.permissions && user.permissions.allowedSellerIds) || user.allowedSellerIds || []).map(String);
+        if (user.role === "seller_admin" && allowedFromToken.includes(sellerId)) {
+            return next();
+        }
+        return res.status(403).json({ error: "Forbidden: Not allowed to edit this seller" });
+    } catch (err) {
+        return res.status(500).json({ error: "Permission check failed" });
+    }
+}
+
+function stripOrderingFields(updates, role) {
+    try {
+        if (role !== "super_admin") {
+            if (updates && typeof updates === "object") {
+                delete updates.order;
+                delete updates.rank;
+            }
+        }
+    } catch {}
+}
+
+function requireContentCreator(req, res, next) {
+    const role = req.user?.role || "";
+    if (role === "super_admin" || role === "admin" || role === "seller_admin") return next();
+    return res.status(403).json({ error: "Forbidden: Content creator role required" });
+}
+
 function slugifyEventName(input) {
     if (!input) return "";
     const base = input
@@ -1669,9 +1703,10 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/posts", requireAuth, async (req, res) => {
+    app2.post("/api/posts", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertPostSchema.parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const readingTime =
                 data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
@@ -1687,7 +1722,8 @@ async function registerRoutes(app2) {
     });
     app2.patch("/api/posts/:id", requireAuth, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             if (updates.content && !updates.readingTime) {
                 updates.readingTime = calculateReadingTime(updates.content);
             }
@@ -1794,16 +1830,17 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/events", requireAuth, async (req, res) => {
+    app2.post("/api/events", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertEventSchema.parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const event = await storage.createEvent(data);
             res.status(201).json(event);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.post("/api/events/bulk-create", requireAuth, async (req, res) => {
+    app2.post("/api/events/bulk-create", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const { events } = req.body;
             if (!Array.isArray(events)) {
@@ -1813,6 +1850,7 @@ async function registerRoutes(app2) {
             for (const eventData of events) {
                 try {
                     const data = insertEventSchema.parse(eventData);
+                    stripOrderingFields(data, req.user?.role || "");
                     const event = await storage.createEvent(data);
                     createdEvents.push(event);
                 } catch (err) {
@@ -1868,9 +1906,10 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/news", requireAuth, async (req, res) => {
+    app2.post("/api/news", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertNewsSchema.parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const news = await storage.createNews(data);
             res.status(201).json(news);
         } catch (error) {
@@ -1879,7 +1918,8 @@ async function registerRoutes(app2) {
     });
     app2.patch("/api/news/:id", requireAuth, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             const news = await storage.updateNews(req.params.id, updates);
             if (!news) {
                 return res.status(404).json({ error: "News item not found" });
@@ -1969,9 +2009,10 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.post("/api/tutorials", requireAuth, async (req, res) => {
+    app2.post("/api/tutorials", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const body = req.body;
+            stripOrderingFields(body, req.user?.role || "");
             const url = String(body.youtubeUrl || "").trim();
             const patterns = [
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
@@ -1993,7 +2034,7 @@ async function registerRoutes(app2) {
                 youtubeId,
                 description: body.description || "",
                 likes: 0,
-                order: typeof body.order === "number" ? body.order : 9999,
+                order: typeof body.order === "number" && (req.user?.role === "super_admin") ? body.order : 9999,
             });
             const lean = await TutorialModel.findById(created._id).lean();
             res.status(201).json({ ...lean, id: String(lean._id) });
@@ -2006,6 +2047,7 @@ async function registerRoutes(app2) {
         try {
             const body = req.body;
             const updates = { ...body };
+            stripOrderingFields(updates, req.user?.role || "");
             if (updates.youtubeUrl) {
                 const url = String(updates.youtubeUrl).trim();
                 const patterns = [
@@ -2669,7 +2711,8 @@ Sitemap: https://crossfire.wiki/sitemap.xml
     });
     app2.patch("/api/events/:id", requireAuth, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             const event = await storage.updateEvent(req.params.id, updates);
             if (!event) {
                 return res.status(404).json({ error: "Event not found" });
@@ -3148,9 +3191,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/sellers/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/sellers/:id", requireAuth, requireSellerEditPermission, async (req, res) => {
         try {
             const data = insertSellerSchema.partial().parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const seller = await storage.updateSeller(req.params.id, data);
             if (!seller) {
                 return res.status(404).json({ error: "Seller not found" });
@@ -3160,7 +3204,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
-    app2.delete("/api/sellers/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/sellers/:id", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const success = await storage.deleteSeller(req.params.id);
             if (!success) {
@@ -3449,6 +3493,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 // server/index-production.ts
 import cors from "cors";
 var app = express();
+var app2 = app;
 function log(message, source = "express") {
     const formattedTime = /* @__PURE__ */ new Date().toLocaleTimeString(
         "en-US",
@@ -3811,7 +3856,7 @@ app.post(
     },
 );
 
-    app2.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req, res) => {
+    app.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             let eventsUpdated = 0;
             let postsUpdated = 0;

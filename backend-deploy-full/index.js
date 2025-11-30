@@ -126,6 +126,12 @@ var AdminSchema = new Schema({
   password: { type: String, required: true },
   role: { type: String, default: "admin" },
   permissions: { type: Schema.Types.Mixed, default: {} },
+  name: { type: String, default: "" },
+  email: { type: String, default: "" },
+  contact: { type: String, default: "" },
+  profileImageUrl: { type: String, default: "" },
+  active: { type: Boolean, default: true },
+  bio: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 var NewsletterSubscriberSchema = new Schema({
@@ -156,6 +162,8 @@ var SellerSchema = new Schema({
     rank: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
     verified: { type: Boolean, default: false },
+    reviewPromptEnabled: { type: Boolean, default: false },
+    reviewPromptText: { type: String, default: "" },
 });
 var SellerReviewSchema = new Schema({
   sellerId: { type: String, required: true },
@@ -344,9 +352,17 @@ var insertTicketReplySchema = z.object({
     isAdmin: z.boolean().optional(),
 });
 var insertAdminSchema = z.object({
-    username: z.string(),
-    password: z.string(),
-    role: z.string().optional(),
+  username: z.string(),
+  password: z.string(),
+  role: z.string().optional(),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  contact: z.string().optional(),
+  profileImageUrl: z.string().optional(),
+  active: z.boolean().optional(),
+  bio: z.string().optional(),
+  permissions: z.record(z.boolean()).optional(),
+  allowedSellerIds: z.array(z.string()).optional(),
 });
 var insertNewsletterSubscriberSchema = z.object({
     email: z.string().email(),
@@ -372,6 +388,8 @@ var insertSellerSchema = z.object({
     featured: z.boolean().optional(),
     promotionText: z.string().optional(),
     rank: z.number().optional(),
+    reviewPromptEnabled: z.boolean().optional(),
+    reviewPromptText: z.string().optional(),
 });
 var insertSellerReviewSchema = z.object({
   sellerId: z.string(),
@@ -866,6 +884,10 @@ var MongoDBStorage = class {
             { permissions: permissions || {} },
             { new: true }
         );
+    }
+    async getAllAdmins() {
+        const admins = await AdminModel.find().sort({ createdAt: -1 }).lean();
+        return admins.map((a) => ({ ...a, id: String(a._id) }));
     }
     async getAdminById(id) {
         const admin = await AdminModel.findById(id).lean();
@@ -3344,6 +3366,69 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             const rows = await SellerReviewModel.find(filter).sort({ createdAt: -1 }).limit(200).lean();
             const out = rows.map((r) => ({ id: String(r._id), sellerId: r.sellerId, userName: r.userName, phoneMasked: r.phoneLast4 ? `****${r.phoneLast4}` : "", phoneCountryCode: r.phoneCountryCode || "", phoneVerified: !!r.phoneVerified, rating: r.rating, createdAt: r.createdAt }));
             res.json(out);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/admins", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const admins = await storage.getAllAdmins();
+            res.json(admins);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.post("/api/admin/admins", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const data = insertAdminSchema.parse(req.body);
+            const { username, password } = data;
+            const exists = await storage.getAdminByUsername(username);
+            if (exists) return res.status(400).json({ error: "Username already exists" });
+            const hashed = await hashPassword(password);
+            const created = await storage.createAdmin({
+                ...data,
+                password: hashed,
+            });
+            res.status(201).json(created);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+    app2.patch("/api/admin/admins/:id", requireAuth, async (req, res) => {
+        try {
+            const id = req.params.id;
+            const isSelf = (req.user?.id || "") === id;
+            const isSuper = (req.user?.role || "") === "super_admin";
+            if (!isSelf && !isSuper) return res.status(403).json({ error: "Forbidden" });
+            const body = req.body || {};
+            const updates = { ...body };
+            if (updates.password) {
+                updates.password = await hashPassword(String(updates.password));
+            }
+            const updated = await storage.updateAdmin(id, updates);
+            if (!updated) return res.status(404).json({ error: "Admin not found" });
+            res.json(updated);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+    app2.delete("/api/admin/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const ok = await storage.deleteAdmin(req.params.id);
+            if (!ok) return res.status(404).json({ error: "Admin not found" });
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/admins/:id/logs", requireAuth, async (req, res) => {
+        try {
+            const id = req.params.id;
+            const isSelf = (req.user?.id || "") === id;
+            const isSuper = (req.user?.role || "") === "super_admin";
+            if (!isSelf && !isSuper) return res.status(403).json({ error: "Forbidden" });
+            const logs = await AdminAuditLogModel.find({ adminId: id }).sort({ createdAt: -1 }).lean();
+            res.json(logs.map(l => ({ id: String(l._id), ...l })));
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

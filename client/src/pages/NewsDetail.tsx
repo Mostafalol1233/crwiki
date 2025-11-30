@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useState, useEffect } from "react";
+import { useParams, Link, useLocation } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ interface NewsItem {
 export default function NewsDetail() {
   const params = useParams();
   const newsId = params.id;
+  const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
@@ -44,6 +45,23 @@ export default function NewsDetail() {
   });
 
   const newsItem = newsItems.find((item) => item.id === newsId);
+
+  const { data: fallbackPost } = useQuery<any>({
+    queryKey: ["/api/posts/" + newsId],
+    enabled: !newsItem && !!newsId,
+    queryFn: async () => {
+      const res = await fetch(`/api/posts/${newsId}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (fallbackPost && (fallbackPost.id || fallbackPost.post_slug)) {
+      const target = `/article/${fallbackPost.post_slug || fallbackPost.id}`;
+      setLocation(target);
+    }
+  }, [fallbackPost, setLocation]);
 
   if (isLoading) {
     return (

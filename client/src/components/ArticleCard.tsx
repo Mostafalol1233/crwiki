@@ -83,21 +83,21 @@ export function ArticleCard({ article }: ArticleCardProps) {
             {article.summary}
           </p>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium">{article.author}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground break-words whitespace-normal">
+            <span className="font-medium truncate">{article.author}</span>
             <span>•</span>
-            <span>{article.date}</span>
+            <span className="truncate">{article.date}</span>
             <span>•</span>
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>
+            <div className="flex items-center gap-1 truncate">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">
                 {article.readingTime} {t("readingTime")}
               </span>
             </div>
             <span>•</span>
-            <div className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              <span>{(article.views || 0).toLocaleString()}</span>
+            <div className="flex items-center gap-1 truncate">
+              <Eye className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{(article.views || 0).toLocaleString()}</span>
             </div>
           </div>
         </CardContent>

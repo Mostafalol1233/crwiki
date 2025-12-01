@@ -2054,6 +2054,14 @@ async function registerRoutes(app2) {
     });
     app2.post("/api/events", requireAuth, requireContentCreator, async (req, res) => {
         try {
+            const adminId = req.user?.id || "";
+            const admin = adminId ? await AdminModel.findById(adminId).lean() : null;
+            const adminName = admin?.username || "Unknown";
+            
+            if (admin && admin.create_limit > 0 && admin.events_created >= admin.create_limit) {
+                return res.status(403).json({ error: "Event creation quota exceeded" });
+            }
+            
             const data = insertEventSchema.parse(req.body);
             stripOrderingFields(data, req.user?.role || "");
             const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
@@ -2063,7 +2071,14 @@ async function registerRoutes(app2) {
             const withSeo = { ...data };
             (withSeo).event_name_slug = withSeo.event_name_slug || eventSlug;
             (withSeo).canonicalUrl = withSeo.canonicalUrl || canonical;
+            (withSeo).createdByAdminId = adminId;
+            (withSeo).createdByAdminName = adminName;
             const event = await storage.createEvent(withSeo);
+            
+            if (admin) {
+                await AdminModel.findByIdAndUpdate(adminId, { $inc: { events_created: 1 } });
+            }
+            
             res.status(201).json(event);
         } catch (error) {
             console.error("Event creation error:", error);
@@ -2284,9 +2299,24 @@ async function registerRoutes(app2) {
     });
     app2.post("/api/news", requireAuth, requireContentCreator, async (req, res) => {
         try {
+            const adminId = req.user?.id || "";
+            const admin = adminId ? await AdminModel.findById(adminId).lean() : null;
+            const adminName = admin?.username || "Unknown";
+            
+            if (admin && admin.create_limit > 0 && admin.news_created >= admin.create_limit) {
+                return res.status(403).json({ error: "News creation quota exceeded" });
+            }
+            
             const data = insertNewsSchema.parse(req.body);
             stripOrderingFields(data, req.user?.role || "");
+            data.createdByAdminId = adminId;
+            data.createdByAdminName = adminName;
             const news = await storage.createNews(data);
+            
+            if (admin) {
+                await AdminModel.findByIdAndUpdate(adminId, { $inc: { news_created: 1 } });
+            }
+            
             res.status(201).json(news);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -2344,7 +2374,7 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.patch("/api/news/:id", requireAuth, requireOwnershipOrAdmin("news"), async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");
@@ -2357,7 +2387,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.delete("/api/news/:id", requireAuth, requireOwnershipOrAdmin("news"), async (req, res) => {
         try {
             const deleted = await storage.deleteNews(req.params.id);
             if (!deleted) {
@@ -2439,6 +2469,14 @@ async function registerRoutes(app2) {
 
     app2.post("/api/tutorials", requireAuth, requireContentCreator, async (req, res) => {
         try {
+            const adminId = req.user?.id || "";
+            const admin = adminId ? await AdminModel.findById(adminId).lean() : null;
+            const adminName = admin?.username || "Unknown";
+            
+            if (admin && admin.create_limit > 0 && admin.tutorials_created >= admin.create_limit) {
+                return res.status(403).json({ error: "Tutorial creation quota exceeded" });
+            }
+            
             const body = req.body;
             stripOrderingFields(body, req.user?.role || "");
             const url = String(body.youtubeUrl || "").trim();
@@ -2464,6 +2502,11 @@ async function registerRoutes(app2) {
                 likes: 0,
                 order: typeof body.order === "number" && (req.user?.role === "super_admin") ? body.order : 9999,
             });
+            
+            if (admin) {
+                await AdminModel.findByIdAndUpdate(adminId, { $inc: { tutorials_created: 1 } });
+            }
+            
             const lean = await TutorialModel.findById(created._id).lean();
             res.status(201).json({ ...lean, id: String(lean._id) });
         } catch (error) {
@@ -2515,6 +2558,46 @@ async function registerRoutes(app2) {
             if (!ok)
                 return res.status(404).json({ error: "Tutorial not found" });
             res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.put("/api/admin/admins/:adminId/permissions", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { adminId } = req.params;
+            const { permissions } = req.body;
+            if (!permissions || typeof permissions !== "object") {
+                return res.status(400).json({ error: "Permissions object required" });
+            }
+            const updated = await AdminModel.findByIdAndUpdate(adminId, { permissions }, { new: true }).lean();
+            if (!updated) return res.status(404).json({ error: "Admin not found" });
+            res.json({ id: String(updated._id), username: updated.username, permissions: updated.permissions });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.put("/api/admin/admins/:adminId/quota", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { adminId } = req.params;
+            const { create_limit } = req.body;
+            if (typeof create_limit !== "number") {
+                return res.status(400).json({ error: "create_limit must be a number (-1 for unlimited)" });
+            }
+            const updated = await AdminModel.findByIdAndUpdate(adminId, { create_limit }, { new: true }).lean();
+            if (!updated) return res.status(404).json({ error: "Admin not found" });
+            res.json({ id: String(updated._id), username: updated.username, create_limit: updated.create_limit, posts_created: updated.posts_created, events_created: updated.events_created, news_created: updated.news_created, tutorials_created: updated.tutorials_created });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/admins/:adminId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const admin = await AdminModel.findById(req.params.adminId).lean();
+            if (!admin) return res.status(404).json({ error: "Admin not found" });
+            res.json({ id: String(admin._id), username: admin.username, name: admin.name, email: admin.email, role: admin.role, permissions: admin.permissions || {}, create_limit: admin.create_limit, posts_created: admin.posts_created, events_created: admin.events_created, news_created: admin.news_created, tutorials_created: admin.tutorials_created, active: admin.active });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

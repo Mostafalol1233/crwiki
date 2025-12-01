@@ -27,7 +27,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "${VITE_API_URL}/api/$1"
+      "destination": "http://51.75.118.151:20032/api/$1"
     },
     {
       "source": "/favicon.png",
@@ -39,7 +39,7 @@
     },
     {
       "source": "/ws",
-      "destination": "${VITE_API_URL}/ws"
+      "destination": "http://51.75.118.151:20032/ws"
     },
     {
       "source": "/(.*)",

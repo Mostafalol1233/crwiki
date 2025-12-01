@@ -1850,11 +1850,37 @@ async function registerRoutes(app2) {
     app2.get("/api/events/slug/:slug", async (req, res) => {
         try {
             const { slug } = req.params;
-            const ev = await storage.getEventBySlug(slug);
+            let ev = await storage.getEventBySlug(slug);
+            if (!ev) {
+                const alt = slugifyEventName(String(slug).replace(/-/g, " "));
+                if (alt && alt !== slug) {
+                    ev = await storage.getEventBySlug(alt);
+                }
+            }
             if (!ev) {
                 try {
-                    await storage.logUrlMatchFailure("event", slug);
+                    const byCanonical = await EventModel.findOne({ canonicalUrl: { $regex: new RegExp(`/events/${slug}$`, "i") } }).lean();
+                    if (byCanonical) {
+                        ev = { ...byCanonical, id: String(byCanonical._id) };
+                    }
                 } catch {}
+            }
+            if (!ev) {
+                try {
+                    const candidates = await EventModel.find().select("title").lean();
+                    for (const c of candidates) {
+                        if (slugifyEventName(c.title || "") === slug) {
+                            const found = await EventModel.findById(c._id).lean();
+                            if (found) {
+                                ev = { ...found, id: String(found._id) };
+                                break;
+                            }
+                        }
+                    }
+                } catch {}
+            }
+            if (!ev) {
+                try { await storage.logUrlMatchFailure("event", slug); } catch {}
                 return res.status(404).json({ error: "Event not found" });
             }
             return res.json(ev);

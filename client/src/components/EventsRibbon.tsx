@@ -22,7 +22,7 @@ export function EventsRibbon({ events }: EventsRibbonProps) {
           {events.map((event) => (
             <Link 
               key={event.id} 
-              href={event.event_name_slug ? `/event/${event.event_name_slug}` : `/events/${event.id}`}
+              href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
               className="flex items-center gap-3 flex-shrink-0 snap-start hover-elevate active-elevate-2 px-4 py-2 rounded-lg transition-all bg-muted/30 hover:bg-muted border border-border"
               data-testid={`link-event-${event.id}`}
             >

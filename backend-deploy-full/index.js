@@ -1914,7 +1914,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.patch("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.patch("/api/posts/:id", requireAuth, requireOwnershipOrAdmin("posts"), async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");
@@ -1933,7 +1933,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.delete("/api/posts/:id", requireAuth, requireOwnershipOrAdmin("posts"), async (req, res) => {
         try {
             const deleted = await storage.deletePost(req.params.id);
             if (!deleted) {
@@ -2174,7 +2174,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), async (req, res) => {
         try {
             const deleted = await storage.deleteEvent(req.params.id);
             if (!deleted) {
@@ -3220,7 +3220,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
+    app2.patch("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");

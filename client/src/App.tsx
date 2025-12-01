@@ -117,7 +117,7 @@ function App() {
               schemaData={{
                 name: "CrossFire Wiki",
                 url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
-                logo: "/white-vafcoin.png",
+                logo: "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png",
               }}
             />
             <SEOHead

@@ -49,12 +49,17 @@ function Router() {
   <Route path="/events" component={Category} />
   <Route path="/category/:category" component={Category} />
       <Route path="/reviews" component={Reviews} />
+      <Route path="/reviews/seller/:sellerName" component={Reviews} />
+      <Route path="/reviews/seller/slug/:slug" component={Reviews} />
       <Route path="/sellers" component={Sellers} />
+      <Route path="/seller/:slug" component={Sellers} />
       <Route path="/news" component={News} />
       <Route path="/news/:id" component={NewsDetail} />
       <Route path="/events/:id" component={EventDetail} />
+      <Route path="/events/:slug" component={EventDetail} />
       <Route path="/mercenaries" component={Mercenaries} />
       <Route path="/grave-games" component={GraveGames} />
+      <Route path="/article/:slug" component={Article} />
       <Route path="/article/:id" component={Article} />
       <Route path="/support" component={Support} />
       <Route path="/my-tickets" component={MyTickets} />
@@ -100,6 +105,24 @@ function Layout() {
 }
 
 function App() {
+  const isMaintenance = (import.meta.env.VITE_MAINTENANCE_MODE ?? '1') === '1';
+  if (isMaintenance) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0f1a] text-white">
+        <div className="max-w-xl w-[92%] rounded-xl p-6 bg-[#131a2a] border border-[#2a3757] shadow-xl">
+          <div className="[direction:ltr]">
+            <h1 className="m-0 mb-2 text-xl">Site Under Maintenance</h1>
+            <p className="text-sm text-[#cbd5e1]">We are performing scheduled updates. The site will be back shortly. Thank you for your patience.</p>
+          </div>
+          <div className="h-px my-4 bg-[#22304d]" />
+          <div className="[direction:rtl]">
+            <h1 className="m-0 mb-2 text-xl">الموقع قيد التحديث</h1>
+            <p className="text-sm text-[#cbd5e1]">نقوم بإجراء تحديثات مجدولة. سيعود الموقع للعمل قريبًا. شكرًا على صبركم.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

@@ -65,13 +65,23 @@ export async function registerRoutes(app) {
                 storage.getAllEvents().catch(() => []),
             ]);
             for (const p of posts) {
-                push(`/article/${p.id}`, { priority: 0.5, changefreq: 'monthly' });
+                const slug = p.post_slug || '';
+                if (slug) {
+                    push(`/article/${slug}`, { priority: 0.5, changefreq: 'monthly' });
+                } else {
+                    push(`/article/${p.id}`, { priority: 0.5, changefreq: 'monthly' });
+                }
             }
             for (const n of news) {
                 push(`/news/${n.id}`, { priority: 0.6, changefreq: 'weekly' });
             }
             for (const e of events) {
-                push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
+                const slug = e.event_name_slug || '';
+                if (slug) {
+                    push(`/events/${slug}`, { priority: 0.4, changefreq: 'monthly' });
+                } else {
+                    push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
+                }
             }
         }
         catch { }

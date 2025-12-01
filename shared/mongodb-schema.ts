@@ -143,12 +143,14 @@ export interface ISeller extends Document {
   promotionText: string;
   averageRating: number;
   totalReviews: number;
+  rank?: number;
   createdAt: Date;
 }
 
 export interface ISellerReview extends Document {
   sellerId: string;
   userName: string;
+  userPhone?: string;
   rating: number;
   comment: string;
   createdAt: Date;
@@ -160,6 +162,7 @@ export interface ITutorial extends Document {
   youtubeUrl: string;
   youtubeId: string;
   likes?: number;
+  order?: number;
   createdAt?: Date;
 }
 
@@ -219,6 +222,7 @@ export interface IMercenary extends Document {
   role: string;
   description?: string;
   voiceLines?: string[]; // MP3 URLs for voice lines (1-30 sounds)
+  order?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -372,12 +376,14 @@ const SellerSchema = new Schema<ISeller>({
   promotionText: { type: String, default: '' },
   averageRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
+  rank: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
 });
 
 const SellerReviewSchema = new Schema<ISellerReview>({
   sellerId: { type: String, required: true },
   userName: { type: String, required: true },
+  userPhone: { type: String, default: '' },
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now },
@@ -389,6 +395,7 @@ const TutorialSchema = new Schema<ITutorial>({
   youtubeUrl: { type: String, required: true },
   youtubeId: { type: String, required: true },
   likes: { type: Number, default: 0 },
+  order: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -451,6 +458,7 @@ const MercenarySchema = new Schema<IMercenary>({
   role: { type: String, required: true },
   description: { type: String, default: "" },
   voiceLines: { type: [String], default: [] },
+  order: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -603,11 +611,13 @@ export const insertSellerSchema = z.object({
   website: z.string().optional(),
   featured: z.boolean().optional(),
   promotionText: z.string().optional(),
+  rank: z.number().optional(),
 });
 
 export const insertSellerReviewSchema = z.object({
   sellerId: z.string(),
   userName: z.string(),
+  userPhone: z.string().optional(),
   rating: z.number().min(1).max(5),
   comment: z.string().optional(),
   verificationAnswer: z.string().optional(),
@@ -618,6 +628,7 @@ export const insertTutorialSchema = z.object({
   description: z.string().optional(),
   youtubeUrl: z.string().url(),
   youtubeId: z.string().min(1),
+  order: z.number().optional(),
 });
 
 export const updateTutorialSchema = insertTutorialSchema.partial();
@@ -659,6 +670,7 @@ export const insertMercenarySchema = z.object({
   image: z.string().min(1),
   role: z.string().min(1),
   sounds: z.array(z.string()).optional(),
+  order: z.number().optional(),
 });
 
 const urlOrEmptyString = z.string().trim().optional().transform((value) => value ?? "").refine((value) => {

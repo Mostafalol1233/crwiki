@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowLeft, Languages } from "lucide-react";
-import { useState } from "react";
-import createDOMPurify from "dompurify";
+import { useState, useEffect } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -26,23 +26,34 @@ interface Event {
   ogImage?: string;
   twitterImage?: string;
   schemaType?: string;
+  event_name_slug?: string;
 }
 
 export default function EventDetail() {
   // wouter's useParams can be untyped in some versions; read params then cast safely
   const params = useParams();
   const id = params?.id as string | undefined;
+  const slug = params?.slug as string | undefined;
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [error, setError] = useState<Error | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
 
   const { data: event, isLoading } = useQuery<Event>({
-    queryKey: ["event", id],
-    enabled: !!id,
+    queryKey: ["event", id || slug],
+    enabled: !!(id || slug),
     retry: 1,
     queryFn: async () => {
-      if (!id) throw new Error("No event ID provided");
+      if (slug) {
+        const res = await fetch(`/api/events/slug/${slug}`);
+        if (!res.ok) {
+          const errorText = await res.text().catch(() => "Unknown error");
+          throw new Error(`Failed to load event: ${res.status} ${errorText}`);
+        }
+        return res.json();
+      }
+      if (!id) throw new Error("No event ID or slug provided");
       const res = await fetch(`/api/events/${id}`);
       if (!res.ok) {
         const errorText = await res.text().catch(() => "Unknown error");
@@ -51,6 +62,15 @@ export default function EventDetail() {
       return res.json();
     },
   });
+
+  useEffect(() => {
+    if (id && event?.event_name_slug) {
+      const slugUrl = `/events/${event.event_name_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
+        setLocation(slugUrl);
+      }
+    }
+  }, [id, event?.event_name_slug]);
 
   if (isLoading) {
     return (
@@ -64,8 +84,7 @@ export default function EventDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Error Loading Event</h2>
-          <p className="text-muted-foreground mb-4">Sorry, there was a problem loading this event.</p>
+          <h2 className="text-2xl font-semibold mb-4">{t("eventNotFound")}</h2>
           <Button onClick={() => setLocation("/")} data-testid="button-back-home">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("backToHome")}
@@ -94,7 +113,7 @@ export default function EventDetail() {
   const hasTranslation = event.titleAr || event.descriptionAr;
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const eventUrl = `${baseUrl}/events/${id}`;
+  const eventUrl = slug ? `${baseUrl}/events/${slug}` : `${baseUrl}/events/${id}`;
   const breadcrumbs = [
     { name: "Events", url: "/category/events" },
     { name: title, url: eventUrl },
@@ -128,7 +147,7 @@ export default function EventDetail() {
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
           <Breadcrumbs items={breadcrumbs} />
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => setLocation("/")}
@@ -136,6 +155,15 @@ export default function EventDetail() {
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("back")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRTL(!isRTL)}
+              data-testid="button-toggle-rtl-event"
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              {isRTL ? "LTR" : "Translate"}
             </Button>
           </div>
 
@@ -146,6 +174,7 @@ export default function EventDetail() {
                 src={event.image}
                 alt={title}
                 className="w-full h-auto max-h-[550px] object-contain"
+                onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
                 data-testid="img-event"
               />
             </div>
@@ -169,7 +198,11 @@ export default function EventDetail() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowTranslation(!showTranslation)}
+                  onClick={() => {
+                    const next = !showTranslation;
+                    setShowTranslation(next);
+                    setIsRTL(next);
+                  }}
                   data-testid="button-toggle-translation"
                 >
                   <Languages className="mr-2 h-4 w-4" />
@@ -179,15 +212,23 @@ export default function EventDetail() {
             </div>
 
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-title">
+              <h1 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? "text-right" : ""}`} data-testid="text-title">
                 {title}
               </h1>
 
               {description && (
                 <div 
-                  className="prose prose-lg dark:prose-invert max-w-none"
-                  // createDOMPurify returns a DOMPurify instance bound to the window
-              dangerouslySetInnerHTML={{ __html: (createDOMPurify as any)(window as any).sanitize(description) }}
+                  className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+                  dir={isRTL ? "rtl" : undefined}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description, {
+                    ALLOWED_TAGS: [
+                      'p','br','strong','b','em','i','u','strike','s','del','h1','h2','h3','h4','h5','h6',
+                      'ul','ol','li','a','img','blockquote','pre','code','table','thead','tbody','tr','th','td','div','span','hr','small'
+                    ],
+                    ALLOWED_ATTR: ['href','src','alt','title','style','class','width','height','target','rel'],
+                    ALLOW_DATA_ATTR: false,
+                    KEEP_CONTENT: true,
+                  }) }}
                   data-testid="text-description"
                 />
               )}

@@ -156,6 +156,19 @@ export class MemoryStorage implements IStorage {
         createdAt: new Date(now.getTime() - 1000 * 60 * 60 * 24),
       },
     ];
+
+    const today = new Date().toISOString().split('T')[0];
+    const seedEvents: any[] = [
+      { title: 'Sleighbell Bonus', description: 'Seasonal rewards and bonuses.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'sleighbell-bonus' },
+      { title: 'Noble Beast Collection', description: 'Collect rare items from the Noble Beast series.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'noble-beast-collection' },
+      { title: 'Gratitude Gathering', description: 'Community appreciation event.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'gratitude-gathering' },
+      { title: 'Black Friday Weapon Loot', description: 'Exclusive Black Friday weapon loot.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'black-friday-weapon-loot' },
+      { title: 'Black Friday 2025', description: 'Annual Black Friday event for 2025.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'black-friday-2025' },
+      { title: 'CF Event Pass Season 5 Rewind', description: 'Relive Season 5 event pass rewards.', date: today, type: 'upcoming', image: '/attached_assets/feature-crossfire.jpg', event_name_slug: 'cf-event-pass-season-5-rewind' },
+    ];
+    for (const ev of seedEvents) {
+      this.events.unshift({ id: uuidv4(), createdAt: new Date(), ...ev } as any);
+    }
   }
 
   // Users
@@ -231,6 +244,9 @@ export class MemoryStorage implements IStorage {
   }
   async getEventById(id: string): Promise<Event | undefined> {
     return this.events.find((e) => e.id === id);
+  }
+  async getEventBySlug(slug: string): Promise<Event | undefined> {
+    return this.events.find((e: any) => (e as any).event_name_slug === slug);
   }
   async createEvent(event: InsertEvent): Promise<Event> {
     const e: any = { ...event, id: uuidv4(), createdAt: new Date() };

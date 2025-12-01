@@ -58,7 +58,7 @@ import {
   type InsertMode,
   type Rank,
   type InsertRank,
-} from "@shared/mongodb-schema";
+} from "../shared/mongodb-schema.js";
 import { connectMongoDB } from "./mongodb";
 
 export interface NewsItem {
@@ -144,6 +144,7 @@ export interface IStorage {
   deleteAdmin(id: string): Promise<boolean>;
 
   getEventById(id: string): Promise<Event | undefined>;
+  getEventBySlug(slug: string): Promise<Event | undefined>;
   updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
 
   getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
@@ -400,7 +401,7 @@ export class MongoDBStorage implements IStorage {
   }
 
   async getAllEvents(): Promise<Event[]> {
-    const events = await EventModel.find().lean();
+    const events = await EventModel.find().sort({ order: 1, createdAt: -1 }).lean();
     return events.map(event => ({
       ...event,
       id: String(event._id),
@@ -693,6 +694,15 @@ export class MongoDBStorage implements IStorage {
     } as any;
   }
 
+  async getEventBySlug(slug: string): Promise<Event | undefined> {
+    const event = await EventModel.findOne({ event_name_slug: slug }).lean();
+    if (!event) return undefined;
+    return {
+      ...event,
+      id: String(event._id),
+    } as any;
+  }
+
   async updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined> {
     const updated = await EventModel.findByIdAndUpdate(id, event, { new: true }).lean();
     if (!updated) return undefined;
@@ -723,7 +733,7 @@ export class MongoDBStorage implements IStorage {
   }
 
   async getAllSellers(): Promise<Seller[]> {
-    const sellers = await SellerModel.find().sort({ createdAt: -1 }).lean();
+    const sellers = await SellerModel.find().sort({ rank: 1, createdAt: -1 }).lean();
     return sellers.map(seller => ({
       ...seller,
       id: String(seller._id),
@@ -731,6 +741,7 @@ export class MongoDBStorage implements IStorage {
       prices: seller.prices || [],
       averageRating: seller.averageRating || 0,
       totalReviews: seller.totalReviews || 0,
+      rank: typeof (seller as any).rank === 'number' ? (seller as any).rank : 9999,
     })) as any;
   }
 
@@ -744,6 +755,7 @@ export class MongoDBStorage implements IStorage {
       prices: seller.prices || [],
       averageRating: seller.averageRating || 0,
       totalReviews: seller.totalReviews || 0,
+      rank: typeof (seller as any).rank === 'number' ? (seller as any).rank : 9999,
     } as any;
   }
 
@@ -758,6 +770,7 @@ export class MongoDBStorage implements IStorage {
       prices: lean.prices || [],
       averageRating: lean.averageRating || 0,
       totalReviews: lean.totalReviews || 0,
+      rank: typeof (lean as any).rank === 'number' ? (lean as any).rank : 9999,
     } as any;
   }
 
@@ -771,6 +784,7 @@ export class MongoDBStorage implements IStorage {
       prices: updated.prices || [],
       averageRating: updated.averageRating || 0,
       totalReviews: updated.totalReviews || 0,
+      rank: typeof (updated as any).rank === 'number' ? (updated as any).rank : 9999,
     } as any;
   }
 

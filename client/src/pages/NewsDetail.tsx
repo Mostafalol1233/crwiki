@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useState, useEffect } from "react";
+import { useParams, Link, useLocation } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,14 +35,33 @@ interface NewsItem {
 export default function NewsDetail() {
   const params = useParams();
   const newsId = params.id;
+  const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [showTranslation, setShowTranslation] = useState(false);
+  const [isRTL, setIsRTL] = useState(false);
 
   const { data: newsItems = [], isLoading } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
   });
 
   const newsItem = newsItems.find((item) => item.id === newsId);
+
+  const { data: fallbackPost } = useQuery<any>({
+    queryKey: ["/api/posts/" + newsId],
+    enabled: !newsItem && !!newsId,
+    queryFn: async () => {
+      const res = await fetch(`/api/posts/${newsId}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (fallbackPost && (fallbackPost.id || fallbackPost.post_slug)) {
+      const target = `/article/${fallbackPost.post_slug || fallbackPost.id}`;
+      setLocation(target);
+    }
+  }, [fallbackPost, setLocation]);
 
   if (isLoading) {
     return (
@@ -128,6 +147,16 @@ export default function NewsDetail() {
             >
               <Globe className="h-5 w-5" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsRTL(!isRTL)}
+              className="ml-2"
+              data-testid="button-toggle-rtl-news"
+            >
+              <Languages className="mr-2 h-4 w-4" />
+              {isRTL ? "LTR" : "Translate"}
+            </Button>
             {hasTranslation && (
               <Button
                 variant="outline"
@@ -180,8 +209,8 @@ export default function NewsDetail() {
           const purified = (createDOMPurify as any)(window as any).sanitize(html);
           return (
             <article
-              className="prose prose-lg dark:prose-invert max-w-none"
-              dir={showTranslation ? "rtl" : undefined}
+              className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+              dir={isRTL ? "rtl" : undefined}
               dangerouslySetInnerHTML={{ __html: purified }}
               data-testid="text-news-content"
             />

@@ -98,14 +98,16 @@ export default function Admin() {
     role: "", 
     image: "", 
     description: "",
-    voiceLines: [] as string[] 
+    voiceLines: [] as string[],
+    order: ""
   });
   const [createMercForm, setCreateMercForm] = useState({ 
     name: "", 
     image: "", 
     role: "", 
     description: "",
-    voiceLines: [] as string[] 
+    voiceLines: [] as string[],
+    order: ""
   });
   const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [uploadedAudioUrls, setUploadedAudioUrls] = useState<string[]>([]);
@@ -137,6 +139,7 @@ export default function Admin() {
   const [activeSellerForReviews, setActiveSellerForReviews] = useState<any | null>(null);
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [csrfToken, setCsrfToken] = useState("");
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [activeTicket, setActiveTicket] = useState<any | null>(null);
   const [activeTicketReplies, setActiveTicketReplies] = useState<any[]>([]);
@@ -158,6 +161,22 @@ export default function Admin() {
       setAdminUsername(username || "");
     }
   }, [setLocation]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const base = (import.meta as any).env?.VITE_API_URL || '';
+        const url = base ? `${base}/api/security/csrf-token` : `/api/security/csrf-token`;
+        const res = await fetch(url, { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          const token = data?.csrfToken || "";
+          setCsrfToken(token);
+          if (token) localStorage.setItem('csrfToken', token);
+        }
+      } catch {}
+    })();
+  }, []);
 
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -351,14 +370,22 @@ export default function Admin() {
     whatsapp: "",
     discord: "",
     website: "",
+    facebook: "",
+    twitter: "",
+    instagram: "",
+    youtube: "",
+    tiktok: "",
+    telegram: "",
     featured: false,
     promotionText: "",
+    rank: "",
   });
 
   const [adminForm, setAdminForm] = useState({
     username: "",
     password: "",
-    role: "admin" as "admin" | "super_admin",
+    role: "admin" as "admin" | "seller_admin" | "super_admin",
+    allowedSellerIds: [] as string[],
   });
   const [adminPermissionsForm, setAdminPermissionsForm] = useState<Record<string, boolean>>({});
 
@@ -900,7 +927,7 @@ export default function Admin() {
       console.log("Mercenary created:", response);
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setIsCreatingMerc(false);
-      setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
+      setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [], order: "" });
       toast({ title: "Mercenary created successfully", description: `${response?.voiceLines?.length || 0} voice lines saved` });
     },
     onError: (error: any) => {
@@ -921,7 +948,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setEditingMerc(null);
       setIsEditingMerc(false);
-      setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
+      setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [], order: "" });
       toast({ title: "Mercenary updated successfully" });
     },
     onError: () => {
@@ -971,6 +998,18 @@ export default function Admin() {
     },
     onError: (error: any) => {
       toast({ title: "Failed to scrape events", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const migrateSlugsMutation = useMutation({
+    mutationFn: () => apiRequest("/api/admin/migrate-slugs", "POST"),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({ title: "Slugs migrated", description: `Events: ${data?.eventsUpdated || 0}, Posts: ${data?.postsUpdated || 0}` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to migrate slugs", description: error.message, variant: "destructive" });
     },
   });
 
@@ -1081,8 +1120,15 @@ export default function Admin() {
       whatsapp: "",
       discord: "",
       website: "",
+      facebook: "",
+      twitter: "",
+      instagram: "",
+      youtube: "",
+      tiktok: "",
+      telegram: "",
       featured: false,
       promotionText: "",
+      rank: "",
     });
   };
 
@@ -1091,6 +1137,7 @@ export default function Admin() {
       username: "",
       password: "",
       role: "admin",
+      allowedSellerIds: [],
     });
   };
 
@@ -1239,15 +1286,17 @@ export default function Admin() {
                   {canTutorials && <option value="tutorials">Tutorials</option>}
                   {canSellers && <option value="sellers">Sellers</option>}
                   {canCFData && <option value="cf-data">CF Data</option>}
+                  {canRestoration && <option value="restoration">Restore Data</option>}
                   {canTranslations && <option value="translations">Translations</option>}
                   {canVerification && <option value="verification">Review Verification</option>}
                   {canAdmins && <option value="admins">Admins</option>}
                   {canSubscribers && <option value="subscribers">Subscribers</option>}
                   {canScraper && <option value="scraper">Scraper</option>}
                   {canMercenaries && <option value="mercenaries">Mercenaries</option>}
-                {canTickets && <option value="tickets">Tickets</option>}
-                {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
-              </select>
+                  {canTickets && <option value="tickets">Tickets</option>}
+                  {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
+                  {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
+                </select>
               </div>
 
               {/* large screen: vertical tabs list */}
@@ -1552,26 +1601,28 @@ export default function Admin() {
                       data-testid="input-post-title"
                     />
                     <div className="space-y-2">
-                      <div data-testid="input-post-content">
-                        <ReactQuill
-                          theme="snow"
-                          value={postForm.content}
-                          onChange={(value) =>
-                            setPostForm({ ...postForm, content: value })
-                          }
-                          modules={{
-                            toolbar: [
-                              [{ 'header': [1, 2, 3, false] }],
-                              ['bold', 'italic', 'underline', 'strike'],
-                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                              ['link', 'blockquote', 'code-block'],
-                              ['clean']
-                            ],
-                          }}
-                          placeholder="Write your content here..."
-                          style={{ minHeight: '200px' }}
-                        />
-                      </div>
+                          <div data-testid="input-post-content">
+                            <ReactQuill
+                              theme="snow"
+                              value={postForm.content}
+                              onChange={(value) =>
+                                setPostForm({ ...postForm, content: value })
+                              }
+                              modules={{
+                                toolbar: [
+                                  [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
+                                  ['bold', 'italic', 'underline', 'strike'],
+                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
+                                  ['link', 'blockquote', 'code-block'],
+                                  ['clean']
+                                ],
+                              }}
+                              placeholder="Write your content here..."
+                              style={{ minHeight: '200px' }}
+                            />
+                          </div>
                     </div>
                     <Textarea
                       placeholder="Summary (optional)"
@@ -1816,6 +1867,43 @@ export default function Admin() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         )}
+                        {canManagePosts && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const max = Math.max(...(posts?.map((p: any) => p.order || 0) || [0]));
+                              updatePostMutation.mutate({ id: post.id, data: { order: max + 1 } });
+                            }}
+                            data-testid={`button-post-first-${post.id}`}
+                          >
+                            First
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const next = (post.order || 0) + 1;
+                              updatePostMutation.mutate({ id: post.id, data: { order: next } });
+                            }}
+                            data-testid={`button-post-up-${post.id}`}
+                          >
+                            Up
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const next = Math.max(0, (post.order || 0) - 1);
+                              updatePostMutation.mutate({ id: post.id, data: { order: next } });
+                            }}
+                            data-testid={`button-post-down-${post.id}`}
+                          >
+                            Down
+                          </Button>
+                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -1866,6 +1954,16 @@ export default function Admin() {
                       {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
                     </Button>
                     )}
+                    {isSuperAdmin && (
+                    <Button
+                      variant="outline"
+                      onClick={() => migrateSlugsMutation.mutate()}
+                      disabled={migrateSlugsMutation.isPending}
+                      data-testid="button-migrate-slugs"
+                    >
+                      {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
+                    </Button>
+                    )}
                     <Dialog open={isCreatingEvent} onOpenChange={(open) => {
                       setIsCreatingEvent(open);
                       if (!open) {
@@ -1905,25 +2003,48 @@ export default function Admin() {
                           dir="rtl"
                           data-testid="input-event-title-ar"
                         />
-                        <Textarea
-                          placeholder="Description (English)"
-                          value={eventForm.description}
-                          onChange={(e) =>
-                            setEventForm({ ...eventForm, description: e.target.value })
-                          }
-                          rows={3}
-                          data-testid="input-event-description"
-                        />
-                        <Textarea
-                          placeholder="Description (Arabic) - الوصف بالعربية"
-                          value={eventForm.descriptionAr}
-                          onChange={(e) =>
-                            setEventForm({ ...eventForm, descriptionAr: e.target.value })
-                          }
-                          rows={3}
-                          dir="rtl"
-                          data-testid="input-event-description-ar"
-                        />
+                        <div data-testid="input-event-description">
+                          <ReactQuill
+                            theme="snow"
+                            value={eventForm.description}
+                            onChange={(value) =>
+                              setEventForm({ ...eventForm, description: value })
+                            }
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['link'],
+                                ['clean']
+                              ],
+                            }}
+                            style={{ minHeight: '150px' }}
+                          />
+                        </div>
+                        <div data-testid="input-event-description-ar">
+                          <ReactQuill
+                            theme="snow"
+                            value={eventForm.descriptionAr}
+                            onChange={(value) =>
+                              setEventForm({ ...eventForm, descriptionAr: value })
+                            }
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['link'],
+                                ['clean']
+                              ],
+                            }}
+                            style={{ minHeight: '150px', direction: 'rtl' }}
+                          />
+                        </div>
                         <Input
                           placeholder="Date"
                           value={eventForm.date}
@@ -2019,6 +2140,17 @@ export default function Admin() {
                                 ? eventForm.seoKeywords.split(",").map((k) => k.trim())
                                 : [],
                             };
+                            const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
+                            const slug = String((eventForm.title || "").toLowerCase())
+                              .normalize('NFKD')
+                              .replace(/\p{Diacritic}/gu, '')
+                              .replace(/[^a-z0-9 ]+/g, '')
+                              .trim()
+                              .replace(/\s+/g, '-')
+                              .substring(0, 60);
+                            const canonical = base ? `${base}/events/${slug}` : `https://crossfire.wiki/events/${slug}`;
+                            (data as any).event_name_slug = slug;
+                            (data as any).canonicalUrl = data.canonicalUrl || canonical;
                             if (editingEvent) {
                               updateEventMutation.mutate({ id: editingEvent.id, data });
                             } else {
@@ -2077,26 +2209,63 @@ export default function Admin() {
                               data-testid={`button-edit-event-${event.id}`}
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            )}
-                            {canManageEvents && (
+                          </Button>
+                          )}
+                          {canManageEvents && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setDeleteConfirmId(event.id);
+                              setDeleteType("event");
+                            }}
+                            data-testid={`button-delete-event-${event.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          )}
+                          {canManageEvents && (
+                          <div className="flex gap-1">
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="outline"
+                              size="sm"
                               onClick={() => {
-                                setDeleteConfirmId(event.id);
-                                setDeleteType("event");
+                                const max = Math.max(...(events?.map((e: any) => e.order || 0) || [0]));
+                                updateEventMutation.mutate({ id: event.id, data: { order: max + 1 } });
                               }}
-                              data-testid={`button-delete-event-${event.id}`}
+                              data-testid={`button-event-first-${event.id}`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              First
                             </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = (event.order || 0) + 1;
+                                updateEventMutation.mutate({ id: event.id, data: { order: next } });
+                              }}
+                              data-testid={`button-event-up-${event.id}`}
+                            >
+                              Up
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = Math.max(0, (event.order || 0) - 1);
+                                updateEventMutation.mutate({ id: event.id, data: { order: next } });
+                              }}
+                              data-testid={`button-event-down-${event.id}`}
+                            >
+                              Down
+                            </Button>
                           </div>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
                 </div>
               </div>
 
@@ -2199,8 +2368,10 @@ export default function Admin() {
                               modules={{
                                 toolbar: [
                                   [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
                                   ['link'],
                                   ['clean']
                                 ],
@@ -2237,8 +2408,10 @@ export default function Admin() {
                               modules={{
                                 toolbar: [
                                   [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
                                   ['link'],
                                   ['clean']
                                 ],
@@ -2435,6 +2608,43 @@ export default function Admin() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          )}
+                          {canManageNews && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const max = Math.max(...(newsItems?.map((n: any) => n.order || 0) || [0]));
+                                updateNewsMutation.mutate({ id: news.id, data: { order: max + 1 } });
+                              }}
+                              data-testid={`button-news-first-${news.id}`}
+                            >
+                              First
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = (news.order || 0) + 1;
+                                updateNewsMutation.mutate({ id: news.id, data: { order: next } });
+                              }}
+                              data-testid={`button-news-up-${news.id}`}
+                            >
+                              Up
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const next = Math.max(0, (news.order || 0) - 1);
+                                updateNewsMutation.mutate({ id: news.id, data: { order: next } });
+                              }}
+                              data-testid={`button-news-down-${news.id}`}
+                            >
+                              Down
+                            </Button>
+                          </div>
                           )}
                           </div>
                         </div>
@@ -3144,6 +3354,18 @@ export default function Admin() {
                         data-testid="input-seller-promotion"
                       />
                     </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="seller-rank">Rank Position (1 = top)</Label>
+                      <Input
+                        id="seller-rank"
+                        placeholder="e.g., 1"
+                        value={sellerForm.rank}
+                        onChange={(e) =>
+                          setSellerForm({ ...sellerForm, rank: e.target.value })
+                        }
+                        data-testid="input-seller-rank"
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="seller-images">Image URLs</Label>
                       <Textarea
@@ -3277,6 +3499,30 @@ export default function Admin() {
                             data-testid="input-seller-website"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-facebook">Facebook</Label>
+                          <Input id="seller-facebook" placeholder="https://facebook.com/username" value={sellerForm.facebook} onChange={(e)=> setSellerForm({ ...sellerForm, facebook: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-twitter">Twitter/X</Label>
+                          <Input id="seller-twitter" placeholder="https://x.com/username" value={sellerForm.twitter} onChange={(e)=> setSellerForm({ ...sellerForm, twitter: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-instagram">Instagram</Label>
+                          <Input id="seller-instagram" placeholder="https://instagram.com/username" value={sellerForm.instagram} onChange={(e)=> setSellerForm({ ...sellerForm, instagram: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-youtube">YouTube</Label>
+                          <Input id="seller-youtube" placeholder="https://youtube.com/@channel" value={sellerForm.youtube} onChange={(e)=> setSellerForm({ ...sellerForm, youtube: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-tiktok">TikTok</Label>
+                          <Input id="seller-tiktok" placeholder="https://tiktok.com/@username" value={sellerForm.tiktok} onChange={(e)=> setSellerForm({ ...sellerForm, tiktok: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="seller-telegram">Telegram</Label>
+                          <Input id="seller-telegram" placeholder="https://t.me/username" value={sellerForm.telegram} onChange={(e)=> setSellerForm({ ...sellerForm, telegram: e.target.value })} />
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -3315,7 +3561,14 @@ export default function Admin() {
                           whatsapp: sellerForm.whatsapp,
                           discord: sellerForm.discord,
                           website: sellerForm.website,
+                          facebook: sellerForm.facebook,
+                          twitter: sellerForm.twitter,
+                          instagram: sellerForm.instagram,
+                          youtube: sellerForm.youtube,
+                          tiktok: sellerForm.tiktok,
+                          telegram: sellerForm.telegram,
                           featured: sellerForm.featured,
+                          rank: sellerForm.rank.trim() ? parseInt(sellerForm.rank.trim(), 10) : undefined,
                         };
                         if (editingSeller) {
                           updateSellerMutation.mutate({ id: editingSeller.id, data });
@@ -3337,16 +3590,17 @@ export default function Admin() {
               <CardContent className="pt-6">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Images</TableHead>
-                      <TableHead>Prices</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Featured</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Images</TableHead>
+                    <TableHead>Prices</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sellers?.map((seller: any) => (
@@ -3360,6 +3614,12 @@ export default function Admin() {
                             {seller.whatsapp && <Badge variant="outline" className="text-xs">WhatsApp</Badge>}
                             {seller.discord && <Badge variant="outline" className="text-xs">Discord</Badge>}
                             {seller.website && <Badge variant="outline" className="text-xs">Website</Badge>}
+                            {seller.facebook && <Badge variant="outline" className="text-xs">Facebook</Badge>}
+                            {seller.twitter && <Badge variant="outline" className="text-xs">Twitter</Badge>}
+                            {seller.instagram && <Badge variant="outline" className="text-xs">Instagram</Badge>}
+                            {seller.youtube && <Badge variant="outline" className="text-xs">YouTube</Badge>}
+                            {seller.tiktok && <Badge variant="outline" className="text-xs">TikTok</Badge>}
+                            {seller.telegram && <Badge variant="outline" className="text-xs">Telegram</Badge>}
                             {!seller.email && !seller.phone && !seller.whatsapp && !seller.discord && !seller.website && (
                               <span className="text-xs text-muted-foreground">None</span>
                             )}
@@ -3382,6 +3642,9 @@ export default function Admin() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="outline" className="text-xs">{typeof seller.rank === 'number' ? seller.rank : '—'}</Badge>
+                        </TableCell>
+                        <TableCell>
                           {seller.featured && <Badge variant="default" className="text-xs">Featured</Badge>}
                         </TableCell>
                         <TableCell className="text-right">
@@ -3389,27 +3652,34 @@ export default function Admin() {
                             <Button
                               variant="ghost"
                               size="icon"
-                                  onClick={() => {
-                                    setEditingSeller(seller);
-                                    setSellerForm({
-                                      name: seller.name,
-                                      description: seller.description || "",
-                                      images: seller.images?.join(', ') || "",
-                                      prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
-                                      priceItems: seller.prices?.map((p: any) => ({
-                                        item: p.item || "",
-                                        price: String(p.price || "")
-                                      })) || [],
-                                      email: seller.email || "",
-                                      phone: seller.phone || "",
-                                      whatsapp: seller.whatsapp || "",
-                                      discord: seller.discord || "",
-                                      website: seller.website || "",
-                                      featured: seller.featured || false,
-                                      promotionText: seller.promotionText || "",
-                                    });
-                                    setIsCreatingSeller(true);
-                                  }}
+                                onClick={() => {
+                                  setEditingSeller(seller);
+                                  setSellerForm({
+                                    name: seller.name,
+                                    description: seller.description || "",
+                                    images: seller.images?.join(', ') || "",
+                                    prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
+                                    priceItems: seller.prices?.map((p: any) => ({
+                                      item: p.item || "",
+                                      price: String(p.price || "")
+                                    })) || [],
+                                    email: seller.email || "",
+                                    phone: seller.phone || "",
+                                    whatsapp: seller.whatsapp || "",
+                                    discord: seller.discord || "",
+                                    website: seller.website || "",
+                                    facebook: seller.facebook || "",
+                                    twitter: seller.twitter || "",
+                                    instagram: seller.instagram || "",
+                                    youtube: seller.youtube || "",
+                                    tiktok: seller.tiktok || "",
+                                    telegram: seller.telegram || "",
+                                    featured: seller.featured || false,
+                                    promotionText: seller.promotionText || "",
+                                    rank: typeof seller.rank === 'number' ? String(seller.rank) : "",
+                                  });
+                                  setIsCreatingSeller(true);
+                                }}
                               data-testid={`button-edit-seller-${seller.id}`}
                             >
                               <Edit className="h-4 w-4" />
@@ -3424,7 +3694,7 @@ export default function Admin() {
                                       setReviewsDialogOpen(true);
                                       setLoadingReviews(true);
                                       try {
-                                        const data = await apiRequest(`/api/sellers/${seller.id}/reviews`, 'GET');
+                                        const data = await apiRequest(`/api/admin/reviews?sellerId=${seller.id}`, 'GET');
                                         setSellerReviews(data || []);
                                       } catch (err: any) {
                                         toast({ title: 'Failed to load reviews', description: err?.message, variant: 'destructive' });
@@ -3650,15 +3920,41 @@ export default function Admin() {
                         onChange={(e) =>
                           setAdminForm({
                             ...adminForm,
-                            role: e.target.value as "admin" | "super_admin",
+                            role: e.target.value as "admin" | "seller_admin" | "super_admin",
                           })
                         }
                         className="w-full h-9 px-3 rounded-md border border-input bg-background"
                         data-testid="select-admin-role"
                       >
                         <option value="admin">Admin</option>
+                        <option value="seller_admin">Seller Admin</option>
                         <option value="super_admin">Super Admin</option>
                       </select>
+                      {adminForm.role === "seller_admin" && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Allowed Sellers</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-auto border rounded-md p-2">
+                            {(sellers || []).map((sel: any) => (
+                              <label key={sel.id} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={adminForm.allowedSellerIds.includes(sel.id)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setAdminForm((f) => ({
+                                      ...f,
+                                      allowedSellerIds: checked
+                                        ? [...f.allowedSellerIds, sel.id]
+                                        : f.allowedSellerIds.filter((id) => id !== sel.id),
+                                    }));
+                                  }}
+                                />
+                                <span>{sel.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="pt-2">
                         <p className="text-sm font-medium mb-2">Permissions</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3680,10 +3976,17 @@ export default function Admin() {
                             const updates: any = { role: adminForm.role };
                             if (adminForm.username) updates.username = adminForm.username;
                             if (adminForm.password) updates.password = adminForm.password;
+                            if (adminForm.role === "seller_admin") {
+                              updates.allowedSellerIds = adminForm.allowedSellerIds || [];
+                            }
                             // include permissions when updating
                             updateAdminMutation.mutate({ id: editingAdmin.id, data: { ...updates, permissions: adminPermissionsForm } });
                           } else {
-                            createAdminMutation.mutate({ ...adminForm, permissions: adminPermissionsForm });
+                            const payload: any = { ...adminForm, permissions: adminPermissionsForm };
+                            if (adminForm.role === "seller_admin") {
+                              payload.allowedSellerIds = adminForm.allowedSellerIds || [];
+                            }
+                            createAdminMutation.mutate(payload);
                           }
                         }}
                         className="w-full"
@@ -3726,11 +4029,12 @@ export default function Admin() {
                                 size="icon"
                                 onClick={() => {
                                   setEditingAdmin(admin);
-                                  setAdminForm({
-                                    username: admin.username,
-                                    password: "",
-                                    role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
-                                  });
+                                setAdminForm({
+                                  username: admin.username,
+                                  password: "",
+                                  role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
+                                  allowedSellerIds: Array.isArray(admin.allowedSellerIds) ? admin.allowedSellerIds : [],
+                                });
                                     // load existing permissions for this admin (if any)
                                     (async () => {
                                       try {
@@ -3835,7 +4139,7 @@ export default function Admin() {
                   setIsCreatingMerc(open);
                   if (!open) {
                     setEditingMerc(null);
-                    setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [] });
+                    setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [], order: "" });
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -3899,6 +4203,19 @@ export default function Admin() {
                         }}
                         rows={3}
                         data-testid="input-mercenary-description"
+                      />
+
+                      <Input
+                        placeholder="Order (1 = first)"
+                        value={editingMerc ? mercForm.order : createMercForm.order}
+                        onChange={(e) => {
+                          if (editingMerc) {
+                            setMercForm({ ...mercForm, order: e.target.value });
+                          } else {
+                            setCreateMercForm({ ...createMercForm, order: e.target.value });
+                          }
+                        }}
+                        data-testid="input-mercenary-order"
                       />
 
                       <div className="space-y-2">
@@ -4016,6 +4333,7 @@ export default function Admin() {
                             image: formData.image,
                             description: formData.description,
                             voiceLines: formData.voiceLines.filter((url: string) => url.trim() !== ""),
+                            order: String((formData as any).order || "").trim() ? parseInt(String((formData as any).order).trim(), 10) : undefined,
                           };
 
                           if (editingMerc) {
@@ -4075,6 +4393,7 @@ export default function Admin() {
                                     image: merc.image || "",
                                     description: merc.description || "",
                                     voiceLines: merc.voiceLines || [],
+                                    order: typeof merc.order === 'number' ? String(merc.order) : "",
                                   });
                                   setIsCreatingMerc(true);
                                 }}
@@ -4116,7 +4435,7 @@ export default function Admin() {
                 if (!open) {
                   setIsEditingMerc(false);
                   setEditingMerc(null);
-                  setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [] });
+                  setMercForm({ name: "", role: "", image: "", description: "", voiceLines: [], order: "" });
                 }
               }}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -4681,12 +5000,61 @@ export default function Admin() {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           <span className="font-medium">{review.userName}</span>
+                          {!review.phoneVerified && (
+                            <Badge variant="outline" className="text-xs">Unverified</Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">{Array.from({length: review.rating}).map((_,i)=> (<Star key={i} className="h-4 w-4 text-yellow-400 inline-block"/>))} <span className="ml-2 text-xs">{review.rating}</span></div>
-                        {review.comment && <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>}
+                        {review.phoneCountryCode && <p className="text-xs mt-1">+{review.phoneCountryCode} • {review.phoneMasked || '****'}</p>}
                         <p className="text-xs text-muted-foreground mt-2">{new Date(review.createdAt).toLocaleString()}</p>
                       </div>
                       <div className="flex items-start">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const base = (import.meta as any).env?.VITE_API_URL || '';
+                              const url = base ? `${base}/api/admin/reviews/${review.id}/phone` : `/api/admin/reviews/${review.id}/phone`;
+                              const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'X-CSRF-Token': csrfToken } });
+                              if (res.ok) {
+                                const data = await res.json();
+                                toast({ title: 'Phone Revealed', description: `${data.phone} (+${data.countryCode})` });
+                              } else {
+                                const text = await res.text();
+                                toast({ title: 'Reveal failed', description: text, variant: 'destructive' });
+                              }
+                            } catch (err: any) {
+                              toast({ title: 'Reveal failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Reveal</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/api/admin/reviews/${review.id}/verify-phone`, 'PATCH', { csrfToken });
+                              setSellerReviews((prev) => prev.map((r) => r.id === review.id ? { ...r, phoneVerified: true } : r));
+                              toast({ title: 'Verified' });
+                            } catch (err: any) {
+                              toast({ title: 'Verify failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Verify</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await apiRequest(`/api/admin/reviews/${review.id}/anonymize-phone`, 'PATCH', { csrfToken });
+                              setSellerReviews((prev) => prev.map((r) => r.id === review.id ? { ...r, phoneMasked: '', phoneCountryCode: '', phoneVerified: false } : r));
+                              toast({ title: 'Anonymized' });
+                            } catch (err: any) {
+                              toast({ title: 'Anonymize failed', description: err?.message, variant: 'destructive' });
+                            }
+                          }}
+                        >Anonymize</Button>
                         <Button
                           variant="ghost"
                           size="icon"

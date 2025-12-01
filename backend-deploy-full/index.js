@@ -5,6 +5,7 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 
 // server/routes.ts
 import { createServer } from "http";
@@ -26,18 +27,19 @@ var UserSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var PostSchema = new Schema({
-    title: { type: String, required: true },
-    slug: { type: String, default: "", index: true },
-    content: { type: String, required: true },
-    summary: { type: String, required: true },
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    tags: { type: [String], required: true },
-    author: { type: String, required: true },
-    views: { type: Number, default: 0 },
-    readingTime: { type: Number, required: true },
-    featured: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  summary: { type: String, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  tags: { type: [String], required: true },
+  author: { type: String, required: true },
+  views: { type: Number, default: 0 },
+  readingTime: { type: Number, required: true },
+  featured: { type: Boolean, default: false },
+  order: { type: Number, default: 0 },
+  post_slug: { type: String, default: "", unique: true },
+  createdAt: { type: Date, default: Date.now },
 });
 var CommentSchema = new Schema({
     postId: { type: String, required: true },
@@ -47,41 +49,43 @@ var CommentSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var EventSchema = new Schema({
-    title: { type: String, required: true },
-    titleAr: { type: String, default: "" },
-    description: { type: String, default: "" },
-    descriptionAr: { type: String, default: "" },
-    date: { type: String, required: true },
-    type: { type: String, required: true },
-    image: { type: String, default: "" },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    seoKeywords: { type: [String], default: [] },
-    canonicalUrl: { type: String, default: "" },
-    ogImage: { type: String, default: "" },
-    twitterImage: { type: String, default: "" },
-    schemaType: { type: String, default: "Event" },
+  title: { type: String, required: true },
+  titleAr: { type: String, default: "" },
+  description: { type: String, default: "" },
+  descriptionAr: { type: String, default: "" },
+  date: { type: String, required: true },
+  type: { type: String, required: true },
+  image: { type: String, default: "" },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "Event" },
+  order: { type: Number, default: 0 },
+  event_name_slug: { type: String, default: "", unique: true },
 });
 var NewsSchema = new Schema({
-    title: { type: String, required: true },
-    titleAr: { type: String, default: "" },
-    slug: { type: String, default: "", index: true },
-    dateRange: { type: String, required: true },
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    content: { type: String, required: true },
-    contentAr: { type: String, default: "" },
-    htmlContent: { type: String, default: "" },
-    author: { type: String, required: true },
-    featured: { type: Boolean, default: false },
-    seoTitle: { type: String, default: "" },
-    seoDescription: { type: String, default: "" },
-    seoKeywords: { type: [String], default: [] },
-    canonicalUrl: { type: String, default: "" },
-    ogImage: { type: String, default: "" },
-    twitterImage: { type: String, default: "" },
-    schemaType: { type: String, default: "NewsArticle" },
-    createdAt: { type: Date, default: Date.now },
+  title: { type: String, required: true },
+  titleAr: { type: String, default: "" },
+  dateRange: { type: String, required: true },
+  image: { type: String, required: true },
+  category: { type: String, required: true },
+  content: { type: String, required: true },
+  contentAr: { type: String, default: "" },
+  htmlContent: { type: String, default: "" },
+  author: { type: String, required: true },
+  featured: { type: Boolean, default: false },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "NewsArticle" },
+  order: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
 });
 var TutorialSchema = new Schema({
     title: { type: String, required: true },
@@ -89,6 +93,7 @@ var TutorialSchema = new Schema({
     youtubeId: { type: String, required: true },
     description: { type: String, default: "" },
     likes: { type: Number, default: 0 },
+    order: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
@@ -117,10 +122,17 @@ var TicketReplySchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var AdminSchema = new Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: "admin" },
-    createdAt: { type: Date, default: Date.now },
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: "admin" },
+  permissions: { type: Schema.Types.Mixed, default: {} },
+  name: { type: String, default: "" },
+  email: { type: String, default: "" },
+  contact: { type: String, default: "" },
+  profileImageUrl: { type: String, default: "" },
+  active: { type: Boolean, default: true },
+  bio: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
 });
 var NewsletterSubscriberSchema = new Schema({
     email: { type: String, required: true, unique: true },
@@ -128,6 +140,7 @@ var NewsletterSubscriberSchema = new Schema({
 });
 var SellerSchema = new Schema({
     name: { type: String, required: true },
+    seller_name_slug: { type: String, default: "" },
     description: { type: String, default: "" },
     images: { type: [String], default: [] },
     prices: { type: [{ item: String, price: Number }], default: [] },
@@ -136,18 +149,34 @@ var SellerSchema = new Schema({
     whatsapp: { type: String, default: "" },
     discord: { type: String, default: "" },
     website: { type: String, default: "" },
+    facebook: { type: String, default: "" },
+    twitter: { type: String, default: "" },
+    instagram: { type: String, default: "" },
+    youtube: { type: String, default: "" },
+    tiktok: { type: String, default: "" },
+    telegram: { type: String, default: "" },
     featured: { type: Boolean, default: false },
     promotionText: { type: String, default: "" },
     averageRating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
+    rank: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
+    verified: { type: Boolean, default: false },
+    reviewPromptEnabled: { type: Boolean, default: false },
+    reviewPromptText: { type: String, default: "" },
 });
 var SellerReviewSchema = new Schema({
-    sellerId: { type: String, required: true },
-    userName: { type: String, required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, default: "" },
-    createdAt: { type: Date, default: Date.now },
+  sellerId: { type: String, required: true },
+  userId: { type: String, default: "" },
+  userName: { type: String, required: true },
+  userPhoneEncrypted: { type: String, default: "" },
+  phoneCountryCode: { type: String, default: "" },
+  phoneLast4: { type: String, default: "" },
+  phoneVerified: { type: Boolean, default: false },
+  helpfulVotes: { type: Number, default: 0 },
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  comment: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
 });
 var UserModel = mongoose.model("User", UserSchema);
 var PostModel = mongoose.model("Post", PostSchema);
@@ -168,6 +197,33 @@ var NewsletterSubscriberModel = mongoose.model(
 );
 var SellerModel = mongoose.model("Seller", SellerSchema);
 var SellerReviewModel = mongoose.model("SellerReview", SellerReviewSchema);
+var UrlMatchFailureSchema = new Schema({
+    type: { type: String, required: true },
+    value: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+});
+var UrlMatchFailureModel = mongoose.model("UrlMatchFailure", UrlMatchFailureSchema);
+var UrlGenerationAuditSchema = new Schema({
+    type: { type: String, required: true },
+    source: { type: String, required: true },
+    slug: { type: String, required: true },
+    ok: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+});
+var UrlGenerationAuditModel = mongoose.model("UrlGenerationAudit", UrlGenerationAuditSchema);
+SellerSchema.index({ name: 1 });
+SellerSchema.index({ seller_name_slug: 1 }, { unique: true });
+EventSchema.index({ event_name_slug: 1 }, { unique: true });
+PostSchema.index({ post_slug: 1 }, { unique: true });
+SellerReviewSchema.index({ sellerId: 1, userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "string" } } });
+var AdminAuditLogSchema = new Schema({
+    action: { type: String, required: true },
+    reviewId: { type: String, required: true },
+    adminId: { type: String, required: true },
+    details: { type: Schema.Types.Mixed, default: {} },
+    createdAt: { type: Date, default: Date.now },
+});
+var AdminAuditLogModel = mongoose.model("AdminAuditLog", AdminAuditLogSchema);
 // Weapons / Modes / Ranks / Mercenaries schemas (added to support seeding endpoints)
 var MercenarySchema = new Schema({
     id: { type: String, required: true },
@@ -176,6 +232,7 @@ var MercenarySchema = new Schema({
     role: { type: String, default: "" },
     description: { type: String, default: "" },
     voiceLines: { type: [String], default: [] },
+    order: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
 });
 var WeaponSchema = new Schema({
@@ -215,20 +272,34 @@ var ChatMessageSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var ChatMessageModel = mongoose.model("ChatMessage", ChatMessageSchema);
+var ChatUserSchema = new Schema({
+    userName: { type: String, required: true },
+    phone: { type: String, default: "" },
+    verified: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+});
+var ChatUserModel = mongoose.model("ChatUser", ChatUserSchema);
+var ChatSettingsSchema = new Schema({
+    name: { type: String, default: "chat" },
+    registrationEnabled: { type: Boolean, default: false },
+    updatedAt: { type: Date, default: Date.now },
+});
+var ChatSettingsModel = mongoose.model("ChatSettings", ChatSettingsSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
 });
 var insertPostSchema = z.object({
-    title: z.string(),
-    content: z.string(),
-    summary: z.string(),
-    image: z.string(),
-    category: z.string(),
-    tags: z.array(z.string()),
-    author: z.string(),
-    readingTime: z.number(),
-    featured: z.boolean().optional(),
+  title: z.string(),
+  content: z.string(),
+  summary: z.string(),
+  image: z.string(),
+  category: z.string(),
+  tags: z.array(z.string()),
+  author: z.string(),
+  readingTime: z.number(),
+  featured: z.boolean().optional(),
+  order: z.number().optional(),
 });
 var insertCommentSchema = z.object({
     postId: z.string(),
@@ -242,39 +313,41 @@ var insertChatMessageSchema = z.object({
     replyTo: z.string().optional(),
 });
 var insertEventSchema = z.object({
-    title: z.string(),
-    titleAr: z.string().optional(),
-    description: z.string().optional(),
-    descriptionAr: z.string().optional(),
-    date: z.string(),
-    type: z.string(),
-    image: z.string().optional(),
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    seoKeywords: z.array(z.string()).optional(),
-    canonicalUrl: z.string().optional(),
-    ogImage: z.string().optional(),
-    twitterImage: z.string().optional(),
-    schemaType: z.string().optional(),
+  title: z.string(),
+  titleAr: z.string().optional(),
+  description: z.string().optional(),
+  descriptionAr: z.string().optional(),
+  date: z.string(),
+  type: z.string(),
+  image: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional(),
+  order: z.number().optional(),
 });
 var insertNewsSchema = z.object({
-    title: z.string(),
-    titleAr: z.string().optional(),
-    dateRange: z.string(),
-    image: z.string(),
-    category: z.string(),
-    content: z.string(),
-    contentAr: z.string().optional(),
-    htmlContent: z.string().optional(),
-    author: z.string(),
-    featured: z.boolean().optional(),
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    seoKeywords: z.array(z.string()).optional(),
-    canonicalUrl: z.string().optional(),
-    ogImage: z.string().optional(),
-    twitterImage: z.string().optional(),
-    schemaType: z.string().optional(),
+  title: z.string(),
+  titleAr: z.string().optional(),
+  dateRange: z.string(),
+  image: z.string(),
+  category: z.string(),
+  content: z.string(),
+  contentAr: z.string().optional(),
+  htmlContent: z.string().optional(),
+  author: z.string(),
+  featured: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.array(z.string()).optional(),
+  canonicalUrl: z.string().optional(),
+  ogImage: z.string().optional(),
+  twitterImage: z.string().optional(),
+  schemaType: z.string().optional(),
+  order: z.number().optional(),
 });
 var insertTicketSchema = z.object({
     title: z.string(),
@@ -292,9 +365,17 @@ var insertTicketReplySchema = z.object({
     isAdmin: z.boolean().optional(),
 });
 var insertAdminSchema = z.object({
-    username: z.string(),
-    password: z.string(),
-    role: z.string().optional(),
+  username: z.string(),
+  password: z.string(),
+  role: z.string().optional(),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  contact: z.string().optional(),
+  profileImageUrl: z.string().optional(),
+  active: z.boolean().optional(),
+  bio: z.string().optional(),
+  permissions: z.record(z.boolean()).optional(),
+  allowedSellerIds: z.array(z.string()).optional(),
 });
 var insertNewsletterSubscriberSchema = z.object({
     email: z.string().email(),
@@ -311,14 +392,25 @@ var insertSellerSchema = z.object({
     whatsapp: z.string().optional(),
     discord: z.string().optional(),
     website: z.string().optional(),
+    facebook: z.string().optional(),
+    twitter: z.string().optional(),
+    instagram: z.string().optional(),
+    youtube: z.string().optional(),
+    tiktok: z.string().optional(),
+    telegram: z.string().optional(),
     featured: z.boolean().optional(),
     promotionText: z.string().optional(),
+    rank: z.number().optional(),
+    reviewPromptEnabled: z.boolean().optional(),
+    reviewPromptText: z.string().optional(),
 });
 var insertSellerReviewSchema = z.object({
-    sellerId: z.string(),
-    userName: z.string(),
-    rating: z.number().min(1).max(5),
-    comment: z.string().optional(),
+  sellerId: z.string(),
+  userId: z.string().optional(),
+  userName: z.string(),
+  userPhone: z.string().optional(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
 });
 
 // server/mongodb.ts
@@ -468,7 +560,7 @@ var MongoDBStorage = class {
         return { ...updated, id: String(updated._id) };
     }
     async getAllPosts() {
-        const posts = await PostModel.find().sort({ createdAt: -1 }).lean();
+        const posts = await PostModel.find().sort({ order: -1, createdAt: -1 }).lean();
         return posts.map((post) => ({
             ...post,
             id: String(post._id),
@@ -477,6 +569,7 @@ var MongoDBStorage = class {
             views: post.views || 0,
             category: post.category || "",
             author: post.author || "Unknown",
+            order: post.order || 0,
         }));
     }
     async getPostById(id) {
@@ -493,7 +586,20 @@ var MongoDBStorage = class {
         };
     }
     async createPost(post) {
-        const newPost = await PostModel.create(post);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        const payload = { ...post };
+        const src = payload.title || payload.seoTitle || "";
+        payload.post_slug = slugifyEventName(src);
+        await this.logUrlGeneration("post", src, payload.post_slug, !!payload.post_slug);
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDesc = String(payload.summary || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDesc.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/article/${payload.post_slug}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "Article";
+        const newPost = await PostModel.create(payload);
         const lean = await PostModel.findById(newPost._id).lean();
         if (!lean) throw new Error("Failed to create post");
         return {
@@ -507,7 +613,15 @@ var MongoDBStorage = class {
         };
     }
     async updatePost(id, post) {
-        const updated = await PostModel.findByIdAndUpdate(id, post, {
+        const updates = { ...post };
+        if (updates.title) {
+            const src = updates.title || updates.seoTitle || "";
+            updates.post_slug = slugifyEventName(src);
+            const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            updates.canonicalUrl = `${baseUrl}/article/${updates.post_slug}`;
+            await this.logUrlGeneration("post", src, updates.post_slug, !!updates.post_slug);
+        }
+        const updated = await PostModel.findByIdAndUpdate(id, updates, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -538,15 +652,33 @@ var MongoDBStorage = class {
         const newComment = await CommentModel.create(comment);
         return newComment;
     }
+    async deleteComment(commentId) {
+        const result = await CommentModel.findByIdAndDelete(commentId);
+        return !!result;
+    }
     async getAllEvents() {
-        const events = await EventModel.find().lean();
+        const events = await EventModel.find().sort({ order: -1, _id: -1 }).lean();
         return events.map((event) => ({
             ...event,
             id: String(event._id),
+            order: event.order || 0,
         }));
     }
     async createEvent(event) {
-        const newEvent = await EventModel.create(event);
+        const payload = { ...event };
+        const src = payload.title || payload.seoTitle || "";
+        payload.event_name_slug = slugifyEventName(src);
+        await this.logUrlGeneration("event", src, payload.event_name_slug, !!payload.event_name_slug);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDescEv = String(payload.description || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDescEv.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/events/${payload.event_name_slug}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "Event";
+        const newEvent = await EventModel.create(payload);
         const lean = await EventModel.findById(newEvent._id).lean();
         if (!lean) throw new Error("Failed to create event");
         return {
@@ -558,8 +690,25 @@ var MongoDBStorage = class {
         const result = await EventModel.findByIdAndDelete(id);
         return !!result;
     }
+    async getEventBySlug(slug) {
+        const ev = await EventModel.findOne({ event_name_slug: slug }).lean();
+        if (!ev) return void 0;
+        return { ...ev, id: String(ev._id) };
+    }
+    async getPostBySlug(slug) {
+        const post = await PostModel.findOne({ post_slug: slug }).lean();
+        if (!post) return void 0;
+        return {
+            ...post,
+            id: String(post._id),
+            tags: post.tags || [],
+            views: post.views || 0,
+            category: post.category || "",
+            author: post.author || "Unknown",
+        };
+    }
     async getAllNews() {
-        const news = await NewsModel.find().sort({ createdAt: -1 });
+        const news = await NewsModel.find().sort({ order: -1, createdAt: -1 });
         return news.map((item) => ({
             id: String(item._id),
             slug: item.slug || "",
@@ -573,11 +722,22 @@ var MongoDBStorage = class {
             htmlContent: item.htmlContent,
             author: item.author,
             featured: item.featured,
+            order: item.order || 0,
             createdAt: item.createdAt,
         }));
     }
     async createNews(news) {
-        const newNews = await NewsModel.create(news);
+        const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+        const payload = { ...news };
+        if (!payload.seoTitle) payload.seoTitle = payload.title || "";
+        const plainDescNews = String(payload.content || "").replace(/<[^>]*>/g, "");
+        if (!payload.seoDescription) payload.seoDescription = plainDescNews.substring(0, 155);
+        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/news/${slugifyEventName(payload.title || "")}`;
+        if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
+        if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
+        if (!payload.schemaType) payload.schemaType = "NewsArticle";
+        const newNews = await NewsModel.create(payload);
         return {
             id: String(newNews._id),
             slug: newNews.slug || "",
@@ -686,7 +846,7 @@ var MongoDBStorage = class {
     }
     async getAllMercenaries() {
         const mercenaries = await MercenaryModel.find()
-            .sort({ createdAt: -1 })
+            .sort({ order: 1, createdAt: -1 })
             .lean();
         return mercenaries.map((m) => ({
             ...m,
@@ -793,6 +953,27 @@ var MongoDBStorage = class {
             id: String(admin._id),
         }));
     }
+
+    async getAllAdminPermissions() {
+        const admins = await AdminModel.find().select({ permissions: 1 }).lean();
+        const map = {};
+        for (const a of admins) {
+            map[String(a._id)] = a.permissions || {};
+        }
+        return map;
+    }
+
+    async updateAdminPermissions(adminId, permissions) {
+        await AdminModel.findByIdAndUpdate(
+            adminId,
+            { permissions: permissions || {} },
+            { new: true }
+        );
+    }
+    async getAllAdmins() {
+        const admins = await AdminModel.find().sort({ createdAt: -1 }).lean();
+        return admins.map((a) => ({ ...a, id: String(a._id) }));
+    }
     async getAdminById(id) {
         const admin = await AdminModel.findById(id).lean();
         if (!admin) return void 0;
@@ -840,7 +1021,15 @@ var MongoDBStorage = class {
         };
     }
     async updateEvent(id, event) {
-        const updated = await EventModel.findByIdAndUpdate(id, event, {
+        const updates = { ...event };
+        if (updates.title) {
+            const src = updates.title || updates.seoTitle || "";
+            updates.event_name_slug = slugifyEventName(src);
+            const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            updates.canonicalUrl = `${baseUrl}/events/${updates.event_name_slug}`;
+            await this.logUrlGeneration("event", src, updates.event_name_slug, !!updates.event_name_slug);
+        }
+        const updated = await EventModel.findByIdAndUpdate(id, updates, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -869,7 +1058,7 @@ var MongoDBStorage = class {
         return !!result;
     }
     async getAllSellers() {
-        const sellers = await SellerModel.find().sort({ createdAt: -1 }).lean();
+        const sellers = await SellerModel.find().sort({ rank: 1, createdAt: -1 }).lean();
         return sellers.map((seller) => ({
             ...seller,
             id: String(seller._id),
@@ -878,6 +1067,18 @@ var MongoDBStorage = class {
             averageRating: seller.averageRating || 0,
             totalReviews: seller.totalReviews || 0,
         }));
+    }
+    async getSellerByExactName(name) {
+        const sel = await SellerModel.findOne({ name }).lean();
+        if (!sel) return void 0;
+        return {
+            ...sel,
+            id: String(sel._id),
+            images: sel.images || [],
+            prices: sel.prices || [],
+            averageRating: sel.averageRating || 0,
+            totalReviews: sel.totalReviews || 0,
+        };
     }
     async getSellerById(id) {
         const seller = await SellerModel.findById(id).lean();
@@ -892,7 +1093,9 @@ var MongoDBStorage = class {
         };
     }
     async createSeller(seller) {
-        const newSeller = await SellerModel.create(seller);
+        const payload = { ...seller };
+        payload.seller_name_slug = slugifyEventName(String(seller.name || ""));
+        const newSeller = await SellerModel.create(payload);
         const lean = await SellerModel.findById(newSeller._id).lean();
         if (!lean) throw new Error("Failed to create seller");
         return {
@@ -905,7 +1108,11 @@ var MongoDBStorage = class {
         };
     }
     async updateSeller(id, seller) {
-        const updated = await SellerModel.findByIdAndUpdate(id, seller, {
+        const payload = { ...seller };
+        if (typeof payload.name === "string" && payload.name.trim().length > 0) {
+            payload.seller_name_slug = slugifyEventName(payload.name);
+        }
+        const updated = await SellerModel.findByIdAndUpdate(id, payload, {
             new: true,
         }).lean();
         if (!updated) return void 0;
@@ -928,19 +1135,45 @@ var MongoDBStorage = class {
             .sort({ createdAt: -1 })
             .lean();
         return reviews.map((review) => ({
-            ...review,
             id: String(review._id),
+            sellerId: review.sellerId,
+            userName: review.userName,
+            rating: review.rating,
+            comment: review.comment || "",
+            createdAt: review.createdAt,
+            helpfulVotes: review.helpfulVotes || 0,
         }));
     }
     async createSellerReview(review) {
-        const newReview = await SellerReviewModel.create(review);
+        const payload = { ...review };
+        if (review.userPhone) {
+            if (!validatePhoneNumber(review.userPhone)) {
+                throw new Error("Invalid phone number format");
+            }
+            payload.userPhoneEncrypted = encryptPhoneNumber(review.userPhone);
+            payload.phoneCountryCode = extractCountryCode(review.userPhone);
+            payload.phoneLast4 = maskLast4(review.userPhone);
+        }
+        const newReview = await SellerReviewModel.create(payload);
         await this.updateSellerRating(review.sellerId);
         const lean = await SellerReviewModel.findById(newReview._id).lean();
         if (!lean) throw new Error("Failed to create review");
         return {
-            ...lean,
             id: String(lean._id),
+            sellerId: lean.sellerId,
+            userId: lean.userId || "",
+            userName: lean.userName,
+            rating: lean.rating,
+            comment: lean.comment || "",
+            createdAt: lean.createdAt,
+            helpfulVotes: lean.helpfulVotes || 0,
         };
+    }
+    async deleteSellerReview(sellerId, reviewId) {
+        const result = await SellerReviewModel.findByIdAndDelete(reviewId);
+        if (!result) return false;
+        await this.updateSellerRating(sellerId);
+        return true;
     }
     async updateSellerRating(sellerId) {
         const reviews = await SellerReviewModel.find({ sellerId });
@@ -954,6 +1187,15 @@ var MongoDBStorage = class {
             averageRating: Math.round(averageRating * 10) / 10,
             totalReviews,
         });
+    }
+    async logUrlMatchFailure(type, value) {
+        await UrlMatchFailureModel.create({ type, value });
+    }
+    async logUrlGeneration(type, source, slug, ok) {
+        await UrlGenerationAuditModel.create({ type, source, slug, ok: !!ok });
+    }
+    async auditAdminAction(action, reviewId, adminId, details) {
+        await AdminAuditLogModel.create({ action, reviewId, adminId, details: details || {} });
     }
     // Weapons
     async getAllWeapons() {
@@ -1098,6 +1340,142 @@ function requireSuperAdmin(req, res, next) {
         return res
             .status(403)
             .json({ error: "Forbidden: Super Admin access required" });
+    }
+    next();
+}
+
+async function requireSellerEditPermission(req, res, next) {
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (user.role === "super_admin") return next();
+    const sellerId = String(req.params.id || "");
+    if (!sellerId) return res.status(400).json({ error: "Missing seller id" });
+    try {
+        const allowedFromToken = ((user.permissions && user.permissions.allowedSellerIds) || user.allowedSellerIds || []).map(String);
+        if (user.role === "seller_admin" && allowedFromToken.includes(sellerId)) {
+            return next();
+        }
+        return res.status(403).json({ error: "Forbidden: Not allowed to edit this seller" });
+    } catch (err) {
+        return res.status(500).json({ error: "Permission check failed" });
+    }
+}
+
+function stripOrderingFields(updates, role) {
+    try {
+        if (role !== "super_admin") {
+            if (updates && typeof updates === "object") {
+                delete updates.order;
+                delete updates.rank;
+            }
+        }
+    } catch {}
+}
+
+function requireContentCreator(req, res, next) {
+    const role = req.user?.role || "";
+    if (role === "super_admin" || role === "admin") return next();
+    return res.status(403).json({ error: "Forbidden: Content creator role required" });
+}
+
+function requireAdminOnly(req, res, next) {
+    const role = req.user?.role || "";
+    if (role === "super_admin" || role === "admin") return next();
+    return res.status(403).json({ error: "Forbidden: Admin role required" });
+}
+
+function slugifyEventName(input) {
+    if (!input) return "";
+    const base = input
+        .toString()
+        .normalize("NFKD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]+/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+    return base.substring(0, 60);
+}
+
+function sanitizeSellerNameParam(name) {
+    const n = String(name || "").trim();
+    if (!/^[A-Za-z0-9 _-]{1,100}$/.test(n)) return null;
+    return n;
+}
+
+function getPhoneKey() {
+    const key = process.env.PHONE_ENC_KEY || "";
+    if (!key || key.length < 32) return null;
+    return Buffer.from(key.substring(0, 32));
+}
+
+function encryptPhoneNumber(plain) {
+    const key = getPhoneKey();
+    if (!key || !plain) return "";
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+    const enc = Buffer.concat([
+        cipher.update(String(plain), "utf8"),
+        cipher.final(),
+    ]);
+    const tag = cipher.getAuthTag();
+    return Buffer.concat([iv, tag, enc]).toString("base64");
+}
+
+function decryptPhoneNumber(enc) {
+    const key = getPhoneKey();
+    if (!key || !enc) return "";
+    const buf = Buffer.from(enc, "base64");
+    const iv = buf.subarray(0, 12);
+    const tag = buf.subarray(12, 28);
+    const data = buf.subarray(28);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+    return dec.toString("utf8");
+}
+
+function extractCountryCode(phone) {
+    const s = String(phone || "").trim();
+    if (!s.startsWith("+")) return "";
+    const digits = s.substring(1);
+    const m = digits.match(/^(\d{1,3})/);
+    return m ? m[1] : "";
+}
+
+function validatePhoneNumber(phone) {
+    const s = String(phone || "").trim();
+    if (!/^\+\d{6,15}$/.test(s)) return false;
+    const cc = extractCountryCode(s);
+    if (!cc) return false;
+    const len = s.replace(/\D/g, "").length;
+    const ranges = {
+        "1": [10, 11],
+        "44": [10, 10],
+        "49": [10, 11],
+        "33": [9, 10],
+        "966": [9, 10],
+        "971": [9, 10],
+    };
+    const r = ranges[cc];
+    if (!r) return len >= 8 && len <= 15;
+    return len >= r[0] && len <= r[1];
+}
+
+function maskLast4(phone) {
+    const s = String(phone || "").replace(/\D/g, "");
+    if (s.length < 4) return "";
+    return s.slice(-4);
+}
+
+function requireCsrf(req, res, next) {
+    const method = String(req.method || "").toUpperCase();
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        const token = req.headers["x-csrf-token"] || req.body?.csrfToken;
+        const base = process.env.CSRF_SECRET || "";
+        if (!base || !token || String(token) !== base) {
+            return res.status(403).json({ error: "CSRF validation failed" });
+        }
     }
     next();
 }
@@ -1352,6 +1730,7 @@ async function registerRoutes(app2) {
                         id: admin.id,
                         username: admin.username,
                         role: admin.role,
+                        permissions: admin.permissions || {},
                     },
                 });
             } else if (password) {
@@ -1360,7 +1739,7 @@ async function registerRoutes(app2) {
                     return res.status(401).json({ error: "Invalid password" });
                 }
                 const token = generateToken({ role: "super_admin" });
-                res.json({ token, admin: { role: "super_admin" } });
+                res.json({ token, admin: { role: "super_admin", permissions: {} } });
             } else {
                 return res
                     .status(400)
@@ -1432,9 +1811,38 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/posts", requireAuth, async (req, res) => {
+    app2.get("/api/posts/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            const post = await storage.getPostBySlug(slug);
+            if (!post) {
+                await storage.logUrlMatchFailure("post", slug);
+                return res.status(404).json({ error: "Post not found" });
+            }
+            const formattedPost = {
+                ...post,
+                date: formatDate(post.createdAt),
+            };
+            res.json(formattedPost);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/posts/:id/redirect", async (req, res) => {
+        try {
+            const p = await storage.getPostById(req.params.id);
+            if (!p) return res.status(404).json({ error: "Post not found" });
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const target = `${base}/article/${p.post_slug || slugifyEventName(p.title || "")}`;
+            res.status(302).set("Location", target).send("Found");
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.post("/api/posts", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertPostSchema.parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const readingTime =
                 data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
@@ -1451,9 +1859,10 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.patch("/api/posts/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             if (updates.content && !updates.readingTime) {
                 updates.readingTime = calculateReadingTime(updates.content);
             }
@@ -1469,7 +1878,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/posts/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deletePost(req.params.id);
             if (!deleted) {
@@ -1484,10 +1893,25 @@ async function registerRoutes(app2) {
         try {
             const comments = await storage.getCommentsByPostId(req.params.id);
             const formattedComments = comments.map((comment) => ({
-                ...comment,
+                id: String(comment._id),
+                name: comment.name,
+                content: comment.content,
                 date: formatDate(comment.createdAt),
+                parentCommentId: comment.parentCommentId || null,
             }));
             res.json(formattedComments);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.delete("/api/posts/:id/comments/:commentId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id, commentId } = req.params;
+            const ok = await storage.deleteComment(commentId);
+            if (!ok) return res.status(404).json({ error: "Comment not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("delete_post_comment", commentId, adminId, { postId: id });
+            res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -1521,18 +1945,71 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/events", async (req, res) => {
+    app2.get("/api/events/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            let ev = await storage.getEventBySlug(slug);
+            if (!ev) {
+                const alt = slugifyEventName(String(slug).replace(/-/g, " "));
+                if (alt && alt !== slug) {
+                    ev = await storage.getEventBySlug(alt);
+                }
+            }
+            if (!ev) {
+                try {
+                    const byCanonical = await EventModel.findOne({ canonicalUrl: { $regex: new RegExp(`/events/${slug}$`, "i") } }).lean();
+                    if (byCanonical) {
+                        ev = { ...byCanonical, id: String(byCanonical._id) };
+                    }
+                } catch {}
+            }
+            if (!ev) {
+                try {
+                    const candidates = await EventModel.find().select("title").lean();
+                    for (const c of candidates) {
+                        if (slugifyEventName(c.title || "") === slug) {
+                            const found = await EventModel.findById(c._id).lean();
+                            if (found) {
+                                ev = { ...found, id: String(found._id) };
+                                break;
+                            }
+                        }
+                    }
+                } catch {}
+            }
+            if (!ev) {
+                try { await storage.logUrlMatchFailure("event", slug); } catch {}
+                return res.status(404).json({ error: "Event not found" });
+            }
+            return res.json(ev);
+        } catch (error) {
+            return res.status(404).json({ error: "Event not found" });
+        }
+    });
+    app2.get("/api/events/:id/redirect", async (req, res) => {
+        try {
+            const ev = await storage.getEventById(req.params.id);
+            if (!ev) return res.status(404).json({ error: "Event not found" });
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const target = `${base}/events/${ev.event_name_slug || slugifyEventName(ev.title || "")}`;
+            res.status(302).set("Location", target).send("Found");
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.post("/api/events", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertEventSchema.parse(req.body);
-            const event = await storage.createEvent(data);
-            if (!event) {
-                return res.status(400).json({ error: "Failed to create event" });
-            }
-            res.status(201).json({
-                success: true,
-                message: "Event created successfully",
-                data: event
-            });
+            stripOrderingFields(data, req.user?.role || "");
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const slug = String(data.title || "");
+            const eventSlug = slugifyEventName(slug);
+            const canonical = `${base}/events/${eventSlug}`;
+            const withSeo = { ...data };
+            (withSeo).event_name_slug = withSeo.event_name_slug || eventSlug;
+            (withSeo).canonicalUrl = withSeo.canonicalUrl || canonical;
+            const event = await storage.createEvent(withSeo);
+            res.status(201).json(event);
         } catch (error) {
             console.error("Event creation error:", error);
             res.status(400).json({ 
@@ -1541,20 +2018,72 @@ async function registerRoutes(app2) {
             });
         }
     });
-    app2.post("/api/events/bulk-create", async (req, res) => {
+    app2.post("/api/events/bulk-create", requireAuth, requireContentCreator, async (req, res) => {
         try {
-            const { events } = req.body;
+            const { events, createAsNews } = req.body || {};
             if (!Array.isArray(events)) {
                 return res.status(400).json({ error: "Events array is required" });
             }
             const createdEvents = [];
-            const failedEvents = [];
-            for (const eventData of events) {
+            let newsCount = 0;
+            for (const raw of events) {
                 try {
-                    const data = insertEventSchema.parse(eventData);
-                    const event = await storage.createEvent(data);
-                    if (event) {
-                        createdEvents.push(event);
+                    const payload = {
+                        title: String(raw.title || "Event"),
+                        titleAr: String(raw.titleAr || ""),
+                        description: String(raw.description || raw.content || ""),
+                        descriptionAr: String(raw.descriptionAr || ""),
+                        date: String(raw.date || new Date().toISOString().slice(0, 10)),
+                        type: String(raw.type || "upcoming"),
+                        image: String(raw.image || ""),
+                        seoTitle: String(raw.seoTitle || ""),
+                        seoDescription: String(raw.seoDescription || ""),
+                        seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
+                        canonicalUrl: String(raw.canonicalUrl || ""),
+                        ogImage: String(raw.ogImage || raw.image || ""),
+                        twitterImage: String(raw.twitterImage || raw.ogImage || raw.image || ""),
+                        schemaType: String(raw.schemaType || "Event"),
+                    };
+                    const data = insertEventSchema.parse(payload);
+                    stripOrderingFields(data, req.user?.role || "");
+                    const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+                    const slug = String(data.title || "");
+                    const eventSlug = slugifyEventName(slug);
+                    const canonical = `${base}/events/${eventSlug}`;
+                    const withSeo = { ...data };
+                    (withSeo).event_name_slug = withSeo.event_name_slug || eventSlug;
+                    (withSeo).canonicalUrl = withSeo.canonicalUrl || canonical;
+                    const event = await storage.createEvent(withSeo);
+                    createdEvents.push(event);
+
+                    if (createAsNews === true) {
+                        const newsPayload = {
+                            title: data.title,
+                            titleAr: data.titleAr || "",
+                            dateRange: data.date,
+                            image: data.image || data.ogImage || data.twitterImage || "",
+                            category: String(raw.category || "Events"),
+                            content: String(raw.content || data.description || ""),
+                            contentAr: String(raw.contentAr || data.descriptionAr || ""),
+                            htmlContent: undefined,
+                            author: "Bimora Team",
+                            featured: false,
+                            seoTitle: data.seoTitle || "",
+                            seoDescription: data.seoDescription || "",
+                            seoKeywords: data.seoKeywords || [],
+                            canonicalUrl: data.canonicalUrl || "",
+                            ogImage: data.ogImage || "",
+                            twitterImage: data.twitterImage || "",
+                            schemaType: "NewsArticle",
+                        };
+                        try {
+                            const newsData = insertNewsSchema.parse(newsPayload);
+                            stripOrderingFields(newsData, req.user?.role || "");
+                            await storage.createNews(newsData);
+                            newsCount++;
+                        } catch (err2) {
+                            console.warn(`Failed to create news from event: ${err2.message}`);
+                        }
                     }
                 } catch (err) {
                     console.warn(`Failed to create event: ${err.message}`);
@@ -1565,19 +2094,17 @@ async function registerRoutes(app2) {
                 }
             }
             res.status(201).json({
-                success: true,
-                message: `Created ${createdEvents.length} events (${failedEvents.length} failed)`,
+                message: `Created ${createdEvents.length} events` + (createAsNews ? ` and ${newsCount} news` : ""),
                 count: createdEvents.length,
-                failed: failedEvents.length,
+                newsCount,
                 events: createdEvents,
-                failedEvents: failedEvents
             });
         } catch (error) {
             console.error("Bulk event creation error:", error);
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/events/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deleteEvent(req.params.id);
             if (!deleted) {
@@ -1700,42 +2227,20 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.get("/api/news/:id", async (req, res) => {
-        try {
-            const idOrSlug = req.params.id;
-            let news = null;
-            // Try to find by MongoDB ObjectId first
-            if (/^[a-f\d]{24}$/i.test(idOrSlug)) {
-                news = await storage.getNewsById(idOrSlug);
-            }
-            // If not found by ID, try to find by slug
-            if (!news) {
-                news = await storage.getNewsBySlug(idOrSlug);
-            }
-            if (!news) {
-                return res.status(404).json({ error: "News item not found" });
-            }
-            res.json(news);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-    app2.post("/api/news", requireAuth, async (req, res) => {
+    app2.post("/api/news", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const data = insertNewsSchema.parse(req.body);
-            // Generate slug from title if not provided
-            if (!data.slug && data.title) {
-                data.slug = slugify(data.title);
-            }
+            stripOrderingFields(data, req.user?.role || "");
             const news = await storage.createNews(data);
             res.status(201).json(news);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.patch("/api/news/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             const news = await storage.updateNews(req.params.id, updates);
             if (!news) {
                 return res.status(404).json({ error: "News item not found" });
@@ -1745,7 +2250,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/news/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deleteNews(req.params.id);
             if (!deleted) {
@@ -1760,7 +2265,7 @@ async function registerRoutes(app2) {
     app2.get("/api/tutorials", async (req, res) => {
         try {
             const items = await TutorialModel.find()
-                .sort({ createdAt: -1 })
+                .sort({ order: 1, createdAt: -1 })
                 .lean();
             res.json(items.map((it) => ({ ...it, id: String(it._id) })));
         } catch (error) {
@@ -1825,9 +2330,10 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.post("/api/tutorials", requireAuth, async (req, res) => {
+    app2.post("/api/tutorials", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const body = req.body;
+            stripOrderingFields(body, req.user?.role || "");
             const url = String(body.youtubeUrl || "").trim();
             const patterns = [
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
@@ -1849,6 +2355,7 @@ async function registerRoutes(app2) {
                 youtubeId,
                 description: body.description || "",
                 likes: 0,
+                order: typeof body.order === "number" && (req.user?.role === "super_admin") ? body.order : 9999,
             });
             const lean = await TutorialModel.findById(created._id).lean();
             res.status(201).json({ ...lean, id: String(lean._id) });
@@ -1857,10 +2364,11 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.patch("/api/tutorials/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/tutorials/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const body = req.body;
             const updates = { ...body };
+            stripOrderingFields(updates, req.user?.role || "");
             if (updates.youtubeUrl) {
                 const url = String(updates.youtubeUrl).trim();
                 const patterns = [
@@ -1894,7 +2402,7 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.delete("/api/tutorials/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/tutorials/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const ok = await TutorialModel.findByIdAndDelete(req.params.id);
             if (!ok)
@@ -2169,6 +2677,84 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+
+    app2.get("/robots.txt", async (_req, res) => {
+        try {
+            res.set("Cache-Control", "no-transform, max-age=0, must-revalidate");
+            res.type("text/plain");
+            res.send(`# CrossFire Wiki - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /my-tickets
+Disallow: /api/
+
+# Allow important pages
+Allow: /weapons
+Allow: /modes
+Allow: /ranks
+Allow: /tutorials
+Allow: /news
+Allow: /events
+Allow: /posts
+Allow: /article/*
+Allow: /news/*
+Allow: /events/*
+Allow: /tutorials/*
+Allow: /category/*
+
+# Crawl delay for politeness
+Crawl-delay: 0.5
+
+# Sitemap location
+Sitemap: https://crossfire.wiki/sitemap.xml
+`);
+        } catch (error) {
+            res.status(500).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: https://crossfire.wiki/sitemap.xml\n");
+        }
+    });
+
+    app2.get("/favicon.ico", async (_req, res) => {
+        try {
+            res.set("Cache-Control", "no-transform, max-age=0, must-revalidate");
+            res.redirect(302, "/favicon.png?v=20251128");
+        } catch (error) {
+            res.redirect(302, "/favicon.png");
+        }
+    });
+
+    app2.post("/api/admin/indexnow", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const body = req.body || {};
+            const urlList = Array.isArray(body.urlList) ? body.urlList : [];
+            if (!urlList.length) {
+                return res.status(400).json({ error: "urlList is required and must be a non-empty array" });
+            }
+            const KEY = body.key || process.env.INDEXNOW_KEY || "7fb6f19aa8e6478fb6dce57412beeeb3";
+            const HOST = body.host || process.env.SITE_HOST || "crossfire.wiki";
+            const KEY_LOC = body.keyLocation || `https://${HOST}/${KEY}.txt`;
+
+            const payload = {
+                host: HOST,
+                key: KEY,
+                keyLocation: KEY_LOC,
+                urlList,
+            };
+            const resp = await fetch("https://api.indexnow.org/IndexNow", {
+                method: "POST",
+                headers: { "Content-Type": "application/json; charset=utf-8" },
+                body: JSON.stringify(payload),
+            });
+            const text = await resp.text();
+            res.status(resp.status).type("text/plain").send(text);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app2.get("/api/tickets/my/:email", async (req, res) => {
         try {
             const { email } = req.params;
@@ -2199,10 +2785,46 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/tickets", async (req, res) => {
+    app2.post("/api/tickets", upload.fields([{ name: "image", maxCount: 1 }, { name: "video", maxCount: 1 }]), async (req, res) => {
         try {
-            const data = insertTicketSchema.parse(req.body);
-            const ticket = await storage.createTicket(data);
+            const body = req.body || {};
+            let mediaUrl = body.mediaUrl || "";
+            let mediaType = body.mediaType || "";
+
+            const imageFile = req.files && Array.isArray(req.files.image) ? req.files.image[0] : undefined;
+            const videoFile = req.files && Array.isArray(req.files.video) ? req.files.video[0] : undefined;
+
+            async function uploadToCatbox(file) {
+                const fd = new FormData();
+                fd.append("reqtype", "fileupload");
+                const blob = new Blob([file.buffer], { type: file.mimetype });
+                fd.append("fileToUpload", blob, file.originalname);
+                const resp = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: fd });
+                if (!resp.ok) throw new Error("Failed to upload media");
+                const url = await resp.text();
+                return url.trim();
+            }
+
+            if (videoFile) {
+                mediaUrl = await uploadToCatbox(videoFile);
+                mediaType = "video";
+            } else if (imageFile) {
+                mediaUrl = await uploadToCatbox(imageFile);
+                mediaType = "image";
+            }
+
+            const payload = insertTicketSchema.parse({
+                title: body.title,
+                description: body.description,
+                userName: body.userName,
+                userEmail: body.userEmail,
+                status: body.status,
+                priority: body.priority,
+                category: body.category,
+                mediaUrl,
+                mediaType,
+            });
+            const ticket = await storage.createTicket(payload);
             const formattedTicket = {
                 ...ticket,
                 createdAt: formatDate(ticket.createdAt),
@@ -2363,6 +2985,40 @@ async function registerRoutes(app2) {
             }
         },
     );
+
+    // Admin permissions (Super Admin only)
+    app2.get(
+        "/api/admin-permissions",
+        requireAuth,
+        requireSuperAdmin,
+        async (_req, res) => {
+            try {
+                const permissions = await storage.getAllAdminPermissions();
+                res.json(permissions);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    );
+
+    app2.put(
+        "/api/admin-permissions/:adminId",
+        requireAuth,
+        requireSuperAdmin,
+        async (req, res) => {
+            try {
+                const { adminId } = req.params;
+                const { permissions } = req.body;
+                if (!permissions || typeof permissions !== "object") {
+                    return res.status(400).json({ error: "Permissions object is required" });
+                }
+                await storage.updateAdminPermissions(adminId, permissions);
+                res.json({ success: true });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        }
+    );
     app2.get("/api/events/:id", async (req, res) => {
         try {
             const event = await storage.getEventById(req.params.id);
@@ -2374,9 +3030,10 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/events/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = { ...req.body };
+            stripOrderingFields(updates, req.user?.role || "");
             const event = await storage.updateEvent(req.params.id, updates);
             if (!event) {
                 return res.status(404).json({ error: "Event not found" });
@@ -2550,7 +3207,7 @@ async function registerRoutes(app2) {
                     const payload = {
                         title: ev.title || "Event",
                         titleAr: ev.titleAr || "",
-                        description: ev.description || "",
+                        description: ev.description || ev.content || "",
                         descriptionAr: ev.descriptionAr || "",
                         date: ev.date || new Date().toISOString().slice(0, 10),
                         type: ev.type || "upcoming",
@@ -2572,6 +3229,8 @@ async function registerRoutes(app2) {
                     if (!existing) {
                         const createdEvent = await storage.createEvent(payload);
                         created.push(createdEvent);
+                    } else if (!existing.description || String(existing.description).trim() === "") {
+                        await storage.updateEvent(String(existing._id || existing.id), { description: payload.description, descriptionAr: payload.descriptionAr || "" });
                     }
                 }
                 res.json({ events: created });
@@ -2776,7 +3435,7 @@ async function registerRoutes(app2) {
 
     app2.post("/api/mercenaries", requireAuth, async (req, res) => {
         try {
-            const { name, image, role, description, voiceLines } = req.body;
+            const { name, image, role, description, voiceLines, order } = req.body;
             if (!name || !image || !role) {
                 return res.status(400).json({ error: "name, image, and role required" });
             }
@@ -2785,7 +3444,8 @@ async function registerRoutes(app2) {
                 image,
                 role,
                 description: description || "",
-                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : [],
+                order: typeof order === "number" ? order : (typeof order === "string" && order.trim() ? parseInt(order.trim(), 10) : undefined),
             });
             res.status(201).json(merc);
         } catch (error) {
@@ -2795,14 +3455,15 @@ async function registerRoutes(app2) {
 
     app2.patch("/api/mercenaries/:id", requireAuth, async (req, res) => {
         try {
-            const { name, image, role, description, voiceLines } = req.body;
+            const { name, image, role, description, voiceLines, order } = req.body;
             const merc = await storage.updateMercenary(req.params.id, {
                 id: req.params.id,
                 name,
                 image,
                 role,
                 description: description || "",
-                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : []
+                voiceLines: Array.isArray(voiceLines) ? voiceLines.filter((url) => url.trim() !== "") : [],
+                order: typeof order === "number" ? order : (typeof order === "string" && order.trim() ? parseInt(order.trim(), 10) : undefined),
             });
             if (!merc) {
                 return res.status(404).json({ error: "Mercenary not found" });
@@ -2853,9 +3514,10 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/sellers/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/sellers/:id", requireAuth, requireSellerEditPermission, async (req, res) => {
         try {
             const data = insertSellerSchema.partial().parse(req.body);
+            stripOrderingFields(data, req.user?.role || "");
             const seller = await storage.updateSeller(req.params.id, data);
             if (!seller) {
                 return res.status(404).json({ error: "Seller not found" });
@@ -2865,7 +3527,7 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.delete("/api/sellers/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/sellers/:id", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const success = await storage.deleteSeller(req.params.id);
             if (!success) {
@@ -2884,14 +3546,270 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
-    app2.post("/api/sellers/:id/reviews", async (req, res) => {
+    const reviewLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
+    app2.post("/api/sellers/:id/reviews", reviewLimiter, requireAuth, async (req, res) => {
         try {
-            const data = insertSellerReviewSchema.parse({
+            const payload = insertSellerReviewSchema.parse({
                 ...req.body,
                 sellerId: req.params.id,
+                userId: req.user?.id || "",
             });
-            const review = await storage.createSellerReview(data);
+            let existing = null;
+            if (payload.userId) {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userId: payload.userId });
+            } else if (payload.userPhone) {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, phoneLast4: maskLast4(payload.userPhone) });
+            } else {
+                existing = await SellerReviewModel.findOne({ sellerId: payload.sellerId, userName: payload.userName });
+            }
+            if (existing) {
+                return res.status(409).json({ error: "You have already submitted a review for this seller." });
+            }
+            const review = await storage.createSellerReview(payload);
             res.json(review);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/reviews/seller/by-name/:sellerName", async (req, res) => {
+        try {
+            const raw = req.params.sellerName;
+            const sellerName = sanitizeSellerNameParam(raw);
+            if (!sellerName) {
+                await storage.logUrlMatchFailure("seller", raw || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const seller = await storage.getSellerByExactName(sellerName);
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller", sellerName);
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const page = parseInt(String(req.query.page || "1"), 10) || 1;
+            const pageSize = 20;
+            const sortOpt = String(req.query.sort || "newest");
+            let sort = { createdAt: -1 };
+            if (sortOpt === "highest") sort = { rating: -1, createdAt: -1 };
+            if (sortOpt === "helpful") sort = { helpfulVotes: -1, createdAt: -1 };
+            const q = SellerReviewModel.find({ sellerId: seller.id }).sort(sort);
+            const total = await SellerReviewModel.countDocuments({ sellerId: seller.id });
+            const items = await q.skip((page - 1) * pageSize).limit(pageSize).lean();
+            const reviews = items.map((r) => ({ id: String(r._id), userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt, helpfulVotes: r.helpfulVotes || 0 }));
+            res.json({ seller: { id: seller.id, name: seller.name, verified: !!seller.verified, averageRating: seller.averageRating || 0, totalReviews: seller.totalReviews || 0 }, reviews, pageInfo: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/reviews/seller/by-slug/:slug", async (req, res) => {
+        try {
+            const raw = req.params.slug;
+            const slug = String(raw || "").trim().toLowerCase();
+            if (!slug) {
+                await storage.logUrlMatchFailure("seller_slug", raw || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const seller = await storage.getSellerBySlug(slug);
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller_slug", slug);
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            const page = parseInt(String(req.query.page || "1"), 10) || 1;
+            const pageSize = 20;
+            const sortOpt = String(req.query.sort || "newest");
+            let sort = { createdAt: -1 };
+            if (sortOpt === "highest") sort = { rating: -1, createdAt: -1 };
+            if (sortOpt === "helpful") sort = { helpfulVotes: -1, createdAt: -1 };
+            const q = SellerReviewModel.find({ sellerId: seller.id }).sort(sort);
+            const total = await SellerReviewModel.countDocuments({ sellerId: seller.id });
+            const items = await q.skip((page - 1) * pageSize).limit(pageSize).lean();
+            const reviews = items.map((r) => ({ id: String(r._id), userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt, helpfulVotes: r.helpfulVotes || 0 }));
+            res.json({ seller: { id: seller.id, name: seller.name, verified: !!seller.verified, images: seller.images || [], description: seller.description || "", averageRating: seller.averageRating || 0, totalReviews: seller.totalReviews || 0 }, reviews, pageInfo: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/sellers/slug/:slug", async (req, res) => {
+        try {
+            const seller = await storage.getSellerBySlug(String(req.params.slug || "").trim().toLowerCase());
+            if (!seller) {
+                await storage.logUrlMatchFailure("seller_slug", req.params.slug || "");
+                return res.status(404).json({ error: "Seller not found" });
+            }
+            res.json(seller);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/security/csrf-token", (req, res) => {
+        const token = process.env.CSRF_SECRET || "";
+        res.json({ csrfToken: token });
+    });
+
+    app2.get("/api/admin/reviews", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const cc = String(req.query.countryCode || "").trim();
+            const verified = String(req.query.verified || "").trim();
+            const start = String(req.query.startDate || "").trim();
+            const end = String(req.query.endDate || "").trim();
+            const sellerId = String(req.query.sellerId || "").trim();
+            const filter = {};
+            if (cc) filter.phoneCountryCode = cc;
+            if (verified === "true") filter.phoneVerified = true;
+            if (verified === "false") filter.phoneVerified = false;
+            if (sellerId) filter.sellerId = sellerId;
+            const range = {};
+            if (start) range.$gte = new Date(start);
+            if (end) range.$lte = new Date(end);
+            if (Object.keys(range).length) filter.createdAt = range;
+            const rows = await SellerReviewModel.find(filter).sort({ createdAt: -1 }).limit(200).lean();
+            const out = rows.map((r) => ({ id: String(r._id), sellerId: r.sellerId, userName: r.userName, phoneMasked: r.phoneLast4 ? `****${r.phoneLast4}` : "", phoneCountryCode: r.phoneCountryCode || "", phoneVerified: !!r.phoneVerified, rating: r.rating, createdAt: r.createdAt }));
+            res.json(out);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/admins", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const admins = await storage.getAllAdmins();
+            res.json(admins);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.post("/api/admin/admins", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const data = insertAdminSchema.parse(req.body);
+            const { username, password } = data;
+            const exists = await storage.getAdminByUsername(username);
+            if (exists) return res.status(400).json({ error: "Username already exists" });
+            const hashed = await hashPassword(password);
+            const created = await storage.createAdmin({
+                ...data,
+                password: hashed,
+            });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("create_admin", String(created.id || created._id || username), adminId, { username });
+            } catch {}
+            res.status(201).json(created);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+    app2.patch("/api/admin/admins/:id", requireAuth, async (req, res) => {
+        try {
+            const id = req.params.id;
+            const isSelf = (req.user?.id || "") === id;
+            const isSuper = (req.user?.role || "") === "super_admin";
+            if (!isSelf && !isSuper) return res.status(403).json({ error: "Forbidden" });
+            const body = req.body || {};
+            const updates = { ...body };
+            if (updates.password) {
+                updates.password = await hashPassword(String(updates.password));
+            }
+            const updated = await storage.updateAdmin(id, updates);
+            if (!updated) return res.status(404).json({ error: "Admin not found" });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("update_admin", id, adminId, { updates: Object.keys(updates) });
+            } catch {}
+            res.json(updated);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+    app2.delete("/api/admin/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const ok = await storage.deleteAdmin(req.params.id);
+            if (!ok) return res.status(404).json({ error: "Admin not found" });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("delete_admin", req.params.id, adminId, {});
+            } catch {}
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/admins/:id/logs", requireAuth, async (req, res) => {
+        try {
+            const id = req.params.id;
+            const isSelf = (req.user?.id || "") === id;
+            const isSuper = (req.user?.role || "") === "super_admin";
+            if (!isSelf && !isSuper) return res.status(403).json({ error: "Forbidden" });
+            const logs = await AdminAuditLogModel.find({ adminId: id }).sort({ createdAt: -1 }).lean();
+            res.json(logs.map(l => ({ id: String(l._id), ...l })));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/admin/reviews/:id/verify-phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const upd = await SellerReviewModel.findByIdAndUpdate(id, { phoneVerified: true }, { new: true }).lean();
+            if (!upd) return res.status(404).json({ error: "Review not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("verify_phone", id, adminId, {});
+            res.json({ id: String(upd._id), phoneVerified: !!upd.phoneVerified });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/admin/reviews/:id/anonymize-phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const upd = await SellerReviewModel.findByIdAndUpdate(id, { userPhoneEncrypted: "", phoneLast4: "", phoneCountryCode: "", phoneVerified: false }, { new: true }).lean();
+            if (!upd) return res.status(404).json({ error: "Review not found" });
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("anonymize_phone", id, adminId, {});
+            res.json({ id: String(upd._id), phoneMasked: "", phoneVerified: false });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/reviews/:id/phone", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const rev = await SellerReviewModel.findById(id).lean();
+            if (!rev) return res.status(404).json({ error: "Review not found" });
+            const enc = rev.userPhoneEncrypted || "";
+            const key = process.env.PHONE_ENC_KEY || "";
+            if (!enc || !key) return res.status(400).json({ error: "Phone not available" });
+            const phone = decryptPhoneNumber(enc);
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("reveal_phone", id, adminId, { sellerId: rev.sellerId });
+            res.json({ phone, countryCode: rev.phoneCountryCode || "", last4: rev.phoneLast4 || "" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/reviews/backup", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const rows = await SellerReviewModel.find().sort({ createdAt: -1 }).lean();
+            const out = rows.map((r) => ({ id: String(r._id), sellerId: r.sellerId, userName: r.userName, rating: r.rating, comment: r.comment || "", createdAt: r.createdAt }));
+            res.json({ count: out.length, reviews: out });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/sellers/:id/reviews/:reviewId", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const { id, reviewId } = req.params;
+            const success = await storage.deleteSellerReview(id, reviewId);
+            if (!success) {
+                return res.status(404).json({ error: "Review not found" });
+            }
+            const adminId = req.user?.id || "";
+            await storage.auditAdminAction("delete_review", reviewId, adminId, { sellerId: id });
+            res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2900,7 +3818,23 @@ async function registerRoutes(app2) {
     // Chat Admin Routes
     app2.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
-            res.json([]);
+            const users = await ChatUserModel.find().sort({ createdAt: -1 }).lean();
+            res.json(users.map(u => ({ id: String(u._id), userName: u.userName, phone: u.phone || "", verified: !!u.verified, createdAt: u.createdAt })));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/public/settings/review-verification", async (_req, res) => {
+        try {
+            const settings = await storage.getSiteSettings();
+            res.json({
+                reviewVerificationEnabled: !!settings.reviewVerificationEnabled,
+                reviewVerificationVideoUrl: settings.reviewVerificationVideoUrl || "",
+                reviewVerificationTimecode: settings.reviewVerificationTimecode || "",
+                reviewVerificationPrompt: settings.reviewVerificationPrompt || "",
+                reviewVerificationYouTubeChannelUrl: settings.reviewVerificationYouTubeChannelUrl || "",
+            });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2908,35 +3842,63 @@ async function registerRoutes(app2) {
 
     app2.post("/api/admin/chat/registration", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const { enabled } = req.body;
-            res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
+            const { enabled } = req.body || {};
+            const updated = await ChatSettingsModel.findOneAndUpdate(
+                { name: "chat" },
+                { registrationEnabled: !!enabled, updatedAt: new Date() },
+                { upsert: true, new: true }
+            ).lean();
+            res.json({ enabled: !!updated.registrationEnabled, message: updated.registrationEnabled ? "Chat registration opened" : "Chat registration closed" });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
     });
 
     app2.post("/api/admin/chat/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         try {
             const { id } = req.params;
-            res.json({ id, verified: true });
+            const upd = await ChatUserModel.findByIdAndUpdate(id, { verified: true }, { new: true, session }).lean();
+            if (!upd) {
+                await session.abortTransaction();
+                return res.status(404).json({ error: "User not found" });
+            }
+            await session.commitTransaction();
+            res.json({ id: String(upd._id), verified: !!upd.verified });
         } catch (error) {
+            await session.abortTransaction();
             res.status(500).json({ error: error.message });
+        } finally {
+            session.endSession();
         }
     });
 
     app2.delete("/api/admin/chat/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         try {
             const { id } = req.params;
-            res.json({ success: true, message: "User removed" });
+            const del = await ChatUserModel.findByIdAndDelete(id, { session }).lean();
+            if (!del) {
+                await session.abortTransaction();
+                return res.status(404).json({ error: "User not found" });
+            }
+            await session.commitTransaction();
+            res.json({ success: true });
         } catch (error) {
+            await session.abortTransaction();
             res.status(500).json({ error: error.message });
+        } finally {
+            session.endSession();
         }
     });
 
     // Site Settings Routes
     app2.get("/api/settings/site", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
-            res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
+            const s = await storage.getSiteSettings();
+            res.json(s);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2944,8 +3906,8 @@ async function registerRoutes(app2) {
 
     app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const { siteTitle, theme } = req.body;
-            res.json({ siteTitle, theme, message: "Settings updated" });
+            const updated = await storage.updateSiteSettings(req.body || {});
+            res.json(updated);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2958,6 +3920,7 @@ async function registerRoutes(app2) {
 // server/index-production.ts
 import cors from "cors";
 var app = express();
+var app2 = app;
 function log(message, source = "express") {
     const formattedTime = /* @__PURE__ */ new Date().toLocaleTimeString(
         "en-US",
@@ -3319,4 +4282,33 @@ app.post(
         res.json({ closed: false });
     },
 );
+
+    app.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            let eventsUpdated = 0;
+            let postsUpdated = 0;
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const events = await EventModel.find().lean();
+            for (const ev of events) {
+                const slug = ev.event_name_slug || slugifyEventName(ev.title || "");
+                const canonical = `${base}/events/${slug}`;
+                if (!ev.event_name_slug || !ev.canonicalUrl) {
+                    await EventModel.updateOne({ _id: ev._id }, { $set: { event_name_slug: slug, canonicalUrl: canonical } });
+                    eventsUpdated++;
+                }
+            }
+            const posts = await PostModel.find().lean();
+            for (const p of posts) {
+                const slug = p.post_slug || slugifyEventName(p.title || "");
+                const canonical = `${base}/article/${slug}`;
+                if (!p.post_slug || !p.canonicalUrl) {
+                    await PostModel.updateOne({ _id: p._id }, { $set: { post_slug: slug, canonicalUrl: canonical } });
+                    postsUpdated++;
+                }
+            }
+            res.json({ success: true, eventsUpdated, postsUpdated });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
 

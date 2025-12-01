@@ -30,7 +30,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
       className="bg-transparent border-0 shadow-none"
       data-testid={`card-article-${article.id}`}
     >
-      <Link href={`/article/${article.id}`}>
+      <Link href={`/article/${(article as any).post_slug || article.id}`}>
         <div className="relative aspect-[16/9] overflow-hidden">
           <img
             src={article.image}

@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 
 const app = express();
 

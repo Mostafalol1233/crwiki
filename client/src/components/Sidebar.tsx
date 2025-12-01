@@ -47,7 +47,7 @@ export function Sidebar({
           {recentPosts.map((post) => (
             <Link
               key={post.id}
-              href={`/article/${post.id}`}
+              href={`/article/${(post as any).post_slug || post.id}`}
               className="flex gap-3 hover-elevate p-2 -m-2 rounded-lg transition-all"
               data-testid={`link-recent-${post.id}`}
             >
@@ -101,7 +101,7 @@ export function Sidebar({
           {mostViewed.map((post, index) => (
             <Link
               key={post.id}
-              href={`/article/${post.id}`}
+              href={`/article/${(post as any).post_slug || post.id}`}
               className="flex items-start gap-3 hover-elevate p-2 -m-2 rounded-lg transition-all"
               data-testid={`link-mostviewed-${post.id}`}
             >
@@ -133,7 +133,7 @@ export function Sidebar({
           {bimoraPicks.map((post) => (
             <Link
               key={post.id}
-              href={`/article/${post.id}`}
+              href={`/article/${(post as any).post_slug || post.id}`}
               className="flex gap-3 hover-elevate p-2 -m-2 rounded-lg transition-all"
               data-testid={`link-pick-${post.id}`}
             >

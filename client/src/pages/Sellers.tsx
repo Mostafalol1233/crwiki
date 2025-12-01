@@ -6,11 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink } from "lucide-react";
 import { SiDiscord } from "react-icons/si";
 import { useState } from "react";
+import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
 
 interface Seller {
   id: string;
   name: string;
+  seller_name_slug?: string;
   description: string;
   images: string[];
   prices: { item: string; price: number }[];
@@ -19,22 +21,51 @@ interface Seller {
   whatsapp: string;
   discord: string;
   website: string;
+  facebook?: string;
+  twitter?: string;
+  instagram?: string;
+  youtube?: string;
+  tiktok?: string;
+  telegram?: string;
   featured: boolean;
   promotionText: string;
   averageRating: number;
   totalReviews: number;
+  rank?: number;
 }
 
 export default function Sellers() {
+  const [slugMatch, slugParams] = useRoute("/seller/:slug");
+  const slug = slugMatch ? (slugParams?.slug as string) : "";
   const { data: sellers = [], isLoading } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
+    enabled: !slugMatch,
+  });
+
+  const { data: sellerBySlug } = useQuery<Seller>({
+    queryKey: ["/api/sellers/slug", slug],
+    enabled: !!slugMatch && !!slug,
+    queryFn: async () => {
+      const res = await fetch(`/api/sellers/slug/${encodeURIComponent(slug)}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
   });
 
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const featuredSellers = sellers.filter(s => s.featured);
-  const regularSellers = sellers.filter(s => !s.featured);
+  const sortByRankThenRating = (a: Seller, b: Seller) => {
+    const ra = typeof a.rank === 'number' ? a.rank! : 9999;
+    const rb = typeof b.rank === 'number' ? b.rank! : 9999;
+    if (ra !== rb) return ra - rb;
+    const ar = a.averageRating || 0;
+    const br = b.averageRating || 0;
+    return br - ar;
+  };
+
+  const featuredSellers = sellers.filter(s => s.featured).slice().sort(sortByRankThenRating);
+  const regularSellers = sellers.filter(s => !s.featured).slice().sort(sortByRankThenRating);
 
   const openSellerDialog = (seller: Seller) => {
     setSelectedSeller(seller);
@@ -146,6 +177,61 @@ export default function Sellers() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (slugMatch && sellerBySlug) {
+    const s = sellerBySlug;
+    return (
+      <>
+        <PageSEO
+          title={`${s.name} — Seller | CrossFire Wiki`}
+          description={s.description || `Seller ${s.name} page.`}
+          canonicalPath={`/seller/${s.seller_name_slug || slug}`}
+        />
+        <div className="min-h-screen bg-background py-12 md:py-20">
+          <div className="max-w-7xl mx-auto px-4 md:px-8">
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold mb-2">{s.name}</h1>
+              <div className="flex items-center gap-3">
+                {renderStars(Math.round(s.averageRating))}
+                <span className="text-sm font-medium">{s.averageRating.toFixed(1)} ({s.totalReviews} reviews)</span>
+              </div>
+            </div>
+
+            {s.images?.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                {s.images.map((image, idx) => (
+                  <div key={idx} className="flex items-center justify-center">
+                    <img src={image} alt={`${s.name} ${idx+1}`} className="max-h-[520px] max-w-full object-contain rounded-md bg-muted/30" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {s.description && (
+              <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+                <p>{s.description}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {s.website && <Button variant="outline" size="sm" onClick={()=> window.open(s.website.startsWith('http') ? s.website : `https://${s.website}`, '_blank')}>Website</Button>}
+              {s.facebook && <Button variant="outline" size="sm" onClick={()=> window.open(s.facebook!, '_blank')}>Facebook</Button>}
+              {s.twitter && <Button variant="outline" size="sm" onClick={()=> window.open(s.twitter!, '_blank')}>Twitter/X</Button>}
+              {s.instagram && <Button variant="outline" size="sm" onClick={()=> window.open(s.instagram!, '_blank')}>Instagram</Button>}
+              {s.youtube && <Button variant="outline" size="sm" onClick={()=> window.open(s.youtube!, '_blank')}>YouTube</Button>}
+              {s.tiktok && <Button variant="outline" size="sm" onClick={()=> window.open(s.tiktok!, '_blank')}>TikTok</Button>}
+              {s.telegram && <Button variant="outline" size="sm" onClick={()=> window.open(s.telegram!, '_blank')}>Telegram</Button>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button className="w-full" onClick={()=> window.location.href = `/reviews/seller/slug/${s.seller_name_slug || slug}`}>View All Reviews</Button>
+              <Button className="w-full" onClick={()=> window.location.href = `/reviews/seller/${encodeURIComponent(s.name)}`}>View Reviews by Name</Button>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -344,6 +430,36 @@ export default function Sellers() {
                       <ExternalLink className="h-3 w-3 ml-auto" />
                     </Button>
                   )}
+                  {selectedSeller.facebook && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.facebook!, '_blank'); }}>
+                      Facebook
+                    </Button>
+                  )}
+                  {selectedSeller.twitter && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.twitter!, '_blank'); }}>
+                      Twitter/X
+                    </Button>
+                  )}
+                  {selectedSeller.instagram && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.instagram!, '_blank'); }}>
+                      Instagram
+                    </Button>
+                  )}
+                  {selectedSeller.youtube && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.youtube!, '_blank'); }}>
+                      YouTube
+                    </Button>
+                  )}
+                  {selectedSeller.tiktok && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.tiktok!, '_blank'); }}>
+                      TikTok
+                    </Button>
+                  )}
+                  {selectedSeller.telegram && (
+                    <Button variant="outline" size="sm" className="justify-start" onClick={(e)=>{ e.stopPropagation(); window.open(selectedSeller.telegram!, '_blank'); }}>
+                      Telegram
+                    </Button>
+                  )}
                   {!selectedSeller.email && !selectedSeller.phone && !selectedSeller.whatsapp && !selectedSeller.discord && !selectedSeller.website && (
                     <p className="text-sm text-muted-foreground">No contact information available</p>
                   )}
@@ -353,8 +469,11 @@ export default function Sellers() {
                   <Button
                     variant="default"
                     className="w-full"
-                    onClick={() => {
-                      window.location.href = `/reviews?seller=${selectedSeller.id}`;
+                  onClick={() => {
+                      const path = selectedSeller.seller_name_slug 
+                        ? `/reviews/seller/slug/${selectedSeller.seller_name_slug}` 
+                        : `/reviews/seller/${encodeURIComponent(selectedSeller.name)}`;
+                      window.location.href = path;
                     }}
                   >
                     View All Reviews

@@ -27,13 +27,17 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# IDE settings (but NOT Replit config)
+# IDE settings
 .idea/
 .vscode/
 .cursor/
 .idx/
 .local/
 .cache/
+
+# Replit config (don't push to git)
+.replit
+replit.md
 
 # Project specific backend (don't deploy to Vercel)
 backend-deploy-full/

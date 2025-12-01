@@ -7,14 +7,18 @@ import { useLocation } from "wouter";
 
 function getWsUrl() {
   const api = import.meta.env.VITE_API_URL || "";
-  if (!api) return "/ws";
-  try {
-    const u = new URL(api);
-    const proto = u.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${u.host}/ws`;
-  } catch {
-    return "/ws";
+  if (api) {
+    try {
+      const u = new URL(api);
+      const proto = u.protocol === "https:" ? "wss:" : "ws:";
+      return `${proto}//${u.host}/ws`;
+    } catch {
+      return "/ws";
+    }
   }
+  // Use current window location for development
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${window.location.host}/ws`;
 }
 
 function getApiUrl(path: string) {

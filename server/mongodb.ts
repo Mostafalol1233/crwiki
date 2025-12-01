@@ -37,9 +37,7 @@ try {
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
+// MongoDB is optional - app will use in-memory storage if not configured
 
 type Cached = {
   conn: typeof mongoose | null;

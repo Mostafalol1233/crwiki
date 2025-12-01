@@ -1881,19 +1881,34 @@ async function registerRoutes(app2) {
     });
     app2.post("/api/posts", requireAuth, requireContentCreator, async (req, res) => {
         try {
+            const adminId = req.user?.id || "";
+            const admin = adminId ? await AdminModel.findById(adminId).lean() : null;
+            const adminName = admin?.username || "Unknown";
+            
+            // Check quota
+            if (admin && admin.create_limit > 0 && admin.posts_created >= admin.create_limit) {
+                return res.status(403).json({ error: "Post creation quota exceeded" });
+            }
+            
             const data = insertPostSchema.parse(req.body);
             stripOrderingFields(data, req.user?.role || "");
-            const readingTime =
-                data.readingTime || calculateReadingTime(data.content);
+            const readingTime = data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
-            // Generate slug from title if not provided
             const slug = data.slug || slugify(data.title);
             const post = await storage.createPost({
                 ...data,
                 readingTime,
                 summary,
                 slug,
+                createdByAdminId: adminId,
+                createdByAdminName: adminName,
             });
+            
+            // Update admin counter
+            if (admin) {
+                await AdminModel.findByIdAndUpdate(adminId, { $inc: { posts_created: 1 } });
+            }
+            
             res.status(201).json(post);
         } catch (error) {
             res.status(400).json({ error: error.message });

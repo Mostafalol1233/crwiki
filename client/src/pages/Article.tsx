@@ -55,6 +55,15 @@ export default function Article() {
   const fallbackFromList = allPosts.find((p: any) => (p?.post_slug && p.post_slug === slug) || (p?.id && (p.id === id || p.id === slug)));
   const finalArticle: any = article || fallbackFromList || null;
 
+  useEffect(() => {
+    if (!slug && (finalArticle as any)?.post_slug) {
+      const target = `/article/${(finalArticle as any).post_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== target) {
+        setLocation(target);
+      }
+    }
+  }, [slug, (finalArticle as any)?.post_slug]);
+
   const addCommentMutation = useMutation({
     mutationFn: (data: { author: string; content: string }) =>
       apiRequest(`/api/posts/${id}/comments`, "POST", data),
@@ -114,14 +123,7 @@ export default function Article() {
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const articleUrl = `${baseUrl}/article/${slug || finalArticle?.post_slug || finalArticle?.id || id}`;
 
-  useEffect(() => {
-    if (!slug && (finalArticle as any)?.post_slug) {
-      const target = `/article/${(finalArticle as any).post_slug}`;
-      if (typeof window !== "undefined" && window.location.pathname !== target) {
-        setLocation(target);
-      }
-    }
-  }, [slug, (finalArticle as any)?.post_slug]);
+  
   const breadcrumbs = [
     { name: finalArticle.category, url: `/category/${finalArticle.category.toLowerCase()}` },
     { name: finalArticle.title, url: articleUrl },

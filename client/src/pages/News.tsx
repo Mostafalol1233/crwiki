@@ -56,6 +56,7 @@ export default function News() {
       summary: post.summary,
       author: post.author,
       featured: post.featured,
+      post_slug: post.post_slug,
       type: 'post' as const
     }));
     
@@ -102,8 +103,8 @@ export default function News() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {allNews.map((item, index) => (
-            <div key={item.id}>
-              <Link href={item.type === 'post' ? `/article/${item.id}` : `/news/${item.id}`}>
+          <div key={item.id}>
+              <Link href={item.type === 'post' ? `/article/${(item as any).post_slug || item.id}` : `/news/${item.id}`}>
                 <Card
                   className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none"
                   data-testid={`card-news-${item.id}`}

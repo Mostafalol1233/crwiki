@@ -63,6 +63,7 @@ import { connectMongoDB } from "./mongodb";
 
 export interface NewsItem {
   id: string;
+  slug?: string;
   title: string;
   titleAr?: string;
   dateRange: string;

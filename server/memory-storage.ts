@@ -253,6 +253,15 @@ export class MemoryStorage implements IStorage {
   async getAllNews(): Promise<NewsItem[]> {
     return this.news;
   }
+  async getNewsById(id: string): Promise<NewsItem | undefined> {
+    return this.news.find((n) => n.id === id);
+  }
+  async getNewsBySlug(slug: string): Promise<NewsItem | undefined> {
+    return this.news.find((n) => (n as any).slug === slug);
+  }
+  async getPostBySlug(slug: string): Promise<any | undefined> {
+    return this.posts.find((p) => (p as any).slug === slug);
+  }
   async createNews(news: Partial<NewsItem>): Promise<NewsItem> {
     const n: any = { ...news, id: uuidv4(), createdAt: new Date() };
     this.news.unshift(n);

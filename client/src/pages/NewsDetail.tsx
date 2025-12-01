@@ -32,25 +32,51 @@ interface NewsItem {
   updatedAt?: string | Date;
 }
 
+interface NewsItemWithSlug extends NewsItem {
+  news_slug?: string;
+}
+
 export default function NewsDetail() {
   const params = useParams();
-  const newsId = params.id;
+  const slug = (params as any)?.slug as string | undefined;
+  const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
 
-  const { data: newsItems = [], isLoading } = useQuery<NewsItem[]>({
-    queryKey: ["/api/news"],
+  const { data: newsItem, isLoading } = useQuery<NewsItemWithSlug>({
+    queryKey: ["news", slug || legacyId],
+    enabled: !!(slug || legacyId),
+    queryFn: async () => {
+      if (slug) {
+        const res = await fetch(`/api/news/slug/${slug}`);
+        if (!res.ok) {
+          const allNews = await fetch("/api/news").then(r => r.json());
+          const found = allNews.find((n: any) => n.news_slug === slug || n.id === slug);
+          if (found) return found;
+          throw new Error("News not found");
+        }
+        return res.json();
+      }
+      if (!legacyId) throw new Error("No news ID or slug provided");
+      const res = await fetch(`/api/news/${legacyId}`);
+      if (!res.ok) {
+        const allNews = await fetch("/api/news").then(r => r.json());
+        const found = allNews.find((n: any) => n.id === legacyId);
+        if (found) return found;
+        throw new Error("News not found");
+      }
+      return res.json();
+    },
   });
 
-  const newsItem = newsItems.find((item) => item.id === newsId);
-
   const { data: fallbackPost } = useQuery<any>({
-    queryKey: ["/api/posts/" + newsId],
-    enabled: !newsItem && !!newsId,
+    queryKey: ["/api/posts/" + (slug || legacyId)],
+    enabled: !newsItem && !!(slug || legacyId),
     queryFn: async () => {
-      const res = await fetch(`/api/posts/${newsId}`);
+      const identifier = slug || legacyId;
+      const res = await fetch(`/api/posts/${identifier}`);
       if (!res.ok) return null;
       return res.json();
     },
@@ -62,6 +88,15 @@ export default function NewsDetail() {
       setLocation(target);
     }
   }, [fallbackPost, setLocation]);
+
+  useEffect(() => {
+    if (legacyId && newsItem?.news_slug) {
+      const slugUrl = `/news/${newsItem.news_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
+        setLocation(slugUrl);
+      }
+    }
+  }, [legacyId, newsItem?.news_slug, setLocation]);
 
   if (isLoading) {
     return (
@@ -86,7 +121,8 @@ export default function NewsDetail() {
   }
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const newsUrl = `${baseUrl}/news/${newsId}`;
+  const newsSlug = newsItem.news_slug || slug || legacyId;
+  const newsUrl = `${baseUrl}/news/${newsSlug}`;
   const breadcrumbs = [
     { name: "News", url: "/news" },
     { name: newsItem.title, url: newsUrl },

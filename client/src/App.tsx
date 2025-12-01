@@ -54,13 +54,14 @@ function Router() {
       <Route path="/sellers" component={Sellers} />
       <Route path="/seller/:slug" component={Sellers} />
       <Route path="/news" component={News} />
-      <Route path="/news/:id" component={NewsDetail} />
-      <Route path="/events/:id" component={EventDetail} />
+      <Route path="/news/:slug" component={NewsDetail} />
+      <Route path="/news/id/:legacyId" component={NewsDetail} />
       <Route path="/events/:slug" component={EventDetail} />
+      <Route path="/events/id/:legacyId" component={EventDetail} />
       <Route path="/mercenaries" component={Mercenaries} />
       <Route path="/grave-games" component={GraveGames} />
       <Route path="/article/:slug" component={Article} />
-      <Route path="/article/:id" component={Article} />
+      <Route path="/article/id/:legacyId" component={Article} />
       <Route path="/support" component={Support} />
       <Route path="/my-tickets" component={MyTickets} />
       <Route path="/about" component={About} />

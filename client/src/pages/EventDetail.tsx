@@ -30,10 +30,9 @@ interface Event {
 }
 
 export default function EventDetail() {
-  // wouter's useParams can be untyped in some versions; read params then cast safely
   const params = useParams();
-  const id = params?.id as string | undefined;
   const slug = params?.slug as string | undefined;
+  const legacyId = params?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [error, setError] = useState<Error | null>(null);
@@ -41,8 +40,8 @@ export default function EventDetail() {
   const [isRTL, setIsRTL] = useState(false);
 
   const { data: event, isLoading } = useQuery<Event>({
-    queryKey: ["event", id || slug],
-    enabled: !!(id || slug),
+    queryKey: ["event", slug || legacyId],
+    enabled: !!(slug || legacyId),
     retry: 1,
     queryFn: async () => {
       if (slug) {
@@ -53,8 +52,8 @@ export default function EventDetail() {
         }
         return res.json();
       }
-      if (!id) throw new Error("No event ID or slug provided");
-      const res = await fetch(`/api/events/${id}`);
+      if (!legacyId) throw new Error("No event ID or slug provided");
+      const res = await fetch(`/api/events/${legacyId}`);
       if (!res.ok) {
         const errorText = await res.text().catch(() => "Unknown error");
         throw new Error(`Failed to load event: ${res.status} ${errorText}`);
@@ -64,13 +63,13 @@ export default function EventDetail() {
   });
 
   useEffect(() => {
-    if (id && event?.event_name_slug) {
+    if (legacyId && event?.event_name_slug) {
       const slugUrl = `/events/${event.event_name_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
         setLocation(slugUrl);
       }
     }
-  }, [id, event?.event_name_slug]);
+  }, [legacyId, event?.event_name_slug, setLocation]);
 
   if (isLoading) {
     return (
@@ -113,7 +112,8 @@ export default function EventDetail() {
   const hasTranslation = event.titleAr || event.descriptionAr;
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const eventUrl = slug ? `${baseUrl}/events/${slug}` : `${baseUrl}/events/${id}`;
+  const eventSlug = event.event_name_slug || slug || legacyId;
+  const eventUrl = `${baseUrl}/events/${eventSlug}`;
   const breadcrumbs = [
     { name: "Events", url: "/category/events" },
     { name: title, url: eventUrl },

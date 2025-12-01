@@ -15,33 +15,33 @@ import { useState, useEffect } from "react";
 
 export default function Article() {
   const params = useParams();
-  const id = (params as any)?.id as string | undefined;
   const slug = (params as any)?.slug as string | undefined;
+  const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [isRTL, setIsRTL] = useState(false);
 
   const { data: article, isLoading } = useQuery<any>({
-    queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${id}`],
-    enabled: !!(id || slug),
+    queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
+    enabled: !!(legacyId || slug),
     queryFn: async () => {
       if (slug) {
         const res = await fetch(`/api/posts/slug/${slug}`);
         if (!res.ok) throw new Error('Failed to fetch article');
         return res.json();
       }
-      if (!id) return null;
-      const res = await fetch(`/api/posts/${id}`);
+      if (!legacyId) return null;
+      const res = await fetch(`/api/posts/${legacyId}`);
       if (!res.ok) throw new Error('Failed to fetch article');
       return res.json();
     },
   });
 
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: [`/api/posts/${(article as any)?.id || id}/comments`],
-    enabled: !!((article as any)?.id || id),
+    queryKey: [`/api/posts/${(article as any)?.id || legacyId}/comments`],
+    enabled: !!((article as any)?.id || legacyId),
     queryFn: async () => {
-      const postId = (article as any)?.id || id;
+      const postId = (article as any)?.id || legacyId;
       const res = await fetch(`/api/posts/${postId}/comments`);
       if (!res.ok) return [];
       return res.json();
@@ -52,33 +52,33 @@ export default function Article() {
     queryKey: ["/api/posts"],
   });
 
-  const fallbackFromList = allPosts.find((p: any) => (p?.post_slug && p.post_slug === slug) || (p?.id && (p.id === id || p.id === slug)));
+  const fallbackFromList = allPosts.find((p: any) => (p?.post_slug && p.post_slug === slug) || (p?.id && (p.id === legacyId || p.id === slug)));
   const finalArticle: any = article || fallbackFromList || null;
 
   useEffect(() => {
-    if (!slug && (finalArticle as any)?.post_slug) {
+    if (legacyId && (finalArticle as any)?.post_slug) {
       const target = `/article/${(finalArticle as any).post_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== target) {
         setLocation(target);
       }
     }
-  }, [slug, (finalArticle as any)?.post_slug]);
+  }, [legacyId, (finalArticle as any)?.post_slug, setLocation]);
 
   const addCommentMutation = useMutation({
     mutationFn: (data: { author: string; content: string }) =>
-      apiRequest(`/api/posts/${id}/comments`, "POST", data),
+      apiRequest(`/api/posts/${(finalArticle as any)?.id || legacyId}/comments`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [slug ? `/api/posts/slug/${slug}/comments` : `/api/posts/${id}/comments`],
+        queryKey: [`/api/posts/${(finalArticle as any)?.id || legacyId}/comments`],
       });
     },
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: (commentId: string) => apiRequest(`/api/posts/${(article as any)?.id || id}/comments/${commentId}`, "DELETE"),
+    mutationFn: (commentId: string) => apiRequest(`/api/posts/${(article as any)?.id || legacyId}/comments/${commentId}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [`/api/posts/${(article as any)?.id || id}/comments`],
+        queryKey: [`/api/posts/${(article as any)?.id || legacyId}/comments`],
       });
     },
   });
@@ -121,7 +121,7 @@ export default function Article() {
   };
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const articleUrl = `${baseUrl}/article/${slug || finalArticle?.post_slug || finalArticle?.id || id}`;
+  const articleUrl = `${baseUrl}/article/${slug || finalArticle?.post_slug || finalArticle?.id || legacyId}`;
 
   
   const breadcrumbs = [

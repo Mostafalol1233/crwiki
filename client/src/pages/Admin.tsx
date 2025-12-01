@@ -2140,6 +2140,17 @@ export default function Admin() {
                                 ? eventForm.seoKeywords.split(",").map((k) => k.trim())
                                 : [],
                             };
+                            const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
+                            const slug = String((eventForm.title || "").toLowerCase())
+                              .normalize('NFKD')
+                              .replace(/\p{Diacritic}/gu, '')
+                              .replace(/[^a-z0-9 ]+/g, '')
+                              .trim()
+                              .replace(/\s+/g, '-')
+                              .substring(0, 60);
+                            const canonical = base ? `${base}/events/${slug}` : `https://crossfire.wiki/events/${slug}`;
+                            (data as any).event_name_slug = slug;
+                            (data as any).canonicalUrl = data.canonicalUrl || canonical;
                             if (editingEvent) {
                               updateEventMutation.mutate({ id: editingEvent.id, data });
                             } else {

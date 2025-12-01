@@ -60,6 +60,8 @@ export default function Reviews() {
   const [verificationAnswer, setVerificationAnswer] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [verifiedCode, setVerifiedCode] = useState("");
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const [match, params] = useRoute("/reviews/seller/:sellerName");
   const sellerNameParam = match ? params?.sellerName as string : "";
@@ -462,7 +464,8 @@ export default function Reviews() {
                         <img
                           src={image}
                           alt={`${seller.name} ${idx + 1}`}
-                          className="max-h-72 max-w-[360px] w-full object-cover rounded-md bg-muted/30"
+                          className="max-h-36 max-w-36 w-full object-contain rounded-md bg-muted/30 cursor-pointer"
+                          onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
                           data-testid={`img-seller-${seller.id}-${idx}`}
                         />
                       </div>
@@ -481,11 +484,12 @@ export default function Reviews() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {seller.images.slice(0, 2).map((image, idx) => (
                       <div key={idx} className="flex items-center justify-center">
-                        <div className="w-full max-w-[360px] h-48 overflow-hidden rounded-md bg-muted/30">
+                        <div className="w-full max-w-36 h-36 overflow-hidden rounded-md bg-muted/30">
                           <img
                             src={image}
                             alt={`${seller.name} ${idx + 1}`}
-                            className="w-full h-full object-cover object-center"
+                            className="w-full h-full object-contain cursor-pointer"
+                            onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
                           />
                         </div>
                       </div>
@@ -615,6 +619,19 @@ export default function Reviews() {
           </Card>
         )}
       </div>
+
+      <Dialog
+        open={isImagePreviewOpen}
+        onOpenChange={(open) => {
+          if (!open) { setIsImagePreviewOpen(false); setPreviewImageUrl(null); }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+          {previewImageUrl && (
+            <img src={previewImageUrl} alt="Preview" className="w-full h-auto object-contain rounded-md" />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={verificationDialogOpen}

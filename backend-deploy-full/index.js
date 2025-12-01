@@ -1289,8 +1289,14 @@ function stripOrderingFields(updates, role) {
 
 function requireContentCreator(req, res, next) {
     const role = req.user?.role || "";
-    if (role === "super_admin" || role === "admin" || role === "seller_admin") return next();
+    if (role === "super_admin" || role === "admin") return next();
     return res.status(403).json({ error: "Forbidden: Content creator role required" });
+}
+
+function requireAdminOnly(req, res, next) {
+    const role = req.user?.role || "";
+    if (role === "super_admin" || role === "admin") return next();
+    return res.status(403).json({ error: "Forbidden: Admin role required" });
 }
 
 function slugifyEventName(input) {
@@ -1742,7 +1748,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.patch("/api/posts/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");
@@ -1761,7 +1767,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/posts/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/posts/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deletePost(req.params.id);
             if (!deleted) {
@@ -1938,7 +1944,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/events/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deleteEvent(req.params.id);
             if (!deleted) {
@@ -1988,7 +1994,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.patch("/api/news/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");
@@ -2001,7 +2007,7 @@ async function registerRoutes(app2) {
             res.status(400).json({ error: error.message });
         }
     });
-    app2.delete("/api/news/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const deleted = await storage.deleteNews(req.params.id);
             if (!deleted) {
@@ -2115,7 +2121,7 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.patch("/api/tutorials/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/tutorials/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const body = req.body;
             const updates = { ...body };
@@ -2153,7 +2159,7 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.delete("/api/tutorials/:id", requireAuth, async (req, res) => {
+    app2.delete("/api/tutorials/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const ok = await TutorialModel.findByIdAndDelete(req.params.id);
             if (!ok)
@@ -2781,7 +2787,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
-    app2.patch("/api/events/:id", requireAuth, async (req, res) => {
+    app2.patch("/api/events/:id", requireAuth, requireAdminOnly, async (req, res) => {
         try {
             const updates = { ...req.body };
             stripOrderingFields(updates, req.user?.role || "");

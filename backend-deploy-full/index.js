@@ -39,6 +39,8 @@ var PostSchema = new Schema({
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
   post_slug: { type: String, default: "", unique: true },
+  createdByAdminId: { type: String, default: "" },
+  createdByAdminName: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 var CommentSchema = new Schema({
@@ -65,6 +67,8 @@ var EventSchema = new Schema({
   schemaType: { type: String, default: "Event" },
   order: { type: Number, default: 0 },
   event_name_slug: { type: String, default: "", unique: true },
+  createdByAdminId: { type: String, default: "" },
+  createdByAdminName: { type: String, default: "" },
 });
 var NewsSchema = new Schema({
   title: { type: String, required: true },
@@ -86,6 +90,8 @@ var NewsSchema = new Schema({
   schemaType: { type: String, default: "NewsArticle" },
   order: { type: Number, default: 0 },
   news_slug: { type: String, default: "", unique: true },
+  createdByAdminId: { type: String, default: "" },
+  createdByAdminName: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 NewsSchema.index({ news_slug: 1 }, { unique: true });
@@ -134,6 +140,11 @@ var AdminSchema = new Schema({
   profileImageUrl: { type: String, default: "" },
   active: { type: Boolean, default: true },
   bio: { type: String, default: "" },
+  create_limit: { type: Number, default: -1 },
+  posts_created: { type: Number, default: 0 },
+  events_created: { type: Number, default: 0 },
+  news_created: { type: Number, default: 0 },
+  tutorials_created: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 var NewsletterSubscriberSchema = new Schema({
@@ -1374,7 +1385,9 @@ function stripOrderingFields(updates, role) {
 
 function requireContentCreator(req, res, next) {
     const role = req.user?.role || "";
-    if (role === "super_admin" || role === "admin") return next();
+    const perms = req.user?.permissions || {};
+    if (role === "super_admin") return next();
+    if (role === "admin" && (perms["posts:create"] || perms["events:create"] || perms["news:create"] || perms["tutorials:create"])) return next();
     return res.status(403).json({ error: "Forbidden: Content creator role required" });
 }
 
@@ -1382,6 +1395,33 @@ function requireAdminOnly(req, res, next) {
     const role = req.user?.role || "";
     if (role === "super_admin" || role === "admin") return next();
     return res.status(403).json({ error: "Forbidden: Admin role required" });
+}
+
+function requireOwnershipOrAdmin(contentType) {
+    return async (req, res, next) => {
+        const role = req.user?.role || "";
+        if (role === "super_admin") return next();
+        const id = req.params.id;
+        if (!id) return res.status(400).json({ error: "Missing ID" });
+        try {
+            let content = null;
+            if (contentType === "post") {
+                content = await PostModel.findById(id).lean();
+            } else if (contentType === "event") {
+                content = await EventModel.findById(id).lean();
+            } else if (contentType === "news") {
+                content = await NewsModel.findById(id).lean();
+            }
+            if (!content) return res.status(404).json({ error: "Not found" });
+            const adminId = req.user?.id || "";
+            if (content.createdByAdminId !== adminId && role !== "super_admin") {
+                return res.status(403).json({ error: "Forbidden: Can only edit/delete your own content" });
+            }
+            return next();
+        } catch (err) {
+            return res.status(500).json({ error: "Permission check failed" });
+        }
+    };
 }
 
 function slugifyEventName(input) {

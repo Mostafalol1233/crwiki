@@ -84,7 +84,7 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
                 className="backdrop-blur-md bg-primary hover:bg-primary/90 border-2 border-primary-foreground/30 text-primary-foreground font-extrabold tracking-wider uppercase rounded-lg md:rounded-xl shadow-lg"
                 data-testid="button-read-featured"
               >
-                <Link href={`/article/${post.id}`}>{t("readMore")}: {post.title}</Link>
+                <Link href={`/article/${(post as any).post_slug || post.id}`}>{t("readMore")}: {post.title}</Link>
               </Button>
             )
           )}

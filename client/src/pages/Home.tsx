@@ -514,7 +514,7 @@ export default function Home() {
                 </Link>
               )}
               {allPosts[0] && (
-                <Link href={`/article/${allPosts[0].id}`} className="block" data-testid="home-latest-post">
+                <Link href={`/article/${(allPosts[0] as any).post_slug || allPosts[0].id}`} className="block" data-testid="home-latest-post">
                   <Card className="hover-elevate h-full group overflow-hidden bg-gradient-to-br from-card to-card/70 border-destructive/20 hover:border-destructive/60 transition-all duration-300">
                     <div className="relative aspect-[3/2] overflow-hidden bg-muted/30">
                       <img
@@ -566,7 +566,7 @@ export default function Home() {
 
           {/* Top 2 Featured Posts */}
           {allPosts.filter((p: any) => p.featured && p.previewOnHome !== false).slice(0, 2).map((post: any) => (
-            <Link key={post.id} href={`/article/${post.id}`} className="block">
+            <Link key={post.id} href={`/article/${(post as any).post_slug || post.id}`} className="block">
               <div className="cursor-pointer h-full overflow-hidden group">
                 <div className="relative aspect-video overflow-hidden bg-muted/30">
                   <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" width="400" height="225" loading="lazy" />
@@ -842,7 +842,7 @@ export default function Home() {
                 <ul className="space-y-2">
                   {mostViewed.map((post) => (
                     <li key={post.id}>
-                      <Link href={`/article/${post.id}`} className="text-sm hover:text-primary transition-colors">
+                      <Link href={`/article/${(post as any).post_slug || post.id}`} className="text-sm hover:text-primary transition-colors">
                         <div className="line-clamp-2">{post.title}</div>
                         <div className="text-xs text-muted-foreground">{post.views} views</div>
                       </Link>
@@ -875,7 +875,7 @@ export default function Home() {
                 <ul className="space-y-3">
                   {recentPosts.map((post) => (
                     <li key={post.id}>
-                      <Link href={`/article/${post.id}`} className="block group">
+                      <Link href={`/article/${(post as any).post_slug || post.id}`} className="block group">
                         <div className="relative aspect-video overflow-hidden rounded-md bg-muted/30 mb-2">
                           <img
                             src={post.image}

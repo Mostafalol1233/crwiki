@@ -328,6 +328,7 @@ export default function Admin() {
     date: "",
     type: "upcoming" as "upcoming" | "trending",
     image: "",
+    event_name_slug: "",
     // SEO fields
     seoTitle: "",
     seoDescription: "",
@@ -1074,6 +1075,7 @@ export default function Admin() {
       date: "",
       type: "upcoming",
       image: "",
+      event_name_slug: "",
       // SEO fields
       seoTitle: "",
       seoDescription: "",

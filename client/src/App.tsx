@@ -105,6 +105,24 @@ function Layout() {
 }
 
 function App() {
+  const isMaintenance = (import.meta.env.VITE_MAINTENANCE_MODE ?? '1') === '1';
+  if (isMaintenance) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0f1a] text-white">
+        <div className="max-w-xl w-[92%] rounded-xl p-6 bg-[#131a2a] border border-[#2a3757] shadow-xl">
+          <div className="[direction:ltr]">
+            <h1 className="m-0 mb-2 text-xl">Site Under Maintenance</h1>
+            <p className="text-sm text-[#cbd5e1]">We are performing scheduled updates. The site will be back shortly. Thank you for your patience.</p>
+          </div>
+          <div className="h-px my-4 bg-[#22304d]" />
+          <div className="[direction:rtl]">
+            <h1 className="m-0 mb-2 text-xl">الموقع قيد التحديث</h1>
+            <p className="text-sm text-[#cbd5e1]">نقوم بإجراء تحديثات مجدولة. سيعود الموقع للعمل قريبًا. شكرًا على صبركم.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

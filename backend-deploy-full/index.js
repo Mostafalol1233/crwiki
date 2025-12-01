@@ -27,6 +27,7 @@ var UserSchema = new Schema({
 });
 var PostSchema = new Schema({
     title: { type: String, required: true },
+    slug: { type: String, default: "", index: true },
     content: { type: String, required: true },
     summary: { type: String, required: true },
     image: { type: String, required: true },
@@ -64,6 +65,7 @@ var EventSchema = new Schema({
 var NewsSchema = new Schema({
     title: { type: String, required: true },
     titleAr: { type: String, default: "" },
+    slug: { type: String, default: "", index: true },
     dateRange: { type: String, required: true },
     image: { type: String, required: true },
     category: { type: String, required: true },
@@ -470,6 +472,7 @@ var MongoDBStorage = class {
         return posts.map((post) => ({
             ...post,
             id: String(post._id),
+            slug: post.slug || "",
             tags: post.tags || [],
             views: post.views || 0,
             category: post.category || "",
@@ -482,6 +485,7 @@ var MongoDBStorage = class {
         return {
             ...post,
             id: String(post._id),
+            slug: post.slug || "",
             tags: post.tags || [],
             views: post.views || 0,
             category: post.category || "",
@@ -495,6 +499,7 @@ var MongoDBStorage = class {
         return {
             ...lean,
             id: String(lean._id),
+            slug: lean.slug || "",
             tags: lean.tags || [],
             views: lean.views || 0,
             category: lean.category || "",
@@ -509,6 +514,7 @@ var MongoDBStorage = class {
         return {
             ...updated,
             id: String(updated._id),
+            slug: updated.slug || "",
             tags: updated.tags || [],
             views: updated.views || 0,
             category: updated.category || "",
@@ -556,6 +562,7 @@ var MongoDBStorage = class {
         const news = await NewsModel.find().sort({ createdAt: -1 });
         return news.map((item) => ({
             id: String(item._id),
+            slug: item.slug || "",
             title: item.title,
             titleAr: item.titleAr,
             dateRange: item.dateRange,
@@ -573,6 +580,7 @@ var MongoDBStorage = class {
         const newNews = await NewsModel.create(news);
         return {
             id: String(newNews._id),
+            slug: newNews.slug || "",
             title: newNews.title,
             titleAr: newNews.titleAr,
             dateRange: newNews.dateRange,
@@ -593,6 +601,7 @@ var MongoDBStorage = class {
         if (!updated) return void 0;
         return {
             id: String(updated._id),
+            slug: updated.slug || "",
             title: updated.title,
             titleAr: updated.titleAr,
             dateRange: updated.dateRange,
@@ -609,6 +618,71 @@ var MongoDBStorage = class {
     async deleteNews(id) {
         const result = await NewsModel.findByIdAndDelete(id);
         return !!result;
+    }
+    async getNewsById(id) {
+        const news = await NewsModel.findById(id).lean();
+        if (!news) return void 0;
+        return {
+            id: String(news._id),
+            slug: news.slug || "",
+            title: news.title,
+            titleAr: news.titleAr,
+            dateRange: news.dateRange,
+            image: news.image,
+            category: news.category,
+            content: news.content,
+            contentAr: news.contentAr,
+            htmlContent: news.htmlContent,
+            author: news.author,
+            featured: news.featured,
+            seoTitle: news.seoTitle,
+            seoDescription: news.seoDescription,
+            seoKeywords: news.seoKeywords,
+            canonicalUrl: news.canonicalUrl,
+            ogImage: news.ogImage,
+            twitterImage: news.twitterImage,
+            schemaType: news.schemaType,
+            createdAt: news.createdAt,
+        };
+    }
+    async getNewsBySlug(slug) {
+        const news = await NewsModel.findOne({ slug }).lean();
+        if (!news) return void 0;
+        return {
+            id: String(news._id),
+            slug: news.slug || "",
+            title: news.title,
+            titleAr: news.titleAr,
+            dateRange: news.dateRange,
+            image: news.image,
+            category: news.category,
+            content: news.content,
+            contentAr: news.contentAr,
+            htmlContent: news.htmlContent,
+            author: news.author,
+            featured: news.featured,
+            seoTitle: news.seoTitle,
+            seoDescription: news.seoDescription,
+            seoKeywords: news.seoKeywords,
+            canonicalUrl: news.canonicalUrl,
+            ogImage: news.ogImage,
+            twitterImage: news.twitterImage,
+            schemaType: news.schemaType,
+            createdAt: news.createdAt,
+        };
+    }
+    async getPostBySlug(slug) {
+        const post = await PostModel.findOne({ slug }).lean();
+        if (!post) return void 0;
+        return {
+            ...post,
+            id: String(post._id),
+            slug: post.slug || "",
+            tags: post.tags || [],
+            views: post.views || 0,
+            category: post.category || "",
+            author: post.author || "Unknown",
+        };
     }
     async getAllMercenaries() {
         const mercenaries = await MercenaryModel.find()
@@ -1029,6 +1103,19 @@ function requireSuperAdmin(req, res, next) {
 }
 
 // server/utils/helpers.ts
+function slugify(text) {
+    if (!text) return "";
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/[\u0600-\u06FF]/g, "") // Remove Arabic characters
+        .replace(/[^\w\s-]/g, "") // Remove special characters
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .replace(/-+/g, "-") // Replace multiple hyphens with single
+        .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+}
+
 function calculateReadingTime(content) {
     const wordsPerMinute = 200;
     const words = content.trim().split(/\s+/).length;
@@ -1321,11 +1408,21 @@ async function registerRoutes(app2) {
     });
     app2.get("/api/posts/:id", async (req, res) => {
         try {
-            const post = await storage.getPostById(req.params.id);
+            const idOrSlug = req.params.id;
+            let post = null;
+            // Try to find by MongoDB ObjectId first
+            if (/^[a-f\d]{24}$/i.test(idOrSlug)) {
+                post = await storage.getPostById(idOrSlug);
+            }
+            // If not found by ID, try to find by slug
+            if (!post) {
+                post = await storage.getPostBySlug(idOrSlug);
+            }
             if (!post) {
                 return res.status(404).json({ error: "Post not found" });
             }
-            await storage.incrementPostViews(req.params.id);
+            // Increment views using the actual ID
+            await storage.incrementPostViews(post.id);
             const formattedPost = {
                 ...post,
                 date: formatDate(post.createdAt),
@@ -1341,10 +1438,13 @@ async function registerRoutes(app2) {
             const readingTime =
                 data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
+            // Generate slug from title if not provided
+            const slug = data.slug || slugify(data.title);
             const post = await storage.createPost({
                 ...data,
                 readingTime,
                 summary,
+                slug,
             });
             res.status(201).json(post);
         } catch (error) {
@@ -1600,9 +1700,33 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+    app2.get("/api/news/:id", async (req, res) => {
+        try {
+            const idOrSlug = req.params.id;
+            let news = null;
+            // Try to find by MongoDB ObjectId first
+            if (/^[a-f\d]{24}$/i.test(idOrSlug)) {
+                news = await storage.getNewsById(idOrSlug);
+            }
+            // If not found by ID, try to find by slug
+            if (!news) {
+                news = await storage.getNewsBySlug(idOrSlug);
+            }
+            if (!news) {
+                return res.status(404).json({ error: "News item not found" });
+            }
+            res.json(news);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app2.post("/api/news", requireAuth, async (req, res) => {
         try {
             const data = insertNewsSchema.parse(req.body);
+            // Generate slug from title if not provided
+            if (!data.slug && data.title) {
+                data.slug = slugify(data.title);
+            }
             const news = await storage.createNews(data);
             res.status(201).json(news);
         } catch (error) {

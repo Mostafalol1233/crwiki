@@ -136,7 +136,7 @@ export default function Category() {
                 <h2 className="text-2xl font-semibold">Events</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {allEvents.map((event: any) => (
-                    <Link key={event.id} href={event.event_name_slug ? `/event/${event.event_name_slug}` : `/events/${event.id}`} className="block">
+                    <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`} className="block">
                       <Card className="h-full hover-elevate transition-all">
                         {event.image && (
                           <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg bg-muted/30">

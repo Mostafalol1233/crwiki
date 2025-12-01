@@ -4,13 +4,13 @@ import fs from 'fs';
 import path from 'path';
 import multer from "multer";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import express from "express";
-import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema } from "@shared/mongodb-schema";
-import type { InsertSellerReview } from "@shared/mongodb-schema";
-import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth";
-import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers";
-import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
+import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema } from "../shared/mongodb-schema.js";
+import type { InsertSellerReview } from "../shared/mongodb-schema.js";
+import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
+import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
+import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper.js";
 import DOMPurify from 'isomorphic-dompurify';
 import type { ScrapedEvent } from "@shared/types";
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
@@ -520,6 +520,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(events);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/events/slug/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params as any;
+      let ev = await (storage as any).getEventBySlug?.(slug);
+      if (!ev) {
+        const normalized = String(slug || "").toLowerCase().replace(/[^a-z0-9 ]+/g, "").trim().replace(/\s+/g, "-");
+        if (normalized && normalized !== slug) {
+          ev = await (storage as any).getEventBySlug?.(normalized);
+        }
+      }
+      if (!ev) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      res.json(ev);
+    } catch (error: any) {
+      res.status(404).json({ error: "Event not found" });
     }
   });
 

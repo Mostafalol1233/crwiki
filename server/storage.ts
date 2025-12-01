@@ -1,11 +1,11 @@
 
-import { MongoDBStorage } from './mongodb-storage';
-import type { IStorage, NewsItem, Mercenary } from './mongodb-storage';
+import { MongoDBStorage } from './mongodb-storage.js';
+import type { IStorage, NewsItem, Mercenary } from './mongodb-storage.js';
 
 export type { IStorage, NewsItem, Mercenary } from './mongodb-storage';
 export { MongoDBStorage };
 
-import { MemoryStorage } from './memory-storage';
+import { MemoryStorage } from './memory-storage.js';
 
 let _storage: IStorage;
 

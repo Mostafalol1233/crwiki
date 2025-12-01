@@ -58,7 +58,7 @@ import {
   type InsertMode,
   type Rank,
   type InsertRank,
-} from "@shared/mongodb-schema";
+} from "../shared/mongodb-schema.js";
 import { connectMongoDB } from "./mongodb";
 
 export interface NewsItem {

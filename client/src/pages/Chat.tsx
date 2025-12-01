@@ -7,7 +7,7 @@ import { useLocation } from "wouter";
 
 function getWsUrl() {
   const api = import.meta.env.VITE_API_URL || "";
-  if (api) {
+  if (api && api.trim()) {
     try {
       const u = new URL(api);
       const proto = u.protocol === "https:" ? "wss:" : "ws:";
@@ -17,8 +17,13 @@ function getWsUrl() {
     }
   }
   // Use current window location for development
-  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${proto}//${window.location.host}/ws`;
+  try {
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host || "localhost:5000";
+    return `${proto}//${host}/ws`;
+  } catch {
+    return "ws://localhost:5000/ws";
+  }
 }
 
 function getApiUrl(path: string) {

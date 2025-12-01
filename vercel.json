@@ -1,26 +1,22 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/client"
-      }
-    }
-  ],
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "dist/client",
+  "env": {
+    "NODE_ENV": "production"
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://51.75.118.151:20032/api/$1"
+      "destination": "${VITE_API_URL}/api/$1"
     },
     {
       "source": "/assets/(.*)",
-      "destination": "http://51.75.118.151:20032/assets/$1"
+      "destination": "${VITE_API_URL}/assets/$1"
     },
     {
       "source": "/ws",
-      "destination": "http://51.75.118.151:20032/ws"
+      "destination": "${VITE_API_URL}/ws"
     },
     {
       "source": "/(.*)",

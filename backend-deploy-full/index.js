@@ -1833,12 +1833,14 @@ async function registerRoutes(app2) {
             const { slug } = req.params;
             const ev = await storage.getEventBySlug(slug);
             if (!ev) {
-                await storage.logUrlMatchFailure("event", slug);
+                try {
+                    await storage.logUrlMatchFailure("event", slug);
+                } catch {}
                 return res.status(404).json({ error: "Event not found" });
             }
-            res.json(ev);
+            return res.json(ev);
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            return res.status(404).json({ error: "Event not found" });
         }
     });
     app2.get("/api/events/:id/redirect", async (req, res) => {
@@ -1864,25 +1866,73 @@ async function registerRoutes(app2) {
     });
     app2.post("/api/events/bulk-create", requireAuth, requireContentCreator, async (req, res) => {
         try {
-            const { events } = req.body;
+            const { events, createAsNews } = req.body || {};
             if (!Array.isArray(events)) {
                 return res.status(400).json({ error: "Events array is required" });
             }
             const createdEvents = [];
-            for (const eventData of events) {
+            let newsCount = 0;
+            for (const raw of events) {
                 try {
-                    const data = insertEventSchema.parse(eventData);
+                    const payload = {
+                        title: String(raw.title || "Event"),
+                        titleAr: String(raw.titleAr || ""),
+                        description: String(raw.description || raw.content || ""),
+                        descriptionAr: String(raw.descriptionAr || ""),
+                        date: String(raw.date || new Date().toISOString().slice(0, 10)),
+                        type: String(raw.type || "upcoming"),
+                        image: String(raw.image || ""),
+                        seoTitle: String(raw.seoTitle || ""),
+                        seoDescription: String(raw.seoDescription || ""),
+                        seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
+                        canonicalUrl: String(raw.canonicalUrl || ""),
+                        ogImage: String(raw.ogImage || raw.image || ""),
+                        twitterImage: String(raw.twitterImage || raw.ogImage || raw.image || ""),
+                        schemaType: String(raw.schemaType || "Event"),
+                    };
+                    const data = insertEventSchema.parse(payload);
                     stripOrderingFields(data, req.user?.role || "");
                     const event = await storage.createEvent(data);
                     createdEvents.push(event);
+
+                    if (createAsNews === true) {
+                        const newsPayload = {
+                            title: data.title,
+                            titleAr: data.titleAr || "",
+                            dateRange: data.date,
+                            image: data.image || data.ogImage || data.twitterImage || "",
+                            category: String(raw.category || "Events"),
+                            content: String(raw.content || data.description || ""),
+                            contentAr: String(raw.contentAr || data.descriptionAr || ""),
+                            htmlContent: undefined,
+                            author: "Bimora Team",
+                            featured: false,
+                            seoTitle: data.seoTitle || "",
+                            seoDescription: data.seoDescription || "",
+                            seoKeywords: data.seoKeywords || [],
+                            canonicalUrl: data.canonicalUrl || "",
+                            ogImage: data.ogImage || "",
+                            twitterImage: data.twitterImage || "",
+                            schemaType: "NewsArticle",
+                        };
+                        try {
+                            const newsData = insertNewsSchema.parse(newsPayload);
+                            stripOrderingFields(newsData, req.user?.role || "");
+                            await storage.createNews(newsData);
+                            newsCount++;
+                        } catch (err2) {
+                            console.warn(`Failed to create news from event: ${err2.message}`);
+                        }
+                    }
                 } catch (err) {
                     console.warn(`Failed to create event: ${err.message}`);
                 }
             }
             res.status(201).json({
-                message: `Created ${createdEvents.length} events`,
+                message: `Created ${createdEvents.length} events` + (createAsNews ? ` and ${newsCount} news` : ""),
                 count: createdEvents.length,
-                events: createdEvents
+                newsCount,
+                events: createdEvents,
             });
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -2908,7 +2958,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                     const payload = {
                         title: ev.title || "Event",
                         titleAr: ev.titleAr || "",
-                        description: ev.description || "",
+                        description: ev.description || ev.content || "",
                         descriptionAr: ev.descriptionAr || "",
                         date: ev.date || new Date().toISOString().slice(0, 10),
                         type: ev.type || "upcoming",
@@ -2930,6 +2980,8 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                     if (!existing) {
                         const createdEvent = await storage.createEvent(payload);
                         created.push(createdEvent);
+                    } else if (!existing.description || String(existing.description).trim() === "") {
+                        await storage.updateEvent(String(existing._id || existing.id), { description: payload.description, descriptionAr: payload.descriptionAr || "" });
                     }
                 }
                 res.json({ events: created });

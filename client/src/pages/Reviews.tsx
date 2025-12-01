@@ -86,6 +86,17 @@ export default function Reviews() {
     }
   });
 
+  const { data: sellerDetails } = useQuery<Seller>({
+    queryKey: ["/api/sellers", sellerByName?.seller?.id],
+    enabled: !!match && !!sellerByName?.seller?.id,
+    queryFn: async () => {
+      const id = sellerByName?.seller?.id;
+      const res = await fetch(`/api/sellers/${id}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+  });
+
   const { data: verificationSettings } = useQuery<ReviewVerificationSettings>({
     queryKey: ["/api/public/settings/review-verification"],
   });
@@ -269,7 +280,9 @@ export default function Reviews() {
 
   const adminToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
   const jwtPayload = parseJwt(adminToken);
-  const isAdmin = jwtPayload && ['super_admin', 'admin', 'ticket_manager'].includes(jwtPayload.role);
+  const isAdmin = jwtPayload && ['super_admin', 'admin', 'seller_admin', 'ticket_manager'].includes(jwtPayload.role);
+  const [sellerImageEdit, setSellerImageEdit] = useState("");
+  const [sellerDescEdit, setSellerDescEdit] = useState("");
 
   return (
     <>
@@ -301,6 +314,63 @@ export default function Reviews() {
               {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
               <span className="text-sm">{(sellerByName.seller.averageRating || 0).toFixed(1)} ({sellerByName.seller.totalReviews || 0})</span>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <div className="w-full max-w-md h-48 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                  {sellerDetails?.images && sellerDetails.images.length > 0 ? (
+                    <img src={sellerDetails.images[0]} alt={`${sellerByName.seller.name} image`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No image yet</div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  {sellerDetails?.description || "No description yet"}
+                </p>
+              </div>
+            </div>
+
+            {isAdmin && sellerByName?.seller?.id && (
+              <div className="mt-6 border-t pt-4">
+                <h3 className="font-semibold mb-2">Seller Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="seller-image">Image URL</Label>
+                    <Input id="seller-image" value={sellerImageEdit} onChange={(e)=> setSellerImageEdit(e.target.value)} placeholder="https://..." />
+                  </div>
+                  <div>
+                    <Label htmlFor="seller-desc">Description</Label>
+                    <Textarea id="seller-desc" value={sellerDescEdit} onChange={(e)=> setSellerDescEdit(e.target.value)} rows={3} placeholder="Short description" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const payload: any = {};
+                        if (sellerImageEdit.trim()) payload.images = [sellerImageEdit.trim()];
+                        if (sellerDescEdit.trim()) payload.description = sellerDescEdit.trim();
+                        if (!payload.images && !payload.description) {
+                          toast({ title: "Nothing to update", variant: "destructive" });
+                          return;
+                        }
+                        await apiRequest(`/api/sellers/${sellerByName.seller.id}`, "PATCH", payload);
+                        queryClient.invalidateQueries({ queryKey: ["/api/sellers", sellerByName.seller.id] });
+                        toast({ title: "Seller updated" });
+                        setSellerImageEdit("");
+                        setSellerDescEdit("");
+                      } catch (err: any) {
+                        toast({ title: "Update failed", description: err?.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    Save Seller Details
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-4">
               <Label>Sort:</Label>
               <Button variant={sort === "newest" ? "default" : "outline"} size="sm" onClick={()=> setSort("newest")}>Newest</Button>

@@ -384,7 +384,8 @@ export default function Admin() {
   const [adminForm, setAdminForm] = useState({
     username: "",
     password: "",
-    role: "admin" as "admin" | "super_admin",
+    role: "admin" as "admin" | "seller_admin" | "super_admin",
+    allowedSellerIds: [] as string[],
   });
   const [adminPermissionsForm, setAdminPermissionsForm] = useState<Record<string, boolean>>({});
 
@@ -1136,6 +1137,7 @@ export default function Admin() {
       username: "",
       password: "",
       role: "admin",
+      allowedSellerIds: [],
     });
   };
 
@@ -1599,26 +1601,28 @@ export default function Admin() {
                       data-testid="input-post-title"
                     />
                     <div className="space-y-2">
-                      <div data-testid="input-post-content">
-                        <ReactQuill
-                          theme="snow"
-                          value={postForm.content}
-                          onChange={(value) =>
-                            setPostForm({ ...postForm, content: value })
-                          }
-                          modules={{
-                            toolbar: [
-                              [{ 'header': [1, 2, 3, false] }],
-                              ['bold', 'italic', 'underline', 'strike'],
-                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                              ['link', 'blockquote', 'code-block'],
-                              ['clean']
-                            ],
-                          }}
-                          placeholder="Write your content here..."
-                          style={{ minHeight: '200px' }}
-                        />
-                      </div>
+                          <div data-testid="input-post-content">
+                            <ReactQuill
+                              theme="snow"
+                              value={postForm.content}
+                              onChange={(value) =>
+                                setPostForm({ ...postForm, content: value })
+                              }
+                              modules={{
+                                toolbar: [
+                                  [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
+                                  ['bold', 'italic', 'underline', 'strike'],
+                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
+                                  ['link', 'blockquote', 'code-block'],
+                                  ['clean']
+                                ],
+                              }}
+                              placeholder="Write your content here..."
+                              style={{ minHeight: '200px' }}
+                            />
+                          </div>
                     </div>
                     <Textarea
                       placeholder="Summary (optional)"
@@ -1999,25 +2003,48 @@ export default function Admin() {
                           dir="rtl"
                           data-testid="input-event-title-ar"
                         />
-                        <Textarea
-                          placeholder="Description (English)"
-                          value={eventForm.description}
-                          onChange={(e) =>
-                            setEventForm({ ...eventForm, description: e.target.value })
-                          }
-                          rows={3}
-                          data-testid="input-event-description"
-                        />
-                        <Textarea
-                          placeholder="Description (Arabic) - الوصف بالعربية"
-                          value={eventForm.descriptionAr}
-                          onChange={(e) =>
-                            setEventForm({ ...eventForm, descriptionAr: e.target.value })
-                          }
-                          rows={3}
-                          dir="rtl"
-                          data-testid="input-event-description-ar"
-                        />
+                        <div data-testid="input-event-description">
+                          <ReactQuill
+                            theme="snow"
+                            value={eventForm.description}
+                            onChange={(value) =>
+                              setEventForm({ ...eventForm, description: value })
+                            }
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['link'],
+                                ['clean']
+                              ],
+                            }}
+                            style={{ minHeight: '150px' }}
+                          />
+                        </div>
+                        <div data-testid="input-event-description-ar">
+                          <ReactQuill
+                            theme="snow"
+                            value={eventForm.descriptionAr}
+                            onChange={(value) =>
+                              setEventForm({ ...eventForm, descriptionAr: value })
+                            }
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'color': [] }, { 'background': [] }],
+                                ['link'],
+                                ['clean']
+                              ],
+                            }}
+                            style={{ minHeight: '150px', direction: 'rtl' }}
+                          />
+                        </div>
                         <Input
                           placeholder="Date"
                           value={eventForm.date}
@@ -2330,8 +2357,10 @@ export default function Admin() {
                               modules={{
                                 toolbar: [
                                   [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
                                   ['link'],
                                   ['clean']
                                 ],
@@ -2368,8 +2397,10 @@ export default function Admin() {
                               modules={{
                                 toolbar: [
                                   [{ 'header': [1, 2, 3, false] }],
+                                  [{ 'size': ['small', false, 'large', 'huge'] }],
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  [{ 'color': [] }, { 'background': [] }],
                                   ['link'],
                                   ['clean']
                                 ],
@@ -3878,15 +3909,41 @@ export default function Admin() {
                         onChange={(e) =>
                           setAdminForm({
                             ...adminForm,
-                            role: e.target.value as "admin" | "super_admin",
+                            role: e.target.value as "admin" | "seller_admin" | "super_admin",
                           })
                         }
                         className="w-full h-9 px-3 rounded-md border border-input bg-background"
                         data-testid="select-admin-role"
                       >
                         <option value="admin">Admin</option>
+                        <option value="seller_admin">Seller Admin</option>
                         <option value="super_admin">Super Admin</option>
                       </select>
+                      {adminForm.role === "seller_admin" && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Allowed Sellers</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-auto border rounded-md p-2">
+                            {(sellers || []).map((sel: any) => (
+                              <label key={sel.id} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={adminForm.allowedSellerIds.includes(sel.id)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setAdminForm((f) => ({
+                                      ...f,
+                                      allowedSellerIds: checked
+                                        ? [...f.allowedSellerIds, sel.id]
+                                        : f.allowedSellerIds.filter((id) => id !== sel.id),
+                                    }));
+                                  }}
+                                />
+                                <span>{sel.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="pt-2">
                         <p className="text-sm font-medium mb-2">Permissions</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3908,10 +3965,17 @@ export default function Admin() {
                             const updates: any = { role: adminForm.role };
                             if (adminForm.username) updates.username = adminForm.username;
                             if (adminForm.password) updates.password = adminForm.password;
+                            if (adminForm.role === "seller_admin") {
+                              updates.allowedSellerIds = adminForm.allowedSellerIds || [];
+                            }
                             // include permissions when updating
                             updateAdminMutation.mutate({ id: editingAdmin.id, data: { ...updates, permissions: adminPermissionsForm } });
                           } else {
-                            createAdminMutation.mutate({ ...adminForm, permissions: adminPermissionsForm });
+                            const payload: any = { ...adminForm, permissions: adminPermissionsForm };
+                            if (adminForm.role === "seller_admin") {
+                              payload.allowedSellerIds = adminForm.allowedSellerIds || [];
+                            }
+                            createAdminMutation.mutate(payload);
                           }
                         }}
                         className="w-full"
@@ -3954,11 +4018,12 @@ export default function Admin() {
                                 size="icon"
                                 onClick={() => {
                                   setEditingAdmin(admin);
-                                  setAdminForm({
-                                    username: admin.username,
-                                    password: "",
-                                    role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
-                                  });
+                                setAdminForm({
+                                  username: admin.username,
+                                  password: "",
+                                  role: Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin"),
+                                  allowedSellerIds: Array.isArray(admin.allowedSellerIds) ? admin.allowedSellerIds : [],
+                                });
                                     // load existing permissions for this admin (if any)
                                     (async () => {
                                       try {

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowLeft, Languages } from "lucide-react";
 import { useState, useEffect } from "react";
-import createDOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -84,8 +84,7 @@ export default function EventDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Error Loading Event</h2>
-          <p className="text-muted-foreground mb-4">Sorry, there was a problem loading this event.</p>
+          <h2 className="text-2xl font-semibold mb-4">{t("eventNotFound")}</h2>
           <Button onClick={() => setLocation("/")} data-testid="button-back-home">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("backToHome")}
@@ -175,6 +174,7 @@ export default function EventDetail() {
                 src={event.image}
                 alt={title}
                 className="w-full h-auto max-h-[550px] object-contain"
+                onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
                 data-testid="img-event"
               />
             </div>
@@ -220,7 +220,15 @@ export default function EventDetail() {
                 <div 
                   className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
                   dir={isRTL ? "rtl" : undefined}
-                  dangerouslySetInnerHTML={{ __html: (createDOMPurify as any)(window as any).sanitize(description) }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description, {
+                    ALLOWED_TAGS: [
+                      'p','br','strong','b','em','i','u','strike','s','del','h1','h2','h3','h4','h5','h6',
+                      'ul','ol','li','a','img','blockquote','pre','code','table','thead','tbody','tr','th','td','div','span','hr','small'
+                    ],
+                    ALLOWED_ATTR: ['href','src','alt','title','style','class','width','height','target','rel'],
+                    ALLOW_DATA_ATTR: false,
+                    KEEP_CONTENT: true,
+                  }) }}
                   data-testid="text-description"
                 />
               )}

@@ -62,6 +62,7 @@ export default function Reviews() {
   const [verifiedCode, setVerifiedCode] = useState("");
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImageDescription, setPreviewImageDescription] = useState<string>("");
 
   const [match, params] = useRoute("/reviews/seller/:sellerName");
   const sellerNameParam = match ? params?.sellerName as string : "";
@@ -320,7 +321,14 @@ export default function Reviews() {
               <div>
                 <div className="w-full max-w-md h-48 rounded-md overflow-hidden bg-muted flex items-center justify-center">
                   {sellerDetails?.images && sellerDetails.images.length > 0 ? (
-                    <img src={sellerDetails.images[0]} alt={`${sellerByName.seller.name} image`} className="w-full h-full object-cover" />
+                    <img
+                      src={sellerDetails.images[0]}
+                      alt={`${sellerByName.seller.name} image`}
+                      className="w-full h-full object-contain cursor-pointer"
+                      loading="lazy"
+                      onClick={() => { setPreviewImageUrl(sellerDetails.images[0]); setPreviewImageDescription(sellerDetails?.description || ""); setIsImagePreviewOpen(true); }}
+                      data-testid={`img-seller-hero-${sellerByName.seller.id}`}
+                    />
                   ) : (
                     <div className="text-sm text-muted-foreground">No image yet</div>
                   )}
@@ -465,7 +473,8 @@ export default function Reviews() {
                           src={image}
                           alt={`${seller.name} ${idx + 1}`}
                           className="max-h-36 max-w-36 w-full object-contain rounded-md bg-muted/30 cursor-pointer"
-                          onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
+                          loading="lazy"
+                          onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(seller.description || ""); setIsImagePreviewOpen(true); }}
                           data-testid={`img-seller-${seller.id}-${idx}`}
                         />
                       </div>
@@ -628,7 +637,14 @@ export default function Reviews() {
       >
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
           {previewImageUrl && (
-            <img src={previewImageUrl} alt="Preview" className="w-full h-auto object-contain rounded-md" />
+            <>
+              <img src={previewImageUrl} alt="Preview" className="w-full h-auto object-contain rounded-md" />
+              {previewImageDescription && (
+                <p className="text-sm text-muted-foreground mt-3" data-testid="text-image-description">
+                  {previewImageDescription}
+                </p>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>

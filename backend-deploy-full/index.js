@@ -272,6 +272,19 @@ var ChatMessageSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 var ChatMessageModel = mongoose.model("ChatMessage", ChatMessageSchema);
+var ChatUserSchema = new Schema({
+    userName: { type: String, required: true },
+    phone: { type: String, default: "" },
+    verified: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+});
+var ChatUserModel = mongoose.model("ChatUser", ChatUserSchema);
+var ChatSettingsSchema = new Schema({
+    name: { type: String, default: "chat" },
+    registrationEnabled: { type: Boolean, default: false },
+    updatedAt: { type: Date, default: Date.now },
+});
+var ChatSettingsModel = mongoose.model("ChatSettings", ChatSettingsSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
@@ -1864,7 +1877,14 @@ async function registerRoutes(app2) {
         try {
             const data = insertEventSchema.parse(req.body);
             stripOrderingFields(data, req.user?.role || "");
-            const event = await storage.createEvent(data);
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const slug = String(data.title || "");
+            const eventSlug = slugifyEventName(slug);
+            const canonical = `${base}/events/${eventSlug}`;
+            const withSeo = { ...data };
+            (withSeo).event_name_slug = withSeo.event_name_slug || eventSlug;
+            (withSeo).canonicalUrl = withSeo.canonicalUrl || canonical;
+            const event = await storage.createEvent(withSeo);
             res.status(201).json(event);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -1898,7 +1918,14 @@ async function registerRoutes(app2) {
                     };
                     const data = insertEventSchema.parse(payload);
                     stripOrderingFields(data, req.user?.role || "");
-                    const event = await storage.createEvent(data);
+                    const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+                    const slug = String(data.title || "");
+                    const eventSlug = slugifyEventName(slug);
+                    const canonical = `${base}/events/${eventSlug}`;
+                    const withSeo = { ...data };
+                    (withSeo).event_name_slug = withSeo.event_name_slug || eventSlug;
+                    (withSeo).canonicalUrl = withSeo.canonicalUrl || canonical;
+                    const event = await storage.createEvent(withSeo);
                     createdEvents.push(event);
 
                     if (createAsNews === true) {
@@ -3447,6 +3474,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 ...data,
                 password: hashed,
             });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("create_admin", String(created.id || created._id || username), adminId, { username });
+            } catch {}
             res.status(201).json(created);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -3465,6 +3496,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
             const updated = await storage.updateAdmin(id, updates);
             if (!updated) return res.status(404).json({ error: "Admin not found" });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("update_admin", id, adminId, { updates: Object.keys(updates) });
+            } catch {}
             res.json(updated);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -3474,6 +3509,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         try {
             const ok = await storage.deleteAdmin(req.params.id);
             if (!ok) return res.status(404).json({ error: "Admin not found" });
+            try {
+                const adminId = req.user?.id || "";
+                await storage.auditAdminAction("delete_admin", req.params.id, adminId, {});
+            } catch {}
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -3563,7 +3602,8 @@ Sitemap: https://crossfire.wiki/sitemap.xml
     // Chat Admin Routes
     app2.get("/api/admin/chat/users", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
-            res.json([]);
+            const users = await ChatUserModel.find().sort({ createdAt: -1 }).lean();
+            res.json(users.map(u => ({ id: String(u._id), userName: u.userName, phone: u.phone || "", verified: !!u.verified, createdAt: u.createdAt })));
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3571,13 +3611,13 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 
     app2.get("/api/public/settings/review-verification", async (_req, res) => {
         try {
-            const enabled = false;
+            const settings = await storage.getSiteSettings();
             res.json({
-                reviewVerificationEnabled: enabled,
-                reviewVerificationVideoUrl: "",
-                reviewVerificationTimecode: "",
-                reviewVerificationPrompt: enabled ? "Enter the secret word from the video." : "",
-                reviewVerificationYouTubeChannelUrl: "",
+                reviewVerificationEnabled: !!settings.reviewVerificationEnabled,
+                reviewVerificationVideoUrl: settings.reviewVerificationVideoUrl || "",
+                reviewVerificationTimecode: settings.reviewVerificationTimecode || "",
+                reviewVerificationPrompt: settings.reviewVerificationPrompt || "",
+                reviewVerificationYouTubeChannelUrl: settings.reviewVerificationYouTubeChannelUrl || "",
             });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -3586,35 +3626,63 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 
     app2.post("/api/admin/chat/registration", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const { enabled } = req.body;
-            res.json({ enabled, message: enabled ? "Chat registration opened" : "Chat registration closed" });
+            const { enabled } = req.body || {};
+            const updated = await ChatSettingsModel.findOneAndUpdate(
+                { name: "chat" },
+                { registrationEnabled: !!enabled, updatedAt: new Date() },
+                { upsert: true, new: true }
+            ).lean();
+            res.json({ enabled: !!updated.registrationEnabled, message: updated.registrationEnabled ? "Chat registration opened" : "Chat registration closed" });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
     });
 
     app2.post("/api/admin/chat/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         try {
             const { id } = req.params;
-            res.json({ id, verified: true });
+            const upd = await ChatUserModel.findByIdAndUpdate(id, { verified: true }, { new: true, session }).lean();
+            if (!upd) {
+                await session.abortTransaction();
+                return res.status(404).json({ error: "User not found" });
+            }
+            await session.commitTransaction();
+            res.json({ id: String(upd._id), verified: !!upd.verified });
         } catch (error) {
+            await session.abortTransaction();
             res.status(500).json({ error: error.message });
+        } finally {
+            session.endSession();
         }
     });
 
     app2.delete("/api/admin/chat/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         try {
             const { id } = req.params;
-            res.json({ success: true, message: "User removed" });
+            const del = await ChatUserModel.findByIdAndDelete(id, { session }).lean();
+            if (!del) {
+                await session.abortTransaction();
+                return res.status(404).json({ error: "User not found" });
+            }
+            await session.commitTransaction();
+            res.json({ success: true });
         } catch (error) {
+            await session.abortTransaction();
             res.status(500).json({ error: error.message });
+        } finally {
+            session.endSession();
         }
     });
 
     // Site Settings Routes
     app2.get("/api/settings/site", requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
-            res.json({ siteTitle: "CrossFire Wiki", theme: "dark" });
+            const s = await storage.getSiteSettings();
+            res.json(s);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3622,8 +3690,8 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 
     app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const { siteTitle, theme } = req.body;
-            res.json({ siteTitle, theme, message: "Settings updated" });
+            const updated = await storage.updateSiteSettings(req.body || {});
+            res.json(updated);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

@@ -43,37 +43,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-const __maintenanceEnabled = (process.env.MAINTENANCE_MODE ?? '1') === '1';
-if (__maintenanceEnabled) {
-  app.use((_req: Request, res: Response) => {
-    const html = [
-      '<!doctype html>',
-      '<html lang="ar">',
-      '<head>',
-      '<meta charset="utf-8" />',
-      '<meta name="viewport" content="width=device-width, initial-scale=1" />',
-      '<title>Site Under Maintenance | الموقع قيد التحديث</title>',
-      '<style>html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;background:#0b0f1a;color:#fff;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif} .card{max-width:720px;width:90%;padding:24px;border-radius:12px;background:#131a2a;border:1px solid #2a3757;box-shadow:0 10px 30px rgba(0,0,0,0.35)} h1{margin:0 0 8px;font-size:24px} p{margin:8px 0 0;line-height:1.6;font-size:16px;color:#cbd5e1} .sep{height:1px;background:#22304d;margin:16px 0} .en{direction:ltr} .ar{direction:rtl}</style>',
-      '</head>',
-      '<body>',
-      '<div class="card">',
-      '<div class="en">',
-      '<h1>Site Under Maintenance</h1>',
-      '<p>We are performing scheduled updates. The site will be back shortly. Thank you for your patience.</p>',
-      '</div>',
-      '<div class="sep"></div>',
-      '<div class="ar">',
-      '<h1>الموقع قيد التحديث</h1>',
-      '<p>نقوم بإجراء تحديثات مجدولة. سيعود الموقع للعمل قريبًا. شكرًا على صبركم.</p>',
-      '</div>',
-      '</div>',
-      '</body>',
-      '</html>'
-    ].join('');
-    res.status(503).type('html').send(html);
-  });
-}
-
 // Canonical domain and HTTPS enforcement (production only)
 app.use((req: Request, res: Response, next: NextFunction) => {
   try {

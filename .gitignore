@@ -27,17 +27,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# IDE
+# IDE (but keep Replit configs)
 .idea/
-.cursor/
-.idx/
 .vscode/
 
-# OS
-.local/
-.cache/
-
-# Project specific
+# Project specific backend
 backend-deploy-full/
 backend/
 server/

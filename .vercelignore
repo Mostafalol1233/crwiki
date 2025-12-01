@@ -13,6 +13,5 @@ coverage/
 .local/
 .cache/
 merc-mp3/
-public/
 *.md
 !client/src/**

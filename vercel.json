@@ -24,26 +24,12 @@
       ]
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "http://51.75.118.151:20032/api/$1"
-    },
-    {
-      "source": "/favicon.png",
-      "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png"
-    },
-    {
-      "source": "/favicon.ico",
-      "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png"
-    },
-    {
-      "source": "/ws",
-      "destination": "http://51.75.118.151:20032/ws"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/api/(.*)", "dest": "http://51.75.118.151:20032/api/$1" },
+    { "src": "/ws", "dest": "http://51.75.118.151:20032/ws" },
+    { "src": "/favicon.png", "dest": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
+    { "src": "/favicon.ico", "dest": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

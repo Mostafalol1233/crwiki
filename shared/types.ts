@@ -20,6 +20,7 @@ export interface Event {
 
 export interface NewsItem {
   id: string;
+  slug?: string;
   title: string;
   titleAr?: string;
   dateRange: string;
@@ -28,7 +29,9 @@ export interface NewsItem {
   category: string;
   content: string;
   contentAr?: string;
+  htmlContent?: string;
   author: string;
+  previewOnHome?: boolean;
   createdAt?: Date;
 }
 

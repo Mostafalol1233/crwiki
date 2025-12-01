@@ -16,6 +16,7 @@ export interface IUser extends Document {
 
 export interface IPost extends Document {
   title: string;
+  slug?: string;
   content: string;
   summary: string;
   image: string;
@@ -68,6 +69,7 @@ export interface IEvent extends Document {
 
 export interface INews extends Document {
   title: string;
+  slug?: string;
   titleAr: string;
   dateRange: string;
   image: string;
@@ -243,6 +245,7 @@ const UserSchema = new Schema<IUser>({
 
 const PostSchema = new Schema<IPost>({
   title: { type: String, required: true },
+  slug: { type: String, default: "", index: true },
   content: { type: String, required: true },
   summary: { type: String, required: true },
   image: { type: String, required: true },
@@ -295,6 +298,7 @@ const EventSchema = new Schema<IEvent>({
 
 const NewsSchema = new Schema<INews>({
   title: { type: String, required: true },
+  slug: { type: String, default: "", index: true },
   titleAr: { type: String, default: '' },
   dateRange: { type: String, required: true },
   image: { type: String, required: true },

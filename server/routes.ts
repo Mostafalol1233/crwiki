@@ -395,13 +395,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/posts/:id", async (req, res) => {
     try {
-      const post = await storage.getPostById(req.params.id);
-      
+      const idOrSlug = req.params.id;
+      let post = null;
+      // Try to find by MongoDB ObjectId first
+      if (/^[a-f\d]{24}$/i.test(idOrSlug)) {
+        post = await storage.getPostById(idOrSlug);
+      }
+      // If not found by ID, try to find by slug
+      if (!post) {
+        post = await storage.getPostBySlug(idOrSlug);
+      }
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }
 
-      await storage.incrementPostViews(req.params.id);
+      await storage.incrementPostViews(post.id);
 
       const formattedPost = {
         ...post,
@@ -420,12 +428,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const readingTime = data.readingTime || calculateReadingTime(data.content);
       const summary = data.summary || generateSummary(data.content);
+      // Generate slug from title
+      const slugifyText = (text: string): string => {
+        if (!text) return "";
+        return text
+          .toString()
+          .toLowerCase()
+          .trim()
+          .replace(/[\u0600-\u06FF]/g, "")
+          .replace(/[^\w\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      };
+      const slug = (data as any).slug || slugifyText(data.title);
       
       const post = await storage.createPost({
         ...data,
         readingTime,
         summary,
-      });
+        slug,
+      } as any);
 
       res.status(201).json(post);
     } catch (error: any) {
@@ -1373,10 +1396,45 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
+  // Slugify helper function for readable URLs
+  const slugify = (text: string): string => {
+    if (!text) return "";
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/[\u0600-\u06FF]/g, "") // Remove Arabic characters
+      .replace(/[^\w\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single
+      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+  };
+
   // News routes
   app.get("/api/news", async (req, res) => {
     try {
       const news = await storage.getAllNews();
+      res.json(news);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/news/:id", async (req, res) => {
+    try {
+      const idOrSlug = req.params.id;
+      let news = null;
+      // Try to find by MongoDB ObjectId first
+      if (/^[a-f\d]{24}$/i.test(idOrSlug)) {
+        news = await storage.getNewsById(idOrSlug);
+      }
+      // If not found by ID, try to find by slug
+      if (!news) {
+        news = await storage.getNewsBySlug(idOrSlug);
+      }
+      if (!news) {
+        return res.status(404).json({ error: "News item not found" });
+      }
       res.json(news);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1391,6 +1449,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       }
       if (data.contentAr) {
         data.contentAr = sanitizeHTML(data.contentAr);
+      }
+      // Generate slug from title if not provided
+      if (!(data as any).slug && data.title) {
+        (data as any).slug = slugify(data.title);
       }
       const news = await storage.createNews(data);
       res.status(201).json(news);

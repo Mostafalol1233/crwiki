@@ -109,6 +109,9 @@ export interface IStorage {
   deleteEvent(id: string): Promise<boolean>;
 
   getAllNews(): Promise<NewsItem[]>;
+  getNewsById(id: string): Promise<NewsItem | undefined>;
+  getNewsBySlug(slug: string): Promise<NewsItem | undefined>;
+  getPostBySlug(slug: string): Promise<Post | undefined>;
   createNews(news: Partial<NewsItem>): Promise<NewsItem>;
   updateNews(id: string, news: Partial<NewsItem>): Promise<NewsItem | undefined>;
   deleteNews(id: string): Promise<boolean>;
@@ -479,6 +482,63 @@ export class MongoDBStorage implements IStorage {
   async deleteNews(id: string): Promise<boolean> {
     const result = await NewsModel.findByIdAndDelete(id);
     return !!result;
+  }
+
+  async getNewsById(id: string): Promise<NewsItem | undefined> {
+    const news = await NewsModel.findById(id).lean();
+    if (!news) return undefined;
+    return {
+      id: String(news._id),
+      slug: (news as any).slug || "",
+      title: news.title,
+      titleAr: news.titleAr,
+      dateRange: news.dateRange,
+      image: news.image,
+      category: news.category,
+      content: news.content,
+      contentAr: news.contentAr,
+      htmlContent: news.htmlContent,
+      author: news.author,
+      featured: news.featured,
+      previewOnHome: (news as any).previewOnHome,
+      createdAt: news.createdAt,
+    };
+  }
+
+  async getNewsBySlug(slug: string): Promise<NewsItem | undefined> {
+    const news = await NewsModel.findOne({ slug }).lean();
+    if (!news) return undefined;
+    return {
+      id: String(news._id),
+      slug: (news as any).slug || "",
+      title: news.title,
+      titleAr: news.titleAr,
+      dateRange: news.dateRange,
+      image: news.image,
+      category: news.category,
+      content: news.content,
+      contentAr: news.contentAr,
+      htmlContent: news.htmlContent,
+      author: news.author,
+      featured: news.featured,
+      previewOnHome: (news as any).previewOnHome,
+      createdAt: news.createdAt,
+    };
+  }
+
+  async getPostBySlug(slug: string): Promise<Post | undefined> {
+    const post = await PostModel.findOne({ slug }).lean();
+    if (!post) return undefined;
+    return {
+      ...post,
+      id: String(post._id),
+      slug: (post as any).slug || "",
+      tags: post.tags || [],
+      views: post.views || 0,
+      category: post.category || "",
+      author: post.author || "Unknown",
+      previewOnHome: (post as any).previewOnHome,
+    } as any;
   }
 
   // Legacy in-memory mercenary methods removed in favor of MongoDB-backed implementations below

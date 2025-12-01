@@ -2063,6 +2063,14 @@ export default function Admin() {
                           }
                           data-testid="input-event-image"
                         />
+                        <Input
+                          placeholder="Custom URL Slug (leave empty to auto-generate)"
+                          value={eventForm.event_name_slug}
+                          onChange={(e) =>
+                            setEventForm({ ...eventForm, event_name_slug: e.target.value })
+                          }
+                          data-testid="input-event-slug"
+                        />
                         <select
                           value={eventForm.type}
                           onChange={(e) =>
@@ -2198,6 +2206,7 @@ export default function Admin() {
                                   date: event.date,
                                   type: event.type,
                                   image: event.image || "",
+                                  event_name_slug: event.event_name_slug || "",
                                   seoTitle: event.seoTitle || "",
                                   seoDescription: event.seoDescription || "",
                                   seoKeywords: event.seoKeywords?.join(", ") || "",
@@ -3794,6 +3803,7 @@ export default function Admin() {
                               date: event.date,
                               type: (event.type || "upcoming") as "upcoming" | "trending",
                               image: event.image || "",
+                              event_name_slug: event.event_name_slug || "",
                               seoTitle: event.seoTitle || "",
                               seoDescription: event.seoDescription || "",
                               seoKeywords: event.seoKeywords || "",

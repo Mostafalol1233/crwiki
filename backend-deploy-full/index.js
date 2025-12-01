@@ -85,8 +85,10 @@ var NewsSchema = new Schema({
   twitterImage: { type: String, default: "" },
   schemaType: { type: String, default: "NewsArticle" },
   order: { type: Number, default: 0 },
+  news_slug: { type: String, default: "", unique: true },
   createdAt: { type: Date, default: Date.now },
 });
+NewsSchema.index({ news_slug: 1 }, { unique: true });
 var TutorialSchema = new Schema({
     title: { type: String, required: true },
     youtubeUrl: { type: String, required: true },
@@ -711,7 +713,7 @@ var MongoDBStorage = class {
         const news = await NewsModel.find().sort({ order: -1, createdAt: -1 });
         return news.map((item) => ({
             id: String(item._id),
-            slug: item.slug || "",
+            news_slug: item.news_slug || "",
             title: item.title,
             titleAr: item.titleAr,
             dateRange: item.dateRange,
@@ -729,18 +731,21 @@ var MongoDBStorage = class {
     async createNews(news) {
         const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
         const payload = { ...news };
+        const src = payload.title || payload.seoTitle || "";
+        payload.news_slug = slugifyEventName(src);
+        await this.logUrlGeneration("news", src, payload.news_slug, !!payload.news_slug);
         if (!payload.seoTitle) payload.seoTitle = payload.title || "";
         const plainDescNews = String(payload.content || "").replace(/<[^>]*>/g, "");
         if (!payload.seoDescription) payload.seoDescription = plainDescNews.substring(0, 155);
         if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
-        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/news/${slugifyEventName(payload.title || "")}`;
+        if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/news/${payload.news_slug}`;
         if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
         if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
         if (!payload.schemaType) payload.schemaType = "NewsArticle";
         const newNews = await NewsModel.create(payload);
         return {
             id: String(newNews._id),
-            slug: newNews.slug || "",
+            news_slug: newNews.news_slug || "",
             title: newNews.title,
             titleAr: newNews.titleAr,
             dateRange: newNews.dateRange,
@@ -755,13 +760,21 @@ var MongoDBStorage = class {
         };
     }
     async updateNews(id, news) {
-        const updated = await NewsModel.findByIdAndUpdate(id, news, {
+        const updates = { ...news };
+        if (updates.title) {
+            const src = updates.title || updates.seoTitle || "";
+            updates.news_slug = slugifyEventName(src);
+            const baseUrl = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            updates.canonicalUrl = `${baseUrl}/news/${updates.news_slug}`;
+            await this.logUrlGeneration("news", src, updates.news_slug, !!updates.news_slug);
+        }
+        const updated = await NewsModel.findByIdAndUpdate(id, updates, {
             new: true,
         });
         if (!updated) return void 0;
         return {
             id: String(updated._id),
-            slug: updated.slug || "",
+            news_slug: updated.news_slug || "",
             title: updated.title,
             titleAr: updated.titleAr,
             dateRange: updated.dateRange,
@@ -784,7 +797,7 @@ var MongoDBStorage = class {
         if (!news) return void 0;
         return {
             id: String(news._id),
-            slug: news.slug || "",
+            news_slug: news.news_slug || "",
             title: news.title,
             titleAr: news.titleAr,
             dateRange: news.dateRange,
@@ -806,11 +819,11 @@ var MongoDBStorage = class {
         };
     }
     async getNewsBySlug(slug) {
-        const news = await NewsModel.findOne({ slug }).lean();
+        const news = await NewsModel.findOne({ news_slug: slug }).lean();
         if (!news) return void 0;
         return {
             id: String(news._id),
-            slug: news.slug || "",
+            news_slug: news.news_slug || "",
             title: news.title,
             titleAr: news.titleAr,
             dateRange: news.dateRange,
@@ -829,19 +842,6 @@ var MongoDBStorage = class {
             twitterImage: news.twitterImage,
             schemaType: news.schemaType,
             createdAt: news.createdAt,
-        };
-    }
-    async getPostBySlug(slug) {
-        const post = await PostModel.findOne({ slug }).lean();
-        if (!post) return void 0;
-        return {
-            ...post,
-            id: String(post._id),
-            slug: post.slug || "",
-            tags: post.tags || [],
-            views: post.views || 0,
-            category: post.category || "",
-            author: post.author || "Unknown",
         };
     }
     async getAllMercenaries() {
@@ -2235,6 +2235,58 @@ async function registerRoutes(app2) {
             res.status(201).json(news);
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+    app2.get("/api/news/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            let news = await storage.getNewsBySlug(slug);
+            if (!news) {
+                const alt = slugifyEventName(String(slug).replace(/-/g, " "));
+                if (alt && alt !== slug) {
+                    news = await storage.getNewsBySlug(alt);
+                }
+            }
+            if (!news) {
+                try {
+                    const byCanonical = await NewsModel.findOne({ canonicalUrl: { $regex: new RegExp(`/news/${slug}$`, "i") } }).lean();
+                    if (byCanonical) {
+                        news = { ...byCanonical, id: String(byCanonical._id), news_slug: byCanonical.news_slug || "" };
+                    }
+                } catch {}
+            }
+            if (!news) {
+                try {
+                    const candidates = await NewsModel.find().select("title").lean();
+                    for (const c of candidates) {
+                        if (slugifyEventName(c.title || "") === slug) {
+                            const found = await NewsModel.findById(c._id).lean();
+                            if (found) {
+                                news = { ...found, id: String(found._id), news_slug: found.news_slug || "" };
+                                break;
+                            }
+                        }
+                    }
+                } catch {}
+            }
+            if (!news) {
+                try { await storage.logUrlMatchFailure("news", slug); } catch {}
+                return res.status(404).json({ error: "News not found" });
+            }
+            return res.json(news);
+        } catch (error) {
+            return res.status(404).json({ error: "News not found" });
+        }
+    });
+    app2.get("/api/news/:id", async (req, res) => {
+        try {
+            const news = await storage.getNewsById(req.params.id);
+            if (!news) {
+                return res.status(404).json({ error: "News not found" });
+            }
+            res.json(news);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
     app2.patch("/api/news/:id", requireAuth, requireAdminOnly, async (req, res) => {

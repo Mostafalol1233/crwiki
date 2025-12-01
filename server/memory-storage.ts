@@ -232,6 +232,9 @@ export class MemoryStorage implements IStorage {
   async getEventById(id: string): Promise<Event | undefined> {
     return this.events.find((e) => e.id === id);
   }
+  async getEventBySlug(slug: string): Promise<Event | undefined> {
+    return this.events.find((e: any) => (e as any).event_name_slug === slug);
+  }
   async createEvent(event: InsertEvent): Promise<Event> {
     const e: any = { ...event, id: uuidv4(), createdAt: new Date() };
     this.events.unshift(e);

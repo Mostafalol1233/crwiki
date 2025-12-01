@@ -140,6 +140,7 @@ export interface IStorage {
   deleteAdmin(id: string): Promise<boolean>;
 
   getEventById(id: string): Promise<Event | undefined>;
+  getEventBySlug(slug: string): Promise<Event | undefined>;
   updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
 
   getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
@@ -396,7 +397,7 @@ export class MongoDBStorage implements IStorage {
   }
 
   async getAllEvents(): Promise<Event[]> {
-    const events = await EventModel.find().lean();
+    const events = await EventModel.find().sort({ order: 1, createdAt: -1 }).lean();
     return events.map(event => ({
       ...event,
       id: String(event._id),
@@ -625,6 +626,15 @@ export class MongoDBStorage implements IStorage {
 
   async getEventById(id: string): Promise<Event | undefined> {
     const event = await EventModel.findById(id).lean();
+    if (!event) return undefined;
+    return {
+      ...event,
+      id: String(event._id),
+    } as any;
+  }
+
+  async getEventBySlug(slug: string): Promise<Event | undefined> {
+    const event = await EventModel.findOne({ event_name_slug: slug }).lean();
     if (!event) return undefined;
     return {
       ...event,

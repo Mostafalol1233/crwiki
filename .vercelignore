@@ -1,5 +1,6 @@
 node_modules/
 backend-deploy-full/
+backend/
 server/
 .env
 .env.local
@@ -7,3 +8,11 @@ server/
 dist/server
 coverage/
 .git/
+.cursor/
+.idx/
+.local/
+.cache/
+merc-mp3/
+public/
+src/
+*.md

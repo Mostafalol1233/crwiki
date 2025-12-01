@@ -1,30 +1,47 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+dist/server
+
+# Misc
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+*.pem
 
-# Replit-specific files (do not push to GitHub)
-replit.md
-.replit
-.replit.nix
-.config/
-.upm/
-.cache/
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment files
+# Local env files
 .env
 .env.local
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Logs
-*.log
-/tmp/
-
-# Editor directories
-.vscode/
+# IDE
 .idea/
- 
-# Backend files - keep server code tracked on GitHub
-index (4).js
+.cursor/
+.idx/
+.vscode/
+
+# OS
+.local/
+.cache/
+
+# Project specific
+backend-deploy-full/
+backend/
+server/
+merc-mp3/
+public/
+src/
+*.mp3

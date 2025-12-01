@@ -1,0 +1,9 @@
+node_modules/
+backend-deploy-full/
+server/
+.env
+.env.local
+.env.*.local
+dist/server
+coverage/
+.git/

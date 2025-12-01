@@ -140,7 +140,7 @@ export default function Article() {
         ogDescription={finalArticle.seoDescription || finalArticle.summary || ""}
         ogType="article"
         ogUrl={articleUrl}
-        schemaType={article.schemaType || "Article"}
+        schemaType={finalArticle.schemaType || "Article"}
         schemaData={{
           headline: finalArticle.title,
           description: finalArticle.summary || "",

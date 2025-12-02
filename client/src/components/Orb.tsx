@@ -179,6 +179,9 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
     const gl = renderer.gl as WebGLRenderingContext;
     gl.clearColor(0, 0, 0, 0);
     container.appendChild(gl.canvas);
+    (gl.canvas as any).style.position = "absolute";
+    (gl.canvas as any).style.inset = "0";
+    (gl.canvas as any).style.zIndex = "1";
 
     const geometry = new Triangle(gl);
     const program = new Program(gl, {

@@ -35,7 +35,7 @@ export default function Login() {
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Login" description="Sign in to chat" />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={200}>
-      <Card className="max-w-md mx-auto">
+      <Card className="max-w-md mx-auto auth-box">
         <CardHeader>
           <CardTitle>Sign In</CardTitle>
         </CardHeader>

@@ -429,22 +429,29 @@ var insertSellerReviewSchema = z.object({
 // server/mongodb.ts
 import mongoose2 from "mongoose";
 var isConnected = false;
-async function connectMongoDB() {
+async function connectMongoDB(maxRetries = 5) {
     if (isConnected) {
         console.log("MongoDB is already connected");
         return;
     }
-    try {
-        const mongoUri = process.env.MONGODB_URI;
-        if (!mongoUri) {
-            throw new Error("MONGODB_URI environment variable is not defined");
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+        throw new Error("MONGODB_URI environment variable is not defined");
+    }
+    let attempt = 0;
+    while (!isConnected && attempt <= maxRetries) {
+        try {
+            attempt++;
+            await mongoose2.connect(mongoUri);
+            isConnected = true;
+            console.log("MongoDB connected successfully");
+            break;
+        } catch (error) {
+            const delayMs = Math.min(30000, 1000 * Math.pow(2, attempt));
+            console.error(`MongoDB connection error (attempt ${attempt}):`, error);
+            if (attempt > maxRetries) throw error;
+            await new Promise((r) => setTimeout(r, delayMs));
         }
-        await mongoose2.connect(mongoUri);
-        isConnected = true;
-        console.log("MongoDB connected successfully");
-    } catch (error) {
-        console.error("MongoDB connection error:", error);
-        throw error;
     }
 }
 mongoose2.connection.on("disconnected", () => {
@@ -4187,6 +4194,16 @@ app.use((req, res, next) => {
         const message = err.message || "Internal Server Error";
         res.status(status).json({ message });
         throw err;
+    });
+
+    app.get("/api/health", async (_req, res) => {
+        try {
+            // Touch the DB with a lightweight command to verify connectivity
+            const ok = isConnected;
+            res.json({ ok: true, dbConnected: ok });
+        } catch (err) {
+            res.status(500).json({ ok: false, error: err?.message || "health check failed" });
+        }
     });
     
     // Serve index.html for all non-API routes (SPA routing)

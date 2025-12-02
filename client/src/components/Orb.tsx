@@ -276,6 +276,7 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
 
   return (
     <div ref={ctnDom} className="orb-container">
+      <div className="orb-overlay" />
       {children ? <div className="orb-content">{children}</div> : null}
     </div>
   );

@@ -23,6 +23,27 @@
   z-index: 1;
 }
 
+.orb-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.25), rgba(0,0,0,0.45));
+}
+
+.auth-box {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+
+.dark .auth-box {
+  background: rgba(18, 18, 18, 0.78);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 @media (max-width: 768px) {
   .orb-container {
     height: 420px;

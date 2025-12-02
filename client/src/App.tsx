@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -89,6 +90,27 @@ function Router() {
 function Layout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
+
+  const animateScrollTop = (duration: number) => {
+    try {
+      const start = window.scrollY || window.pageYOffset || 0;
+      if (start <= 0) return;
+      const startTime = performance.now();
+      const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        const y = Math.round(start * (1 - ease(t)));
+        window.scrollTo(0, y);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    } catch {}
+  };
+
+  useEffect(() => {
+    animateScrollTop(300);
+  }, [location]);
 
   if (isAdminPage) {
     return <Router />;

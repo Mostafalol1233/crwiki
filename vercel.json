@@ -27,6 +27,10 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "http://51.75.118.151:20032/api/$1" },
     { "source": "/ws", "destination": "http://51.75.118.151:20032/ws" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

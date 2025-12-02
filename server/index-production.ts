@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes.js";
@@ -86,6 +87,14 @@ app.use((req, res, next) => {
   const assetsPath = path.resolve(currentDir, "..", "attached_assets");
   app.use("/assets", express.static(assetsPath));
 
+  const distPath = path.resolve(currentDir, "..", "dist", "client");
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
+  }
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -94,14 +103,7 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Backend API only - no frontend serving
-  // Frontend is deployed separately to Netlify
-  app.get('*', (_req, res) => {
-    res.status(404).json({ 
-      message: 'API endpoint not found. Frontend is hosted on Netlify.',
-      hint: 'Make sure your frontend is pointing to this backend URL'
-    });
-  });
+  
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // X-Host uses port 25539 which cannot be changed
@@ -114,6 +116,6 @@ app.use((req, res, next) => {
     log(`🚀 Backend API server running on port ${port}`);
     log(`📡 Serving API endpoints at /api/*`);
     log(`🖼️  Serving assets at /assets/*`);
-    log(`🌐 Frontend should be deployed to Netlify`);
+    log(`🌐 Frontend static files served when present`);
   });
 })();

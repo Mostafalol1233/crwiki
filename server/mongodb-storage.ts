@@ -59,7 +59,7 @@ import {
   type Rank,
   type InsertRank,
 } from "../shared/mongodb-schema.js";
-import { connectMongoDB } from "./mongodb";
+import { connectMongoDB } from "./mongodb.js";
 
 export interface NewsItem {
   id: string;
@@ -236,7 +236,7 @@ export class MongoDBStorage implements IStorage {
 
   private initializeMercenaries() {
     // Import mercenaries from seed data
-    import('./data/seed-data').then(({ mercenariesData }) => {
+    import('./data/seed-data.js').then(({ mercenariesData }) => {
       mercenariesData.forEach((merc, index) => {
         const mercenary: Mercenary = {
           id: String(index + 1),

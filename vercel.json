@@ -30,6 +30,7 @@
     { "source": "/favicon.png", "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
     { "source": "/favicon.ico", "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
     { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/", "destination": "/index.html" },
     { "source": "/admin/(.*)", "destination": "/index.html" },
     { "source": "/news/(.*)", "destination": "/index.html" },
     { "source": "/events/(.*)", "destination": "/index.html" },

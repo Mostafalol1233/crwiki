@@ -8,31 +8,25 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const envPath = join(__dirname, '..', '.env');
-const envLocalPath = join(__dirname, '..', '.env.local');
+const envPathCandidates = [
+  // when running compiled code: dist/server -> dist/.env
+  join(__dirname, '..', '.env'),
+  join(__dirname, '..', '.env.local'),
+  // project root: dist/server -> ../../.env
+  join(__dirname, '..', '..', '.env'),
+  join(__dirname, '..', '..', '.env.local'),
+];
 
-try {
-  const envFile = readFileSync(envPath, 'utf8');
-  const envVars = parse(envFile);
-  for (const key in envVars) {
-    if (!process.env[key]) {
-      process.env[key] = envVars[key];
+for (const candidate of envPathCandidates) {
+  try {
+    const content = readFileSync(candidate, 'utf8');
+    const parsed = parse(content);
+    for (const key in parsed) {
+      if (!process.env[key]) {
+        process.env[key] = parsed[key];
+      }
     }
-  }
-} catch (err) {
-  // .env file might not exist, that's ok
-}
-
-try {
-  const envLocalFile = readFileSync(envLocalPath, 'utf8');
-  const envLocalVars = parse(envLocalFile);
-  for (const key in envLocalVars) {
-    if (!process.env[key]) {
-      process.env[key] = envLocalVars[key];
-    }
-  }
-} catch (err) {
-  // .env.local file might not exist, that's ok
+  } catch {}
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;

@@ -3,9 +3,9 @@ import { /*Clock, Eye*/ } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "./LanguageProvider";
+import fallbackImage from "@assets/feature-crossfire.jpg";
 // Define background URL directly to avoid import issues
 const bgImage = "https://files.catbox.moe/16kyiz.jpg";
-const fallbackImage = "/attached_assets/feature-crossfire.jpg";
 
 interface HeroPost {
   id: string;

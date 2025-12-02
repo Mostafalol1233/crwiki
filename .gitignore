@@ -44,6 +44,6 @@ backend-deploy-full/
 backend/
 server/
 merc-mp3/
-public/
-src/
+/public/
+/src/
 *.mp3

@@ -176,9 +176,9 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
     if (!container) return;
 
     const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
-    const gl = renderer.gl as WebGLRenderingContext;
+    const gl = renderer.gl as any;
     gl.clearColor(0, 0, 0, 0);
-    container.appendChild(gl.canvas);
+    container.appendChild(gl.canvas as unknown as Node);
     (gl.canvas as any).style.position = "absolute";
     (gl.canvas as any).style.inset = "0";
     (gl.canvas as any).style.zIndex = "1";
@@ -269,7 +269,7 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
       window.removeEventListener("resize", resize);
       container.removeEventListener("mousemove", handleMouseMove as any);
       container.removeEventListener("mouseleave", handleMouseLeave as any);
-      container.removeChild(gl.canvas);
+      container.removeChild(gl.canvas as unknown as Node);
       (gl as any).getExtension("WEBGL_lose_context")?.loseContext();
     };
   }, [hue, hoverIntensity, rotateOnHover, forceHoverState]);

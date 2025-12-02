@@ -41,6 +41,7 @@ import Register from "@/pages/Register";
 import Chat from "@/pages/Chat";
 import ResetPassword from "@/pages/ResetPassword";
 import { SEOHead } from "@/components/SEOHead";
+import TargetCursor from "@/components/TargetCursor";
 
 function Router() {
   return (
@@ -78,6 +79,7 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={Admin} />
+      <Route path="/admin/:rest*" component={Admin} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/chat" component={Chat} />
@@ -151,6 +153,7 @@ function App() {
               }}
             />
             <Layout />
+            <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
             <Toaster />
           </LanguageProvider>
         </ThemeProvider>

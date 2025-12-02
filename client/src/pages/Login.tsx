@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PageSEO from "@/components/PageSEO";
+import Orb from "@/components/Orb";
 import { useLocation } from "wouter";
 
 export default function Login() {
@@ -33,6 +34,9 @@ export default function Login() {
   return (
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Login" description="Sign in to chat" />
+      <div className="mb-8">
+        <Orb hoverIntensity={0.5} rotateOnHover={true} hue={200} />
+      </div>
       <Card className="max-w-md mx-auto">
         <CardHeader>
           <CardTitle>Sign In</CardTitle>

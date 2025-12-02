@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PageSEO from "@/components/PageSEO";
+import Orb from "@/components/Orb";
 
 const schema = z.object({
   username: z.string().min(2, "Username is required"),
@@ -39,6 +40,9 @@ export default function Register() {
   return (
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Register" description="Create an account to chat" />
+      <div className="mb-8">
+        <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320} />
+      </div>
       <Card className="max-w-md mx-auto">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>

@@ -41,7 +41,7 @@ export default function Register() {
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Register" description="Create an account to chat" />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320}>
-      <Card className="max-w-md mx-auto auth-box">
+      <Card className="w-full max-w-md mx-auto auth-box">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
         </CardHeader>

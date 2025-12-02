@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Orb from "@/components/Orb";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -107,8 +108,9 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md mx-4">
+    <div className="min-h-screen flex items-center justify-center bg-transparent relative z-10">
+      <Orb hoverIntensity={0.5} rotateOnHover={true} hue={220}>
+      <Card className="w-full max-w-md mx-4 auth-box">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-6 w-6 text-primary" />
@@ -185,6 +187,7 @@ export default function AdminLogin() {
           </Tabs>
         </CardContent>
       </Card>
+      </Orb>
     </div>
   );
 }

@@ -4,6 +4,9 @@
   "outputDirectory": "dist/client",
   "cleanUrls": true,
   "trailingSlash": false,
+  "builds": [
+    { "src": "client/index.html", "use": "@vercel/static-build", "config": { "distDir": "dist/client" } }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

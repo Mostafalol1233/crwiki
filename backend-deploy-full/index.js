@@ -4446,6 +4446,25 @@ app.delete(
     },
 );
 
+app.post(
+    "/api/admin/users/reset-code",
+    requireAuth,
+    requireSuperAdmin,
+    async (req, res) => {
+        try {
+            const email = (req.body && req.body.email) || "";
+            if (!email) return res.status(400).json({ error: "Email required" });
+            const user = await UserModel.findOne({ email }).lean();
+            if (!user) return res.status(404).json({ error: "User not found" });
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            await UserModel.updateOne({ _id: user._id }, { $set: { emailVerificationCode: code } });
+            res.json({ resetCode: code });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    },
+);
+
 app.get(
     "/api/admin/registration",
     requireAuth,

@@ -7,9 +7,10 @@ type Props = {
   hoverIntensity?: number;
   rotateOnHover?: boolean;
   forceHoverState?: boolean;
+  children?: React.ReactNode;
 };
 
-export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = true, forceHoverState = false }: Props) {
+export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = true, forceHoverState = false, children }: Props) {
   const ctnDom = useRef<HTMLDivElement | null>(null);
 
   const vert = `
@@ -270,5 +271,9 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
     };
   }, [hue, hoverIntensity, rotateOnHover, forceHoverState]);
 
-  return <div ref={ctnDom} className="orb-container" />;
+  return (
+    <div ref={ctnDom} className="orb-container">
+      {children ? <div className="orb-content">{children}</div> : null}
+    </div>
+  );
 }

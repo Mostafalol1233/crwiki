@@ -475,8 +475,8 @@ export default function Admin() {
   });
 
   const { data: admins } = useQuery<any[]>({
-    queryKey: ["/api/admins"],
-    queryFn: () => apiRequest("/api/admins", "GET"),
+    queryKey: ["/api/admin/admins"],
+    queryFn: () => apiRequest("/api/admin/admins", "GET"),
     enabled: isSuperAdmin,
   });
 
@@ -771,9 +771,9 @@ export default function Admin() {
   });
 
   const createAdminMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/admins", "POST", data),
+    mutationFn: (data: any) => apiRequest("/api/admin/admins", "POST", data),
     onSuccess: async (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/admins"] });
       // If permissions were set in the form, save them via the admin-permissions API
       try {
         const created = data;
@@ -806,7 +806,7 @@ export default function Admin() {
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       apiRequest(`/api/admins/${id}`, "PATCH", data),
     onSuccess: async (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/admins"] });
       const adminId = data?.id || data?._id;
       try {
         if (adminId) {
@@ -832,7 +832,7 @@ export default function Admin() {
   const deleteAdminMutation = useMutation({
     mutationFn: (id: string) => apiRequest(`/api/admins/${id}`, "DELETE"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/admins"] });
       toast({ title: "Admin deleted successfully" });
     },
     onError: () => {

@@ -40,9 +40,7 @@ export default function Register() {
   return (
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Register" description="Create an account to chat" />
-      <div className="mb-8">
-        <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320} />
-      </div>
+      <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320}>
       <Card className="max-w-md mx-auto">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
@@ -75,6 +73,7 @@ export default function Register() {
           </form>
         </CardContent>
       </Card>
+      </Orb>
     </div>
   );
 }

@@ -4,6 +4,7 @@
   "outputDirectory": "dist/client",
   "cleanUrls": true,
   "trailingSlash": false,
+
   "headers": [
     {
       "source": "/assets/(.*)",
@@ -13,22 +14,14 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=3600"
-        }
-      ]
     }
   ],
+
   "rewrites": [
     { "source": "/api/(.*)", "destination": "http://51.75.118.151:20032/api/$1" },
-    { "source": "/ws", "destination": "http://51.75.118.151:20032/ws" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/ws", "destination": "http://51.75.118.151:20032/ws" }
   ],
+
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }

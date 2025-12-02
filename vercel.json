@@ -24,36 +24,11 @@
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://51.75.118.151:20032/api/$1" },
-    { "source": "/ws", "destination": "http://51.75.118.151:20032/ws" },
-    { "source": "/favicon.png", "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
-    { "source": "/favicon.ico", "destination": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/", "destination": "/index.html" },
-    { "source": "/admin/(.*)", "destination": "/index.html" },
-    { "source": "/reviews", "destination": "/index.html" },
-    { "source": "/reviews/(.*)", "destination": "/index.html" },
-    { "source": "/reviews/seller/(.*)", "destination": "/index.html" },
-    { "source": "/news/(.*)", "destination": "/index.html" },
-    { "source": "/events/(.*)", "destination": "/index.html" },
-    { "source": "/weapons", "destination": "/index.html" },
-    { "source": "/modes", "destination": "/index.html" },
-    { "source": "/ranks", "destination": "/index.html" },
-    { "source": "/posts/(.*)", "destination": "/index.html" },
-    { "source": "/sellers/(.*)", "destination": "/index.html" },
-    { "source": "/seller/(.*)", "destination": "/index.html" },
-    { "source": "/tutorials/(.*)", "destination": "/index.html" },
-    { "source": "/article/(.*)", "destination": "/index.html" },
-    { "source": "/support", "destination": "/index.html" },
-    { "source": "/my-tickets", "destination": "/index.html" },
-    { "source": "/download", "destination": "/index.html" },
-    { "source": "/about", "destination": "/index.html" },
-    { "source": "/contact", "destination": "/index.html" },
-    { "source": "/chat", "destination": "/index.html" },
-    { "source": "/terms", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/category/(.*)", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "http://51.75.118.151:20032/api/$1" },
+    { "src": "/ws", "dest": "http://51.75.118.151:20032/ws" },
+    { "src": "/favicon.png", "dest": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
+    { "src": "/favicon.ico", "dest": "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

@@ -1,9 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "npm run build:client",
-  "outputDirectory": "dist/client",
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/client"
+      }
+    }
+  ],
 
   "headers": [
     {
@@ -18,9 +23,21 @@
   ],
 
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://51.75.118.151:20032/api/$1" },
-    { "source": "/ws", "destination": "http://51.75.118.151:20032/ws" },
-
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "http://51.75.118.151:20032/api/$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "http://51.75.118.151:20032/assets/$1"
+    },
+    {
+      "source": "/ws",
+      "destination": "http://51.75.118.151:20032/ws"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

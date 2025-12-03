@@ -152,7 +152,7 @@ function Layout() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <audio id="intro-audio" src="/media/intro.mp3" preload="auto" playsInline autoPlay muted />
+      <audio id="intro-audio" src="/Hazbin Hotel S2 Ultimate Sing-Along - PART 2 _ Prime Video (mp3cut.net) (1).mp3" preload="auto" playsInline autoPlay muted />
       {showNeon && (
         <div className={`vox-neon-text ${neonFade ? "vox-fade-out" : ""}`} aria-live="polite" role="status">
           <div className="vox-electric">

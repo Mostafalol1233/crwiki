@@ -4133,10 +4133,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
     });
 
     // Site Settings Routes
-    app2.get("/api/settings/site", requireAuth, requireSuperAdmin, async (_req, res) => {
+    app2.get("/api/settings/site", async (_req, res) => {
         try {
             const s = await storage.getSiteSettings();
-            res.json(s);
+            res.json(s || {});
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

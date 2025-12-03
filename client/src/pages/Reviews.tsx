@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Star, User } from "lucide-react";
 import { format } from "date-fns";
+import DOMPurify from "isomorphic-dompurify";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -319,7 +320,7 @@ export default function Reviews() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
-                <div className="w-full max-w-md h-48 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                <div className="w-full max-w-md h-48 rounded-md overflow-hidden flex items-center justify-center">
                   {sellerDetails?.images && sellerDetails.images.length > 0 ? (
                     <img
                       src={sellerDetails.images[0]}
@@ -335,9 +336,7 @@ export default function Reviews() {
                 </div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
-                  {sellerDetails?.description || "No description yet"}
-                </p>
+                <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(String(sellerDetails?.description || "No description yet")) }} />
               </div>
             </div>
 
@@ -360,7 +359,10 @@ export default function Reviews() {
                     onClick={async () => {
                       try {
                         const payload: any = {};
-                        if (sellerImageEdit.trim()) payload.images = [sellerImageEdit.trim()];
+                        if (sellerImageEdit.trim()) {
+                          const parts = sellerImageEdit.split(',').map((s)=> s.trim()).filter(Boolean);
+                          payload.images = parts.length ? parts : [sellerImageEdit.trim()];
+                        }
                         if (sellerDescEdit.trim()) payload.description = sellerDescEdit.trim();
                         if (!payload.images && !payload.description) {
                           toast({ title: "Nothing to update", variant: "destructive" });
@@ -472,7 +474,7 @@ export default function Reviews() {
                         <img
                           src={image}
                           alt={`${seller.name} ${idx + 1}`}
-                          className="max-h-36 max-w-36 w-full object-contain rounded-md bg-muted/30 cursor-pointer"
+                          className="max-h-36 max-w-36 w-full object-contain cursor-pointer"
                           loading="lazy"
                           onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(seller.description || ""); setIsImagePreviewOpen(true); }}
                           data-testid={`img-seller-${seller.id}-${idx}`}
@@ -493,14 +495,12 @@ export default function Reviews() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {seller.images.slice(0, 2).map((image, idx) => (
                       <div key={idx} className="flex items-center justify-center">
-                        <div className="w-full max-w-36 h-36 overflow-hidden rounded-md bg-muted/30">
-                          <img
-                            src={image}
-                            alt={`${seller.name} ${idx + 1}`}
-                            className="w-full h-full object-contain cursor-pointer"
-                            onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
-                          />
-                        </div>
+                        <img
+                          src={image}
+                          alt={`${seller.name} ${idx + 1}`}
+                          className="max-h-36 max-w-36 w-full object-contain cursor-pointer"
+                          onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
+                        />
                       </div>
                     ))}
                   </div>

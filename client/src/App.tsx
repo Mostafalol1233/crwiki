@@ -130,7 +130,7 @@ function Layout() {
       if (!el) return;
       audioRef.current = el;
       const onEnded = () => { setNeonFade(true); setTimeout(() => setShowNeon(false), 800); };
-      const onPlaying = () => { setNeonFade(false); setShowNeon(true); };
+      const onPlaying = () => { setNeonFade(false); setShowNeon(true); setTimeout(() => setShowNeon(false), 20000); };
       el.addEventListener("ended", onEnded);
       el.addEventListener("playing", onPlaying);
       const tryPlay = async () => {
@@ -142,12 +142,29 @@ function Layout() {
         } catch {
           // show subtle prompt if autoplay blocked
           setShowNeon(true);
+          setTimeout(() => setShowNeon(false), 20000);
         }
       };
       tryPlay();
       return () => { el.removeEventListener("ended", onEnded); el.removeEventListener("playing", onPlaying); };
     } catch {}
   }, []);
+
+  useEffect(() => {
+    try {
+      const routeEl = document.getElementById("route-audio") as HTMLAudioElement | null;
+      if (!routeEl) return;
+      const playOnRoutes = ["/mercenaries", "/modes", "/ranks", "/weapons"];
+      const shouldPlay = playOnRoutes.some((p) => location.startsWith(p));
+      if (shouldPlay) {
+        (async () => {
+          try { routeEl.currentTime = 0; routeEl.muted = true; await routeEl.play(); setTimeout(() => { try { routeEl.muted = false; } catch {} }, 300); } catch {}
+        })();
+      } else {
+        try { routeEl.pause(); } catch {}
+      }
+    } catch {}
+  }, [location]);
 
   if (isAdminPage) {
     return <Router />;
@@ -156,6 +173,7 @@ function Layout() {
   return (
     <div className="flex flex-col min-h-screen">
       <audio id="intro-audio" src={introOverride || "https://files.catbox.moe/imua96.mp3"} preload="auto" playsInline autoPlay muted />
+      <audio id="route-audio" src="https://files.catbox.moe/7ljomr.mp3" preload="auto" playsInline />
       {showNeon && (
         <div className={`vox-neon-text ${neonFade ? "vox-fade-out" : ""}`} aria-live="polite" role="status">
           <div className="vox-electric">

@@ -112,7 +112,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
       {/* backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       {/* modal */}
-      <div className="relative z-[61] max-w-lg w-[92%] md:w-[640px] bg-background/80 backdrop-blur-md border border-border shadow-2xl">
+      <div className="relative z-[61] max-w-lg w-[92%] md:w-[640px] bg-background/60 backdrop-blur-lg border border-border shadow-2xl">
         <button
           className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded hover:bg-muted"
           onClick={onClose}
@@ -123,7 +123,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
         {data.imageUrl ? (
           <img src={data.imageUrl} alt="Announcement" className="w-full h-auto object-cover" />
         ) : null}
-        <div className="p-4 prose prose-invert max-w-none">
+        <div className="p-4 prose max-w-none">
           <div dangerouslySetInnerHTML={safeHtml} />
           {data.linkUrl ? (
             <div className="mt-3">

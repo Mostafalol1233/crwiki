@@ -81,12 +81,12 @@ export default function AdminAnnouncements() {
     try {
       setLoadingGlobal(true);
       const res = await fetch(`/api/announcements/global`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible }),
       });
       if (!res.ok) throw new Error(await res.text());
-      toast({ title: "Saved", description: "Global announcement updated" });
+      toast({ title: "Created", description: "New global announcement added" });
       try {
         const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
         if (res2.ok) setGlobalList(await res2.json());

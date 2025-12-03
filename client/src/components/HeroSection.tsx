@@ -41,8 +41,8 @@ export function HeroSection({ post, isPlaceholder }: HeroSectionProps) {
       <div className="absolute inset-0 opacity-[0.12] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,.08), transparent 60%)' }} />
       <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,.06) 0px, rgba(255,255,255,.06) 1px, transparent 2px, transparent 4px)' }} />
 
-      <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[60vh] md:min-h-[70vh] flex items-end pb-10 md:pb-16">
-        <div className="max-w-3xl border-2 border-primary/30 bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-xl md:rounded-2xl p-5 md:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[60vh] md:min-h-[70vh] flex items-end pb-10 md:pb-16 overflow-x-auto md:overflow-visible" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="max-w-3xl md:max-w-3xl min-w-[640px] md:min-w-0 border-2 border-primary/30 bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-xl md:rounded-2xl p-5 md:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
           <Badge
             variant="default"
             className="mb-4"

@@ -397,7 +397,7 @@ export default function Reviews() {
                           const parts = sellerImageEdit.split(',').map((s)=> s.trim()).filter(Boolean);
                           payload.images = parts.length ? parts : [sellerImageEdit.trim()];
                         }
-                        if (sellerDescEdit.trim()) payload.description = sellerDescEdit.trim();
+                        if (sellerDescEdit.trim()) payload.descriptionHtml = sellerDescEdit.trim();
                         if (!payload.images && !payload.description) {
                           toast({ title: "Nothing to update", variant: "destructive" });
                           return;

@@ -470,9 +470,7 @@ export default function Sellers() {
                     variant="default"
                     className="w-full"
                   onClick={() => {
-                      const path = selectedSeller.seller_name_slug 
-                        ? `/reviews/seller/slug/${selectedSeller.seller_name_slug}` 
-                        : `/reviews/seller/${encodeURIComponent(selectedSeller.name)}`;
+                      const path = `/reviews/seller/${encodeURIComponent(selectedSeller.name)}`;
                       window.location.href = path;
                     }}
                   >

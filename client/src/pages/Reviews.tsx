@@ -340,6 +340,25 @@ export default function Reviews() {
               </div>
             </div>
 
+            {sellerDetails?.images && sellerDetails.images.length > 1 && (
+              <div className="mt-6">
+                <h3 className="font-semibold mb-3">Gallery</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {sellerDetails.images.slice(1).map((image, idx) => (
+                    <div key={idx} className="flex items-center justify-center">
+                      <img
+                        src={image}
+                        alt={`${sellerByName.seller.name} ${idx + 2}`}
+                        className="w-full h-36 object-contain cursor-pointer"
+                        loading="lazy"
+                        onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(sellerDetails?.description || ""); setIsImagePreviewOpen(true); }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {isAdmin && sellerByName?.seller?.id && (
               <div className="mt-6 border-t pt-4">
                 <h3 className="font-semibold mb-2">Seller Details</h3>

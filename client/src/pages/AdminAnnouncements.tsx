@@ -153,7 +153,7 @@ export default function AdminAnnouncements() {
     try {
       setLoadingSeller(true);
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive }),
       });

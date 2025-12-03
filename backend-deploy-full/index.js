@@ -3373,8 +3373,27 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             return res.status(403).json({ error: "Forbidden: Invalid token" });
         }
         req.user = payload;
-        next();
+        const role = req.user?.role || "";
+        const perms = req.user?.permissions || {};
+        if (role === "super_admin" || role === "scraper_admin" || perms["events:scrape"] || perms["news:scrape"] || perms["scraper:run"]) {
+            return next();
+        }
+        return res.status(403).json({ error: "Forbidden: Scraper permission required" });
     }
+
+    // Additional scraper auth middleware for clarity
+    function requireScraperAuth(req, res, next) {
+        return requireEventScraperOrApiKey(req, res, next);
+    }
+
+    // Per-route rate limiter for scraping operations
+    const scrapeLimiter = rateLimit({
+        windowMs: 5 * 60 * 1000,
+        max: 20,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: "Too many scraping requests, please try again later",
+    });
 
     // Scraping routes (fallback for deployments that don't keep full server)
     try {
@@ -3385,9 +3404,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             scrapeRanks,
         } = await import("./services/scraper.js");
 
-        app2.get("/api/scrape/forum-list", async (req, res) => {
+        app2.get("/api/scrape/forum-list", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const posts = await scrapeForumAnnouncements();
+                try { await storage.auditAdminAction("scrape_forum_list", "-", req.user?.id || "", { count: Array.isArray(posts) ? posts.length : 0 }); } catch {}
                 res.json(posts);
             } catch (err) {
                 res.status(500).json({
@@ -3396,12 +3416,13 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
         });
 
-        app2.post("/api/scrape/event-details", async (req, res) => {
+        app2.post("/api/scrape/event-details", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const { url } = req.body;
                 if (!url)
                     return res.status(400).json({ error: "URL is required" });
                 const event = await scrapeEventDetails(url);
+                try { await storage.auditAdminAction("scrape_event_details", url, req.user?.id || "", {}); } catch {}
                 res.json(event);
             } catch (err) {
                 res.status(500).json({
@@ -3410,7 +3431,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
         });
 
-        app2.post("/api/admin/scrape-and-create-events", async (req, res) => {
+        app2.post("/api/admin/scrape-and-create-events", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const posts = await scrapeForumAnnouncements();
                 const urls = posts.map((p) => p.url);
@@ -3446,6 +3467,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                         await storage.updateEvent(String(existing._id || existing.id), { description: payload.description, descriptionAr: payload.descriptionAr || "" });
                     }
                 }
+                try { await storage.auditAdminAction("scrape_and_create_events", "-", req.user?.id || "", { createdCount: created.length }); } catch {}
                 res.json({ events: created });
             } catch (err) {
                 res.status(500).json({
@@ -3454,9 +3476,10 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
         });
 
-        app2.get("/api/scrape/ranks", async (req, res) => {
+        app2.get("/api/scrape/ranks", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const ranks = await scrapeRanks();
+                try { await storage.auditAdminAction("scrape_ranks", "-", req.user?.id || "", { count: Array.isArray(ranks) ? ranks.length : 0 }); } catch {}
                 res.json(ranks);
             } catch (err) {
                 res.status(500).json({
@@ -3465,7 +3488,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
         });
 
-        app2.post("/api/admin/scrape-and-create-ranks", async (req, res) => {
+        app2.post("/api/admin/scrape-and-create-ranks", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const ranks = await scrapeRanks();
                 const created = [];
@@ -3484,6 +3507,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                         created.push(createdRank);
                     }
                 }
+                try { await storage.auditAdminAction("scrape_and_create_ranks", "-", req.user?.id || "", { createdCount: created.length }); } catch {}
                 res.json({
                     message: `Created ${created.length} ranks`,
                     count: created.length,
@@ -3496,7 +3520,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             }
         });
 
-        app2.post("/api/admin/reset-ranks", async (req, res) => {
+        app2.post("/api/admin/reset-ranks", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const existing = await storage.getAllRanks();
                 for (const r of existing) {
@@ -3514,6 +3538,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                     const createdRank = await storage.createRank(payload);
                     created.push(createdRank);
                 }
+                try { await storage.auditAdminAction("reset_ranks", "-", req.user?.id || "", { createdCount: created.length }); } catch {}
                 res.json({
                     message: `Reset ranks and created ${created.length} new ranks`,
                     count: created.length,
@@ -4126,6 +4151,97 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
 
+    // Announcements: Global
+    app2.get("/api/announcements/global", async (_req, res) => {
+        try {
+            const doc = await GlobalAnnouncementModel.findOne().sort({ updatedAt: -1 }).lean();
+            res.json({
+                contentHtml: doc?.contentHtml || "",
+                imageUrl: doc?.imageUrl || "",
+                linkUrl: doc?.linkUrl || "",
+                active: doc?.active ?? true,
+                dismissible: doc?.dismissible ?? true,
+                updatedAt: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date(0).toISOString()
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.put("/api/announcements/global", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const payload = {
+                contentHtml: String(req.body?.contentHtml || ""),
+                imageUrl: String(req.body?.imageUrl || ""),
+                linkUrl: String(req.body?.linkUrl || ""),
+                active: !!req.body?.active,
+                dismissible: req.body?.dismissible === false ? false : true,
+            };
+            const updated = await GlobalAnnouncementModel.findOneAndUpdate(
+                {},
+                payload,
+                { upsert: true, new: true }
+            ).lean();
+            res.json({
+                contentHtml: updated.contentHtml || "",
+                imageUrl: updated.imageUrl || "",
+                linkUrl: updated.linkUrl || "",
+                active: !!updated.active,
+                dismissible: updated.dismissible !== false,
+                updatedAt: updated.updatedAt ? new Date(updated.updatedAt).toISOString() : new Date().toISOString()
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    // Announcements: Seller-scoped
+    app2.get("/api/announcements/seller/:slug", async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            const doc = await SellerAnnouncementModel.findOne({ sellerSlug: slug }).lean();
+            if (!doc) return res.status(404).json({ error: "Announcement not found" });
+            res.json({
+                contentHtml: doc.contentHtml || "",
+                imageUrl: doc.imageUrl || "",
+                linkUrl: doc.linkUrl || "",
+                active: doc.active ?? true,
+                updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date(0).toISOString()
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.put("/api/announcements/seller/:slug", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            const payload = {
+                sellerSlug: slug,
+                contentHtml: String(req.body?.contentHtml || ""),
+                imageUrl: String(req.body?.imageUrl || ""),
+                linkUrl: String(req.body?.linkUrl || ""),
+                active: !!req.body?.active,
+            };
+            const updated = await SellerAnnouncementModel.findOneAndUpdate(
+                { sellerSlug: slug },
+                payload,
+                { upsert: true, new: true }
+            ).lean();
+            res.json({
+                contentHtml: updated.contentHtml || "",
+                imageUrl: updated.imageUrl || "",
+                linkUrl: updated.linkUrl || "",
+                active: !!updated.active,
+                updatedAt: updated.updatedAt ? new Date(updated.updatedAt).toISOString() : new Date().toISOString()
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
     const httpServer = createServer(app2);
     return httpServer;
 }
@@ -4199,6 +4315,18 @@ app.use((req, res, next) => {
             `[assets] No ATTACHED_ASSETS_PATH set. Assets are served as URLs from database.`,
         );
     }
+
+    // Serve a fixed intro audio file for autoplay
+    try {
+        const introAudioPath = path.resolve(process.cwd(), "Hazbin Hotel S2 Ultimate Sing-Along - PART 2 _ Prime Video (mp3cut.net) (1).mp3");
+        app.get("/media/intro.mp3", (_req, res) => {
+            res.sendFile(introAudioPath, (err) => {
+                if (err) {
+                    res.status(404).json({ error: "Audio file not found" });
+                }
+            });
+        });
+    } catch {}
     
     // Serve built client files from dist/client
     const clientDistPath = path.resolve(currentDir, "dist", "client");

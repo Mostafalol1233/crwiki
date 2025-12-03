@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -95,6 +95,12 @@ function Router() {
 function Layout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
+  const [showNeon, setShowNeon] = useState(true);
+  const [neonFade, setNeonFade] = useState(false);
+  const audioRef = (typeof window !== "undefined") ? (window as any).__introAudioRef || { current: null } : { current: null };
+  if ((window as any).__introAudioRef === undefined) {
+    (window as any).__introAudioRef = { current: null };
+  }
 
   const animateScrollTop = (duration: number) => {
     try {
@@ -117,12 +123,43 @@ function Layout() {
     animateScrollTop(300);
   }, [location]);
 
+  useEffect(() => {
+    try {
+      const el = document.getElementById("intro-audio") as HTMLAudioElement | null;
+      if (!el) return;
+      audioRef.current = el;
+      const onEnded = () => { setNeonFade(true); setTimeout(() => setShowNeon(false), 800); };
+      el.addEventListener("ended", onEnded);
+      const tryPlay = async () => {
+        try {
+          el.muted = true;
+          await el.play();
+          // unmute shortly after to respect autoplay policies
+          setTimeout(() => { try { el.muted = false; } catch {} }, 300);
+        } catch {
+          // show subtle prompt if autoplay blocked
+          setShowNeon(true);
+        }
+      };
+      tryPlay();
+      return () => { el.removeEventListener("ended", onEnded); };
+    } catch {}
+  }, []);
+
   if (isAdminPage) {
     return <Router />;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
+      <audio id="intro-audio" src="/media/intro.mp3" preload="auto" playsInline />
+      {showNeon && (
+        <div className={`vox-neon-text ${neonFade ? "vox-fade-out" : ""}`} aria-live="polite" role="status">
+          <div className="vox-electric">
+            <h1 className="vox-text vox-pulse" aria-label="Trust us with Your News">Trust us with Your News</h1>
+          </div>
+        </div>
+      )}
       <Header />
       <main className="flex-1">
         <AnnouncementModal location={location} />

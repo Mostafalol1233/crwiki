@@ -73,6 +73,7 @@ import { AdvancedContentManager } from "@/components/AdvancedContentManager";
 import { Switch } from "@/components/ui/switch";
 import type { SiteSettings } from "@/types/site-settings";
 import type { ScrapedEvent } from "@shared/types";
+import AdminAnnouncements from "@/pages/AdminAnnouncements";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
@@ -205,7 +206,7 @@ export default function Admin() {
   const canUsers = isSuperAdmin;
   const canChat = isSuperAdmin;
   const canSubscribers = isSuperAdmin || !!adminPerms["subscribers:manage"];
-  const canScraper = isSuperAdmin || !!adminPerms["events:scrape"] || !!adminPerms["news:scrape"];
+  const canScraper = isSuperAdmin || !!adminPerms["events:scrape"] || !!adminPerms["news:scrape"] || !!adminPerms["scraper:run"];
   const canMercenaries = isSuperAdmin || !!adminPerms["mercenaries:manage"];
   const canTickets = isSuperAdmin || !!adminPerms["tickets:manage"];
 
@@ -385,7 +386,7 @@ export default function Admin() {
   const [adminForm, setAdminForm] = useState({
     username: "",
     password: "",
-    role: "admin" as "admin" | "seller_admin" | "super_admin",
+    role: "admin" as "admin" | "seller_admin" | "scraper_admin" | "super_admin",
     allowedSellerIds: [] as string[],
   });
   const [adminPermissionsForm, setAdminPermissionsForm] = useState<Record<string, boolean>>({});
@@ -395,6 +396,8 @@ export default function Admin() {
     { key: "events:scrape", label: "Events - Scrape (import)" },
     { key: "news:add", label: "News - Add (manual)" },
     { key: "news:scrape", label: "News - Scrape (import)" },
+    { key: "scraper:run", label: "Scraper - Run operations" },
+    { key: "scraper:manage", label: "Scraper - Manage settings" },
     { key: "posts:manage", label: "Posts - Manage" },
     { key: "sellers:manage", label: "Sellers - Manage" },
     { key: "mercenaries:manage", label: "Mercenaries - Manage" },
@@ -1294,6 +1297,7 @@ export default function Admin() {
                   {canAdmins && <option value="admins">Admins</option>}
                   {canSubscribers && <option value="subscribers">Subscribers</option>}
                   {canScraper && <option value="scraper">Scraper</option>}
+                  {isSuperAdmin && <option value="announcements">Announcements</option>}
                   {canMercenaries && <option value="mercenaries">Mercenaries</option>}
                   {canTickets && <option value="tickets">Tickets</option>}
                   {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
@@ -1372,6 +1376,12 @@ export default function Admin() {
                   <Upload className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Scraper</span>
                 </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="announcements" data-testid="tab-announcements">
+                    <Newspaper className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Announcements</span>
+                  </TabsTrigger>
                 )}
                 {canMercenaries && (
                 <TabsTrigger value="mercenaries" data-testid="tab-mercenaries">
@@ -1501,7 +1511,12 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+              </TabsContent>
+              {isSuperAdmin && (
+                <TabsContent value="announcements" className="space-y-6" data-testid="content-announcements">
+                  <AdminAnnouncements />
+                </TabsContent>
+              )}
 
           {canUsers && (
           <TabsContent value="users" className="space-y-6" data-testid="content-users">

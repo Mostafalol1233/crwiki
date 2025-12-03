@@ -71,7 +71,7 @@ export default function AdminAnnouncements() {
       setLoadingGlobal(true);
       const res = await fetch(`/api/announcements/global`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}` },
         body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -111,7 +111,7 @@ export default function AdminAnnouncements() {
       setLoadingSeller(true);
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}` },
         body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive }),
       });
       if (!res.ok) throw new Error(await res.text());

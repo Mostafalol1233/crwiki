@@ -3038,6 +3038,33 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(400).json({ error: error.message });
         }
     });
+
+    app2.post("/api/contact", apiLimiter, async (req, res) => {
+        try {
+            const { name, email, subject, message } = req.body || {};
+            if (!name || !email || !message) {
+                return res.status(400).json({ error: "name, email, and message are required" });
+            }
+            const payload = insertTicketSchema.parse({
+                title: subject || "Contact Form",
+                description: message,
+                userName: name,
+                userEmail: email,
+                status: "open",
+                priority: "normal",
+                category: "contact",
+            });
+            const ticket = await storage.createTicket(payload);
+            const formatted = {
+                ...ticket,
+                createdAt: formatDate(ticket.createdAt),
+                updatedAt: formatDate(ticket.updatedAt),
+            };
+            res.status(201).json(formatted);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
     app2.patch("/api/tickets/:id", requireAuth, async (req, res) => {
         try {
             const updates = req.body;

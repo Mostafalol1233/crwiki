@@ -67,6 +67,11 @@ export default function Reviews() {
 
   const [match, params] = useRoute("/reviews/seller/:sellerName");
   const sellerNameParam = match ? params?.sellerName as string : "";
+  const sellerSlug = useMemo(() => {
+    const s = String(sellerNameParam || "").toLowerCase().trim();
+    if (!s) return "";
+    return s.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+  }, [sellerNameParam]);
   const [sort, setSort] = useState<"newest" | "highest" | "helpful">("newest");
   const [page, setPage] = useState(1);
 
@@ -96,6 +101,16 @@ export default function Reviews() {
     queryFn: async () => {
       const id = sellerByName?.seller?.id;
       const res = await fetch(`/api/sellers/${id}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+  });
+
+  const { data: sellerPage } = useQuery<{ sellerSlug: string; images: string[]; descriptionHtml: string }>({
+    queryKey: ["/api/seller-pages", sellerSlug],
+    enabled: !!match && !!sellerSlug,
+    queryFn: async () => {
+      const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`);
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
@@ -321,13 +336,13 @@ export default function Reviews() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
                 <div className="w-full max-w-md h-48 rounded-md overflow-hidden flex items-center justify-center">
-                  {sellerDetails?.images && sellerDetails.images.length > 0 ? (
+                  {(sellerPage?.images?.length || 0) > 0 ? (
                     <img
-                      src={sellerDetails.images[0]}
+                      src={sellerPage!.images[0]}
                       alt={`${sellerByName.seller.name} image`}
                       className="w-full h-full object-contain cursor-pointer"
                       loading="lazy"
-                      onClick={() => { setPreviewImageUrl(sellerDetails.images[0]); setPreviewImageDescription(sellerDetails?.description || ""); setIsImagePreviewOpen(true); }}
+                      onClick={() => { setPreviewImageUrl(sellerPage!.images[0]); setPreviewImageDescription(sellerPage?.descriptionHtml || ""); setIsImagePreviewOpen(true); }}
                       data-testid={`img-seller-hero-${sellerByName.seller.id}`}
                     />
                   ) : (
@@ -336,22 +351,22 @@ export default function Reviews() {
                 </div>
               </div>
               <div>
-                <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(String(sellerDetails?.description || "No description yet")) }} />
+                <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(String(sellerPage?.descriptionHtml || "No description yet")) }} />
               </div>
             </div>
 
-            {sellerDetails?.images && sellerDetails.images.length > 1 && (
+            {(sellerPage?.images?.length || 0) > 1 && (
               <div className="mt-6">
                 <h3 className="font-semibold mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {sellerDetails.images.slice(1).map((image, idx) => (
+                  {sellerPage!.images.slice(1).map((image, idx) => (
                     <div key={idx} className="flex items-center justify-center">
                       <img
                         src={image}
                         alt={`${sellerByName.seller.name} ${idx + 2}`}
                         className="w-full h-36 object-contain cursor-pointer"
                         loading="lazy"
-                        onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(sellerDetails?.description || ""); setIsImagePreviewOpen(true); }}
+                        onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(sellerPage?.descriptionHtml || ""); setIsImagePreviewOpen(true); }}
                       />
                     </div>
                   ))}
@@ -387,8 +402,8 @@ export default function Reviews() {
                           toast({ title: "Nothing to update", variant: "destructive" });
                           return;
                         }
-                        await apiRequest(`/api/sellers/${sellerByName.seller.id}`, "PATCH", payload);
-                        queryClient.invalidateQueries({ queryKey: ["/api/sellers", sellerByName.seller.id] });
+                        await apiRequest(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, "PATCH", payload);
+                        queryClient.invalidateQueries({ queryKey: ["/api/seller-pages", sellerSlug] });
                         toast({ title: "Seller updated" });
                         setSellerImageEdit("");
                         setSellerDescEdit("");

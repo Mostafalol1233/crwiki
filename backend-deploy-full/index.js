@@ -314,6 +314,12 @@ var SellerAnnouncementSchema = new Schema({
 }, { timestamps: true });
 var GlobalAnnouncementModel = mongoose.model("GlobalAnnouncement", GlobalAnnouncementSchema);
 var SellerAnnouncementModel = mongoose.model("SellerAnnouncement", SellerAnnouncementSchema);
+var SellerPageSchema = new Schema({
+    sellerSlug: { type: String, index: true, unique: true },
+    images: { type: [String], default: [] },
+    descriptionHtml: { type: String, default: "" },
+}, { timestamps: true });
+var SellerPageModel = mongoose.model("SellerPage", SellerPageSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
@@ -4353,6 +4359,35 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             res.status(201).json({ id: String(updated._id), sellerSlug: slug, contentHtml: updated.contentHtml || "", imageUrl: updated.imageUrl || "", linkUrl: updated.linkUrl || "", active: !!updated.active, updatedAt: updated.updatedAt });
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/seller-pages/:slug", async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            const doc = await SellerPageModel.findOne({ sellerSlug: slug }).lean();
+            if (!doc) return res.json({ sellerSlug: slug, images: [], descriptionHtml: "" });
+            res.json({ sellerSlug: slug, images: doc.images || [], descriptionHtml: doc.descriptionHtml || "" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/seller-pages/:slug", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            const images = Array.isArray(req.body?.images) ? req.body.images.filter((s) => !!String(s).trim()) : [];
+            const descriptionHtml = String(req.body?.descriptionHtml || "");
+            const updated = await SellerPageModel.findOneAndUpdate(
+                { sellerSlug: slug },
+                { sellerSlug: slug, images, descriptionHtml },
+                { upsert: true, new: true }
+            ).lean();
+            res.json({ sellerSlug: slug, images: updated.images || [], descriptionHtml: updated.descriptionHtml || "" });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

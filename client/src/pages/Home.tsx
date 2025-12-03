@@ -641,7 +641,35 @@ export default function Home() {
                     </Button>
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="md:hidden overflow-x-auto -mx-4 md:mx-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <div className="flex gap-4 px-4">
+                    {(featuredNewsHome.length > 0 ? allNews.filter((n: any) => !n.featured) : allNews).filter((n: any) => n.previewOnHome !== false).slice(0, 6).map((item: any) => (
+                      <Link key={item.id} href={`/news/${item.id}`} className="block min-w-[280px] sm:min-w-[320px]" data-testid={`home-news-${item.id}`}>
+                        <div className="overflow-hidden">
+                          <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
+                            <img src={item.image} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" width="400" height="225" loading="lazy" decoding="async" />
+                            {item.category && (
+                              <div className="absolute top-2 right-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.category}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{item.content?.substring(0, 120) || ''}...</p>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <span>{item.dateRange}</span>
+                              {item.author && <span>• {item.author}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(featuredNewsHome.length > 0 ? allNews.filter((n: any) => !n.featured) : allNews).filter((n: any) => n.previewOnHome !== false).slice(0, 6).map((item: any) => (
                     <Link key={item.id} href={`/news/${item.id}`} className="block" data-testid={`home-news-${item.id}`}>
                       <div className="overflow-hidden">

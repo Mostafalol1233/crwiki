@@ -41,7 +41,9 @@ import Register from "@/pages/Register";
 import Chat from "@/pages/Chat";
 import ResetPassword from "@/pages/ResetPassword";
 import { SEOHead } from "@/components/SEOHead";
+import AnnouncementModal from "@/components/AnnouncementModal";
 import TargetCursor from "@/components/TargetCursor";
+import AdminAnnouncements from "@/pages/AdminAnnouncements";
 
 function Router() {
   return (
@@ -78,6 +80,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/announcements-manage" component={AdminAnnouncements} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/:rest*" component={Admin} />
       <Route path="/login" component={Login} />
@@ -122,6 +125,7 @@ function Layout() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1">
+        <AnnouncementModal location={location} />
         <Router />
       </main>
       <Footer />

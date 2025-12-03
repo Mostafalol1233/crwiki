@@ -298,6 +298,22 @@ var ChatSettingsSchema = new Schema({
     updatedAt: { type: Date, default: Date.now },
 });
 var ChatSettingsModel = mongoose.model("ChatSettings", ChatSettingsSchema);
+var GlobalAnnouncementSchema = new Schema({
+    contentHtml: { type: String, default: "" },
+    imageUrl: { type: String, default: "" },
+    linkUrl: { type: String, default: "" },
+    active: { type: Boolean, default: true },
+    dismissible: { type: Boolean, default: true },
+}, { timestamps: true });
+var SellerAnnouncementSchema = new Schema({
+    sellerSlug: { type: String, index: true, unique: true },
+    contentHtml: { type: String, default: "" },
+    imageUrl: { type: String, default: "" },
+    linkUrl: { type: String, default: "" },
+    active: { type: Boolean, default: true },
+}, { timestamps: true });
+var GlobalAnnouncementModel = mongoose.model("GlobalAnnouncement", GlobalAnnouncementSchema);
+var SellerAnnouncementModel = mongoose.model("SellerAnnouncement", SellerAnnouncementSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
@@ -4232,26 +4248,23 @@ app.use((req, res, next) => {
         });
     });
 
-    // Auto-seed database if AUTO_SEED=true - uses ranksData from seed-from-urls.js
-    if (process.env.AUTO_SEED === "true") {
+    // Auto-seed database from URLs (default enabled if not set)
+    if (process.env.AUTO_SEED === void 0) process.env.AUTO_SEED = "true";
+    if (String(process.env.AUTO_SEED).toLowerCase() === "true") {
         (async () => {
             try {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
-                log("🌱 AUTO_SEED enabled: seeding ranks from seed-from-urls.js...");
-                await RankModel.deleteMany({});
-                
-                // Import ranks data from seed-from-urls.js
+                log("🌱 AUTO_SEED enabled: seeding data from seed-from-urls.js...");
                 const seedModule = await import("./seed-from-urls.js");
-                const allRanks = seedModule.ranksData || [];
-                
-                if (allRanks.length > 0) {
-                    await RankModel.insertMany(allRanks);
-                    log(`✅ Seeded ${allRanks.length} ranks successfully`);
+                const run = seedModule?.default;
+                if (typeof run === "function") {
+                    await run();
+                    log("✅ Seeded mercenaries, weapons, modes, and ranks successfully");
                 } else {
-                    log("⚠️ No ranks data found in seed-from-urls.js");
+                    log("⚠️ seed-from-urls.js default export is not a function");
                 }
             } catch (err) {
-                log(`⚠️ Auto-seeding error: ${err.message}`);
+                log(`⚠️ Auto-seeding error: ${err?.message || err}`);
             }
         })();
     }

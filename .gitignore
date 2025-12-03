@@ -40,7 +40,6 @@ yarn-error.log*
 replit.md
 
 # Project specific backend (don't deploy to Vercel)
-backend-deploy-full/
 backend/
 server/
 merc-mp3/

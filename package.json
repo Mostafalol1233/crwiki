@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/dev.ts",
-    "build": "npm run build:client",
+    "build": "npm run build:client && node -e \"const fs=require('fs');const path=require('path');const src=path.resolve('Hazbin Hotel S2 Ultimate Sing-Along - PART 2 _ Prime Video (mp3cut.net) (1).mp3');const dest=path.resolve('dist/client/Hazbin Hotel S2 Ultimate Sing-Along - PART 2 _ Prime Video (mp3cut.net) (1).mp3');try{if(fs.existsSync(src)){fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(src,dest);console.log('Copied intro mp3 to dist');}else{console.log('Intro mp3 not found, skipping copy');}}catch(e){console.log('Copy intro mp3 failed:',e.message);}\"",
     "build:client": "vite build",
     "build:server": "cd server && tsc -p tsconfig.json && cd ..",
     "start": "cross-env NODE_ENV=production node -r dotenv/config dist/server/index.js",

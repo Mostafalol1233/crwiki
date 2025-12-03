@@ -4168,7 +4168,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
 
-    app2.put("/api/announcements/global", requireAuth, requireSuperAdmin, async (req, res) => {
+    app2.put("/api/announcements/global", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
         try {
             const payload = {
                 contentHtml: String(req.body?.contentHtml || ""),
@@ -4214,10 +4214,21 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
 
-    app2.put("/api/announcements/seller/:slug", requireAuth, requireSuperAdmin, async (req, res) => {
+    app2.put("/api/announcements/seller/:slug", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
         try {
             const slug = String(req.params.slug || "").trim().toLowerCase();
             if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            // Prevent image duplication from seller's own images
+            try {
+                const imageUrl = String(req.body?.imageUrl || "").trim();
+                if (imageUrl) {
+                    const sellerDoc = await SellerModel.findOne({ seller_name_slug: slug }).lean();
+                    const images = sellerDoc?.images || [];
+                    if (images.includes(imageUrl)) {
+                        return res.status(400).json({ error: "Image duplicates seller page image" });
+                    }
+                }
+            } catch {}
             const payload = {
                 sellerSlug: slug,
                 contentHtml: String(req.body?.contentHtml || ""),
@@ -4230,6 +4241,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 payload,
                 { upsert: true, new: true }
             ).lean();
+            try { await storage.auditAdminAction("seller_announcement_update", slug, req.user?.id || "", { active: !!updated.active }); } catch {}
             res.json({
                 contentHtml: updated.contentHtml || "",
                 imageUrl: updated.imageUrl || "",
@@ -4239,6 +4251,103 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             });
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+
+    // Announcements: Admin CRUD endpoints
+    app2.get("/api/admin/announcements/global", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const docs = await GlobalAnnouncementModel.find().sort({ updatedAt: -1 }).lean();
+            const out = docs.map((d) => ({ id: String(d._id), contentHtml: d.contentHtml || "", imageUrl: d.imageUrl || "", linkUrl: d.linkUrl || "", active: d.active ?? true, dismissible: d.dismissible !== false, updatedAt: d.updatedAt }));
+            res.json(out);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/announcements/global", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const payload = {
+                contentHtml: String(req.body?.contentHtml || ""),
+                imageUrl: String(req.body?.imageUrl || ""),
+                linkUrl: String(req.body?.linkUrl || ""),
+                active: !!req.body?.active,
+                dismissible: req.body?.dismissible === false ? false : true,
+            };
+            const created = await GlobalAnnouncementModel.create(payload);
+            const lean = await GlobalAnnouncementModel.findById(created._id).lean();
+            try { await storage.auditAdminAction("global_announcement_create", String(created._id), req.user?.id || "", {}); } catch {}
+            res.status(201).json({ id: String(lean._id), contentHtml: lean.contentHtml || "", imageUrl: lean.imageUrl || "", linkUrl: lean.linkUrl || "", active: lean.active ?? true, dismissible: lean.dismissible !== false, updatedAt: lean.updatedAt });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/announcements/global/:id", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const ok = await GlobalAnnouncementModel.findByIdAndDelete(id);
+            if (!ok) return res.status(404).json({ error: "Announcement not found" });
+            try { await storage.auditAdminAction("global_announcement_delete", id, req.user?.id || "", {}); } catch {}
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/announcements/seller", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const docs = await SellerAnnouncementModel.find().sort({ updatedAt: -1 }).lean();
+            const out = docs.map((d) => ({ id: String(d._id), sellerSlug: d.sellerSlug, contentHtml: d.contentHtml || "", imageUrl: d.imageUrl || "", linkUrl: d.linkUrl || "", active: d.active ?? true, updatedAt: d.updatedAt }));
+            res.json(out);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/announcements/seller/:slug", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            if (!slug) return res.status(400).json({ error: "Missing seller slug" });
+            const payload = {
+                sellerSlug: slug,
+                contentHtml: String(req.body?.contentHtml || ""),
+                imageUrl: String(req.body?.imageUrl || ""),
+                linkUrl: String(req.body?.linkUrl || ""),
+                active: !!req.body?.active,
+            };
+            // Prevent image duplication from seller's own images
+            try {
+                const imageUrl = payload.imageUrl.trim();
+                if (imageUrl) {
+                    const sellerDoc = await SellerModel.findOne({ seller_name_slug: slug }).lean();
+                    const images = sellerDoc?.images || [];
+                    if (images.includes(imageUrl)) {
+                        return res.status(400).json({ error: "Image duplicates seller page image" });
+                    }
+                }
+            } catch {}
+            const updated = await SellerAnnouncementModel.findOneAndUpdate(
+                { sellerSlug: slug },
+                payload,
+                { upsert: true, new: true }
+            ).lean();
+            try { await storage.auditAdminAction("seller_announcement_create_or_update", slug, req.user?.id || "", { active: !!updated.active }); } catch {}
+            res.status(201).json({ id: String(updated._id), sellerSlug: slug, contentHtml: updated.contentHtml || "", imageUrl: updated.imageUrl || "", linkUrl: updated.linkUrl || "", active: !!updated.active, updatedAt: updated.updatedAt });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/announcements/seller/:slug", requireAuth, requireSuperAdmin, requireCsrf, async (req, res) => {
+        try {
+            const slug = String(req.params.slug || "").trim().toLowerCase();
+            const ok = await SellerAnnouncementModel.findOneAndDelete({ sellerSlug: slug });
+            if (!ok) return res.status(404).json({ error: "Announcement not found" });
+            try { await storage.auditAdminAction("seller_announcement_delete", slug, req.user?.id || "", {}); } catch {}
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

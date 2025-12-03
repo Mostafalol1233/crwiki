@@ -32,6 +32,7 @@ export default function AdminAnnouncements() {
   const [gActive, setGActive] = useState(true);
   const [gDismissible, setGDismissible] = useState(true);
   const [loadingGlobal, setLoadingGlobal] = useState(false);
+  const [globalList, setGlobalList] = useState<any[]>([]);
 
   // Seller announcement state
   const [sellerName, setSellerName] = useState("");
@@ -41,6 +42,9 @@ export default function AdminAnnouncements() {
   const [sLinkUrl, setSLinkUrl] = useState("");
   const [sActive, setSActive] = useState(true);
   const [loadingSeller, setLoadingSeller] = useState(false);
+  const [sellerAnnouncements, setSellerAnnouncements] = useState<any[]>([]);
+  const [sellerReviews, setSellerReviews] = useState<any[]>([]);
+  const [activeSellerForReviews, setActiveSellerForReviews] = useState<{ id: string; name: string } | null>(null);
 
   // Load global on mount
   useEffect(() => {
@@ -63,6 +67,13 @@ export default function AdminAnnouncements() {
         }
       } catch {}
       finally { setLoadingGlobal(false); }
+      try {
+        const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+        if (res2.ok) {
+          const list = await res2.json();
+          setGlobalList(Array.isArray(list) ? list : []);
+        }
+      } catch {}
     })();
   }, []);
 
@@ -71,15 +82,33 @@ export default function AdminAnnouncements() {
       setLoadingGlobal(true);
       const res = await fetch(`/api/announcements/global`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}` },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible }),
       });
       if (!res.ok) throw new Error(await res.text());
       toast({ title: "Saved", description: "Global announcement updated" });
+      try {
+        const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+        if (res2.ok) setGlobalList(await res2.json());
+      } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
     } finally {
       setLoadingGlobal(false);
+    }
+  };
+
+  const deleteGlobal = async (id: string) => {
+    try {
+      const res = await fetch(`/api/announcements/global/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setGlobalList((prev) => prev.filter((g) => g.id !== id));
+      toast({ title: 'Deleted', description: 'Global announcement removed' });
+    } catch (e: any) {
+      toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
     }
   };
 
@@ -98,6 +127,20 @@ export default function AdminAnnouncements() {
         // clear if none
         setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true);
       }
+      // Load seller announcement list
+      try {
+        const res2 = await fetch(`/api/admin/announcements/seller`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+        if (res2.ok) setSellerAnnouncements(await res2.json());
+      } catch {}
+      // Load reviews for this seller slug
+      try {
+        const res3 = await fetch(`/api/reviews/seller/by-slug/${encodeURIComponent(sellerSlug)}`);
+        if (res3.ok) {
+          const data = await res3.json();
+          setActiveSellerForReviews({ id: data?.seller?.id, name: data?.seller?.name });
+          setSellerReviews(Array.isArray(data?.reviews) ? data.reviews : []);
+        }
+      } catch {}
     } catch {}
     finally { setLoadingSeller(false); }
   };
@@ -111,15 +154,50 @@ export default function AdminAnnouncements() {
       setLoadingSeller(true);
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
         method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("auth_token") || ""}` },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive }),
       });
       if (!res.ok) throw new Error(await res.text());
       toast({ title: "Saved", description: "Seller announcement updated" });
+      try {
+        const res2 = await fetch(`/api/admin/announcements/seller`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+        if (res2.ok) setSellerAnnouncements(await res2.json());
+      } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
     } finally {
       setLoadingSeller(false);
+    }
+  };
+
+  const deleteSellerAnnouncement = async () => {
+    if (!sellerSlug) return;
+    try {
+      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
+      setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true);
+      toast({ title: 'Deleted', description: 'Seller announcement removed' });
+    } catch (e: any) {
+      toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
+    }
+  };
+
+  const deleteSellerReview = async (reviewId: string) => {
+    try {
+      if (!activeSellerForReviews) return;
+      const res = await fetch(`/api/sellers/${activeSellerForReviews.id}/reviews/${encodeURIComponent(reviewId)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setSellerReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      toast({ title: 'Review deleted' });
+    } catch (e: any) {
+      toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
     }
   };
 
@@ -154,6 +232,22 @@ export default function AdminAnnouncements() {
             <div className="flex gap-3">
               <Button onClick={saveGlobal} disabled={loadingGlobal}>Save</Button>
             </div>
+
+            {globalList.length > 0 && (
+              <div className="mt-6">
+                <div className="text-sm font-medium mb-2">All Global Announcements</div>
+                <div className="space-y-2">
+                  {globalList.map((g) => (
+                    <div key={g.id} className="flex items-center justify-between border rounded-md p-2">
+                      <div className="text-xs truncate max-w-[70%]">{g.contentHtml || '(empty)'}</div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => deleteGlobal(g.id)}>Delete</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -186,7 +280,39 @@ export default function AdminAnnouncements() {
 
             <div className="flex gap-3">
               <Button onClick={saveSeller} disabled={!sellerSlug || loadingSeller}>Save</Button>
+              <Button variant="outline" onClick={deleteSellerAnnouncement} disabled={!sellerSlug || loadingSeller}>Delete</Button>
             </div>
+
+            {sellerAnnouncements.length > 0 && (
+              <div className="mt-6">
+                <div className="text-sm font-medium mb-2">Seller Announcements</div>
+                <div className="space-y-2">
+                  {sellerAnnouncements.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between border rounded-md p-2">
+                      <div className="text-xs truncate max-w-[50%]">{s.sellerSlug}</div>
+                      <div className="text-xs truncate max-w-[30%]">{s.contentHtml || '(empty)'}</div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSellerName(s.sellerSlug)}>Load</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSellerForReviews && (
+              <div className="mt-6">
+                <div className="text-sm font-medium mb-2">Comments for {activeSellerForReviews.name}</div>
+                <div className="space-y-2">
+                  {sellerReviews.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between border rounded-md p-2">
+                      <div className="text-xs truncate max-w-[70%]">{r.comment || ''}</div>
+                      <Button variant="outline" size="sm" onClick={() => deleteSellerReview(r.id)}>Delete</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

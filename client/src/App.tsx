@@ -95,7 +95,7 @@ function Router() {
 function Layout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
-  const [showNeon, setShowNeon] = useState(true);
+  const [showNeon, setShowNeon] = useState(false);
   const [neonFade, setNeonFade] = useState(false);
   const audioRef = (typeof window !== "undefined") ? (window as any).__introAudioRef || { current: null } : { current: null };
   if ((window as any).__introAudioRef === undefined) {
@@ -129,7 +129,9 @@ function Layout() {
       if (!el) return;
       audioRef.current = el;
       const onEnded = () => { setNeonFade(true); setTimeout(() => setShowNeon(false), 800); };
+      const onPlaying = () => { setNeonFade(false); setShowNeon(true); };
       el.addEventListener("ended", onEnded);
+      el.addEventListener("playing", onPlaying);
       const tryPlay = async () => {
         try {
           el.muted = true;
@@ -142,7 +144,7 @@ function Layout() {
         }
       };
       tryPlay();
-      return () => { el.removeEventListener("ended", onEnded); };
+      return () => { el.removeEventListener("ended", onEnded); el.removeEventListener("playing", onPlaying); };
     } catch {}
   }, []);
 
@@ -152,11 +154,11 @@ function Layout() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <audio id="intro-audio" src="/Hazbin Hotel S2 Ultimate Sing-Along - PART 2 _ Prime Video (mp3cut.net) (1).mp3" preload="auto" playsInline autoPlay muted />
+      <audio id="intro-audio" src="/media/intro.mp3" preload="auto" playsInline autoPlay muted />
       {showNeon && (
         <div className={`vox-neon-text ${neonFade ? "vox-fade-out" : ""}`} aria-live="polite" role="status">
           <div className="vox-electric">
-            <h1 className="vox-text vox-pulse" aria-label="Trust us with Your News">Trust us with Your News</h1>
+            <h1 className="vox-text vox-pulse" aria-label="trust us with your news">trust us with your news</h1>
           </div>
         </div>
       )}

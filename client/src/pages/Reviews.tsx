@@ -107,7 +107,7 @@ export default function Reviews() {
     }
   });
 
-  const { data: sellerPage } = useQuery<{ sellerSlug: string; images: string[]; descriptionHtml: string }>({
+  const { data: sellerPage } = useQuery<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks: { image: string; contentHtml: string; description: string }[] }>({
     queryKey: ["/api/seller-pages", sellerSlug],
     enabled: !!match && !!sellerSlug,
     queryFn: async () => {
@@ -361,7 +361,7 @@ export default function Reviews() {
               <div className="mt-6">
                 <h3 className="font-semibold mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {sellerPage!.blocks.slice(1).map((blk, idx) => (
+                  {sellerPage!.blocks.slice(1).map((blk: { image: string; contentHtml: string; description: string }, idx: number) => (
                     <div key={idx} className="flex items-center justify-center">
                       <img
                         src={blk.image}

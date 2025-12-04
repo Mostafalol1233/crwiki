@@ -119,8 +119,17 @@ export default function Home() {
     <>
       <PageSEO
         title={"CrossFire Wiki — Guides, Weapons, Modes & Community"}
-        description={"CrossFire Wiki: weapons, modes, tutorials, ranks, and community resources. Master Crossfire with up-to-date guides and maps."}
-        keywords={["CrossFire", "CrossFire wiki", "weapons", "modes", "tutorials"]}
+        description={"CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master Crossfire with up-to-date guides, maps and competitive intel."}
+        keywords={[
+          "CrossFire",
+          "CrossFire wiki",
+          "CrossFire events",
+          "CrossFire tournaments",
+          "CrossFire competitive modes",
+          "weapons",
+          "modes",
+          "tutorials",
+        ]}
         canonicalPath="/"
       />
       <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
@@ -157,12 +166,12 @@ export default function Home() {
                 {displayEvents[0] && (
                   <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block" key={displayEvents[0].id} data-testid={`home-event-left-top-${displayEvents[0].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
                         {displayEvents[0].image && (
                           <img
                             src={displayEvents[0].image}
                             alt={displayEvents[0].title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -195,12 +204,12 @@ export default function Home() {
                 {displayEvents[1] && (
                   <Link href={displayEvents[1].event_name_slug ? `/events/${displayEvents[1].event_name_slug}` : `/events/${displayEvents[1].id}`} className="block" key={displayEvents[1].id} data-testid={`home-event-left-bottom-${displayEvents[1].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
                         {displayEvents[1].image && (
                           <img
                             src={displayEvents[1].image}
                             alt={displayEvents[1].title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -236,12 +245,12 @@ export default function Home() {
                 {displayEvents[2] && (
                   <Link href={displayEvents[2].event_name_slug ? `/events/${displayEvents[2].event_name_slug}` : `/events/${displayEvents[2].id}`} className="block" key={displayEvents[2].id} data-testid={`home-event-right-featured-${displayEvents[2].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px] w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
                         {displayEvents[2].image && (
                           <img
                             src={displayEvents[2].image}
                             alt={displayEvents[2].title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                             width="800"
                             height="544"
                             loading="lazy"
@@ -280,18 +289,18 @@ export default function Home() {
                   {displayEvents[3] && (
                     <Link href={displayEvents[3].event_name_slug ? `/events/${displayEvents[3].event_name_slug}` : `/events/${displayEvents[3].id}`} className="block" key={displayEvents[3].id} data-testid={`home-event-bottom-left-top-${displayEvents[3].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
-                        <div className="relative w-full h-full overflow-hidden rounded-md">
-                        {displayEvents[3].image && (
-          <img
-            src={displayEvents[3].image}
-            alt={displayEvents[3].title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            width="400"
-            height="256"
-            loading="lazy"
-            decoding="async"
-          />
-        )}
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                          {displayEvents[3].image && (
+                            <img
+                              src={displayEvents[3].image}
+                              alt={displayEvents[3].title}
+                              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                              width="400"
+                              height="256"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          )}
                           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[3].title}</h4>
@@ -304,12 +313,12 @@ export default function Home() {
                   {displayEvents[4] && (
                     <Link href={displayEvents[4].event_name_slug ? `/events/${displayEvents[4].event_name_slug}` : `/events/${displayEvents[4].id}`} className="block" key={displayEvents[4].id} data-testid={`home-event-bottom-left-bottom-${displayEvents[4].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
-                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
         {displayEvents[4].image && (
           <img
             src={displayEvents[4].image}
             alt={displayEvents[4].title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
             width="400"
             height="256"
             loading="lazy"
@@ -331,12 +340,12 @@ export default function Home() {
                   {displayEvents[5] && (
                     <Link href={displayEvents[5].event_name_slug ? `/events/${displayEvents[5].event_name_slug}` : `/events/${displayEvents[5].id}`} className="block" key={displayEvents[5].id} data-testid={`home-event-bottom-right-${displayEvents[5].id}`}>
                       <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px]">
-                        <div className="relative w-full h-full overflow-hidden rounded-md">
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
         {displayEvents[5].image && (
           <img
             src={displayEvents[5].image}
             alt={displayEvents[5].title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
             width="800"
             height="544"
             loading="lazy"
@@ -495,7 +504,7 @@ export default function Home() {
                       <img
                         src={allEvents[0].image}
                         alt={allEvents[0].title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                         width="400"
                         height="267"
                         loading="lazy"
@@ -746,9 +755,9 @@ export default function Home() {
                                   {allEvents[0] && (
                                     <Link href={`/events/${allEvents[0].event_name_slug || allEvents[0].id}`} className="block" data-testid={`home-event-featured-${allEvents[0].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[0].image && (
-                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -767,9 +776,9 @@ export default function Home() {
                                   {allEvents[1] && (
                                     <Link href={`/events/${allEvents[1].event_name_slug || allEvents[1].id}`} className="block" data-testid={`home-event-right-top-${allEvents[1].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[1].image && (
-                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
@@ -783,9 +792,9 @@ export default function Home() {
                                   {allEvents[2] && (
                                     <Link href={`/events/${allEvents[2].event_name_slug || allEvents[2].id}`} className="block" data-testid={`home-event-right-bottom-${allEvents[2].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[2].image && (
-                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
@@ -803,9 +812,9 @@ export default function Home() {
                                   {allEvents[3] && (
                                     <Link href={`/events/${allEvents[3].event_name_slug || allEvents[3].id}`} className="block" data-testid={`home-event-2-left-1-${allEvents[3].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[3].image && (
-                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -819,9 +828,9 @@ export default function Home() {
                                   {allEvents[4] && (
                                     <Link href={`/events/${allEvents[4].event_name_slug || allEvents[4].id}`} className="block" data-testid={`home-event-2-left-2-${allEvents[4].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[4].image && (
-                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -837,9 +846,9 @@ export default function Home() {
                                   {allEvents[5] && (
                                     <Link href={`/events/${allEvents[5].event_name_slug || allEvents[5].id}`} className="block" data-testid={`home-event-2-right-large-${allEvents[5].id}`}>
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
-                                        <div className="absolute inset-0">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[5].image && (
-                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />

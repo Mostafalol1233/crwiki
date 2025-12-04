@@ -144,6 +144,32 @@ export default function EventDetail() {
           eventAttendanceMode: "OnlineEventAttendanceMode",
         }}
       />
+      <SEOHead
+        onlySchema
+        schemaType="BreadcrumbList"
+        schemaData={{
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Home",
+              item: baseUrl || "https://crossfire.wiki/",
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Events",
+              item: `${baseUrl}/category/events`,
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: title,
+              item: eventUrl,
+            },
+          ],
+        }}
+      />
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
           <Breadcrumbs items={breadcrumbs} />

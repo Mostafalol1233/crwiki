@@ -127,15 +127,13 @@ export default function News() {
                       </Badge>
                     </div>
 
-                    <div className="absolute inset-x-0 bottom-0 p-6 text-white bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                    <div className="absolute inset-x-0 bottom-0 p-2 md:p-3 text-white bg-gradient-to-t from-black/70 via-black/20 to-transparent">
                       <h3
-                        className={`font-bold mb-2 ${
-                          index === 0 ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"
-                        }`}
+                        className="text-sm md:text-base font-semibold leading-tight px-2 py-1"
                       >
                         {language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title}
                       </h3>
-                      <p className="text-base md:text-lg text-white/85">{item.dateRange}</p>
+                      <p className="text-xs md:text-sm text-white/85 px-2 pb-1">{item.dateRange}</p>
                     </div>
                   </div>
                 </Card>

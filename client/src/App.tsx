@@ -130,7 +130,7 @@ function Layout() {
       if (!el) return;
       audioRef.current = el;
       const onEnded = () => { setNeonFade(true); setTimeout(() => setShowNeon(false), 800); };
-      const onPlaying = () => { setNeonFade(false); setShowNeon(true); setTimeout(() => setShowNeon(false), 20000); };
+      const onPlaying = () => { setNeonFade(false); setShowNeon(true); setTimeout(() => setShowNeon(false), 2000); };
       el.addEventListener("ended", onEnded);
       el.addEventListener("playing", onPlaying);
       const tryPlay = async () => {
@@ -142,11 +142,19 @@ function Layout() {
         } catch {
           // show subtle prompt if autoplay blocked
           setShowNeon(true);
-          setTimeout(() => setShowNeon(false), 20000);
+          setTimeout(() => setShowNeon(false), 2000);
         }
       };
       tryPlay();
       return () => { el.removeEventListener("ended", onEnded); el.removeEventListener("playing", onPlaying); };
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      const audio = new Audio('/sounds/startup.mp3');
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
     } catch {}
   }, []);
 

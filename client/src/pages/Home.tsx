@@ -171,7 +171,7 @@ export default function Home() {
                           <img
                             src={displayEvents[0].image}
                             alt={displayEvents[0].title}
-                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -209,7 +209,7 @@ export default function Home() {
                           <img
                             src={displayEvents[1].image}
                             alt={displayEvents[1].title}
-                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -250,7 +250,7 @@ export default function Home() {
                           <img
                             src={displayEvents[2].image}
                             alt={displayEvents[2].title}
-                            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="800"
                             height="544"
                             loading="lazy"
@@ -294,7 +294,7 @@ export default function Home() {
                             <img
                               src={displayEvents[3].image}
                               alt={displayEvents[3].title}
-                              className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                              className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
                               width="400"
                               height="256"
                               loading="lazy"
@@ -318,7 +318,7 @@ export default function Home() {
           <img
             src={displayEvents[4].image}
             alt={displayEvents[4].title}
-            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
             width="400"
             height="256"
             loading="lazy"
@@ -345,7 +345,7 @@ export default function Home() {
           <img
             src={displayEvents[5].image}
             alt={displayEvents[5].title}
-            className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
             width="800"
             height="544"
             loading="lazy"
@@ -504,7 +504,7 @@ export default function Home() {
                       <img
                         src={allEvents[0].image}
                         alt={allEvents[0].title}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
                         width="400"
                         height="267"
                         loading="lazy"
@@ -757,7 +757,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[0].image && (
-                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[0].image} alt={allEvents[0].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -778,7 +778,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[1].image && (
-                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[1].image} alt={allEvents[1].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
@@ -794,7 +794,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[195px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[2].image && (
-                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[2].image} alt={allEvents[2].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
@@ -814,7 +814,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[3].image && (
-                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[3].image} alt={allEvents[3].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -830,7 +830,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[4].image && (
-                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[4].image} alt={allEvents[4].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />
@@ -848,7 +848,7 @@ export default function Home() {
                                       <div className="relative overflow-hidden group cursor-pointer h-[400px]">
                                         <div className="absolute inset-0 flex items-center justify-center bg-black">
                                           {allEvents[5].image && (
-                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
+                                            <img src={allEvents[5].image} alt={allEvents[5].title} className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" width="400" height="256" />
                                           )}
                                         </div>
                                         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/30 to-transparent" />

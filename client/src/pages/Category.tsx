@@ -143,7 +143,7 @@ export default function Category() {
                             <img
                               src={event.image}
                               alt={event.title}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-cover rounded-xl"
                             />
                             <Badge
                               variant={event.type === "upcoming" ? "default" : "secondary"}
@@ -184,7 +184,7 @@ export default function Category() {
                           <img
                             src={item.image}
                             alt={item.title}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-cover rounded-xl"
                           />
                           {item.featured && (
                             <Badge variant="default" className="absolute top-2 left-2">

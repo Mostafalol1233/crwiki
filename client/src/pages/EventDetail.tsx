@@ -199,7 +199,7 @@ export default function EventDetail() {
               <img
                 src={event.image}
                 alt={title}
-                className="w-full h-auto max-h-[550px] object-contain"
+                className="w-full h-full max-h-[550px] object-cover rounded-xl"
                 onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
                 data-testid="img-event"
               />

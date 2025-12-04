@@ -64,6 +64,7 @@ export default function Reviews() {
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewImageDescription, setPreviewImageDescription] = useState<string>("");
+  const [previewContentHtml, setPreviewContentHtml] = useState<string>("");
 
   const [match, params] = useRoute("/reviews/seller/:sellerName");
   const sellerNameParam = match ? params?.sellerName as string : "";
@@ -302,6 +303,7 @@ export default function Reviews() {
   const isAdmin = jwtPayload && ['super_admin', 'admin', 'seller_admin', 'ticket_manager'].includes(jwtPayload.role);
   const [sellerImageEdit, setSellerImageEdit] = useState("");
   const [sellerDescEdit, setSellerDescEdit] = useState("");
+  const [sellerHtmlEdit, setSellerHtmlEdit] = useState("");
 
   return (
     <>
@@ -333,16 +335,16 @@ export default function Reviews() {
               {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
               <span className="text-sm">{(sellerByName.seller.averageRating || 0).toFixed(1)} ({sellerByName.seller.totalReviews || 0})</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
                 <div className="w-full max-w-md h-48 rounded-md overflow-hidden flex items-center justify-center">
-                  {(sellerPage?.images?.length || 0) > 0 ? (
+                  {(sellerPage?.blocks?.length || 0) > 0 ? (
                     <img
-                      src={sellerPage!.images[0]}
+                      src={sellerPage!.blocks[0].image}
                       alt={`${sellerByName.seller.name} image`}
                       className="w-full h-full object-contain cursor-pointer"
                       loading="lazy"
-                      onClick={() => { setPreviewImageUrl(sellerPage!.images[0]); setPreviewImageDescription(sellerPage?.descriptionHtml || ""); setIsImagePreviewOpen(true); }}
+                      onClick={() => { setPreviewImageUrl(sellerPage!.blocks[0].image); setPreviewImageDescription(sellerPage!.blocks[0].description || sellerPage?.descriptionHtml || ""); setPreviewContentHtml(sellerPage!.blocks[0].contentHtml || ""); setIsImagePreviewOpen(true); }}
                       data-testid={`img-seller-hero-${sellerByName.seller.id}`}
                     />
                   ) : (
@@ -355,18 +357,18 @@ export default function Reviews() {
               </div>
             </div>
 
-            {(sellerPage?.images?.length || 0) > 1 && (
+            {(sellerPage?.blocks?.length || 0) > 1 && (
               <div className="mt-6">
                 <h3 className="font-semibold mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {sellerPage!.images.slice(1).map((image, idx) => (
+                  {sellerPage!.blocks.slice(1).map((blk, idx) => (
                     <div key={idx} className="flex items-center justify-center">
                       <img
-                        src={image}
+                        src={blk.image}
                         alt={`${sellerByName.seller.name} ${idx + 2}`}
                         className="w-full h-36 object-contain cursor-pointer"
                         loading="lazy"
-                        onClick={() => { setPreviewImageUrl(image); setPreviewImageDescription(sellerPage?.descriptionHtml || ""); setIsImagePreviewOpen(true); }}
+                        onClick={() => { setPreviewImageUrl(blk.image); setPreviewImageDescription(blk.description || sellerPage?.descriptionHtml || ""); setPreviewContentHtml(blk.contentHtml || ""); setIsImagePreviewOpen(true); }}
                       />
                     </div>
                   ))}
@@ -386,6 +388,10 @@ export default function Reviews() {
                     <Label htmlFor="seller-desc">Description</Label>
                     <Textarea id="seller-desc" value={sellerDescEdit} onChange={(e)=> setSellerDescEdit(e.target.value)} rows={3} placeholder="Short description" />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="seller-html">Content (HTML)</Label>
+                    <Textarea id="seller-html" value={sellerHtmlEdit} onChange={(e)=> setSellerHtmlEdit(e.target.value)} rows={4} placeholder="<p style='color:#f80;font-weight:bold'>Your rich content here</p>" />
+                  </div>
                 </div>
                 <div className="mt-3">
                   <Button
@@ -393,12 +399,12 @@ export default function Reviews() {
                     onClick={async () => {
                       try {
                         const payload: any = {};
-                        if (sellerImageEdit.trim()) {
-                          const parts = sellerImageEdit.split(',').map((s)=> s.trim()).filter(Boolean);
-                          payload.images = parts.length ? parts : [sellerImageEdit.trim()];
+                        const nextBlocks = Array.isArray(sellerPage?.blocks) ? [...sellerPage!.blocks] : [];
+                        if (sellerImageEdit.trim() || sellerHtmlEdit.trim() || sellerDescEdit.trim()) {
+                          nextBlocks.push({ image: sellerImageEdit.trim(), contentHtml: sellerHtmlEdit.trim(), description: sellerDescEdit.trim() });
+                          payload.blocks = nextBlocks;
                         }
-                        if (sellerDescEdit.trim()) payload.descriptionHtml = sellerDescEdit.trim();
-                        if (!payload.images && !payload.description) {
+                        if (!payload.blocks) {
                           toast({ title: "Nothing to update", variant: "destructive" });
                           return;
                         }
@@ -407,6 +413,7 @@ export default function Reviews() {
                         toast({ title: "Seller updated" });
                         setSellerImageEdit("");
                         setSellerDescEdit("");
+                        setSellerHtmlEdit("");
                       } catch (err: any) {
                         toast({ title: "Update failed", description: err?.message, variant: "destructive" });
                       }
@@ -673,6 +680,9 @@ export default function Reviews() {
           {previewImageUrl && (
             <>
               <img src={previewImageUrl} alt="Preview" className="w-full h-auto object-contain rounded-md" />
+              {previewContentHtml && (
+                <div className="prose prose-invert max-w-none mt-3" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewContentHtml) }} />
+              )}
               {previewImageDescription && (
                 <p className="text-sm text-muted-foreground mt-3" data-testid="text-image-description">
                   {previewImageDescription}

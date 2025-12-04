@@ -318,6 +318,16 @@ var SellerPageSchema = new Schema({
     sellerSlug: { type: String, index: true, unique: true },
     images: { type: [String], default: [] },
     descriptionHtml: { type: String, default: "" },
+    blocks: {
+        type: [
+            {
+                image: { type: String, default: "" },
+                contentHtml: { type: String, default: "" },
+                description: { type: String, default: "" },
+            },
+        ],
+        default: [],
+    },
 }, { timestamps: true });
 var SellerPageModel = mongoose.model("SellerPage", SellerPageSchema);
 var insertUserSchema = z.object({
@@ -4367,8 +4377,14 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             const slug = String(req.params.slug || "").trim().toLowerCase();
             if (!slug) return res.status(400).json({ error: "Missing seller slug" });
             const doc = await SellerPageModel.findOne({ sellerSlug: slug }).lean();
-            if (!doc) return res.json({ sellerSlug: slug, images: [], descriptionHtml: "" });
-            res.json({ sellerSlug: slug, images: doc.images || [], descriptionHtml: doc.descriptionHtml || "" });
+            if (!doc) return res.json({ sellerSlug: slug, images: [], descriptionHtml: "", blocks: [] });
+            const images = doc.images || [];
+            const descriptionHtml = doc.descriptionHtml || "";
+            let blocks = Array.isArray(doc.blocks) ? doc.blocks : [];
+            if ((!blocks || blocks.length === 0) && images.length > 0) {
+                blocks = images.map((img) => ({ image: img, contentHtml: "", description: "" }));
+            }
+            res.json({ sellerSlug: slug, images, descriptionHtml, blocks });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -4378,14 +4394,29 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         try {
             const slug = String(req.params.slug || "").trim().toLowerCase();
             if (!slug) return res.status(400).json({ error: "Missing seller slug" });
-            const images = Array.isArray(req.body?.images) ? req.body.images.filter((s) => !!String(s).trim()) : [];
-            const descriptionHtml = String(req.body?.descriptionHtml || "");
+            const images = Array.isArray(req.body?.images) ? req.body.images.filter((s) => !!String(s).trim()) : undefined;
+            const descriptionHtml = typeof req.body?.descriptionHtml === "string" ? String(req.body.descriptionHtml) : undefined;
+            const blocks = Array.isArray(req.body?.blocks)
+                ? req.body.blocks
+                    .map((b) => ({
+                        image: String(b?.image || ""),
+                        contentHtml: String(b?.contentHtml || ""),
+                        description: String(b?.description || ""),
+                    }))
+                : undefined;
+            const update = { sellerSlug: slug };
+            if (images !== undefined) update.images = images;
+            if (descriptionHtml !== undefined) update.descriptionHtml = descriptionHtml;
+            if (blocks !== undefined) update.blocks = blocks;
             const updated = await SellerPageModel.findOneAndUpdate(
                 { sellerSlug: slug },
-                { sellerSlug: slug, images, descriptionHtml },
+                update,
                 { upsert: true, new: true }
             ).lean();
-            res.json({ sellerSlug: slug, images: updated.images || [], descriptionHtml: updated.descriptionHtml || "" });
+            const outImages = updated.images || [];
+            const outDescriptionHtml = updated.descriptionHtml || "";
+            const outBlocks = Array.isArray(updated.blocks) ? updated.blocks : [];
+            res.json({ sellerSlug: slug, images: outImages, descriptionHtml: outDescriptionHtml, blocks: outBlocks });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

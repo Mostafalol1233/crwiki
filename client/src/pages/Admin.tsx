@@ -2924,7 +2924,6 @@ export default function Admin() {
               </Card>
             </TabsContent>
             )}
-          )}
 
           {canTutorials && (
             <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">

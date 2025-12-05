@@ -298,6 +298,16 @@ var ChatSettingsSchema = new Schema({
     updatedAt: { type: Date, default: Date.now },
 });
 var ChatSettingsModel = mongoose.model("ChatSettings", ChatSettingsSchema);
+var SiteSettingsSchema = new Schema({
+    publicBaseUrl: { type: String, default: "" },
+    seoTitle: { type: String, default: "" },
+    seoDescription: { type: String, default: "" },
+    seoKeywords: { type: [String], default: [] },
+    seoOgImage: { type: String, default: "" },
+    robots: { type: String, default: "index, follow" },
+    updatedAt: { type: Date, default: Date.now },
+}, { timestamps: true });
+var SiteSettingsModel = mongoose.model("SiteSettings", SiteSettingsSchema);
 var GlobalAnnouncementSchema = new Schema({
     contentHtml: { type: String, default: "" },
     imageUrl: { type: String, default: "" },
@@ -4177,8 +4187,41 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 
     app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const updated = await storage.updateSiteSettings(req.body || {});
-            res.json(updated);
+            const body = req.body || {};
+            const payload = {
+                publicBaseUrl: String(body.publicBaseUrl || ""),
+                seoTitle: String(body.seoTitle || ""),
+                seoDescription: String(body.seoDescription || ""),
+                seoKeywords: Array.isArray(body.seoKeywords) ? body.seoKeywords.map((k) => String(k)) : (body.seoKeywords ? String(body.seoKeywords).split(',').map((s)=> s.trim()).filter(Boolean) : []),
+                seoOgImage: String(body.seoOgImage || ""),
+                robots: String(body.robots || "index, follow"),
+            };
+            const updated = await SiteSettingsModel.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
+            res.json({
+                publicBaseUrl: updated.publicBaseUrl || "",
+                seoTitle: updated.seoTitle || "",
+                seoDescription: updated.seoDescription || "",
+                seoKeywords: updated.seoKeywords || [],
+                seoOgImage: updated.seoOgImage || "",
+                robots: updated.robots || "index, follow",
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/public/settings/seo", async (_req, res) => {
+        try {
+            const s = await SiteSettingsModel.findOne().lean();
+            const outBase = String(s?.publicBaseUrl || process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            res.json({
+                publicBaseUrl: outBase,
+                seoTitle: s?.seoTitle || "",
+                seoDescription: s?.seoDescription || "",
+                seoKeywords: s?.seoKeywords || [],
+                seoOgImage: s?.seoOgImage || "",
+                robots: s?.robots || "index, follow",
+            });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

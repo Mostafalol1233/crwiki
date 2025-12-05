@@ -30,8 +30,12 @@ const apiLimiter = rateLimit({
 });
 export async function registerRoutes(app) {
     // SEO: robots.txt
-    app.get('/robots.txt', (_req, res) => {
-        const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+    app.get('/robots.txt', async (_req, res) => {
+        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+        try {
+            const s = await storage.getSiteSettings();
+            if (s?.publicBaseUrl) base = String(s.publicBaseUrl).replace(/\/$/, '');
+        } catch {}
         const robots = [
             'User-agent: *',
             'Allow: /',
@@ -41,7 +45,11 @@ export async function registerRoutes(app) {
     });
     // SEO: sitemap.xml (basic dynamic)
     app.get('/sitemap.xml', async (_req, res) => {
-        const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+        try {
+            const s = await storage.getSiteSettings();
+            if (s?.publicBaseUrl) base = String(s.publicBaseUrl).replace(/\/$/, '');
+        } catch {}
         const urls = [];
         const push = (path, opt = {}) => {
             urls.push({ loc: `${base}${path}`, priority: opt.priority, changefreq: opt.changefreq, lastmod: opt.lastmod });

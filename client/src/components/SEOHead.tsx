@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 interface SEOHeadProps {
@@ -38,17 +38,31 @@ export function SEOHead({
 }: SEOHeadProps) {
   const [location] = useLocation();
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
-  const baseUrl = envBase || (typeof window !== "undefined" ? window.location.origin : "");
+  const [siteSeo, setSiteSeo] = useState<{ publicBaseUrl?: string; seoTitle?: string; seoDescription?: string; seoKeywords?: string[]; seoOgImage?: string; robots?: string } | null>(null);
+  const baseUrl = (siteSeo?.publicBaseUrl || envBase || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
   const currentUrl = baseUrl + location;
   const finalCanonical = canonicalUrl || currentUrl;
   const finalOgUrl = ogUrl || currentUrl;
-  const finalTitle = title || "CrossFire Wiki — Complete CrossFire Gaming Guide";
-  const finalDescription = description || "CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates.";
+  const finalTitle = title || siteSeo?.seoTitle || "CrossFire Wiki — Complete CrossFire Gaming Guide";
+  const finalDescription = description || siteSeo?.seoDescription || "CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates.";
   const finalOgTitle = ogTitle || finalTitle;
   const finalOgDescription = ogDescription || finalDescription;
-  const finalOgImage = ogImage || `${baseUrl}/feature-crossfire.jpg`;
+  const finalOgImage = ogImage || siteSeo?.seoOgImage || `${baseUrl}/feature-crossfire.jpg`;
   const finalTwitterImage = twitterImage || finalOgImage;
-  const robotsValue = noindex ? "noindex, follow" : robots || "index, follow";
+  const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow";
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/public/settings/seo');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setSiteSeo(data);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!onlySchema) {

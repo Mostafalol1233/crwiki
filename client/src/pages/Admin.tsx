@@ -2851,7 +2851,6 @@ export default function Admin() {
               </Card>
             </TabsContent>
 
-            {canSiteSettings && (
             <TabsContent value="site-settings" className="space-y-6" data-testid="content-site-settings">
               <Card>
                 <CardHeader>
@@ -2923,7 +2922,6 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </TabsContent>
-            )}
 
           {canTutorials && (
             <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">

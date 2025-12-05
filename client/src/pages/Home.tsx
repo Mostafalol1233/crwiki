@@ -131,6 +131,17 @@ export default function Home() {
           "tutorials",
         ]}
         canonicalPath="/"
+        schemaType="Organization"
+        schemaData={{
+          name: "CrossFire Wiki",
+          url: (typeof window !== 'undefined' ? window.location.origin : 'https://crossfire.wiki'),
+          logo: "https://files.catbox.moe/cxen8x.png",
+          sameAs: [
+            "https://twitter.com/crossfire",
+            "https://www.facebook.com/crossfire",
+            "https://www.youtube.com/",
+          ],
+        }}
       />
       <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80">
       {/* Fire sparks / glow at the edges of the interface */}

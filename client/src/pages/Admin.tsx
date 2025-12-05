@@ -149,6 +149,7 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [siteSettings, setSiteSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -179,6 +180,22 @@ export default function Admin() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const d = await apiRequest('/api/public/settings/seo', 'GET');
+        setSiteSettings({
+          base: d.publicBaseUrl || '',
+          title: d.seoTitle || '',
+          desc: d.seoDescription || '',
+          keywords: (d.seoKeywords || []).join(', '),
+          og: d.seoOgImage || '',
+          robots: d.robots || 'index, follow',
+        });
+      } catch {}
+    })();
+  }, []);
+
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
 
@@ -202,6 +219,7 @@ export default function Admin() {
   const canRestoration = isSuperAdmin;
   const canTranslations = true;
   const canVerification = isSuperAdmin || !!adminPerms["settings:manage"];
+  const canSiteSettings = isSuperAdmin || !!adminPerms["settings:manage"];
   const canAdmins = isSuperAdmin;
   const canUsers = isSuperAdmin;
   const canChat = isSuperAdmin;
@@ -1353,12 +1371,18 @@ export default function Admin() {
                   <span className="hidden sm:inline">Translations</span>
                 </TabsTrigger>
                 )}
-                {canVerification && (
-                  <TabsTrigger value="verification" data-testid="tab-verification">
-                    <Shield className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Review Verification</span>
-                  </TabsTrigger>
-                )}
+              {canVerification && (
+                <TabsTrigger value="verification" data-testid="tab-verification">
+                  <Shield className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Review Verification</span>
+                </TabsTrigger>
+              )}
+              {canSiteSettings && (
+                <TabsTrigger value="site-settings" data-testid="tab-site-settings">
+                  <Shield className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Site Settings</span>
+                </TabsTrigger>
+              )}
                 {canAdmins && (
                   <TabsTrigger value="admins" data-testid="tab-admins">
                     <Users className="h-4 w-4 mr-2" />
@@ -1417,7 +1441,7 @@ export default function Admin() {
           </div>
 
           <div className="flex-1">
-              <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
+            <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
@@ -2826,6 +2850,80 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {canSiteSettings && (
+            <TabsContent value="site-settings" className="space-y-6" data-testid="content-site-settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>SEO & Site Settings</CardTitle>
+                  <CardDescription>Database-backed SEO settings used by robots, sitemap, and client meta tags</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="site-base">Public Base URL</Label>
+                      <Input id="site-base" value={siteSettings.base} onChange={(e)=> setSiteSettings({ ...siteSettings, base: e.target.value })} placeholder="https://www.crossfire.wiki" />
+                    </div>
+                    <div>
+                      <Label htmlFor="site-og">Default OG Image URL</Label>
+                      <Input id="site-og" value={siteSettings.og} onChange={(e)=> setSiteSettings({ ...siteSettings, og: e.target.value })} placeholder="https://.../og-image.jpg" />
+                    </div>
+                    <div>
+                      <Label htmlFor="site-title">Default SEO Title</Label>
+                      <Input id="site-title" value={siteSettings.title} onChange={(e)=> setSiteSettings({ ...siteSettings, title: e.target.value })} placeholder="CrossFire Wiki — Competitive Guide" />
+                    </div>
+                    <div>
+                      <Label htmlFor="site-robots">Robots</Label>
+                      <Input id="site-robots" value={siteSettings.robots} onChange={(e)=> setSiteSettings({ ...siteSettings, robots: e.target.value })} placeholder="index, follow" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="site-desc">Default SEO Description</Label>
+                      <Textarea id="site-desc" value={siteSettings.desc} onChange={(e)=> setSiteSettings({ ...siteSettings, desc: e.target.value })} rows={3} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="site-keywords">Keywords (comma separated)</Label>
+                      <Input id="site-keywords" value={siteSettings.keywords} onChange={(e)=> setSiteSettings({ ...siteSettings, keywords: e.target.value })} placeholder="CrossFire, FPS, Weapons, Modes" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={async () => {
+                      try {
+                        await apiRequest('/api/settings/site', 'PUT', {
+                          publicBaseUrl: siteSettings.base,
+                          seoTitle: siteSettings.title,
+                          seoDescription: siteSettings.desc,
+                          seoKeywords: siteSettings.keywords.split(',').map((s)=> s.trim()).filter(Boolean),
+                          seoOgImage: siteSettings.og,
+                          robots: siteSettings.robots || 'index, follow',
+                        });
+                        toast({ title: 'Saved', description: 'Site settings updated' });
+                      } catch (e: any) {
+                        toast({ title: 'Save failed', description: e?.message || '', variant: 'destructive' });
+                      }
+                    }}>Save Settings</Button>
+                    <Button variant="outline" onClick={async () => {
+                      try {
+                        const d = await apiRequest('/api/public/settings/seo', 'GET');
+                        setSiteSettings({
+                          base: d.publicBaseUrl || '',
+                          title: d.seoTitle || '',
+                          desc: d.seoDescription || '',
+                          keywords: (d.seoKeywords || []).join(', '),
+                          og: d.seoOgImage || '',
+                          robots: d.robots || 'index, follow',
+                        });
+                        toast({ title: 'Loaded', description: 'Settings fresh from server' });
+                      } catch {}
+                    }}>Load Current</Button>
+                    <Button variant="secondary" onClick={async () => {
+                      if (!siteSettings.og) { toast({ title: 'Enter OG image URL' }); return; }
+                      try { const res = await fetch(siteSettings.og, { method: 'HEAD' }); toast({ title: 'Image Check', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Image Check', description: 'Failed to reach image', variant: 'destructive' }); }
+                    }}>Check OG Image URL</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            )}
           )}
 
           {canTutorials && (

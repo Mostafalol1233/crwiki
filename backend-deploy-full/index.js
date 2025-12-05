@@ -4565,8 +4565,8 @@ app.use((req, res, next) => {
     
     // Serve built client files from dist/client
     const clientDistPath = path.resolve(currentDir, "dist", "client");
-    app.use("/assets", express.static(path.join(clientDistPath, "assets"), { maxAge: "1d" }));
-    app.use(express.static(clientDistPath, { maxAge: "1d" }));
+    app.use("/assets", express.static(path.join(clientDistPath, "assets"), { maxAge: "7d", immutable: true }));
+    app.use(express.static(clientDistPath, { maxAge: "7d", immutable: true }));
     
     app.use((err, _req, res, _next) => {
         const status = err.status || err.statusCode || 500;

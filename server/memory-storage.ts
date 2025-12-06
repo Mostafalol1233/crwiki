@@ -527,8 +527,28 @@ export class MemoryStorage implements IStorage {
   async getTutorialById(id: string): Promise<Tutorial | undefined> {
     return this.tutorials.find((t) => t.id === id) as any;
   }
+  async getTutorialBySlug(slug: string): Promise<Tutorial | undefined> {
+    return this.tutorials.find((t: any) => (t as any).tutorial_slug === slug) as any;
+  }
   async createTutorial(tutorial: InsertTutorial): Promise<Tutorial> {
-    const t: any = { ...tutorial, id: uuidv4(), createdAt: new Date(), likes: 0 };
+    const base = String((tutorial as any).title || '').toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    let slug = base || 'tutorial';
+    const existing = this.tutorials.filter((x: any) => String((x as any).tutorial_slug || '').toLowerCase().startsWith(slug.toLowerCase()));
+    if (existing.length > 0) {
+      const nums = existing
+        .map((x: any) => String((x as any).tutorial_slug || ''))
+        .map((s) => {
+          const m = s.match(/-(\d+)$/);
+          return m ? parseInt(m[1], 10) : (s.toLowerCase() === slug.toLowerCase() ? 1 : 0);
+        })
+        .filter((n) => !isNaN(n));
+      const next = (nums.length > 0 ? Math.max(...nums) + 1 : 2);
+      slug = `${slug}-${next}`;
+    }
+    const t: any = { ...tutorial, id: uuidv4(), createdAt: new Date(), likes: 0, tutorial_slug: slug };
     this.tutorials.unshift(t);
     return t;
   }

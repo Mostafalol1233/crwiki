@@ -59,7 +59,7 @@ export default function TutorialsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {tutorials && tutorials.length > 0 ? (
             tutorials.map((tutorial) => (
-              <Link key={tutorial.id} href={`/tutorials/${tutorial.id}`}>
+              <Link key={tutorial.id} href={(tutorial as any).tutorial_slug ? `/tutorials/${(tutorial as any).tutorial_slug}` : `/tutorials/id/${tutorial.id}`}>
                 <Card className="hover-elevate cursor-pointer h-full">
                   <div className="aspect-video w-full bg-black rounded-t-lg overflow-hidden">
                     <img

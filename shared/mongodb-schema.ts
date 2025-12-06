@@ -28,6 +28,7 @@ export interface IPost extends Document {
   featured: boolean;
   previewOnHome?: boolean;
   createdAt: Date;
+  language?: string;
   // SEO fields
   seoTitle?: string;
   seoDescription?: string;
@@ -163,6 +164,7 @@ export interface ITutorial extends Document {
   youtubeId: string;
   likes?: number;
   order?: number;
+  tutorial_slug?: string;
   createdAt?: Date;
 }
 
@@ -261,6 +263,7 @@ const PostSchema = new Schema<IPost>({
   featured: { type: Boolean, default: false },
   previewOnHome: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
+  language: { type: String, default: "en" },
   // SEO fields
   seoTitle: { type: String, default: "" },
   seoDescription: { type: String, default: "" },
@@ -396,6 +399,7 @@ const TutorialSchema = new Schema<ITutorial>({
   youtubeId: { type: String, required: true },
   likes: { type: Number, default: 0 },
   order: { type: Number, default: 9999 },
+  tutorial_slug: { type: String, default: "", unique: true },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -508,6 +512,7 @@ export const insertPostSchema = z.object({
   readingTime: z.number(),
   featured: z.boolean().optional(),
   previewOnHome: z.boolean().optional(),
+  language: z.enum(["en", "ar"]).optional(),
   // SEO fields
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),

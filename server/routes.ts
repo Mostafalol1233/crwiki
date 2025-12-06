@@ -2445,6 +2445,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     }
   });
 
+  app.get("/api/tutorials/slug/:slug", async (req, res) => {
+    try {
+      const tutorial = await storage.getTutorialBySlug(req.params.slug);
+      if (!tutorial) {
+        return res.status(404).json({ error: "Tutorial not found" });
+      }
+      res.json(tutorial);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/tutorials", requireAuth, requireTutorialManager, async (req, res) => {
     try {
       const data = insertTutorialSchema.parse(req.body);
@@ -2531,6 +2543,29 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/tutorials/id/:legacyId', async (req, res) => {
+    try {
+      const t = await storage.getTutorialById(req.params.legacyId);
+      if (!t) return res.redirect(301, '/tutorials');
+      const slug = (t as any).tutorial_slug || '';
+      if (slug) return res.redirect(301, `/tutorials/${slug}`);
+      return res.redirect(301, `/tutorials/${(t as any).id || req.params.legacyId}`);
+    } catch {
+      return res.redirect(301, '/tutorials');
+    }
+  });
+  app.get('/tutorials/:legacyId([a-fA-F0-9]{24})', async (req, res) => {
+    try {
+      const t = await storage.getTutorialById(req.params.legacyId);
+      if (!t) return res.redirect(301, '/tutorials');
+      const slug = (t as any).tutorial_slug || '';
+      if (slug) return res.redirect(301, `/tutorials/${slug}`);
+      return res.redirect(301, `/tutorials/${(t as any).id || req.params.legacyId}`);
+    } catch {
+      return res.redirect(301, '/tutorials');
     }
   });
 

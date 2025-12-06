@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, useLocation } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,31 +20,61 @@ import type { Tutorial, TutorialComment } from "@shared/mongodb-schema";
 import { format } from "date-fns";
 
 export default function TutorialDetailPage() {
-  const [, params] = useRoute("/tutorials/:id");
+  const params = useParams();
+  const slug = (params as any)?.slug as string | undefined;
+  const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const tutorialId = params?.id;
 
   const [showLikeDialog, setShowLikeDialog] = useState(false);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentContent, setCommentContent] = useState("");
 
   const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<Tutorial>({
-    queryKey: ["/api/tutorials", tutorialId || ""],
-    enabled: !!tutorialId,
+    queryKey: ["tutorial", slug || legacyId || ""],
+    enabled: !!(slug || legacyId),
+    queryFn: async () => {
+      if (slug) {
+        const res = await fetch(`/api/tutorials/slug/${slug}`);
+        if (!res.ok) {
+          const all = await fetch(`/api/tutorials`).then(r => r.json());
+          const found = all.find((t: any) => t.tutorial_slug === slug || t.id === slug);
+          if (found) return found;
+          throw new Error("Tutorial not found");
+        }
+        return res.json();
+      }
+      if (!legacyId) throw new Error("No tutorial identifier provided");
+      const res = await fetch(`/api/tutorials/${legacyId}`);
+      if (!res.ok) {
+        const all = await fetch(`/api/tutorials`).then(r => r.json());
+        const found = all.find((t: any) => t.id === legacyId);
+        if (found) return found;
+        throw new Error("Tutorial not found");
+      }
+      return res.json();
+    },
   });
 
   const { data: comments = [], isError: commentsError } = useQuery<TutorialComment[]>({
-    queryKey: ["/api/tutorials", tutorialId || "", "comments"],
-    enabled: !!tutorialId,
+    queryKey: ["/api/tutorials", (tutorial as any)?.id || legacyId || "", "comments"],
+    enabled: !!((tutorial as any)?.id || legacyId),
+    queryFn: async () => {
+      const id = (tutorial as any)?.id || legacyId;
+      const res = await fetch(`/api/tutorials/${id}/comments`);
+      if (!res.ok) return [];
+      return res.json();
+    }
   });
 
   const likeMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/tutorials/${tutorialId}/like`, "POST", {});
+      const id = (tutorial as any)?.id || legacyId;
+      return await apiRequest(`/api/tutorials/${id}/like`, "POST", {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", tutorialId || ""] });
+      const id = (tutorial as any)?.id || legacyId || "";
+      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", id] });
       toast({
         title: "Liked!",
         description: "Thank you for your support!",
@@ -61,10 +91,12 @@ export default function TutorialDetailPage() {
 
   const commentMutation = useMutation({
     mutationFn: async (data: { author: string; content: string }) => {
-      return await apiRequest(`/api/tutorials/${tutorialId}/comments`, "POST", data);
+      const id = (tutorial as any)?.id || legacyId;
+      return await apiRequest(`/api/tutorials/${id}/comments`, "POST", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", tutorialId || "", "comments"] });
+      const id = (tutorial as any)?.id || legacyId || "";
+      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", id, "comments"] });
       setCommentAuthor("");
       setCommentContent("");
       toast({
@@ -80,6 +112,15 @@ export default function TutorialDetailPage() {
       });
     },
   });
+
+  useEffect(() => {
+    if (legacyId && (tutorial as any)?.tutorial_slug) {
+      const target = `/tutorials/${(tutorial as any).tutorial_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== target) {
+        setLocation(target);
+      }
+    }
+  }, [legacyId, tutorial, setLocation]);
 
   const handleLikeClick = () => {
     setShowLikeDialog(true);

@@ -64,6 +64,10 @@ export default function Article() {
     }
   }, [legacyId, (finalArticle as any)?.post_slug, setLocation]);
 
+  useEffect(() => {
+    setIsRTL((finalArticle as any)?.language === 'ar');
+  }, [(finalArticle as any)?.language]);
+
   const addCommentMutation = useMutation({
     mutationFn: (data: { author: string; content: string }) =>
       apiRequest(`/api/posts/${(finalArticle as any)?.id || legacyId}/comments`, "POST", data),

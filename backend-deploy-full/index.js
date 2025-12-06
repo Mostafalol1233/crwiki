@@ -39,6 +39,14 @@ var PostSchema = new Schema({
   featured: { type: Boolean, default: false },
   order: { type: Number, default: 0 },
   post_slug: { type: String, default: "", unique: true },
+  seoTitle: { type: String, default: "" },
+  seoDescription: { type: String, default: "" },
+  seoKeywords: { type: [String], default: [] },
+  canonicalUrl: { type: String, default: "" },
+  ogImage: { type: String, default: "" },
+  twitterImage: { type: String, default: "" },
+  schemaType: { type: String, default: "Article" },
+  language: { type: String, default: "en" },
   createdByAdminId: { type: String, default: "" },
   createdByAdminName: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
@@ -102,6 +110,7 @@ var TutorialSchema = new Schema({
     description: { type: String, default: "" },
     likes: { type: Number, default: 0 },
     order: { type: Number, default: 9999 },
+    tutorial_slug: { type: String, default: "", unique: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
@@ -228,6 +237,7 @@ SellerSchema.index({ name: 1 });
 SellerSchema.index({ seller_name_slug: 1 }, { unique: true });
 EventSchema.index({ event_name_slug: 1 }, { unique: true });
 PostSchema.index({ post_slug: 1 }, { unique: true });
+TutorialSchema.index({ tutorial_slug: 1 }, { unique: true });
 SellerReviewSchema.index({ sellerId: 1, userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "string" } } });
 var AdminAuditLogSchema = new Schema({
     action: { type: String, required: true },
@@ -654,13 +664,19 @@ var MongoDBStorage = class {
         payload.post_slug = slugifyEventName(src);
         await this.logUrlGeneration("post", src, payload.post_slug, !!payload.post_slug);
         if (!payload.seoTitle) payload.seoTitle = payload.title || "";
-        const plainDesc = String(payload.summary || "").replace(/<[^>]*>/g, "");
-        if (!payload.seoDescription) payload.seoDescription = plainDesc.substring(0, 155);
-        if (!payload.seoKeywords) payload.seoKeywords = (payload.title || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+        const plainContent = String(payload.content || payload.summary || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+        if (!payload.seoDescription || payload.seoDescription.length < 60 || payload.seoDescription.length > 160) {
+            const d = generateSummary(plainContent, 160);
+            payload.seoDescription = d.length < 60 ? plainContent.substring(0, Math.min(160, Math.max(60, plainContent.length))).trim() : d;
+        }
+        if (!payload.seoKeywords || (Array.isArray(payload.seoKeywords) ? payload.seoKeywords.length === 0 : true)) {
+            payload.seoKeywords = suggestKeywords(plainContent, 8);
+        }
         if (!payload.canonicalUrl) payload.canonicalUrl = `${baseUrl}/article/${payload.post_slug}`;
         if (!payload.ogImage && payload.image) payload.ogImage = payload.image;
         if (!payload.twitterImage && (payload.ogImage || payload.image)) payload.twitterImage = payload.ogImage || payload.image;
         if (!payload.schemaType) payload.schemaType = "Article";
+        if (!payload.language) payload.language = "en";
         const newPost = await PostModel.create(payload);
         const lean = await PostModel.findById(newPost._id).lean();
         if (!lean) throw new Error("Failed to create post");
@@ -683,6 +699,17 @@ var MongoDBStorage = class {
             updates.canonicalUrl = `${baseUrl}/article/${updates.post_slug}`;
             await this.logUrlGeneration("post", src, updates.post_slug, !!updates.post_slug);
         }
+        if (updates.content) {
+            const plainContent = String(updates.content || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+            if (!updates.seoDescription || updates.seoDescription.length < 60 || updates.seoDescription.length > 160) {
+                const d = generateSummary(plainContent, 160);
+                updates.seoDescription = d.length < 60 ? plainContent.substring(0, Math.min(160, Math.max(60, plainContent.length))).trim() : d;
+            }
+            if (!updates.seoKeywords || (Array.isArray(updates.seoKeywords) ? updates.seoKeywords.length === 0 : true)) {
+                updates.seoKeywords = suggestKeywords(plainContent, 8);
+            }
+        }
+        if (!updates.schemaType) updates.schemaType = "Article";
         const updated = await PostModel.findByIdAndUpdate(id, updates, {
             new: true,
         }).lean();
@@ -1580,11 +1607,24 @@ function calculateReadingTime(content) {
     return minutes;
 }
 function generateSummary(content, maxLength = 200) {
-    const plainText = content.replace(/[#*`]/g, "").trim();
-    if (plainText.length <= maxLength) {
-        return plainText;
-    }
-    return plainText.substring(0, maxLength).trim() + "...";
+  const plainText = content.replace(/[#*`]/g, "").trim();
+  if (plainText.length <= maxLength) {
+    return plainText;
+  }
+  return plainText.substring(0, maxLength).trim() + "...";
+}
+function suggestKeywords(text, limit = 8) {
+  const stop = new Set(["the","and","a","an","to","of","in","on","for","with","by","is","are","was","were","be","as","at","from","that","this","it","or","if","but","about","into","over","after","before","under","above","between","الع","","","من","على","في","عن","و","47","45","43","46","29","ما","لا","لم","لن","إلى","الى","كان","كانت","ذلك","هذه","هذا","إذ","قد","لقد","كما"]);
+  const words = String(text || "")
+    .toLowerCase()
+    .replace(/<[^>]*>/g, " ")
+    .replace(/[^\p{L}\p{N}\s]+/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w && w.length > 2 && !stop.has(w));
+  const freq = new Map();
+  for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+  const sorted = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]).map(([w]) => w);
+  return sorted.slice(0, limit);
 }
 function formatDate(date) {
     const now = /* @__PURE__ */ new Date();
@@ -2449,6 +2489,17 @@ async function registerRoutes(app2) {
         }
     });
 
+    app2.get("/api/tutorials/slug/:slug", async (req, res) => {
+        try {
+            const { slug } = req.params;
+            const item = await TutorialModel.findOne({ tutorial_slug: slug }).lean();
+            if (!item) return res.status(404).json({ error: "Tutorial not found" });
+            res.json({ ...item, id: String(item._id) });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app2.get("/api/tutorials/:id", async (req, res) => {
         try {
             const item = await TutorialModel.findById(req.params.id).lean();
@@ -2533,6 +2584,15 @@ async function registerRoutes(app2) {
             }
             if (!youtubeId)
                 return res.status(400).json({ error: "Invalid YouTube URL" });
+            const baseSlug = slugifyEventName(body.title);
+            let finalSlug = baseSlug || "tutorial";
+            let attempt = 1;
+            while (true) {
+                const conflict = await TutorialModel.findOne({ tutorial_slug: finalSlug }).lean();
+                if (!conflict) break;
+                attempt += 1;
+                finalSlug = `${baseSlug}-${attempt}`;
+            }
             const created = await TutorialModel.create({
                 title: body.title,
                 youtubeUrl: url,
@@ -2540,6 +2600,7 @@ async function registerRoutes(app2) {
                 description: body.description || "",
                 likes: 0,
                 order: typeof body.order === "number" && (req.user?.role === "super_admin") ? body.order : 9999,
+                tutorial_slug: finalSlug,
             });
             
             if (admin) {
@@ -2578,6 +2639,18 @@ async function registerRoutes(app2) {
                         .json({ error: "Invalid YouTube URL" });
                 updates.youtubeId = youtubeId;
             }
+            if (typeof updates.title === "string" && updates.title.trim().length > 0) {
+                const baseSlug = slugifyEventName(updates.title);
+                let candidate = baseSlug || "tutorial";
+                let attempt = 1;
+                while (true) {
+                    const conflict = await TutorialModel.findOne({ tutorial_slug: candidate, _id: { $ne: req.params.id } }).lean();
+                    if (!conflict) break;
+                    attempt += 1;
+                    candidate = `${baseSlug}-${attempt}`;
+                }
+                updates.tutorial_slug = candidate;
+            }
             const updated = await TutorialModel.findByIdAndUpdate(
                 req.params.id,
                 updates,
@@ -2588,6 +2661,18 @@ async function registerRoutes(app2) {
             res.json({ ...updated, id: String(updated._id) });
         } catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/tutorials/:id/redirect", async (req, res) => {
+        try {
+            const t = await TutorialModel.findById(req.params.id).lean();
+            if (!t) return res.status(404).json({ error: "Tutorial not found" });
+            const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
+            const target = `${base}/tutorials/${t.tutorial_slug || slugifyEventName(t.title || "")}`;
+            res.status(301).set("Location", target).send("Moved Permanently");
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 
@@ -2944,6 +3029,21 @@ Sitemap: https://crossfire.wiki/sitemap.xml
 `);
         } catch (error) {
             res.status(500).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: https://crossfire.wiki/sitemap.xml\n");
+        }
+    });
+
+    app2.get("/tutorials/:legacyId([a-fA-F0-9]{24})", async (req, res) => {
+        try {
+            const { legacyId } = req.params;
+            const t = await TutorialModel.findById(legacyId).lean();
+            if (!t) {
+                return res.redirect(301, "/tutorials");
+            }
+            const slug = t.tutorial_slug || slugifyEventName(t.title || "");
+            if (slug) return res.redirect(301, `/tutorials/${slug}`);
+            return res.redirect(301, `/tutorials/id/${legacyId}`);
+        } catch {
+            return res.redirect(301, "/tutorials");
         }
     });
 

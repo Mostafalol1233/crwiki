@@ -149,7 +149,7 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [registrationClosed, setRegistrationClosed] = useState(false);
-  const [siteSettings, setSiteSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
+  const [seoSettings, setSeoSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -184,7 +184,7 @@ export default function Admin() {
     (async () => {
       try {
         const d = await apiRequest('/api/public/settings/seo', 'GET');
-        setSiteSettings({
+        setSeoSettings({
           base: d.publicBaseUrl || '',
           title: d.seoTitle || '',
           desc: d.seoDescription || '',
@@ -248,6 +248,7 @@ export default function Admin() {
       ...(canRestoration ? ["restoration"] : []),
       ...(canTranslations ? ["translations"] : []),
       ...(canVerification ? ["verification"] : []),
+      ...(canSiteSettings ? ["site-settings"] : []),
       ...(canAdmins ? ["admins"] : []),
       ...(canUsers ? ["users"] : []),
       ...(canChat ? ["chat-settings"] : []),
@@ -329,6 +330,7 @@ export default function Admin() {
     featured: false,
     previewOnHome: true,
     readingTime: 5,
+    language: "en",
     // SEO fields
     seoTitle: "",
     seoDescription: "",
@@ -1076,6 +1078,7 @@ export default function Admin() {
       featured: false,
       previewOnHome: true,
       readingTime: 5,
+      language: "en",
       // SEO fields
       seoTitle: "",
       seoDescription: "",
@@ -1297,31 +1300,32 @@ export default function Admin() {
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-56">
               {/* small screen: select picker */}
-              <div className="block lg:hidden mb-3">
-                <select
-                  value={activeTab}
-                  onChange={(e) => setActiveTab(e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                >
-                  <option value="dashboard">Dashboard</option>
-                  {canPosts && <option value="posts">Posts</option>}
-                  {canEventsNews && <option value="events-news">Events & News</option>}
-                  {canTutorials && <option value="tutorials">Tutorials</option>}
-                  {canSellers && <option value="sellers">Sellers</option>}
-                  {canCFData && <option value="cf-data">CF Data</option>}
-                  {canRestoration && <option value="restoration">Restore Data</option>}
-                  {canTranslations && <option value="translations">Translations</option>}
-                  {canVerification && <option value="verification">Review Verification</option>}
-                  {canAdmins && <option value="admins">Admins</option>}
-                  {canSubscribers && <option value="subscribers">Subscribers</option>}
-                  {canScraper && <option value="scraper">Scraper</option>}
-                  {isSuperAdmin && <option value="announcements">Announcements</option>}
-                  {canMercenaries && <option value="mercenaries">Mercenaries</option>}
-                  {canTickets && <option value="tickets">Tickets</option>}
-                  {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
-                  {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
-                </select>
-              </div>
+  <div className="block lg:hidden mb-3">
+    <select
+      value={activeTab}
+      onChange={(e) => setActiveTab(e.target.value)}
+      className="w-full h-10 px-3 rounded-md border border-input bg-background"
+    >
+      <option value="dashboard">Dashboard</option>
+      {canPosts && <option value="posts">Posts</option>}
+      {canEventsNews && <option value="events-news">Events & News</option>}
+      {canTutorials && <option value="tutorials">Tutorials</option>}
+      {canSellers && <option value="sellers">Sellers</option>}
+      {canCFData && <option value="cf-data">CF Data</option>}
+      {canRestoration && <option value="restoration">Restore Data</option>}
+      {canTranslations && <option value="translations">Translations</option>}
+      {canVerification && <option value="verification">Review Verification</option>}
+      {canSiteSettings && <option value="site-settings">Site Settings</option>}
+      {canAdmins && <option value="admins">Admins</option>}
+      {canSubscribers && <option value="subscribers">Subscribers</option>}
+      {canScraper && <option value="scraper">Scraper</option>}
+      {isSuperAdmin && <option value="announcements">Announcements</option>}
+      {canMercenaries && <option value="mercenaries">Mercenaries</option>}
+      {canTickets && <option value="tickets">Tickets</option>}
+      {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
+      {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
+    </select>
+  </div>
 
               {/* large screen: vertical tabs list */}
               <TabsList className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-2">
@@ -1641,28 +1645,43 @@ export default function Admin() {
                       }
                       data-testid="input-post-title"
                     />
+                    <div className="flex items-center gap-2">
+                      <Label>Language</Label>
+                      <select
+                        value={postForm.language}
+                        onChange={(e) => setPostForm({ ...postForm, language: e.target.value })}
+                        className="h-9 px-3 rounded-md border border-input bg-background"
+                        data-testid="select-post-language"
+                      >
+                        <option value="en">English (LTR)</option>
+                        <option value="ar">Arabic (RTL)</option>
+                      </select>
+                      <Badge variant="outline">{postForm.language === "ar" ? "RTL" : "LTR"}</Badge>
+                    </div>
                     <div className="space-y-2">
                           <div data-testid="input-post-content">
-                            <ReactQuill
-                              theme="snow"
-                              value={postForm.content}
-                              onChange={(value) =>
-                                setPostForm({ ...postForm, content: value })
-                              }
-                              modules={{
-                                toolbar: [
-                                  [{ 'header': [1, 2, 3, false] }],
-                                  [{ 'size': ['small', false, 'large', 'huge'] }],
-                                  ['bold', 'italic', 'underline', 'strike'],
-                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                  [{ 'color': [] }, { 'background': [] }],
-                                  ['link', 'blockquote', 'code-block'],
-                                  ['clean']
-                                ],
-                              }}
-                              placeholder="Write your content here..."
-                              style={{ minHeight: '200px' }}
-                            />
+                            <div dir={postForm.language === 'ar' ? 'rtl' : 'ltr'} style={{ textAlign: postForm.language === 'ar' ? 'right' : 'left' }}>
+                              <ReactQuill
+                                theme="snow"
+                                value={postForm.content}
+                                onChange={(value) =>
+                                  setPostForm({ ...postForm, content: value })
+                                }
+                                modules={{
+                                  toolbar: [
+                                    [{ 'header': [1, 2, 3, false] }],
+                                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                                    ['bold', 'italic', 'underline', 'strike'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    [{ 'color': [] }, { 'background': [] }],
+                                    ['link', 'blockquote', 'code-block'],
+                                    ['clean']
+                                  ],
+                                }}
+                                placeholder="Write your content here..."
+                                style={{ minHeight: '200px' }}
+                              />
+                            </div>
                           </div>
                     </div>
                     <Textarea
@@ -1770,6 +1789,28 @@ export default function Admin() {
                         }
                         data-testid="input-post-seo-keywords"
                       />
+                      {(() => {
+                        const text = [postForm.title, postForm.summary, postForm.content].join(' ');
+                        const plain = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+                        const stop = new Set(["the","and","a","an","to","of","in","on","for","with","by","is","are","was","were","be","as","at","from","that","this","it","or","if","but","about","into","over","after","before","under","above","between","من","على","في","عن","و","ما","لا","لم","لن","إلى","الى","كان","كانت","ذلك","هذه","هذا","قد","لقد","كما"]);
+                        const parts = plain.replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter((w) => w && w.length > 2 && !stop.has(w));
+                        const freq = new Map<string, number>();
+                        for (const w of parts) freq.set(w, (freq.get(w) || 0) + 1);
+                        const suggestions = Array.from(freq.entries()).sort((a,b)=>b[1]-a[1]).map(([w])=>w).slice(0,8);
+                        const current = (postForm.seoKeywords || '').split(',').map(s=>s.trim()).filter(Boolean);
+                        return suggestions.length ? (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {suggestions.map((s)=> (
+                              <Badge key={s} variant={current.includes(s) ? 'default' : 'outline'} onClick={() => {
+                                const next = Array.from(new Set([...current, s]));
+                                setPostForm({ ...postForm, seoKeywords: next.join(', ') });
+                              }} className="cursor-pointer">
+                                {s}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
                       <Input
                         placeholder="Canonical URL (optional)"
                         value={postForm.canonicalUrl}
@@ -1810,12 +1851,29 @@ export default function Admin() {
                     
                     <Button
                       onClick={() => {
+                        const plain = String(postForm.content || postForm.summary || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                        let seoDesc = (postForm.seoDescription || '').trim();
+                        if (!seoDesc || seoDesc.length < 60 || seoDesc.length > 160) {
+                          const d = plain.substring(0, 160).trim();
+                          seoDesc = d.length < 60 ? plain.substring(0, Math.min(160, Math.max(60, plain.length))).trim() : d;
+                        }
+                        const kwStr = (postForm.seoKeywords || '').trim();
+                        let kws = kwStr ? kwStr.split(',').map(k=>k.trim()).filter(Boolean) : [];
+                        if (kws.length === 0) {
+                          const text = [postForm.title, postForm.summary, postForm.content].join(' ');
+                          const plainAll = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+                          const stop = new Set(["the","and","a","an","to","of","in","on","for","with","by","is","are","was","were","be","as","at","from","that","this","it","or","if","but","about","into","over","after","before","under","above","between","من","على","في","عن","و","ما","لا","لم","لن","إلى","الى","كان","كانت","ذلك","هذه","هذا","قد","لقد","كما"]);
+                          const parts = plainAll.replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter((w) => w && w.length > 2 && !stop.has(w));
+                          const freq = new Map<string, number>();
+                          for (const w of parts) freq.set(w, (freq.get(w) || 0) + 1);
+                          kws = Array.from(freq.entries()).sort((a,b)=>b[1]-a[1]).map(([w])=>w).slice(0,8);
+                        }
                         const data = {
                           ...postForm,
+                          language: postForm.language,
+                          seoDescription: seoDesc,
                           tags: postForm.tags.split(",").map((t) => t.trim()),
-                          seoKeywords: postForm.seoKeywords
-                            ? postForm.seoKeywords.split(",").map((k) => k.trim())
-                            : [],
+                          seoKeywords: kws,
                         };
                         if (editingPost) {
                           updatePostMutation.mutate({ id: editingPost.id, data });
@@ -1880,6 +1938,7 @@ export default function Admin() {
                               featured: post.featured,
                               previewOnHome: post.previewOnHome !== false,
                               readingTime: post.readingTime,
+                              language: post.language || 'en',
                               seoTitle: post.seoTitle || "",
                               seoDescription: post.seoDescription || "",
                               seoKeywords: post.seoKeywords?.join(", ") || "",
@@ -2850,7 +2909,9 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </TabsContent>
+          )}
 
+          {canSiteSettings && (
             <TabsContent value="site-settings" className="space-y-6" data-testid="content-site-settings">
               <Card>
                 <CardHeader>
@@ -2861,39 +2922,39 @@ export default function Admin() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="site-base">Public Base URL</Label>
-                      <Input id="site-base" value={siteSettings.base} onChange={(e)=> setSiteSettings({ ...siteSettings, base: e.target.value })} placeholder="https://www.crossfire.wiki" />
+                      <Input id="site-base" value={seoSettings.base} onChange={(e)=> setSeoSettings({ ...seoSettings, base: e.target.value })} placeholder="https://www.crossfire.wiki" />
                     </div>
                     <div>
                       <Label htmlFor="site-og">Default OG Image URL</Label>
-                      <Input id="site-og" value={siteSettings.og} onChange={(e)=> setSiteSettings({ ...siteSettings, og: e.target.value })} placeholder="https://.../og-image.jpg" />
+                      <Input id="site-og" value={seoSettings.og} onChange={(e)=> setSeoSettings({ ...seoSettings, og: e.target.value })} placeholder="https://.../og-image.jpg" />
                     </div>
                     <div>
                       <Label htmlFor="site-title">Default SEO Title</Label>
-                      <Input id="site-title" value={siteSettings.title} onChange={(e)=> setSiteSettings({ ...siteSettings, title: e.target.value })} placeholder="CrossFire Wiki — Competitive Guide" />
+                      <Input id="site-title" value={seoSettings.title} onChange={(e)=> setSeoSettings({ ...seoSettings, title: e.target.value })} placeholder="CrossFire Wiki — Competitive Guide" />
                     </div>
                     <div>
                       <Label htmlFor="site-robots">Robots</Label>
-                      <Input id="site-robots" value={siteSettings.robots} onChange={(e)=> setSiteSettings({ ...siteSettings, robots: e.target.value })} placeholder="index, follow" />
+                      <Input id="site-robots" value={seoSettings.robots} onChange={(e)=> setSeoSettings({ ...seoSettings, robots: e.target.value })} placeholder="index, follow" />
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="site-desc">Default SEO Description</Label>
-                      <Textarea id="site-desc" value={siteSettings.desc} onChange={(e)=> setSiteSettings({ ...siteSettings, desc: e.target.value })} rows={3} />
+                      <Textarea id="site-desc" value={seoSettings.desc} onChange={(e)=> setSeoSettings({ ...seoSettings, desc: e.target.value })} rows={3} />
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="site-keywords">Keywords (comma separated)</Label>
-                      <Input id="site-keywords" value={siteSettings.keywords} onChange={(e)=> setSiteSettings({ ...siteSettings, keywords: e.target.value })} placeholder="CrossFire, FPS, Weapons, Modes" />
+                      <Input id="site-keywords" value={seoSettings.keywords} onChange={(e)=> setSeoSettings({ ...seoSettings, keywords: e.target.value })} placeholder="CrossFire, FPS, Weapons, Modes" />
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={async () => {
                       try {
                         await apiRequest('/api/settings/site', 'PUT', {
-                          publicBaseUrl: siteSettings.base,
-                          seoTitle: siteSettings.title,
-                          seoDescription: siteSettings.desc,
-                          seoKeywords: siteSettings.keywords.split(',').map((s)=> s.trim()).filter(Boolean),
-                          seoOgImage: siteSettings.og,
-                          robots: siteSettings.robots || 'index, follow',
+                          publicBaseUrl: seoSettings.base,
+                          seoTitle: seoSettings.title,
+                          seoDescription: seoSettings.desc,
+                          seoKeywords: seoSettings.keywords.split(',').map((s)=> s.trim()).filter(Boolean),
+                          seoOgImage: seoSettings.og,
+                          robots: seoSettings.robots || 'index, follow',
                         });
                         toast({ title: 'Saved', description: 'Site settings updated' });
                       } catch (e: any) {
@@ -2903,7 +2964,7 @@ export default function Admin() {
                     <Button variant="outline" onClick={async () => {
                       try {
                         const d = await apiRequest('/api/public/settings/seo', 'GET');
-                        setSiteSettings({
+                        setSeoSettings({
                           base: d.publicBaseUrl || '',
                           title: d.seoTitle || '',
                           desc: d.seoDescription || '',
@@ -2915,13 +2976,14 @@ export default function Admin() {
                       } catch {}
                     }}>Load Current</Button>
                     <Button variant="secondary" onClick={async () => {
-                      if (!siteSettings.og) { toast({ title: 'Enter OG image URL' }); return; }
-                      try { const res = await fetch(siteSettings.og, { method: 'HEAD' }); toast({ title: 'Image Check', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Image Check', description: 'Failed to reach image', variant: 'destructive' }); }
+                      if (!seoSettings.og) { toast({ title: 'Enter OG image URL' }); return; }
+                      try { const res = await fetch(seoSettings.og, { method: 'HEAD' }); toast({ title: 'Image Check', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Image Check', description: 'Failed to reach image', variant: 'destructive' }); }
                     }}>Check OG Image URL</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+          )}
 
           {canTutorials && (
             <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">

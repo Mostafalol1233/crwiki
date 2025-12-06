@@ -254,7 +254,11 @@ export default function TutorialManager({ canManage: canManageProp }: { canManag
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => window.open(`/tutorials/${tutorial.id}`, "_blank")}
+                            onClick={() => {
+                              const slug = (tutorial as any).tutorial_slug;
+                              const url = slug ? `/tutorials/${slug}` : `/tutorials/id/${tutorial.id}`;
+                              window.open(url, "_blank");
+                            }}
                             data-testid="button-view"
                           >
                             <Eye className="h-4 w-4" />

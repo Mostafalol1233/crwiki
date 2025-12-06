@@ -165,6 +165,7 @@ export interface IStorage {
 
   getAllTutorials(): Promise<Tutorial[]>;
   getTutorialById(id: string): Promise<Tutorial | undefined>;
+  getTutorialBySlug(slug: string): Promise<Tutorial | undefined>;
   createTutorial(tutorial: InsertTutorial): Promise<Tutorial>;
   updateTutorial(id: string, tutorial: Partial<InsertTutorial>): Promise<Tutorial | undefined>;
   deleteTutorial(id: string): Promise<boolean>;
@@ -850,14 +851,44 @@ export class MongoDBStorage implements IStorage {
     } as any;
   }
 
+  async getTutorialBySlug(slug: string): Promise<Tutorial | undefined> {
+    const tutorial = await TutorialModel.findOne({ tutorial_slug: slug }).lean();
+    if (!tutorial) return undefined;
+    return { ...tutorial, id: String(tutorial._id) } as any;
+  }
+
   async createTutorial(tutorial: InsertTutorial): Promise<Tutorial> {
-    const newTutorial = await TutorialModel.create(tutorial);
-    const lean = await TutorialModel.findById(newTutorial._id).lean();
+    await this.connect();
+    const base = String(tutorial.title || '').toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    let slug = base || 'tutorial';
+    const exists = await TutorialModel.find({ tutorial_slug: new RegExp(`^${slug}(?:-\\d+)?$`, 'i') }).lean();
+    if (exists && exists.length > 0) {
+      const nums = exists
+        .map(t => String((t as any).tutorial_slug || ''))
+        .map(s => {
+          const m = s.match(/-(\d+)$/);
+          return m ? parseInt(m[1], 10) : (s.toLowerCase() === slug.toLowerCase() ? 1 : 0);
+        })
+        .filter(n => !isNaN(n));
+      const next = (nums.length > 0 ? Math.max(...nums) + 1 : 2);
+      slug = `${slug}-${next}`;
+    }
+
+    const created = await TutorialModel.create({
+      title: tutorial.title,
+      description: (tutorial as any).description || '',
+      youtubeUrl: tutorial.youtubeUrl,
+      youtubeId: tutorial.youtubeId,
+      likes: typeof (tutorial as any).likes === 'number' ? (tutorial as any).likes : 0,
+      order: typeof (tutorial as any).order === 'number' ? (tutorial as any).order : 9999,
+      tutorial_slug: slug,
+    });
+    const lean = await TutorialModel.findById(created._id).lean();
     if (!lean) throw new Error('Failed to create tutorial');
-    return {
-      ...lean,
-      id: String(lean._id),
-    } as any;
+    return { ...lean, id: String(lean._id) } as any;
   }
 
   async updateTutorial(id: string, tutorial: Partial<InsertTutorial>): Promise<Tutorial | undefined> {

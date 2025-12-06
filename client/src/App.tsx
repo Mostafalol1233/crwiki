@@ -72,7 +72,8 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/download" component={Download} />
       <Route path="/tutorials" component={Tutorials} />
-      <Route path="/tutorials/:id" component={TutorialDetail} />
+      <Route path="/tutorials/:slug" component={TutorialDetail} />
+      <Route path="/tutorials/id/:legacyId" component={TutorialDetail} />
       <Route path="/weapons" component={Weapons} />
       <Route path="/modes" component={Modes} />
       <Route path="/ranks" component={Ranks} />

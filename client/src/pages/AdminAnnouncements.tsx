@@ -46,6 +46,9 @@ export default function AdminAnnouncements() {
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [activeSellerForReviews, setActiveSellerForReviews] = useState<{ id: string; name: string } | null>(null);
 
+  const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
+  const [annSettingsLoading, setAnnSettingsLoading] = useState(false);
+
   // Load global on mount
   useEffect(() => {
     try {
@@ -56,6 +59,13 @@ export default function AdminAnnouncements() {
     (async () => {
       try {
         setLoadingGlobal(true);
+        try {
+          const sres = await fetch(`/api/public/settings/announcements`);
+          if (sres.ok) {
+            const sj = await sres.json();
+            setAnnouncementsEnabled(Boolean(sj?.enabled ?? true));
+          }
+        } catch {}
         const res = await fetch(`/api/announcements/global`);
         if (res.ok) {
           const json: Announcement & { dismissible?: boolean } = await res.json();
@@ -201,9 +211,40 @@ export default function AdminAnnouncements() {
     }
   };
 
+  const saveAnnouncementsEnabled = async () => {
+    try {
+      setAnnSettingsLoading(true);
+      const res = await fetch(`/api/settings/site`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' },
+        body: JSON.stringify({ announcementsEnabled }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast({ title: 'Saved', description: 'Announcements setting updated' });
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e?.message || '', variant: 'destructive' });
+    } finally {
+      setAnnSettingsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-10">
       <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Announcements Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox checked={announcementsEnabled} onCheckedChange={(v)=>setAnnouncementsEnabled(Boolean(v))} id="ann-enabled" />
+              <label htmlFor="ann-enabled">Enable announcements sitewide</label>
+            </div>
+            <div>
+              <Button onClick={saveAnnouncementsEnabled} disabled={annSettingsLoading}>Save</Button>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Global Announcement</CardTitle>

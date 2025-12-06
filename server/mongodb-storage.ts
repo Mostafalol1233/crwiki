@@ -213,6 +213,7 @@ export class MongoDBStorage implements IStorage {
     reviewVerificationPrompt: "",
     reviewVerificationTimecode: "",
     reviewVerificationYouTubeChannelUrl: "",
+    announcementsEnabled: true,
   };
 
   constructor() {
@@ -954,6 +955,7 @@ export class MongoDBStorage implements IStorage {
       reviewVerificationPrompt: doc.reviewVerificationPrompt || "",
       reviewVerificationTimecode: doc.reviewVerificationTimecode || "",
       reviewVerificationYouTubeChannelUrl: doc.reviewVerificationYouTubeChannelUrl || "",
+      announcementsEnabled: doc.announcementsEnabled !== false,
     };
   }
 

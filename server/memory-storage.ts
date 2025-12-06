@@ -66,6 +66,7 @@ export class MemoryStorage implements IStorage {
     reviewVerificationPrompt: "",
     reviewVerificationTimecode: "",
     reviewVerificationYouTubeChannelUrl: "",
+    announcementsEnabled: true,
   };
 
   constructor() {

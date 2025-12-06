@@ -24,7 +24,7 @@ export default function Weapons() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const { data: weapons = [], isLoading } = useQuery<Weapon[]>({
+  const { data: weapons = [], isLoading, isError, error, refetch } = useQuery<Weapon[]>({
     queryKey: ["weapons"],
     queryFn: async () => {
       const data = await apiRequest("/api/weapons", "GET");
@@ -46,13 +46,29 @@ export default function Weapons() {
   const filteredWeapons = useMemo(() => {
     return weapons.filter((weapon) => {
       const matchesSearch =
-        weapon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        weapon.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        (searchQuery ? weapon.name.includes(searchQuery) : true) ||
+        (searchQuery ? weapon.description?.includes(searchQuery) : false);
       const matchesCategory =
         selectedCategory === "all" || weapon.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [weapons, searchQuery, selectedCategory]);
+
+  const sortedWeapons = useMemo(() => {
+    const term = searchQuery;
+    const score = (w: Weapon) => {
+      let s = 0;
+      if (term) {
+        if (w.name.includes(term)) s += 3;
+        if (w.description?.includes(term)) s += 1;
+      }
+      if (selectedCategory !== "all" && w.category === selectedCategory) s += 2;
+      return s;
+    };
+    return [...filteredWeapons].sort(
+      (a, b) => score(b) - score(a) || a.name.localeCompare(b.name)
+    );
+  }, [filteredWeapons, searchQuery, selectedCategory]);
 
   const breadcrumbs = [
     { name: "Weapons", url: "/weapons" },
@@ -123,7 +139,22 @@ export default function Weapons() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredWeapons.length === 0 ? (
+          ) : isError ? (
+            <Card>
+              <CardContent className="py-12 text-center space-y-3">
+                <p className="text-muted-foreground">
+                  {(error as Error)?.message || "Failed to load weapons."}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => refetch()}
+                >
+                  Retry
+                </Badge>
+              </CardContent>
+            </Card>
+          ) : sortedWeapons.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-muted-foreground">
@@ -135,7 +166,7 @@ export default function Weapons() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredWeapons.map((weapon) => (
+              {sortedWeapons.map((weapon) => (
                 <Dialog key={weapon.id}>
                   <DialogTrigger asChild>
                     <Card
@@ -154,6 +185,8 @@ export default function Weapons() {
                             src={weapon.image}
                             alt={weapon.name}
                             className="w-full h-full object-contain p-4 transform transition-transform duration-300 hover:scale-110"
+                            loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -223,6 +256,8 @@ export default function Weapons() {
                               src={weapon.image}
                               alt={weapon.name}
                               className="w-full h-full object-contain p-4"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

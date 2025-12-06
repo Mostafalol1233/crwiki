@@ -11,7 +11,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
+import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 
 export default function Article() {
   const params = useParams();
@@ -20,6 +21,8 @@ export default function Article() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const [isRTL, setIsRTL] = useState(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
 
   const { data: article, isLoading } = useQuery<any>({
     queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
@@ -67,6 +70,8 @@ export default function Article() {
   useEffect(() => {
     setIsRTL((finalArticle as any)?.language === 'ar');
   }, [(finalArticle as any)?.language]);
+
+  useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
 
   const addCommentMutation = useMutation({
     mutationFn: (data: { author: string; content: string }) =>
@@ -237,13 +242,14 @@ export default function Article() {
                 <img
                   src={finalArticle.image}
                   alt={finalArticle.title}
-                  className="w-full h-auto max-h-[650px] object-contain"
+                  className="w-full h-auto max-h-[650px] object-contain cursor-zoom-in"
                   width="800"
                   height="544"
-                  loading="eager"
+                  loading="lazy"
                   fetchPriority="high"
                   decoding="async"
                   data-testid="img-article-cover"
+                  onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
                 />
               </div>
             )}
@@ -260,6 +266,7 @@ export default function Article() {
           <div
             className={`prose prose-lg dark:prose-invert max-w-none mb-12 ${isRTL ? "text-right" : ""}`}
             dir={isRTL ? "rtl" : undefined}
+            ref={contentRef}
             dangerouslySetInnerHTML={{
               __html: finalArticle.content ? finalArticle.content.replace(/\n/g, "<br />") : '',
             }}
@@ -293,6 +300,7 @@ export default function Article() {
         </article>
       </div>
     </div>
+    <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open={viewer.open} onClose={() => setViewer((v) => ({ ...v, open: false }))} />
     </>
   );
 }

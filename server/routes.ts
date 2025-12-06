@@ -6,7 +6,7 @@ import multer from "multer";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { storage } from "./storage.js";
 import express from "express";
-import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema } from "../shared/mongodb-schema.js";
+import { insertPostSchema, insertCommentSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, insertTutorialCommentSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertRankSchema, UserModel } from "../shared/mongodb-schema.js";
 import type { InsertSellerReview } from "../shared/mongodb-schema.js";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireNewsScraper, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
@@ -277,6 +277,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Admin: Users management and registration toggle
+  app.get(
+    "/api/admin/users",
+    requireAuth,
+    requireSuperAdmin,
+    async (_req, res) => {
+      try {
+        const users = await UserModel.find().sort({ createdAt: -1 }).lean();
+        res.json(
+          users.map((u: any) => ({
+            id: String(u._id),
+            username: u.username,
+            email: u.email,
+            phone: u.phone,
+            verifiedEmail: !!u.verifiedEmail,
+            verifiedPhone: !!u.verifiedPhone,
+            emailVerificationCode: u.emailVerificationCode || "",
+            phoneVerificationCode: u.phoneVerificationCode || "",
+            createdAt: u.createdAt,
+          }))
+        );
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/users/:id/generate-phone-code",
+    requireAuth,
+    requireSuperAdmin,
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const updated = await UserModel.findByIdAndUpdate(
+          id,
+          { phoneVerificationCode: code, verifiedPhone: false },
+          { new: true },
+        ).lean();
+        if (!updated) return res.status(404).json({ error: "User not found" });
+        res.json({
+          id: String(updated._id),
+          phone: updated.phone,
+          phoneCode: code,
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/admin/users/:id/verify",
+    requireAuth,
+    requireSuperAdmin,
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { verifiedEmail, verifiedPhone } = (req.body || {}) as any;
+        const update: Record<string, any> = {};
+        if (verifiedEmail === true) Object.assign(update, { verifiedEmail: true, emailVerificationCode: "" });
+        if (verifiedPhone === true) Object.assign(update, { verifiedPhone: true, phoneVerificationCode: "" });
+        const updated = await UserModel.findByIdAndUpdate(id, update, { new: true }).lean();
+        if (!updated) return res.status(404).json({ error: "User not found" });
+        res.json({
+          id: String(updated._id),
+          verifiedEmail: !!updated.verifiedEmail,
+          verifiedPhone: !!updated.verifiedPhone,
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/admin/users/:id",
+    requireAuth,
+    requireSuperAdmin,
+    async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await UserModel.findByIdAndDelete(id);
+        if (!result) return res.status(404).json({ error: "User not found" });
+        res.json({ success: true });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
+  let registrationClosed = false;
+  app.get(
+    "/api/admin/registration",
+    requireAuth,
+    requireSuperAdmin,
+    (_req, res) => {
+      res.json({ closed: registrationClosed });
+    },
+  );
+  app.post(
+    "/api/admin/registration/close",
+    requireAuth,
+    requireSuperAdmin,
+    (_req, res) => {
+      registrationClosed = true;
+      res.json({ closed: true });
+    },
+  );
+  app.post(
+    "/api/admin/registration/open",
+    requireAuth,
+    requireSuperAdmin,
+    (_req, res) => {
+      registrationClosed = false;
+      res.json({ closed: false });
+    },
+  );
 
   app.post("/api/users/reset-password", authLimiter, async (req, res) => {
     try {
@@ -1372,6 +1492,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         reviewVerificationPassphrase: raw.reviewVerificationPassphrase ?? "",
         reviewVerificationPrompt: raw.reviewVerificationPrompt ?? "",
         reviewVerificationTimecode: raw.reviewVerificationTimecode ?? "",
+        announcementsEnabled: toBoolean(raw.announcementsEnabled),
       };
 
       const parsed = siteSettingsSchema.parse(normalized);
@@ -1410,6 +1531,15 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         reviewVerificationTimecode: settings.reviewVerificationTimecode,
         reviewVerificationYouTubeChannelUrl: settings.reviewVerificationYouTubeChannelUrl,
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/public/settings/announcements", async (_req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      res.json({ enabled: settings.announcementsEnabled });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1982,6 +2112,130 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         return res.status(404).json({ error: "Admin not found" });
       }
 
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/admins", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const admins = await storage.getAllAdmins();
+      const sanitizedAdmins = admins.map(({ password, ...admin }) => admin);
+      res.json(sanitizedAdmins);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/admins", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const { username, password, role, roles: rolesFromBody, permissions } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      const existingAdmin = await storage.getAdminByUsername(username);
+      if (existingAdmin) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      const hashedPassword = await hashPassword(password);
+      let finalRoles: string[] = [];
+      if (Array.isArray(rolesFromBody) && rolesFromBody.length > 0) {
+        finalRoles = rolesFromBody;
+      } else if (role) {
+        finalRoles = [role];
+      } else {
+        finalRoles = ["admin"];
+      }
+      if (permissions && typeof permissions === 'object') {
+        const permToRole: Record<string, string> = {
+          'events:add': 'event_manager',
+          'events:scrape': 'event_scraper',
+          'news:add': 'news_manager',
+          'news:scrape': 'news_scraper',
+          'posts:manage': 'post_manager',
+          'sellers:manage': 'seller_manager',
+          'tutorials:manage': 'tutorial_manager',
+          'tickets:manage': 'ticket_manager',
+          'mercenaries:manage': 'mercenary_manager',
+          'settings:manage': 'settings_manager',
+        };
+        for (const [perm, enabled] of Object.entries(permissions)) {
+          if (enabled && permToRole[perm]) {
+            if (!finalRoles.includes(permToRole[perm])) finalRoles.push(permToRole[perm]);
+          }
+        }
+      }
+      const data = insertAdminSchema.parse({ username, password: hashedPassword, roles: finalRoles });
+      const admin = await storage.createAdmin(data);
+      const { password: _, ...sanitizedAdmin } = admin;
+      res.status(201).json(sanitizedAdmin);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const updates: any = {};
+      if (req.body.username !== undefined) updates.username = req.body.username;
+      if (req.body.password !== undefined) {
+        updates.password = await hashPassword(req.body.password);
+      }
+      const baseRoles: string[] = [];
+      if (typeof req.body.role === 'string' && req.body.role.trim()) {
+        baseRoles.push(req.body.role.trim());
+      }
+      if (Array.isArray(req.body.roles) && req.body.roles.length > 0) {
+        const rolesArr: string[] = req.body.roles;
+        if (baseRoles.length && !rolesArr.includes(baseRoles[0])) {
+          rolesArr.unshift(baseRoles[0]);
+        }
+        updates.roles = rolesArr;
+      } else if (req.body.permissions && typeof req.body.permissions === 'object') {
+        const permissions = req.body.permissions as Record<string, boolean>;
+        const permToRole: Record<string, string> = {
+          'events:add': 'event_manager',
+          'events:scrape': 'event_scraper',
+          'news:add': 'news_manager',
+          'news:scrape': 'news_scraper',
+          'posts:manage': 'post_manager',
+          'sellers:manage': 'seller_manager',
+          'tutorials:manage': 'tutorial_manager',
+          'tickets:manage': 'ticket_manager',
+          'mercenaries:manage': 'mercenary_manager',
+          'settings:manage': 'settings_manager',
+        };
+        const rolesFromPerms: string[] = [...baseRoles];
+        for (const [perm, enabled] of Object.entries(permissions)) {
+          if (enabled && permToRole[perm]) {
+            const role = permToRole[perm];
+            if (!rolesFromPerms.includes(role)) rolesFromPerms.push(role);
+          }
+        }
+        if (rolesFromPerms.length > 0) {
+          updates.roles = rolesFromPerms;
+        }
+      } else if (baseRoles.length > 0) {
+        updates.roles = baseRoles;
+      }
+      const admin = await storage.updateAdmin(req.params.id, updates);
+      if (!admin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+      const { password: _, ...sanitizedAdmin } = admin;
+      res.json(sanitizedAdmin);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/admins/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteAdmin(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

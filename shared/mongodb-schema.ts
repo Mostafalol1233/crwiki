@@ -182,6 +182,7 @@ export interface ISiteSettings extends Document {
   reviewVerificationPrompt: string;
   reviewVerificationTimecode: string;
   reviewVerificationYouTubeChannelUrl: string;
+  announcementsEnabled: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -418,6 +419,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
     reviewVerificationPrompt: { type: String, default: "" },
     reviewVerificationTimecode: { type: String, default: "" },
     reviewVerificationYouTubeChannelUrl: { type: String, default: "" },
+    announcementsEnabled: { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -695,6 +697,7 @@ export const siteSettingsSchema = z.object({
   reviewVerificationPrompt: z.string().trim().max(1000).optional().transform((value) => value ?? ""),
   reviewVerificationTimecode: z.string().trim().max(50).optional().transform((value) => value ?? ""),
   reviewVerificationYouTubeChannelUrl: urlOrEmptyString,
+  announcementsEnabled: z.boolean().optional().default(true),
 });
 
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
@@ -814,5 +817,6 @@ export type SiteSettings = {
   reviewVerificationPrompt: string;
   reviewVerificationTimecode: string;
   reviewVerificationYouTubeChannelUrl: string;
+  announcementsEnabled: boolean;
 };
 export type SiteSettingsDocument = ISiteSettings;

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { ArrowLeft, Target, Globe, Languages } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 
 interface NewsItem {
   id: string;
@@ -44,6 +45,9 @@ export default function NewsDetail() {
   const { t, language, toggleLanguage } = useLanguage();
   const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
+  useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
 
   const { data: newsItem, isLoading } = useQuery<NewsItemWithSlug>({
     queryKey: ["news", slug || legacyId],
@@ -233,8 +237,9 @@ export default function NewsDetail() {
           <img
             src={newsItem.image}
             alt={newsItem.title}
-            className="w-full h-auto object-cover"
+            className="w-full h-auto object-cover cursor-zoom-in"
             data-testid="img-news-hero"
+            onClick={() => setViewer({ open: true, src: newsItem.image, alt: newsItem.title })}
           />
         </div>
 
@@ -247,6 +252,7 @@ export default function NewsDetail() {
             <article
               className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
               dir={isRTL ? "rtl" : undefined}
+              ref={contentRef}
               dangerouslySetInnerHTML={{ __html: purified }}
               data-testid="text-news-content"
             />
@@ -262,6 +268,7 @@ export default function NewsDetail() {
         </div>
       </div>
     </div>
+    <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open={viewer.open} onClose={() => setViewer((v) => ({ ...v, open: false }))} />
     </>
   );
 }

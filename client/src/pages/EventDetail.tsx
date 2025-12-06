@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowLeft, Languages } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 
 interface Event {
   id: string;
@@ -38,6 +39,9 @@ export default function EventDetail() {
   const [error, setError] = useState<Error | null>(null);
   const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
+  useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
 
   const { data: event, isLoading } = useQuery<Event>({
     queryKey: ["event", slug || legacyId],
@@ -199,9 +203,10 @@ export default function EventDetail() {
               <img
                 src={event.image}
                 alt={title}
-                className="w-full h-full max-h-[550px] object-cover rounded-xl"
+                className="w-full h-full max-h-[550px] object-cover rounded-xl cursor-zoom-in"
                 onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
                 data-testid="img-event"
+                onClick={() => setViewer({ open: true, src: event.image!, alt: title })}
               />
             </div>
           )}
@@ -246,6 +251,7 @@ export default function EventDetail() {
                 <div 
                   className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
                   dir={isRTL ? "rtl" : undefined}
+                  ref={contentRef}
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description, {
                     ALLOWED_TAGS: [
                       'p','br','strong','b','em','i','u','strike','s','del','h1','h2','h3','h4','h5','h6',
@@ -271,6 +277,7 @@ export default function EventDetail() {
         </Card>
       </div>
     </div>
+    <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open={viewer.open} onClose={() => setViewer((v) => ({ ...v, open: false }))} />
     </>
   );
 }

@@ -24,6 +24,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Announcement | null>(null);
   const [scope, setScope] = useState<string>("global");
+  const [enabled, setEnabled] = useState<boolean>(true);
 
   const sellerSlugFromPath = useMemo(() => {
     try {
@@ -47,6 +48,16 @@ export default function AnnouncementModal({ location }: { location: string }) {
       setLoading(true);
       setData(null);
       try {
+        try {
+          const sres = await fetch(`/api/public/settings/announcements`);
+          if (sres.ok) {
+            const sj = await sres.json();
+            setEnabled(Boolean(sj?.enabled ?? true));
+            if (!Boolean(sj?.enabled ?? true)) {
+              return;
+            }
+          }
+        } catch {}
         let res: Response | null = null;
         let scopeLabel = "global";
 

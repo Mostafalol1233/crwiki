@@ -13,6 +13,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import { useRef, useState, useEffect } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
+import { Loader2 } from "lucide-react";
 
 export default function Article() {
   const params = useParams();
@@ -23,6 +24,7 @@ export default function Article() {
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const { data: article, isLoading } = useQuery<any>({
     queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
@@ -237,22 +239,28 @@ export default function Article() {
               <span data-testid="text-date">{finalArticle.date}</span>
             </div>
 
-            {finalArticle.image && (
-              <div className="w-full bg-black rounded-md mb-8 overflow-hidden flex justify-center">
-                <img
-                  src={finalArticle.image}
-                  alt={finalArticle.title}
-                  className="w-full h-auto max-h-[650px] object-contain cursor-zoom-in"
-                  width="800"
-                  height="544"
-                  loading="lazy"
-                  fetchPriority="high"
-                  decoding="async"
-                  data-testid="img-article-cover"
-                  onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
-                />
-              </div>
-            )}
+          {finalArticle.image && (
+            <div className="relative w-full bg-black rounded-md mb-8 overflow-hidden flex justify-center">
+              {!imgLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              <img
+                src={finalArticle.image}
+                alt={finalArticle.title}
+                className="w-full h-auto max-h-[60vh] md:max-h-[650px] object-contain cursor-zoom-in"
+                width="800"
+                height="544"
+                loading="lazy"
+                fetchPriority="high"
+                decoding="async"
+                data-testid="img-article-cover"
+                onLoad={() => setImgLoaded(true)}
+                onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
+              />
+            </div>
+          )}
           </div>
 
           {finalArticle.summary && (

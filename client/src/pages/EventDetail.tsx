@@ -4,7 +4,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ArrowLeft, Languages } from "lucide-react";
+import { Calendar, ArrowLeft, Languages, Loader2 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { SEOHead } from "@/components/SEOHead";
@@ -42,6 +42,7 @@ export default function EventDetail() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const { data: event, isLoading } = useQuery<Event>({
     queryKey: ["event", slug || legacyId],
@@ -199,13 +200,21 @@ export default function EventDetail() {
 
         <Card className="overflow-hidden">
           {event.image && (
-            <div className="w-full bg-black overflow-hidden flex justify-center">
+            <div className="relative w-full bg-black overflow-hidden flex justify-center">
+              {!imgLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              )}
               <img
                 src={event.image}
                 alt={title}
-                className="w-full h-full max-h-[550px] object-cover rounded-xl cursor-zoom-in"
+                className="w-full h-auto max-h-[50vh] md:max-h-[550px] object-contain rounded-xl cursor-zoom-in"
                 onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
+                onLoad={() => setImgLoaded(true)}
                 data-testid="img-event"
+                loading="lazy"
+                decoding="async"
                 onClick={() => setViewer({ open: true, src: event.image!, alt: title })}
               />
             </div>

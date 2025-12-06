@@ -485,3 +485,24 @@
 @keyframes voxFade {
   to { opacity: 0; transform: scale(0.98); }
 }
+
+/* Responsive content images inside rich text */
+.prose img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 1rem auto;
+}
+
+@media (max-width: 768px) {
+  .prose img {
+    max-height: 50vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .prose img {
+    max-height: 40vh;
+  }
+}

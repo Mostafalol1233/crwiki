@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 
 type Props = {
   src: string;
@@ -96,9 +97,17 @@ export function ImageViewerOverlay({ src, alt, open, onClose }: Props) {
         >
           <div
             ref={containerRef}
-            className="absolute inset-0 bg-black/80"
+            className="absolute inset-0 bg-white/75"
             onClick={onClose}
           />
+          <button
+            type="button"
+            aria-label="Close image viewer"
+            onClick={onClose}
+            className="absolute top-3 right-3 z-[71] inline-flex items-center justify-center h-9 w-9 rounded-full bg-white/90 text-black shadow-md hover:bg-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
           <div
             className="absolute inset-0 flex items-center justify-center touch-pan-y"
             onWheel={onWheel}
@@ -136,7 +145,17 @@ export function useZoomableImages(container: React.RefObject<HTMLElement>, openV
       } catch {}
       img.style.maxWidth = "800px";
       img.style.height = "auto";
+      img.style.objectFit = "contain";
       img.style.cursor = "zoom-in";
+      img.style.transition = "opacity 200ms ease";
+      if (!img.complete) {
+        img.style.opacity = "0.7";
+        const onLoad = () => {
+          img.style.opacity = "1";
+          img.removeEventListener("load", onLoad as any);
+        };
+        img.addEventListener("load", onLoad as any);
+      }
       img.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();

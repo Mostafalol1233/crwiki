@@ -4,7 +4,7 @@ import { useParams, Link, useLocation } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Globe, Languages } from "lucide-react";
+import { ArrowLeft, Target, Globe, Languages, Loader2 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -48,6 +48,7 @@ export default function NewsDetail() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const { data: newsItem, isLoading } = useQuery<NewsItemWithSlug>({
     queryKey: ["news", slug || legacyId],
@@ -233,12 +234,20 @@ export default function NewsDetail() {
           </div>
         </section>
 
-        <div className="w-full overflow-hidden mb-10">
+        <div className="relative w-full overflow-hidden mb-10">
+          {!imgLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
           <img
             src={newsItem.image}
             alt={newsItem.title}
-            className="w-full h-auto object-cover cursor-zoom-in"
+            className="w-full h-auto max-h-[50vh] md:max-h-[560px] object-contain cursor-zoom-in"
             data-testid="img-news-hero"
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setImgLoaded(true)}
             onClick={() => setViewer({ open: true, src: newsItem.image, alt: newsItem.title })}
           />
         </div>

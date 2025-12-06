@@ -207,12 +207,22 @@ function App() {
         <ThemeProvider>
           <LanguageProvider>
             <SEOHead
+              title="CrossFire Wiki — Complete CrossFire Gaming Guide"
+              description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates."
+              keywords={["CrossFire","Crossfire","CF","CrossFire Wiki","Z8Games","FPS","Shooter"]}
+              ogType="website"
+              ogImage="https://crossfire.wiki/white-vafcoin.png"
+              ogImageAlt="CrossFire Wiki default Open Graph image"
+              ogImageWidth={1200}
+              ogImageHeight={630}
+            />
+            <SEOHead
               onlySchema
               schemaType="Organization"
               schemaData={{
                 name: "CrossFire Wiki",
                 url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
-                logo: "https://images.seeklogo.com/logo-png/42/1/crossfire-logo-png_seeklogo-429200.png",
+                logo: "https://crossfire.wiki/white-vafcoin.png",
               }}
             />
             <SEOHead

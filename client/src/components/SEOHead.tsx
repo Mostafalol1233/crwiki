@@ -17,6 +17,9 @@ interface SEOHeadProps {
   robots?: string;
   noindex?: boolean;
   onlySchema?: boolean;
+  ogImageAlt?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
 }
 
 export function SEOHead({
@@ -35,11 +38,14 @@ export function SEOHead({
   robots,
   noindex = false,
   onlySchema = false,
+  ogImageAlt,
+  ogImageWidth = 1200,
+  ogImageHeight = 630,
 }: SEOHeadProps) {
   const [location] = useLocation();
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
   const [siteSeo, setSiteSeo] = useState<{ publicBaseUrl?: string; seoTitle?: string; seoDescription?: string; seoKeywords?: string[]; seoOgImage?: string; robots?: string } | null>(null);
-  const baseUrl = (siteSeo?.publicBaseUrl || envBase || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
+  const baseUrl = (siteSeo?.publicBaseUrl || envBase || (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki")).replace(/\/$/, "");
   const currentUrl = baseUrl + location;
   const finalCanonical = canonicalUrl || currentUrl;
   const finalOgUrl = ogUrl || currentUrl;
@@ -47,7 +53,17 @@ export function SEOHead({
   const finalDescription = description || siteSeo?.seoDescription || "CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates.";
   const finalOgTitle = ogTitle || finalTitle;
   const finalOgDescription = ogDescription || finalDescription;
-  const finalOgImage = ogImage || siteSeo?.seoOgImage || `${baseUrl}/feature-crossfire.jpg`;
+  const resolveAbsolute = (img?: string) => {
+    const src = img || '';
+    if (!src) return `${baseUrl}/feature-crossfire.jpg`;
+    try {
+      const u = new URL(src, baseUrl);
+      return u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
+    } catch {
+      return `${baseUrl}/feature-crossfire.jpg`;
+    }
+  };
+  const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);
   const finalTwitterImage = twitterImage || finalOgImage;
   const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow";
 
@@ -59,7 +75,9 @@ export function SEOHead({
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled) setSiteSeo(data);
-      } catch {}
+      } catch {
+        // gracefully ignore when backend is unavailable
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -94,6 +112,8 @@ export function SEOHead({
 
     const uniqueKeywords = Array.from(new Set([...(keywords || []), ...baseKeywords]));
 
+    const imgType = finalOgImage.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    const altText = ogImageAlt || finalOgTitle;
     const metaTags = !onlySchema
       ? [
           { name: "description", content: finalDescription },
@@ -103,12 +123,18 @@ export function SEOHead({
           { property: "og:title", content: finalOgTitle },
           { property: "og:description", content: finalOgDescription },
           { property: "og:image", content: finalOgImage },
+          { property: "og:image:secure_url", content: finalOgImage },
+          { property: "og:image:type", content: imgType },
+          { property: "og:image:width", content: String(ogImageWidth) },
+          { property: "og:image:height", content: String(ogImageHeight) },
+          { property: "og:image:alt", content: altText },
           { property: "og:type", content: ogType },
           { property: "og:url", content: finalOgUrl },
           { name: "twitter:card", content: "summary_large_image" },
           { name: "twitter:title", content: finalOgTitle },
           { name: "twitter:description", content: finalOgDescription },
           { name: "twitter:image", content: finalTwitterImage },
+          { name: "twitter:image:alt", content: altText },
         ]
       : [];
 

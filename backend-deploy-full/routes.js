@@ -1252,6 +1252,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 reviewVerificationPassphrase: raw.reviewVerificationPassphrase ?? "",
                 reviewVerificationPrompt: raw.reviewVerificationPrompt ?? "",
                 reviewVerificationTimecode: raw.reviewVerificationTimecode ?? "",
+                announcementsEnabled: toBoolean(raw.announcementsEnabled),
             };
             const parsed = siteSettingsSchema.parse(normalized);
             if (parsed.reviewVerificationEnabled) {
@@ -1275,6 +1276,87 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         catch (error) {
             res.status(400).json({ error: error.message });
         }
+    });
+    app.get("/api/public/settings/announcements", async (_req, res) => {
+        try {
+            const settings = await storage.getSiteSettings();
+            res.json({ enabled: settings.announcementsEnabled });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    const announcementsStore = new Map();
+
+    app.get("/api/announcements/global", async (_req, res) => {
+        const a = announcementsStore.get("global") || null;
+        res.json(a || { active: false });
+    });
+    app.post("/api/announcements/global", requireAuth, requireSettingsManager, async (req, res) => {
+        const body = req.body || {};
+        const item = {
+            contentHtml: body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "",
+            imageUrl: String(body.imageUrl || ""),
+            linkUrl: String(body.linkUrl || ""),
+            active: Boolean(body.active ?? true),
+            dismissible: body.dismissible === false ? false : true,
+            direction: (body.direction === "rtl" || body.direction === "ltr") ? body.direction : "auto",
+            updatedAt: new Date().toISOString(),
+        };
+        announcementsStore.set("global", item);
+        res.json(item);
+    });
+    app.delete("/api/announcements/global/:id", requireAuth, requireSettingsManager, async (req, res) => {
+        const { id } = req.params;
+        if (id !== "global")
+            return res.status(404).json({ error: "Not found" });
+        announcementsStore.delete("global");
+        res.json({ success: true });
+    });
+    app.get("/api/admin/announcements/global", requireAuth, requireSettingsManager, async (_req, res) => {
+        const a = announcementsStore.get("global");
+        const list = a ? [{ id: "global", ...a }] : [];
+        res.json(list);
+    });
+    app.get("/api/announcements/seller/:slug", async (req, res) => {
+        const key = `seller:${String(req.params.slug || "").toLowerCase()}`;
+        const a = announcementsStore.get(key) || null;
+        res.json(a || { active: false });
+    });
+    app.post("/api/announcements/seller/:slug", requireAuth, requireSettingsManager, async (req, res) => {
+        const slug = String(req.params.slug || "").toLowerCase();
+        if (!slug)
+            return res.status(400).json({ error: "Slug required" });
+        const body = req.body || {};
+        const item = {
+            sellerSlug: slug,
+            contentHtml: body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "",
+            imageUrl: String(body.imageUrl || ""),
+            linkUrl: String(body.linkUrl || ""),
+            active: Boolean(body.active ?? true),
+            dismissible: body.dismissible === false ? false : true,
+            direction: (body.direction === "rtl" || body.direction === "ltr") ? body.direction : "auto",
+            updatedAt: new Date().toISOString(),
+        };
+        announcementsStore.set(`seller:${slug}`, item);
+        res.json(item);
+    });
+    app.delete("/api/announcements/seller/:slug", requireAuth, requireSettingsManager, async (req, res) => {
+        const slug = String(req.params.slug || "").toLowerCase();
+        const key = `seller:${slug}`;
+        if (!announcementsStore.has(key))
+            return res.status(404).json({ error: "Not found" });
+        announcementsStore.delete(key);
+        res.json({ success: true });
+    });
+    app.get("/api/admin/announcements/seller", requireAuth, requireSettingsManager, async (_req, res) => {
+        const list = [];
+        for (const [k, v] of announcementsStore.entries()) {
+            if (k.startsWith("seller:"))
+                list.push({ id: k, sellerSlug: k.replace("seller:", ""), ...v });
+        }
+        res.json(list);
     });
     app.get("/api/public/settings/review-verification", async (_req, res) => {
         try {

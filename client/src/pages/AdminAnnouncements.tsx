@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 function slugify(input: string) {
   return input
@@ -24,6 +25,7 @@ type Announcement = {
 
 export default function AdminAnnouncements() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Global announcement state
   const [gContentHtml, setGContentHtml] = useState("");
@@ -87,6 +89,20 @@ export default function AdminAnnouncements() {
     })();
   }, []);
 
+  const handleUnauthorized = (status: number) => {
+    if (status === 401) {
+      toast({ title: 'Session expired', description: 'Please login again', variant: 'destructive' });
+      localStorage.removeItem('adminToken');
+      setLocation('/admin/login');
+      return true;
+    }
+    if (status === 403) {
+      toast({ title: 'Access denied', description: 'Insufficient permissions', variant: 'destructive' });
+      return true;
+    }
+    return false;
+  };
+
   const saveGlobal = async () => {
     try {
       setLoadingGlobal(true);
@@ -95,11 +111,17 @@ export default function AdminAnnouncements() {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (handleUnauthorized(res.status)) return;
+        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
+        throw new Error(msg);
+      }
       toast({ title: "Created", description: "New global announcement added" });
       try {
         const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
         if (res2.ok) setGlobalList(await res2.json());
+        else if (handleUnauthorized(res2.status)) return;
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -114,7 +136,12 @@ export default function AdminAnnouncements() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (handleUnauthorized(res.status)) return;
+        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
+        throw new Error(msg);
+      }
       setGlobalList((prev) => prev.filter((g) => g.id !== id));
       toast({ title: 'Deleted', description: 'Global announcement removed' });
     } catch (e: any) {
@@ -167,11 +194,17 @@ export default function AdminAnnouncements() {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (handleUnauthorized(res.status)) return;
+        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
+        throw new Error(msg);
+      }
       toast({ title: "Saved", description: "Seller announcement updated" });
       try {
         const res2 = await fetch(`/api/admin/announcements/seller`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
         if (res2.ok) setSellerAnnouncements(await res2.json());
+        else if (handleUnauthorized(res2.status)) return;
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -187,7 +220,12 @@ export default function AdminAnnouncements() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (handleUnauthorized(res.status)) return;
+        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
+        throw new Error(msg);
+      }
       setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
       setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true);
       toast({ title: 'Deleted', description: 'Seller announcement removed' });
@@ -203,7 +241,12 @@ export default function AdminAnnouncements() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (handleUnauthorized(res.status)) return;
+        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
+        throw new Error(msg);
+      }
       setSellerReviews((prev) => prev.filter((r) => r.id !== reviewId));
       toast({ title: 'Review deleted' });
     } catch (e: any) {
@@ -219,7 +262,24 @@ export default function AdminAnnouncements() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' },
         body: JSON.stringify({ announcementsEnabled }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let msg = await res.text();
+        if (res.status === 401) {
+          toast({ title: 'Session expired', description: 'Please login again', variant: 'destructive' });
+          localStorage.removeItem('adminToken');
+          setLocation('/admin/login');
+          return;
+        }
+        if (res.status === 403) {
+          toast({ title: 'Access denied', description: 'Insufficient permissions', variant: 'destructive' });
+          return;
+        }
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed && parsed.error) msg = String(parsed.error);
+        } catch {}
+        throw new Error(msg);
+      }
       toast({ title: 'Saved', description: 'Announcements setting updated' });
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message || '', variant: 'destructive' });

@@ -131,6 +131,7 @@ export default function Home() {
           "tutorials",
         ]}
         canonicalPath="/"
+        image={"https://crossfire.wiki/images/og-image.jpg"}
         schemaType="Organization"
         schemaData={{
           name: "CrossFire Wiki",
@@ -460,6 +461,49 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {displayEvents.length > 0 && (
+          <section className="mb-12">
+            <div className="max-w-[1400px] mx-auto px-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-[12px] lg:gap-[16px]">
+                {displayEvents.slice(0, 12).map((ev: any) => (
+                  <Link
+                    href={ev.event_name_slug ? `/events/${ev.event_name_slug}` : `/events/${ev.id}`}
+                    key={ev.id}
+                    className="block"
+                  >
+                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9]">
+                      <img
+                        src={ev.image}
+                        alt={ev.title}
+                        className="w-full h-full object-cover object-center block"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+                      <div className="absolute top-3 left-3 flex items-center gap-2">
+                        {ev.type && (
+                          <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
+                            {ev.type === 'trending' ? 'HOT' : 'NEW'}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <h4 className="font-semibold text-base md:text-lg line-clamp-2">{ev.title}</h4>
+                        {ev.date && (
+                          <p className="text-xs md:text-sm text-white/85 flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3" />
+                            {ev.date}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {showPortalSections && (
           <>
@@ -953,7 +997,7 @@ export default function Home() {
         </>
         )}
       </div>
-    </div>
+      </div>
     </>
   );
 }

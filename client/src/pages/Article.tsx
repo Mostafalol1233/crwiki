@@ -27,16 +27,12 @@ export default function Article() {
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const { data: article, isLoading } = useQuery<any>({
-    queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
+    queryKey: [slug ? `/api/posts/${slug}` : `/api/posts/${legacyId}`],
     enabled: !!(legacyId || slug),
     queryFn: async () => {
-      if (slug) {
-        const res = await fetch(`/api/posts/slug/${slug}`);
-        if (!res.ok) throw new Error('Failed to fetch article');
-        return res.json();
-      }
-      if (!legacyId) return null;
-      const res = await fetch(`/api/posts/${legacyId}`);
+      const idOrSlug = slug || legacyId;
+      if (!idOrSlug) return null;
+      const res = await fetch(`/api/posts/${idOrSlug}`);
       if (!res.ok) throw new Error('Failed to fetch article');
       return res.json();
     },

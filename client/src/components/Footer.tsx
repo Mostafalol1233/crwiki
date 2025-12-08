@@ -16,7 +16,7 @@ export function Footer() {
     { label: "News & Updates", path: "/news" },
     { label: "Posts", path: "/posts" },
     { label: "Tutorials", path: "/tutorials" },
-    { label: "Events", path: "/events" },
+    { label: "Events", path: "https://crossfire.wiki/category/events" },
   ];
 
   const supportLinks = [
@@ -125,13 +125,25 @@ export function Footer() {
             <ul className="space-y-3">
               {contentLinks.map((link) => (
                 <li key={link.path}>
-                  <Link
-                    href={link.path}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 hover:translate-x-1 inline-block"
-                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {link.label}
-                  </Link>
+                  {String(link.path).startsWith("http") ? (
+                    <a
+                      href={link.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 hover:translate-x-1 inline-block"
+                      data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.path}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 hover:translate-x-1 inline-block"
+                      data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

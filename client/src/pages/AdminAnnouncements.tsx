@@ -21,6 +21,7 @@ type Announcement = {
   linkUrl?: string;
   active?: boolean;
   dismissible?: boolean;
+  direction?: 'auto' | 'ltr' | 'rtl';
 };
 
 export default function AdminAnnouncements() {
@@ -33,6 +34,7 @@ export default function AdminAnnouncements() {
   const [gLinkUrl, setGLinkUrl] = useState("");
   const [gActive, setGActive] = useState(true);
   const [gDismissible, setGDismissible] = useState(true);
+  const [gDirection, setGDirection] = useState<'auto'|'ltr'|'rtl'>("auto");
   const [loadingGlobal, setLoadingGlobal] = useState(false);
   const [globalList, setGlobalList] = useState<any[]>([]);
 
@@ -47,6 +49,7 @@ export default function AdminAnnouncements() {
   const [sellerAnnouncements, setSellerAnnouncements] = useState<any[]>([]);
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [activeSellerForReviews, setActiveSellerForReviews] = useState<{ id: string; name: string } | null>(null);
+  const [sDirection, setSDirection] = useState<'auto'|'ltr'|'rtl'>("auto");
 
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
   const [annSettingsLoading, setAnnSettingsLoading] = useState(false);
@@ -76,6 +79,7 @@ export default function AdminAnnouncements() {
           setGLinkUrl(json.linkUrl || "");
           setGActive(Boolean(json.active ?? true));
           setGDismissible(Boolean(json.dismissible ?? true));
+          setGDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
         }
       } catch {}
       finally { setLoadingGlobal(false); }
@@ -109,7 +113,7 @@ export default function AdminAnnouncements() {
       const res = await fetch(`/api/announcements/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible }),
+        body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible, direction: gDirection }),
       });
       if (!res.ok) {
         let msg = await res.text();
@@ -160,9 +164,10 @@ export default function AdminAnnouncements() {
         setSImageUrl(json.imageUrl || "");
         setSLinkUrl(json.linkUrl || "");
         setSActive(Boolean(json.active ?? true));
+        setSDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
       } else {
         // clear if none
-        setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true);
+        setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       }
       // Load seller announcement list
       try {
@@ -192,7 +197,7 @@ export default function AdminAnnouncements() {
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive }),
+        body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive, direction: sDirection }),
       });
       if (!res.ok) {
         let msg = await res.text();
@@ -227,7 +232,7 @@ export default function AdminAnnouncements() {
         throw new Error(msg);
       }
       setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
-      setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true);
+      setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       toast({ title: 'Deleted', description: 'Seller announcement removed' });
     } catch (e: any) {
       toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
@@ -319,6 +324,17 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Content (HTML allowed)</label>
             <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preview Direction</label>
+                <div className="flex gap-2">
+                  <Button variant={gDirection==='auto'?'default':'outline'} size="sm" onClick={()=>setGDirection('auto')}>Auto</Button>
+                  <Button variant={gDirection==='ltr'?'default':'outline'} size="sm" onClick={()=>setGDirection('ltr')}>Left-to-Right</Button>
+                  <Button variant={gDirection==='rtl'?'default':'outline'} size="sm" onClick={()=>setGDirection('rtl')}>Right-to-Left</Button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Checkbox checked={gActive} onCheckedChange={(v)=>setGActive(Boolean(v))} id="g-active" />
@@ -373,6 +389,17 @@ export default function AdminAnnouncements() {
 
             <label className="text-sm font-medium">Content (HTML allowed)</label>
             <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preview Direction</label>
+                <div className="flex gap-2">
+                  <Button variant={sDirection==='auto'?'default':'outline'} size="sm" onClick={()=>setSDirection('auto')}>Auto</Button>
+                  <Button variant={sDirection==='ltr'?'default':'outline'} size="sm" onClick={()=>setSDirection('ltr')}>Left-to-Right</Button>
+                  <Button variant={sDirection==='rtl'?'default':'outline'} size="sm" onClick={()=>setSDirection('rtl')}>Right-to-Left</Button>
+                </div>
+              </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <Checkbox checked={sActive} onCheckedChange={(v)=>setSActive(Boolean(v))} id="s-active" />

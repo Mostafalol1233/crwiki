@@ -19,6 +19,7 @@ type Announcement = {
   active?: boolean;
   dismissible?: boolean;
   updatedAt?: string;
+  direction?: 'auto' | 'ltr' | 'rtl';
 };
 
 export default function AnnouncementModal({ location }: { location: string }) {
@@ -136,6 +137,9 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
   const safeHtml = { __html: DOMPurify.sanitize(String(data.contentHtml || "")) };
 
+  const finalDir = (data?.direction === 'rtl') ? 'rtl' : (data?.direction === 'ltr') ? 'ltr' : (language === "ar" ? 'rtl' : 'ltr');
+  const finalAlign = finalDir === 'rtl' ? 'text-right' : 'text-left';
+
   return (
     <AnimatePresence>
       {open && (
@@ -163,7 +167,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
             className="relative z-[61] max-w-lg w-[92%] md:w-[640px] bg-background/60 backdrop-blur-lg border border-border shadow-2xl"
-            dir={language === "ar" ? "rtl" : "ltr"}
+            dir={finalDir}
           >
             <div className="flex items-center justify-between p-2">
               <div />
@@ -196,7 +200,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
             {data.imageUrl ? (
               <img src={data.imageUrl} alt="Announcement" className="w-full h-auto object-cover" />
             ) : null}
-            <div className={`p-4 prose max-w-none ${language === "ar" ? "text-right" : "text-left"}`}>
+            <div className={`p-4 prose max-w-none ${finalAlign}`}>
               <div dangerouslySetInnerHTML={safeHtml} />
               {data.linkUrl ? (
                 <div className="mt-3">

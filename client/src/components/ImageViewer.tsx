@@ -44,12 +44,12 @@ export function ImageViewerOverlay({ src, alt, open, onClose }: Props) {
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    (e.target as Element).setPointerCapture(e.pointerId);
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setPointers((prev) => new Map(prev).set(e.pointerId, { x: e.clientX, y: e.clientY }));
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
-    (e.target as Element).releasePointerCapture(e.pointerId);
+    (e.currentTarget as Element).releasePointerCapture(e.pointerId);
     setPointers((prev) => {
       const next = new Map(prev);
       next.delete(e.pointerId);
@@ -62,7 +62,8 @@ export function ImageViewerOverlay({ src, alt, open, onClose }: Props) {
       const next = new Map(prev);
       const last = next.get(e.pointerId);
       next.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (next.size === 1 && last) {
+      const isPrimaryDown = (e.buttons & 1) === 1;
+      if (next.size === 1 && last && (isPrimaryDown || e.pointerType !== "mouse")) {
         const dx = e.clientX - last.x;
         const dy = e.clientY - last.y;
         setTranslate((t) => ({ x: t.x + dx, y: t.y + dy }));
@@ -78,6 +79,19 @@ export function ImageViewerOverlay({ src, alt, open, onClose }: Props) {
       }
       return next;
     });
+  };
+
+  const onPointerCancel = (e: React.PointerEvent) => {
+    try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch {}
+    setPointers((prev) => {
+      const next = new Map(prev);
+      next.delete(e.pointerId);
+      return next;
+    });
+  };
+
+  const onPointerLeave = () => {
+    setPointers(new Map());
   };
 
   const onDoubleClick = () => {
@@ -109,11 +123,13 @@ export function ImageViewerOverlay({ src, alt, open, onClose }: Props) {
             <X className="h-5 w-5" />
           </button>
           <div
-            className="absolute inset-0 flex items-center justify-center touch-pan-y"
+            className="absolute inset-0 flex items-center justify-center touch-none"
             onWheel={onWheel}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onPointerLeave={onPointerLeave}
             onDoubleClick={onDoubleClick}
           >
             <img

@@ -183,7 +183,7 @@ export default function Home() {
                           <img
                             src={displayEvents[0].image}
                             alt={displayEvents[0].title}
-                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -221,7 +221,7 @@ export default function Home() {
                           <img
                             src={displayEvents[1].image}
                             alt={displayEvents[1].title}
-                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="400"
                             height="256"
                             loading="lazy"
@@ -262,7 +262,7 @@ export default function Home() {
                           <img
                             src={displayEvents[2].image}
                             alt={displayEvents[2].title}
-                            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
                             width="800"
                             height="544"
                             loading="lazy"
@@ -306,7 +306,7 @@ export default function Home() {
                             <img
                               src={displayEvents[3].image}
                               alt={displayEvents[3].title}
-                              className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+                              className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
                               width="400"
                               height="256"
                               loading="lazy"
@@ -330,7 +330,7 @@ export default function Home() {
           <img
             src={displayEvents[4].image}
             alt={displayEvents[4].title}
-            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
             width="400"
             height="256"
             loading="lazy"
@@ -357,7 +357,7 @@ export default function Home() {
           <img
             src={displayEvents[5].image}
             alt={displayEvents[5].title}
-            className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
             width="800"
             height="544"
             loading="lazy"
@@ -389,7 +389,7 @@ export default function Home() {
           {/* Modes & Weapons feature tiles */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Competitive Modes */}
-            <Link href="/modes" className="block">
+            <Link href="/modes" className="block order-2 md:order-1">
               <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
@@ -413,7 +413,7 @@ export default function Home() {
             </Link>
 
             {/* Weapons */}
-            <Link href="/weapons" className="block">
+            <Link href="/weapons" className="block order-3 md:order-2">
               <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
@@ -437,8 +437,8 @@ export default function Home() {
             </Link>
 
             {/* Cooperative Modes */}
-            <Link href="/modes" className="block">
-              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+            <Link href="/modes" className="block order-1 md:order-3">
+              <div className="relative h-48 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
@@ -465,18 +465,46 @@ export default function Home() {
         {displayEvents.length > 0 && (
           <section className="mb-12">
             <div className="max-w-[1400px] mx-auto px-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-[12px] lg:gap-[16px]">
+              {/* Mobile: single event preview below featured */}
+              <div className="md:hidden">
+                {displayEvents[0] && (
+                  <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block">
+                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-black">
+                      <img
+                        src={displayEvents[0].image}
+                        alt={displayEvents[0].title}
+                        className="w-full h-full object-contain object-center block"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <h4 className="font-semibold text-base line-clamp-2">{displayEvents[0].title}</h4>
+                        {displayEvents[0].date && (
+                          <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3" />
+                            {displayEvents[0].date}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                )}
+              </div>
+
+              {/* Desktop/Tablet: multi-card grid */}
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-[12px] lg:gap-[16px]">
                 {displayEvents.slice(0, 12).map((ev: any) => (
                   <Link
                     href={ev.event_name_slug ? `/events/${ev.event_name_slug}` : `/events/${ev.id}`}
                     key={ev.id}
                     className="block"
                   >
-                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9]">
+                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-black">
                       <img
                         src={ev.image}
                         alt={ev.title}
-                        className="w-full h-full object-cover object-center block"
+                        className="w-full h-full object-contain object-center block"
                         loading="lazy"
                         decoding="async"
                       />

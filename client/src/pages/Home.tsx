@@ -172,13 +172,13 @@ export default function Home() {
               </Link>
             </div>
             {/* CrossFire style: 1 large right, 2 square left, 2 square bottom left, 1 large bottom right */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-[2px]">
               {/* Left column: 2 square cards stacked */}
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {displayEvents[0] && (
                   <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block" key={displayEvents[0].id} data-testid={`home-event-left-top-${displayEvents[0].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60 w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
                         {displayEvents[0].image && (
                           <img
                             src={displayEvents[0].image}
@@ -191,7 +191,7 @@ export default function Home() {
                             fetchPriority="high"
                           />
                         )}
-                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        
                         {displayEvents[0].type && (
                           <div className="absolute top-3 left-3">
                             <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
@@ -215,8 +215,8 @@ export default function Home() {
                 
                 {displayEvents[1] && (
                   <Link href={displayEvents[1].event_name_slug ? `/events/${displayEvents[1].event_name_slug}` : `/events/${displayEvents[1].id}`} className="block" key={displayEvents[1].id} data-testid={`home-event-left-bottom-${displayEvents[1].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60 w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
                         {displayEvents[1].image && (
                           <img
                             src={displayEvents[1].image}
@@ -229,7 +229,7 @@ export default function Home() {
                             fetchPriority="high"
                           />
                         )}
-                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        
                         {displayEvents[1].type && (
                           <div className="absolute top-3 left-3">
                             <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
@@ -256,8 +256,8 @@ export default function Home() {
               <div className="lg:col-span-2">
                 {displayEvents[2] && (
                   <Link href={displayEvents[2].event_name_slug ? `/events/${displayEvents[2].event_name_slug}` : `/events/${displayEvents[2].id}`} className="block" key={displayEvents[2].id} data-testid={`home-event-right-featured-${displayEvents[2].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px] w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-[480px] w-full">
+                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
                         {displayEvents[2].image && (
                           <img
                             src={displayEvents[2].image}
@@ -269,7 +269,7 @@ export default function Home() {
                             decoding="async"
                           />
                         )}
-                        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                        
                         {displayEvents[2].type && (
                           <div className="absolute top-4 left-4">
                             <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-sm uppercase font-bold px-3 py-1">
@@ -295,13 +295,13 @@ export default function Home() {
 
             {/* Bottom row: 2 squares left, 1 large right */}
             {(displayEvents[3] || displayEvents[4] || displayEvents[5]) && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-[2px] mt-[2px]">
                 {/* Left: 2 squares */}
                 <div className="lg:col-span-1 flex flex-col gap-4">
                   {displayEvents[3] && (
                     <Link href={displayEvents[3].event_name_slug ? `/events/${displayEvents[3].event_name_slug}` : `/events/${displayEvents[3].id}`} className="block" key={displayEvents[3].id} data-testid={`home-event-bottom-left-top-${displayEvents[3].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60">
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
                           {displayEvents[3].image && (
                             <img
                               src={displayEvents[3].image}
@@ -313,7 +313,7 @@ export default function Home() {
                               decoding="async"
                             />
                           )}
-                          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                          
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[3].title}</h4>
                           </div>
@@ -324,8 +324,8 @@ export default function Home() {
                   
                   {displayEvents[4] && (
                     <Link href={displayEvents[4].event_name_slug ? `/events/${displayEvents[4].event_name_slug}` : `/events/${displayEvents[4].id}`} className="block" key={displayEvents[4].id} data-testid={`home-event-bottom-left-bottom-${displayEvents[4].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-64">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60">
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
         {displayEvents[4].image && (
           <img
             src={displayEvents[4].image}
@@ -337,7 +337,7 @@ export default function Home() {
             decoding="async"
           />
         )}
-                          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                          
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[4].title}</h4>
                           </div>
@@ -351,8 +351,8 @@ export default function Home() {
                 <div className="lg:col-span-2">
                   {displayEvents[5] && (
                     <Link href={displayEvents[5].event_name_slug ? `/events/${displayEvents[5].event_name_slug}` : `/events/${displayEvents[5].id}`} className="block" key={displayEvents[5].id} data-testid={`home-event-bottom-right-${displayEvents[5].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-card border-border/60 h-[544px]">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black">
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-[480px]">
+                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
         {displayEvents[5].image && (
           <img
             src={displayEvents[5].image}
@@ -364,7 +364,7 @@ export default function Home() {
             decoding="async"
           />
         )}
-                          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                          
                           <div className="absolute bottom-4 left-4 right-4 text-white">
                             <h3 className="font-bold text-lg md:text-xl line-clamp-3">{displayEvents[5].title}</h3>
                             {displayEvents[5].date && (
@@ -387,10 +387,10 @@ export default function Home() {
         {/* CrossFire-style feature strip */}
         <section className="space-y-6 mb-12">
           {/* Modes & Weapons feature tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[2px]">
             {/* Competitive Modes */}
             <Link href="/modes" className="block order-2 md:order-1">
-              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+              <div className="relative h-40 md:h-48 lg:h-60 overflow-hidden rounded-md group p-1">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
@@ -398,8 +398,8 @@ export default function Home() {
                       "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-comp.jpg)",
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-                <div className="relative h-full flex flex-col justify-end p-5 text-white">
+                
+                <div className="relative h-full flex flex-col justify-end p-2 text-white">
                   <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
                     COMPETITIVE MODES
                   </h4>
@@ -414,7 +414,7 @@ export default function Home() {
 
             {/* Weapons */}
             <Link href="/weapons" className="block order-3 md:order-2">
-              <div className="relative h-40 md:h-52 lg:h-64 overflow-hidden rounded-md border border-border group">
+              <div className="relative h-40 md:h-48 lg:h-60 overflow-hidden rounded-md group p-1">
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
@@ -422,8 +422,8 @@ export default function Home() {
                       "url(https://z8games.akamaized.net/cfna/web/image/feature-weap.jpg)",
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-                <div className="relative h-full flex flex-col justify-end p-5 text-white">
+                
+                <div className="relative h-full flex flex-col justify-end p-2 text-white">
                   <h4 className="text-xl md:text-2xl font-extrabold tracking-wide mb-3">
                     WEAPONS
                   </h4>
@@ -469,7 +469,7 @@ export default function Home() {
               <div className="md:hidden">
                 {displayEvents[0] && (
                   <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block">
-                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-black">
+                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-transparent p-1">
                       <img
                         src={displayEvents[0].image}
                         alt={displayEvents[0].title}
@@ -477,7 +477,7 @@ export default function Home() {
                         loading="lazy"
                         decoding="async"
                       />
-                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+                      
                       <div className="absolute bottom-3 left-3 right-3 text-white">
                         <h4 className="font-semibold text-base line-clamp-2">{displayEvents[0].title}</h4>
                         {displayEvents[0].date && (
@@ -493,14 +493,14 @@ export default function Home() {
               </div>
 
               {/* Desktop/Tablet: multi-card grid */}
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-[12px] lg:gap-[16px]">
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-[2px]">
                 {displayEvents.slice(0, 12).map((ev: any) => (
                   <Link
                     href={ev.event_name_slug ? `/events/${ev.event_name_slug}` : `/events/${ev.id}`}
                     key={ev.id}
                     className="block"
                   >
-                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-black">
+                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-transparent p-1">
                       <img
                         src={ev.image}
                         alt={ev.title}
@@ -508,7 +508,7 @@ export default function Home() {
                         loading="lazy"
                         decoding="async"
                       />
-                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+                      
                       <div className="absolute top-3 left-3 flex items-center gap-2">
                         {ev.type && (
                           <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">

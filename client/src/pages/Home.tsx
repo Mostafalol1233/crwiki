@@ -177,8 +177,8 @@ export default function Home() {
               <div className="lg:col-span-1 flex flex-col gap-4">
                 {displayEvents[0] && (
                   <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block" key={displayEvents[0].id} data-testid={`home-event-left-top-${displayEvents[0].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
+                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-60">
                         {displayEvents[0].image && (
                           <img
                             src={displayEvents[0].image}
@@ -215,8 +215,8 @@ export default function Home() {
                 
                 {displayEvents[1] && (
                   <Link href={displayEvents[1].event_name_slug ? `/events/${displayEvents[1].event_name_slug}` : `/events/${displayEvents[1].id}`} className="block" key={displayEvents[1].id} data-testid={`home-event-left-bottom-${displayEvents[1].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60 w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
+                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-60">
                         {displayEvents[1].image && (
                           <img
                             src={displayEvents[1].image}
@@ -256,8 +256,8 @@ export default function Home() {
               <div className="lg:col-span-2">
                 {displayEvents[2] && (
                   <Link href={displayEvents[2].event_name_slug ? `/events/${displayEvents[2].event_name_slug}` : `/events/${displayEvents[2].id}`} className="block" key={displayEvents[2].id} data-testid={`home-event-right-featured-${displayEvents[2].id}`}>
-                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-[480px] w-full">
-                      <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
+                    <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
+                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-[480px]">
                         {displayEvents[2].image && (
                           <img
                             src={displayEvents[2].image}
@@ -462,76 +462,7 @@ export default function Home() {
           </div>
         </section>
 
-        {displayEvents.length > 0 && (
-          <section className="mb-12">
-            <div className="max-w-[1400px] mx-auto px-5">
-              {/* Mobile: single event preview below featured */}
-              <div className="md:hidden">
-                {displayEvents[0] && (
-                  <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block">
-                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-transparent p-1">
-                      <img
-                        src={displayEvents[0].image}
-                        alt={displayEvents[0].title}
-                        className="w-full h-full object-contain object-center block"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      
-                      <div className="absolute bottom-3 left-3 right-3 text-white">
-                        <h4 className="font-semibold text-base line-clamp-2">{displayEvents[0].title}</h4>
-                        {displayEvents[0].date && (
-                          <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
-                            <Calendar className="h-3 w-3" />
-                            {displayEvents[0].date}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                )}
-              </div>
-
-              {/* Desktop/Tablet: multi-card grid */}
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-[2px]">
-                {displayEvents.slice(0, 12).map((ev: any) => (
-                  <Link
-                    href={ev.event_name_slug ? `/events/${ev.event_name_slug}` : `/events/${ev.id}`}
-                    key={ev.id}
-                    className="block"
-                  >
-                    <div className="relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl aspect-[16/9] bg-transparent p-1">
-                      <img
-                        src={ev.image}
-                        alt={ev.title}
-                        className="w-full h-full object-contain object-center block"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      
-                      <div className="absolute top-3 left-3 flex items-center gap-2">
-                        {ev.type && (
-                          <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
-                            {ev.type === 'trending' ? 'HOT' : 'NEW'}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="absolute bottom-3 left-3 right-3 text-white">
-                        <h4 className="font-semibold text-base md:text-lg line-clamp-2">{ev.title}</h4>
-                        {ev.date && (
-                          <p className="text-xs md:text-sm text-white/85 flex items-center gap-1 mt-1">
-                            <Calendar className="h-3 w-3" />
-                            {ev.date}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+        
 
         {showPortalSections && (
           <>

@@ -4639,6 +4639,9 @@ app.use((req, res, next) => {
 (async () => {
     const server = await registerRoutes(app);
     
+    // Ensure MongoDB is connected before seeding
+    await connectMongoDB();
+    
     // Auto-seed weapons on startup if collection is empty
     try {
         const weaponCount = await WeaponModel.countDocuments();

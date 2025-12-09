@@ -35908,4 +35908,4 @@ const weaponsData = [
   }
 ];
 
-module.exports = { weaponsData };
+export { weaponsData };

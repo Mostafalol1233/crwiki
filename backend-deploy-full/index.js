@@ -7,6 +7,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 
+// Import weapons data for auto-seeding
+import { weaponsData } from "./weapons-all-seed.js";
+
 // server/routes.ts
 import { createServer } from "http";
 import multer from "multer";
@@ -4635,6 +4638,21 @@ app.use((req, res, next) => {
 });
 (async () => {
     const server = await registerRoutes(app);
+    
+    // Auto-seed weapons on startup if collection is empty
+    try {
+        const weaponCount = await WeaponModel.countDocuments();
+        if (weaponCount === 0 && weaponsData && weaponsData.length > 0) {
+            console.log(`[seed] Weapons collection is empty. Seeding ${weaponsData.length} weapons...`);
+            await WeaponModel.insertMany(weaponsData);
+            console.log(`[seed] Successfully seeded ${weaponsData.length} weapons from CrossFire wiki.`);
+        } else {
+            console.log(`[seed] Weapons collection already has ${weaponCount} weapons. Skipping seed.`);
+        }
+    } catch (seedError) {
+        console.error("[seed] Error seeding weapons:", seedError.message);
+    }
+    
     const currentFile = fileURLToPath(import.meta.url);
     const currentDir = path.dirname(currentFile);
     // Allow configuring the assets folder via env var so deployed backends can

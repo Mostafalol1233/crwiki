@@ -216,6 +216,27 @@ Preferred communication style: Simple, everyday language.
 - nodemon: Auto-restart on changes
 - esbuild: Fast bundling
 
+## Weapons Data & Scraping
+
+**Scraped Weapons (49 total):**
+- Location: attached_assets/scraped_weapons/ (PNG images)
+- Data file: attached_assets/weapons_data.json
+- Seed script: scripts/seed-weapons.js
+
+**Categories:**
+- Assault Rifles: AK47, M4A1, M16, FAMAS, G36K, etc.
+- Sniper Rifles: AWM, Barrett M82A1, Dragunov, M700
+- SMG: P90, MP5, UMP-45, Kriss Super V, Uzi
+- Machine Guns: M249 Minimi, M60, RPK, MG3
+- Shotguns: SPAS-12, XM1014, AA-12, Jackhammer
+- Pistols: Desert Eagle, Glock-18, USP, Colt Python
+- Rifles: Winchester
+
+**To seed weapons to database:**
+```bash
+node scripts/seed-weapons.js --execute
+```
+
 ## Image Sources
 
 **Primary (Catbox CDN):**

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -197,6 +198,7 @@ export default function Admin() {
   const [seoSettings, setSeoSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
   useEffect(() => {
+    try { console.log("[Admin] mount"); } catch {}
     const token = localStorage.getItem("adminToken");
     const role = localStorage.getItem("adminRole");
     const username = localStorage.getItem("adminUsername");
@@ -247,6 +249,7 @@ export default function Admin() {
   const isSuperAdmin = adminRole === "super_admin";
   const [adminPerms, setAdminPerms] = useState<Record<string, boolean>>({});
   useEffect(() => {
+    try { console.log("[Admin] permissions", { role: adminRole }); } catch {}
     try {
       const raw = localStorage.getItem("adminPermissions") || "{}";
       const parsed = JSON.parse(raw);
@@ -1316,6 +1319,7 @@ export default function Admin() {
   };
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-transparent">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="flex items-center justify-between mb-8">
@@ -1347,7 +1351,7 @@ export default function Admin() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v || "dashboard")} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-56">
               {/* small screen: select picker */}
@@ -5541,5 +5545,36 @@ export default function Admin() {
         }
   `}</style>
     </div>
+    </ErrorBoundary>
   );
+}
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }>{
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: undefined };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    try { console.error("[Admin ErrorBoundary]", error, info); } catch {}
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+          <div className="max-w-lg w-full p-6 border rounded-md">
+            <h2 className="text-xl font-semibold mb-2">Admin UI crashed</h2>
+            <p className="text-sm mb-4">A runtime error occurred. Try reloading or navigating back.</p>
+            <div className="flex gap-2">
+              <Button onClick={() => { try { window.location.reload(); } catch {} }}>Reload</Button>
+              <Button variant="outline" onClick={() => { try { history.back(); } catch {} }}>Go Back</Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
 }

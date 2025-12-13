@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ export default function AdminAnnouncements() {
 
   // Load global on mount
   useEffect(() => {
+    try { console.log("[AdminAnnouncements] mount"); } catch {}
     try {
       const u = new URL(window.location.href);
       const pre = u.searchParams.get("seller");
@@ -294,6 +296,7 @@ export default function AdminAnnouncements() {
   };
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-background py-10">
       <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-8">
         <Card>
@@ -445,5 +448,36 @@ export default function AdminAnnouncements() {
         </Card>
       </div>
     </div>
+    </ErrorBoundary>
   );
+}
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }>{
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: undefined };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    try { console.error("[AdminAnnouncements ErrorBoundary]", error, info); } catch {}
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+          <div className="max-w-lg w-full p-6 border rounded-md">
+            <h2 className="text-xl font-semibold mb-2">Announcements UI crashed</h2>
+            <p className="text-sm mb-4">A runtime error occurred. Try reloading or navigating back.</p>
+            <div className="flex gap-2">
+              <Button onClick={() => { try { window.location.reload(); } catch {} }}>Reload</Button>
+              <Button variant="outline" onClick={() => { try { history.back(); } catch {} }}>Go Back</Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
 }

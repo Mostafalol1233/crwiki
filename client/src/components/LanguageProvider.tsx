@@ -150,7 +150,7 @@ const translations: Record<Language, Record<string, string>> = {
     newsAndUpdates: "والتحديثات",
     translationNote: "ملاحظة الترجمة:",
     translationNoteText: "سيتم ترجمة هذا المقال تلقائياً باستخدام واجهة برمجة التطبيقات للترجمة الآلية عند التفعيل.",
-    mercenaries: "المرتزقة",
+    mercenaries: "شخصيات",
     mercenariesSubtitle: "اختر محاربك. أتقن مصيرك.",
     graveGames: "ألعاب القبور",
     graveGamesSubtitle: "شبكة العنكبوت في الانتظار",

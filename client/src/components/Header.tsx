@@ -230,7 +230,7 @@ export function Header() {
         { path: "/reviews", label: t("reviews"), icon: CFIconBook },
       ],
     },
-    { path: "/mercenaries", label: t("Mercenaries"), icon: CFIconUsers },
+    { path: "/mercenaries", label: t("mercenaries"), icon: CFIconUsers },
   ];
 
   const isActiveDropdown = (items: DropdownItem[]) => {
@@ -245,9 +245,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
-          <Link href="/" className="flex items-center gap-2 font-extrabold uppercase tracking-wide text-foreground text-sm md:text-base">
-            <img src="/favicon.png" alt="CrossFire logo" className="h-8 w-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }} />
-            <span className="crossfire-pro">CROSSFIRE WIKI</span>
+          <Link href="/" aria-label="Home" className="flex items-center gap-2 font-extrabold uppercase tracking-wide text-foreground text-sm md:text-base">
+            <img src="/favicon.png" alt="CrossFire logo" className="h-8 w-8 object-contain" width="32" height="32" onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }} />
+            <span className="crossfire-pro">Crossfire</span>
 
           </Link>
           <div className="flex items-center gap-4">
@@ -260,7 +260,7 @@ export function Header() {
       <div className="w-full border-b shadow bg-card">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex h-14 md:h-16 items-center gap-4">
-            <Link href="/" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
+            <Link href="/" aria-label="Home" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
               <img
                 src={theme === 'dark' ? logoDarkImage : logoLightImage}
                 alt="CrossFire"

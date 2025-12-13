@@ -185,6 +185,8 @@ export default function Weapons() {
                             src={weapon.image}
                             alt={weapon.name}
                             className="w-full h-full object-contain p-4 transform transition-transform duration-300 hover:scale-110"
+                            width={600}
+                            height={600}
                             loading="lazy"
                             decoding="async"
                           />

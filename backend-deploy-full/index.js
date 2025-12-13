@@ -3088,37 +3088,11 @@ async function registerRoutes(app2) {
         try {
             res.set("Cache-Control", "no-transform, max-age=0, must-revalidate");
             res.type("text/plain");
-            res.send(`# CrossFire Wiki - Robots.txt
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /admin/*
-Disallow: /login
-Disallow: /register
-Disallow: /reset-password
-Disallow: /my-tickets
-Disallow: /api/
-
-# Allow important pages
-Allow: /weapons
-Allow: /modes
-Allow: /ranks
-Allow: /tutorials
-Allow: /news
-Allow: /events
-Allow: /posts
-Allow: /article/*
-Allow: /news/*
-Allow: /events/*
-Allow: /tutorials/*
-Allow: /category/*
-
-# Crawl delay for politeness
-Crawl-delay: 0.5
-
-# Sitemap location
-Sitemap: https://crossfire.wiki/sitemap.xml
-`);
+            res.send([
+                "User-agent: *",
+                "Allow: /",
+                "Sitemap: https://crossfire.wiki/sitemap.xml",
+            ].join("\n"));
         } catch (error) {
             res.status(500).type("text/plain").send("User-agent: *\nAllow: /\nSitemap: https://crossfire.wiki/sitemap.xml\n");
         }
@@ -4741,6 +4715,17 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 app.set("trust proxy", 1); // Trust the first proxy
 // Lightweight request logging: avoid capturing response bodies to save CPU/RAM
+// Force non-www canonical host
+app.use((req, res, next) => {
+    try {
+        const host = req.get("host") || "";
+        if (host.toLowerCase().startsWith("www.crossfire.wiki")) {
+            const target = `https://crossfire.wiki${req.originalUrl || ''}`;
+            return res.redirect(301, target);
+        }
+    } catch {}
+    next();
+});
 app.use((req, res, next) => {
     const start = Date.now();
     const path2 = req.path;

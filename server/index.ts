@@ -170,8 +170,22 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // WebSocket server for chat
-  const wss = new WebSocketServer({ server, path: "/ws" });
+  // WebSocket server for chat (attach via HTTP upgrade to avoid binding a separate port)
+  const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
+  server.on("upgrade", (req, socket, head) => {
+    try {
+      const url = new URL(req.url || "", `http://${req.headers.host}`);
+      if (url.pathname === "/ws") {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+          wss.emit("connection", ws, req);
+        });
+      } else {
+        socket.destroy();
+      }
+    } catch {
+      try { socket.destroy(); } catch {}
+    }
+  });
   const clients = new Map<string, Set<any>>();
 
   function addClient(userId: string, ws: any) {

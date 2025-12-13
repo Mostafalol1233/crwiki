@@ -8,7 +8,24 @@ import { cn } from "@/lib/utils"
 
 const Dialog = DialogPrimitive.Root
 
-const DialogTrigger = DialogPrimitive.Trigger
+const DialogTrigger = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
+>(({ asChild, children, ...props }, ref) => {
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  return (
+    <DialogPrimitive.Trigger ref={ref} asChild={useChild} {...props}>
+      {useChild ? (
+        children as React.ReactElement
+      ) : (
+        <button type="button">{children ?? "Open"}</button>
+      )}
+    </DialogPrimitive.Trigger>
+  )
+})
+DialogTrigger.displayName = DialogPrimitive.Trigger.displayName
 
 const DialogPortal = DialogPrimitive.Portal
 

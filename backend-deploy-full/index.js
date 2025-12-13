@@ -2023,6 +2023,12 @@ async function registerRoutes(app2) {
                 const n = await storage.getNewsById(id);
                 if (n) { title = n.title; description = n.seoDescription || (n.content ? String(n.content).slice(0,160) : ""); image = n.ogImage || n.image || fallbackOg; url = `${url}/news/${n.news_slug || id}`; }
             }
+            try {
+                const head = await fetch(image, { method: 'HEAD' });
+                if (!head || !head.ok) image = fallbackOg;
+            } catch {
+                image = fallbackOg;
+            }
             const html = `<!doctype html><html lang="en"><head>
 <meta charset="utf-8" />
 <meta property="og:title" content="${title}" />

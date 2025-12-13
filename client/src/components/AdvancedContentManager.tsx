@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import {
   Dialog,
   DialogContent,
@@ -483,12 +484,12 @@ export function AdvancedContentManager() {
                     setNewsForm((s) => ({ ...s, image: e.target.value }))
                   }
                 />
-                <ReactQuill
-                  theme="snow"
+                <Textarea
+                  placeholder="News content"
                   value={newsForm.content}
-                  onChange={(val) => setNewsForm((s) => ({ ...s, content: val }))}
-                  modules={quillModules}
-                  formats={quillFormats}
+                  onChange={(e) => setNewsForm((s) => ({ ...s, content: e.target.value }))}
+                  rows={8}
+                  className="font-mono text-sm"
                 />
                 <Button onClick={addNews} className="w-full">
                   Save News
@@ -680,12 +681,12 @@ export function AdvancedContentManager() {
                   }
                 />
                 <div className="space-y-2">
-                  <ReactQuill
-                    theme="snow"
+                  <Textarea
+                    placeholder="Post content"
                     value={postForm.content}
-                    onChange={(val) => setPostForm((s) => ({ ...s, content: val }))}
-                    modules={quillModules}
-                    formats={quillFormats}
+                    onChange={(e) => setPostForm((s) => ({ ...s, content: e.target.value }))}
+                    rows={10}
+                    className="font-mono text-sm"
                   />
                   <div className="rounded border p-3">
                     <p className="text-sm font-medium mb-2">Preview</p>
@@ -799,47 +800,3 @@ export function AdvancedContentManager() {
     </Dialog>
   );
 }
-import ReactQuill from "react-quill";
-import 'react-quill/dist/quill.snow.css';
-import DOMPurify from 'isomorphic-dompurify';
-  const quillModules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'font': [] }],
-        [{ 'size': ['small', false, 'large', 'huge'] }],
-        ['bold', 'italic', 'underline'],
-        [{ 'align': [] }],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        ['link', 'image'],
-        [{ 'color': [] }, { 'background': [] }],
-        ['clean'],
-        ['table', 'audio']
-      ],
-      handlers: {
-        table: () => {
-          const rows = Number(prompt('Rows?', '2') || '2');
-          const cols = Number(prompt('Columns?', '2') || '2');
-          if (!rows || !cols) return;
-          const header = Array(cols).fill('<th>Header</th>').join('');
-          const bodyRows = Array(rows).fill(`<tr>${Array(cols).fill('<td>Cell</td>').join('')}</tr>`).join('');
-          const html = `<table style="width:100%;border-collapse:collapse"><thead><tr>${header}</tr></thead><tbody>${bodyRows}</tbody></table>`;
-          const el = document.createElement('div');
-          el.innerHTML = html;
-          const sanitized = DOMPurify.sanitize(el.innerHTML, { ADD_TAGS: ['table','thead','tbody','tr','th','td'] });
-          (window as any).Quill && (window as any).Quill.find && null;
-          setPostForm((s) => ({ ...s, content: s.content + '\n' + sanitized }));
-        },
-        audio: () => {
-          const src = prompt('MP3 URL?');
-          if (!src) return;
-          const html = `<audio controls src="${src}"></audio>`;
-          const sanitized = DOMPurify.sanitize(html, { ADD_TAGS: ['audio'], ADD_ATTR: ['controls','src'] });
-          setPostForm((s) => ({ ...s, content: s.content + '\n' + sanitized }));
-        }
-      }
-    }
-  }), []);
-
-  const quillFormats = useMemo(() => [
-    'font','size','bold','italic','underline','align','list','bullet','link','image','color','background'
-  ], []);

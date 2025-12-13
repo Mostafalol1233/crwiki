@@ -62,7 +62,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import ReactQuill from "react-quill";
+// ReactQuill is dynamically loaded to avoid runtime SSR/import issues
 import "react-quill/dist/quill.snow.css";
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
@@ -75,11 +75,56 @@ import type { SiteSettings } from "@/types/site-settings";
 import type { ScrapedEvent } from "@shared/types";
 import AdminAnnouncements from "@/pages/AdminAnnouncements";
 
+// Autosave hook reusable across admin editors
+function useAutosave<T>(key: string, form: T, enabled: boolean) {
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const t = setTimeout(() => {
+      try {
+        const historyKey = `${key}-history`;
+        const raw = localStorage.getItem(historyKey) || '[]';
+        const history = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+        const entry = { ts: Date.now(), form };
+        const next = [...history, entry].slice(-50);
+        localStorage.setItem(key, JSON.stringify(form));
+        localStorage.setItem(historyKey, JSON.stringify(next));
+        setLastSavedAt(entry.ts);
+      } catch {}
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [key, form, enabled]);
+  const restoreLast = () => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const getHistory = () => {
+    try {
+      const raw = localStorage.getItem(`${key}-history`) || '[]';
+      return Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  return { lastSavedAt, restoreLast, getHistory };
+}
+
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [adminRole, setAdminRole] = useState<string>("");
   const [adminUsername, setAdminUsername] = useState<string>("");
+  const [Quill, setQuill] = useState<any>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const mod = await import("react-quill");
+        if (mounted) setQuill(mod.default);
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, []);
   
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
@@ -341,6 +386,8 @@ export default function Admin() {
     schemaType: "Article",
   });
 
+  const postAuto = useAutosave(`admin-post-${editingPost?.id || 'new'}`, postForm, isCreatingPost);
+
   const [eventForm, setEventForm] = useState({
     title: "",
     titleAr: "",
@@ -359,6 +406,8 @@ export default function Admin() {
     twitterImage: "",
     schemaType: "Event",
   });
+
+  const eventAuto = useAutosave(`admin-event-${editingEvent?.id || 'new'}`, eventForm, isCreatingEvent);
 
   const [newsForm, setNewsForm] = useState({
     title: "",
@@ -380,6 +429,8 @@ export default function Admin() {
     twitterImage: "",
     schemaType: "NewsArticle",
   });
+
+  const newsAuto = useAutosave(`admin-news-${editingNews?.id || 'new'}`, newsForm, isCreatingNews);
 
   const [sellerForm, setSellerForm] = useState({
     name: "",
@@ -1636,6 +1687,13 @@ export default function Admin() {
                       {editingPost ? "Edit Post" : "Create New Post"}
                     </DialogTitle>
                   </DialogHeader>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{postAuto.lastSavedAt ? `Autosaved ${new Date(postAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      const restored = postAuto.restoreLast();
+                      if (restored) setPostForm(restored);
+                    }}>Restore autosave</Button>
+                  </div>
                   <div className="space-y-4">
                     <Input
                       placeholder="Title"
@@ -1661,10 +1719,10 @@ export default function Admin() {
                     <div className="space-y-2">
                           <div data-testid="input-post-content">
                             <div dir={postForm.language === 'ar' ? 'rtl' : 'ltr'} style={{ textAlign: postForm.language === 'ar' ? 'right' : 'left' }}>
-                              <ReactQuill
+                              {Quill ? <Quill
                                 theme="snow"
                                 value={postForm.content}
-                                onChange={(value) =>
+                                onChange={(value: string) =>
                                   setPostForm({ ...postForm, content: value })
                                 }
                                 modules={{
@@ -1680,7 +1738,14 @@ export default function Admin() {
                                 }}
                                 placeholder="Write your content here..."
                                 style={{ minHeight: '200px' }}
-                              />
+                              /> : (
+                                <Textarea
+                                  placeholder="Write your content here..."
+                                  value={postForm.content}
+                                  onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
+                                  rows={8}
+                                />
+                              )}
                             </div>
                           </div>
                     </div>
@@ -2079,12 +2144,19 @@ export default function Admin() {
                         </Button>
                         )}
                       </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingEvent ? "Edit Event" : "Create New Event"}
-                        </DialogTitle>
-                      </DialogHeader>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingEvent ? "Edit Event" : "Create New Event"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{eventAuto.lastSavedAt ? `Autosaved ${new Date(eventAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      const restored = eventAuto.restoreLast();
+                      if (restored) setEventForm(restored);
+                    }}>Restore autosave</Button>
+                  </div>
                       <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
@@ -2104,10 +2176,10 @@ export default function Admin() {
                           data-testid="input-event-title-ar"
                         />
                         <div data-testid="input-event-description">
-                          <ReactQuill
+                          {Quill ? <Quill
                             theme="snow"
                             value={eventForm.description}
-                            onChange={(value) =>
+                            onChange={(value: string) =>
                               setEventForm({ ...eventForm, description: value })
                             }
                             modules={{
@@ -2122,13 +2194,20 @@ export default function Admin() {
                               ],
                             }}
                             style={{ minHeight: '150px' }}
-                          />
+                          /> : (
+                            <Textarea
+                              placeholder="Event description"
+                              value={eventForm.description}
+                              onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                              rows={6}
+                            />
+                          )}
                         </div>
                         <div data-testid="input-event-description-ar">
-                          <ReactQuill
+                          {Quill ? <Quill
                             theme="snow"
                             value={eventForm.descriptionAr}
-                            onChange={(value) =>
+                            onChange={(value: string) =>
                               setEventForm({ ...eventForm, descriptionAr: value })
                             }
                             modules={{
@@ -2143,7 +2222,15 @@ export default function Admin() {
                               ],
                             }}
                             style={{ minHeight: '150px', direction: 'rtl' }}
-                          />
+                          /> : (
+                            <Textarea
+                              placeholder="الوصف"
+                              dir="rtl"
+                              value={eventForm.descriptionAr}
+                              onChange={(e) => setEventForm({ ...eventForm, descriptionAr: e.target.value })}
+                              rows={6}
+                            />
+                          )}
                         </div>
                         <Input
                           placeholder="Date"
@@ -2397,11 +2484,18 @@ export default function Admin() {
                       )}
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingNews ? "Edit News Item" : "Create New News Item"}
-                        </DialogTitle>
-                      </DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingNews ? "Edit News Item" : "Create New News Item"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{newsAuto.lastSavedAt ? `Autosaved ${new Date(newsAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      const restored = newsAuto.restoreLast();
+                      if (restored) setNewsForm(restored);
+                    }}>Restore autosave</Button>
+                  </div>
                       <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
@@ -2468,10 +2562,10 @@ export default function Admin() {
                             </Button>
                           </div>
                           <div data-testid="input-news-content">
-                            <ReactQuill
+                            {Quill ? <Quill
                               theme="snow"
                               value={newsForm.content}
-                              onChange={(value) =>
+                              onChange={(value: string) =>
                                 setNewsForm({ ...newsForm, content: value })
                               }
                               modules={{
@@ -2486,7 +2580,14 @@ export default function Admin() {
                                 ],
                               }}
                               style={{ minHeight: '150px' }}
-                            />
+                            /> : (
+                              <Textarea
+                                placeholder="Write news content"
+                                value={newsForm.content}
+                                onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
+                                rows={6}
+                              />
+                            )}
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -2508,10 +2609,10 @@ export default function Admin() {
                             </Button>
                           </div>
                           <div data-testid="input-news-content-ar">
-                            <ReactQuill
+                            {Quill ? <Quill
                               theme="snow"
                               value={newsForm.contentAr}
-                              onChange={(value) =>
+                              onChange={(value: string) =>
                                 setNewsForm({ ...newsForm, contentAr: value })
                               }
                               modules={{
@@ -2526,7 +2627,15 @@ export default function Admin() {
                                 ],
                               }}
                               style={{ minHeight: '150px', direction: 'rtl' }}
-                            />
+                            /> : (
+                              <Textarea
+                                placeholder="المحتوى"
+                                dir="rtl"
+                                value={newsForm.contentAr}
+                                onChange={(e) => setNewsForm({ ...newsForm, contentAr: e.target.value })}
+                                rows={6}
+                              />
+                            )}
                           </div>
                         </div>
                         <Input
@@ -5430,7 +5539,7 @@ export default function Admin() {
           direction: rtl;
           text-align: right;
         }
-      `}</style>
+  `}</style>
     </div>
   );
 }

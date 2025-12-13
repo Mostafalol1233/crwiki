@@ -253,7 +253,7 @@ var AdminAuditLogModel = mongoose.model("AdminAuditLog", AdminAuditLogSchema);
 // Weapons / Modes / Ranks / Mercenaries schemas (added to support seeding endpoints)
 var MercenarySchema = new Schema({
     id: { type: String, required: true },
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     image: { type: String, required: true },
     role: { type: String, default: "" },
     description: { type: String, default: "" },
@@ -958,9 +958,7 @@ var MongoDBStorage = class {
         return !!res;
     }
     async updateMercenary(id, data) {
-        const updated = await MercenaryModel.findOneAndUpdate({ id }, data, {
-            new: true,
-        }).lean();
+        const updated = await MercenaryModel.findByIdAndUpdate(id, data, { new: true }).lean();
         if (!updated) return void 0;
         return { ...updated, id: updated.id || String(updated._id) };
     }

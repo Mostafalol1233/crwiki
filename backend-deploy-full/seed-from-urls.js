@@ -83,8 +83,8 @@ const mercenariesData = [
     image: "https://files.catbox.moe/eck3jc.jpeg",
     role: "Samurai",
     description: "Melee combat warrior with exceptional close-quarters combat skills and honor-bound tactics.",
-    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
-    voiceLines: ["/merc-mp3/ronin-line1.mp3"],
+    audioUrl: "https://files.catbox.moe/yynni6.mp3",
+    voiceLines: ["https://files.catbox.moe/yynni6.mp3"],
     stats: { health: 80, speed: 80, attack: 85, defense: 70 }
   },
   {
@@ -116,6 +116,16 @@ const mercenariesData = [
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
     voiceLines: ["https://files.catbox.moe/abgtcf.mp3", "/merc-mp3/sfg-line2.mp3"],
     stats: { health: 80, speed: 85, attack: 85, defense: 75 }
+  },
+  {
+    id: "11",
+    name: "Arabella",
+    image: "https://files.catbox.moe/8x7xqv.jpeg",
+    role: "Infiltrator",
+    description: "Covert operative specializing in stealth entry, deception, and precision takedowns.",
+    audioUrl: "https://files.catbox.moe/zbha6p.mp3",
+    voiceLines: ["https://files.catbox.moe/zbha6p.mp3"],
+    stats: { health: 70, speed: 90, attack: 80, defense: 60 }
   },
 ];
 

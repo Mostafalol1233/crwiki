@@ -318,6 +318,7 @@ var SiteSettingsSchema = new Schema({
     seoKeywords: { type: [String], default: [] },
     seoOgImage: { type: String, default: "" },
     robots: { type: String, default: "index, follow" },
+    announcementsEnabled: { type: Boolean, default: true },
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 var SiteSettingsModel = mongoose.model("SiteSettings", SiteSettingsSchema);
@@ -327,6 +328,7 @@ var GlobalAnnouncementSchema = new Schema({
     linkUrl: { type: String, default: "" },
     active: { type: Boolean, default: true },
     dismissible: { type: Boolean, default: true },
+    direction: { type: String, default: "auto" },
 }, { timestamps: true });
 var SellerAnnouncementSchema = new Schema({
     sellerSlug: { type: String, index: true, unique: true },
@@ -334,6 +336,7 @@ var SellerAnnouncementSchema = new Schema({
     imageUrl: { type: String, default: "" },
     linkUrl: { type: String, default: "" },
     active: { type: Boolean, default: true },
+    direction: { type: String, default: "auto" },
 }, { timestamps: true });
 var GlobalAnnouncementModel = mongoose.model("GlobalAnnouncement", GlobalAnnouncementSchema);
 var SellerAnnouncementModel = mongoose.model("SellerAnnouncement", SellerAnnouncementSchema);
@@ -4298,6 +4301,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 seoKeywords: Array.isArray(body.seoKeywords) ? body.seoKeywords.map((k) => String(k)) : (body.seoKeywords ? String(body.seoKeywords).split(',').map((s)=> s.trim()).filter(Boolean) : []),
                 seoOgImage: String(body.seoOgImage || ""),
                 robots: String(body.robots || "index, follow"),
+                announcementsEnabled: body.announcementsEnabled === false ? false : !!body.announcementsEnabled,
             };
             const updated = await SiteSettingsModel.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
             res.json({
@@ -4307,6 +4311,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 seoKeywords: updated.seoKeywords || [],
                 seoOgImage: updated.seoOgImage || "",
                 robots: updated.robots || "index, follow",
+                announcementsEnabled: updated.announcementsEnabled !== false,
             });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -4330,6 +4335,15 @@ Sitemap: https://crossfire.wiki/sitemap.xml
         }
     });
 
+    app2.get("/api/public/settings/announcements", async (_req, res) => {
+        try {
+            const s = await SiteSettingsModel.findOne().lean();
+            res.json({ enabled: s?.announcementsEnabled !== false });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Announcements: Global
     app2.get("/api/announcements/global", async (_req, res) => {
         try {
@@ -4340,6 +4354,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 linkUrl: doc?.linkUrl || "",
                 active: doc?.active ?? true,
                 dismissible: doc?.dismissible ?? true,
+                direction: doc?.direction || "auto",
                 updatedAt: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date(0).toISOString()
             });
         } catch (error) {
@@ -4355,6 +4370,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 linkUrl: String(req.body?.linkUrl || ""),
                 active: !!req.body?.active,
                 dismissible: req.body?.dismissible === false ? false : true,
+                direction: (req.body?.direction === 'rtl' || req.body?.direction === 'ltr') ? req.body.direction : 'auto',
             };
             const updated = await GlobalAnnouncementModel.findOneAndUpdate(
                 {},
@@ -4367,6 +4383,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 linkUrl: updated.linkUrl || "",
                 active: !!updated.active,
                 dismissible: updated.dismissible !== false,
+                direction: updated.direction || 'auto',
                 updatedAt: updated.updatedAt ? new Date(updated.updatedAt).toISOString() : new Date().toISOString()
             });
         } catch (error) {
@@ -4386,6 +4403,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 imageUrl: doc.imageUrl || "",
                 linkUrl: doc.linkUrl || "",
                 active: doc.active ?? true,
+                direction: doc.direction || 'auto',
                 updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date(0).toISOString()
             });
         } catch (error) {
@@ -4414,6 +4432,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 imageUrl: String(req.body?.imageUrl || ""),
                 linkUrl: String(req.body?.linkUrl || ""),
                 active: !!req.body?.active,
+                direction: (req.body?.direction === 'rtl' || req.body?.direction === 'ltr') ? req.body.direction : 'auto',
             };
             const updated = await SellerAnnouncementModel.findOneAndUpdate(
                 { sellerSlug: slug },
@@ -4426,6 +4445,7 @@ Sitemap: https://crossfire.wiki/sitemap.xml
                 imageUrl: updated.imageUrl || "",
                 linkUrl: updated.linkUrl || "",
                 active: !!updated.active,
+                direction: updated.direction || 'auto',
                 updatedAt: updated.updatedAt ? new Date(updated.updatedAt).toISOString() : new Date().toISOString()
             });
         } catch (error) {

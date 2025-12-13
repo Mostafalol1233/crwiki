@@ -16,6 +16,30 @@ import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image
 import type { Tutorial } from "@shared/mongodb-schema";
 
 export default function Home() {
+  function RatioBox({ src, alt, mdHeightClass = "", children }: { src: string; alt: string; mdHeightClass?: string; children?: React.ReactNode }) {
+    const [ratio, setRatio] = useState<number>(9 / 16);
+    return (
+      <div
+        className={`relative w-full overflow-hidden rounded-md bg-transparent p-0 md:p-1 ${mdHeightClass}`}
+        style={{ paddingTop: `${ratio * 100}%` }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth > 0) setRatio(img.naturalHeight / img.naturalWidth);
+            }}
+          />
+        </div>
+        {children}
+      </div>
+    );
+  }
   const { t } = useLanguage();
 
   const { data: allPosts = [] } = useQuery<Article[]>({
@@ -178,37 +202,26 @@ export default function Home() {
                 {displayEvents[0] && (
                   <Link href={displayEvents[0].event_name_slug ? `/events/${displayEvents[0].event_name_slug}` : `/events/${displayEvents[0].id}`} className="block" key={displayEvents[0].id} data-testid={`home-event-left-top-${displayEvents[0].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
-                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-60">
-                        {displayEvents[0].image && (
-                          <img
-                            src={displayEvents[0].image}
-                            alt={displayEvents[0].title}
-                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-                            width="400"
-                            height="256"
-                            loading="lazy"
-                            decoding="async"
-                            fetchPriority="high"
-                          />
-                        )}
-                        
-                        {displayEvents[0].type && (
-                          <div className="absolute top-3 left-3">
-                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
-                              {displayEvents[0].type === "upcoming" ? "Upcoming" : "Trending"}
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                          <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[0].title}</h4>
-                          {displayEvents[0].date && (
-                            <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
-                              <Calendar className="h-3 w-3" />
-                              {displayEvents[0].date}
-                            </p>
+                      {displayEvents[0].image && (
+                        <RatioBox src={displayEvents[0].image} alt={displayEvents[0].title} mdHeightClass="md:h-60">
+                          {displayEvents[0].type && (
+                            <div className="absolute top-3 left-3">
+                              <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
+                                {displayEvents[0].type === "upcoming" ? "Upcoming" : "Trending"}
+                              </Badge>
+                            </div>
                           )}
-                        </div>
-                      </div>
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[0].title}</h4>
+                            {displayEvents[0].date && (
+                              <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
+                                <Calendar className="h-3 w-3" />
+                                {displayEvents[0].date}
+                              </p>
+                            )}
+                          </div>
+                        </RatioBox>
+                      )}
                     </Card>
                   </Link>
                 )}
@@ -216,37 +229,26 @@ export default function Home() {
                 {displayEvents[1] && (
                   <Link href={displayEvents[1].event_name_slug ? `/events/${displayEvents[1].event_name_slug}` : `/events/${displayEvents[1].id}`} className="block" key={displayEvents[1].id} data-testid={`home-event-left-bottom-${displayEvents[1].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
-                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-60">
-                        {displayEvents[1].image && (
-                          <img
-                            src={displayEvents[1].image}
-                            alt={displayEvents[1].title}
-                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-                            width="400"
-                            height="256"
-                            loading="lazy"
-                            decoding="async"
-                            fetchPriority="high"
-                          />
-                        )}
-                        
-                        {displayEvents[1].type && (
-                          <div className="absolute top-3 left-3">
-                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
-                              {displayEvents[1].type === "upcoming" ? "Upcoming" : "Trending"}
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                          <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[1].title}</h4>
-                          {displayEvents[1].date && (
-                            <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
-                              <Calendar className="h-3 w-3" />
-                              {displayEvents[1].date}
-                            </p>
+                      {displayEvents[1].image && (
+                        <RatioBox src={displayEvents[1].image} alt={displayEvents[1].title} mdHeightClass="md:h-60">
+                          {displayEvents[1].type && (
+                            <div className="absolute top-3 left-3">
+                              <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-xs uppercase font-bold">
+                                {displayEvents[1].type === "upcoming" ? "Upcoming" : "Trending"}
+                              </Badge>
+                            </div>
                           )}
-                        </div>
-                      </div>
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[1].title}</h4>
+                            {displayEvents[1].date && (
+                              <p className="text-xs text-white/85 flex items-center gap-1 mt-1">
+                                <Calendar className="h-3 w-3" />
+                                {displayEvents[1].date}
+                              </p>
+                            )}
+                          </div>
+                        </RatioBox>
+                      )}
                     </Card>
                   </Link>
                 )}
@@ -257,36 +259,26 @@ export default function Home() {
                 {displayEvents[2] && (
                   <Link href={displayEvents[2].event_name_slug ? `/events/${displayEvents[2].event_name_slug}` : `/events/${displayEvents[2].id}`} className="block" key={displayEvents[2].id} data-testid={`home-event-right-featured-${displayEvents[2].id}`}>
                     <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent w-full">
-                      <div className="relative w-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1 aspect-video md:aspect-auto md:h-[480px]">
-                        {displayEvents[2].image && (
-                          <img
-                            src={displayEvents[2].image}
-                            alt={displayEvents[2].title}
-                            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-                            width="800"
-                            height="544"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        )}
-                        
-                        {displayEvents[2].type && (
-                          <div className="absolute top-4 left-4">
-                            <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-sm uppercase font-bold px-3 py-1">
-                              {displayEvents[2].type === "upcoming" ? "Upcoming" : "Featured"}
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="absolute bottom-4 left-4 right-4 text-white">
-                          <h3 className="font-bold text-lg md:text-xl line-clamp-3 mb-2">{displayEvents[2].title}</h3>
-                          {displayEvents[2].date && (
-                            <p className="text-sm text-white/90 flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              {displayEvents[2].date}
-                            </p>
+                      {displayEvents[2].image && (
+                        <RatioBox src={displayEvents[2].image} alt={displayEvents[2].title} mdHeightClass="md:h-[480px]">
+                          {displayEvents[2].type && (
+                            <div className="absolute top-4 left-4">
+                              <Badge className="backdrop-blur-sm bg-primary/85 text-primary-foreground border-primary/20 text-sm uppercase font-bold px-3 py-1">
+                                {displayEvents[2].type === "upcoming" ? "Upcoming" : "Featured"}
+                              </Badge>
+                            </div>
                           )}
-                        </div>
-                      </div>
+                          <div className="absolute bottom-4 left-4 right-4 text-white">
+                            <h3 className="font-bold text-lg md:text-xl line-clamp-3 mb-2">{displayEvents[2].title}</h3>
+                            {displayEvents[2].date && (
+                              <p className="text-sm text-white/90 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                {displayEvents[2].date}
+                              </p>
+                            )}
+                          </div>
+                        </RatioBox>
+                      )}
                     </Card>
                   </Link>
                 )}
@@ -300,48 +292,28 @@ export default function Home() {
                 <div className="lg:col-span-1 flex flex-col gap-4">
                   {displayEvents[3] && (
                     <Link href={displayEvents[3].event_name_slug ? `/events/${displayEvents[3].event_name_slug}` : `/events/${displayEvents[3].id}`} className="block" key={displayEvents[3].id} data-testid={`home-event-bottom-left-top-${displayEvents[3].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
-                          {displayEvents[3].image && (
-                            <img
-                              src={displayEvents[3].image}
-                              alt={displayEvents[3].title}
-                              className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-                              width="400"
-                              height="256"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          )}
-                          
-                          <div className="absolute bottom-3 left-3 right-3 text-white">
-                            <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[3].title}</h4>
-                          </div>
-                        </div>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent">
+                        {displayEvents[3].image && (
+                          <RatioBox src={displayEvents[3].image} alt={displayEvents[3].title} mdHeightClass="md:h-60">
+                            <div className="absolute bottom-3 left-3 right-3 text-white">
+                              <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[3].title}</h4>
+                            </div>
+                          </RatioBox>
+                        )}
                       </Card>
                     </Link>
                   )}
                   
                   {displayEvents[4] && (
                     <Link href={displayEvents[4].event_name_slug ? `/events/${displayEvents[4].event_name_slug}` : `/events/${displayEvents[4].id}`} className="block" key={displayEvents[4].id} data-testid={`home-event-bottom-left-bottom-${displayEvents[4].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-60">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
-        {displayEvents[4].image && (
-          <img
-            src={displayEvents[4].image}
-            alt={displayEvents[4].title}
-            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-            width="400"
-            height="256"
-            loading="lazy"
-            decoding="async"
-          />
-        )}
-                          
-                          <div className="absolute bottom-3 left-3 right-3 text-white">
-                            <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[4].title}</h4>
-                          </div>
-                        </div>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent">
+                        {displayEvents[4].image && (
+                          <RatioBox src={displayEvents[4].image} alt={displayEvents[4].title} mdHeightClass="md:h-60">
+                            <div className="absolute bottom-3 left-3 right-3 text-white">
+                              <h4 className="font-semibold text-sm line-clamp-2">{displayEvents[4].title}</h4>
+                            </div>
+                          </RatioBox>
+                        )}
                       </Card>
                     </Link>
                   )}
@@ -351,30 +323,20 @@ export default function Home() {
                 <div className="lg:col-span-2">
                   {displayEvents[5] && (
                     <Link href={displayEvents[5].event_name_slug ? `/events/${displayEvents[5].event_name_slug}` : `/events/${displayEvents[5].id}`} className="block" key={displayEvents[5].id} data-testid={`home-event-bottom-right-${displayEvents[5].id}`}>
-                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent h-[480px]">
-                        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-transparent p-1">
-        {displayEvents[5].image && (
-          <img
-            src={displayEvents[5].image}
-            alt={displayEvents[5].title}
-            className="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
-            width="800"
-            height="544"
-            loading="lazy"
-            decoding="async"
-          />
-        )}
-                          
-                          <div className="absolute bottom-4 left-4 right-4 text-white">
-                            <h3 className="font-bold text-lg md:text-xl line-clamp-3">{displayEvents[5].title}</h3>
-                            {displayEvents[5].date && (
-                              <p className="text-sm text-white/90 flex items-center gap-2 mt-2">
-                                <Calendar className="h-4 w-4" />
-                                {displayEvents[5].date}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                      <Card className="relative overflow-hidden group hover-elevate transition-all duration-300 cursor-pointer bg-transparent">
+                        {displayEvents[5].image && (
+                          <RatioBox src={displayEvents[5].image} alt={displayEvents[5].title} mdHeightClass="md:h-[480px]">
+                            <div className="absolute bottom-4 left-4 right-4 text-white">
+                              <h3 className="font-bold text-lg md:text-xl line-clamp-3">{displayEvents[5].title}</h3>
+                              {displayEvents[5].date && (
+                                <p className="text-sm text-white/90 flex items-center gap-2 mt-2">
+                                  <Calendar className="h-4 w-4" />
+                                  {displayEvents[5].date}
+                                </p>
+                              )}
+                            </div>
+                          </RatioBox>
+                        )}
                       </Card>
                     </Link>
                   )}

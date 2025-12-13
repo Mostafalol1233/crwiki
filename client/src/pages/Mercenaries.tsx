@@ -1,9 +1,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/components/LanguageProvider";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, Grid3x3, Zap } from "lucide-react";
+import { Volume2, VolumeX, Grid3x3, Zap, StopCircle } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 interface Mercenary {
@@ -21,6 +21,7 @@ export default function Mercenaries() {
   const [expandedMercId, setExpandedMercId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const lastSoundRef = useRef<{ [key: string]: string | null }>({});
+  const [stopFlash, setStopFlash] = useState(false);
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
@@ -59,6 +60,31 @@ export default function Mercenaries() {
       setPlayingMercId(null);
     };
   };
+
+  const stopAllAudio = () => {
+    try {
+      Object.values(audioRefs.current).forEach((audio) => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {}
+      });
+      setPlayingMercId(null);
+      setStopFlash(true);
+      setTimeout(() => setStopFlash(false), 250);
+    } catch {}
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.code === "Space") {
+        e.preventDefault();
+        stopAllAudio();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (isLoading) {
     return (
@@ -104,6 +130,14 @@ export default function Mercenaries() {
               className="hover:bg-primary/80"
             >
               <Grid3x3 className="h-5 w-5" />
+            </Button>
+            <Button
+              size="icon"
+              title="Stop all mercenary audio (Esc/Space)"
+              onClick={stopAllAudio}
+              className={`w-10 h-10 ${stopFlash ? "bg-destructive text-white" : "bg-muted hover:bg-destructive/80"}`}
+            >
+              <StopCircle className="h-5 w-5" />
             </Button>
           </div>
         </div>

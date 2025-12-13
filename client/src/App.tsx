@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { queryClient } from "./lib/queryClient";
@@ -176,10 +177,15 @@ function Layout() {
   }, [location]);
 
   if (isAdminPage) {
-    return <Router />;
+    return (
+      <ErrorBoundary>
+        <Router />
+      </ErrorBoundary>
+    );
   }
 
   return (
+    <ErrorBoundary>
     <div className="flex flex-col min-h-screen">
       <audio id="intro-audio" src={introOverride || "https://files.catbox.moe/imua96.mp3"} preload="auto" playsInline autoPlay muted />
       <audio id="route-audio" src="https://files.catbox.moe/7ljomr.mp3" preload="auto" playsInline />
@@ -197,6 +203,7 @@ function Layout() {
       </main>
       <Footer />
     </div>
+    </ErrorBoundary>
   );
 }
 
@@ -244,3 +251,36 @@ function App() {
 }
 
 export default App;
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: any }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: undefined };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    try { console.error("[App ErrorBoundary]", error, info); } catch {}
+  }
+  render() {
+    if (this.state?.hasError) {
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+          <div className="max-w-lg w-full p-6 border rounded-md">
+            <h2 className="text-xl font-semibold mb-2">An error occurred</h2>
+            <p className="text-sm mb-4">Unexpected runtime error. Try reloading or navigating back.</p>
+            <div className="flex gap-2">
+              <button className="min-h-9 px-4 py-2 border rounded-md" onClick={() => { try { window.location.reload(); } catch {} }}>Reload</button>
+              <button className="min-h-9 px-4 py-2 border rounded-md" onClick={() => { try { history.back(); } catch {} }}>Go Back</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}

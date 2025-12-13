@@ -129,6 +129,7 @@ export default function Article() {
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const articleUrl = `${baseUrl}/article/${slug || finalArticle?.post_slug || finalArticle?.id || legacyId}`;
+  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("adminToken");
 
   
   const breadcrumbs = [
@@ -228,10 +229,12 @@ export default function Article() {
                 <Clock className="h-4 w-4" />
                 <span data-testid="text-reading-time">{finalArticle.readingTime} min read</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                <span data-testid="text-views">{finalArticle.views} views</span>
-              </div>
+              {isAdmin && typeof (finalArticle as any)?.views !== 'undefined' && (
+                <div className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  <span data-testid="text-views">{finalArticle.views} views</span>
+                </div>
+              )}
               <span data-testid="text-date">{finalArticle.date}</span>
             </div>
 

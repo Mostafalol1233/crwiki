@@ -958,7 +958,12 @@ var MongoDBStorage = class {
         return !!res;
     }
     async updateMercenary(id, data) {
-        const updated = await MercenaryModel.findByIdAndUpdate(id, data, { new: true }).lean();
+        let updated = await MercenaryModel.findOneAndUpdate({ id: String(id) }, data, { new: true }).lean();
+        if (!updated) {
+            if (/^[a-f\d]{24}$/i.test(String(id))) {
+                updated = await MercenaryModel.findByIdAndUpdate(id, data, { new: true }).lean();
+            }
+        }
         if (!updated) return void 0;
         return { ...updated, id: updated.id || String(updated._id) };
     }
@@ -1610,6 +1615,13 @@ function calculateReadingTime(content) {
     const minutes = Math.ceil(words / wordsPerMinute);
     return minutes;
 }
+function sanitizePublicPost(post, includeViews) {
+    const out = { ...post };
+    if (!includeViews) {
+        try { delete out.views; } catch {}
+    }
+    return out;
+}
 function generateSummary(content, maxLength = 200) {
   const plainText = content.replace(/[#*`]/g, "").trim();
   if (plainText.length <= maxLength) {
@@ -1679,6 +1691,8 @@ async function registerRoutes(app2) {
         standardHeaders: true,
         legacyHeaders: false,
     });
+
+// test-only helper was removed from exports to avoid runtime issues
     app2.post("/api/users/register", authLimiter, async (req, res) => {
         try {
             if (registrationClosed) {
@@ -1740,12 +1754,14 @@ async function registerRoutes(app2) {
                 verifiedEmail: false,
                 verifiedPhone: false,
             });
+            console.log("[REGISTER] user created", { id, username, email });
             res.status(201).json({
                 message: "Registered. Verify email and phone.",
                 emailCode,
                 phoneCode,
             });
         } catch (error) {
+            console.warn("[REGISTER] failed", { error: error?.message });
             res.status(500).json({ error: error.message });
         }
     });
@@ -1760,15 +1776,20 @@ async function registerRoutes(app2) {
             const byUsername = await storage.getUserByUsername(identifier);
             const byPhone = await storage.getUserByPhone(identifier);
             const user = byEmail || byUsername || byPhone;
-            if (!user)
+            if (!user) {
+                console.warn("[LOGIN] user not found", { identifier });
                 return res.status(401).json({ error: "Invalid credentials" });
+            }
             const ok = await comparePassword(password, user.password);
-            if (!ok)
+            if (!ok) {
+                console.warn("[LOGIN] bad password", { id: user.id || user._id });
                 return res.status(401).json({ error: "Invalid credentials" });
+            }
             const id =
                 (user && (user.id || user._id?.toString?.() || user._id)) ||
                 undefined;
             const token = generateToken({ id, username: user.username });
+            console.log("[LOGIN] success", { id, username: user.username });
             res.json({
                 token,
                 user: {
@@ -1779,6 +1800,7 @@ async function registerRoutes(app2) {
                 },
             });
         } catch (error) {
+            console.error("[LOGIN] error", { error: error?.message });
             res.status(500).json({ error: error.message });
         }
     });
@@ -1899,10 +1921,10 @@ async function registerRoutes(app2) {
             if (featured === "true") {
                 posts = posts.filter((post) => post.featured);
             }
-            const formattedPosts = posts.map((post) => ({
+            const formattedPosts = posts.map((post) => sanitizePublicPost({
                 ...post,
                 date: formatDate(post.createdAt),
-            }));
+            }, false));
             res.json(formattedPosts);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -1925,10 +1947,10 @@ async function registerRoutes(app2) {
             }
             // Increment views using the actual ID
             await storage.incrementPostViews(post.id);
-            const formattedPost = {
+            const formattedPost = sanitizePublicPost({
                 ...post,
                 date: formatDate(post.createdAt),
-            };
+            }, false);
             res.json(formattedPost);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -1958,6 +1980,23 @@ async function registerRoutes(app2) {
             const base = (process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
             const target = `${base}/article/${p.post_slug || slugifyEventName(p.title || "")}`;
             res.status(302).set("Location", target).send("Found");
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/posts/analytics", requireAuth, requireAdminOnly, async (_req, res) => {
+        try {
+            const posts = await storage.getAllPosts();
+            res.json(posts.map((p) => ({ id: p.id, title: p.title, views: p.views || 0 })));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app2.get("/api/admin/posts/:id/analytics", requireAuth, requireAdminOnly, async (req, res) => {
+        try {
+            const post = await storage.getPostById(req.params.id);
+            if (!post) return res.status(404).json({ error: "Post not found" });
+            res.json({ id: post.id, title: post.title, views: post.views || 0 });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -2950,7 +2989,11 @@ async function registerRoutes(app2) {
                 return res.status(404).json({ error: "Mercenary not found" });
             res.json(updated);
         } catch (err) {
-            res.status(400).json({ error: err.message });
+            const msg = String(err?.message || "Update failed");
+            if (/Cast to ObjectId failed/i.test(msg)) {
+                return res.status(400).json({ error: "Invalid mercenary id" });
+            }
+            res.status(500).json({ error: msg });
         }
     });
     app2.get("/api/mercenaries/:id", async (req, res) => {

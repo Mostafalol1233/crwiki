@@ -109,16 +109,19 @@ export default function Home() {
       .slice(0, 6);
   }, [allPosts]);
 
+  const isAdmin = typeof window !== 'undefined' && !!localStorage.getItem('adminToken');
   const mostViewed = useMemo(() => {
+    if (!isAdmin) return [] as { id: string; title: string; views: number }[];
     return [...allPosts]
-      .sort((a, b) => b.views - a.views)
+      .filter((p: any) => typeof p.views !== 'undefined')
+      .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
       .slice(0, 3)
-      .map((post) => ({
+      .map((post: any) => ({
         id: post.id,
         title: post.title,
-        views: post.views,
+        views: post.views || 0,
       }));
-  }, [allPosts]);
+  }, [allPosts, isAdmin]);
 
   const bimoraPicks = useMemo(() => {
     return allPosts

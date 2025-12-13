@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
-const logoLightImage = "/white-vafcoin.png";
-const logoDarkImage = "/black-vafcon.png";
+const logoLightImage = "/favicon.png";
+const logoDarkImage = "/favicon.png";
 
 function CFIconHome(props: any) {
   return (
@@ -245,9 +245,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
-          <Link href="/" className="flex items-center gap-2 font-bold italic uppercase tracking-wide text-foreground">
-            <img src="https://files.catbox.moe/cxen8x.png" alt="CrossFire logo" className="h-8 w-8 object-contain" />
-            <span className="crossfire-pro">CrossFire</span>
+          <Link href="/" className="flex items-center gap-2 font-extrabold uppercase tracking-wide text-foreground text-sm md:text-base">
+            <img src="/favicon.png" alt="CrossFire logo" className="h-8 w-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }} />
+            <span className="crossfire-pro">CROSSFIRE WIKI</span>
 
           </Link>
           <div className="flex items-center gap-4">

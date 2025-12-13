@@ -1673,14 +1673,14 @@ export default function Admin() {
                   resetPostForm();
                 }
               }}>
-                <DialogTrigger asChild>
-                  {canManagePosts && (
-                  <Button data-testid="button-create-post">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Post
-                  </Button>
-                  )}
-                </DialogTrigger>
+                {canManagePosts ? (
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-create-post">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Post
+                    </Button>
+                  </DialogTrigger>
+                ) : null}
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -2136,14 +2136,14 @@ export default function Admin() {
                         resetEventForm();
                       }
                     }}>
-                      <DialogTrigger asChild>
-                        {canManageEvents && (
-                        <Button data-testid="button-create-event">
-                          <Plus className="h-4 w-4 mr-2" />
-                          New Event
-                        </Button>
-                        )}
-                      </DialogTrigger>
+                      {canManageEvents ? (
+                        <DialogTrigger asChild>
+                          <Button data-testid="button-create-event">
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Event
+                          </Button>
+                        </DialogTrigger>
+                      ) : null}
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
                   <DialogHeader>
                     <DialogTitle>
@@ -2475,14 +2475,14 @@ export default function Admin() {
                       resetNewsForm();
                     }
                   }}>
-                    <DialogTrigger asChild>
-                      {canManageNews && (
-                      <Button data-testid="button-create-news">
-                        <Plus className="h-4 w-4 mr-2" />
-                        New News
-                      </Button>
-                      )}
-                    </DialogTrigger>
+                    {canManageNews ? (
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-create-news">
+                          <Plus className="h-4 w-4 mr-2" />
+                          New News
+                        </Button>
+                      </DialogTrigger>
+                    ) : null}
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
                   <DialogHeader>
                     <DialogTitle>
@@ -3593,14 +3593,14 @@ export default function Admin() {
                   resetSellerForm();
                 }
               }}>
-                    <DialogTrigger asChild>
-                    {canManageSellers && (
-                    <Button data-testid="button-create-seller">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Seller
-                    </Button>
-                    )}
-                    </DialogTrigger>
+                    {canManageSellers ? (
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-create-seller">
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Seller
+                        </Button>
+                      </DialogTrigger>
+                    ) : null}
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -4176,14 +4176,14 @@ export default function Admin() {
                     resetAdminForm();
                   }
                 }}>
-                  <DialogTrigger asChild>
-                    {canAdmins && (
-                    <Button data-testid="button-create-admin">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Admin
-                    </Button>
-                    )}
-                  </DialogTrigger>
+                  {canAdmins ? (
+                    <DialogTrigger asChild>
+                      <Button data-testid="button-create-admin">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Admin
+                      </Button>
+                    </DialogTrigger>
+                  ) : null}
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>

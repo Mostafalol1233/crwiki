@@ -49,18 +49,24 @@ export function SEOHead({
   const currentUrl = baseUrl + location;
   const finalCanonical = canonicalUrl || currentUrl;
   const finalOgUrl = ogUrl || currentUrl;
-  const finalTitle = title || siteSeo?.seoTitle || "CrossFire Wiki — Complete CrossFire Gaming Guide";
-  const finalDescription = description || siteSeo?.seoDescription || "CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates.";
+  const normalizeTitle = (s?: string) => {
+    if (!s) return s;
+    return s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ");
+  };
+  const defaultTitle = "CROSSFIRE WIKI | Weapons | Modes | Guides | Community";
+  const defaultDescription = "CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master Crossfire with up-to-date guides, maps and competitive intel.";
+  const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
+  const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
   const finalOgTitle = ogTitle || finalTitle;
   const finalOgDescription = ogDescription || finalDescription;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
-    if (!src) return `${baseUrl}/feature-crossfire.jpg`;
+    if (!src) return `${baseUrl}/favicon.ico`;
     try {
       const u = new URL(src, baseUrl);
       return u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
     } catch {
-      return `${baseUrl}/feature-crossfire.jpg`;
+      return `${baseUrl}/favicon.ico`;
     }
   };
   const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);

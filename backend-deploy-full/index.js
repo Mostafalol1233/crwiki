@@ -4,6 +4,7 @@ import "dotenv/config";
 // server/index-production.ts
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 
@@ -2001,6 +2002,44 @@ async function registerRoutes(app2) {
             res.status(500).json({ error: error.message });
         }
     });
+
+    // Minimal Open Graph share page that redirects to client route
+    app2.get("/share/:type/:id", async (req, res) => {
+        try {
+            const { type, id } = req.params;
+            let title = "Crossfire";
+            let description = "";
+            let image = "";
+            let url = `${req.protocol}://${req.get("host")}`;
+            const settings = await SiteSettingsModel.findOne().lean();
+            const fallbackOg = settings?.seoOgImage || "http://51.75.118.151:20032/favicon.ico";
+            if (type === "post") {
+                const p = await storage.getPostById(id);
+                if (p) { title = p.title; description = p.summary || p.seoDescription || ""; image = p.ogImage || p.image || fallbackOg; url = `${url}/article/${p.post_slug || p.id}`; }
+            } else if (type === "event") {
+                const e = await storage.getEventById(id);
+                if (e) { title = e.title; description = e.seoDescription || e.description || ""; image = e.ogImage || e.image || fallbackOg; url = `${url}/event/${e.event_name_slug || id}`; }
+            } else if (type === "news") {
+                const n = await storage.getNewsById(id);
+                if (n) { title = n.title; description = n.seoDescription || (n.content ? String(n.content).slice(0,160) : ""); image = n.ogImage || n.image || fallbackOg; url = `${url}/news/${n.news_slug || id}`; }
+            }
+            const html = `<!doctype html><html lang="en"><head>
+<meta charset="utf-8" />
+<meta property="og:title" content="${title}" />
+<meta property="og:description" content="${description}" />
+<meta property="og:image" content="${image}" />
+<meta property="og:url" content="${url}" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${title}" />
+<meta name="twitter:description" content="${description}" />
+<meta name="twitter:image" content="${image}" />
+</head><body><script>location.href=${JSON.stringify(url)}</script></body></html>`;
+            res.set("Content-Type", "text/html").send(html);
+        } catch (error) {
+            res.status(500).send(`Error: ${error.message}`);
+        }
+    });
     app2.post("/api/posts", requireAuth, requireContentCreator, async (req, res) => {
         try {
             const adminId = req.user?.id || "";
@@ -3127,6 +3166,21 @@ Sitemap: https://crossfire.wiki/sitemap.xml
             });
             const text = await resp.text();
             res.status(resp.status).type("text/plain").send(text);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/admin/reseed-mercs-ranks", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const mod = await import("./seed-from-urls.js");
+            const mercs = Array.isArray(mod.mercenariesData) ? mod.mercenariesData : [];
+            const ranks = Array.isArray(mod.ranksData) ? mod.ranksData : [];
+            await MercenaryModel.deleteMany({});
+            await RankModel.deleteMany({});
+            if (mercs.length) await MercenaryModel.insertMany(mercs);
+            if (ranks.length) await RankModel.insertMany(ranks);
+            res.json({ success: true, mercenaries: mercs.length, ranks: ranks.length });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -4793,8 +4847,8 @@ app.use((req, res, next) => {
         });
     });
 
-    // Auto-seed database from URLs (default enabled if not set)
-    if (process.env.AUTO_SEED === void 0) process.env.AUTO_SEED = "true";
+    // Full AUTO_SEED (weapons/modes/mercs/ranks) is now opt-in
+    if (process.env.AUTO_SEED === void 0) process.env.AUTO_SEED = "false";
     if (String(process.env.AUTO_SEED).toLowerCase() === "true") {
         (async () => {
             try {
@@ -4810,6 +4864,27 @@ app.use((req, res, next) => {
                 }
             } catch (err) {
                 log(`⚠️ Auto-seeding error: ${err?.message || err}`);
+            }
+        })();
+    }
+
+    // Reseed only Mercenaries and Ranks on startup (requested behavior)
+    if (process.env.RESEED_MERCS_RANKS_ON_START === void 0) process.env.RESEED_MERCS_RANKS_ON_START = "true";
+    if (String(process.env.RESEED_MERCS_RANKS_ON_START).toLowerCase() === "true") {
+        (async () => {
+            try {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                const mod = await import("./seed-from-urls.js");
+                const mercs = Array.isArray(mod.mercenariesData) ? mod.mercenariesData : [];
+                const ranks = Array.isArray(mod.ranksData) ? mod.ranksData : [];
+                log(`🔁 Reseeding mercenaries (${mercs.length}) and ranks (${ranks.length}) from seed module...`);
+                await MercenaryModel.deleteMany({});
+                await RankModel.deleteMany({});
+                if (mercs.length) await MercenaryModel.insertMany(mercs);
+                if (ranks.length) await RankModel.insertMany(ranks);
+                log("✅ Reseeded mercenaries and ranks successfully");
+            } catch (err) {
+                log(`⚠️ Merc/Ranks reseed error: ${err?.message || err}`);
             }
         })();
     }
@@ -5096,3 +5171,41 @@ app.post(
         }
     });
 
+    // Static serving for predictable insert URLs
+    try {
+        const insertDir = path.resolve("backend-deploy-full/uploads/insert");
+        fs.mkdirSync(insertDir, { recursive: true });
+        app2.use("/insert", express.static(insertDir, { maxAge: "7d" }));
+    } catch {}
+    // Upload to predictable /insert/{element_name}.{ext}
+    const insertStorage = multer.diskStorage({
+        destination: function (_req, _file, cb) {
+            try {
+                const dir = path.resolve("backend-deploy-full/uploads/insert");
+                fs.mkdirSync(dir, { recursive: true });
+                cb(null, dir);
+            } catch (e) {
+                cb(e);
+            }
+        },
+        filename: function (req, file, cb) {
+            const raw = String(req.body?.element_name || file.originalname || "file");
+            const base = raw.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+            const ext = (file.originalname.split(".").pop() || "").toLowerCase();
+            const allowed = ["png","jpg","jpeg","gif","webp","mp3","wav"]; 
+            const finalExt = allowed.includes(ext) ? ext : "bin";
+            cb(null, `${base}.${finalExt}`);
+        }
+    });
+    const uploadInsert = multer({ storage: insertStorage, limits: { fileSize: 25 * 1024 * 1024 } });
+    app2.post("/api/upload/insert", uploadLimiter, requireAuth, uploadInsert.single("file"), async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).json({ error: "No file provided" });
+            const settings = await SiteSettingsModel.findOne().lean();
+            const base = (settings?.publicBaseUrl && settings.publicBaseUrl.trim()) ? settings.publicBaseUrl.trim() : `${req.protocol}://${req.get("host")}`;
+            const url = `${base}/insert/${req.file.filename}`;
+            res.json({ url });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });

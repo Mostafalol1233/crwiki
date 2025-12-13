@@ -15,8 +15,8 @@ const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/crossfir
 const FORUM_BASE_URL = "https://forum.z8games.com";
 const ANNOUNCEMENTS_URL = `${FORUM_BASE_URL}/categories/crossfire-announcements`;
 
-// MERCENARIES - 10 unique mercenary characters with CATBOX URLS AND AUDIO
-const mercenariesData = [
+// MERCENARIES - 10+ unique mercenary characters with CATBOX URLS AND AUDIO
+export const mercenariesData = [
   {
     id: "1",
     name: "Wolf",

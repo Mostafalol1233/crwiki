@@ -5,13 +5,19 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import PageSEO from "@/components/PageSEO";
 import Orb from "@/components/Orb";
 
 const schema = z.object({
   username: z.string().min(2, "Username is required"),
   email: z.string().email("Invalid email"),
-  phone: z.string().min(6, "Invalid phone"),
+  phone: z
+    .string()
+    .min(8, "Invalid phone")
+    .max(15, "Invalid phone")
+    .refine((v) => /^\+?\d{8,15}$/.test(v), "Invalid phone number"),
   password: z.string().min(8, "Min 8 characters").refine((v) => /[^A-Za-z0-9]/.test(v), {
     message: "Include at least one special character",
   }),
@@ -20,25 +26,40 @@ const schema = z.object({
 export default function Register() {
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
   const [status, setStatus] = useState<string>("");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const onSubmit = async (values: any) => {
     setStatus("Registering...");
     try {
+      const phoneSanitized = String(values.phone || "").replace(/^\+/, "");
+      if (!/^\d{8,15}$/.test(phoneSanitized)) {
+        setStatus("Invalid phone number");
+        return;
+      }
+      const payload = { ...values, phone: phoneSanitized };
       const res = await fetch("/api/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Registration failed");
-      setStatus("Registered successfully.");
+      try {
+        sessionStorage.setItem(
+          "prefillLogin",
+          JSON.stringify({ identifier: values.email, password: values.password })
+        );
+      } catch {}
+      toast({ title: "Account created", description: "You can now sign in." });
+      setLocation("/login");
     } catch (e: any) {
       setStatus(e.message);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <PageSEO title="Register" description="Create an account to chat" />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320}>
       <Card className="w-full max-w-md mx-auto auth-box">
@@ -54,7 +75,13 @@ export default function Register() {
             </div>
             <div>
               <label className="text-sm font-medium">Phone</label>
-              <Input type="tel" placeholder="+123456789" {...register("phone")} />
+              <Input
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9+]*"
+                placeholder="123456789"
+                {...register("phone")}
+              />
               {errors.phone && <p className="text-red-500 text-sm">{String(errors.phone.message)}</p>}
             </div>
             <div>
@@ -68,7 +95,7 @@ export default function Register() {
               {errors.password && <p className="text-red-500 text-sm">{String(errors.password.message)}</p>}
               <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters and at least one special character.</p>
             </div>
-            <Button type="submit" className="w-full">Register</Button>
+            <Button type="submit" className="w-full h-12 text-base">Register</Button>
             {status && <p className="text-sm mt-2">{status}</p>}
           </form>
         </CardContent>

@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import Orb from "@/components/Orb";
 import { useLocation } from "wouter";
 
 export default function Login() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, setValue } = useForm();
   const [status, setStatus] = useState<string>("");
   const [, setLocation] = useLocation();
 
@@ -31,6 +32,19 @@ export default function Login() {
     }
   };
 
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("prefillLogin");
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p?.identifier) setValue("identifier", String(p.identifier));
+        if (p?.password) setValue("password", String(p.password));
+        sessionStorage.removeItem("prefillLogin");
+        setStatus("Account created successfully. Please sign in.");
+      }
+    } catch {}
+  }, [setValue]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <PageSEO title="Login" description="Sign in to chat" />
@@ -49,7 +63,7 @@ export default function Login() {
               <label className="text-sm font-medium">Password</label>
               <Input type="password" placeholder="••••••••" {...register("password")} />
             </div>
-            <Button type="submit" className="w-full">Login</Button>
+            <Button type="submit" className="w-full h-12 text-base">Login</Button>
             {status && <p className="text-sm mt-2">{status}</p>}
           </form>
         </CardContent>

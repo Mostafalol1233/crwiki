@@ -45,14 +45,23 @@ const BreadcrumbLink = React.forwardRef<
     asChild?: boolean
   }
 >(({ asChild, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+
+  const Comp: any = useChild ? Slot : "a"
+
+  const { children: _ignored, ...rest } = props as any
 
   return (
     <Comp
       ref={ref}
       className={cn("transition-colors hover:text-foreground", className)}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Comp>
   )
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"

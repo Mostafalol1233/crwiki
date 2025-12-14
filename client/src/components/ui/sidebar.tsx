@@ -399,7 +399,12 @@ function SidebarGroupLabel({
   asChild = false,
   ...props
 }: React.ComponentProps<"div"> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "div"
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  const Comp: any = useChild ? Slot : "div"
+  const { children: _ignored, ...rest } = props as any
 
   return (
     <Comp
@@ -410,8 +415,10 @@ function SidebarGroupLabel({
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Comp>
   )
 }
 
@@ -420,7 +427,12 @@ function SidebarGroupAction({
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "button"
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  const Comp: any = useChild ? Slot : "button"
+  const { children: _ignored, ...rest } = props as any
 
   return (
     <Comp
@@ -433,8 +445,10 @@ function SidebarGroupAction({
         "group-data-[collapsible=icon]:hidden",
         className
       )}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Comp>
   )
 }
 
@@ -509,8 +523,13 @@ function SidebarMenuButton({
   isActive?: boolean
   tooltip?: string | React.ComponentProps<typeof TooltipContent>
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
-  const Comp = asChild ? Slot : "button"
+  const rawChildren = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(rawChildren as any)
+  const isFragment = isValid && (rawChildren as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  const Comp: any = useChild ? Slot : "button"
   const { isMobile, state } = useSidebar()
+  const { children: _ignored, ...rest } = props as any
 
   const button = (
     <Comp
@@ -519,8 +538,10 @@ function SidebarMenuButton({
       data-size={size}
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      {...props}
-    />
+      {...rest}
+    >
+      {rawChildren}
+    </Comp>
   )
 
   if (!tooltip) {
@@ -540,7 +561,7 @@ function SidebarMenuButton({
         side="right"
         align="center"
         hidden={state !== "collapsed" || isMobile}
-        {...tooltip}
+        {...(tooltip as any)}
       />
     </Tooltip>
   )
@@ -555,7 +576,12 @@ function SidebarMenuAction({
   asChild?: boolean
   showOnHover?: boolean
 }) {
-  const Comp = asChild ? Slot : "button"
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  const Comp: any = useChild ? Slot : "button"
+  const { children: _ignored, ...rest } = props as any
 
   return (
     <Comp
@@ -573,8 +599,10 @@ function SidebarMenuAction({
           "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Comp>
   )
 }
 
@@ -678,7 +706,12 @@ function SidebarMenuSubButton({
   size?: "sm" | "md"
   isActive?: boolean
 }) {
-  const Comp = asChild ? Slot : "a"
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useChild = !!asChild && isValid && !isFragment
+  const Comp: any = useChild ? Slot : "a"
+  const { children: _ignored, ...rest } = props as any
 
   return (
     <Comp
@@ -694,8 +727,10 @@ function SidebarMenuSubButton({
         "group-data-[collapsible=icon]:hidden",
         className
       )}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Comp>
   )
 }
 

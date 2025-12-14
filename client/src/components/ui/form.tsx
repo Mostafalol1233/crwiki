@@ -108,19 +108,38 @@ const FormControl = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  const children = (props as any).children as React.ReactNode
+  const isValid = React.isValidElement(children as any)
+  const isFragment = isValid && (children as any).type === React.Fragment
+  const useSlot = isValid && !isFragment
+  const { children: _ignored, ...rest } = props as any
+
+  if (!useSlot) {
+    return (
+      <div
+        id={formItemId}
+        aria-describedby={
+          !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
+        }
+        aria-invalid={!!error}
+      >
+        {children || null}
+      </div>
+    )
+  }
 
   return (
     <Slot
       ref={ref}
       id={formItemId}
       aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
+        !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
-      {...props}
-    />
+      {...rest}
+    >
+      {children}
+    </Slot>
   )
 })
 FormControl.displayName = "FormControl"

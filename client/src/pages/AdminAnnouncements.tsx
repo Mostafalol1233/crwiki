@@ -18,6 +18,8 @@ function slugify(input: string) {
 
 type Announcement = {
   contentHtml?: string;
+  contentHtmlEn?: string;
+  contentHtmlAr?: string;
   imageUrl?: string;
   linkUrl?: string;
   active?: boolean;
@@ -30,7 +32,8 @@ export default function AdminAnnouncements() {
   const [, setLocation] = useLocation();
 
   // Global announcement state
-  const [gContentHtml, setGContentHtml] = useState("");
+  const [gContentHtmlEn, setGContentHtmlEn] = useState("");
+  const [gContentHtmlAr, setGContentHtmlAr] = useState("");
   const [gImageUrl, setGImageUrl] = useState("");
   const [gLinkUrl, setGLinkUrl] = useState("");
   const [gActive, setGActive] = useState(true);
@@ -42,7 +45,8 @@ export default function AdminAnnouncements() {
   // Seller announcement state
   const [sellerName, setSellerName] = useState("");
   const sellerSlug = useMemo(() => slugify(sellerName), [sellerName]);
-  const [sContentHtml, setSContentHtml] = useState("");
+  const [sContentHtmlEn, setSContentHtmlEn] = useState("");
+  const [sContentHtmlAr, setSContentHtmlAr] = useState("");
   const [sImageUrl, setSImageUrl] = useState("");
   const [sLinkUrl, setSLinkUrl] = useState("");
   const [sActive, setSActive] = useState(true);
@@ -107,7 +111,8 @@ export default function AdminAnnouncements() {
         const res = await fetch(`/api/announcements/global`);
         if (res.ok) {
           const json: Announcement & { dismissible?: boolean } = await res.json();
-          setGContentHtml(json.contentHtml || "");
+          setGContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
+          setGContentHtmlAr(json.contentHtmlAr || "");
           setGImageUrl(json.imageUrl || "");
           setGLinkUrl(json.linkUrl || "");
           setGActive(Boolean(json.active ?? true));
@@ -146,7 +151,16 @@ export default function AdminAnnouncements() {
       const res = await fetch(`/api/announcements/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({ contentHtml: gContentHtml, imageUrl: gImageUrl, linkUrl: gLinkUrl, active: gActive, dismissible: gDismissible, direction: gDirection }),
+        body: JSON.stringify({
+          contentHtml: gContentHtmlEn || gContentHtmlAr || "",
+          contentHtmlEn: gContentHtmlEn,
+          contentHtmlAr: gContentHtmlAr,
+          imageUrl: gImageUrl,
+          linkUrl: gLinkUrl,
+          active: gActive,
+          dismissible: gDismissible,
+          direction: gDirection,
+        }),
       });
       if (!res.ok) {
         let msg = await res.text();
@@ -193,14 +207,20 @@ export default function AdminAnnouncements() {
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`);
       if (res.ok) {
         const json: Announcement = await res.json();
-        setSContentHtml(json.contentHtml || "");
+        setSContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
+        setSContentHtmlAr(json.contentHtmlAr || "");
         setSImageUrl(json.imageUrl || "");
         setSLinkUrl(json.linkUrl || "");
         setSActive(Boolean(json.active ?? true));
         setSDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
       } else {
         // clear if none
-        setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
+        setSContentHtmlEn("");
+        setSContentHtmlAr("");
+        setSImageUrl("");
+        setSLinkUrl("");
+        setSActive(true);
+        setSDirection('auto');
       }
       // Load seller announcement list
       try {
@@ -230,7 +250,15 @@ export default function AdminAnnouncements() {
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({ contentHtml: sContentHtml, imageUrl: sImageUrl, linkUrl: sLinkUrl, active: sActive, direction: sDirection }),
+        body: JSON.stringify({
+          contentHtml: sContentHtmlEn || sContentHtmlAr || "",
+          contentHtmlEn: sContentHtmlEn,
+          contentHtmlAr: sContentHtmlAr,
+          imageUrl: sImageUrl,
+          linkUrl: sLinkUrl,
+          active: sActive,
+          direction: sDirection,
+        }),
       });
       if (!res.ok) {
         let msg = await res.text();
@@ -265,7 +293,12 @@ export default function AdminAnnouncements() {
         throw new Error(msg);
       }
       setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
-      setSContentHtml(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
+      setSContentHtmlEn("");
+      setSContentHtmlAr("");
+      setSImageUrl("");
+      setSLinkUrl("");
+      setSActive(true);
+      setSDirection('auto');
       toast({ title: 'Deleted', description: 'Seller announcement removed' });
     } catch (e: any) {
       toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
@@ -354,24 +387,38 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content</label>
-            <div
-              dir={gDirection === 'rtl' ? 'rtl' : 'ltr'}
-              style={{ textAlign: gDirection === 'rtl' ? 'right' : 'left' }}
-            >
-              <ReactQuill
-                theme="snow"
-                value={gContentHtml}
-                onChange={setGContentHtml}
-                modules={richTextModules}
-                formats={richTextFormats}
-                style={{ minHeight: 150 }}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Content (English)</label>
+                <div dir="ltr" style={{ textAlign: 'left' }}>
+                  <ReactQuill
+                    theme="snow"
+                    value={gContentHtmlEn}
+                    onChange={setGContentHtmlEn}
+                    modules={richTextModules}
+                    formats={richTextFormats}
+                    style={{ minHeight: 150 }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Content (Arabic)</label>
+                <div dir="rtl" style={{ textAlign: 'right' }}>
+                  <ReactQuill
+                    theme="snow"
+                    value={gContentHtmlAr}
+                    onChange={setGContentHtmlAr}
+                    modules={richTextModules}
+                    formats={richTextFormats}
+                    style={{ minHeight: 150 }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preview Direction</label>
+                <label className="text-sm font-medium">Default Direction</label>
                 <div className="flex gap-2">
                   <Button variant={gDirection==='auto'?'default':'outline'} size="sm" onClick={()=>setGDirection('auto')}>Auto</Button>
                   <Button variant={gDirection==='ltr'?'default':'outline'} size="sm" onClick={()=>setGDirection('ltr')}>Left-to-Right</Button>
@@ -432,24 +479,38 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={sLinkUrl} onChange={(e)=>setSLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content</label>
-            <div
-              dir={sDirection === 'rtl' ? 'rtl' : 'ltr'}
-              style={{ textAlign: sDirection === 'rtl' ? 'right' : 'left' }}
-            >
-              <ReactQuill
-                theme="snow"
-                value={sContentHtml}
-                onChange={setSContentHtml}
-                modules={richTextModules}
-                formats={richTextFormats}
-                style={{ minHeight: 150 }}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Content (English)</label>
+                <div dir="ltr" style={{ textAlign: 'left' }}>
+                  <ReactQuill
+                    theme="snow"
+                    value={sContentHtmlEn}
+                    onChange={setSContentHtmlEn}
+                    modules={richTextModules}
+                    formats={richTextFormats}
+                    style={{ minHeight: 150 }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Content (Arabic)</label>
+                <div dir="rtl" style={{ textAlign: 'right' }}>
+                  <ReactQuill
+                    theme="snow"
+                    value={sContentHtmlAr}
+                    onChange={setSContentHtmlAr}
+                    modules={richTextModules}
+                    formats={richTextFormats}
+                    style={{ minHeight: 150 }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preview Direction</label>
+                <label className="text-sm font-medium">Default Direction</label>
                 <div className="flex gap-2">
                   <Button variant={sDirection==='auto'?'default':'outline'} size="sm" onClick={()=>setSDirection('auto')}>Auto</Button>
                   <Button variant={sDirection==='ltr'?'default':'outline'} size="sm" onClick={()=>setSDirection('ltr')}>Left-to-Right</Button>

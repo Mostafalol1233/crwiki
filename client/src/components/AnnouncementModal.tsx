@@ -14,6 +14,8 @@ function slugify(input: string) {
 
 type Announcement = {
   contentHtml?: string;
+  contentHtmlEn?: string;
+  contentHtmlAr?: string;
   imageUrl?: string;
   linkUrl?: string;
   active?: boolean;
@@ -52,7 +54,8 @@ export default function AnnouncementModal({ location }: { location: string }) {
   const [scope, setScope] = useState<string>("global");
   const [enabled, setEnabled] = useState<boolean>(true);
   const [displayMs, setDisplayMs] = useState<number>(0);
-  const { language, toggleLanguage } = useLanguage();
+  const { language } = useLanguage();
+  const [viewLang, setViewLang] = useState<"en" | "ar">(language === "ar" ? "ar" : "en");
 
   const sellerSlugFromPath = useMemo(() => {
     try {
@@ -126,6 +129,19 @@ export default function AnnouncementModal({ location }: { location: string }) {
   }, [sellerSlugFromPath]);
 
   useEffect(() => {
+    if (!data) return;
+    const hasEn = Boolean(data.contentHtmlEn && data.contentHtmlEn.trim().length > 0);
+    const hasAr = Boolean(data.contentHtmlAr && data.contentHtmlAr.trim().length > 0);
+    if (hasEn && !hasAr) {
+      setViewLang("en");
+    } else if (hasAr && !hasEn) {
+      setViewLang("ar");
+    } else if (!hasEn && !hasAr) {
+      setViewLang(language === "ar" ? "ar" : "en");
+    }
+  }, [data, language]);
+
+  useEffect(() => {
     if (!loading && data?.active) {
       const version = data.updatedAt || JSON.stringify({ c: data.contentHtml, i: data.imageUrl, l: data.linkUrl });
       const key = `announce_dismiss_${scope}_${version}`;
@@ -158,9 +174,12 @@ export default function AnnouncementModal({ location }: { location: string }) {
     setOpen(false);
   };
 
-  const safeHtml = { __html: DOMPurify.sanitize(String(data.contentHtml || "")) };
+  const primaryHtml = viewLang === "ar"
+    ? (data.contentHtmlAr || data.contentHtml)
+    : (data.contentHtmlEn || data.contentHtml);
+  const safeHtml = { __html: DOMPurify.sanitize(String(primaryHtml || "")) };
 
-  const finalDir = (data?.direction === 'rtl') ? 'rtl' : (data?.direction === 'ltr') ? 'ltr' : (language === "ar" ? 'rtl' : 'ltr');
+  const finalDir = viewLang === 'ar' ? 'rtl' : 'ltr';
   const finalAlign = finalDir === 'rtl' ? 'text-right' : 'text-left';
   const videoEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
   const isAudioLink = data.linkUrl ? /(\.mp3|\.ogg|\.wav|\.m4a)([?#]|$)/i.test(data.linkUrl) : false;
@@ -199,16 +218,16 @@ export default function AnnouncementModal({ location }: { location: string }) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => { if (language !== "en") toggleLanguage(); }}
-                  className={`px-2 py-1 text-xs rounded ${language === "en" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                  onClick={() => setViewLang("en")}
+                  className={`px-2 py-1 text-xs rounded ${viewLang === "en" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                   aria-label="Switch to English"
                 >
                   EN
                 </button>
                 <button
                   type="button"
-                  onClick={() => { if (language !== "ar") toggleLanguage(); }}
-                  className={`px-2 py-1 text-xs rounded ${language === "ar" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                  onClick={() => setViewLang("ar")}
+                  className={`px-2 py-1 text-xs rounded ${viewLang === "ar" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                   aria-label="Switch to Arabic"
                 >
                   AR

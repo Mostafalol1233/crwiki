@@ -59,14 +59,14 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-8 flex items-center justify-center">
+    <div className="min-h-screen px-4 py-8 flex justify-center">
       <PageSEO title="Register" description="Create an account to chat" />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320}>
       <Card className="w-full max-w-md mx-auto auth-box">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 max-h-[75vh] overflow-y-auto">
+        <CardContent className="space-y-4">
           <form className="space-y-4 pb-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label className="text-sm font-medium">Email</label>
@@ -95,7 +95,7 @@ export default function Register() {
               {errors.password && <p className="text-red-500 text-sm">{String(errors.password.message)}</p>}
               <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters and at least one special character.</p>
             </div>
-            <div className="sticky bottom-0 bg-background pt-2">
+            <div className="pt-2">
               <Button type="submit" className="w-full h-12 text-base">Register</Button>
               <p className="text-sm mt-2 min-h-5">{status}</p>
             </div>

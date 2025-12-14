@@ -1297,8 +1297,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     });
     app.post("/api/announcements/global", requireAuth, requireSettingsManager, async (req, res) => {
         const body = req.body || {};
+        const contentHtml = body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "";
+        const contentHtmlEn = body.contentHtmlEn ? sanitizeHTML(String(body.contentHtmlEn)) : "";
+        const contentHtmlAr = body.contentHtmlAr ? sanitizeHTML(String(body.contentHtmlAr)) : "";
         const item = {
-            contentHtml: body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "",
+            contentHtml: contentHtml || contentHtmlEn || contentHtmlAr || "",
+            contentHtmlEn,
+            contentHtmlAr,
             imageUrl: String(body.imageUrl || ""),
             linkUrl: String(body.linkUrl || ""),
             active: Boolean(body.active ?? true),
@@ -1331,9 +1336,14 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         if (!slug)
             return res.status(400).json({ error: "Slug required" });
         const body = req.body || {};
+        const contentHtml = body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "";
+        const contentHtmlEn = body.contentHtmlEn ? sanitizeHTML(String(body.contentHtmlEn)) : "";
+        const contentHtmlAr = body.contentHtmlAr ? sanitizeHTML(String(body.contentHtmlAr)) : "";
         const item = {
             sellerSlug: slug,
-            contentHtml: body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "",
+            contentHtml: contentHtml || contentHtmlEn || contentHtmlAr || "",
+            contentHtmlEn,
+            contentHtmlAr,
             imageUrl: String(body.imageUrl || ""),
             linkUrl: String(body.linkUrl || ""),
             active: Boolean(body.active ?? true),

@@ -4,9 +4,9 @@
   place-items: center;
   width: 100%;
   max-width: 640px;
-  height: clamp(380px, 50vw, 560px);
+  min-height: clamp(380px, 50vw, 560px);
   margin: 0 auto;
-  overflow: hidden;
+  overflow: visible;
   filter: drop-shadow(0 6px 20px rgba(0,0,0,0.35));
 }
 
@@ -50,7 +50,7 @@
 
 @media (max-width: 768px) {
   .orb-container {
-    height: 420px;
+    min-height: 420px;
   }
   .orb-content {
     width: 92%;

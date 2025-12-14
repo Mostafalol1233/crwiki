@@ -5549,7 +5549,7 @@ export default function Admin() {
   );
 }
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }>{
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: undefined };
@@ -5562,11 +5562,24 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
   render() {
     if (this.state.hasError) {
+      const message = this.state?.error ? String((this.state.error as any).message || this.state.error) : "";
+      const stack = (this.state?.error as any)?.stack ? String((this.state.error as any).stack) : "";
       return (
         <div className="min-h-screen w-full flex items-center justify-center">
           <div className="max-w-lg w-full p-6 border rounded-md">
             <h2 className="text-xl font-semibold mb-2">Admin UI crashed</h2>
-            <p className="text-sm mb-4">A runtime error occurred. Try reloading or navigating back.</p>
+            <p className="text-sm mb-2">A runtime error occurred. Try reloading or navigating back.</p>
+            {message && (
+              <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800 whitespace-pre-wrap max-h-40 overflow-auto">
+                {message}
+              </div>
+            )}
+            {stack && (
+              <details className="mb-4 text-xs text-muted-foreground max-h-40 overflow-auto">
+                <summary className="cursor-pointer mb-1">Technical details</summary>
+                <pre className="whitespace-pre-wrap text-[10px] leading-snug">{stack}</pre>
+              </details>
+            )}
             <div className="flex gap-2">
               <Button onClick={() => { try { window.location.reload(); } catch {} }}>Reload</Button>
               <Button variant="outline" onClick={() => { try { history.back(); } catch {} }}>Go Back</Button>

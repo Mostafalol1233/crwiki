@@ -151,6 +151,38 @@ export default function Admin() {
   const [registrationClosed, setRegistrationClosed] = useState(false);
   const [seoSettings, setSeoSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
+  const richTextModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      ["link", "image", "video", "blockquote", "code-block"],
+      ["clean"],
+    ],
+  };
+
+  const richTextFormats = [
+    "header",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+    "background",
+    "align",
+    "link",
+    "image",
+    "video",
+    "blockquote",
+    "code-block",
+  ];
+
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     const role = localStorage.getItem("adminRole");
@@ -1040,24 +1072,31 @@ export default function Admin() {
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await fetch('/api/upload-image', {
+      formData.append("file", file);
+      formData.append("element_name", file.name);
+
+      const response = await fetch("/api/upload/insert", {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
         },
         body: formData,
       });
       
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        let msg = 'Failed to upload file';
+        try {
+          const t = await response.text();
+          msg = t || msg;
+        } catch {}
+        throw new Error(msg);
       }
       
       return response.json();
     },
-    onSuccess: (data) => {
-      setUploadedImageUrl(data.url);
+    onSuccess: (data: any) => {
+      const url = data?.url || "";
+      if (url) setUploadedImageUrl(url);
       setImageFile(null);
       toast({ title: "Image uploaded successfully!" });
     },
@@ -1667,17 +1706,8 @@ export default function Admin() {
                                 onChange={(value) =>
                                   setPostForm({ ...postForm, content: value })
                                 }
-                                modules={{
-                                  toolbar: [
-                                    [{ 'header': [1, 2, 3, false] }],
-                                    [{ 'size': ['small', false, 'large', 'huge'] }],
-                                    ['bold', 'italic', 'underline', 'strike'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    [{ 'color': [] }, { 'background': [] }],
-                                    ['link', 'blockquote', 'code-block'],
-                                    ['clean']
-                                  ],
-                                }}
+                                modules={richTextModules}
+                                formats={richTextFormats}
                                 placeholder="Write your content here..."
                                 style={{ minHeight: '200px' }}
                               />
@@ -2110,17 +2140,8 @@ export default function Admin() {
                             onChange={(value) =>
                               setEventForm({ ...eventForm, description: value })
                             }
-                            modules={{
-                              toolbar: [
-                                [{ 'header': [1, 2, 3, false] }],
-                                [{ 'size': ['small', false, 'large', 'huge'] }],
-                                ['bold', 'italic', 'underline', 'strike'],
-                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                [{ 'color': [] }, { 'background': [] }],
-                                ['link'],
-                                ['clean']
-                              ],
-                            }}
+                            modules={richTextModules}
+                            formats={richTextFormats}
                             style={{ minHeight: '150px' }}
                           />
                         </div>
@@ -2131,17 +2152,8 @@ export default function Admin() {
                             onChange={(value) =>
                               setEventForm({ ...eventForm, descriptionAr: value })
                             }
-                            modules={{
-                              toolbar: [
-                                [{ 'header': [1, 2, 3, false] }],
-                                [{ 'size': ['small', false, 'large', 'huge'] }],
-                                ['bold', 'italic', 'underline', 'strike'],
-                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                [{ 'color': [] }, { 'background': [] }],
-                                ['link'],
-                                ['clean']
-                              ],
-                            }}
+                            modules={richTextModules}
+                            formats={richTextFormats}
                             style={{ minHeight: '150px', direction: 'rtl' }}
                           />
                         </div>
@@ -2474,17 +2486,8 @@ export default function Admin() {
                               onChange={(value) =>
                                 setNewsForm({ ...newsForm, content: value })
                               }
-                              modules={{
-                                toolbar: [
-                                  [{ 'header': [1, 2, 3, false] }],
-                                  [{ 'size': ['small', false, 'large', 'huge'] }],
-                                  ['bold', 'italic', 'underline'],
-                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                  [{ 'color': [] }, { 'background': [] }],
-                                  ['link'],
-                                  ['clean']
-                                ],
-                              }}
+                              modules={richTextModules}
+                              formats={richTextFormats}
                               style={{ minHeight: '150px' }}
                             />
                           </div>
@@ -2514,17 +2517,8 @@ export default function Admin() {
                               onChange={(value) =>
                                 setNewsForm({ ...newsForm, contentAr: value })
                               }
-                              modules={{
-                                toolbar: [
-                                  [{ 'header': [1, 2, 3, false] }],
-                                  [{ 'size': ['small', false, 'large', 'huge'] }],
-                                  ['bold', 'italic', 'underline'],
-                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                  [{ 'color': [] }, { 'background': [] }],
-                                  ['link'],
-                                  ['clean']
-                                ],
-                              }}
+                              modules={richTextModules}
+                              formats={richTextFormats}
                               style={{ minHeight: '150px', direction: 'rtl' }}
                             />
                           </div>

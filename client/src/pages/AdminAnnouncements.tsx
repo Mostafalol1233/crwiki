@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +54,38 @@ export default function AdminAnnouncements() {
 
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
   const [annSettingsLoading, setAnnSettingsLoading] = useState(false);
+
+  const richTextModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }, { background: [] }],
+      [{ align: [] }],
+      ["link", "image", "video", "blockquote", "code-block"],
+      ["clean"],
+    ],
+  };
+
+  const richTextFormats = [
+    "header",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+    "background",
+    "align",
+    "link",
+    "image",
+    "video",
+    "blockquote",
+    "code-block",
+  ];
 
   // Load global on mount
   useEffect(() => {
@@ -321,8 +354,20 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content (HTML allowed)</label>
-            <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
+            <label className="text-sm font-medium">Content</label>
+            <div
+              dir={gDirection === 'rtl' ? 'rtl' : 'ltr'}
+              style={{ textAlign: gDirection === 'rtl' ? 'right' : 'left' }}
+            >
+              <ReactQuill
+                theme="snow"
+                value={gContentHtml}
+                onChange={setGContentHtml}
+                modules={richTextModules}
+                formats={richTextFormats}
+                style={{ minHeight: 150 }}
+              />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -387,8 +432,20 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={sLinkUrl} onChange={(e)=>setSLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content (HTML allowed)</label>
-            <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
+            <label className="text-sm font-medium">Content</label>
+            <div
+              dir={sDirection === 'rtl' ? 'rtl' : 'ltr'}
+              style={{ textAlign: sDirection === 'rtl' ? 'right' : 'left' }}
+            >
+              <ReactQuill
+                theme="snow"
+                value={sContentHtml}
+                onChange={setSContentHtml}
+                modules={richTextModules}
+                formats={richTextFormats}
+                style={{ minHeight: 150 }}
+              />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

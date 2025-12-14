@@ -132,6 +132,16 @@ export default function AnnouncementModal({ location }: { location: string }) {
     if (!data) return;
     const hasEn = Boolean(data.contentHtmlEn && data.contentHtmlEn.trim().length > 0);
     const hasAr = Boolean(data.contentHtmlAr && data.contentHtmlAr.trim().length > 0);
+    // If admin explicitly set direction, respect it for initial language when possible
+    if (data.direction === 'rtl' && hasAr) {
+      setViewLang("ar");
+      return;
+    }
+    if (data.direction === 'ltr' && hasEn) {
+      setViewLang("en");
+      return;
+    }
+    // Fallbacks based on available content
     if (hasEn && !hasAr) {
       setViewLang("en");
     } else if (hasAr && !hasEn) {
@@ -179,7 +189,8 @@ export default function AnnouncementModal({ location }: { location: string }) {
     : (data.contentHtmlEn || data.contentHtml);
   const safeHtml = { __html: DOMPurify.sanitize(String(primaryHtml || "")) };
 
-  const finalDir = viewLang === 'ar' ? 'rtl' : 'ltr';
+  const explicitDir = (data?.direction === 'rtl' || data?.direction === 'ltr') ? data.direction : undefined;
+  const finalDir = explicitDir || (viewLang === 'ar' ? 'rtl' : 'ltr');
   const finalAlign = finalDir === 'rtl' ? 'text-right' : 'text-left';
   const videoEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
   const isAudioLink = data.linkUrl ? /(\.mp3|\.ogg|\.wav|\.m4a)([?#]|$)/i.test(data.linkUrl) : false;
@@ -210,7 +221,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="relative z-[61] max-w-lg w-[92%] md:w-[640px] bg-background/60 backdrop-blur-lg border border-border shadow-2xl"
+            className="relative z-[61] max-w-lg w-[92%] md:w-[640px] max-h-[90vh] bg-background/60 backdrop-blur-lg border border-border shadow-2xl flex flex-col"
             dir={finalDir}
           >
             <div className="flex items-center justify-between p-2">
@@ -241,34 +252,36 @@ export default function AnnouncementModal({ location }: { location: string }) {
                 </button>
               </div>
             </div>
-            {data.imageUrl ? (
-              <img src={data.imageUrl} alt="Announcement" className="w-full h-auto object-cover" />
-            ) : null}
-            <div className={`p-4 prose max-w-none ${finalAlign}`}>
-              <div dangerouslySetInnerHTML={safeHtml} />
-              {videoEmbedUrl && (
-                <div className="mt-3 aspect-video">
-                  <iframe
-                    src={videoEmbedUrl}
-                    title="Announcement video"
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              )}
-              {isAudioLink && !videoEmbedUrl && (
-                <div className="mt-3">
-                  <audio controls src={data.linkUrl || ""} className="w-full" />
-                </div>
-              )}
-              {data.linkUrl && !videoEmbedUrl && !isAudioLink && (
-                <div className="mt-3">
-                  <a className="text-primary underline" href={data.linkUrl} target="_blank" rel="noreferrer">
-                    Learn more
-                  </a>
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto">
+              {data.imageUrl ? (
+                <img src={data.imageUrl} alt="Announcement" className="w-full h-auto object-cover" />
+              ) : null}
+              <div className={`p-4 prose max-w-none ${finalAlign}`}>
+                <div dangerouslySetInnerHTML={safeHtml} />
+                {videoEmbedUrl && (
+                  <div className="mt-3 aspect-video">
+                    <iframe
+                      src={videoEmbedUrl}
+                      title="Announcement video"
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                {isAudioLink && !videoEmbedUrl && (
+                  <div className="mt-3">
+                    <audio controls src={data.linkUrl || ""} className="w-full" />
+                  </div>
+                )}
+                {data.linkUrl && !videoEmbedUrl && !isAudioLink && (
+                  <div className="mt-3">
+                    <a className="text-primary underline" href={data.linkUrl} target="_blank" rel="noreferrer">
+                      Learn more
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

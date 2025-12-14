@@ -57,8 +57,8 @@ export function SEOHead({
     if (!s) return s;
     return s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ");
   };
-  const defaultTitle = "CROSSFIRE WIKI | Weapons | Modes | Guides | Community";
-  const defaultDescription = "CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master Crossfire with up-to-date guides, maps and competitive intel.";
+  const defaultTitle = "CrossFire Wiki | Weapons | Modes | Guides | Community";
+  const defaultDescription = "CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master CrossFire with up-to-date guides, maps and competitive intel.";
   const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
   const finalOgTitle = ogTitle || finalTitle;

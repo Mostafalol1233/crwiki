@@ -3,6 +3,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +60,11 @@ export default function AdminAnnouncements() {
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
   const [annSettingsLoading, setAnnSettingsLoading] = useState(false);
 
+  const [gEnMode, setGEnMode] = useState<"rich" | "html">("rich");
+  const [gArMode, setGArMode] = useState<"rich" | "html">("rich");
+  const [sEnMode, setSEnMode] = useState<"rich" | "html">("rich");
+  const [sArMode, setSArMode] = useState<"rich" | "html">("rich");
+
   const richTextModules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -70,6 +76,19 @@ export default function AdminAnnouncements() {
       ["link", "image", "video", "blockquote", "code-block"],
       ["clean"],
     ],
+  };
+
+  const pickPrimaryContent = (en: string, ar: string) => {
+    const normalize = (html: string) =>
+      String(html || "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .trim();
+    const enNorm = normalize(en);
+    const arNorm = normalize(ar);
+    if (enNorm.length > 0) return en;
+    if (arNorm.length > 0) return ar;
+    return "";
   };
 
   const richTextFormats = [
@@ -148,11 +167,12 @@ export default function AdminAnnouncements() {
   const saveGlobal = async () => {
     try {
       setLoadingGlobal(true);
+      const primary = pickPrimaryContent(gContentHtmlEn, gContentHtmlAr);
       const res = await fetch(`/api/announcements/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({
-          contentHtml: gContentHtmlEn || gContentHtmlAr || "",
+          contentHtml: primary,
           contentHtmlEn: gContentHtmlEn,
           contentHtmlAr: gContentHtmlAr,
           imageUrl: gImageUrl,
@@ -247,11 +267,12 @@ export default function AdminAnnouncements() {
     }
     try {
       setLoadingSeller(true);
+      const primary = pickPrimaryContent(sContentHtmlEn, sContentHtmlAr);
       const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
         body: JSON.stringify({
-          contentHtml: sContentHtmlEn || sContentHtmlAr || "",
+          contentHtml: primary,
           contentHtmlEn: sContentHtmlEn,
           contentHtmlAr: sContentHtmlAr,
           imageUrl: sImageUrl,
@@ -389,30 +410,60 @@ export default function AdminAnnouncements() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Content (English)</label>
-                <div dir="ltr" style={{ textAlign: 'left' }}>
-                  <ReactQuill
-                    theme="snow"
-                    value={gContentHtmlEn}
-                    onChange={setGContentHtmlEn}
-                    modules={richTextModules}
-                    formats={richTextFormats}
-                    style={{ minHeight: 150 }}
-                  />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Content (English)</label>
+                  <div className="flex gap-1 text-xs">
+                    <Button type="button" size="sm" variant={gEnMode === "rich" ? "default" : "outline"} onClick={() => setGEnMode("rich")}>Rich</Button>
+                    <Button type="button" size="sm" variant={gEnMode === "html" ? "default" : "outline"} onClick={() => setGEnMode("html")}>HTML</Button>
+                  </div>
                 </div>
+                {gEnMode === "rich" ? (
+                  <div dir="ltr" style={{ textAlign: 'left' }}>
+                    <ReactQuill
+                      theme="snow"
+                      value={gContentHtmlEn}
+                      onChange={setGContentHtmlEn}
+                      modules={richTextModules}
+                      formats={richTextFormats}
+                      style={{ minHeight: 150 }}
+                    />
+                  </div>
+                ) : (
+                  <Textarea
+                    rows={8}
+                    value={gContentHtmlEn}
+                    onChange={(e) => setGContentHtmlEn(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Content (Arabic)</label>
-                <div dir="rtl" style={{ textAlign: 'right' }}>
-                  <ReactQuill
-                    theme="snow"
-                    value={gContentHtmlAr}
-                    onChange={setGContentHtmlAr}
-                    modules={richTextModules}
-                    formats={richTextFormats}
-                    style={{ minHeight: 150 }}
-                  />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Content (Arabic)</label>
+                  <div className="flex gap-1 text-xs">
+                    <Button type="button" size="sm" variant={gArMode === "rich" ? "default" : "outline"} onClick={() => setGArMode("rich")}>Rich</Button>
+                    <Button type="button" size="sm" variant={gArMode === "html" ? "default" : "outline"} onClick={() => setGArMode("html")}>HTML</Button>
+                  </div>
                 </div>
+                {gArMode === "rich" ? (
+                  <div dir="rtl" style={{ textAlign: 'right' }}>
+                    <ReactQuill
+                      theme="snow"
+                      value={gContentHtmlAr}
+                      onChange={setGContentHtmlAr}
+                      modules={richTextModules}
+                      formats={richTextFormats}
+                      style={{ minHeight: 150 }}
+                    />
+                  </div>
+                ) : (
+                  <Textarea
+                    rows={8}
+                    value={gContentHtmlAr}
+                    onChange={(e) => setGContentHtmlAr(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                )}
               </div>
             </div>
 
@@ -481,30 +532,60 @@ export default function AdminAnnouncements() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Content (English)</label>
-                <div dir="ltr" style={{ textAlign: 'left' }}>
-                  <ReactQuill
-                    theme="snow"
-                    value={sContentHtmlEn}
-                    onChange={setSContentHtmlEn}
-                    modules={richTextModules}
-                    formats={richTextFormats}
-                    style={{ minHeight: 150 }}
-                  />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Content (English)</label>
+                  <div className="flex gap-1 text-xs">
+                    <Button type="button" size="sm" variant={sEnMode === "rich" ? "default" : "outline"} onClick={() => setSEnMode("rich")}>Rich</Button>
+                    <Button type="button" size="sm" variant={sEnMode === "html" ? "default" : "outline"} onClick={() => setSEnMode("html")}>HTML</Button>
+                  </div>
                 </div>
+                {sEnMode === "rich" ? (
+                  <div dir="ltr" style={{ textAlign: 'left' }}>
+                    <ReactQuill
+                      theme="snow"
+                      value={sContentHtmlEn}
+                      onChange={setSContentHtmlEn}
+                      modules={richTextModules}
+                      formats={richTextFormats}
+                      style={{ minHeight: 150 }}
+                    />
+                  </div>
+                ) : (
+                  <Textarea
+                    rows={8}
+                    value={sContentHtmlEn}
+                    onChange={(e) => setSContentHtmlEn(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Content (Arabic)</label>
-                <div dir="rtl" style={{ textAlign: 'right' }}>
-                  <ReactQuill
-                    theme="snow"
-                    value={sContentHtmlAr}
-                    onChange={setSContentHtmlAr}
-                    modules={richTextModules}
-                    formats={richTextFormats}
-                    style={{ minHeight: 150 }}
-                  />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Content (Arabic)</label>
+                  <div className="flex gap-1 text-xs">
+                    <Button type="button" size="sm" variant={sArMode === "rich" ? "default" : "outline"} onClick={() => setSArMode("rich")}>Rich</Button>
+                    <Button type="button" size="sm" variant={sArMode === "html" ? "default" : "outline"} onClick={() => setSArMode("html")}>HTML</Button>
+                  </div>
                 </div>
+                {sArMode === "rich" ? (
+                  <div dir="rtl" style={{ textAlign: 'right' }}>
+                    <ReactQuill
+                      theme="snow"
+                      value={sContentHtmlAr}
+                      onChange={setSContentHtmlAr}
+                      modules={richTextModules}
+                      formats={richTextFormats}
+                      style={{ minHeight: 150 }}
+                    />
+                  </div>
+                ) : (
+                  <Textarea
+                    rows={8}
+                    value={sContentHtmlAr}
+                    onChange={(e) => setSContentHtmlAr(e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                )}
               </div>
             </div>
 

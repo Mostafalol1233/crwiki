@@ -1300,8 +1300,16 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         const contentHtml = body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "";
         const contentHtmlEn = body.contentHtmlEn ? sanitizeHTML(String(body.contentHtmlEn)) : "";
         const contentHtmlAr = body.contentHtmlAr ? sanitizeHTML(String(body.contentHtmlAr)) : "";
+        const normalize = (html) => String(html || "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+        let primary = contentHtml;
+        if (!normalize(primary)) {
+            if (normalize(contentHtmlEn))
+                primary = contentHtmlEn;
+            else if (normalize(contentHtmlAr))
+                primary = contentHtmlAr;
+        }
         const item = {
-            contentHtml: contentHtml || contentHtmlEn || contentHtmlAr || "",
+            contentHtml: primary,
             contentHtmlEn,
             contentHtmlAr,
             imageUrl: String(body.imageUrl || ""),
@@ -1339,9 +1347,17 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         const contentHtml = body.contentHtml ? sanitizeHTML(String(body.contentHtml)) : "";
         const contentHtmlEn = body.contentHtmlEn ? sanitizeHTML(String(body.contentHtmlEn)) : "";
         const contentHtmlAr = body.contentHtmlAr ? sanitizeHTML(String(body.contentHtmlAr)) : "";
+        const normalize = (html) => String(html || "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+        let primary = contentHtml;
+        if (!normalize(primary)) {
+            if (normalize(contentHtmlEn))
+                primary = contentHtmlEn;
+            else if (normalize(contentHtmlAr))
+                primary = contentHtmlAr;
+        }
         const item = {
             sellerSlug: slug,
-            contentHtml: contentHtml || contentHtmlEn || contentHtmlAr || "",
+            contentHtml: primary,
             contentHtmlEn,
             contentHtmlAr,
             imageUrl: String(body.imageUrl || ""),

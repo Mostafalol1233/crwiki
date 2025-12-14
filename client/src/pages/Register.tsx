@@ -59,7 +59,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-8 flex justify-center">
+    <div className="min-h-screen px-4 py-8 flex justify-center overflow-y-auto">
       <PageSEO title="Register" description="Create an account to chat" />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={320}>
       <Card className="w-full max-w-md mx-auto auth-box">

@@ -4547,11 +4547,12 @@ async function registerRoutes(app2) {
                 linkUrl: String(req.body?.linkUrl || ""),
                 active: !!req.body?.active,
                 dismissible: req.body?.dismissible === false ? false : true,
+                direction: (req.body?.direction === 'rtl' || req.body?.direction === 'ltr') ? req.body.direction : 'auto',
             };
             const created = await GlobalAnnouncementModel.create(payload);
             const lean = await GlobalAnnouncementModel.findById(created._id).lean();
             try { await storage.auditAdminAction("global_announcement_create", String(created._id), req.user?.id || "", {}); } catch {}
-            res.status(201).json({ id: String(lean._id), contentHtml: lean.contentHtml || "", imageUrl: lean.imageUrl || "", linkUrl: lean.linkUrl || "", active: lean.active ?? true, dismissible: lean.dismissible !== false, updatedAt: lean.updatedAt });
+            res.status(201).json({ id: String(lean._id), contentHtml: lean.contentHtml || "", imageUrl: lean.imageUrl || "", linkUrl: lean.linkUrl || "", active: lean.active ?? true, dismissible: lean.dismissible !== false, direction: lean.direction || 'auto', updatedAt: lean.updatedAt });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
@@ -4589,6 +4590,7 @@ async function registerRoutes(app2) {
                 imageUrl: String(req.body?.imageUrl || ""),
                 linkUrl: String(req.body?.linkUrl || ""),
                 active: !!req.body?.active,
+                direction: (req.body?.direction === 'rtl' || req.body?.direction === 'ltr') ? req.body.direction : 'auto',
             };
             // Prevent image duplication from seller's own images
             try {
@@ -4607,7 +4609,7 @@ async function registerRoutes(app2) {
                 { upsert: true, new: true }
             ).lean();
             try { await storage.auditAdminAction("seller_announcement_create_or_update", slug, req.user?.id || "", { active: !!updated.active }); } catch {}
-            res.status(201).json({ id: String(updated._id), sellerSlug: slug, contentHtml: updated.contentHtml || "", imageUrl: updated.imageUrl || "", linkUrl: updated.linkUrl || "", active: !!updated.active, updatedAt: updated.updatedAt });
+            res.status(201).json({ id: String(updated._id), sellerSlug: slug, contentHtml: updated.contentHtml || "", imageUrl: updated.imageUrl || "", linkUrl: updated.linkUrl || "", active: !!updated.active, direction: updated.direction || 'auto', updatedAt: updated.updatedAt });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }

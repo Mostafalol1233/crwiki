@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Orb from "@/components/Orb";
-import { apiRequest } from "@/lib/queryClient";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -16,22 +15,6 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // Ensure CSRF token is available for login requests if backend enforces it
-  useEffect(() => {
-    (async () => {
-      try {
-        const base = (import.meta as any).env?.VITE_API_URL || '';
-        const url = base ? `${base}/api/security/csrf-token` : `/api/security/csrf-token`;
-        const res = await fetch(url, { method: 'GET', credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          const token = data?.csrfToken || "";
-          if (token) localStorage.setItem('csrfToken', token);
-        }
-      } catch {}
-    })();
-  }, []);
 
   const handleAdminLogin = async () => {
     if (!username || !adminPassword) {
@@ -45,7 +28,17 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      const { token, admin } = await apiRequest("/api/auth/login", "POST", { username, password: adminPassword });
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password: adminPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const { token, admin } = await response.json();
       localStorage.setItem("adminToken", token);
       // server returns roles array; store single role for legacy client usage
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin");
@@ -81,7 +74,17 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      const { token, admin } = await apiRequest("/api/auth/login", "POST", { password });
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid password");
+      }
+
+      const { token, admin } = await response.json();
       localStorage.setItem("adminToken", token);
       // server returns roles array; store single role for legacy client usage
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "super_admin");

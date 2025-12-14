@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,7 +62,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useLocation } from "wouter";
-// ReactQuill is dynamically loaded to avoid runtime SSR/import issues
+import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
@@ -76,56 +75,11 @@ import type { SiteSettings } from "@/types/site-settings";
 import type { ScrapedEvent } from "@shared/types";
 import AdminAnnouncements from "@/pages/AdminAnnouncements";
 
-// Autosave hook reusable across admin editors
-function useAutosave<T>(key: string, form: T, enabled: boolean) {
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  useEffect(() => {
-    if (!enabled) return;
-    const t = setTimeout(() => {
-      try {
-        const historyKey = `${key}-history`;
-        const raw = localStorage.getItem(historyKey) || '[]';
-        const history = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
-        const entry = { ts: Date.now(), form };
-        const next = [...history, entry].slice(-50);
-        localStorage.setItem(key, JSON.stringify(form));
-        localStorage.setItem(historyKey, JSON.stringify(next));
-        setLastSavedAt(entry.ts);
-      } catch {}
-    }, 1000);
-    return () => clearTimeout(t);
-  }, [key, form, enabled]);
-  const restoreLast = () => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
-  const getHistory = () => {
-    try {
-      const raw = localStorage.getItem(`${key}-history`) || '[]';
-      return Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
-    } catch { return []; }
-  };
-  return { lastSavedAt, restoreLast, getHistory };
-}
-
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [adminRole, setAdminRole] = useState<string>("");
   const [adminUsername, setAdminUsername] = useState<string>("");
-  const [Quill, setQuill] = useState<any>(null);
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const mod = await import("react-quill");
-        if (mounted) setQuill(mod.default);
-      } catch {}
-    })();
-    return () => { mounted = false; };
-  }, []);
   
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
@@ -198,7 +152,6 @@ export default function Admin() {
   const [seoSettings, setSeoSettings] = useState<{ base: string; og: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
   useEffect(() => {
-    try { console.log("[Admin] mount"); } catch {}
     const token = localStorage.getItem("adminToken");
     const role = localStorage.getItem("adminRole");
     const username = localStorage.getItem("adminUsername");
@@ -249,7 +202,6 @@ export default function Admin() {
   const isSuperAdmin = adminRole === "super_admin";
   const [adminPerms, setAdminPerms] = useState<Record<string, boolean>>({});
   useEffect(() => {
-    try { console.log("[Admin] permissions", { role: adminRole }); } catch {}
     try {
       const raw = localStorage.getItem("adminPermissions") || "{}";
       const parsed = JSON.parse(raw);
@@ -389,8 +341,6 @@ export default function Admin() {
     schemaType: "Article",
   });
 
-  const postAuto = useAutosave(`admin-post-${editingPost?.id || 'new'}`, postForm, isCreatingPost);
-
   const [eventForm, setEventForm] = useState({
     title: "",
     titleAr: "",
@@ -409,8 +359,6 @@ export default function Admin() {
     twitterImage: "",
     schemaType: "Event",
   });
-
-  const eventAuto = useAutosave(`admin-event-${editingEvent?.id || 'new'}`, eventForm, isCreatingEvent);
 
   const [newsForm, setNewsForm] = useState({
     title: "",
@@ -432,8 +380,6 @@ export default function Admin() {
     twitterImage: "",
     schemaType: "NewsArticle",
   });
-
-  const newsAuto = useAutosave(`admin-news-${editingNews?.id || 'new'}`, newsForm, isCreatingNews);
 
   const [sellerForm, setSellerForm] = useState({
     name: "",
@@ -1319,7 +1265,6 @@ export default function Admin() {
   };
 
   return (
-    <ErrorBoundary>
     <div className="min-h-screen bg-transparent">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="flex items-center justify-between mb-8">
@@ -1351,7 +1296,7 @@ export default function Admin() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v || "dashboard")} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-56">
               {/* small screen: select picker */}
@@ -1677,27 +1622,20 @@ export default function Admin() {
                   resetPostForm();
                 }
               }}>
-                {canManagePosts ? (
-                  <DialogTrigger asChild>
-                    <Button data-testid="button-create-post">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Post
-                    </Button>
-                  </DialogTrigger>
-                ) : null}
+                <DialogTrigger asChild>
+                  {canManagePosts && (
+                  <Button data-testid="button-create-post">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Post
+                  </Button>
+                  )}
+                </DialogTrigger>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingPost ? "Edit Post" : "Create New Post"}
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{postAuto.lastSavedAt ? `Autosaved ${new Date(postAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      const restored = postAuto.restoreLast();
-                      if (restored) setPostForm(restored);
-                    }}>Restore autosave</Button>
-                  </div>
                   <div className="space-y-4">
                     <Input
                       placeholder="Title"
@@ -1723,10 +1661,10 @@ export default function Admin() {
                     <div className="space-y-2">
                           <div data-testid="input-post-content">
                             <div dir={postForm.language === 'ar' ? 'rtl' : 'ltr'} style={{ textAlign: postForm.language === 'ar' ? 'right' : 'left' }}>
-                              {Quill ? <Quill
+                              <ReactQuill
                                 theme="snow"
                                 value={postForm.content}
-                                onChange={(value: string) =>
+                                onChange={(value) =>
                                   setPostForm({ ...postForm, content: value })
                                 }
                                 modules={{
@@ -1736,20 +1674,13 @@ export default function Admin() {
                                     ['bold', 'italic', 'underline', 'strike'],
                                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                     [{ 'color': [] }, { 'background': [] }],
-                                    ['link', 'image', 'video', 'blockquote', 'code-block'],
+                                    ['link', 'blockquote', 'code-block'],
                                     ['clean']
                                   ],
                                 }}
                                 placeholder="Write your content here..."
                                 style={{ minHeight: '200px' }}
-                              /> : (
-                                <Textarea
-                                  placeholder="Write your content here..."
-                                  value={postForm.content}
-                                  onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
-                                  rows={8}
-                                />
-                              )}
+                              />
                             </div>
                           </div>
                     </div>
@@ -2140,27 +2071,20 @@ export default function Admin() {
                         resetEventForm();
                       }
                     }}>
-                      {canManageEvents ? (
-                        <DialogTrigger asChild>
-                          <Button data-testid="button-create-event">
-                            <Plus className="h-4 w-4 mr-2" />
-                            New Event
-                          </Button>
-                        </DialogTrigger>
-                      ) : null}
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingEvent ? "Edit Event" : "Create New Event"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{eventAuto.lastSavedAt ? `Autosaved ${new Date(eventAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      const restored = eventAuto.restoreLast();
-                      if (restored) setEventForm(restored);
-                    }}>Restore autosave</Button>
-                  </div>
+                      <DialogTrigger asChild>
+                        {canManageEvents && (
+                        <Button data-testid="button-create-event">
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Event
+                        </Button>
+                        )}
+                      </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingEvent ? "Edit Event" : "Create New Event"}
+                        </DialogTitle>
+                      </DialogHeader>
                       <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
@@ -2180,10 +2104,10 @@ export default function Admin() {
                           data-testid="input-event-title-ar"
                         />
                         <div data-testid="input-event-description">
-                          {Quill ? <Quill
+                          <ReactQuill
                             theme="snow"
                             value={eventForm.description}
-                            onChange={(value: string) =>
+                            onChange={(value) =>
                               setEventForm({ ...eventForm, description: value })
                             }
                             modules={{
@@ -2193,25 +2117,18 @@ export default function Admin() {
                                 ['bold', 'italic', 'underline', 'strike'],
                                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                 [{ 'color': [] }, { 'background': [] }],
-                                ['link', 'image', 'video'],
+                                ['link'],
                                 ['clean']
                               ],
                             }}
                             style={{ minHeight: '150px' }}
-                          /> : (
-                            <Textarea
-                              placeholder="Event description"
-                              value={eventForm.description}
-                              onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                              rows={6}
-                            />
-                          )}
+                          />
                         </div>
                         <div data-testid="input-event-description-ar">
-                          {Quill ? <Quill
+                          <ReactQuill
                             theme="snow"
                             value={eventForm.descriptionAr}
-                            onChange={(value: string) =>
+                            onChange={(value) =>
                               setEventForm({ ...eventForm, descriptionAr: value })
                             }
                             modules={{
@@ -2226,15 +2143,7 @@ export default function Admin() {
                               ],
                             }}
                             style={{ minHeight: '150px', direction: 'rtl' }}
-                          /> : (
-                            <Textarea
-                              placeholder="الوصف"
-                              dir="rtl"
-                              value={eventForm.descriptionAr}
-                              onChange={(e) => setEventForm({ ...eventForm, descriptionAr: e.target.value })}
-                              rows={6}
-                            />
-                          )}
+                          />
                         </div>
                         <Input
                           placeholder="Date"
@@ -2479,27 +2388,20 @@ export default function Admin() {
                       resetNewsForm();
                     }
                   }}>
-                    {canManageNews ? (
-                      <DialogTrigger asChild>
-                        <Button data-testid="button-create-news">
-                          <Plus className="h-4 w-4 mr-2" />
-                          New News
-                        </Button>
-                      </DialogTrigger>
-                    ) : null}
+                    <DialogTrigger asChild>
+                      {canManageNews && (
+                      <Button data-testid="button-create-news">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New News
+                      </Button>
+                      )}
+                    </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingNews ? "Edit News Item" : "Create New News Item"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{newsAuto.lastSavedAt ? `Autosaved ${new Date(newsAuto.lastSavedAt).toLocaleTimeString()}` : 'Autosave active'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      const restored = newsAuto.restoreLast();
-                      if (restored) setNewsForm(restored);
-                    }}>Restore autosave</Button>
-                  </div>
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingNews ? "Edit News Item" : "Create New News Item"}
+                        </DialogTitle>
+                      </DialogHeader>
                       <div className="space-y-6">
                         <Input
                           placeholder="Title (English)"
@@ -2566,10 +2468,10 @@ export default function Admin() {
                             </Button>
                           </div>
                           <div data-testid="input-news-content">
-                            {Quill ? <Quill
+                            <ReactQuill
                               theme="snow"
                               value={newsForm.content}
-                              onChange={(value: string) =>
+                              onChange={(value) =>
                                 setNewsForm({ ...newsForm, content: value })
                               }
                               modules={{
@@ -2579,19 +2481,12 @@ export default function Admin() {
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                   [{ 'color': [] }, { 'background': [] }],
-                                  ['link', 'image', 'video'],
+                                  ['link'],
                                   ['clean']
                                 ],
                               }}
                               style={{ minHeight: '150px' }}
-                            /> : (
-                              <Textarea
-                                placeholder="Write news content"
-                                value={newsForm.content}
-                                onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
-                                rows={6}
-                              />
-                            )}
+                            />
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -2613,10 +2508,10 @@ export default function Admin() {
                             </Button>
                           </div>
                           <div data-testid="input-news-content-ar">
-                            {Quill ? <Quill
+                            <ReactQuill
                               theme="snow"
                               value={newsForm.contentAr}
-                              onChange={(value: string) =>
+                              onChange={(value) =>
                                 setNewsForm({ ...newsForm, contentAr: value })
                               }
                               modules={{
@@ -2631,15 +2526,7 @@ export default function Admin() {
                                 ],
                               }}
                               style={{ minHeight: '150px', direction: 'rtl' }}
-                            /> : (
-                              <Textarea
-                                placeholder="المحتوى"
-                                dir="rtl"
-                                value={newsForm.contentAr}
-                                onChange={(e) => setNewsForm({ ...newsForm, contentAr: e.target.value })}
-                                rows={6}
-                              />
-                            )}
+                            />
                           </div>
                         </div>
                         <Input
@@ -3597,14 +3484,14 @@ export default function Admin() {
                   resetSellerForm();
                 }
               }}>
-                    {canManageSellers ? (
-                      <DialogTrigger asChild>
-                        <Button data-testid="button-create-seller">
-                          <Plus className="h-4 w-4 mr-2" />
-                          New Seller
-                        </Button>
-                      </DialogTrigger>
-                    ) : null}
+                    <DialogTrigger asChild>
+                    {canManageSellers && (
+                    <Button data-testid="button-create-seller">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Seller
+                    </Button>
+                    )}
+                    </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -4180,14 +4067,14 @@ export default function Admin() {
                     resetAdminForm();
                   }
                 }}>
-                  {canAdmins ? (
-                    <DialogTrigger asChild>
-                      <Button data-testid="button-create-admin">
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Admin
-                      </Button>
-                    </DialogTrigger>
-                  ) : null}
+                  <DialogTrigger asChild>
+                    {canAdmins && (
+                    <Button data-testid="button-create-admin">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Admin
+                    </Button>
+                    )}
+                  </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>
@@ -5543,51 +5430,7 @@ export default function Admin() {
           direction: rtl;
           text-align: right;
         }
-  `}</style>
+      `}</style>
     </div>
-    </ErrorBoundary>
   );
-}
-
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: undefined };
-  }
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error: any, info: any) {
-    try { console.error("[Admin ErrorBoundary]", error, info); } catch {}
-  }
-  render() {
-    if (this.state.hasError) {
-      const message = this.state?.error ? String((this.state.error as any).message || this.state.error) : "";
-      const stack = (this.state?.error as any)?.stack ? String((this.state.error as any).stack) : "";
-      return (
-        <div className="min-h-screen w-full flex items-center justify-center">
-          <div className="max-w-lg w-full p-6 border rounded-md">
-            <h2 className="text-xl font-semibold mb-2">Admin UI crashed</h2>
-            <p className="text-sm mb-2">A runtime error occurred. Try reloading or navigating back.</p>
-            {message && (
-              <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800 whitespace-pre-wrap max-h-40 overflow-auto">
-                {message}
-              </div>
-            )}
-            {stack && (
-              <details className="mb-4 text-xs text-muted-foreground max-h-40 overflow-auto">
-                <summary className="cursor-pointer mb-1">Technical details</summary>
-                <pre className="whitespace-pre-wrap text-[10px] leading-snug">{stack}</pre>
-              </details>
-            )}
-            <div className="flex gap-2">
-              <Button onClick={() => { try { window.location.reload(); } catch {} }}>Reload</Button>
-              <Button variant="outline" onClick={() => { try { history.back(); } catch {} }}>Go Back</Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children as any;
-  }
 }

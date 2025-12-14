@@ -1,6 +1,4 @@
-import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import "react-quill/dist/quill.snow.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,49 +28,6 @@ export default function AdminAnnouncements() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const [Quill, setQuill] = useState<any>(null);
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const mod = await import("react-quill");
-        if (mounted) setQuill(mod.default);
-      } catch {}
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      [{ size: ["small", false, "large", "huge"] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ color: [] }, { background: [] }],
-      ["link", "image", "video"],
-      ["blockquote", "code-block"],
-      ["clean"],
-    ],
-  };
-
-  const quillFormats = [
-    "header",
-    "size",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "list",
-    "bullet",
-    "color",
-    "background",
-    "link",
-    "image",
-    "video",
-    "blockquote",
-    "code-block",
-  ];
-
   // Global announcement state
   const [gContentHtml, setGContentHtml] = useState("");
   const [gImageUrl, setGImageUrl] = useState("");
@@ -101,7 +56,6 @@ export default function AdminAnnouncements() {
 
   // Load global on mount
   useEffect(() => {
-    try { console.log("[AdminAnnouncements] mount"); } catch {}
     try {
       const u = new URL(window.location.href);
       const pre = u.searchParams.get("seller");
@@ -340,7 +294,6 @@ export default function AdminAnnouncements() {
   };
 
   return (
-    <ErrorBoundary>
     <div className="min-h-screen bg-background py-10">
       <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-8">
         <Card>
@@ -368,24 +321,8 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content</label>
-            {Quill ? (
-              <div
-                dir={gDirection === 'rtl' ? 'rtl' : 'ltr'}
-                style={{ textAlign: gDirection === 'rtl' ? 'right' : 'left' }}
-              >
-                <Quill
-                  theme="snow"
-                  value={gContentHtml}
-                  onChange={(value: string) => setGContentHtml(value)}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  style={{ minHeight: 150 }}
-                />
-              </div>
-            ) : (
-              <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
-            )}
+            <label className="text-sm font-medium">Content (HTML allowed)</label>
+            <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -450,24 +387,8 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={sLinkUrl} onChange={(e)=>setSLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content</label>
-            {Quill ? (
-              <div
-                dir={sDirection === 'rtl' ? 'rtl' : 'ltr'}
-                style={{ textAlign: sDirection === 'rtl' ? 'right' : 'left' }}
-              >
-                <Quill
-                  theme="snow"
-                  value={sContentHtml}
-                  onChange={(value: string) => setSContentHtml(value)}
-                  modules={quillModules}
-                  formats={quillFormats}
-                  style={{ minHeight: 150 }}
-                />
-              </div>
-            ) : (
-              <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
-            )}
+            <label className="text-sm font-medium">Content (HTML allowed)</label>
+            <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -524,36 +445,5 @@ export default function AdminAnnouncements() {
         </Card>
       </div>
     </div>
-    </ErrorBoundary>
   );
-}
-
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }>{
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: undefined };
-  }
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error: any, info: any) {
-    try { console.error("[AdminAnnouncements ErrorBoundary]", error, info); } catch {}
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen w-full flex items-center justify-center">
-          <div className="max-w-lg w-full p-6 border rounded-md">
-            <h2 className="text-xl font-semibold mb-2">Announcements UI crashed</h2>
-            <p className="text-sm mb-4">A runtime error occurred. Try reloading or navigating back.</p>
-            <div className="flex gap-2">
-              <Button onClick={() => { try { window.location.reload(); } catch {} }}>Reload</Button>
-              <Button variant="outline" onClick={() => { try { history.back(); } catch {} }}>Go Back</Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children as any;
-  }
 }

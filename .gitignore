@@ -8,7 +8,8 @@ node_modules/
 
 # Production
 /build
-/dist
+# Note: dist is no longer ignored so that built frontend assets can be inspected by tooling.
+# If you don’t want to commit dist, configure your VCS to ignore it separately.
 dist/server
 
 # Misc

@@ -1736,7 +1736,7 @@ export default function Admin() {
                                     ['bold', 'italic', 'underline', 'strike'],
                                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                     [{ 'color': [] }, { 'background': [] }],
-                                    ['link', 'blockquote', 'code-block'],
+                                    ['link', 'image', 'video', 'blockquote', 'code-block'],
                                     ['clean']
                                   ],
                                 }}
@@ -2193,7 +2193,7 @@ export default function Admin() {
                                 ['bold', 'italic', 'underline', 'strike'],
                                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                 [{ 'color': [] }, { 'background': [] }],
-                                ['link'],
+                                ['link', 'image', 'video'],
                                 ['clean']
                               ],
                             }}
@@ -2579,7 +2579,7 @@ export default function Admin() {
                                   ['bold', 'italic', 'underline'],
                                   [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                   [{ 'color': [] }, { 'background': [] }],
-                                  ['link'],
+                                  ['link', 'image', 'video'],
                                   ['clean']
                                 ],
                               }}

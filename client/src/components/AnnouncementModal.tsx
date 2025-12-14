@@ -22,6 +22,29 @@ type Announcement = {
   direction?: 'auto' | 'ltr' | 'rtl';
 };
 
+function getYouTubeEmbedUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+      const parts = u.pathname.split("/");
+      const idx = parts.indexOf("embed");
+      if (idx >= 0 && parts[idx + 1]) {
+        return `https://www.youtube.com/embed/${parts[idx + 1]}`;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function AnnouncementModal({ location }: { location: string }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -139,6 +162,8 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
   const finalDir = (data?.direction === 'rtl') ? 'rtl' : (data?.direction === 'ltr') ? 'ltr' : (language === "ar" ? 'rtl' : 'ltr');
   const finalAlign = finalDir === 'rtl' ? 'text-right' : 'text-left';
+  const videoEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
+  const isAudioLink = data.linkUrl ? /(\.mp3|\.ogg|\.wav|\.m4a)([?#]|$)/i.test(data.linkUrl) : false;
 
   return (
     <AnimatePresence>
@@ -202,13 +227,29 @@ export default function AnnouncementModal({ location }: { location: string }) {
             ) : null}
             <div className={`p-4 prose max-w-none ${finalAlign}`}>
               <div dangerouslySetInnerHTML={safeHtml} />
-              {data.linkUrl ? (
+              {videoEmbedUrl && (
+                <div className="mt-3 aspect-video">
+                  <iframe
+                    src={videoEmbedUrl}
+                    title="Announcement video"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+              {isAudioLink && !videoEmbedUrl && (
+                <div className="mt-3">
+                  <audio controls src={data.linkUrl || ""} className="w-full" />
+                </div>
+              )}
+              {data.linkUrl && !videoEmbedUrl && !isAudioLink && (
                 <div className="mt-3">
                   <a className="text-primary underline" href={data.linkUrl} target="_blank" rel="noreferrer">
                     Learn more
                   </a>
                 </div>
-              ) : null}
+              )}
             </div>
           </motion.div>
         </motion.div>

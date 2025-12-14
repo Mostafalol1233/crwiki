@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
+import "react-quill/dist/quill.snow.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +29,49 @@ type Announcement = {
 export default function AdminAnnouncements() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  const [Quill, setQuill] = useState<any>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const mod = await import("react-quill");
+        if (mounted) setQuill(mod.default);
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      [{ size: ["small", false, "large", "huge"] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }, { background: [] }],
+      ["link", "image", "video"],
+      ["blockquote", "code-block"],
+      ["clean"],
+    ],
+  };
+
+  const quillFormats = [
+    "header",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "color",
+    "background",
+    "link",
+    "image",
+    "video",
+    "blockquote",
+    "code-block",
+  ];
 
   // Global announcement state
   const [gContentHtml, setGContentHtml] = useState("");
@@ -324,8 +368,24 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content (HTML allowed)</label>
-            <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
+            <label className="text-sm font-medium">Content</label>
+            {Quill ? (
+              <div
+                dir={gDirection === 'rtl' ? 'rtl' : 'ltr'}
+                style={{ textAlign: gDirection === 'rtl' ? 'right' : 'left' }}
+              >
+                <Quill
+                  theme="snow"
+                  value={gContentHtml}
+                  onChange={(value: string) => setGContentHtml(value)}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  style={{ minHeight: 150 }}
+                />
+              </div>
+            ) : (
+              <Textarea value={gContentHtml} onChange={(e)=>setGContentHtml(e.target.value)} rows={8} />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -390,8 +450,24 @@ export default function AdminAnnouncements() {
             <label className="text-sm font-medium">Link URL</label>
             <Input value={sLinkUrl} onChange={(e)=>setSLinkUrl(e.target.value)} placeholder="https://..." />
 
-            <label className="text-sm font-medium">Content (HTML allowed)</label>
-            <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
+            <label className="text-sm font-medium">Content</label>
+            {Quill ? (
+              <div
+                dir={sDirection === 'rtl' ? 'rtl' : 'ltr'}
+                style={{ textAlign: sDirection === 'rtl' ? 'right' : 'left' }}
+              >
+                <Quill
+                  theme="snow"
+                  value={sContentHtml}
+                  onChange={(value: string) => setSContentHtml(value)}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  style={{ minHeight: 150 }}
+                />
+              </div>
+            ) : (
+              <Textarea value={sContentHtml} onChange={(e)=>setSContentHtml(e.target.value)} rows={8} />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

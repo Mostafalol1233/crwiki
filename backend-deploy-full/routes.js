@@ -536,13 +536,15 @@ export async function registerRoutes(app) {
                 'blockquote', 'pre', 'code',
                 'table', 'thead', 'tbody', 'tr', 'th', 'td',
                 'div', 'span',
-                'hr'
+                'hr',
+                'audio', 'video', 'source', 'iframe'
             ],
             ALLOWED_ATTR: [
                 'href', 'src', 'alt', 'title',
                 'style', 'class',
                 'width', 'height',
-                'target', 'rel'
+                'target', 'rel',
+                'controls', 'frameborder', 'allow', 'allowfullscreen'
             ],
             ALLOW_DATA_ATTR: false,
             KEEP_CONTENT: true

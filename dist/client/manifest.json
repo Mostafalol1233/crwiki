@@ -1,0 +1,13 @@
+{
+  "name": "CrossFire Wiki",
+  "short_name": "CF Wiki",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "description": "CrossFire Wiki — weapons, modes, ranks, and community guides.",
+  "icons": [
+    { "src": "/white-vafcoin.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/black-vafcon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -5168,13 +5168,15 @@ app.post(
     try {
         const insertDir = path.resolve("backend-deploy-full/uploads/insert");
         fs.mkdirSync(insertDir, { recursive: true });
-        app2.use("/insert", express.static(insertDir, { maxAge: "7d" }));
+        const imagesDir = path.resolve("backend-deploy-full/uploads/images");
+        try { fs.mkdirSync(imagesDir, { recursive: true }); } catch {}
+        app2.use("/images", express.static(imagesDir, { maxAge: "7d" }));
     } catch {}
     // Upload to predictable /insert/{element_name}.{ext}
     const insertStorage = multer.diskStorage({
         destination: function (_req, _file, cb) {
             try {
-                const dir = path.resolve("backend-deploy-full/uploads/insert");
+                const dir = path.resolve("backend-deploy-full/uploads/images");
                 fs.mkdirSync(dir, { recursive: true });
                 cb(null, dir);
             } catch (e) {
@@ -5185,7 +5187,7 @@ app.post(
             const raw = String(req.body?.element_name || file.originalname || "file");
             const base = raw.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
             const ext = (file.originalname.split(".").pop() || "").toLowerCase();
-            const allowed = ["png","jpg","jpeg","gif","webp","mp3","wav"]; 
+            const allowed = ["png","jpg","jpeg","gif","webp","mp4","webm","ogg","mp3","wav"]; 
             const finalExt = allowed.includes(ext) ? ext : "bin";
             cb(null, `${base}.${finalExt}`);
         }
@@ -5196,7 +5198,7 @@ app.post(
             if (!req.file) return res.status(400).json({ error: "No file provided" });
             const settings = await SiteSettingsModel.findOne().lean();
             const base = (settings?.publicBaseUrl && settings.publicBaseUrl.trim()) ? settings.publicBaseUrl.trim() : `${req.protocol}://${req.get("host")}`;
-            const url = `${base}/insert/${req.file.filename}`;
+            const url = `${base}/images/${req.file.filename}`;
             res.json({ url });
         } catch (error) {
             res.status(500).json({ error: error.message });

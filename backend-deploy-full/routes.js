@@ -9,6 +9,9 @@ import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, req
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers";
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons } from "./services/scraper";
 import DOMPurify from 'isomorphic-dompurify';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -544,11 +547,33 @@ export async function registerRoutes(app) {
                 'style', 'class',
                 'width', 'height',
                 'target', 'rel',
-                'controls', 'frameborder', 'allow', 'allowfullscreen'
+                'controls', 'frameborder', 'allow', 'allowfullscreen',
+                'loading', 'decoding', 'fetchpriority'
             ],
             ALLOW_DATA_ATTR: false,
             KEEP_CONTENT: true
         });
+    };
+    const isAllowedMediaUrl = (url) => {
+        if (!url || typeof url !== 'string') return false;
+        const rel = /^\/images\/[A-Za-z0-9._\/-]+$/i;
+        const cf = /^https?:\/\/(?:www\.)?crossfire\.wiki\/images\/[A-Za-z0-9._\/-]+$/i;
+        const catbox = /^https?:\/\/files\.catbox\.moe\/[A-Za-z0-9._\/-]+$/i;
+        return rel.test(url) || cf.test(url) || catbox.test(url);
+    };
+    const validateMediaUrlsInHtml = (html) => {
+        const srcs = [];
+        const regex = /<(?:img|video|source)\b[^>]*?\s(?:src)\s*=\s*"([^"]+)"/gi;
+        let m;
+        while ((m = regex.exec(html))) {
+            srcs.push(m[1]);
+        }
+        for (const u of srcs) {
+            if (!isAllowedMediaUrl(u)) {
+                return { ok: false, url: u };
+            }
+        }
+        return { ok: true };
     };
     app.post("/api/events", requireAuth, requireEventManager, async (req, res) => {
         try {
@@ -1420,6 +1445,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             if (data.contentAr) {
                 data.contentAr = sanitizeHTML(data.contentAr);
             }
+            if (data.image && !isAllowedMediaUrl(data.image)) {
+                return res.status(400).json({ error: "Invalid image URL. Use /images, https://crossfire.wiki/images, or files.catbox.moe" });
+            }
+            const check = validateMediaUrlsInHtml((data.htmlContent && String(data.htmlContent)) || String(data.content || ''));
+            if (!check.ok) {
+                return res.status(400).json({ error: `Invalid media URL in content: ${check.url}` });
+            }
             const news = await storage.createNews(data);
             res.status(201).json(news);
         }
@@ -1435,6 +1467,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
             if (updates.contentAr) {
                 updates.contentAr = sanitizeHTML(updates.contentAr);
+            }
+            if (updates.image && !isAllowedMediaUrl(updates.image)) {
+                return res.status(400).json({ error: "Invalid image URL. Use /images, https://crossfire.wiki/images, or files.catbox.moe" });
+            }
+            const check = validateMediaUrlsInHtml((updates.htmlContent && String(updates.htmlContent)) || String(updates.content || ''));
+            if (!check.ok) {
+                return res.status(400).json({ error: `Invalid media URL in content: ${check.url}` });
             }
             const news = await storage.updateNews(req.params.id, updates);
             if (!news) {
@@ -1963,6 +2002,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             if (!req.file) {
                 return res.status(400).json({ error: "No image file provided" });
             }
+            const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+            if (!allowed.includes(req.file.mimetype)) {
+                return res.status(400).json({ error: "Unsupported image type" });
+            }
             // Create form data for catbox.moe
             const formData = new FormData();
             formData.append('reqtype', 'fileupload');
@@ -1978,7 +2021,11 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 throw new Error('Failed to upload to catbox.moe');
             }
             const imageUrl = await response.text();
-            res.json({ url: imageUrl.trim() });
+            const url = imageUrl.trim();
+            if (!isAllowedMediaUrl(url)) {
+                return res.status(400).json({ error: "Upload succeeded but URL not allowed" });
+            }
+            res.json({ url });
         }
         catch (error) {
             res.status(500).json({ error: error.message });
@@ -2399,3 +2446,177 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     const httpServer = createServer(app);
     return httpServer;
 }
+    const slugifySafe = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const ensureDir = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch {} };
+    const IMAGES_DIR = path.resolve('backend-deploy-full/uploads/images');
+    const BACKUP_DIR = path.resolve('backend-deploy-full/uploads/images_backup');
+    ensureDir(IMAGES_DIR);
+    ensureDir(BACKUP_DIR);
+
+    async function optimizeToWebP(srcPath, destBase, kind) {
+        const sizes = [
+            { name: 'thumb', width: 320 },
+            { name: 'medium', width: 800 },
+            { name: 'large', width: 1200 },
+        ];
+        const outputs = [];
+        for (const s of sizes) {
+            const outPath = path.join(IMAGES_DIR, `${destBase}-${s.name}.webp`);
+            const pipeline = sharp(srcPath).resize({ width: s.width, height: 1080, fit: 'inside' });
+            if (kind === 'graphics') {
+                await pipeline.webp({ lossless: true }).toFile(outPath);
+            } else {
+                await pipeline.webp({ quality: 72 }).toFile(outPath);
+            }
+            outputs.push({ size: s.name, path: outPath });
+        }
+        const mainOut = path.join(IMAGES_DIR, `${destBase}.webp`);
+        const mainPipe = sharp(srcPath).resize({ width: 1920, height: 1080, fit: 'inside' });
+        if (kind === 'graphics') {
+            await mainPipe.webp({ lossless: true }).toFile(mainOut);
+        } else {
+            await mainPipe.webp({ quality: 72 }).toFile(mainOut);
+        }
+        outputs.push({ size: 'main', path: mainOut });
+        return outputs;
+    }
+
+    function pickKindFromContext(title, category) {
+        const t = String(title || '').toLowerCase();
+        const c = String(category || '').toLowerCase();
+        if (c.includes('event') || t.includes('screenshot')) return 'graphics';
+        return 'photo';
+    }
+
+    function buildSeoFilename({ title, category, date, feature }) {
+        const game = 'crossfire';
+        const theme = slugifySafe(category || 'general');
+        const content = slugifySafe(title || 'image');
+        const year = String((date && new Date(date).getFullYear()) || new Date().getFullYear());
+        const feat = slugifySafe(feature || 'feature');
+        return `${game}-${theme}-${content}-${year}-${feat}`;
+    }
+
+    const LOG_DIR = path.resolve('backend-deploy-full/logs');
+    ensureDir(LOG_DIR);
+    const LOG_FILE = path.join(LOG_DIR, 'image-processing.jsonl');
+    const logChange = (entry) => { try { fs.appendFileSync(LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch {} };
+
+    app.post('/api/admin/images/process', requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const dryRun = String(req.query.dryRun || '').toLowerCase() === 'true';
+            const items = [];
+            const [posts, news, events] = await Promise.all([
+                storage.getAllPosts().catch(() => []),
+                storage.getAllNews().catch(() => []),
+                storage.getAllEvents().catch(() => []),
+            ]);
+            const processImage = async (srcUrl, ctx) => {
+                if (!srcUrl || !isAllowedMediaUrl(srcUrl)) return null;
+                const localRel = srcUrl.replace(/^https?:\/\/[^/]+/, '');
+                const filePath = localRel.startsWith('/images/') ? path.join(IMAGES_DIR, localRel.replace('/images/', '')) : null;
+                if (!filePath || !fs.existsSync(filePath)) return null;
+                const ext = path.extname(filePath).toLowerCase();
+                const base = path.basename(filePath, ext);
+                const backup = path.join(BACKUP_DIR, `${base}_original${ext}`);
+                if (!dryRun) {
+                    try { fs.copyFileSync(filePath, backup); } catch {}
+                }
+                const destBase = buildSeoFilename({ title: ctx.title, category: ctx.category, date: ctx.date, feature: ctx.feature });
+                const kind = pickKindFromContext(ctx.title, ctx.category);
+                const outputs = dryRun ? [] : await optimizeToWebP(filePath, destBase, kind);
+                const mainUrl = `/images/${destBase}.webp`;
+                logChange({ action: 'optimize', from: srcUrl, to: mainUrl, ctx });
+                return { mainUrl, outputs };
+            };
+
+            const updateHtmlImgs = (html, transform) => {
+                return String(html || '').replace(/<img\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
+                    const t = transform(src);
+                    const addAttrs = ' loading="lazy" decoding="async"';
+                    if (!t) return `<img${pre}src="${src}"${post}${addAttrs}>`;
+                    return `<img${pre}src="${t}"${post}${addAttrs}>`;
+                });
+            };
+
+            let processed = 0;
+
+            for (const p of posts) {
+                const ctx = { title: p.title, category: p.category, date: p.createdAt, feature: 'article' };
+                const updImg = await processImage(p.image, ctx);
+                const newImage = updImg?.mainUrl || p.image;
+                const newContent = updateHtmlImgs(p.content, (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src));
+                if (!dryRun) await storage.updatePost(p.id, { image: newImage, content: newContent });
+                items.push({ type: 'post', id: p.id, from: p.image, to: newImage });
+                processed++;
+            }
+
+            for (const n of news) {
+                const ctx = { title: n.title, category: n.category, date: n.createdAt, feature: 'news' };
+                const updImg = await processImage(n.image, ctx);
+                const newImage = updImg?.mainUrl || n.image;
+                const rawHtml = (n.htmlContent && n.htmlContent.trim().length > 0 ? n.htmlContent : n.content) || '';
+                const newHtml = updateHtmlImgs(rawHtml, (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src));
+                if (!dryRun) await storage.updateNews(n.id, { image: newImage, htmlContent: newHtml });
+                items.push({ type: 'news', id: n.id, from: n.image, to: newImage });
+                processed++;
+            }
+
+            for (const e of events) {
+                const ctx = { title: e.title, category: e.type || 'events', date: e.date, feature: 'event' };
+                const updImg = await processImage(e.image, ctx);
+                const newImage = updImg?.mainUrl || e.image;
+                if (!dryRun) await storage.updateEvent(e.id, { image: newImage });
+                items.push({ type: 'event', id: e.id, from: e.image, to: newImage });
+                processed++;
+            }
+
+            res.json({ success: true, processed, items, dryRun });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Image sitemap
+    app.get('/images-sitemap.xml', async (_req, res) => {
+        try {
+            const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+            const [posts, news, events] = await Promise.all([
+                storage.getAllPosts().catch(() => []),
+                storage.getAllNews().catch(() => []),
+                storage.getAllEvents().catch(() => []),
+            ]);
+            const urls = [];
+            const pushImage = (pageUrl, imageUrl, title, caption) => {
+                urls.push({ pageUrl, imageUrl, title, caption });
+            };
+            for (const p of posts) {
+                const pageUrl = `${base}/article/${p.post_slug || p.id}`;
+                if (p.image) pushImage(pageUrl, `${base}${p.image.startsWith('/') ? '' : '/'}${p.image}`, p.title, p.summary || p.title);
+            }
+            for (const n of news) {
+                const pageUrl = `${base}/news/${n.id}`;
+                if (n.image) pushImage(pageUrl, `${base}${n.image.startsWith('/') ? '' : '/'}${n.image}`, n.title, n.category || n.title);
+            }
+            for (const e of events) {
+                const pageUrl = `${base}/events/${e.event_name_slug || e.id}`;
+                if (e.image) pushImage(pageUrl, `${base}${e.image.startsWith('/') ? '' : '/'}${e.image}`, e.title, e.type || 'event');
+            }
+            const body = ['<?xml version="1.0" encoding="UTF-8"?>',
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+                ...urls.map(u => [
+                    '  <url>',
+                    `    <loc>${u.pageUrl}</loc>`,
+                    '    <image:image>',
+                    `      <image:loc>${u.imageUrl}</image:loc>`,
+                    `      <image:title>${String(u.title || '').replace(/&/g, '&amp;')}</image:title>`,
+                    `      <image:caption>${String(u.caption || '').replace(/&/g, '&amp;')}</image:caption>`,
+                    '    </image:image>',
+                    '  </url>'
+                ].join('\n')),
+                '</urlset>'].join('\n');
+            res.type('application/xml').send(body);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });

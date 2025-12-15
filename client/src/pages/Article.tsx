@@ -167,6 +167,19 @@ export default function Article() {
           },
         }}
       />
+      {finalArticle.image && (
+        <SEOHead
+          onlySchema
+          schemaType="ImageObject"
+          schemaData={{
+            contentUrl: finalArticle.image,
+            name: finalArticle.title,
+            description: (finalArticle.summary || finalArticle.title || '').substring(0, 200),
+            width: 1200,
+            height: 800,
+          }}
+        />
+      )}
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
           <Breadcrumbs items={breadcrumbs} />

@@ -674,8 +674,8 @@ export default function Admin() {
       resetNewsForm();
       toast({ title: "News item created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create news item", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to create news item", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -689,8 +689,8 @@ export default function Admin() {
       resetNewsForm();
       toast({ title: "News item updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update news item", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to update news item", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -2618,6 +2618,34 @@ export default function Admin() {
                         
                         <Button
                           onClick={() => {
+                            const isAllowedMediaUrl = (url: string) => {
+                              if (!url) return true;
+                              const rel = /^\/images\/[A-Za-z0-9._\/-]+$/i;
+                              const cf = /^https?:\/\/(?:www\.)?crossfire\.wiki\/images\/[A-Za-z0-9._\/-]+$/i;
+                              const catbox = /^https?:\/\/files\.catbox\.moe\/[A-Za-z0-9._\/-]+$/i;
+                              return rel.test(url) || cf.test(url) || catbox.test(url);
+                            };
+                            const validateMediaUrlsInHtml = (html: string) => {
+                              const srcs: string[] = [];
+                              const regex = /<(?:img|video|source)\b[^>]*?\s(?:src)\s*=\s*"([^"]+)"/gi;
+                              let m: RegExpExecArray | null;
+                              while ((m = regex.exec(html))) srcs.push(m[1]);
+                              for (const u of srcs) if (!isAllowedMediaUrl(u)) return u;
+                              return null;
+                            };
+                            if (!newsForm.title.trim() || !newsForm.content.trim()) {
+                              toast({ title: "Title and content required", variant: "destructive" });
+                              return;
+                            }
+                            if (newsForm.image && !isAllowedMediaUrl(newsForm.image)) {
+                              toast({ title: "Invalid image URL", description: "Use /images or crossfire.wiki/images or files.catbox.moe", variant: "destructive" });
+                              return;
+                            }
+                            const bad = validateMediaUrlsInHtml(newsForm.content || "");
+                            if (bad) {
+                              toast({ title: "Invalid media URL in content", description: bad, variant: "destructive" });
+                              return;
+                            }
                             const data = {
                               ...newsForm,
                               seoKeywords: newsForm.seoKeywords

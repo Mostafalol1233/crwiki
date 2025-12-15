@@ -50,7 +50,7 @@ export default function NewsDetail() {
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const { data: newsItem, isLoading } = useQuery<NewsItemWithSlug>({
+  const { data: newsItem, isLoading, error } = useQuery<NewsItemWithSlug>({
     queryKey: ["news", slug || legacyId],
     enabled: !!(slug || legacyId),
     queryFn: async () => {
@@ -74,7 +74,14 @@ export default function NewsDetail() {
       }
       return res.json();
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
+
+  useEffect(() => {
+    const rtl = language === 'ar' || (showTranslation && !!(newsItem?.titleAr || newsItem?.contentAr));
+    setIsRTL(rtl);
+  }, [language, showTranslation, newsItem?.titleAr, newsItem?.contentAr]);
 
   const { data: fallbackPost } = useQuery<any>({
     queryKey: ["/api/posts/" + (slug || legacyId)],
@@ -107,6 +114,14 @@ export default function NewsDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg text-muted-foreground">{t("loading")}</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-destructive">Error loading</div>
       </div>
     );
   }
@@ -164,7 +179,20 @@ export default function NewsDetail() {
           dateModified: newsItem.updatedAt ? new Date(newsItem.updatedAt).toISOString() : new Date().toISOString(),
         }}
       />
-      <div className="min-h-screen bg-background">
+      {newsItem.image && (
+        <SEOHead
+          onlySchema
+          schemaType="ImageObject"
+          schemaData={{
+            contentUrl: newsItem.image,
+            name: selectedTitle,
+            description: (selectedContentRaw || '').replace(/<[^>]*>/g, '').substring(0, 200) || selectedTitle,
+            width: 1200,
+            height: 800,
+          }}
+        />
+      )}
+      <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
           <Breadcrumbs items={breadcrumbs} />
           <div className="flex items-center justify-between mb-6">
@@ -218,7 +246,7 @@ export default function NewsDetail() {
               {newsItem.category}
             </Badge>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black leading-tight mb-4" data-testid="text-news-title">
+          <h1 className={`text-5xl md:text-6xl font-black leading-tight mb-4 ${isRTL ? 'text-right' : ''}`} data-testid="text-news-title">
             {selectedTitle}
           </h1>
           {newsItem.contentAr && (
@@ -227,7 +255,7 @@ export default function NewsDetail() {
               <span dir="rtl">{newsItem.contentAr.replace(/<[^>]*>?/gm, "").slice(0, 180)}...</span>
             </p>
           )}
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className={`flex items-center gap-2 text-muted-foreground text-sm ${isRTL ? 'justify-end' : ''}`}>
             <span data-testid="text-news-author">{newsItem.author}</span>
             <span>•</span>
             <span data-testid="text-news-date">{newsItem.dateRange}</span>

@@ -556,7 +556,13 @@ export const insertNewsSchema = z.object({
   title: z.string(),
   titleAr: z.string().optional(),
   dateRange: z.string(),
-  image: z.string(),
+  image: z.string().refine((url) => {
+    if (url === '') return true;
+    const crossfireImagesAbs = /^https?:\/\/(?:www\.)?crossfire\.wiki\/images\/[A-Za-z0-9._\/-]+$/i;
+    const crossfireImagesRel = /^\/images\/[A-Za-z0-9._\/-]+$/i;
+    const catbox = /^https?:\/\/files\.catbox\.moe\/[A-Za-z0-9._\/-]+$/i;
+    return crossfireImagesAbs.test(url) || crossfireImagesRel.test(url) || catbox.test(url);
+  }, { message: "Image URL must be under /images or https://crossfire.wiki/images or files.catbox.moe" }),
   category: z.string(),
   content: z.string(),
   contentAr: z.string().optional(),

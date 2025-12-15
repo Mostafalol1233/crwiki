@@ -149,6 +149,19 @@ export default function EventDetail() {
           eventAttendanceMode: "OnlineEventAttendanceMode",
         }}
       />
+      {event.image && (
+        <SEOHead
+          onlySchema
+          schemaType="ImageObject"
+          schemaData={{
+            contentUrl: event.image,
+            name: title,
+            description: (description || title || '').replace(/<[^>]*>/g, '').substring(0, 200),
+            width: 1200,
+            height: 800,
+          }}
+        />
+      )}
       <SEOHead
         onlySchema
         schemaType="BreadcrumbList"

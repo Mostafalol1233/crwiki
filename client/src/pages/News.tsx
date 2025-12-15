@@ -36,12 +36,14 @@ type NewsItem = NewsItemNews | NewsItemPost;
 export default function News() {
   const { t, language, toggleLanguage } = useLanguage();
 
-  const { data: newsItems = [], isLoading: newsLoading } = useQuery<NewsItem[]>({
+  const { data: newsItems = [], isLoading: newsLoading, error: newsError } = useQuery<NewsItem[]>({
     queryKey: ["/api/news"],
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: posts = [], isLoading: postsLoading } = useQuery<any[]>({
+  const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<any[]>({
     queryKey: ["/api/posts"],
+    staleTime: 5 * 60 * 1000,
   });
 
   const allNews = useMemo(() => {
@@ -74,6 +76,13 @@ export default function News() {
       </div>
     );
   }
+  if (newsError || postsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-destructive">Error loading</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -82,7 +91,7 @@ export default function News() {
         description={"Latest CrossFire news, posts, and updates from the community and official sources."}
         canonicalPath="/news"
       />
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20" dir={language === "ar" ? "rtl" : "ltr"}>
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="flex items-center justify-between mb-12">
           <h1 className="text-3xl md:text-4xl font-bold">
@@ -100,46 +109,32 @@ export default function News() {
             <Globe className="h-5 w-5" />
           </Button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {allNews.map((item, index) => (
-          <div key={item.id}>
-              <Link href={item.type === 'post' ? `/article/${(item as any).post_slug || item.id}` : `/news/${item.id}`}>
-                <Card
-                  className="relative overflow-hidden cursor-pointer bg-transparent border-0 shadow-none"
-                  data-testid={`card-news-${item.id}`}
-                >
-                  <div className={`relative ${index === 0 ? "aspect-[16/9]" : "aspect-[16/9]"} overflow-hidden rounded-lg bg-muted/30`}>
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      width="400"
-                      height="300"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <Badge
-                        className="backdrop-blur-sm bg-primary/90 text-primary-foreground border-primary/30"
-                        data-testid={`badge-category-${item.category.toLowerCase()}`}
-                      >
-                        {item.category}
-                      </Badge>
-                    </div>
-
-                    <div className="absolute inset-x-0 bottom-0 p-2 md:p-3 text-white bg-gradient-to-t from-black/70 via-black/20 to-transparent">
-                      <h3
-                        className="text-sm md:text-base font-semibold leading-tight px-2 py-1"
-                      >
-                        {language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title}
-                      </h3>
-                      <p className="text-xs md:text-sm text-white/85 px-2 pb-1">{item.dateRange}</p>
-                    </div>
+        <div className="space-y-6 mb-12">
+          {allNews.map((item) => {
+            const href = item.type === 'post' ? `/article/${(item as any).post_slug || item.id}` : `/news/${item.id}`;
+            const titleText = language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title;
+            const dateText = (() => {
+              const raw = (item as any).createdAt || item.dateRange || (item as any).date;
+              const d = raw && !isNaN(Date.parse(raw)) ? new Date(raw) : null;
+              try {
+                return d ? new Intl.DateTimeFormat(language === 'ar' ? 'ar' : undefined, { year: 'numeric', month: 'long', day: 'numeric' }).format(d) : (item.dateRange || '');
+              } catch {
+                return item.dateRange || '';
+              }
+            })();
+            return (
+              <Link key={item.id} href={href}>
+                <Card className="bg-transparent border-b border-muted/40 rounded-none shadow-none py-3" data-testid={`card-news-${item.id}`}>
+                  <h3 className={`text-xl md:text-2xl font-semibold ${language === 'ar' ? 'text-right' : ''}`}>{titleText}</h3>
+                  <div className={`text-sm text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
+                    <span>{dateText}</span>
+                    <span> • </span>
+                    <span>{item.author}</span>
                   </div>
                 </Card>
               </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="flex justify-center">

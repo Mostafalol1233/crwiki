@@ -13,7 +13,7 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
-import { extractKeywords, generateSeoTitle, summarize, generateSeoImage, parseFlexibleDate, formatEnglishDate } from './seo-utils.js';
+import { extractKeywords, generateSeoTitle, summarize, generateSeoImage, parseFlexibleDate, formatEnglishDate, slugifySafe } from './seo-utils.js';
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 // Rate limiter for image uploads - 10 uploads per hour per IP
@@ -927,8 +927,9 @@ export async function registerRoutes(app) {
             // Add posts
             posts.forEach((post) => {
                 const lastmod = post.updatedAt || post.createdAt;
+                const slug = post.post_slug || post.id;
                 sitemap += `  <url>
-    <loc>${baseUrl}/post/${post.id}</loc>
+    <loc>${baseUrl}/article/${slug}</loc>
     <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -938,8 +939,9 @@ export async function registerRoutes(app) {
             // Add news
             news.forEach((item) => {
                 const lastmod = item.updatedAt || item.createdAt;
+                const slug = item.news_slug || item.id;
                 sitemap += `  <url>
-    <loc>${baseUrl}/news/${item.id}</loc>
+    <loc>${baseUrl}/news/${slug}</loc>
     <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -948,8 +950,9 @@ export async function registerRoutes(app) {
             });
             // Add events
             events.forEach((event) => {
+                const slug = event.event_name_slug || event.id;
                 sitemap += `  <url>
-    <loc>${baseUrl}/events/${event.id}</loc>
+    <loc>${baseUrl}/events/${slug}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1529,6 +1532,120 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 return res.status(404).json({ error: "News item not found" });
             }
             res.json({ success: true });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Admin: Merge & Optimize News — preview changes
+    app.get("/api/admin/news/merge/preview", requireAuth, requireNewsManager, async (_req, res) => {
+        try {
+            const baseUrl = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+            const news = await storage.getAllNews();
+            const changes = [];
+            for (const n of news) {
+                const updates = {};
+                const canonical = `${baseUrl}/news/${n.news_slug || slugifySafe(n.title)}`;
+                if (!n.canonicalUrl || n.canonicalUrl !== canonical) {
+                    updates.canonicalUrl = canonical;
+                }
+                const content = String(n.htmlContent || n.content || '');
+                let nextContent = content;
+                const hrefRegex = /(href=\")((?:https?:\/\/)?(?:www\.)?crossfire\.wiki)?\/?(news|article|events)\/([A-Za-z0-9_-]+)(\")/gi;
+                nextContent = nextContent.replace(hrefRegex, (_m, p1, _host, kind, ident, p5) => {
+                    let slug = ident;
+                    if (kind === 'news') slug = (n.news_slug || slugifySafe(n.title));
+                    return `${p1}${baseUrl}/${kind}/${slug}${p5}`;
+                });
+                // Ensure <img> alt text
+                nextContent = nextContent.replace(/<img(?![^>]*\salt=)[^>]*>/gi, (tag) => {
+                    const alt = (n.seoTitle || n.title || '').replace(/"/g, '');
+                    const withAlt = tag.replace(/<img/i, `<img alt=\"${alt}\"`);
+                    return withAlt;
+                });
+                if (nextContent !== content) {
+                    updates.htmlContent = nextContent;
+                }
+                const kws = extractKeywords(n.content || n.htmlContent || '');
+                const seoTitle = n.seoTitle && n.seoTitle.trim() ? n.seoTitle : generateSeoTitle(n.title, n.content || n.htmlContent || '');
+                const seoDescription = n.seoDescription && n.seoDescription.trim() ? n.seoDescription : summarize(n.content || n.htmlContent || '');
+                const seoKeywords = Array.from(new Set([...(n.seoKeywords || []), ...kws]));
+                const itemChanges = {};
+                if (seoTitle !== n.seoTitle) itemChanges.seoTitle = { from: n.seoTitle || '', to: seoTitle };
+                if (seoDescription !== n.seoDescription) itemChanges.seoDescription = { from: n.seoDescription || '', to: seoDescription };
+                if (JSON.stringify(seoKeywords) !== JSON.stringify(n.seoKeywords || [])) itemChanges.seoKeywords = { from: n.seoKeywords || [], to: seoKeywords };
+                if (updates.canonicalUrl) itemChanges.canonicalUrl = { from: n.canonicalUrl || '', to: updates.canonicalUrl };
+                if (updates.htmlContent) itemChanges.htmlContent = { preview: true };
+                let imageChange = null;
+                try {
+                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: n.title, title: seoTitle || n.title, keywords: seoKeywords });
+                    if (seoImage?.url && seoImage.url !== n.ogImage) {
+                        itemChanges.ogImage = { from: n.ogImage || '', to: seoImage.url };
+                    }
+                } catch {}
+                if (Object.keys(itemChanges).length > 0) {
+                    changes.push({ id: n.id, title: n.title, news_slug: n.news_slug || '', changes: itemChanges });
+                }
+            }
+            res.json({ count: changes.length, changes });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Admin: Merge & Optimize News — apply changes
+    app.post("/api/admin/news/merge", requireAuth, requireNewsManager, async (req, res) => {
+        const apply = String(req.body?.apply || 'true').toLowerCase() !== 'false';
+        try {
+            const baseUrl = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+            const news = await storage.getAllNews();
+            const changelog = [];
+            for (const n of news) {
+                const updates = {};
+                const canonical = `${baseUrl}/news/${n.news_slug || slugifySafe(n.title)}`;
+                if (!n.canonicalUrl || n.canonicalUrl !== canonical) {
+                    updates.canonicalUrl = canonical;
+                }
+                const content = String(n.htmlContent || n.content || '');
+                let nextContent = content;
+                const hrefRegex = /(href=\")((?:https?:\/\/)?(?:www\.)?crossfire\.wiki)?\/?(news|article|events)\/([A-Za-z0-9_-]+)(\")/gi;
+                nextContent = nextContent.replace(hrefRegex, (_m, p1, _host, kind, ident, p5) => {
+                    let slug = ident;
+                    if (kind === 'news') slug = (n.news_slug || slugifySafe(n.title));
+                    return `${p1}${baseUrl}/${kind}/${slug}${p5}`;
+                });
+                nextContent = nextContent.replace(/<img(?![^>]*\salt=)[^>]*>/gi, (tag) => {
+                    const alt = (n.seoTitle || n.title || '').replace(/"/g, '');
+                    const withAlt = tag.replace(/<img/i, `<img alt=\"${alt}\"`);
+                    return withAlt;
+                });
+                if (nextContent !== content) {
+                    updates.htmlContent = nextContent;
+                }
+                const kws = extractKeywords(n.content || n.htmlContent || '');
+                updates.seoKeywords = Array.from(new Set([...(n.seoKeywords || []), ...kws]));
+                updates.seoTitle = n.seoTitle && n.seoTitle.trim() ? n.seoTitle : generateSeoTitle(n.title, n.content || n.htmlContent || '');
+                updates.seoDescription = n.seoDescription && n.seoDescription.trim() ? n.seoDescription : summarize(n.content || n.htmlContent || '');
+                try {
+                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: n.title, title: updates.seoTitle || n.title, keywords: updates.seoKeywords });
+                    updates.ogImage = seoImage.url;
+                    updates.twitterImage = seoImage.url;
+                } catch {}
+                updates.schemaType = n.schemaType || 'NewsArticle';
+                if (Object.keys(updates).length > 0) {
+                    changelog.push({ id: n.id, title: n.title, updates });
+                    if (apply) {
+                        await storage.updateNews(n.id, updates);
+                    }
+                }
+            }
+            res.json({ success: true, applied: apply, updated: apply ? changelog.length : 0, changelog });
         }
         catch (error) {
             res.status(500).json({ error: error.message });

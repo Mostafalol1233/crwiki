@@ -244,7 +244,7 @@ export default function EventDetail() {
 
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span data-testid="text-date">{event.date}</span>
+                <span className="date-text" data-testid="text-date">{event.date}</span>
               </div>
 
               {hasTranslation && (

@@ -72,6 +72,11 @@ export function AdvancedContentManager() {
     image: "",
   });
 
+  // Merge & Optimize state
+  const [mergeLoading, setMergeLoading] = useState(false);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [mergePreview, setMergePreview] = useState<any>(null);
+
   const saveToLocalStorage = (newItems: ContentItem[]) => {
     localStorage.setItem("advancedContent", JSON.stringify(newItems));
     setItems(newItems);
@@ -465,6 +470,82 @@ export function AdvancedContentManager() {
 
           {/* NEWS TAB */}
           <TabsContent value="news" className="space-y-4">
+            {/* Merge & Optimize */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Merge & Optimize News</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        setSelectedItem(null);
+                        setMergeLoading(true);
+                        const res = await fetch('/api/admin/news/merge/preview', { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+                        const data = await res.json();
+                        setMergePreview(data);
+                        setShowMergeDialog(true);
+                      } catch (e: any) {
+                        toast({ title: 'Preview failed', description: e?.message || 'Unknown error', variant: 'destructive' });
+                      } finally {
+                        setMergeLoading(false);
+                      }
+                    }}
+                  >
+                    {mergeLoading ? 'Loading…' : 'Preview Merge'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        setMergeLoading(true);
+                        const res = await fetch('/api/admin/news/merge', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, body: JSON.stringify({ apply: true }) });
+                        const data = await res.json();
+                        setMergePreview(data);
+                        toast({ title: 'Merge applied', description: `${data.updated || 0} items updated` });
+                      } catch (e: any) {
+                        toast({ title: 'Merge failed', description: e?.message || 'Unknown error', variant: 'destructive' });
+                      } finally {
+                        setMergeLoading(false);
+                      }
+                    }}
+                  >
+                    Apply Merge
+                  </Button>
+                </div>
+                <Dialog open={showMergeDialog} onOpenChange={setShowMergeDialog}>
+                  <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>Merge Preview</DialogTitle>
+                    </DialogHeader>
+                    <div className="max-h-[50vh] overflow-auto space-y-3 text-sm">
+                      {mergePreview?.changes?.length ? mergePreview.changes.map((c: any) => (
+                        <div key={c.id} className="border rounded-md p-2">
+                          <div className="font-medium">{c.title}</div>
+                          <div className="text-muted-foreground">ID: {c.id} • Slug: {c.news_slug}</div>
+                          <ul className="list-disc pl-5 mt-1">
+                            {Object.entries(c.changes).map(([k, v]: any) => (
+                              <li key={k}>
+                                {k}: {v?.preview ? 'content updated' : (typeof v === 'object' ? `${v.from} → ${v.to}` : String(v))}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )) : (
+                        <div className="text-muted-foreground">No changes detected</div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowMergeDialog(false)}>Close</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle>Create News</CardTitle>

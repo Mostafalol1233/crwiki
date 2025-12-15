@@ -151,7 +151,7 @@ export default function News() {
                       <Card className="bg-transparent border-b border-muted/40 rounded-none shadow-none py-3" data-testid={`card-news-${item.id}`}>
                         <h3 className={`text-xl md:text-2xl font-semibold ${language === 'ar' ? 'text-right' : ''}`}>{titleText}</h3>
                         <div className={`text-sm text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
-                          <span>{dateText}</span>
+                          <span className="date-text">{dateText}</span>
                           <span> • </span>
                           <span>{item.author}</span>
                         </div>

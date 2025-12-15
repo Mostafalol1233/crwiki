@@ -157,7 +157,7 @@ export default function Category() {
                           <h3 className="text-xl font-semibold mb-2 line-clamp-2">{event.title}</h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                             <Calendar className="h-4 w-4" />
-                            <span>{event.date}</span>
+                            <span className="date-text">{event.date}</span>
                           </div>
                           {event.description && (
                             <p className="text-sm text-muted-foreground line-clamp-3">

@@ -91,7 +91,7 @@ export default function TutorialsPage() {
                         {tutorial.createdAt && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>{format(new Date(tutorial.createdAt), "MMM d, yyyy")}</span>
+                            <span className="date-text">{format(new Date(tutorial.createdAt), "MMM d, yyyy")}</span>
                           </div>
                         )}
                       </div>

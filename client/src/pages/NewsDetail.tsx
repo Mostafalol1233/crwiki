@@ -261,7 +261,7 @@ export default function NewsDetail() {
             </p>
           )}
           <div className={`flex items-center gap-2 text-muted-foreground text-sm ${isRTL ? 'justify-end' : ''}`}>
-            <span data-testid="text-news-date">{englishDate} • {newsItem.author || 'Bimora Team'}</span>
+            <span className="date-text" data-testid="text-news-date">{englishDate} • {newsItem.author || 'Bimora Team'}</span>
           </div>
         </section>
 

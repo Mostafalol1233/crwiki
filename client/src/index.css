@@ -416,6 +416,14 @@
       opacity: 0.4;
     }
   }
+
+  /* Consistent date text styling with WCAG AA contrast */
+  .date-text {
+    color: #2D3748; /* slate-700 */
+  }
+  .dark .date-text {
+    color: #CBD5E0; /* slate-300 */
+  }
 }
 
 /* Neon Vox-style animated text */

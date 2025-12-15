@@ -86,7 +86,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground break-words whitespace-normal">
             <span className="font-medium truncate">{article.author}</span>
             <span>•</span>
-            <span className="truncate">{article.date}</span>
+            <span className="truncate date-text">{article.date}</span>
             <span>•</span>
             <div className="flex items-center gap-1 truncate">
               <Clock className="h-3 w-3 flex-shrink-0" />

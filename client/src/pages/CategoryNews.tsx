@@ -113,7 +113,7 @@ export default function CategoryNews() {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      <span>{item.dateRange}</span>
+                      <span className="date-text">{item.dateRange}</span>
                     </div>
                     <span>•</span>
                     <div className="flex items-center gap-1">

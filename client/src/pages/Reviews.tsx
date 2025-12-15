@@ -339,14 +339,46 @@ export default function Reviews() {
               <div>
                 <div className="w-full max-w-md h-48 rounded-md overflow-hidden flex items-center justify-center">
                   {(sellerPage?.blocks?.length || 0) > 0 ? (
-                    <img
-                      src={sellerPage!.blocks[0].image}
-                      alt={`${sellerByName.seller.name} image`}
-                      className="w-full h-full object-contain cursor-pointer"
-                      loading="lazy"
-                      onClick={() => { setPreviewImageUrl(sellerPage!.blocks[0].image); setPreviewImageDescription(sellerPage!.blocks[0].description || sellerPage?.descriptionHtml || ""); setPreviewContentHtml(sellerPage!.blocks[0].contentHtml || ""); setIsImagePreviewOpen(true); }}
-                      data-testid={`img-seller-hero-${sellerByName.seller.id}`}
-                    />
+                    <div className="relative group w-full h-full">
+                      <img
+                        src={sellerPage!.blocks[0].image}
+                        alt={`${sellerByName.seller.name} image`}
+                        className="w-full h-full object-contain cursor-pointer"
+                        loading="lazy"
+                        onClick={() => { setPreviewImageUrl(sellerPage!.blocks[0].image); setPreviewImageDescription(sellerPage!.blocks[0].description || sellerPage?.descriptionHtml || ""); setPreviewContentHtml(sellerPage!.blocks[0].contentHtml || ""); setIsImagePreviewOpen(true); }}
+                        data-testid={`img-seller-hero-${sellerByName.seller.id}`}
+                      />
+                      {(jwtPayload?.role === 'super_admin') && (
+                        <button
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full h-8 w-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          title="Delete image"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!sellerSlug) return;
+                            const ok = window.confirm('Delete this image from seller page?');
+                            if (!ok) return;
+                            try {
+                              const nextBlocks = (sellerPage?.blocks || []).filter((_b, i) => i !== 0);
+                              const nextImages = (sellerPage?.images || []).filter((url) => url !== sellerPage!.blocks[0].image);
+                              const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, {
+                                method: 'PATCH',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                },
+                                body: JSON.stringify({ images: nextImages, blocks: nextBlocks })
+                              });
+                              if (!res.ok) throw new Error(await res.text());
+                              const updated = await res.json();
+                              (sellerPage as any).images = updated.images;
+                              (sellerPage as any).blocks = updated.blocks;
+                            } catch (err: any) {
+                              alert(err?.message || 'Failed to delete image');
+                            }
+                          }}
+                        >×</button>
+                      )}
+                    </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">No image yet</div>
                   )}
@@ -362,7 +394,7 @@ export default function Reviews() {
                 <h3 className="font-semibold mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {sellerPage!.blocks.slice(1).map((blk: { image: string; contentHtml: string; description: string }, idx: number) => (
-                    <div key={idx} className="flex items-center justify-center">
+                    <div key={idx} className="relative flex items-center justify-center group">
                       <img
                         src={blk.image}
                         alt={`${sellerByName.seller.name} ${idx + 2}`}
@@ -370,6 +402,36 @@ export default function Reviews() {
                         loading="lazy"
                         onClick={() => { setPreviewImageUrl(blk.image); setPreviewImageDescription(blk.description || sellerPage?.descriptionHtml || ""); setPreviewContentHtml(blk.contentHtml || ""); setIsImagePreviewOpen(true); }}
                       />
+                      {(jwtPayload?.role === 'super_admin') && (
+                        <button
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full h-7 w-7 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          title="Delete image"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!sellerSlug) return;
+                            const ok = window.confirm('Delete this image from seller page?');
+                            if (!ok) return;
+                            try {
+                              const nextBlocks = (sellerPage?.blocks || []).filter((b, i) => i !== (idx + 1));
+                              const nextImages = (sellerPage?.images || []).filter((url) => url !== blk.image);
+                              const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, {
+                                method: 'PATCH',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                },
+                                body: JSON.stringify({ images: nextImages, blocks: nextBlocks })
+                              });
+                              if (!res.ok) throw new Error(await res.text());
+                              const updated = await res.json();
+                              (sellerPage as any).images = updated.images;
+                              (sellerPage as any).blocks = updated.blocks;
+                            } catch (err: any) {
+                              alert(err?.message || 'Failed to delete image');
+                            }
+                          }}
+                        >×</button>
+                      )}
                     </div>
                   ))}
                 </div>

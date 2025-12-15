@@ -153,6 +153,11 @@ export default function NewsDetail() {
   const selectedTitle = showTranslation && newsItem.titleAr ? newsItem.titleAr : newsItem.title;
   const selectedContentRaw = showTranslation && newsItem.contentAr ? newsItem.contentAr : (newsItem.htmlContent && newsItem.htmlContent.trim().length > 0 ? newsItem.htmlContent : newsItem.content);
 
+  const englishDate = (() => {
+    const d = newsItem.createdAt ? new Date(newsItem.createdAt as any) : new Date();
+    return d.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  })();
+
   return (
     <>
       <SEOHead
@@ -256,9 +261,7 @@ export default function NewsDetail() {
             </p>
           )}
           <div className={`flex items-center gap-2 text-muted-foreground text-sm ${isRTL ? 'justify-end' : ''}`}>
-            <span data-testid="text-news-author">{newsItem.author}</span>
-            <span>•</span>
-            <span data-testid="text-news-date">{newsItem.dateRange}</span>
+            <span data-testid="text-news-date">{englishDate} • {newsItem.author || 'Bimora Team'}</span>
           </div>
         </section>
 

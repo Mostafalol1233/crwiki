@@ -13,6 +13,7 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
+import { extractKeywords, generateSeoTitle, summarize, generateSeoImage, parseFlexibleDate, formatEnglishDate } from './seo-utils.js';
 // Configure multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 // Rate limiter for image uploads - 10 uploads per hour per IP
@@ -548,7 +549,8 @@ export async function registerRoutes(app) {
                 'width', 'height',
                 'target', 'rel',
                 'controls', 'frameborder', 'allow', 'allowfullscreen',
-                'loading', 'decoding', 'fetchpriority'
+                'loading', 'decoding', 'fetchpriority',
+                'preload', 'muted', 'autoplay'
             ],
             ALLOW_DATA_ATTR: false,
             KEEP_CONTENT: true
@@ -563,7 +565,7 @@ export async function registerRoutes(app) {
     };
     const validateMediaUrlsInHtml = (html) => {
         const srcs = [];
-        const regex = /<(?:img|video|source)\b[^>]*?\s(?:src)\s*=\s*"([^"]+)"/gi;
+        const regex = /<(?:img|video|audio|source)\b[^>]*?\s(?:src)\s*=\s*"([^"]+)"/gi;
         let m;
         while ((m = regex.exec(html))) {
             srcs.push(m[1]);
@@ -1452,6 +1454,20 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             if (!check.ok) {
                 return res.status(400).json({ error: `Invalid media URL in content: ${check.url}` });
             }
+            const parsedDate = parseFlexibleDate(data.dateRange, Date.now());
+            data.dateRange = formatEnglishDate(parsedDate);
+            const kws = extractKeywords(data.content);
+            data.seoKeywords = Array.from(new Set([...(data.seoKeywords || []), ...kws]));
+            data.seoTitle = data.seoTitle && data.seoTitle.trim() ? data.seoTitle : generateSeoTitle(data.title, data.content);
+            data.seoDescription = data.seoDescription && data.seoDescription.trim() ? data.seoDescription : summarize(data.content);
+            try {
+                const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                fs.mkdirSync(imagesDir, { recursive: true });
+                const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: data.title, title: data.seoTitle || data.title, keywords: data.seoKeywords });
+                data.ogImage = seoImage.url;
+                data.twitterImage = seoImage.url;
+            } catch {}
+            data.schemaType = data.schemaType || 'NewsArticle';
             const news = await storage.createNews(data);
             res.status(201).json(news);
         }
@@ -1474,6 +1490,27 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             const check = validateMediaUrlsInHtml((updates.htmlContent && String(updates.htmlContent)) || String(updates.content || ''));
             if (!check.ok) {
                 return res.status(400).json({ error: `Invalid media URL in content: ${check.url}` });
+            }
+            if (typeof updates.dateRange === 'string' && updates.dateRange.trim()) {
+                const parsedDate = parseFlexibleDate(updates.dateRange, Date.now());
+                updates.dateRange = formatEnglishDate(parsedDate);
+            }
+            const rebuild = String((req.query.rebuildSeo || '')).toLowerCase() === 'true';
+            if (rebuild || !updates.seoTitle || !updates.seoDescription || !updates.seoKeywords || !updates.ogImage) {
+                const title = updates.title;
+                const content = updates.content || updates.htmlContent || '';
+                const kws = extractKeywords(content);
+                updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
+                updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
+                updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
+                try {
+                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
+                    updates.ogImage = seoImage.url;
+                    updates.twitterImage = seoImage.url;
+                } catch {}
+                updates.schemaType = updates.schemaType || 'NewsArticle';
             }
             const news = await storage.updateNews(req.params.id, updates);
             if (!news) {
@@ -2462,7 +2499,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         const outputs = [];
         for (const s of sizes) {
             const outPath = path.join(IMAGES_DIR, `${destBase}-${s.name}.webp`);
-            const pipeline = sharp(srcPath).resize({ width: s.width, height: 1080, fit: 'inside' });
+            const pipeline = sharp(srcPath, { animated: true }).resize({ width: s.width, height: 1080, fit: 'inside' });
             if (kind === 'graphics') {
                 await pipeline.webp({ lossless: true }).toFile(outPath);
             } else {
@@ -2471,7 +2508,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             outputs.push({ size: s.name, path: outPath });
         }
         const mainOut = path.join(IMAGES_DIR, `${destBase}.webp`);
-        const mainPipe = sharp(srcPath).resize({ width: 1920, height: 1080, fit: 'inside' });
+        const mainPipe = sharp(srcPath, { animated: true }).resize({ width: 1920, height: 1080, fit: 'inside' });
         if (kind === 'graphics') {
             await mainPipe.webp({ lossless: true }).toFile(mainOut);
         } else {
@@ -2530,13 +2567,51 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 return { mainUrl, outputs };
             };
 
-            const updateHtmlImgs = (html, transform) => {
-                return String(html || '').replace(/<img\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
-                    const t = transform(src);
+            const processMediaFile = async (srcUrl, ctx) => {
+                if (!srcUrl || !isAllowedMediaUrl(srcUrl)) return null;
+                const localRel = srcUrl.replace(/^https?:\/\/[^/]+/, '');
+                const filePath = localRel.startsWith('/images/') ? path.join(IMAGES_DIR, localRel.replace('/images/', '')) : null;
+                if (!filePath || !fs.existsSync(filePath)) return null;
+                const ext = path.extname(filePath).toLowerCase();
+                const destBase = buildSeoFilename({ title: ctx.title, category: ctx.category, date: ctx.date, feature: ctx.feature });
+                const newPath = path.join(IMAGES_DIR, `${destBase}${ext}`);
+                const base = path.basename(filePath);
+                const backup = path.join(BACKUP_DIR, `${base.replace(ext, '')}_original${ext}`);
+                if (!dryRun) {
+                    try { fs.copyFileSync(filePath, backup); } catch {}
+                    try { fs.renameSync(filePath, newPath); } catch {}
+                }
+                const newUrl = `/images/${destBase}${ext}`;
+                logChange({ action: 'rename', from: srcUrl, to: newUrl, ctx });
+                return { newUrl };
+            };
+
+            const updateHtmlMedia = (html, transformImg, transformSrc) => {
+                let s = String(html || '');
+                s = s.replace(/<img\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
+                    const t = transformImg(src);
                     const addAttrs = ' loading="lazy" decoding="async"';
                     if (!t) return `<img${pre}src="${src}"${post}${addAttrs}>`;
                     return `<img${pre}src="${t}"${post}${addAttrs}>`;
                 });
+                s = s.replace(/<video\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
+                    const t = transformSrc(src);
+                    const addAttrs = ' preload="none"';
+                    if (!t) return `<video${pre}src="${src}"${post}${addAttrs}>`;
+                    return `<video${pre}src="${t}"${post}${addAttrs}>`;
+                });
+                s = s.replace(/<audio\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
+                    const t = transformSrc(src);
+                    const addAttrs = ' preload="none"';
+                    if (!t) return `<audio${pre}src="${src}"${post}${addAttrs}>`;
+                    return `<audio${pre}src="${t}"${post}${addAttrs}>`;
+                });
+                s = s.replace(/<source\b([^>]*?)src="([^"]+)"([^>]*)>/gi, (m, pre, src, post) => {
+                    const t = transformSrc(src);
+                    if (!t) return `<source${pre}src="${src}"${post}>`;
+                    return `<source${pre}src="${t}"${post}>`;
+                });
+                return s;
             };
 
             let processed = 0;
@@ -2545,7 +2620,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 const ctx = { title: p.title, category: p.category, date: p.createdAt, feature: 'article' };
                 const updImg = await processImage(p.image, ctx);
                 const newImage = updImg?.mainUrl || p.image;
-                const newContent = updateHtmlImgs(p.content, (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src));
+                const newContent = updateHtmlMedia(p.content,
+                    (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src),
+                    (src) => {
+                        const m = processMediaFile(src, { title: p.title, category: p.category, date: p.createdAt, feature: 'article' });
+                        return m ? (m.then(v => v?.newUrl).catch(() => src)) : src;
+                    }
+                );
                 if (!dryRun) await storage.updatePost(p.id, { image: newImage, content: newContent });
                 items.push({ type: 'post', id: p.id, from: p.image, to: newImage });
                 processed++;
@@ -2556,7 +2637,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 const updImg = await processImage(n.image, ctx);
                 const newImage = updImg?.mainUrl || n.image;
                 const rawHtml = (n.htmlContent && n.htmlContent.trim().length > 0 ? n.htmlContent : n.content) || '';
-                const newHtml = updateHtmlImgs(rawHtml, (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src));
+                const newHtml = updateHtmlMedia(rawHtml,
+                    (src) => (isAllowedMediaUrl(src) ? (updImg?.mainUrl || src) : src),
+                    (src) => {
+                        const m = processMediaFile(src, { title: n.title, category: n.category, date: n.createdAt, feature: 'news' });
+                        return m ? (m.then(v => v?.newUrl).catch(() => src)) : src;
+                    }
+                );
                 if (!dryRun) await storage.updateNews(n.id, { image: newImage, htmlContent: newHtml });
                 items.push({ type: 'news', id: n.id, from: n.image, to: newImage });
                 processed++;

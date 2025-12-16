@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Copy, Trash2, Plus, Check, X, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,6 +77,13 @@ export function AdvancedContentManager() {
   const [mergeLoading, setMergeLoading] = useState(false);
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [mergePreview, setMergePreview] = useState<any>(null);
+
+  // Upload enhancements
+  const [uploadMethod, setUploadMethod] = useState<"server" | "catbox">("server");
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [lastUploadedUrl, setLastUploadedUrl] = useState<string>("");
+  const [lastUploadedMethod, setLastUploadedMethod] = useState<"server" | "catbox" | null>(null);
+  const publicBase = typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki";
 
   const saveToLocalStorage = (newItems: ContentItem[]) => {
     localStorage.setItem("advancedContent", JSON.stringify(newItems));
@@ -290,10 +298,45 @@ export function AdvancedContentManager() {
             <CardTitle>Upload File (Predictable URL)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={uploadMethod === "server" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUploadMethod("server")}
+                  >
+                    Server link
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  crossfire.wiki/images — SEO-friendly, hosted on your server
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={uploadMethod === "catbox" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUploadMethod("catbox")}
+                  >
+                    Catbox link
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  catbox.moe — legacy hosting method, external CDN
+                </TooltipContent>
+              </Tooltip>
+              {lastUploadedUrl && (
+                <Badge variant={lastUploadedMethod === "server" ? "default" : "secondary"}>
+                  {lastUploadedMethod === "server" ? "Server" : "Catbox"}
+                </Badge>
+              )}
+            </div>
             <div className="grid sm:grid-cols-3 gap-2">
               <Input id="elementName" placeholder="element_name (used in URL)" />
               <Input id="fileInput" type="file" />
-              <Button id="uploadBtn" onClick={async () => {
+              <Button id="uploadBtn" disabled={uploadLoading} onClick={async () => {
                 const elName = (document.getElementById('elementName') as HTMLInputElement)?.value || '';
                 const fileEl = (document.getElementById('fileInput') as HTMLInputElement);
                 const file = fileEl?.files?.[0];
@@ -302,17 +345,49 @@ export function AdvancedContentManager() {
                 fd.append('element_name', elName);
                 fd.append('file', file);
                 try {
-                  const res = await fetch('/api/upload/insert', { method: 'POST', body: fd, headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` } });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data?.error || 'Upload failed');
-                  toast({ title: 'Uploaded', description: data.url });
-                  navigator.clipboard.writeText(String(data.url));
+                  setUploadLoading(true);
+                  if (uploadMethod === "server") {
+                    const res = await fetch('/api/upload/insert', { method: 'POST', body: fd, headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` } });
+                    const data = await res.json();
+                    if (!res.ok || !data?.url) throw new Error(data?.error || 'Upload failed');
+                    setLastUploadedUrl(String(data.url));
+                    setLastUploadedMethod("server");
+                    toast({ title: 'Uploaded (server)', description: String(data.url) });
+                    navigator.clipboard.writeText(String(data.url));
+                  } else {
+                    const fd2 = new FormData();
+                    fd2.append('image', file);
+                    const res = await fetch('/api/upload-image', { method: 'POST', body: fd2, headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` } });
+                    const data = await res.json();
+                    if (!res.ok || !data?.url) throw new Error(data?.error || 'Upload failed');
+                    setLastUploadedUrl(String(data.url));
+                    setLastUploadedMethod("catbox");
+                    toast({ title: 'Uploaded (catbox)', description: String(data.url) });
+                    navigator.clipboard.writeText(String(data.url));
+                  }
                 } catch (e:any) {
                   toast({ title: 'Upload error', description: String(e.message || e), variant: 'destructive' });
+                } finally {
+                  setUploadLoading(false);
                 }
               }}>Upload</Button>
+              {lastUploadedUrl && (
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(lastUploadedUrl)}>Copy</Button>
+                  <Button variant="ghost" size="sm" onClick={async () => {
+                    try {
+                      if ((navigator as any).share) {
+                        await (navigator as any).share({ url: lastUploadedUrl, title: 'Shared link' });
+                      } else {
+                        copyToClipboard(lastUploadedUrl);
+                      }
+                    } catch {}
+                  }}>Share</Button>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">URL format: crossfire.wiki/insert/${'{element_name}.{extension}'}</p>
+            <p className="text-xs text-muted-foreground">URL format: {publicBase}/images/${'{element_name}.{extension}'}</p>
+            <p className="text-xs text-muted-foreground">Tip: Server links are optimized for SEO and reliability. Catbox links are legacy and may change.</p>
           </CardContent>
         </Card>
 
@@ -544,6 +619,64 @@ export function AdvancedContentManager() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              </CardContent>
+            </Card>
+            {/* Migration (images & media) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Migration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        setSelectedItem(null);
+                        setMergeLoading(true);
+                        const res = await fetch('/api/admin/images/process?dryRun=true', { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+                        const data = await res.json();
+                        const newsCount = Array.isArray(data?.items) ? data.items.filter((i: any) => i.type === 'news').length : 0;
+                        setMergePreview({ previewOnly: true, total: data?.processed || 0, newsCount });
+                        toast({ title: 'Migration preview', description: `News items affected: ${newsCount}` });
+                      } catch (e: any) {
+                        toast({ title: 'Preview failed', description: e?.message || 'Unknown error', variant: 'destructive' });
+                      } finally {
+                        setMergeLoading(false);
+                      }
+                    }}
+                  >
+                    Preview Migration
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      let timer: any = null;
+                      try {
+                        setMergeLoading(true);
+                        timer = setInterval(() => {
+                          // indeterminate progress indicator via repeated toasts
+                          toast({ title: 'Migrating…', description: 'Processing images and media links', duration: 1500 });
+                        }, 1600);
+                        const res = await fetch('/api/admin/images/process', { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
+                        const data = await res.json();
+                        clearInterval(timer);
+                        setMergePreview({ applied: true, processed: data?.processed || 0 });
+                        const newsDone = Array.isArray(data?.items) ? data.items.filter((i: any) => i.type === 'news').length : 0;
+                        toast({ title: 'Migration complete', description: `Processed ${data?.processed || 0} items • News: ${newsDone}` });
+                      } catch (e: any) {
+                        if (timer) clearInterval(timer);
+                        toast({ title: 'Migration failed', description: e?.message || 'Unknown error', variant: 'destructive' });
+                      } finally {
+                        setMergeLoading(false);
+                      }
+                    }}
+                  >
+                    Run Migration
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             <Card>

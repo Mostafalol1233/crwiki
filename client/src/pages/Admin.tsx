@@ -141,6 +141,7 @@ export default function Admin() {
   const [sellerReviews, setSellerReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [csrfToken, setCsrfToken] = useState("");
+  const [migrationCounts, setMigrationCounts] = useState<{ events: number; posts: number; news: number } | null>(null);
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [activeTicket, setActiveTicket] = useState<any | null>(null);
   const [activeTicketReplies, setActiveTicketReplies] = useState<any[]>([]);
@@ -1063,6 +1064,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      setMigrationCounts({ events: data?.eventsUpdated || 0, posts: data?.postsUpdated || 0, news: data?.newsUpdated || 0 });
       toast({ title: "Slugs migrated", description: `Events: ${data?.eventsUpdated || 0}, Posts: ${data?.postsUpdated || 0}, News: ${data?.newsUpdated || 0}` });
     },
     onError: (error: any) => {
@@ -2092,6 +2094,13 @@ export default function Admin() {
                       {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
                     </Button>
                     )}
+                    {migrationCounts && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Events: {migrationCounts.events}</Badge>
+                        <Badge variant="secondary">Posts: {migrationCounts.posts}</Badge>
+                        <Badge variant="secondary">News: {migrationCounts.news}</Badge>
+                      </div>
+                    )}
                     <Dialog open={isCreatingEvent} onOpenChange={(open) => {
                       setIsCreatingEvent(open);
                       if (!open) {
@@ -2616,6 +2625,20 @@ export default function Admin() {
                         
                         <Button
                           onClick={() => {
+                            const len = (s: string) => (s || '').trim().length;
+                            if (newsForm.seoTitle && (len(newsForm.seoTitle) < 30 || len(newsForm.seoTitle) > 70)) {
+                              toast({ title: "SEO Title length", description: "Use 30–70 characters", variant: "destructive" });
+                              return;
+                            }
+                            if (newsForm.seoDescription && (len(newsForm.seoDescription) < 80 || len(newsForm.seoDescription) > 200)) {
+                              toast({ title: "Meta description length", description: "Use 80–200 characters", variant: "destructive" });
+                              return;
+                            }
+                            const kwList = (newsForm.seoKeywords || '').split(',').map((k)=> k.trim()).filter(Boolean);
+                            if (kwList.length > 20) {
+                              toast({ title: "Too many keywords", description: "Limit to 20 or fewer", variant: "destructive" });
+                              return;
+                            }
                             const isAllowedMediaUrl = (url: string) => {
                               if (!url) return true;
                               const rel = /^\/images\/[A-Za-z0-9._\/-]+$/i;

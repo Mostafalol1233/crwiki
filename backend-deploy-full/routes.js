@@ -176,6 +176,8 @@ export async function registerRoutes(app) {
     app.post('/api/admin/migrate-slugs', requireAuth, requireSuperAdmin, async (_req, res) => {
         try {
             const baseUrl = await resolveBaseUrl();
+            const site = await storage.getSiteSettings().catch(() => ({}));
+            const defaultOg = site.seoOgImage || '';
             let eventsUpdated = 0, postsUpdated = 0, newsUpdated = 0;
             const [events, posts, news] = await Promise.all([
                 storage.getAllEvents().catch(() => []),
@@ -188,9 +190,23 @@ export async function registerRoutes(app) {
                 const baseSlug = e.event_name_slug || e.title || '';
                 const unique = ensureUniqueSlug(events, 'event_name_slug', baseSlug);
                 const canonical = `${baseUrl}/events/${unique}`;
-                const needs = (!e.event_name_slug || e.event_name_slug !== unique || !e.canonicalUrl || e.canonicalUrl !== canonical);
-                if (needs) {
-                    await storage.updateEvent(e.id || e._id, { event_name_slug: unique, canonicalUrl: canonical });
+                const updates = {};
+                if (!e.event_name_slug || e.event_name_slug !== unique) updates.event_name_slug = unique;
+                if (!e.canonicalUrl || e.canonicalUrl !== canonical) updates.canonicalUrl = canonical;
+                const baseText = String(e.description || e.title || '');
+                const kws = extractKeywords(baseText);
+                const nextKeywords = Array.from(new Set([...(e.seoKeywords || []), ...kws]));
+                if (!e.seoKeywords || String(e.seoKeywords.join(',')) !== String(nextKeywords.join(','))) updates.seoKeywords = nextKeywords;
+                const nextTitle = (e.seoTitle && e.seoTitle.trim()) ? e.seoTitle : generateSeoTitle(e.title, baseText);
+                if (!e.seoTitle || e.seoTitle !== nextTitle) updates.seoTitle = nextTitle;
+                const nextDesc = (e.seoDescription && e.seoDescription.trim()) ? e.seoDescription : summarize(baseText);
+                if (!e.seoDescription || e.seoDescription !== nextDesc) updates.seoDescription = nextDesc;
+                if (!e.ogImage) updates.ogImage = defaultOg || e.ogImage;
+                if (!e.twitterImage) updates.twitterImage = updates.ogImage || e.twitterImage;
+                updates.schemaType = e.schemaType || 'Event';
+                if (Object.keys(updates).length > 0) {
+                    await storage.updateEvent(e.id || e._id, updates);
+                    logSeoChange({ action: 'normalize_event_seo', id: e.id || e._id, updates });
                     eventsUpdated++;
                 }
             }
@@ -198,9 +214,23 @@ export async function registerRoutes(app) {
             for (const p of posts) {
                 const unique = ensureUniqueSlug(posts, 'post_slug', p.post_slug || p.title || '');
                 const canonical = `${baseUrl}/article/${unique}`;
-                const needs = (!p.post_slug || p.post_slug !== unique || !p.canonicalUrl || p.canonicalUrl !== canonical);
-                if (needs) {
-                    await storage.updatePost(p.id || p._id, { post_slug: unique, canonicalUrl: canonical });
+                const updates = {};
+                if (!p.post_slug || p.post_slug !== unique) updates.post_slug = unique;
+                if (!p.canonicalUrl || p.canonicalUrl !== canonical) updates.canonicalUrl = canonical;
+                const baseText = String(p.content || p.summary || p.title || '');
+                const kws = extractKeywords(baseText);
+                const nextKeywords = Array.from(new Set([...(p.seoKeywords || []), ...kws]));
+                if (!p.seoKeywords || String(p.seoKeywords.join(',')) !== String(nextKeywords.join(','))) updates.seoKeywords = nextKeywords;
+                const nextTitle = (p.seoTitle && p.seoTitle.trim()) ? p.seoTitle : generateSeoTitle(p.title, baseText);
+                if (!p.seoTitle || p.seoTitle !== nextTitle) updates.seoTitle = nextTitle;
+                const nextDesc = (p.seoDescription && p.seoDescription.trim()) ? p.seoDescription : summarize(baseText);
+                if (!p.seoDescription || p.seoDescription !== nextDesc) updates.seoDescription = nextDesc;
+                if (!p.ogImage) updates.ogImage = defaultOg || p.ogImage;
+                if (!p.twitterImage) updates.twitterImage = updates.ogImage || p.twitterImage;
+                updates.schemaType = p.schemaType || 'Article';
+                if (Object.keys(updates).length > 0) {
+                    await storage.updatePost(p.id || p._id, updates);
+                    logSeoChange({ action: 'normalize_post_seo', id: p.id || p._id, updates });
                     postsUpdated++;
                 }
             }
@@ -208,9 +238,23 @@ export async function registerRoutes(app) {
             for (const n of news) {
                 const unique = ensureUniqueSlug(news, 'news_slug', n.news_slug || n.title || '');
                 const canonical = `${baseUrl}/news/${unique}`;
-                const needs = (!n.news_slug || n.news_slug !== unique || !n.canonicalUrl || n.canonicalUrl !== canonical);
-                if (needs) {
-                    await storage.updateNews(n.id || n._id, { news_slug: unique, canonicalUrl: canonical });
+                const updates = {};
+                if (!n.news_slug || n.news_slug !== unique) updates.news_slug = unique;
+                if (!n.canonicalUrl || n.canonicalUrl !== canonical) updates.canonicalUrl = canonical;
+                const baseText = String(n.htmlContent || n.content || n.title || '');
+                const kws = extractKeywords(baseText);
+                const nextKeywords = Array.from(new Set([...(n.seoKeywords || []), ...kws]));
+                if (!n.seoKeywords || String(n.seoKeywords.join(',')) !== String(nextKeywords.join(','))) updates.seoKeywords = nextKeywords;
+                const nextTitle = (n.seoTitle && n.seoTitle.trim()) ? n.seoTitle : generateSeoTitle(n.title, baseText);
+                if (!n.seoTitle || n.seoTitle !== nextTitle) updates.seoTitle = nextTitle;
+                const nextDesc = (n.seoDescription && n.seoDescription.trim()) ? n.seoDescription : summarize(baseText);
+                if (!n.seoDescription || n.seoDescription !== nextDesc) updates.seoDescription = nextDesc;
+                if (!n.ogImage) updates.ogImage = defaultOg || n.ogImage;
+                if (!n.twitterImage) updates.twitterImage = updates.ogImage || n.twitterImage;
+                updates.schemaType = n.schemaType || 'NewsArticle';
+                if (Object.keys(updates).length > 0) {
+                    await storage.updateNews(n.id || n._id, updates);
+                    logSeoChange({ action: 'normalize_news_seo', id: n.id || n._id, updates });
                     newsUpdated++;
                 }
             }
@@ -517,6 +561,18 @@ export async function registerRoutes(app) {
             const data = insertPostSchema.parse(req.body);
             const readingTime = data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
+            const kws = extractKeywords(String(data.content || ''));
+            data.seoKeywords = Array.from(new Set([...(data.seoKeywords || []), ...kws]));
+            data.seoTitle = data.seoTitle && data.seoTitle.trim() ? data.seoTitle : generateSeoTitle(data.title, data.content);
+            data.seoDescription = data.seoDescription && data.seoDescription.trim() ? data.seoDescription : summarize(data.content);
+            try {
+                const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                fs.mkdirSync(imagesDir, { recursive: true });
+                const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: data.title, title: data.seoTitle || data.title, keywords: data.seoKeywords });
+                data.ogImage = seoImage.url;
+                data.twitterImage = seoImage.url;
+            } catch {}
+            data.schemaType = data.schemaType || 'Article';
             const all = await storage.getAllPosts().catch(() => []);
             const baseUrl = await resolveBaseUrl();
             const baseSlug = data.post_slug || data.title || '';
@@ -543,6 +599,22 @@ export async function registerRoutes(app) {
             }
             if (updates.content && !updates.summary) {
                 updates.summary = generateSummary(updates.content);
+            }
+            if (updates.title || updates.content || updates.seoTitle || updates.seoDescription || updates.seoKeywords) {
+                const title = updates.title || '';
+                const content = updates.content || '';
+                const kws = extractKeywords(String(content || ''));
+                updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
+                updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
+                updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
+                try {
+                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'post', title: updates.seoTitle || title, keywords: updates.seoKeywords });
+                    updates.ogImage = seoImage.url;
+                    updates.twitterImage = seoImage.url;
+                } catch {}
+                updates.schemaType = updates.schemaType || 'Article';
             }
             const post = await storage.updatePost(req.params.id, updates);
             if (!post) {
@@ -692,6 +764,19 @@ export async function registerRoutes(app) {
             if (data.descriptionAr) {
                 data.descriptionAr = sanitizeHTML(data.descriptionAr);
             }
+            const baseText = String(data.description || data.title || '');
+            const kws = extractKeywords(baseText);
+            data.seoKeywords = Array.from(new Set([...(data.seoKeywords || []), ...kws]));
+            data.seoTitle = data.seoTitle && data.seoTitle.trim() ? data.seoTitle : generateSeoTitle(data.title, baseText);
+            data.seoDescription = data.seoDescription && data.seoDescription.trim() ? data.seoDescription : summarize(baseText);
+            try {
+                const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                fs.mkdirSync(imagesDir, { recursive: true });
+                const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: data.title, title: data.seoTitle || data.title, keywords: data.seoKeywords });
+                data.ogImage = seoImage.url;
+                data.twitterImage = seoImage.url;
+            } catch {}
+            data.schemaType = data.schemaType || 'Event';
             const all = await storage.getAllEvents().catch(() => []);
             const baseUrl = await resolveBaseUrl();
             const baseSlug = data.event_name_slug || data.title || '';
@@ -712,6 +797,22 @@ export async function registerRoutes(app) {
             }
             if (updates.descriptionAr) {
                 updates.descriptionAr = sanitizeHTML(updates.descriptionAr);
+            }
+            if (updates.title || updates.description || updates.seoTitle || updates.seoDescription || updates.seoKeywords) {
+                const title = updates.title || '';
+                const content = String(updates.description || title || '');
+                const kws = extractKeywords(content);
+                updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
+                updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
+                updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
+                try {
+                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'event', title: updates.seoTitle || title, keywords: updates.seoKeywords });
+                    updates.ogImage = seoImage.url;
+                    updates.twitterImage = seoImage.url;
+                } catch {}
+                updates.schemaType = updates.schemaType || 'Event';
             }
             const event = await storage.updateEvent(req.params.id, updates);
             if (!event) {
@@ -1396,6 +1497,12 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 reviewVerificationPrompt: raw.reviewVerificationPrompt ?? "",
                 reviewVerificationTimecode: raw.reviewVerificationTimecode ?? "",
                 announcementsEnabled: toBoolean(raw.announcementsEnabled),
+                publicBaseUrl: raw.publicBaseUrl ?? "",
+                seoTitle: raw.seoTitle ?? "",
+                seoDescription: raw.seoDescription ?? "",
+                seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
+                seoOgImage: raw.seoOgImage ?? "",
+                robots: raw.robots ?? "index, follow",
             };
             const parsed = siteSettingsSchema.parse(normalized);
             if (parsed.reviewVerificationEnabled) {
@@ -1406,18 +1513,53 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(400).json({ error: "Verification video URL is required when review verification is enabled." });
                 }
             }
+            const before = await storage.getSiteSettings().catch(() => ({}));
             const updated = await storage.updateSiteSettings({
                 ...parsed,
                 reviewVerificationVideoUrl: parsed.reviewVerificationVideoUrl.trim(),
                 reviewVerificationPassphrase: parsed.reviewVerificationPassphrase.trim(),
                 reviewVerificationPrompt: parsed.reviewVerificationPrompt.trim(),
                 reviewVerificationTimecode: parsed.reviewVerificationTimecode.trim(),
-                reviewVerificationYouTubeChannelUrl: parsed.reviewVerificationYouTubeChannelUrl.trim(),
+                reviewVerificationYouTubeChannelUrl: (parsed.reviewVerificationYouTubeChannelUrl || '').trim(),
+                publicBaseUrl: (parsed.publicBaseUrl || '').trim(),
+                seoTitle: (parsed.seoTitle || '').trim(),
+                seoDescription: (parsed.seoDescription || '').trim(),
+                seoKeywords: Array.isArray(parsed.seoKeywords) ? parsed.seoKeywords.filter(Boolean) : [],
+                seoOgImage: (parsed.seoOgImage || '').trim(),
+                robots: (parsed.robots || 'index, follow').trim(),
             });
+            try {
+                const diff = {};
+                const keys = ['publicBaseUrl','seoTitle','seoDescription','seoKeywords','seoOgImage','robots'];
+                for (const k of keys) {
+                    const a = (before?.[k] ?? '');
+                    const b = (updated?.[k] ?? '');
+                    const av = Array.isArray(a) ? a.join(',') : a;
+                    const bv = Array.isArray(b) ? b.join(',') : b;
+                    if (String(av) !== String(bv)) diff[k] = { from: av, to: bv };
+                }
+                if (Object.keys(diff).length > 0) logSeoChange({ actor: req.user?.username || 'system', action: 'update_site_seo', changes: diff });
+            } catch {}
             res.json(updated);
         }
         catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+    app.get("/api/public/settings/seo", async (_req, res) => {
+        try {
+            const s = await storage.getSiteSettings();
+            res.json({
+                publicBaseUrl: s.publicBaseUrl || '',
+                seoTitle: s.seoTitle || '',
+                seoDescription: s.seoDescription || '',
+                seoKeywords: Array.isArray(s.seoKeywords) ? s.seoKeywords : [],
+                seoOgImage: s.seoOgImage || '',
+                robots: s.robots || 'index, follow',
+            });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
     app.get("/api/public/settings/announcements", async (_req, res) => {
@@ -2779,6 +2921,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     ensureDir(LOG_DIR);
     const LOG_FILE = path.join(LOG_DIR, 'image-processing.jsonl');
     const logChange = (entry) => { try { fs.appendFileSync(LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch {} };
+    const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
+    const logSeoChange = (entry) => { try { fs.appendFileSync(SEO_LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch {} };
 
     app.post('/api/admin/images/process', requireAuth, requireSuperAdmin, async (req, res) => {
         try {

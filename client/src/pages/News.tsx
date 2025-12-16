@@ -135,7 +135,7 @@ export default function News() {
               </div>
               <div className="space-y-6">
                 {items.map((item) => {
-                  const href = item.type === 'post' ? `/article/${(item as any).post_slug || item.id}` : `/news/${item.id}`;
+                  const href = item.type === 'post' ? `/article/${(item as any).post_slug || item.id}` : `/news/${(item as any).news_slug || item.id}`;
                   const titleText = language === "ar" && "titleAr" in item && item.titleAr ? item.titleAr : item.title;
                   const dateText = (() => {
                     const raw = (item as any).createdAt || item.dateRange || (item as any).date;

@@ -74,7 +74,7 @@ export default function CategoryNews() {
           {news.map((item) => (
             <Link
               key={item.id}
-              href={`/news/${item.id}`}
+              href={`/news/${(item as any).news_slug || item.id}`}
               data-testid={`link-news-${item.id}`}
             >
               <Card className="h-full hover-elevate active-elevate-2 transition-all duration-300 hover:scale-[1.02]">

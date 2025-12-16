@@ -183,6 +183,12 @@ export interface ISiteSettings extends Document {
   reviewVerificationTimecode: string;
   reviewVerificationYouTubeChannelUrl: string;
   announcementsEnabled: boolean;
+  publicBaseUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  seoOgImage?: string;
+  robots?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -420,6 +426,12 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
     reviewVerificationTimecode: { type: String, default: "" },
     reviewVerificationYouTubeChannelUrl: { type: String, default: "" },
     announcementsEnabled: { type: Boolean, default: true },
+    publicBaseUrl: { type: String, default: "" },
+    seoTitle: { type: String, default: "" },
+    seoDescription: { type: String, default: "" },
+    seoKeywords: { type: [String], default: [] },
+    seoOgImage: { type: String, default: "" },
+    robots: { type: String, default: "index, follow" },
   },
   {
     timestamps: true,
@@ -704,6 +716,15 @@ export const siteSettingsSchema = z.object({
   reviewVerificationTimecode: z.string().trim().max(50).optional().transform((value) => value ?? ""),
   reviewVerificationYouTubeChannelUrl: urlOrEmptyString,
   announcementsEnabled: z.boolean().optional().default(true),
+  publicBaseUrl: urlOrEmptyString,
+  seoTitle: z.string().trim().max(120).optional().transform((value) => value ?? ""),
+  seoDescription: z.string().trim().max(300).optional().transform((value) => value ?? ""),
+  seoKeywords: z.array(z.string().trim().max(50)).optional().transform((value) => value ?? []),
+  seoOgImage: urlOrEmptyString,
+  robots: z.string().trim().optional().transform((value) => value ?? "index, follow").refine((v) => {
+    const allowed = new Set(["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"]);
+    return allowed.has(v.toLowerCase());
+  }, { message: "Robots must be one of: index, follow | noindex, follow | index, nofollow | noindex, nofollow" }),
 });
 
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
@@ -824,5 +845,11 @@ export type SiteSettings = {
   reviewVerificationTimecode: string;
   reviewVerificationYouTubeChannelUrl: string;
   announcementsEnabled: boolean;
+  publicBaseUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  seoOgImage?: string;
+  robots?: string;
 };
 export type SiteSettingsDocument = ISiteSettings;

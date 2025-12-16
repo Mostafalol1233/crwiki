@@ -4,7 +4,7 @@ import { useParams, Link, useLocation } from "wouter";
 import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Globe, Languages, Loader2 } from "lucide-react";
+import { ArrowLeft, Target, Globe, Loader2 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -43,7 +43,6 @@ export default function NewsDetail() {
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
-  const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
@@ -79,9 +78,8 @@ export default function NewsDetail() {
   });
 
   useEffect(() => {
-    const rtl = language === 'ar' || (showTranslation && !!(newsItem?.titleAr || newsItem?.contentAr));
-    setIsRTL(rtl);
-  }, [language, showTranslation, newsItem?.titleAr, newsItem?.contentAr]);
+    setIsRTL(language === 'ar');
+  }, [language]);
 
   const { data: fallbackPost } = useQuery<any>({
     queryKey: ["/api/posts/" + (slug || legacyId)],
@@ -148,14 +146,20 @@ export default function NewsDetail() {
     { name: newsItem.title, url: newsUrl },
   ];
 
-  const hasTranslation = !!(newsItem.titleAr || newsItem.contentAr);
+  const selectedTitle = language === 'ar' && newsItem.titleAr ? newsItem.titleAr : newsItem.title;
+  const selectedContentRaw = (() => {
+    if (language === 'ar' && newsItem.contentAr) return newsItem.contentAr;
+    const html = newsItem.htmlContent && newsItem.htmlContent.trim().length > 0 ? newsItem.htmlContent : newsItem.content;
+    return html;
+  })();
 
-  const selectedTitle = showTranslation && newsItem.titleAr ? newsItem.titleAr : newsItem.title;
-  const selectedContentRaw = showTranslation && newsItem.contentAr ? newsItem.contentAr : (newsItem.htmlContent && newsItem.htmlContent.trim().length > 0 ? newsItem.htmlContent : newsItem.content);
-
-  const englishDate = (() => {
+  const monthYearText = (() => {
     const d = newsItem.createdAt ? new Date(newsItem.createdAt as any) : new Date();
-    return d.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    try {
+      return new Intl.DateTimeFormat(language === 'ar' ? 'ar' : 'en-US', { month: 'long', year: 'numeric' }).format(d);
+    } catch {
+      return d.toLocaleString(language === 'ar' ? 'ar' : undefined, { month: 'long', year: 'numeric' });
+    }
   })();
 
   return (
@@ -221,28 +225,7 @@ export default function NewsDetail() {
             >
               <Globe className="h-5 w-5" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRTL(!isRTL)}
-              className="ml-2"
-              data-testid="button-toggle-rtl-news"
-            >
-              <Languages className="mr-2 h-4 w-4" />
-              {isRTL ? "LTR" : "Translate"}
-            </Button>
-            {hasTranslation && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTranslation(!showTranslation)}
-                className="ml-2"
-                data-testid="button-toggle-translation-news"
-              >
-                <Languages className="mr-2 h-4 w-4" />
-                {showTranslation ? t("showOriginal") : t("showTranslation")}
-              </Button>
-            )}
+            {/* Single language toggle only; RTL tied to Arabic */}
           </div>
 
         <section className="mb-10">
@@ -254,14 +237,15 @@ export default function NewsDetail() {
           <h1 className={`text-5xl md:text-6xl font-black leading-tight mb-4 ${isRTL ? 'text-right' : ''}`} data-testid="text-news-title">
             {selectedTitle}
           </h1>
-          {newsItem.contentAr && (
+          {language === 'ar' && newsItem.contentAr && (
             <p className="text-lg md:text-xl text-gray-700 mb-4 flex items-start gap-2">
               <Target className="h-5 w-5 text-red-600 mt-1" />
               <span dir="rtl">{newsItem.contentAr.replace(/<[^>]*>?/gm, "").slice(0, 180)}...</span>
             </p>
           )}
-          <div className={`flex items-center gap-2 text-muted-foreground text-sm ${isRTL ? 'justify-end' : ''}`}>
-            <span className="date-text" data-testid="text-news-date">{englishDate} • {newsItem.author || 'Bimora Team'}</span>
+          <div className={`flex items-center gap-3 text-sm ${isRTL ? 'justify-end' : ''}`}>
+            <Badge className="bg-blue-600 text-white rounded-full px-3 py-1" data-testid="text-news-date">{monthYearText}</Badge>
+            <span className="text-muted-foreground" data-testid="text-news-author">{newsItem.author || 'Bimora Team'}</span>
           </div>
         </section>
 
@@ -302,7 +286,7 @@ export default function NewsDetail() {
         <div className="mt-12">
           <Link href="/news">
             <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" data-testid="button-more-news">
-              {showTranslation && newsItem.titleAr ? `إقرأ المزيد: ${newsItem.titleAr}` : `إقرأ المزيد: ${newsItem.title}`}
+              {t("readMore")}: {language === 'ar' && newsItem.titleAr ? newsItem.titleAr : newsItem.title}
             </Button>
           </Link>
         </div>

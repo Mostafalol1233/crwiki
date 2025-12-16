@@ -1062,7 +1062,8 @@ export default function Admin() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      toast({ title: "Slugs migrated", description: `Events: ${data?.eventsUpdated || 0}, Posts: ${data?.postsUpdated || 0}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      toast({ title: "Slugs migrated", description: `Events: ${data?.eventsUpdated || 0}, Posts: ${data?.postsUpdated || 0}, News: ${data?.newsUpdated || 0}` });
     },
     onError: (error: any) => {
       toast({ title: "Failed to migrate slugs", description: error.message, variant: "destructive" });
@@ -1072,17 +1073,15 @@ export default function Admin() {
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("element_name", file.name);
-
-      const response = await fetch("/api/upload/insert", {
+      formData.append("image", file);
+      const response = await fetch("/api/upload-image", {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+          'x-csrf-token': localStorage.getItem('csrfToken') || '',
         },
         body: formData,
       });
-      
       if (!response.ok) {
         let msg = 'Failed to upload file';
         try {
@@ -1091,17 +1090,16 @@ export default function Admin() {
         } catch {}
         throw new Error(msg);
       }
-      
       return response.json();
     },
     onSuccess: (data: any) => {
       const url = data?.url || "";
       if (url) setUploadedImageUrl(url);
       setImageFile(null);
-      toast({ title: "Image uploaded successfully!" });
+      toast({ title: "Image uploaded", description: url ? url : undefined });
     },
-    onError: () => {
-      toast({ title: "Failed to upload image", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to upload image", description: error?.message || '', variant: "destructive" });
     },
   });
 
@@ -3081,6 +3079,7 @@ export default function Admin() {
                                       method: 'POST',
                                       headers: {
                                         'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                                        'x-csrf-token': localStorage.getItem('csrfToken') || '',
                                       },
                                       body: formData,
                                     })
@@ -3227,6 +3226,7 @@ export default function Admin() {
                                       method: 'POST',
                                       headers: {
                                         'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                                        'x-csrf-token': localStorage.getItem('csrfToken') || '',
                                       },
                                       body: formData,
                                     })
@@ -3372,6 +3372,7 @@ export default function Admin() {
                                       method: 'POST',
                                       headers: {
                                         'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                                        'x-csrf-token': localStorage.getItem('csrfToken') || '',
                                       },
                                       body: formData,
                                     })
@@ -4678,11 +4679,15 @@ export default function Admin() {
                               formData.append('image', imageFile);
                               const res = await fetch(`${apiBase}/api/upload-image`, {
                                 method: 'POST',
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` },
+                                headers: { 
+                                  'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                  'x-csrf-token': localStorage.getItem('csrfToken') || '',
+                                },
                                 body: formData,
                               });
                               if (!res.ok) throw new Error('Upload failed');
-                              const url = await res.text();
+                              const json = await res.json().catch(() => null);
+                              const url = json?.url || '';
                               if (url) {
                                 if (editingMerc) {
                                   setMercForm({ ...mercForm, image: url });

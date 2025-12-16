@@ -32,7 +32,26 @@ const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+const CSRF_TOKEN = process.env.CSRF_TOKEN || ('cf-' + Math.random().toString(36).slice(2));
 export async function registerRoutes(app) {
+    async function resolveBaseUrl() {
+        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+        try {
+            const s = await storage.getSiteSettings();
+            if (s?.publicBaseUrl) base = String(s.publicBaseUrl).replace(/\/$/, '');
+        } catch {}
+        return base;
+    }
+    function ensureUniqueSlug(list, field, base) {
+        let candidate = slugifySafe(base);
+        if (!candidate) candidate = 'item';
+        const existing = new Set(list.map(x => String(x[field] || '').toLowerCase()).filter(Boolean));
+        let suffix = 2;
+        while (existing.has(candidate.toLowerCase())) {
+            candidate = slugifySafe(`${base}-${suffix++}`);
+        }
+        return candidate.slice(0, 60);
+    }
     // SEO: robots.txt
     app.get('/robots.txt', async (_req, res) => {
         let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
@@ -152,9 +171,86 @@ export async function registerRoutes(app) {
                         username: admin.username,
                         roles: admin.roles,
                         permissions: permissions || {},
-                    }
-                });
+        }
+    });
+    app.post('/api/admin/migrate-slugs', requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const baseUrl = await resolveBaseUrl();
+            let eventsUpdated = 0, postsUpdated = 0, newsUpdated = 0;
+            const [events, posts, news] = await Promise.all([
+                storage.getAllEvents().catch(() => []),
+                storage.getAllPosts().catch(() => []),
+                storage.getAllNews().catch(() => []),
+            ]);
+            // Events
+            const evExisting = new Set(events.map(e => String(e.event_name_slug || '').toLowerCase()).filter(Boolean));
+            for (const e of events) {
+                const baseSlug = e.event_name_slug || e.title || '';
+                const unique = ensureUniqueSlug(events, 'event_name_slug', baseSlug);
+                const canonical = `${baseUrl}/events/${unique}`;
+                const needs = (!e.event_name_slug || e.event_name_slug !== unique || !e.canonicalUrl || e.canonicalUrl !== canonical);
+                if (needs) {
+                    await storage.updateEvent(e.id || e._id, { event_name_slug: unique, canonicalUrl: canonical });
+                    eventsUpdated++;
+                }
             }
+            // Posts
+            for (const p of posts) {
+                const unique = ensureUniqueSlug(posts, 'post_slug', p.post_slug || p.title || '');
+                const canonical = `${baseUrl}/article/${unique}`;
+                const needs = (!p.post_slug || p.post_slug !== unique || !p.canonicalUrl || p.canonicalUrl !== canonical);
+                if (needs) {
+                    await storage.updatePost(p.id || p._id, { post_slug: unique, canonicalUrl: canonical });
+                    postsUpdated++;
+                }
+            }
+            // News
+            for (const n of news) {
+                const unique = ensureUniqueSlug(news, 'news_slug', n.news_slug || n.title || '');
+                const canonical = `${baseUrl}/news/${unique}`;
+                const needs = (!n.news_slug || n.news_slug !== unique || !n.canonicalUrl || n.canonicalUrl !== canonical);
+                if (needs) {
+                    await storage.updateNews(n.id || n._id, { news_slug: unique, canonicalUrl: canonical });
+                    newsUpdated++;
+                }
+            }
+            res.json({ success: true, eventsUpdated, postsUpdated, newsUpdated });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    app.post('/api/admin/migrate-slugs/rollback', requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            let eventsRolled = 0, postsRolled = 0, newsRolled = 0;
+            const [events, posts, news] = await Promise.all([
+                storage.getAllEvents().catch(() => []),
+                storage.getAllPosts().catch(() => []),
+                storage.getAllNews().catch(() => []),
+            ]);
+            for (const e of events) {
+                if (e.event_name_slug || e.canonicalUrl) {
+                    await storage.updateEvent(e.id || e._id, { event_name_slug: '', canonicalUrl: '' });
+                    eventsRolled++;
+                }
+            }
+            for (const p of posts) {
+                if (p.post_slug || p.canonicalUrl) {
+                    await storage.updatePost(p.id || p._id, { post_slug: '', canonicalUrl: '' });
+                    postsRolled++;
+                }
+            }
+            for (const n of news) {
+                if (n.news_slug || n.canonicalUrl) {
+                    await storage.updateNews(n.id || n._id, { news_slug: '', canonicalUrl: '' });
+                    newsRolled++;
+                }
+            }
+            res.json({ success: true, eventsRolled, postsRolled, newsRolled });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+}
             else if (password) {
                 const isValid = await verifyAdminPassword(password);
                 if (!isValid) {
@@ -421,10 +517,17 @@ export async function registerRoutes(app) {
             const data = insertPostSchema.parse(req.body);
             const readingTime = data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
+            const all = await storage.getAllPosts().catch(() => []);
+            const baseUrl = await resolveBaseUrl();
+            const baseSlug = data.post_slug || data.title || '';
+            const unique = ensureUniqueSlug(all, 'post_slug', baseSlug);
+            const canonical = `${baseUrl}/article/${unique}`;
             const post = await storage.createPost({
                 ...data,
                 readingTime,
                 summary,
+                post_slug: unique,
+                canonicalUrl: canonical,
             });
             res.status(201).json(post);
         }
@@ -518,6 +621,9 @@ export async function registerRoutes(app) {
         console.log(`Request received: ${req.method} ${req.path}`);
         res.json({ message: 'Welcome to the API' });
     });
+    app.get('/api/security/csrf-token', async (_req, res) => {
+        res.json({ csrfToken: CSRF_TOKEN });
+    });
     app.get("/api/events/:id", async (req, res) => {
         try {
             const event = await storage.getEventById(req.params.id);
@@ -586,7 +692,12 @@ export async function registerRoutes(app) {
             if (data.descriptionAr) {
                 data.descriptionAr = sanitizeHTML(data.descriptionAr);
             }
-            const event = await storage.createEvent(data);
+            const all = await storage.getAllEvents().catch(() => []);
+            const baseUrl = await resolveBaseUrl();
+            const baseSlug = data.event_name_slug || data.title || '';
+            const unique = ensureUniqueSlug(all, 'event_name_slug', baseSlug);
+            const canonical = `${baseUrl}/events/${unique}`;
+            const event = await storage.createEvent({ ...data, event_name_slug: unique, canonicalUrl: canonical });
             res.status(201).json(event);
         }
         catch (error) {
@@ -1471,7 +1582,12 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 data.twitterImage = seoImage.url;
             } catch {}
             data.schemaType = data.schemaType || 'NewsArticle';
-            const news = await storage.createNews(data);
+            const all = await storage.getAllNews().catch(() => []);
+            const baseUrl = await resolveBaseUrl();
+            const baseSlug = data.news_slug || data.title || '';
+            const unique = ensureUniqueSlug(all, 'news_slug', baseSlug);
+            const canonical = `${baseUrl}/news/${unique}`;
+            const news = await storage.createNews({ ...data, news_slug: unique, canonicalUrl: canonical });
             res.status(201).json(news);
         }
         catch (error) {
@@ -2153,6 +2269,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     // Image upload route with rate limiting
     app.post("/api/upload-image", uploadLimiter, requireAuth, upload.single('image'), async (req, res) => {
         try {
+            const token = String(req.headers['x-csrf-token'] || '');
+            if (!token || token !== CSRF_TOKEN) {
+                return res.status(403).json({ error: 'CSRF validation failed' });
+            }
             if (!req.file) {
                 return res.status(400).json({ error: "No image file provided" });
             }
@@ -2188,6 +2308,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
     // Audio upload route with rate limiting
     app.post("/api/upload-audio", uploadLimiter, requireAuth, upload.single('audio'), async (req, res) => {
         try {
+            const token = String(req.headers['x-csrf-token'] || '');
+            if (!token || token !== CSRF_TOKEN) {
+                return res.status(403).json({ error: 'CSRF validation failed' });
+            }
             if (!req.file) {
                 return res.status(400).json({ error: "No audio file provided" });
             }

@@ -7,7 +7,12 @@ const STOP_WORDS = new Set([
 ]);
 
 export function slugifySafe(s) {
-  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return String(s || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
 }
 
 export function extractKeywords(text, opts = {}) {
@@ -124,4 +129,3 @@ export function validateDateRangeInput(s) {
   const ok = /^(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[\/-]\d{4}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(\s+\d{4})?|([a-z]{3,9})(\s+\d{4})?)$/i.test(String(s || '').trim());
   return ok;
 }
-

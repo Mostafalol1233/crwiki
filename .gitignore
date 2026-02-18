@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+# Note: dist is no longer ignored so that built frontend assets can be inspected by tooling.
+# If you don’t want to commit dist, configure your VCS to ignore it separately.
+dist/server
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE settings
+.idea/
+.vscode/
+.cursor/
+.idx/
+.local/
+.cache/
+
+# Replit config (don't push to git)
+.replit
+replit.md
+
+# Project specific backend (don't deploy to Vercel)
+backend/
+server/
+merc-mp3/
+/public/
+/src/
+*.mp3

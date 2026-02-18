@@ -11,6 +11,8 @@ import { SiDiscord, SiWhatsapp, SiTelegram, SiFacebook, SiX, SiInstagram, SiYout
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
+import DOMPurify from "isomorphic-dompurify";
+import { useQuery as useRQ } from "@tanstack/react-query";
 
 interface Seller {
   id: string;
@@ -138,6 +140,17 @@ export default function Sellers() {
     enabled: !!slugMatch && !!slug,
     queryFn: async () => {
       const res = await fetch(`/api/sellers/slug/${encodeURIComponent(slug)}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+  });
+
+  const pageSlug = useMemo(() => sellerBySlug?.seller_name_slug || slug, [sellerBySlug?.seller_name_slug, slug]);
+  const { data: sellerPage } = useRQ<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks?: { image: string; contentHtml: string; description: string }[] }>({
+    queryKey: ["/api/seller-pages", pageSlug],
+    enabled: !!slugMatch && !!pageSlug,
+    queryFn: async () => {
+      const res = await fetch(`/api/seller-pages/${encodeURIComponent(pageSlug!)}`);
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
@@ -492,6 +505,156 @@ export default function Sellers() {
           />
         )}
       </>
+    );
+  }
+
+  // ─── Full Seller Profile View (when /seller/:slug) ───
+  if (slugMatch) {
+    if (slugLoading) {
+      return (
+        <LocalErrorBoundary>
+          <div className="min-h-screen bg-background py-12 md:py-20">
+            <div className="max-w-5xl mx-auto px-4 md:px-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-8 w-1/3 bg-muted rounded" />
+                <div className="h-64 w-full bg-muted rounded" />
+                <div className="h-32 w-full bg-muted rounded" />
+              </div>
+            </div>
+          </div>
+        </LocalErrorBoundary>
+      );
+    }
+    if (slugIsError || !sellerBySlug) {
+      return (
+        <LocalErrorBoundary>
+          <div className="min-h-screen bg-background py-12 md:py-20">
+            <div className="max-w-5xl mx-auto px-4 md:px-8">
+              <Card>
+                <CardContent className="py-12 text-center space-y-3">
+                  <p className="text-destructive">Seller not found</p>
+                  <Button variant="outline" onClick={() => { try { window.location.href = '/sellers'; } catch { } }}>Back to Sellers</Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </LocalErrorBoundary>
+      );
+    }
+
+    const images = (sellerPage?.images && sellerPage.images.length > 0) ? sellerPage.images : (sellerBySlug.images || []);
+    const mainImage = images?.[0] || "";
+    const descriptionHtml = sellerPage?.descriptionHtml || "";
+
+    return (
+      <LocalErrorBoundary>
+        <>
+          <PageSEO
+            title={sellerBySlug.seoTitle || `${sellerBySlug.name} — Game Card Seller`}
+            description={sellerBySlug.seoDescription || sellerBySlug.promotionText || sellerBySlug.description}
+            canonicalPath={`/seller/${pageSlug}`}
+            image={sellerBySlug.ogImage || mainImage || ""}
+          />
+          <div className="min-h-screen bg-background py-12 md:py-20">
+            <div className="max-w-5xl mx-auto px-4 md:px-8">
+              <div className="flex items-start justify-between gap-4 mb-8">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold">{sellerBySlug.name}</h1>
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    {renderStars(Math.round(isFiniteNumber(sellerBySlug.averageRating) ? sellerBySlug.averageRating : 0))}
+                    <span className="font-medium text-foreground">{formatRating(sellerBySlug.averageRating)}</span>
+                    <span>({sellerBySlug.totalReviews || 0} reviews)</span>
+                    {sellerBySlug.featured && (
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">⭐ Featured</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {sellerBySlug.website && <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => window.open(normalizeUrl(sellerBySlug.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
+                  {sellerBySlug.whatsapp && <Button variant="outline" size="sm" className="justify-start gap-2 text-green-600" onClick={() => window.open(normalizeUrl(sellerBySlug.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
+                  {sellerBySlug.discord && <Button variant="outline" size="sm" className="justify-start gap-2 text-indigo-600" onClick={() => window.open(normalizeUrl(sellerBySlug.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
+                </div>
+              </div>
+
+              {mainImage && (
+                <div className="relative w-full overflow-hidden mb-8">
+                  <img
+                    src={mainImage}
+                    alt={`${sellerBySlug.name} main`}
+                    className="w-full h-auto md:max-h-[560px] object-contain cursor-zoom-in bg-transparent"
+                    loading="lazy"
+                    onClick={() => setLightbox({ images, index: 0 })}
+                  />
+                </div>
+              )}
+
+              <article
+                className="prose dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: (() => {
+                    const raw = descriptionHtml || "";
+                    return DOMPurify.sanitize(raw, {
+                      ALLOWED_TAGS: [
+                        'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                        'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr',
+                        'audio', 'video', 'source', 'iframe'
+                      ],
+                      ALLOWED_ATTR: [
+                        'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
+                        'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
+                      ],
+                      ALLOW_DATA_ATTR: false,
+                      KEEP_CONTENT: true,
+                    });
+                  })()
+                }}
+              />
+
+              {images.length > 1 && (
+                <div className="mt-8">
+                  <h2 className="text-xl font-semibold mb-3">Gallery</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {images.slice(1).map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="group relative rounded-lg border bg-muted overflow-hidden cursor-pointer"
+                        onClick={() => setLightbox({ images, index: idx + 1 })}
+                      >
+                        <img src={img} className="w-full h-40 object-contain bg-transparent" alt={`${sellerBySlug.name} ${idx + 2}`} />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(sellerBySlug.prices) && sellerBySlug.prices.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-xl font-semibold mb-3">Price List</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {sellerBySlug.prices.map((p, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 rounded-lg border bg-muted/50 hover:border-primary/30 transition-colors">
+                        <span className="text-sm truncate mr-2">{p.item}</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.price} L.E</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {lightbox && (
+            <GalleryLightbox
+              images={lightbox.images}
+              initialIndex={lightbox.index}
+              onClose={() => setLightbox(null)}
+            />
+          )}
+        </>
+      </LocalErrorBoundary>
     );
   }
 

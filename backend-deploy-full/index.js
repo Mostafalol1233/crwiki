@@ -1357,6 +1357,18 @@ var MongoDBStorage = class {
             totalReviews: seller.totalReviews || 0,
         };
     }
+    async getSellerBySlug(slug) {
+        const s = await SellerModel.findOne({ seller_name_slug: slug }).lean();
+        if (!s) return void 0;
+        return {
+            ...s,
+            id: String(s._id),
+            images: s.images || [],
+            prices: s.prices || [],
+            averageRating: s.averageRating || 0,
+            totalReviews: s.totalReviews || 0,
+        };
+    }
     async createSeller(seller) {
         const payload = { ...seller };
         payload.seller_name_slug = slugifyEventName(String(seller.name || ""));

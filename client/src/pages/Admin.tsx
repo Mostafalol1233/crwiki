@@ -2430,21 +2430,23 @@ export default function Admin() {
                                 }
                                 data-testid="input-event-slug"
                               />
-                              <div data-testid="input-event-description">
-                                <RichTextEditor
-                                  value={eventForm.description}
-                                  onChange={(value) => setEventForm({ ...eventForm, description: value })}
-                                  height={150}
-                                  direction="ltr"
-                                />
-                              </div>
-                              <div data-testid="input-event-description-ar">
-                                <RichTextEditor
-                                  value={eventForm.descriptionAr}
-                                  onChange={(value) => setEventForm({ ...eventForm, descriptionAr: value })}
-                                  height={150}
-                                  direction="rtl"
-                                />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div data-testid="input-event-description">
+                                  <RichTextEditor
+                                    value={eventForm.description}
+                                    onChange={(value) => setEventForm({ ...eventForm, description: value })}
+                                    height={150}
+                                    direction="ltr"
+                                  />
+                                </div>
+                                <div data-testid="input-event-description-ar">
+                                  <RichTextEditor
+                                    value={eventForm.descriptionAr}
+                                    onChange={(value) => setEventForm({ ...eventForm, descriptionAr: value })}
+                                    height={150}
+                                    direction="rtl"
+                                  />
+                                </div>
                               </div>
                               <Input
                                 placeholder="Date"
@@ -2842,31 +2844,33 @@ export default function Admin() {
                                   />
                                 </div>
                               </div>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <label className="text-sm font-medium">Content (Arabic) - المحتوى بالعربية</label>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      const text = prompt("Paste your content here:");
-                                      if (text) {
-                                        setPastedContent(text);
-                                        setIsPasteFormatterOpen(true);
-                                      }
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    📋 Smart Paste
-                                  </Button>
-                                </div>
-                                <div data-testid="input-news-content-ar">
-                                  <RichTextEditor
-                                    value={newsForm.contentAr}
-                                    onChange={(value) => setNewsForm({ ...newsForm, contentAr: value })}
-                                    height={150}
-                                    direction="rtl"
-                                  />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium">Content (Arabic) - المحتوى بالعربية</label>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const text = prompt("Paste your content here:");
+                                        if (text) {
+                                          setPastedContent(text);
+                                          setIsPasteFormatterOpen(true);
+                                        }
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      📋 Smart Paste
+                                    </Button>
+                                  </div>
+                                  <div data-testid="input-news-content-ar">
+                                    <RichTextEditor
+                                      value={newsForm.contentAr}
+                                      onChange={(value) => setNewsForm({ ...newsForm, contentAr: value })}
+                                      height={150}
+                                      direction="rtl"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                               <Input

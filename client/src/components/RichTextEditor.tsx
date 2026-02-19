@@ -72,25 +72,63 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
         try {
           const file = files?.[0];
           if (!file) return;
-          const tokRes = await fetch('/api/security/csrf-token', { method: 'GET' });
+          const tokRes = await fetch("/api/security/csrf-token", { method: "GET", credentials: "include" });
           const tokJson = await tokRes.json().catch(() => ({}));
-          const token = tokJson?.csrfToken || localStorage.getItem('csrfToken') || '';
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('folder', 'editor');
-          const res = await fetch('/images/upload', {
-            method: 'POST',
-            headers: token ? { 'X-CSRF-Token': token } as Record<string, string> : undefined,
-            body: fd
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data?.error || 'Upload failed');
-          const url = data?.domainUrl || data?.domain_url || data?.secure_url || '';
-          if (!url) throw new Error('No URL returned');
-          uploadHandler({ result: [{ url, name: file.name, size: file.size }] });
+          const csrfToken = tokJson?.csrfToken || localStorage.getItem("csrfToken") || "";
+          const adminToken = localStorage.getItem("adminToken") || localStorage.getItem("userToken") || "";
+          const baseHeaders: Record<string, string> = {};
+          if (csrfToken) baseHeaders["X-CSRF-Token"] = csrfToken;
+          if (adminToken) baseHeaders["Authorization"] = `Bearer ${adminToken}`;
+
+          const uploadViaCloudinary = async () => {
+            const fd = new FormData();
+            fd.append("images", file);
+            const res = await fetch("/api/upload-image", {
+              method: "POST",
+              headers: baseHeaders,
+              body: fd,
+              credentials: "include",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data?.ok || !Array.isArray(data.results) || !data.results[0]?.ok) {
+              const firstErr = Array.isArray(data?.results) && data.results[0] && data.results[0].error;
+              throw new Error(data?.error || firstErr || "Upload failed");
+            }
+            const item = data.results[0];
+            const url = item.fullUrl || item.url;
+            if (!url) throw new Error("No URL returned");
+            return url as string;
+          };
+
+          const uploadLocally = async () => {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("folder", "editor");
+            const headers = csrfToken ? { "X-CSRF-Token": csrfToken } as Record<string, string> : undefined;
+            const res = await fetch("/images/upload", {
+              method: "POST",
+              headers,
+              body: fd,
+              credentials: "include",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || "Upload failed");
+            const url = data?.domainUrl || data?.domain_url || data?.cloudinaryUrl || data?.secure_url || "";
+            if (!url) throw new Error("No URL returned");
+            return url as string;
+          };
+
+          let finalUrl = "";
+          try {
+            finalUrl = await uploadViaCloudinary();
+          } catch {
+            finalUrl = await uploadLocally();
+          }
+
+          uploadHandler({ result: [{ url: finalUrl, name: file.name, size: file.size }] });
         } catch (e: any) {
-          toast?.({ title: 'Upload error', description: e?.message || String(e), variant: 'destructive' });
-          uploadHandler({ errorMessage: 'Upload error' });
+          toast?.({ title: "Upload error", description: e?.message || String(e), variant: "destructive" });
+          uploadHandler({ errorMessage: "Upload error" });
         }
       }}
     />

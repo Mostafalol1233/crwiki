@@ -5952,7 +5952,12 @@ app.use((req, res, next) => {
                         const slug = pathname.replace(/^\/events\//i, "").split("?")[0];
                         const ev = await storage.getEventByIdOrSlug(slug);
                         if (ev) {
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(ev.ogImage || ev.image || "", base) || fallbackOg);
+                            let ogImage = ev.ogImage || ev.image || "";
+                            if (!ogImage && ev.description) {
+                                const m = String(ev.description).match(/<img[^>]+src=["']([^"']+)["']/i);
+                                if (m && m[1]) ogImage = m[1];
+                            }
+                            const img = toCloudinary1200x630(resolveAbsoluteUrl(ogImage || "", base) || fallbackOg);
                             meta = {
                                 title: ev.seoTitle || ev.title,
                                 description: ev.seoDescription || String(ev.description || "").replace(/<[^>]*>/g, "").slice(0, 200),

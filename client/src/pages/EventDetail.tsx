@@ -206,6 +206,10 @@ export default function EventDetail() {
   const description = showTranslation && event.descriptionAr ? event.descriptionAr : event.description;
   const hasTranslation = event.titleAr || event.descriptionAr;
 
+  const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(description || "");
+  const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
+  const seoImage = event.ogImage || event.image || descriptionImage;
+
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const eventSlug = event.event_name_slug || slug || legacyId;
   const eventUrl = `${baseUrl}/events/${eventSlug}`;
@@ -223,8 +227,8 @@ export default function EventDetail() {
         description={event.seoDescription || description?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         keywords={event.seoKeywords || [event.type || "event", "crossfire event"]}
         canonicalUrl={event.canonicalUrl || eventUrl}
-        ogImage={event.ogImage || event.image}
-        twitterImage={event.twitterImage || event.ogImage || event.image}
+        ogImage={seoImage}
+        twitterImage={event.twitterImage || seoImage}
         ogTitle={event.seoTitle || title}
         ogDescription={event.seoDescription || description?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         ogType="article"
@@ -236,7 +240,7 @@ export default function EventDetail() {
         schemaData={{
           name: title,
           description: description?.replace(/<[^>]*>/g, '').substring(0, 200) || "",
-          image: event.image,
+          image: seoImage || event.image,
           startDate: event.date,
           eventStatus: "EventScheduled",
           eventAttendanceMode: "OnlineEventAttendanceMode",
@@ -247,7 +251,7 @@ export default function EventDetail() {
           onlySchema
           schemaType="ImageObject"
           schemaData={{
-            contentUrl: event.image,
+            contentUrl: seoImage || event.image,
             name: title,
             description: (description || title || '').replace(/<[^>]*>/g, '').substring(0, 200),
             width: 1200,
@@ -363,37 +367,39 @@ export default function EventDetail() {
                 </h1>
 
                 {description && (
-                  <div
-                    className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
-                    dir={isRTL ? "rtl" : undefined}
-                    ref={contentRef}
-                    dangerouslySetInnerHTML={{
-                      __html: (() => {
-                        const transformEmbeds = (input: string) => {
-                          let out = String(input || "");
-                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          return out;
-                        };
-                        const html = transformEmbeds(description || "");
-                        return DOMPurify.sanitize(html, {
-                          ALLOWED_TAGS: [
-                            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                            'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr', 'small',
-                            'audio', 'video', 'source', 'iframe'
-                          ],
-                          ALLOWED_ATTR: [
-                            'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
-                            'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
-                          ],
-                          ALLOW_DATA_ATTR: false,
-                          KEEP_CONTENT: true,
-                        });
-                      })()
-                    }}
-                    data-testid="text-description"
-                  />
+                  <div className="w-full overflow-x-auto">
+                    <div
+                      className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+                      dir={isRTL ? "rtl" : undefined}
+                      ref={contentRef}
+                      dangerouslySetInnerHTML={{
+                        __html: (() => {
+                          const transformEmbeds = (input: string) => {
+                            let out = String(input || "");
+                            out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                            out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                            out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                            return out;
+                          };
+                          const html = transformEmbeds(description || "");
+                          return DOMPurify.sanitize(html, {
+                            ALLOWED_TAGS: [
+                              'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                              'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr', 'small',
+                              'audio', 'video', 'source', 'iframe'
+                            ],
+                            ALLOWED_ATTR: [
+                              'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
+                              'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
+                            ],
+                            ALLOW_DATA_ATTR: false,
+                            KEEP_CONTENT: true,
+                          });
+                        })()
+                      }}
+                      data-testid="text-description"
+                    />
+                  </div>
                 )}
               </div>
 

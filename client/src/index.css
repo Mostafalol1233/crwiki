@@ -503,6 +503,18 @@
   display: block;
   margin: 1rem auto;
 }
+.prose table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+.prose th,
+.prose td {
+  word-break: break-word;
+  padding: 0.25rem 0.5rem;
+}
 .blot-formatter__overlay {
   z-index: 999;
 }

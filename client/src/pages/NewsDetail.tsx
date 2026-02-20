@@ -157,6 +157,10 @@ export default function NewsDetail() {
     return html;
   })();
 
+  const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(selectedContentRaw || "");
+  const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
+  const seoImage = newsItem.ogImage || newsItem.image || descriptionImage;
+
   const monthYearText = (() => {
     const d = newsItem.createdAt ? new Date(newsItem.createdAt as any) : new Date();
     try {
@@ -173,8 +177,8 @@ export default function NewsDetail() {
         description={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         keywords={newsItem.seoKeywords || [newsItem.category]}
         canonicalUrl={newsItem.canonicalUrl || newsUrl}
-        ogImage={newsItem.ogImage || newsItem.image}
-        twitterImage={newsItem.twitterImage || newsItem.ogImage || newsItem.image}
+        ogImage={seoImage}
+        twitterImage={newsItem.twitterImage || seoImage}
         ogTitle={newsItem.seoTitle || selectedTitle}
         ogDescription={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
         ogType="article"

@@ -105,6 +105,11 @@ export default function Article() {
     { name: finalArticle.title, url: articleUrl },
   ];
 
+  const rawContent = finalArticle.content ? finalArticle.content.replace(/\n/g, "<br />") : "";
+  const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(rawContent || "");
+  const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
+  const seoImage = finalArticle.ogImage || finalArticle.image || descriptionImage;
+
   return (
     <>
       <SEOHead
@@ -112,8 +117,8 @@ export default function Article() {
         description={finalArticle.seoDescription || finalArticle.summary || ""}
         keywords={finalArticle.seoKeywords || finalArticle.tags || []}
         canonicalUrl={finalArticle.canonicalUrl || articleUrl}
-        ogImage={finalArticle.ogImage || finalArticle.image}
-        twitterImage={finalArticle.twitterImage || finalArticle.ogImage || finalArticle.image}
+        ogImage={seoImage}
+        twitterImage={finalArticle.twitterImage || seoImage}
         ogTitle={finalArticle.seoTitle || finalArticle.title}
         ogDescription={finalArticle.seoDescription || finalArticle.summary || ""}
         ogType="article"

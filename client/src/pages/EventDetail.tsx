@@ -367,39 +367,37 @@ export default function EventDetail() {
                 </h1>
 
                 {description && (
-                  <div className="w-full overflow-x-auto">
-                    <div
-                      className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
-                      dir={isRTL ? "rtl" : undefined}
-                      ref={contentRef}
-                      dangerouslySetInnerHTML={{
-                        __html: (() => {
-                          const transformEmbeds = (input: string) => {
-                            let out = String(input || "");
-                            out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                            out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                            out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                            return out;
-                          };
-                          const html = transformEmbeds(description || "");
-                          return DOMPurify.sanitize(html, {
-                            ALLOWED_TAGS: [
-                              'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                              'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr', 'small',
-                              'audio', 'video', 'source', 'iframe'
-                            ],
-                            ALLOWED_ATTR: [
-                              'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
-                              'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
-                            ],
-                            ALLOW_DATA_ATTR: false,
-                            KEEP_CONTENT: true,
-                          });
-                        })()
-                      }}
-                      data-testid="text-description"
-                    />
-                  </div>
+                  <div
+                    className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+                    dir={isRTL ? "rtl" : undefined}
+                    ref={contentRef}
+                    dangerouslySetInnerHTML={{
+                      __html: (() => {
+                        const transformEmbeds = (input: string) => {
+                          let out = String(input || "");
+                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                          out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                          return out;
+                        };
+                        const html = transformEmbeds(description || "");
+                        return DOMPurify.sanitize(html, {
+                          ALLOWED_TAGS: [
+                            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                            'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr', 'small',
+                            'audio', 'video', 'source', 'iframe'
+                          ],
+                          ALLOWED_ATTR: [
+                            'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
+                            'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
+                          ],
+                          ALLOW_DATA_ATTR: false,
+                          KEEP_CONTENT: true,
+                        });
+                      })()
+                    }}
+                    data-testid="text-description"
+                  />
                 )}
               </div>
 

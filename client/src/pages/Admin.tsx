@@ -1959,15 +1959,15 @@ export default function Admin() {
                             <Badge variant="outline">{postForm.language === "ar" ? "RTL" : "LTR"}</Badge>
                           </div>
                           <div className="space-y-2">
-                            <div data-testid="input-post-content">
-                              <RichTextEditor
-                                value={postForm.content}
-                                onChange={(value) => setPostForm({ ...postForm, content: value })}
-                                placeholder="Write your content here..."
-                                direction={postForm.language === 'ar' ? 'rtl' : 'ltr'}
-                                height={200}
-                              />
-                            </div>
+                                <div data-testid="input-post-content">
+                                  <RichTextEditor
+                                    value={postForm.content}
+                                    onChange={(value) => setPostForm({ ...postForm, content: value })}
+                                    placeholder="Write your content here..."
+                                    direction={postForm.language === 'ar' ? 'rtl' : 'ltr'}
+                                    height={360}
+                                  />
+                                </div>
                           </div>
                           <Textarea
                             placeholder="Summary (optional)"
@@ -2435,7 +2435,7 @@ export default function Admin() {
                                   <RichTextEditor
                                     value={eventForm.description}
                                     onChange={(value) => setEventForm({ ...eventForm, description: value })}
-                                    height={150}
+                                    height={320}
                                     direction="ltr"
                                   />
                                 </div>
@@ -2443,7 +2443,7 @@ export default function Admin() {
                                   <RichTextEditor
                                     value={eventForm.descriptionAr}
                                     onChange={(value) => setEventForm({ ...eventForm, descriptionAr: value })}
-                                    height={150}
+                                    height={320}
                                     direction="rtl"
                                   />
                                 </div>
@@ -2839,7 +2839,7 @@ export default function Admin() {
                                   <RichTextEditor
                                     value={newsForm.content}
                                     onChange={(value) => setNewsForm({ ...newsForm, content: value })}
-                                    height={150}
+                                    height={320}
                                     direction="ltr"
                                   />
                                 </div>
@@ -2867,7 +2867,7 @@ export default function Admin() {
                                     <RichTextEditor
                                       value={newsForm.contentAr}
                                       onChange={(value) => setNewsForm({ ...newsForm, contentAr: value })}
-                                      height={150}
+                                      height={320}
                                       direction="rtl"
                                     />
                                   </div>

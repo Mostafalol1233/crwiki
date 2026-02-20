@@ -3179,7 +3179,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 }
                 if (!req.file) return res.status(400).json({ ok: false, error: 'No file provided' });
                 const allowed = [
-                    'image/jpeg', 'image/png', 'image/gif',
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'image/webp',
                     'video/mp4',
                     'application/pdf'
                 ];

@@ -395,7 +395,7 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {gEnMode === "rich" ? (
-                  <RichTextEditor value={gContentHtmlEn} onChange={setGContentHtmlEn} direction="ltr" height={150} />
+                  <RichTextEditor value={gContentHtmlEn} onChange={setGContentHtmlEn} direction="ltr" height={260} />
                 ) : (
                   <Textarea
                     rows={8}
@@ -414,7 +414,7 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {gArMode === "rich" ? (
-                  <RichTextEditor value={gContentHtmlAr} onChange={setGContentHtmlAr} direction="rtl" height={150} />
+                  <RichTextEditor value={gContentHtmlAr} onChange={setGContentHtmlAr} direction="rtl" height={260} />
                 ) : (
                   <Textarea
                     rows={8}
@@ -499,7 +499,7 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {sEnMode === "rich" ? (
-                  <RichTextEditor value={sContentHtmlEn} onChange={setSContentHtmlEn} direction="ltr" height={150} />
+                  <RichTextEditor value={sContentHtmlEn} onChange={setSContentHtmlEn} direction="ltr" height={260} />
                 ) : (
                   <Textarea
                     rows={8}
@@ -518,7 +518,7 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {sArMode === "rich" ? (
-                  <RichTextEditor value={sContentHtmlAr} onChange={setSContentHtmlAr} direction="rtl" height={150} />
+                  <RichTextEditor value={sContentHtmlAr} onChange={setSContentHtmlAr} direction="rtl" height={260} />
                 ) : (
                   <Textarea
                     rows={8}

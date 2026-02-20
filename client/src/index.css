@@ -541,12 +541,18 @@
 
 @media (max-width: 768px) {
   .prose img {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
     max-height: 50vh;
   }
 }
 
 @media (max-width: 480px) {
   .prose img {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
     max-height: 40vh;
   }
 }

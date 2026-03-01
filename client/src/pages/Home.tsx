@@ -170,7 +170,7 @@ export default function Home() {
           <HeroSection post={heroPost} bgImageUrl={heroBgUrl} />
           
           <div className="py-12 space-y-16">
-            {/* 1. Event-preview priority: Every scraped event is rendered in a dedicated preview card at the top. */}
+            {/* 1. Scraped Events (Raw HTML) - TOP PRIORITY */}
             {allEvents.filter(e => e.rawHtmlContent).map((event: any) => (
               <Card key={event.id} className="overflow-hidden border-2 border-primary/20 shadow-2xl">
                 <div className="bg-primary/5 px-6 py-4 border-b border-primary/10 flex justify-between items-center">
@@ -204,55 +204,69 @@ export default function Home() {
               </Card>
             ))}
 
-            {/* Existing Ribbon for other events */}
+            {/* 2. Events Grid (Matching User Screenshot) */}
+            <section className="space-y-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-6 w-6 text-primary" />
+                  <h2 className="text-3xl font-black uppercase tracking-tight italic">
+                    Latest Events
+                  </h2>
+                </div>
+              </div>
+              
+              {/* Top Row: 4 Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {allEvents.filter(e => !e.rawHtmlContent).slice(0, 4).map((event: any) => (
+                  <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
+                    <Card className="group relative overflow-hidden aspect-[4/5] border-0 rounded-none cursor-pointer">
+                      <img 
+                        src={event.image || 'https://files.catbox.moe/wof38b.jpeg'} 
+                        alt={event.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 p-6 space-y-2">
+                        <h3 className="text-white font-bold text-xl uppercase tracking-tight line-clamp-2">
+                          {event.title}
+                        </h3>
+                        <p className="text-white/70 text-xs font-bold uppercase tracking-widest">
+                          {event.date}
+                        </p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Bottom Row: 3 Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {allEvents.filter(e => !e.rawHtmlContent).slice(4, 7).map((event: any) => (
+                  <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
+                    <Card className="group relative overflow-hidden aspect-video border-0 rounded-none cursor-pointer">
+                      <img 
+                        src={event.image || 'https://files.catbox.moe/wof38b.jpeg'} 
+                        alt={event.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 p-6 space-y-2">
+                        <h3 className="text-white font-bold text-xl uppercase tracking-tight line-clamp-2">
+                          {event.title}
+                        </h3>
+                        <p className="text-white/70 text-xs font-bold uppercase tracking-widest">
+                          {event.date}
+                        </p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            {/* Existing Ribbon for other events - moved below grid */}
             <div className="wiki-content-card rounded-2xl overflow-hidden">
-              <EventsRibbon events={displayEvents} />
-            </div>
-
-            <div className="max-w-6xl mx-auto space-y-24">
-              {/* 2. Behind it (background) show a “Recent Posts” section. */}
-              <section className="space-y-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <ThumbsUp className="h-6 w-6 text-primary" />
-                    <h2 className="text-3xl font-black uppercase tracking-tight italic">
-                      {t("recentPosts") || "Recent Posts"}
-                    </h2>
-                  </div>
-                  <Link href="/posts">
-                    <Button variant="ghost" className="hover:text-primary transition-colors uppercase font-bold tracking-widest text-xs">
-                      View All Posts →
-                    </Button>
-                  </Link>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {allPosts.slice(0, 6).map((post) => (
-                    <ArticleCard key={post.id} article={post} />
-                  ))}
-                </div>
-              </section>
-
-              {/* 3. Below that show “Recent News”. */}
-              <section className="space-y-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                    <h2 className="text-3xl font-black uppercase tracking-tight italic">
-                      {t("latestNews") || "Latest News"}
-                    </h2>
-                  </div>
-                  <Link href="/news">
-                    <Button variant="ghost" className="hover:text-primary transition-colors uppercase font-bold tracking-widest text-xs">
-                      View All News →
-                    </Button>
-                  </Link>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {allNews.slice(0, 4).map((item: any) => (
-                    <ArticleCard key={item.id} article={item} />
-                  ))}
-                </div>
-              </section>
+              <EventsRibbon events={allEvents.filter((e: any) => !e.rawHtmlContent).slice(7, 15)} />
             </div>
           </div>
         </div>

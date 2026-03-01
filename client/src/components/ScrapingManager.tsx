@@ -51,6 +51,28 @@ export default function ScrapingManager() {
   const [createAsNews, setCreateAsNews] = useState(true);
   const [validation, setValidation] = useState<{ colors: string[]; tagCounts: Record<string, number>; length: number } | null>(null);
 
+  const [isMirroring, setIsMirroring] = useState(false);
+
+  const handleMirror = async (url: string) => {
+    setIsMirroring(true);
+    try {
+      const response = await apiRequest("/api/mirror-url", "POST", { url });
+      if (response.success) {
+        setEditedEvent({
+          ...editedEvent!,
+          content: response.content,
+          rawHtmlContent: response.content,
+          title: response.title || editedEvent?.title
+        });
+        toast({ title: "Mirroring Successful", description: "Content has been mirrored with local assets." });
+      }
+    } catch (error: any) {
+      toast({ title: "Mirroring Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsMirroring(false);
+    }
+  };
+
   const handleFetchEvents = async () => {
     setIsScraping(true);
     
@@ -560,6 +582,16 @@ export default function ScrapingManager() {
                       disabled={!editedEvent?.content}
                     >
                       Validate formatting
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleMirror(editedEvent?.url || '')}
+                      disabled={isMirroring || !editedEvent?.url}
+                    >
+                      {isMirroring ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Full Mirror (Local Assets)
                     </Button>
                     <Button
                       type="button"

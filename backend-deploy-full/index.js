@@ -9,6 +9,7 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
+import { MirrorService } from './services/mirror.js';
 
 // Import weapons data for auto-seeding
 import { weaponsData } from "./weapons-all-seed.js";
@@ -1986,6 +1987,8 @@ async function registerRoutes(app2) {
     });
 
     // test-only helper was removed from exports to avoid runtime issues
+    app2.use('/uploads/mirrored', express.static(path.resolve('backend-deploy-full/uploads/mirrored')));
+
     app2.post("/api/users/register", authLimiter, async (req, res) => {
         try {
             if (registrationClosed) {
@@ -2658,6 +2661,26 @@ async function registerRoutes(app2) {
     });
 
     // Scrape events endpoint for admin panel
+    app2.post("/api/mirror-url", async (req, res) => {
+        try {
+            const { url } = req.body || {};
+            if (!url) return res.status(400).json({ error: "URL is required" });
+            
+            console.log(`[Route] Mirroring URL: ${url}`);
+            const data = await MirrorService.mirror(url);
+            
+            res.json({ 
+                success: true, 
+                title: data.title, 
+                content: data.content,
+                originalUrl: url
+            });
+        } catch (error) {
+            console.error("Mirror error:", error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app2.post("/api/scrape-events", async (req, res) => {
         try {
             const { url, type } = req.body || {};

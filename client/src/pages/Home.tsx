@@ -5,16 +5,18 @@ import { format } from "date-fns";
 import { HeroSection } from "@/components/HeroSection";
 import PageSEO from "@/components/PageSEO";
 import { ArticleCard, type Article } from "@/components/ArticleCard";
-import { EventsRibbon } from "@/components/EventsRibbon";
 import { Sidebar } from "@/components/Sidebar";
+import { EventsRibbon } from "@/components/EventsRibbon";
+import RawHtmlPreview from "@/components/RawHtmlPreview";
+import { useLanguage } from "@/components/LanguageProvider";
+import { apiRequest } from "@/lib/queryClient";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThumbsUp, Calendar, Play, ExternalLink, Flame, Sparkles } from "lucide-react";
-import { useLanguage } from "@/components/LanguageProvider";
+import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import type { Tutorial } from "@shared/mongodb-schema";
-import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   function RatioBox({ src, alt, mdHeightClass = "", children }: { src: string; alt: string; mdHeightClass?: string; children?: React.ReactNode }) {
@@ -55,7 +57,10 @@ export default function Home() {
   });
   const allEvents = eventsData?.items || [];
   const displayEvents = useMemo(() => {
-    return allEvents.filter((e: any) => (String(e.title || "").trim().length > 0) && (String(e.description || e.content || "").trim().length > 0));
+    return allEvents
+      .filter((e: any) => !e.rawHtmlContent)
+      .filter((e: any) => (String(e.title || "").trim().length > 0) && (String(e.description || e.content || "").trim().length > 0))
+      .slice(0, 5);
   }, [allEvents]);
 
   const { data: newsData } = useQuery<{ items: any[], total: number }>({
@@ -165,7 +170,41 @@ export default function Home() {
           <HeroSection post={heroPost} bgImageUrl={heroBgUrl} />
           
           <div className="py-12 space-y-16">
-            {/* 1. Events list in the centre column as the primary content block. */}
+            {/* 1. Event-preview priority: Every scraped event is rendered in a dedicated preview card at the top. */}
+            {allEvents.filter(e => e.rawHtmlContent).map((event: any) => (
+              <Card key={event.id} className="overflow-hidden border-2 border-primary/20 shadow-2xl">
+                <div className="bg-primary/5 px-6 py-4 border-b border-primary/10 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                    <span className="font-bold uppercase tracking-widest text-sm text-primary">Forum Announcement</span>
+                  </div>
+                  <Badge variant="outline" className="bg-background">{event.date}</Badge>
+                </div>
+                <CardContent className="p-0">
+                  <div className="p-6 md:p-10">
+                    <h2 className="text-3xl md:text-4xl font-black mb-6 uppercase tracking-tight italic text-primary">
+                      {event.title}
+                    </h2>
+                    <RawHtmlPreview 
+                      html={event.rawHtmlContent} 
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  {event.image && (
+                    <div className="w-full h-64 md:h-96 relative">
+                      <img 
+                        src={event.image} 
+                        alt={event.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Existing Ribbon for other events */}
             <div className="wiki-content-card rounded-2xl overflow-hidden">
               <EventsRibbon events={displayEvents} />
             </div>

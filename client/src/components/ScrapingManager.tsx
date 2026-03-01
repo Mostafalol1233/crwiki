@@ -12,6 +12,7 @@ import { Loader2, Download, Eye, CheckCircle, Calendar, Image as ImageIcon } fro
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import DOMPurify from 'isomorphic-dompurify';
+import RawHtmlPreview from "@/components/RawHtmlPreview";
 import type { ScrapedEvent } from "@shared/types";
 
 const sanitizeHTML = (html: string): string => {
@@ -574,11 +575,12 @@ export default function ScrapingManager() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Preview</label>
-                  <div 
-                    className="p-4 rounded-md border bg-muted/50 prose prose-sm dark:prose-invert max-w-none overflow-auto max-h-64"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(editedEvent?.content || '') }}
-                    data-testid="div-content-preview"
-                  />
+                  <div className="p-4 rounded-md border bg-muted/50 overflow-auto max-h-64">
+                    <RawHtmlPreview 
+                      html={editedEvent?.rawHtmlContent || editedEvent?.content || ''} 
+                      data-testid="div-content-preview"
+                    />
+                  </div>
                   {validation && (
                     <div className="mt-3 p-2 rounded border bg-muted">
                       <div className="text-xs text-muted-foreground mb-1">Detected text colors:</div>

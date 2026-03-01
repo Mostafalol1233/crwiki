@@ -358,7 +358,8 @@ export async function scrapeEventDetails(url) {
   }
 
   const contentEl = $('.Message.userContent, .MessageList .Message, .UserContent').first();
-  let content = contentEl?.html() || '';
+  const rawHtmlContent = contentEl?.html() || '';
+  let content = rawHtmlContent;
   if (content) {
     const normalized = normalizeForumHtml(content);
     content = DOMPurify.sanitize(normalized, {
@@ -385,6 +386,7 @@ export async function scrapeEventDetails(url) {
     date,
     image: finalImage,
     content,
+    rawHtmlContent,
     category: 'Announcement',
     colors,
     logo: logoUrl,

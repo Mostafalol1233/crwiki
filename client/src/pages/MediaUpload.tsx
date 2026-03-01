@@ -150,8 +150,18 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
 
       let filesToUpload = [...files];
       if (filesToUpload.length === 0 && urlInput) {
-        const f = await processUrl(urlInput);
-        if (f) filesToUpload = [f];
+        try {
+          var f = await processUrl(urlInput);
+          if (f) filesToUpload = [f];
+        } catch (err: any) {
+          console.error("[MediaUpload] Error processing URL", {
+            file: "MediaUpload.tsx",
+            line: 153,
+            error: err.message,
+            stack: err.stack
+          });
+          var f: any = null; // Fallback value
+        }
       }
 
       if (filesToUpload.length === 0) {

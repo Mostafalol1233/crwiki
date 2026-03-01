@@ -4,7 +4,18 @@ export interface ScrapedEvent {
   date: string;
   image: string;
   content: string;
+  rawHtmlContent?: string;
   category: string;
+  colors: string[];
+  logo?: string;
+  preview: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  ogTitle?: string;
+  ogDescription?: string;
+  ogType?: string;
+  ogUrl?: string;
 }
 
 export interface Event {
@@ -16,6 +27,7 @@ export interface Event {
   date: string;
   type: "upcoming" | "trending";
   image: string;
+  rawHtmlContent?: string;
 }
 
 export interface NewsItem {
@@ -30,6 +42,7 @@ export interface NewsItem {
   content: string;
   contentAr?: string;
   htmlContent?: string;
+  rawHtmlContent?: string;
   author: string;
   previewOnHome?: boolean;
   createdAt?: Date;

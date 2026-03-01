@@ -40,7 +40,7 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
         ["removeFormat"],
         ["outdent", "indent"],
         ["align", "horizontalRule", "list", "lineHeight"],
-        ["table", "link", "image", "video", "audio", "math"],
+        ["table", "link", "image", "video", "audio"],
         ["fullScreen", "showBlocks", "codeView"],
         ["preview", "print"],
       ],

@@ -286,7 +286,7 @@ export default function EventDetail() {
         }}
       />
       <div className="min-h-screen">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+        <div className="w-full px-4 md:px-8 py-8 md:py-12">
           {!(event as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}
           <div className="mb-8 mt-4 flex items-center gap-3 no-print">
             <Button
@@ -309,7 +309,7 @@ export default function EventDetail() {
             </Button>
           </div>
 
-          <div className={`${(event as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+          <div className={`${(event as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-4 md:p-8 lg:p-10 w-full"}`}>
             <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
               {!(event as any).fullLayout && (
                 <header className="mb-12">

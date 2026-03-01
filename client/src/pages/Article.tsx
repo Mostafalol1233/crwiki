@@ -80,9 +80,9 @@ export default function Article() {
   const isAdmin = useMemo(() => typeof window !== "undefined" && !!localStorage.getItem("adminToken"), []);
 
   const breadcrumbs = useMemo(() => [
-    { label: t("home"), href: "/" },
-    { label: finalArticle?.category || "News", href: `/category/${finalArticle?.category?.toLowerCase() || "news"}` },
-    { label: finalArticle?.title || "Article", href: "" }
+    { name: t("home"), url: "/" },
+    { name: finalArticle?.category || "News", url: `/category/${finalArticle?.category?.toLowerCase() || "news"}` },
+    { name: finalArticle?.title || "Article", url: "" }
   ], [t, finalArticle]);
 
   const relatedArticles = useMemo(() => {
@@ -135,9 +135,9 @@ export default function Article() {
         title={finalArticle?.title}
         description={finalArticle?.summary}
         keywords={finalArticle?.tags?.join(", ")}
-        image={finalArticle?.image || descriptionImage}
+        ogImage={finalArticle?.image || descriptionImage}
         canonicalUrl={finalArticle?.canonicalUrl || (slug ? `https://crossfire.wiki/article/${slug}` : undefined)}
-        type={finalArticle?.schemaType || "Article"}
+        schemaType={finalArticle?.schemaType || "Article"}
       />
       {finalArticle.image && (
         <SEOHead

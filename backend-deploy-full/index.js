@@ -5,6 +5,8 @@ import "dotenv/config";
 import express from "express";
 import path from "path";
 import fs from "fs";
+import fetch from "node-fetch";
+import * as cheerio from "cheerio";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 
@@ -2387,7 +2389,7 @@ async function registerRoutes(app2) {
         }
     });
 
-    app2.post("/api/admin/settings/site", requireAuth, requireAdmin, async (req, res) => {
+    app2.post("/api/admin/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const settings = req.body;
             fs.writeFileSync(path.join(__dirname, "settings.json"), JSON.stringify(settings, null, 2));
@@ -4523,6 +4525,56 @@ async function registerRoutes(app2) {
                 });
             } catch (error) {
                 res.status(500).json({ ok: false, error: error?.message || "validate_failed" });
+            }
+        });
+
+        app2.post("/api/admin/scrape-full-pages", requireAuth, requireAdmin, async (req, res) => {
+            try {
+                const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
+                if (urls.length === 0) return res.status(400).json({ error: "No URLs provided" });
+
+                const results = [];
+                for (const url of urls) {
+                    try {
+                        const response = await fetch(url, {
+                            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+                        });
+                        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+                        
+                        const html = await response.text();
+                        const $ = cheerio.load(html);
+
+                        // Remove scripts and styles
+                        $('script, style, iframe, noscript').remove();
+
+                        const title = $('title').text() || $('h1').first().text() || "Untitled Page";
+                        const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || "";
+                        const keywords = ($('meta[name="keywords"]').attr('content') || "").split(',').map(k => k.trim()).filter(Boolean);
+                        const mainImage = $('meta[property="og:image"]').attr('content') || $('link[rel="image_src"]').attr('href') || "";
+
+                        // Basic content extraction
+                        const content = $('article').html() || $('.content').html() || $('#content').html() || $('main').html() || $('body').html() || "";
+                        const textOnly = $('article').text() || $('.content').text() || $('#content').text() || $('main').text() || $('body').text() || "";
+                        const excerpt = textOnly.substring(0, 250).trim() + "...";
+
+                        results.push({
+                            url,
+                            title: title.trim(),
+                            description: description.trim(),
+                            keywords,
+                            mainImage,
+                            content: content.trim(),
+                            excerpt,
+                            contentLength: content.length
+                        });
+                    } catch (err) {
+                        results.push({ url, error: err.message });
+                    }
+                }
+
+                res.json({ ok: true, data: results });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
             }
         });
 

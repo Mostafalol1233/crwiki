@@ -72,6 +72,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
 import CFDataScraper from "@/components/CFDataScraper";
+import FullPageScraper from "@/components/FullPageScraper";
 import RestorationManager from "@/components/RestorationManager";
 import { PasteFormatter } from "@/components/PasteFormatter";
 import { ImageEditorModal, type ImageEditorConfig } from "@/components/ImageEditorModal";
@@ -1431,6 +1432,9 @@ export default function Admin() {
       twitterImage: "",
       schemaType: "Article",
       fullLayout: false,
+      sourceUrl: "",
+      isVerified: false,
+      externalLinks: [],
     });
   };
 
@@ -1453,6 +1457,9 @@ export default function Admin() {
       twitterImage: "",
       schemaType: "Event",
       fullLayout: false,
+      sourceUrl: "",
+      isVerified: false,
+      externalLinks: [],
     });
   };
 
@@ -1478,6 +1485,9 @@ export default function Admin() {
       twitterImage: "",
       schemaType: "NewsArticle",
       fullLayout: false,
+      sourceUrl: "",
+      isVerified: false,
+      externalLinks: [],
     });
   };
 
@@ -2343,6 +2353,9 @@ export default function Admin() {
                                       twitterImage: post.twitterImage || "",
                                       schemaType: post.schemaType || "Article",
                                       fullLayout: post.fullLayout || false,
+                                      sourceUrl: post.sourceUrl || "",
+                                      isVerified: post.isVerified || false,
+                                      externalLinks: post.externalLinks || [],
                                     });
                                     setIsCreatingPost(true);
                                   }}
@@ -2424,6 +2437,10 @@ export default function Admin() {
                           <h2 className="text-2xl font-semibold mb-4">CrossFire Data Scraper</h2>
                           <CFDataScraper />
                         </div>
+                        <div>
+                          <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
+                          <FullPageScraper />
+                        </div>
                       </>
                     ) : (
                       <Card>
@@ -2484,7 +2501,7 @@ export default function Admin() {
                               </Button>
                             )}
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
                             <div className="flex items-center justify-between">
                               <DialogTitle>
                                 {editingEvent ? "Edit Event" : "Create New Event"}
@@ -2763,6 +2780,9 @@ export default function Admin() {
                                           twitterImage: event.twitterImage || "",
                                           schemaType: event.schemaType || "Event",
                                           fullLayout: event.fullLayout || false,
+                                          sourceUrl: event.sourceUrl || "",
+                                          isVerified: event.isVerified || false,
+                                          externalLinks: event.externalLinks || [],
                                         });
                                         setIsCreatingEvent(true);
                                       }}
@@ -3281,6 +3301,9 @@ export default function Admin() {
                                           twitterImage: news.twitterImage || "",
                                           schemaType: news.schemaType || "NewsArticle",
                                           fullLayout: news.fullLayout || false,
+                                          sourceUrl: news.sourceUrl || "",
+                                          isVerified: news.isVerified || false,
+                                          externalLinks: news.externalLinks || [],
                                         });
                                         setIsCreatingNews(true);
                                       }}
@@ -4814,6 +4837,9 @@ export default function Admin() {
                                     twitterImage: event.twitterImage || "",
                                     schemaType: event.schemaType || "Event",
                                     fullLayout: event.fullLayout || false,
+                                    sourceUrl: event.sourceUrl || "",
+                                    isVerified: event.isVerified || false,
+                                    externalLinks: event.externalLinks || [],
                                   });
                                   setIsCreatingEvent(true);
                                 }}
@@ -4873,6 +4899,9 @@ export default function Admin() {
                                     twitterImage: news.twitterImage || "",
                                     schemaType: news.schemaType || "NewsArticle",
                                     fullLayout: news.fullLayout || false,
+                                    sourceUrl: news.sourceUrl || "",
+                                    isVerified: news.isVerified || false,
+                                    externalLinks: news.externalLinks || [],
                                   });
                                   setIsCreatingNews(true);
                                 }}

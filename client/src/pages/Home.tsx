@@ -236,7 +236,12 @@ export default function Home() {
               <aside className="lg:col-span-4 space-y-8">
                 {/* Sidebar Cards */}
                 <div className="wiki-content-card rounded-2xl p-6 shadow-xl border-t-4 border-t-primary">
-                  <Sidebar />
+                  <Sidebar 
+                    recentPosts={recentPosts} 
+                    popularTags={popularTags} 
+                    mostViewed={mostViewed} 
+                    bimoraPicks={bimoraPicks} 
+                  />
                 </div>
 
                 {/* Most Viewed */}

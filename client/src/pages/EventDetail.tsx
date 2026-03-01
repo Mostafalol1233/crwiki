@@ -285,14 +285,15 @@ export default function EventDetail() {
           ],
         }}
       />
-      <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
-          <Breadcrumbs items={breadcrumbs} />
-          <div className="mb-6 flex items-center gap-3">
+      <div className="min-h-screen">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+          {!(event as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}
+          <div className="mb-8 mt-4 flex items-center gap-3 no-print">
             <Button
-              variant="ghost"
+              variant="outline"
+              size="sm"
               onClick={() => setLocation("/")}
-              data-testid="button-back"
+              className="rounded-none font-bold uppercase tracking-tight"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("back")}
@@ -301,128 +302,84 @@ export default function EventDetail() {
               variant="outline"
               size="sm"
               onClick={() => setIsRTL(!isRTL)}
-              data-testid="button-toggle-rtl-event"
+              className="rounded-none font-bold uppercase tracking-tight"
             >
               <Languages className="mr-2 h-4 w-4" />
               {isRTL ? "LTR" : "Translate"}
             </Button>
           </div>
 
-          <Card className="overflow-hidden">
-            {event.image && (
-              <div className="relative w-full bg-black overflow-hidden flex justify-center">
-                {!imgLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className={`${(event as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+            <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
+              {!(event as any).fullLayout && (
+                <header className="mb-12">
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <Badge
+                      variant={event.type === "upcoming" ? "default" : "secondary"}
+                      className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1"
+                    >
+                      {event.type === "upcoming" ? t("upcoming") : t("trending")}
+                    </Badge>
+
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span className="date-text">{event.date}</span>
+                    </div>
                   </div>
-                )}
-                <img
-                  src={event.image}
-                  alt={title}
-                  className="w-full h-auto md:max-h-[550px] object-contain rounded-xl cursor-zoom-in"
-                  onError={(e: any) => { e.currentTarget.src = "/attached_assets/feature-crossfire.jpg"; }}
-                  onLoad={() => setImgLoaded(true)}
-                  data-testid="img-event"
-                  loading="lazy"
-                  decoding="async"
-                  onClick={() => setViewer({ open: true, src: event.image!, alt: title })}
+
+                  <h1
+                    className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}
+                  >
+                    {title}
+                  </h1>
+
+                  {event.image && (
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl mb-12">
+                      <img
+                        src={event.image}
+                        alt={title}
+                        className="w-full h-full object-cover cursor-zoom-in"
+                        onLoad={() => setImgLoaded(true)}
+                        onClick={() => setViewer({ open: true, src: event.image!, alt: title })}
+                      />
+                    </div>
+                  )}
+                </header>
+              )}
+
+              <div
+                className={`prose prose-xl dark:prose-invert max-w-none mb-16 ${isRTL ? "text-right" : ""}`}
+                dir={isRTL ? "rtl" : undefined}
+                ref={contentRef}
+                dangerouslySetInnerHTML={{
+                  __html: (() => {
+                    const transformEmbeds = (input: string) => {
+                      let out = String(input || "");
+                      out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video mb-8"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                      return out;
+                    };
+                    const html = transformEmbeds(description || "");
+                    return DOMPurify.sanitize(html, {
+                      ADD_TAGS: ['style', 'script', 'iframe'],
+                      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
+                      FORCE_BODY: true,
+                      ALLOW_UNKNOWN_PROTOCOLS: true,
+                    });
+                  })()
+                }}
+              />
+
+              <div className="border-t pt-12 mt-12">
+                <CommentSection
+                  comments={Array.isArray(comments) ? comments : []}
+                  onCommentSubmit={handleCommentSubmit}
+                  isAdmin={Boolean(localStorage.getItem("adminToken"))}
+                  onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
+                  onLike={(id) => likeCommentMutation.mutate(id)}
                 />
               </div>
-            )}
-
-            <CardContent className="p-6 md:p-8 space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge
-                  variant={event.type === "upcoming" ? "default" : "secondary"}
-                  data-testid={`badge-type-${event.type}`}
-                >
-                  {event.type === "upcoming" ? t("upcoming") : t("trending")}
-                </Badge>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span className="date-text" data-testid="text-date">{event.date}</span>
-                </div>
-
-                {hasTranslation && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const next = !showTranslation;
-                      setShowTranslation(next);
-                      setIsRTL(next);
-                    }}
-                    data-testid="button-toggle-translation"
-                  >
-                    <Languages className="mr-2 h-4 w-4" />
-                    {showTranslation ? t("showOriginal") : t("showTranslation")}
-                  </Button>
-                )}
-              </div>
-
-              <div>
-                <h1 className={`text-3xl md:text-4xl font-bold mb-4 ${isRTL ? "text-right" : ""}`} data-testid="text-title">
-                  {title}
-                </h1>
-
-                {description && (
-                  <div
-                    className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
-                    dir={isRTL ? "rtl" : undefined}
-                    ref={contentRef}
-                    dangerouslySetInnerHTML={{
-                      __html: (() => {
-                        const transformEmbeds = (input: string) => {
-                          let out = String(input || "");
-                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                          return out;
-                        };
-                        const html = transformEmbeds(description || "");
-                        return DOMPurify.sanitize(html, {
-                          ALLOWED_TAGS: [
-                            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                            'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr', 'small',
-                            'audio', 'video', 'source', 'iframe'
-                          ],
-                          ALLOWED_ATTR: [
-                            'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
-                            'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
-                          ],
-                          ALLOW_DATA_ATTR: false,
-                          KEEP_CONTENT: true,
-                        });
-                      })()
-                    }}
-                    data-testid="text-description"
-                  />
-                )}
-              </div>
-
-              {hasTranslation && (
-                <div className="pt-6 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    {showTranslation ? t("viewingTranslation") : t("translationAvailable")}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {event && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Comments</h2>
-              <CommentSection
-                comments={Array.isArray(comments) ? comments : []}
-                onCommentSubmit={handleCommentSubmit}
-                isAdmin={Boolean(localStorage.getItem("adminToken"))}
-                onDeleteComment={(id) => deleteCommentMutation.mutate(id)}
-                onLike={(id) => likeCommentMutation.mutate(id)}
-              />
-            </div>
-          )}
+            </article>
+          </div>
         </div>
       </div>
       <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open={viewer.open} onClose={() => setViewer((v) => ({ ...v, open: false }))} />

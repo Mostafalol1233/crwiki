@@ -1,6 +1,6 @@
 import { useParams, Link, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Clock, Eye, ArrowLeft, Languages, List, ChevronDown, ChevronRight, Flag } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Clock, Eye, ArrowLeft, Languages, List, Flag, Maximize2, User, Calendar, ListOrdered, CheckCircle, ExternalLink, Link2 as LinkIcon, Info, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,10 +9,8 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
-import { Loader2 } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
 
 export default function Article() {
@@ -25,8 +23,7 @@ export default function Article() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
-  const [isTocOpen, setIsTocOpen] = useState(true);
+  const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);
 
   const { data: article, isLoading } = useQuery<any>({
     queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
@@ -44,23 +41,69 @@ export default function Article() {
   });
   const allPosts = postsData?.items || [];
 
-  const fallbackFromList = allPosts.find((p: any) => (p?.post_slug && p.post_slug === slug) || (p?.id && (p.id === legacyId || p.id === slug)));
-  const finalArticle: any = article || fallbackFromList || null;
+  const finalArticle = useMemo(() => {
+    if (article) return article;
+    return allPosts.find((p: any) => 
+      (p?.post_slug && p.post_slug === slug) || 
+      (p?.id && (p.id === legacyId || p.id === slug))
+    ) || null;
+  }, [article, allPosts, slug, legacyId]);
 
   useEffect(() => {
-    if (legacyId && (finalArticle as any)?.post_slug) {
-      const target = `/posts/${(finalArticle as any).post_slug}`;
+    if (finalArticle?.content) {
+      const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
+      const hTags = doc.querySelectorAll("h2, h3, h4");
+      const hData = Array.from(hTags).map((h, i) => {
+        const id = `heading-${i}`;
+        h.id = id;
+        return { id, text: h.textContent || "", level: parseInt(h.tagName.substring(1)) };
+      });
+      setHeadings(hData);
+    }
+  }, [finalArticle?.content]);
+
+  useEffect(() => {
+    if (legacyId && finalArticle?.post_slug) {
+      const target = `/posts/${finalArticle.post_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== target) {
         setLocation(target);
       }
     }
-  }, [legacyId, (finalArticle as any)?.post_slug, setLocation]);
+  }, [legacyId, finalArticle?.post_slug, setLocation]);
 
   useEffect(() => {
-    setIsRTL((finalArticle as any)?.language === 'ar');
-  }, [(finalArticle as any)?.language]);
+    setIsRTL(finalArticle?.language === 'ar');
+  }, [finalArticle?.language]);
 
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
+
+  const isAdmin = useMemo(() => typeof window !== "undefined" && !!localStorage.getItem("adminToken"), []);
+
+  const breadcrumbs = useMemo(() => [
+    { label: t("home"), href: "/" },
+    { label: finalArticle?.category || "News", href: `/category/${finalArticle?.category?.toLowerCase() || "news"}` },
+    { label: finalArticle?.title || "Article", href: "" }
+  ], [t, finalArticle]);
+
+  const relatedArticles = useMemo(() => {
+    if (!finalArticle || !allPosts) return [];
+    return allPosts
+      .filter((p: any) => p.id !== finalArticle.id && p.category === finalArticle.category)
+      .slice(0, 3);
+  }, [finalArticle, allPosts]);
+
+  const rawContent = useMemo(() => {
+    if (!finalArticle?.content) return "";
+    const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
+    const hTags = doc.querySelectorAll("h2, h3, h4");
+    hTags.forEach((h, i) => {
+      h.id = `heading-${i}`;
+    });
+    return doc.body.innerHTML;
+  }, [finalArticle?.content]);
+
+  const firstImageMatch = useMemo(() => /<img[^>]+src=["']([^"']+)["']/i.exec(rawContent || ""), [rawContent]);
+  const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
 
   if (isLoading) {
     return (
@@ -86,62 +129,15 @@ export default function Article() {
     );
   }
 
-  const relatedArticles = allPosts
-    .filter(
-      (post) =>
-        post.id !== finalArticle.id &&
-        (post.category === finalArticle.category ||
-          (post.tags && Array.isArray(post.tags) && finalArticle.tags && Array.isArray(finalArticle.tags) && post.tags.some((tag: string) => finalArticle.tags.includes(tag))))
-    )
-    .slice(0, 3);
-
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const articleUrl = `${baseUrl}/posts/${slug || finalArticle?.post_slug || finalArticle?.id || legacyId}`;
-  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("adminToken");
-
-
-  const breadcrumbs = [
-    { name: finalArticle.category, url: `/category/${finalArticle.category.toLowerCase()}` },
-    { name: finalArticle.title, url: articleUrl },
-  ];
-
-  const rawContent = finalArticle.content ? finalArticle.content.replace(/\n/g, "<br />") : "";
-  const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(rawContent || "");
-  const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
-  const seoImage = finalArticle.ogImage || finalArticle.image || descriptionImage;
-
   return (
     <>
       <SEOHead
-        title={finalArticle.seoTitle || `${finalArticle.title} | Crossfire Wiki`}
-        description={finalArticle.seoDescription || finalArticle.summary || ""}
-        keywords={finalArticle.seoKeywords || finalArticle.tags || []}
-        canonicalUrl={finalArticle.canonicalUrl || articleUrl}
-        ogImage={seoImage}
-        twitterImage={finalArticle.twitterImage || seoImage}
-        ogTitle={finalArticle.seoTitle || finalArticle.title}
-        ogDescription={finalArticle.seoDescription || finalArticle.summary || ""}
-        ogType="article"
-        ogUrl={articleUrl}
-        ogImageWidth={1200}
-        ogImageHeight={630}
-        noindex={false}
-        schemaType={finalArticle.schemaType || "Article"}
-        schemaData={{
-          headline: finalArticle.title,
-          description: finalArticle.summary || "",
-          image: finalArticle.image,
-          author: {
-            "@type": "Person",
-            name: finalArticle.author,
-          },
-          datePublished: finalArticle.createdAt ? new Date(finalArticle.createdAt).toISOString() : new Date().toISOString(),
-          dateModified: finalArticle.updatedAt ? new Date(finalArticle.updatedAt).toISOString() : new Date().toISOString(),
-          mainEntityOfPage: {
-            "@type": "WebPage",
-            "@id": articleUrl,
-          },
-        }}
+        title={finalArticle?.title}
+        description={finalArticle?.summary}
+        keywords={finalArticle?.tags?.join(", ")}
+        image={finalArticle?.image || descriptionImage}
+        canonicalUrl={finalArticle?.canonicalUrl || (slug ? `https://crossfire.wiki/article/${slug}` : undefined)}
+        type={finalArticle?.schemaType || "Article"}
       />
       {finalArticle.image && (
         <SEOHead
@@ -156,14 +152,16 @@ export default function Article() {
           }}
         />
       )}
-      <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
-          <Breadcrumbs items={breadcrumbs} />
-          <div className="flex items-center gap-3 mb-6">
+      <div className="min-h-screen">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+          {!finalArticle.fullLayout && <Breadcrumbs items={breadcrumbs} />}
+          
+          <div className="flex items-center gap-3 mb-8 mt-4 no-print">
             <Button
-              variant="ghost"
+              variant="outline"
+              size="sm"
               asChild
-              data-testid="button-back-home"
+              className="rounded-none font-bold uppercase tracking-tight"
             >
               <Link href="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -174,196 +172,287 @@ export default function Article() {
               variant="outline"
               size="sm"
               onClick={() => setIsRTL(!isRTL)}
-              data-testid="button-toggle-rtl-article"
+              className="rounded-none font-bold uppercase tracking-tight"
             >
               <Languages className="mr-2 h-4 w-4" />
               {isRTL ? "LTR" : "Translate"}
             </Button>
           </div>
 
-          <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
-            <div className="mb-8 md:mb-12">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <Link href={`/category/${finalArticle.category.toLowerCase()}`}>
-                  <Badge variant="default" data-testid="badge-category" className="cursor-pointer hover:bg-primary/80">
-                    {finalArticle.category}
-                  </Badge>
-                </Link>
-                {finalArticle.tags && Array.isArray(finalArticle.tags) && finalArticle.tags.map((tag: string) => (
-                  <Link key={tag} href={`/search?q=${encodeURIComponent(tag)}`}>
-                    <Badge variant="outline" data-testid={`badge-tag-${tag}`} className="cursor-pointer hover:bg-accent">
-                      {tag}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
+          <div className={`${finalArticle.fullLayout ? "grid grid-cols-1 lg:grid-cols-12 gap-12" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+            <div className={`${finalArticle.fullLayout ? "lg:col-span-9" : ""}`}>
+              <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
+                {!finalArticle.fullLayout && (
+                  <>
+                    <header className="mb-12">
+                      <div className="flex flex-wrap items-center gap-2 mb-6 no-print">
+                        <Link href={`/category/${finalArticle?.category?.toLowerCase() || "news"}`}>
+                          <Badge variant="default" className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1">
+                            {finalArticle?.category || "NEWS"}
+                          </Badge>
+                        </Link>
+                        {finalArticle?.tags && Array.isArray(finalArticle.tags) && finalArticle.tags.map((tag: string) => (
+                          <Link key={tag} href={`/search?q=${encodeURIComponent(tag)}`}>
+                            <Badge variant="secondary" className="rounded-none uppercase font-bold text-[10px] px-3 py-1">
+                              #{tag}
+                            </Badge>
+                          </Link>
+                        ))}
+                      </div>
 
-              <h1
-                className={`text-3xl md:text-4xl lg:text-5xl font-bold mb-6 ${isRTL ? "text-right" : ""}`}
-                data-testid="text-article-title"
-              >
-                {finalArticle.title}
-              </h1>
+                      <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}>
+                        {finalArticle?.title}
+                      </h1>
 
-              <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm text-muted-foreground mb-8">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      {finalArticle.author
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span data-testid="text-author">{finalArticle.author}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span data-testid="text-reading-time">{finalArticle.readingTime} min read</span>
-                </div>
-                {isAdmin && typeof (finalArticle as any)?.views !== 'undefined' && (
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span data-testid="text-views">{finalArticle.views} views</span>
+                      <div className="flex flex-wrap items-center gap-6 text-xs font-bold uppercase tracking-widest text-muted-foreground border-y py-6 mb-12 border-border/50 no-print">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-primary/20">
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {finalArticle?.author?.[0]?.toUpperCase() || "B"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>BY {finalArticle?.author}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>{finalArticle?.readingTime} MIN READ</span>
+                        </div>
+                        {isAdmin && typeof finalArticle?.views !== 'undefined' && (
+                          <div className="flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            <span>{finalArticle.views} VIEWS</span>
+                          </div>
+                        )}
+                        <span>PUBLISHED: {finalArticle?.date || "N/A"}</span>
+                      </div>
+
+                      {finalArticle?.image && (
+                        <div className="relative w-full aspect-video rounded-none border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
+                          <img
+                            src={finalArticle.image}
+                            alt={finalArticle.title}
+                            className="object-contain w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
+                            onLoad={() => setImgLoaded(true)}
+                            onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )}
+                    </header>
+
+                    <div className="flex flex-wrap items-center gap-4 mb-8 no-print mt-8">
+                      {finalArticle?.isVerified && (
+                        <Badge variant="outline" className="rounded-none border-green-500 text-green-500 font-black uppercase italic px-3 py-1 bg-green-500/5">
+                          <CheckCircle className="h-3 w-3 mr-2" />
+                          Verified Content
+                        </Badge>
+                      )}
+                      {finalArticle?.sourceUrl && (
+                        <Button variant="ghost" size="sm" asChild className="p-0 h-auto text-[10px] font-black uppercase tracking-tight italic hover:text-primary transition-colors">
+                          <a href={finalArticle.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                            <ExternalLink className="h-3 w-3 mr-2" />
+                            Original Source
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+
+                    {headings.length > 0 && (
+                      <div className="mb-12 p-8 border border-border/50 bg-muted/5 rounded-none no-print wiki-toc">
+                        <div className="flex items-center gap-2 mb-6">
+                          <List className="h-5 w-5 text-primary" />
+                          <h2 className="text-xl font-black uppercase italic tracking-tight">Table of Contents</h2>
+                        </div>
+                        <nav className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
+                          {headings.map((h) => (
+                            <a
+                              key={h.id}
+                              href={`#${h.id}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className={`text-sm font-bold uppercase tracking-tight hover:text-primary transition-colors flex items-center gap-2 ${h.level > 2 ? 'pl-6 opacity-80' : ''}`}
+                            >
+                              <span className="text-[10px] text-primary/50">0{h.level - 1}.</span>
+                              {h.text}
+                            </a>
+                          ))}
+                        </nav>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!finalArticle.fullLayout && finalArticle?.summary && (
+                  <div className="mb-12 p-8 border-l-4 border-primary bg-primary/5 italic text-lg leading-relaxed rounded-none">
+                    {finalArticle.summary}
                   </div>
                 )}
-                <span data-testid="text-date">{finalArticle.date}</span>
-              </div>
 
-              {finalArticle.image && (
-                <div className="relative w-full bg-black rounded-md mb-8 overflow-hidden flex justify-center">
-                  {!imgLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
-                  <img
-                    src={finalArticle.image}
-                    alt={finalArticle.title}
-                    className="w-full h-auto max-h-[60vh] md:max-h-[650px] object-contain cursor-zoom-in"
-                    width="800"
-                    height="544"
-                    loading="lazy"
-                    fetchPriority="high"
-                    decoding="async"
-                    data-testid="img-article-cover"
-                    onLoad={() => setImgLoaded(true)}
-                    onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
+                <div className="wiki-article-body mt-12">
+                  <div
+                    ref={contentRef}
+                    className={`prose prose-slate dark:prose-invert max-w-none 
+                      prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter
+                      prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium
+                      prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                      prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50
+                      ${isRTL ? "rtl" : ""}`}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(rawContent, {
+                        ADD_TAGS: ['style', 'script', 'iframe'],
+                        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
+                        FORCE_BODY: true,
+                        ALLOW_UNKNOWN_PROTOCOLS: true,
+                      })
+                    }}
                   />
                 </div>
-              )}
-            </div>
 
-            {finalArticle.summary && (
-              <div className="bg-card border border-border rounded-md p-6 mb-8" dir={isRTL ? "rtl" : undefined}>
-                <p className={`text-lg text-foreground font-medium ${isRTL ? "text-right" : ""}`} data-testid="text-summary">
-                  {finalArticle.summary}
-                </p>
-              </div>
-            )}
-
-            {toc.length > 0 && (
-              <div className="bg-card border border-border rounded-md p-4 mb-8 w-full md:w-auto md:min-w-[300px] inline-block" dir={isRTL ? "rtl" : undefined}>
-                <div
-                  className="flex items-center justify-between cursor-pointer select-none"
-                  onClick={() => setIsTocOpen(!isTocOpen)}
-                >
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <List className="h-5 w-5" />
-                    {t("tableOfContents") || "Table of Contents"}
-                  </h3>
-                  {isTocOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                </div>
-                {isTocOpen && (
-                  <nav className="mt-4 space-y-1">
-                    {toc.map((item) => (
-                      <a
-                        key={item.id}
-                        href={`#${item.id}`}
-                        className={`block text-sm hover:underline hover:text-primary transition-colors py-1 ${item.level === 3 ? (isRTL ? "mr-4" : "ml-4 text-muted-foreground") : "font-medium"
-                          }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const el = document.getElementById(item.id);
-                          if (el) {
-                            const offset = 80; // Header height
-                            const elementPosition = el.getBoundingClientRect().top;
-                            const offsetPosition = elementPosition + window.pageYOffset - offset;
-                            window.scrollTo({
-                              top: offsetPosition,
-                              behavior: "smooth"
-                            });
-                            window.history.pushState(null, "", `#${item.id}`);
-                          }
-                        }}
-                      >
-                        {item.text}
-                      </a>
-                    ))}
-                  </nav>
+                {finalArticle.externalLinks && finalArticle.externalLinks.length > 0 && (
+                  <div className="mt-16 p-8 border border-border/50 bg-muted/5 rounded-none no-print">
+                    <h2 className="text-xl font-black uppercase italic tracking-tight mb-6 flex items-center gap-2">
+                      <LinkIcon className="h-5 w-5 text-primary" />
+                      External Links
+                    </h2>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {finalArticle.externalLinks.map((link: any, i: number) => (
+                        <li key={i}>
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold uppercase tracking-tight hover:text-primary transition-colors flex items-center gap-2 group"
+                          >
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full group-hover:scale-150 transition-transform" />
+                            {link.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-              </div>
-            )}
 
-            <div
-              className={`prose prose-lg dark:prose-invert max-w-none mb-12 ${isRTL ? "text-right" : ""}`}
-              dir={isRTL ? "rtl" : undefined}
-              ref={contentRef}
-              dangerouslySetInnerHTML={{
-                __html: (() => {
-                  const transformEmbeds = (input: string) => {
-                    let out = String(input || "");
-                    out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                    out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                    out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                    return out;
-                  };
-                  const raw = finalArticle.content ? finalArticle.content.replace(/\n/g, "<br />") : "";
-                  const html = transformEmbeds(raw);
-                  return DOMPurify.sanitize(html, {
-                    ALLOWED_TAGS: [
-                      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                      'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr',
-                      'audio', 'video', 'source', 'iframe'
-                    ],
-                    ALLOWED_ATTR: [
-                      'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
-                      'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
-                    ],
-                    ALLOW_DATA_ATTR: false,
-                    KEEP_CONTENT: true,
-                  });
-                })()
-              }}
-              data-testid="content-article-body"
-            />
+                <div className="flex justify-end mt-4 mb-8 no-print">
+                  <Button variant="outline" size="sm" asChild className="rounded-none font-bold uppercase tracking-tight">
+                    <Link href={`/support?category=content&title=Issue with article: ${encodeURIComponent(finalArticle?.title || "")}`}>
+                      <Flag className="mr-2 h-4 w-4" />
+                      Report Issue
+                    </Link>
+                  </Button>
+                </div>
 
-            <div className="flex justify-end mt-4 mb-8">
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/support?category=content&title=Issue with article: ${encodeURIComponent(finalArticle.title)}`}>
-                  <Flag className="mr-2 h-4 w-4" />
-                  Report Issue
-                </Link>
-              </Button>
+                {relatedArticles.length > 0 && (
+                  <div className="border-t pt-12 mt-12 no-print">
+                    <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter mb-8">
+                      {t("relatedArticles")}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {relatedArticles.map((relatedArticle) => (
+                        <ArticleCard
+                          key={relatedArticle.id}
+                          article={relatedArticle}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
             </div>
 
-            {relatedArticles.length > 0 && (
-              <div className="border-t pt-12 mt-12">
-                <h2 className="text-2xl md:text-3xl font-semibold mb-8">
-                  {t("relatedArticles")}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {relatedArticles.map((relatedArticle) => (
-                    <ArticleCard
-                      key={relatedArticle.id}
-                      article={relatedArticle}
-                    />
-                  ))}
+            {finalArticle.fullLayout && (
+              <aside className="lg:col-span-3 space-y-8 no-print">
+                <div className="wiki-sidebar-card p-8 border border-border/50 bg-muted/5 rounded-none sticky top-24 shadow-sm">
+                  <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-3 border-b border-primary/20 pb-4">
+                    <Info className="h-5 w-5 text-primary" />
+                    Article Metadata
+                  </h3>
+
+                  <div className="space-y-8">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Namespace</span>
+                      <span className="text-sm font-black uppercase italic tracking-tight text-primary">Main Article</span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Category</span>
+                      <Link href={`/category/${finalArticle?.category?.toLowerCase() || "news"}`} className="text-sm font-black uppercase tracking-tight hover:text-primary transition-colors">
+                        {finalArticle?.category || "NEWS"}
+                      </Link>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Author</span>
+                      <span className="text-sm font-black uppercase tracking-tight">{finalArticle?.author}</span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Last Updated</span>
+                      <span className="text-sm font-black uppercase tracking-tight">
+                        {finalArticle?.updatedAt ? new Date(finalArticle.updatedAt).toLocaleDateString() : (finalArticle?.createdAt ? new Date(finalArticle.createdAt).toLocaleDateString() : "N/A")}
+                      </span>
+                    </div>
+
+                    {finalArticle?.tags && finalArticle.tags.length > 0 && (
+                      <div className="flex flex-col gap-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Tags</span>
+                        <div className="flex flex-wrap gap-2">
+                          {finalArticle.tags.map((tag: string) => (
+                            <Link key={tag} href={`/search?q=${encodeURIComponent(tag)}`} className="text-[9px] font-black uppercase tracking-tighter border border-border/50 px-2 py-1 hover:bg-primary hover:text-primary-foreground transition-all">
+                              {tag}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-12 pt-8 border-t border-border/50 space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-4">Wiki Tools</h4>
+                    <Button variant="outline" size="sm" className="w-full rounded-none font-black uppercase tracking-tighter text-[10px] justify-start h-10 border-primary/20 hover:bg-primary/5 group" onClick={() => window.print()}>
+                      <Flag className="h-3 w-3 mr-3 text-primary group-hover:scale-110 transition-transform" />
+                      Print Version
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full rounded-none font-black uppercase tracking-tighter text-[10px] justify-start h-10 border-primary/20 hover:bg-primary/5 group" asChild>
+                      <Link href={`/support?category=content&title=Citation needed: ${encodeURIComponent(finalArticle?.title || "")}`}>
+                        <Share2 className="h-3 w-3 mr-3 text-primary group-hover:scale-110 transition-transform" />
+                        Cite Article
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
+
+                {headings.length > 0 && (
+                  <div className="wiki-sidebar-card p-8 border border-border/50 bg-muted/5 rounded-none sticky top-[500px] shadow-sm hidden lg:block">
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-3 border-b border-primary/20 pb-4">
+                      <ListOrdered className="h-5 w-5 text-primary" />
+                      Sections
+                    </h3>
+                    <nav className="space-y-4">
+                      {headings.slice(0, 10).map((h) => (
+                        <a
+                          key={h.id}
+                          href={`#${h.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className={`text-[11px] font-black uppercase tracking-tight hover:text-primary transition-colors flex items-center gap-3 group ${h.level > 2 ? 'pl-4 opacity-70' : ''}`}
+                        >
+                          <span className="w-1 h-1 bg-primary/30 group-hover:bg-primary transition-colors" />
+                          {h.text}
+                        </a>
+                      ))}
+                      {headings.length > 10 && (
+                        <span className="text-[10px] font-black uppercase italic text-muted-foreground pl-4">...and {headings.length - 10} more</span>
+                      )}
+                    </nav>
+                  </div>
+                )}
+              </aside>
             )}
-          </article>
+          </div>
         </div>
       </div>
       <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open={viewer.open} onClose={() => setViewer((v) => ({ ...v, open: false }))} />

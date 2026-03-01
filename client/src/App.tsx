@@ -113,6 +113,27 @@ function Layout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
 
+  // Site Background Logic
+  useEffect(() => {
+    let cancelled = false;
+    const updateBg = async () => {
+      try {
+        const data = await fetch("/api/public/settings/site").then(r => r.json());
+        if (cancelled) return;
+        const bgUrl = data?.backgroundImageUrl || "";
+        if (bgUrl) {
+          document.documentElement.style.setProperty('--site-bg-image', `url(${bgUrl})`);
+        } else {
+          document.documentElement.style.setProperty('--site-bg-image', 'none');
+        }
+      } catch (e) {
+        console.error("Failed to load site background", e);
+      }
+    };
+    updateBg();
+    return () => { cancelled = true; };
+  }, []);
+
   const [showNeon, setShowNeon] = useState(false);
   const [neonFade, setNeonFade] = useState(false);
   const audioRef = (typeof window !== "undefined") ? (window as any).__introAudioRef || { current: null } : { current: null };

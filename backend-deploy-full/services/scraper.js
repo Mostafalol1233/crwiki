@@ -199,6 +199,107 @@ export async function scrapeRanks() {
   }
 }
 
+export async function scrapePage(url) {
+  try {
+    const response = await axios.get(url, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      timeout: 20000
+    });
+
+    const $ = cheerio.load(response.data);
+    
+    // CrossFire specific patches page often has content in #patch_notes or similar
+    const title = $('h1').first().text().trim() || 
+                  $('.title').first().text().trim() || 
+                  $('title').text().trim() || 
+                  'CrossFire Patch Notes';
+    
+    // Try to find the main content area
+    const selectors = [
+      '#patch_notes', 
+      '.patch_notes', 
+      '.content_area', 
+      '.article-content', 
+      'article', 
+      '.post-content',
+      '#main-content'
+    ];
+    
+    let contentEl = null;
+    for (const s of selectors) {
+      if ($(s).length > 0) {
+        contentEl = $(s).first();
+        break;
+      }
+    }
+    
+    if (!contentEl) {
+      // Fallback: find the div with the most paragraphs
+      let maxP = 0;
+      $('div').each((_, el) => {
+        const pCount = $(el).find('p').length;
+        if (pCount > maxP) {
+          maxP = pCount;
+          contentEl = $(el);
+        }
+      });
+    }
+
+    let content = contentEl?.html() || $('body').html() || '';
+    
+    // Clean up content
+    const $content = cheerio.load(content);
+    $content('script, style, iframe, nav, footer, header, .ads, .sidebar').remove();
+    
+    // Resolve image URLs
+    $content('img').each((_, el) => {
+      let src = $(el).attr('src');
+      if (src && !src.startsWith('http')) {
+        try {
+          $(el).attr('src', new URL(src, url).toString());
+        } catch (e) {}
+      }
+    });
+    
+    content = $content.html();
+    
+    const sanitized = DOMPurify.sanitize(content, {
+      ADD_TAGS: ['style', 'script', 'iframe'],
+      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target', 'style', 'class'],
+      FORCE_BODY: true,
+      ALLOW_UNKNOWN_PROTOCOLS: true,
+    });
+
+    // Find main image
+    let image = $('meta[property="og:image"]').attr('content') || 
+                $('meta[name="twitter:image"]').attr('content') || '';
+    
+    if (!image) {
+      const firstImg = $content('img').first();
+      image = firstImg.attr('src') || '';
+    }
+
+    const summary = $('meta[name="description"]').attr('content') || 
+                    $('meta[property="og:description"]').attr('content') || 
+                    $(contentEl).text().trim().substring(0, 200) + '...';
+
+    return {
+      title,
+      content: sanitized,
+      summary,
+      image,
+      url
+    };
+  } catch (error) {
+    console.error(`Scrape error for ${url}:`, error.message);
+    return null;
+  }
+}
+
 export async function scrapeEventDetails(url) {
   const response = await axios.get(url, {
     headers: { 'User-Agent': 'Mozilla/5.0' },

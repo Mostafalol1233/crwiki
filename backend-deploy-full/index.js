@@ -513,6 +513,7 @@ var insertPostSchema = z.object({
     readingTime: z.number(),
     featured: z.boolean().optional(),
     order: z.number().optional(),
+    fullLayout: z.boolean().optional(),
 });
 var insertConversationSchema = z.object({
     participants: z.array(z.string()),
@@ -541,6 +542,7 @@ var insertEventSchema = z.object({
     twitterImage: z.string().optional(),
     schemaType: z.string().optional(),
     order: z.number().optional(),
+    fullLayout: z.boolean().optional(),
 });
 var insertNewsSchema = z.object({
     title: z.string(),
@@ -562,6 +564,7 @@ var insertNewsSchema = z.object({
     twitterImage: z.string().optional(),
     schemaType: z.string().optional(),
     order: z.number().optional(),
+    fullLayout: z.boolean().optional(),
 });
 var insertTicketSchema = z.object({
     title: z.string(),
@@ -950,7 +953,7 @@ var MongoDBStorage = class {
     async getEventBySlug(slug) {
         const ev = await EventModel.findOne({ event_name_slug: slug }).lean();
         if (!ev) return void 0;
-        return { ...ev, id: String(ev._id) };
+        return { ...ev, id: String(ev._id), fullLayout: !!ev.fullLayout };
     }
     async getPostBySlug(slug) {
         const post = await PostModel.findOne({ post_slug: slug }).lean();
@@ -962,6 +965,7 @@ var MongoDBStorage = class {
             views: post.views || 0,
             category: post.category || "",
             author: post.author || "Unknown",
+            fullLayout: !!post.fullLayout,
         };
     }
     async getAllNews() {
@@ -1103,6 +1107,7 @@ var MongoDBStorage = class {
             ogImage: news.ogImage,
             twitterImage: news.twitterImage,
             schemaType: news.schemaType,
+            fullLayout: !!news.fullLayout,
             createdAt: news.createdAt,
         };
     }
@@ -2373,6 +2378,25 @@ async function registerRoutes(app2) {
         }
     });
 
+    app2.get("/api/public/settings/site", async (req, res) => {
+        try {
+            const data = fs.readFileSync(path.join(__dirname, "settings.json"), "utf8");
+            res.json(JSON.parse(data));
+        } catch (e) {
+            res.json({ backgroundImageUrl: "" });
+        }
+    });
+
+    app2.post("/api/admin/settings/site", requireAuth, requireAdmin, async (req, res) => {
+        try {
+            const settings = req.body;
+            fs.writeFileSync(path.join(__dirname, "settings.json"), JSON.stringify(settings, null, 2));
+            res.json({ success: true });
+        } catch (e) {
+            res.status(500).send("Error saving settings");
+        }
+    });
+
     app2.get("/api/events", async (req, res) => {
         try {
             const limit = Math.max(1, Math.min(100, parseInt(String(req.query?.limit || "20"), 10) || 20));
@@ -2604,10 +2628,6 @@ async function registerRoutes(app2) {
                     }
                 } catch (err) {
                     console.warn(`Failed to create event: ${err.message}`);
-                    failedEvents.push({
-                        title: eventData.title,
-                        error: err.message
-                    });
                 }
             }
             res.status(201).json({
@@ -2636,6 +2656,39 @@ async function registerRoutes(app2) {
     // Scrape events endpoint for admin panel
     app2.post("/api/scrape-events", async (req, res) => {
         try {
+            const { url, type } = req.body || {};
+            if (url) {
+                console.log(`🔍 Scraping custom URL: ${url}`);
+                const data = await scrapePage(url);
+                if (!data) return res.status(400).json({ error: "Failed to scrape page" });
+                
+                if (type === 'post') {
+                    const postData = {
+                        title: data.title,
+                        content: data.content,
+                        summary: data.summary,
+                        image: data.image,
+                        category: "News",
+                        tags: ["Scraped"],
+                        author: "Bimora Scraper",
+                        readingTime: calculateReadingTime(data.content),
+                        featured: false
+                    };
+                    const post = await storage.createPost(insertPostSchema.parse(postData));
+                    return res.json({ success: true, item: post, type: 'post' });
+                } else {
+                    const eventData = {
+                        title: data.title,
+                        description: data.content,
+                        date: new Date().toISOString().split('T')[0],
+                        type: 'upcoming',
+                        image: data.image || 'https://files.catbox.moe/wof38b.jpeg'
+                    };
+                    const event = await storage.createEvent(insertEventSchema.parse(eventData));
+                    return res.json({ success: true, item: event, type: 'event' });
+                }
+            }
+
             console.log("🔍 Admin: Easy scrape - Getting forum announcements...");
             const posts = await scrapeForumAnnouncements();
             if (!posts || posts.length === 0) {

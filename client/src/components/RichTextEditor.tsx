@@ -33,11 +33,16 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
     return {
       buttonList: [
         ["undo", "redo"],
-        ["formatBlock", "bold", "underline", "italic", "strike"],
-        ["fontColor", "hiliteColor"],
-        ["align", "list", "indent", "outdent"],
-        ["table", "link", "image", "video"],
-        ["removeFormat", "fullScreen", "showBlocks", "codeView"],
+        ["font", "fontSize", "formatBlock"],
+        ["paragraphStyle", "blockquote"],
+        ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+        ["fontColor", "hiliteColor", "textStyle"],
+        ["removeFormat"],
+        ["outdent", "indent"],
+        ["align", "horizontalRule", "list", "lineHeight"],
+        ["table", "link", "image", "video", "audio", "math"],
+        ["fullScreen", "showBlocks", "codeView"],
+        ["preview", "print"],
       ],
       katex: null,
       height,
@@ -45,6 +50,10 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
       imageRotation: true,
       charCounter: true,
       defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`,
+      codeMirror: {
+        src: "https://cdn.jsdelivr.net/npm/codemirror@5.65.0",
+        style: "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/lib/codemirror.css",
+      }
     };
   }, [direction, height]);
 

@@ -176,7 +176,110 @@ const GalleryUploader = ({
 };
 
 export default function Admin() {
- 
+  const [postForm, setPostForm] = useState({
+    title: "",
+    post_slug: "",
+    content: "",
+    summary: "",
+    image: "",
+    images: [] as string[],
+    category: "Tutorials",
+    tags: "",
+    author: "Bimora Team",
+    featured: false,
+    previewOnHome: true,
+    readingTime: 5,
+    language: "en",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    canonicalUrl: "",
+    ogImage: "",
+    twitterImage: "",
+    schemaType: "Article",
+    fullLayout: false,
+    sourceUrl: "",
+    isVerified: false,
+    externalLinks: [] as { name: string; url: string }[],
+  });
+
+  const [eventForm, setEventForm] = useState({
+    title: "",
+    titleAr: "",
+    description: "",
+    descriptionAr: "",
+    date: "",
+    type: "upcoming" as "upcoming" | "trending",
+    image: "",
+    images: [] as string[],
+    event_name_slug: "",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    canonicalUrl: "",
+    ogImage: "",
+    twitterImage: "",
+    schemaType: "Event",
+    fullLayout: false,
+    sourceUrl: "",
+    isVerified: false,
+    externalLinks: [] as { name: string; url: string }[],
+  });
+
+  const [newsForm, setNewsForm] = useState({
+    title: "",
+    news_slug: "",
+    titleAr: "",
+    dateRange: "",
+    image: "",
+    images: [] as string[],
+    category: "News",
+    content: "",
+    contentAr: "",
+    author: "Bimora Team",
+    featured: false,
+    previewOnHome: true,
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+    canonicalUrl: "",
+    ogImage: "",
+    twitterImage: "",
+    schemaType: "NewsArticle",
+    fullLayout: false,
+    sourceUrl: "",
+    isVerified: false,
+    externalLinks: [] as { name: string; url: string }[],
+  });
+
+  const [sellerForm, setSellerForm] = useState({
+    name: "",
+    description: "",
+    images: "",
+    prices: "",
+    priceItems: [] as { item: string; price: string }[],
+    email: "",
+    phone: "",
+    whatsapp: "",
+    discord: "",
+    website: "",
+    facebook: "",
+    twitter: "",
+    instagram: "",
+    youtube: "",
+    tiktok: "",
+    telegram: "",
+    featured: false,
+    promotionText: "",
+    rank: "",
+  });
+
+  const [adminForm, setAdminForm] = useState({
+    username: "",
+    password: "",
+    role: "admin" as "admin" | "seller_admin" | "scraper_admin" | "super_admin",
+    allowedSellerIds: [] as string[],
+  });
 
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -296,13 +399,41 @@ export default function Admin() {
   const [editingImageSrc, setEditingImageSrc] = useState("");
   const [imageEditorConfig, setImageEditorConfig] = useState<ImageEditorConfig | undefined>(undefined);
 
-  
-
- 
-
- 
-
   const [editingSellerImageIndex, setEditingSellerImageIndex] = useState<number | null>(null);
+
+  const [drafts, setDrafts] = useState<Record<string, any>>({});
+  
+  // Auto-save logic
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const currentDrafts = {
+        post: postForm,
+        event: eventForm,
+        news: newsForm
+      };
+      localStorage.setItem("admin_drafts", JSON.stringify(currentDrafts));
+    }, 30000); // every 30 seconds
+    return () => clearInterval(timer);
+  }, [postForm, eventForm, newsForm]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("admin_drafts");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setDrafts(parsed);
+      } catch(e) {}
+    }
+  }, []);
+
+  const restoreDraft = (type: 'post' | 'event' | 'news') => {
+    if (drafts[type]) {
+      if (type === 'post') setPostForm(drafts.post);
+      if (type === 'event') setEventForm(drafts.event);
+      if (type === 'news') setNewsForm(drafts.news);
+      toast({ title: "Draft restored", description: `Restored your last saved ${type} content.` });
+    }
+  };
 
   const handleImageSave = (newSrc: string) => {
     if (editingSellerImageIndex !== null) {
@@ -337,6 +468,29 @@ export default function Admin() {
   const [seoSettings, setSeoSettings] = useState<{ base: string; og: string; bg: string; title: string; desc: string; keywords: string; robots: string }>({ base: "", og: "", bg: "", title: "", desc: "", keywords: "", robots: "index, follow" });
 
  
+
+  const [bgSettings, setBgSettings] = useState({
+    backgroundImageUrl: ""
+  });
+
+  const saveBgSettings = async () => {
+    try {
+      await apiRequest("/api/admin/settings/site", "POST", bgSettings);
+      toast({ title: "Settings saved", description: "Background image updated." });
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+    }
+  };
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await apiRequest("/api/public/settings/site", "GET");
+        if (data) setBgSettings({ backgroundImageUrl: data.backgroundImageUrl || "" });
+      } catch (e) {}
+    };
+    loadSettings();
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -510,99 +664,6 @@ export default function Admin() {
   }
   async function closeRegistration() { const r = await apiRequest("/api/admin/registration/close", "POST", {}); setRegistrationClosed(!!r?.closed); }
   async function openRegistration() { const r = await apiRequest("/api/admin/registration/open", "POST", {}); setRegistrationClosed(!!r?.closed); }
-
-  const [postForm, setPostForm] = useState({
-    title: "",
-    post_slug: "",
-    content: "",
-    summary: "",
-    image: "",
-    images: [] as string[],
-    category: "Tutorials",
-    tags: "",
-    author: "Bimora Team",
-    featured: false,
-    previewOnHome: true,
-    readingTime: 5,
-    language: "en",
-    seoTitle: "",
-    seoDescription: "",
-    seoKeywords: "",
-    canonicalUrl: "",
-    ogImage: "",
-    twitterImage: "",
-    schemaType: "Article",
-  });
-
-  const [eventForm, setEventForm] = useState({
-    title: "",
-    titleAr: "",
-    description: "",
-    descriptionAr: "",
-    date: "",
-    type: "upcoming" as "upcoming" | "trending",
-    image: "",
-    images: [] as string[],
-    event_name_slug: "",
-    seoTitle: "",
-    seoDescription: "",
-    seoKeywords: "",
-    canonicalUrl: "",
-    ogImage: "",
-    twitterImage: "",
-    schemaType: "Event",
-  });
-
-  const [newsForm, setNewsForm] = useState({
-    title: "",
-    news_slug: "",
-    titleAr: "",
-    dateRange: "",
-    image: "",
-    images: [] as string[],
-    category: "News",
-    content: "",
-    contentAr: "",
-    author: "Bimora Team",
-    featured: false,
-    previewOnHome: true,
-    seoTitle: "",
-    seoDescription: "",
-    seoKeywords: "",
-    canonicalUrl: "",
-    ogImage: "",
-    twitterImage: "",
-    schemaType: "NewsArticle",
-  });
-
-  const [sellerForm, setSellerForm] = useState({
-    name: "",
-    description: "",
-    images: "",
-    prices: "",
-    priceItems: [] as { item: string; price: string }[],
-    email: "",
-    phone: "",
-    whatsapp: "",
-    discord: "",
-    website: "",
-    facebook: "",
-    twitter: "",
-    instagram: "",
-    youtube: "",
-    tiktok: "",
-    telegram: "",
-    featured: false,
-    promotionText: "",
-    rank: "",
-  });
-
-  const [adminForm, setAdminForm] = useState({
-    username: "",
-    password: "",
-    role: "admin" as "admin" | "seller_admin" | "scraper_admin" | "super_admin",
-    allowedSellerIds: [] as string[],
-  });
   const [adminPermissionsForm, setAdminPermissionsForm] = useState<Record<string, boolean>>({});
 
   const AVAILABLE_PERMISSIONS: { key: string; label: string }[] = [
@@ -1369,6 +1430,7 @@ export default function Admin() {
       ogImage: "",
       twitterImage: "",
       schemaType: "Article",
+      fullLayout: false,
     });
   };
 
@@ -1390,6 +1452,7 @@ export default function Admin() {
       ogImage: "",
       twitterImage: "",
       schemaType: "Event",
+      fullLayout: false,
     });
   };
 
@@ -1414,6 +1477,7 @@ export default function Admin() {
       ogImage: "",
       twitterImage: "",
       schemaType: "NewsArticle",
+      fullLayout: false,
     });
   };
 
@@ -1959,15 +2023,23 @@ export default function Admin() {
                             <Badge variant="outline">{postForm.language === "ar" ? "RTL" : "LTR"}</Badge>
                           </div>
                           <div className="space-y-2">
-                                <div data-testid="input-post-content">
-                                  <RichTextEditor
-                                    value={postForm.content}
-                                    onChange={(value) => setPostForm({ ...postForm, content: value })}
-                                    placeholder="Write your content here..."
-                                    direction={postForm.language === 'ar' ? 'rtl' : 'ltr'}
-                                    height={360}
-                                  />
-                                </div>
+                            <div className="flex items-center justify-between">
+                              <Label>Content</Label>
+                              {drafts.post && (
+                                <Button variant="outline" size="sm" onClick={() => restoreDraft('post')}>
+                                  <RotateCw className="h-3 w-3 mr-1" /> Restore Draft
+                                </Button>
+                              )}
+                            </div>
+                            <div data-testid="input-post-content">
+                              <RichTextEditor
+                                value={postForm.content}
+                                onChange={(value) => setPostForm({ ...postForm, content: value })}
+                                placeholder="Write your content here..."
+                                direction={postForm.language === 'ar' ? 'rtl' : 'ltr'}
+                                height={600}
+                              />
+                            </div>
                           </div>
                           <Textarea
                             placeholder="Summary (optional)"
@@ -2047,6 +2119,19 @@ export default function Admin() {
                               data-testid="checkbox-post-preview-home"
                             />
                             <span className="text-sm">Show on Home</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                            <input
+                              type="checkbox"
+                              checked={postForm.fullLayout}
+                              onChange={(e) =>
+                                setPostForm({
+                                  ...postForm,
+                                  fullLayout: e.target.checked,
+                                })
+                              }
+                            />
+                            <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                           </label>
 
                           <div className="space-y-4 pt-4 border-t">
@@ -2257,6 +2342,7 @@ export default function Admin() {
                                       ogImage: post.ogImage || "",
                                       twitterImage: post.twitterImage || "",
                                       schemaType: post.schemaType || "Article",
+                                      fullLayout: post.fullLayout || false,
                                     });
                                     setIsCreatingPost(true);
                                   }}
@@ -2399,11 +2485,16 @@ export default function Admin() {
                             )}
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                            <DialogHeader>
+                            <div className="flex items-center justify-between">
                               <DialogTitle>
                                 {editingEvent ? "Edit Event" : "Create New Event"}
                               </DialogTitle>
-                            </DialogHeader>
+                              {drafts.event && (
+                                <Button variant="outline" size="sm" onClick={() => restoreDraft('event')}>
+                                  <RotateCw className="h-3 w-3 mr-1" /> Restore Draft
+                                </Button>
+                              )}
+                            </div>
                             <div className="space-y-6">
                               <Input
                                 placeholder="Title (English)"
@@ -2491,6 +2582,20 @@ export default function Admin() {
                                 <option value="upcoming">Upcoming</option>
                                 <option value="trending">Trending</option>
                               </select>
+
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={eventForm.fullLayout}
+                                  onChange={(e) =>
+                                    setEventForm({
+                                      ...eventForm,
+                                      fullLayout: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
+                              </label>
 
                               <div className="space-y-4 pt-4 border-t">
                                 <h3 className="text-sm font-semibold">SEO Settings</h3>
@@ -2657,6 +2762,7 @@ export default function Admin() {
                                           ogImage: event.ogImage || "",
                                           twitterImage: event.twitterImage || "",
                                           schemaType: event.schemaType || "Event",
+                                          fullLayout: event.fullLayout || false,
                                         });
                                         setIsCreatingEvent(true);
                                       }}
@@ -2743,11 +2849,16 @@ export default function Admin() {
                             )}
                           </DialogTrigger>
                           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-                            <DialogHeader>
+                            <div className="flex items-center justify-between">
                               <DialogTitle>
                                 {editingNews ? "Edit News Item" : "Create New News Item"}
                               </DialogTitle>
-                            </DialogHeader>
+                              {drafts.news && (
+                                <Button variant="outline" size="sm" onClick={() => restoreDraft('news')}>
+                                  <RotateCw className="h-3 w-3 mr-1" /> Restore Draft
+                                </Button>
+                              )}
+                            </div>
                             <div className="space-y-6">
                               <Input
                                 placeholder="Title (English)"
@@ -2908,6 +3019,19 @@ export default function Admin() {
                                   data-testid="checkbox-news-preview-home"
                                 />
                                 <span className="text-sm">Show on Home</span>
+                              </label>
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={newsForm.fullLayout}
+                                  onChange={(e) =>
+                                    setNewsForm({
+                                      ...newsForm,
+                                      fullLayout: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
 
                               <div className="space-y-4 pt-4 border-t">
@@ -3156,6 +3280,7 @@ export default function Admin() {
                                           ogImage: news.ogImage || "",
                                           twitterImage: news.twitterImage || "",
                                           schemaType: news.schemaType || "NewsArticle",
+                                          fullLayout: news.fullLayout || false,
                                         });
                                         setIsCreatingNews(true);
                                       }}
@@ -4688,6 +4813,7 @@ export default function Admin() {
                                     ogImage: event.ogImage || "",
                                     twitterImage: event.twitterImage || "",
                                     schemaType: event.schemaType || "Event",
+                                    fullLayout: event.fullLayout || false,
                                   });
                                   setIsCreatingEvent(true);
                                 }}
@@ -4746,6 +4872,7 @@ export default function Admin() {
                                     ogImage: news.ogImage || "",
                                     twitterImage: news.twitterImage || "",
                                     schemaType: news.schemaType || "NewsArticle",
+                                    fullLayout: news.fullLayout || false,
                                   });
                                   setIsCreatingNews(true);
                                 }}
@@ -5952,6 +6079,81 @@ export default function Admin() {
                   </div>
                 </TabsContent>
               )}
+              <TabsContent value="site-settings" className="space-y-6">
+                <Card className="wiki-content-card">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-black uppercase italic tracking-tight">
+                      Global Site Customization
+                    </CardTitle>
+                    <CardDescription>
+                      Customize the look and feel of the entire wiki without restrictions.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    <div className="space-y-4">
+                      <Label className="text-lg font-bold uppercase italic">Full Site Background</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <Label>Background Image URL</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              placeholder="https://example.com/bg.jpg" 
+                              value={bgSettings.backgroundImageUrl}
+                              onChange={(e) => setBgSettings({ ...bgSettings, backgroundImageUrl: e.target.value })}
+                            />
+                            <Button variant="outline" size="icon" onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = async (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file) {
+                                  const fd = new FormData();
+                                  fd.append('image', file);
+                                  try {
+                                    const res = await fetch('/api/upload-image', {
+                                      method: 'POST',
+                                      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+                                      body: fd
+                                    });
+                                    const data = await res.json();
+                                    if (data.url) setBgSettings({ ...bgSettings, backgroundImageUrl: data.url });
+                                  } catch (err) {
+                                    toast({ title: "Upload failed", variant: "destructive" });
+                                  }
+                                }
+                              };
+                              input.click();
+                            }}>
+                              <Upload className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground italic">
+                            Tip: Use high-quality dark/industrial images for the best CrossFire look.
+                          </p>
+                        </div>
+                        <div className="border rounded-xl overflow-hidden aspect-video relative bg-muted">
+                          {bgSettings.backgroundImageUrl ? (
+                            <img src={bgSettings.backgroundImageUrl} className="w-full h-full object-cover" alt="Preview" />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">No Background Set</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t">
+                      <Button 
+                        size="lg" 
+                        onClick={saveBgSettings}
+                        className="w-full md:w-auto font-black uppercase italic tracking-widest px-12"
+                      >
+                        Apply Global Theme
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </div>
           </div>
         </Tabs>

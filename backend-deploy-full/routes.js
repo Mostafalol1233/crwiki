@@ -36,6 +36,94 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 const CSRF_TOKEN = process.env.CSRF_TOKEN || ('cf-' + Math.random().toString(36).slice(2));
+const ensureDir = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch { } };
+const IMAGES_DIR = path.resolve('backend-deploy-full/uploads/images');
+const BACKUP_DIR = path.resolve('backend-deploy-full/uploads/images_backup');
+ensureDir(IMAGES_DIR);
+ensureDir(BACKUP_DIR);
+
+async function optimizeToWebP(srcPath, destBase, kind) {
+    const sizes = [
+        { name: 'thumb', width: 320 },
+        { name: 'medium', width: 800 },
+        { name: 'large', width: 1200 },
+    ];
+    const outputs = [];
+    for (const s of sizes) {
+        const outPath = path.join(IMAGES_DIR, `${destBase}-${s.name}.webp`);
+        const pipeline = sharp(srcPath, { animated: true }).resize({ width: s.width, height: 1080, fit: 'inside' });
+        if (kind === 'graphics') {
+            await pipeline.webp({ lossless: true }).toFile(outPath);
+        } else {
+            await pipeline.webp({ quality: 72 }).toFile(outPath);
+        }
+        outputs.push({ size: s.name, path: outPath });
+    }
+    const mainOut = path.join(IMAGES_DIR, `${destBase}.webp`);
+    const mainPipe = sharp(srcPath, { animated: true }).resize({ width: 1920, height: 1080, fit: 'inside' });
+    if (kind === 'graphics') {
+        await mainPipe.webp({ lossless: true }).toFile(mainOut);
+    } else {
+        await mainPipe.webp({ quality: 72 }).toFile(mainOut);
+    }
+    outputs.push({ size: 'main', path: mainOut });
+    return outputs;
+}
+
+function pickKindFromContext(title, category) {
+    const t = String(title || '').toLowerCase();
+    const c = String(category || '').toLowerCase();
+    if (c.includes('event') || t.includes('screenshot')) return 'graphics';
+    return 'photo';
+}
+
+function buildSeoFilename({ title, category, date, feature }) {
+    const game = 'crossfire';
+    const theme = slugifySafe(category || 'general');
+    const content = slugifySafe(title || 'image');
+    const year = String((date && new Date(date).getFullYear()) || new Date().getFullYear());
+    const feat = slugifySafe(feature || 'feature');
+    return `${game}-${theme}-${content}-${year}-${feat}`;
+}
+
+const LOG_DIR = path.resolve('backend-deploy-full/logs');
+ensureDir(LOG_DIR);
+const LOG_FILE = path.join(LOG_DIR, 'image-processing.jsonl');
+const logChange = (entry) => { try { fs.appendFileSync(LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
+const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
+const logSeoChange = (entry) => { try { fs.appendFileSync(SEO_LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
+const UPLOAD_LOG_FILE = path.join(LOG_DIR, 'upload-events.jsonl');
+const logUpload = (entry) => { try { fs.appendFileSync(UPLOAD_LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
+const uploadStats = { total: 0, success: 0, failed: 0, durations: [] };
+function recordUpload(ok, durationMs) {
+    uploadStats.total++;
+    if (ok) uploadStats.success++; else uploadStats.failed++;
+    if (typeof durationMs === 'number' && isFinite(durationMs)) uploadStats.durations.push(durationMs);
+    if (uploadStats.durations.length > 1000) uploadStats.durations.splice(0, uploadStats.durations.length - 1000);
+}
+
+function sanitizeFilename(name) {
+    const n = String(name || '').trim();
+    if (!n) return '';
+    return n.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120);
+}
+
+function mimeToExt(mime) {
+    const map = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+        'video/mp4': 'mp4',
+        'video/webm': 'webm',
+        'video/ogg': 'ogv',
+        'audio/mpeg': 'mp3',
+        'audio/ogg': 'ogg',
+        'audio/wav': 'wav',
+    };
+    return map[mime] || 'bin';
+}
+
 export async function registerRoutes(app) {
     // Ensure non-POST methods on /images/upload return 405 before static middleware
     app.get('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
@@ -1656,7 +1744,9 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         catch (error) {
             res.status(500).json({ error: error.message });
         }
-        app.post("/api/events/bulk-create", requireAuth, requireEventScraper, async (req, res) => {
+    });
+
+    app.post("/api/events/bulk-create", requireAuth, requireEventScraper, async (req, res) => {
             try {
                 const { events, createAsNews } = req.body;
                 if (!events || !Array.isArray(events)) {
@@ -4089,65 +4179,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 res.status(500).json({ error: error.message });
             }
         });
-        const httpServer = createServer(app);
-        return httpServer;
-    }
-const slugifySafe = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    const ensureDir = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch { } };
-    const IMAGES_DIR = path.resolve('backend-deploy-full/uploads/images');
-    const BACKUP_DIR = path.resolve('backend-deploy-full/uploads/images_backup');
-    ensureDir(IMAGES_DIR);
-    ensureDir(BACKUP_DIR);
-
-    async function optimizeToWebP(srcPath, destBase, kind) {
-        const sizes = [
-            { name: 'thumb', width: 320 },
-            { name: 'medium', width: 800 },
-            { name: 'large', width: 1200 },
-        ];
-        const outputs = [];
-        for (const s of sizes) {
-            const outPath = path.join(IMAGES_DIR, `${destBase}-${s.name}.webp`);
-            const pipeline = sharp(srcPath, { animated: true }).resize({ width: s.width, height: 1080, fit: 'inside' });
-            if (kind === 'graphics') {
-                await pipeline.webp({ lossless: true }).toFile(outPath);
-            } else {
-                await pipeline.webp({ quality: 72 }).toFile(outPath);
-            }
-            outputs.push({ size: s.name, path: outPath });
-        }
-        const mainOut = path.join(IMAGES_DIR, `${destBase}.webp`);
-        const mainPipe = sharp(srcPath, { animated: true }).resize({ width: 1920, height: 1080, fit: 'inside' });
-        if (kind === 'graphics') {
-            await mainPipe.webp({ lossless: true }).toFile(mainOut);
-        } else {
-            await mainPipe.webp({ quality: 72 }).toFile(mainOut);
-        }
-        outputs.push({ size: 'main', path: mainOut });
-        return outputs;
-    }
-
-    function pickKindFromContext(title, category) {
-        const t = String(title || '').toLowerCase();
-        const c = String(category || '').toLowerCase();
-        if (c.includes('event') || t.includes('screenshot')) return 'graphics';
-        return 'photo';
-    }
-
-    function buildSeoFilename({ title, category, date, feature }) {
-        const game = 'crossfire';
-        const theme = slugifySafe(category || 'general');
-        const content = slugifySafe(title || 'image');
-        const year = String((date && new Date(date).getFullYear()) || new Date().getFullYear());
-        const feat = slugifySafe(feature || 'feature');
-        return `${game}-${theme}-${content}-${year}-${feat}`;
-    }
-
-    const LOG_DIR = path.resolve('backend-deploy-full/logs');
-    ensureDir(LOG_DIR);
-    const LOG_FILE = path.join(LOG_DIR, 'image-processing.jsonl');
-    const logChange = (entry) => { try { fs.appendFileSync(LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
-    const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
+const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
     const logSeoChange = (entry) => { try { fs.appendFileSync(SEO_LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
     const UPLOAD_LOG_FILE = path.join(LOG_DIR, 'upload-events.jsonl');
     const logUpload = (entry) => { try { fs.appendFileSync(UPLOAD_LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
@@ -4642,3 +4674,7 @@ const slugifySafe = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, 
         ].join('\n');
         res.type('html').send(html);
     });
+
+    const httpServer = createServer(app);
+    return httpServer;
+}

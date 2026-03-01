@@ -212,116 +212,99 @@ export default function NewsDetail() {
           }}
         />
       )}
-      <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-          <Breadcrumbs items={breadcrumbs} />
-          <div className="flex items-center justify-between mb-6">
-            <Link href="/news">
-              <Button
-                variant="ghost"
-                data-testid="button-back-to-news"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t("backToNews")}
-              </Button>
-            </Link>
+      <div className="min-h-screen" dir={isRTL ? "rtl" : "ltr"}>
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+          {!(newsItem as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}
+          <div className="mb-8 mt-4 flex items-center gap-3 no-print">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleLanguage}
-              title={language === "en" ? "العربية" : "English"}
-              aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"}
-              className="rounded-none"
-              data-testid="button-language-toggle-newsdetail"
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/news")}
+              className="rounded-none font-bold uppercase tracking-tight"
             >
-              <Globe className="h-5 w-5" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t("back")}
             </Button>
-            {/* Single language toggle only; RTL tied to Arabic */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleLanguage}
+              className="rounded-none font-bold uppercase tracking-tight"
+            >
+              <Globe className="mr-2 h-4 w-4" />
+              {language === 'ar' ? 'English' : 'العربية'}
+            </Button>
           </div>
 
-          <section className="mb-10">
-            <div className="mb-3">
-              <Badge className="bg-red-600 text-white rounded-full px-3 py-1" data-testid={`badge-category-${newsItem.category.toLowerCase()}`}>
-                {newsItem.category}
-              </Badge>
-            </div>
-            <h1 className={`text-5xl md:text-6xl font-black leading-tight mb-4 ${isRTL ? 'text-right' : ''}`} data-testid="text-news-title">
-              {selectedTitle}
-            </h1>
-            {language === 'ar' && newsItem.contentAr && (
-              <p className="text-lg md:text-xl text-gray-700 mb-4 flex items-start gap-2">
-                <Target className="h-5 w-5 text-red-600 mt-1" />
-                <span dir="rtl">{newsItem.contentAr.replace(/<[^>]*>?/gm, "").slice(0, 180)}...</span>
-              </p>
-            )}
-            <div className={`flex items-center gap-3 text-sm ${isRTL ? 'justify-end' : ''}`}>
-              <Badge className="bg-blue-600 text-white rounded-full px-3 py-1" data-testid="text-news-date">{monthYearText}</Badge>
-              <span className="text-muted-foreground" data-testid="text-news-author">{newsItem.author || 'Bimora Team'}</span>
-            </div>
-          </section>
+          <div className={`${(newsItem as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+            <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
+              {!(newsItem as any).fullLayout && (
+                <header className="mb-12">
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <Badge className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1">
+                      {newsItem.category}
+                    </Badge>
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      <Target className="h-4 w-4" />
+                      <span>{monthYearText}</span>
+                    </div>
+                  </div>
 
-          <div className="relative w-full overflow-hidden mb-10">
-            {!imgLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            <img
-              src={newsItem.image}
-              alt={newsItem.title}
-              className="w-full h-auto md:max-h-[560px] object-contain cursor-zoom-in"
-              data-testid="img-news-hero"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-              decoding="async"
-              onLoad={() => setImgLoaded(true)}
-              onClick={() => setViewer({ open: true, src: newsItem.image, alt: newsItem.title })}
-            />
-          </div>
+                  <h1
+                    className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}
+                  >
+                    {selectedTitle}
+                  </h1>
 
+                  <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-12">
+                    <span>BY {newsItem.author || 'Bimora Team'}</span>
+                  </div>
 
+                  {newsItem.image && (
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl mb-12">
+                      <img
+                        src={newsItem.image}
+                        alt={newsItem.title}
+                        className="w-full h-full object-cover cursor-zoom-in"
+                        onLoad={() => setImgLoaded(true)}
+                        onClick={() => setViewer({ open: true, src: newsItem.image, alt: newsItem.title })}
+                      />
+                    </div>
+                  )}
+                </header>
+              )}
 
-          {(() => {
-            const transformEmbeds = (input: string) => {
-              let out = String(input || "");
-              out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-              out = out.replace(/https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-              out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-              return out;
-            };
-            const purifier = (createDOMPurify as any)(window as any);
-            const html = transformEmbeds(selectedContentRaw || "");
-            const purified = purifier.sanitize(html, {
-              ALLOWED_TAGS: [
-                'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'hr',
-                'audio', 'video', 'source', 'iframe'
-              ],
-              ALLOWED_ATTR: [
-                'href', 'src', 'alt', 'title', 'style', 'class', 'width', 'height', 'target', 'rel',
-                'controls', 'frameborder', 'allow', 'allowfullscreen', 'loading', 'decoding', 'fetchpriority', 'preload', 'muted', 'autoplay'
-              ],
-              ALLOW_DATA_ATTR: false,
-              KEEP_CONTENT: true,
-            });
-            return (
-              <article
-                className={`prose prose-lg dark:prose-invert max-w-none ${isRTL ? "text-right" : ""}`}
+              <div
+                className={`prose prose-xl dark:prose-invert max-w-none mb-16 ${isRTL ? "text-right" : ""}`}
                 dir={isRTL ? "rtl" : undefined}
                 ref={contentRef}
-                dangerouslySetInnerHTML={{ __html: purified }}
-                data-testid="text-news-content"
+                dangerouslySetInnerHTML={{
+                  __html: (() => {
+                    const transformEmbeds = (input: string) => {
+                      let out = String(input || "");
+                      out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video mb-8"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
+                      return out;
+                    };
+                    const purifier = (createDOMPurify as any)(window as any);
+                    const html = transformEmbeds(selectedContentRaw || "");
+                    return purifier.sanitize(html, {
+                      ADD_TAGS: ['style', 'script', 'iframe'],
+                      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
+                      FORCE_BODY: true,
+                      ALLOW_UNKNOWN_PROTOCOLS: true,
+                    });
+                  })()
+                }}
               />
-            );
-          })()}
 
-          <div className="mt-12">
-            <Link href="/news">
-              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" data-testid="button-more-news">
-                {t("readMore")}: {language === 'ar' && newsItem.titleAr ? newsItem.titleAr : newsItem.title}
-              </Button>
-            </Link>
+              <div className="mt-12">
+                <Link href="/news">
+                  <Button size="lg" className="rounded-none font-black uppercase italic tracking-widest px-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                    {t("readMore")}
+                  </Button>
+                </Link>
+              </div>
+            </article>
           </div>
         </div>
       </div>

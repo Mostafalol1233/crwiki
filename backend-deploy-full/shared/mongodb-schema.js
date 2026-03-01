@@ -39,6 +39,10 @@ const PostSchema = new Schema({
     twitterImage: { type: String, default: "" },
     schemaType: { type: String, default: "Article" },
     breadcrumbs: { type: [{ name: String, url: String }], default: [] },
+    sourceUrl: { type: String, default: "" },
+    isVerified: { type: Boolean, default: false },
+    externalLinks: { type: [{ name: String, url: String }], default: [] },
+    version: { type: Number, default: 1 },
     updatedAt: { type: Date, default: Date.now },
 });
 const EventSchema = new Schema({
@@ -48,6 +52,7 @@ const EventSchema = new Schema({
     description: { type: String, default: '' },
     descriptionAr: { type: String, default: '' },
     date: { type: String, required: true },
+    location: { type: String, default: '' },
     type: { type: String, required: true },
     image: { type: String, default: '' },
     images: { type: [String], default: [] },
@@ -59,6 +64,10 @@ const EventSchema = new Schema({
     twitterImage: { type: String, default: '' },
     schemaType: { type: String, default: 'Event' },
     breadcrumbs: { type: [{ name: String, url: String }], default: [] },
+    sourceUrl: { type: String, default: "" },
+    isVerified: { type: Boolean, default: false },
+    externalLinks: { type: [{ name: String, url: String }], default: [] },
+    version: { type: Number, default: 1 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
@@ -85,7 +94,28 @@ const NewsSchema = new Schema({
     twitterImage: { type: String, default: '' },
     schemaType: { type: String, default: 'NewsArticle' },
     breadcrumbs: { type: [{ name: String, url: String }], default: [] },
+    sourceUrl: { type: String, default: "" },
+    isVerified: { type: Boolean, default: false },
+    externalLinks: { type: [{ name: String, url: String }], default: [] },
+    version: { type: Number, default: 1 },
     updatedAt: { type: Date, default: Date.now },
+});
+
+const WikiVersionSchema = new Schema({
+    pageId: { type: Schema.Types.ObjectId, required: true, index: true },
+    pageType: { type: String, required: true }, // 'post', 'event', 'news'
+    version: { type: Number, required: true },
+    content: { type: Object, required: true }, // Complete snapshot of the page data
+    author: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+});
+
+const WikiTemplateSchema = new Schema({
+    name: { type: String, required: true, unique: true },
+    type: { type: String, required: true }, // 'post', 'event', 'news'
+    content: { type: Object, required: true }, // Default values for the form
+    author: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
 });
 
 const TicketSchema = new Schema({
@@ -242,6 +272,8 @@ export const ModeModel = mongoose.model('Mode', ModeSchema);
 export const RankModel = mongoose.model('Rank', RankSchema);
 export const MercenaryModel = mongoose.model('Mercenary', MercenarySchema);
 export const AdminPermissionModel = mongoose.model('AdminPermission', AdminPermissionSchema);
+export const WikiVersionModel = mongoose.model('WikiVersion', WikiVersionSchema);
+export const WikiTemplateModel = mongoose.model('WikiTemplate', WikiTemplateSchema);
 export const insertUserSchema = z.object({
     username: z.string().min(2),
     email: z.string().email(),

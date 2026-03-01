@@ -285,21 +285,21 @@ var SellerReviewSchema = new Schema({
     comment: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
 });
-var UserModel = mongoose.model("User", UserSchema);
-var PostModel = mongoose.model("Post", PostSchema);
-var EventModel = mongoose.model("Event", EventSchema);
-var NewsModel = mongoose.model("News", NewsSchema);
-var TicketModel = mongoose.model("Ticket", TicketSchema);
-var TutorialModel = mongoose.model("Tutorial", TutorialSchema);
-var TicketReplyModel = mongoose.model("TicketReply", TicketReplySchema);
-var AdminModel = mongoose.model("Admin", AdminSchema);
-var EventCommentModel = mongoose.model("EventComment", EventCommentSchema);
-var NewsletterSubscriberModel = mongoose.model(
+var UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
+var PostModel = mongoose.models.Post || mongoose.model("Post", PostSchema);
+var EventModel = mongoose.models.Event || mongoose.model("Event", EventSchema);
+var NewsModel = mongoose.models.News || mongoose.model("News", NewsSchema);
+var TicketModel = mongoose.models.Ticket || mongoose.model("Ticket", TicketSchema);
+var TutorialModel = mongoose.models.Tutorial || mongoose.model("Tutorial", TutorialSchema);
+var TicketReplyModel = mongoose.models.TicketReply || mongoose.model("TicketReply", TicketReplySchema);
+var AdminModel = mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
+var EventCommentModel = mongoose.models.EventComment || mongoose.model("EventComment", EventCommentSchema);
+var NewsletterSubscriberModel = mongoose.models.NewsletterSubscriber || mongoose.model(
     "NewsletterSubscriber",
     NewsletterSubscriberSchema,
 );
-var SellerModel = mongoose.model("Seller", SellerSchema);
-var SellerReviewModel = mongoose.model("SellerReview", SellerReviewSchema);
+var SellerModel = mongoose.models.Seller || mongoose.model("Seller", SellerSchema);
+var SellerReviewModel = mongoose.models.SellerReview || mongoose.model("SellerReview", SellerReviewSchema);
 var UploadedFileSchema = new Schema({
     filename: { type: String, required: true },
     mimetype: { type: String, required: true },
@@ -317,13 +317,13 @@ var UploadedFileSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 UploadedFileSchema.index({ bucket: 1, filename: 1 }, { unique: true });
-var UploadedFileModel = mongoose.model("UploadedFile", UploadedFileSchema);
+var UploadedFileModel = mongoose.models.UploadedFile || mongoose.model("UploadedFile", UploadedFileSchema);
 var UrlMatchFailureSchema = new Schema({
     type: { type: String, required: true },
     value: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
 });
-var UrlMatchFailureModel = mongoose.model("UrlMatchFailure", UrlMatchFailureSchema);
+var UrlMatchFailureModel = mongoose.models.UrlMatchFailure || mongoose.model("UrlMatchFailure", UrlMatchFailureSchema);
 var UrlGenerationAuditSchema = new Schema({
     type: { type: String, required: true },
     source: { type: String, required: true },
@@ -331,7 +331,7 @@ var UrlGenerationAuditSchema = new Schema({
     ok: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
 });
-var UrlGenerationAuditModel = mongoose.model("UrlGenerationAudit", UrlGenerationAuditSchema);
+var UrlGenerationAuditModel = mongoose.models.UrlGenerationAudit || mongoose.model("UrlGenerationAudit", UrlGenerationAuditSchema);
 SellerSchema.index({ name: 1 });
 SellerSchema.index({ seller_name_slug: 1 }, { unique: true });
 EventSchema.index({ event_name_slug: 1 }, { unique: true });
@@ -345,10 +345,10 @@ var AdminAuditLogSchema = new Schema({
     details: { type: Schema.Types.Mixed, default: {} },
     createdAt: { type: Date, default: Date.now },
 });
-var AdminAuditLogModel = mongoose.model("AdminAuditLog", AdminAuditLogSchema);
+var AdminAuditLogModel = mongoose.models.AdminAuditLog || mongoose.model("AdminAuditLog", AdminAuditLogSchema);
 // Weapons / Modes / Ranks / Mercenaries schemas (added to support seeding endpoints)
 var MercenarySchema = new Schema({
-    id: { type: String, required: true },
+    mercenaryId: { type: String, required: true },
     name: { type: String, required: true, unique: true },
     image: { type: String, required: true },
     role: { type: String, default: "" },
@@ -385,10 +385,10 @@ var RankSchema = new Schema({
     requirements: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
 });
-var MercenaryModel = mongoose.model("Mercenary", MercenarySchema);
-var WeaponModel = mongoose.model("Weapon", WeaponSchema);
-var ModeModel = mongoose.model("Mode", ModeSchema);
-var RankModel = mongoose.model("Rank", RankSchema);
+var MercenaryModel = mongoose.models.Mercenary || mongoose.model("Mercenary", MercenarySchema);
+var WeaponModel = mongoose.models.Weapon || mongoose.model("Weapon", WeaponSchema);
+var ModeModel = mongoose.models.Mode || mongoose.model("Mode", ModeSchema);
+var RankModel = mongoose.models.Rank || mongoose.model("Rank", RankSchema);
 var ConversationSchema = new Schema({
     participants: { type: [String], required: true },
     type: { type: String, enum: ['direct', 'group', 'channel'], default: 'direct' },
@@ -407,21 +407,21 @@ var MessageSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 });
 
-var ConversationModel = mongoose.model("Conversation", ConversationSchema);
-var MessageModel = mongoose.model("Message", MessageSchema);
+var ConversationModel = mongoose.models.Conversation || mongoose.model("Conversation", ConversationSchema);
+var MessageModel = mongoose.models.Message || mongoose.model("Message", MessageSchema);
 var ChatUserSchema = new Schema({
     userName: { type: String, required: true },
     phone: { type: String, default: "" },
     verified: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
 });
-var ChatUserModel = mongoose.model("ChatUser", ChatUserSchema);
+var ChatUserModel = mongoose.models.ChatUser || mongoose.model("ChatUser", ChatUserSchema);
 var ChatSettingsSchema = new Schema({
     name: { type: String, default: "chat" },
     registrationEnabled: { type: Boolean, default: false },
     updatedAt: { type: Date, default: Date.now },
 });
-var ChatSettingsModel = mongoose.model("ChatSettings", ChatSettingsSchema);
+var ChatSettingsModel = mongoose.models.ChatSettings || mongoose.model("ChatSettings", ChatSettingsSchema);
 var AnalyticsTutorialSchema = new Schema({
     tutorialId: { type: String, index: true },
     visitorHash: { type: String, index: true },
@@ -451,9 +451,9 @@ var AnalyticsAnnouncementSchema = new Schema({
     browser: { type: String, default: "unknown" },
     createdAt: { type: Date, default: Date.now, index: true },
 }, { collection: "analytics_announcements" });
-var AnalyticsTutorialModel = mongoose.model("AnalyticsTutorialModel", AnalyticsTutorialSchema);
-var AnalyticsSellerModel = mongoose.model("AnalyticsSellerModel", AnalyticsSellerSchema);
-var AnalyticsAnnouncementModel = mongoose.model("AnalyticsAnnouncementModel", AnalyticsAnnouncementSchema);
+var AnalyticsTutorialModel = mongoose.models.AnalyticsTutorialModel || mongoose.model("AnalyticsTutorialModel", AnalyticsTutorialSchema);
+var AnalyticsSellerModel = mongoose.models.AnalyticsSellerModel || mongoose.model("AnalyticsSellerModel", AnalyticsSellerSchema);
+var AnalyticsAnnouncementModel = mongoose.models.AnalyticsAnnouncementModel || mongoose.model("AnalyticsAnnouncementModel", AnalyticsAnnouncementSchema);
 var SiteSettingsSchema = new Schema({
     publicBaseUrl: { type: String, default: "" },
     seoTitle: { type: String, default: "" },
@@ -465,7 +465,7 @@ var SiteSettingsSchema = new Schema({
     announcementsEnabled: { type: Boolean, default: true },
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
-var SiteSettingsModel = mongoose.model("SiteSettings", SiteSettingsSchema);
+var SiteSettingsModel = mongoose.models.SiteSettings || mongoose.model("SiteSettings", SiteSettingsSchema);
 var GlobalAnnouncementSchema = new Schema({
     contentHtml: { type: String, default: "" },
     imageUrl: { type: String, default: "" },
@@ -482,8 +482,8 @@ var SellerAnnouncementSchema = new Schema({
     active: { type: Boolean, default: true },
     direction: { type: String, default: "auto" },
 }, { timestamps: true });
-var GlobalAnnouncementModel = mongoose.model("GlobalAnnouncement", GlobalAnnouncementSchema);
-var SellerAnnouncementModel = mongoose.model("SellerAnnouncement", SellerAnnouncementSchema);
+var GlobalAnnouncementModel = mongoose.models.GlobalAnnouncement || mongoose.model("GlobalAnnouncement", GlobalAnnouncementSchema);
+var SellerAnnouncementModel = mongoose.models.SellerAnnouncement || mongoose.model("SellerAnnouncement", SellerAnnouncementSchema);
 var SellerPageSchema = new Schema({
     sellerSlug: { type: String, index: true, unique: true },
     images: { type: [String], default: [] },
@@ -499,7 +499,7 @@ var SellerPageSchema = new Schema({
         default: [],
     },
 }, { timestamps: true });
-var SellerPageModel = mongoose.model("SellerPage", SellerPageSchema);
+var SellerPageModel = mongoose.models.SellerPage || mongoose.model("SellerPage", SellerPageSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
@@ -641,9 +641,9 @@ async function connectMongoDB(maxRetries = 5) {
         console.log("MongoDB is already connected");
         return;
     }
-    const mongoUri = process.env.MONGODB_URI;
+    const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
     if (!mongoUri) {
-        throw new Error("MONGODB_URI environment variable is not defined");
+        throw new Error("MONGODB_URI or DATABASE_URL environment variable is not defined");
     }
     let attempt = 0;
     while (!isConnected && attempt <= maxRetries) {
@@ -676,7 +676,9 @@ var MongoDBStorage = class {
     constructor() {
         this.mercenaries = /* @__PURE__ */ new Map();
         this.initializeMercenaries();
-        this.connect();
+        this.connect().catch(err => {
+            console.error("Critical: Failed to connect to MongoDB in MongoDBStorage constructor:", err.message);
+        });
     }
     async connect() {
         if (!this.initialized) {
@@ -687,77 +689,77 @@ var MongoDBStorage = class {
     initializeMercenaries() {
         const mercenaries = [
             {
-                id: "1",
+                mercenaryId: "1",
                 name: "Wolf",
                 image: "https://files.catbox.moe/6npa73.jpeg",
                 role: "Assault",
                 description: "Aggressive assault specialist",
             },
             {
-                id: "2",
+                mercenaryId: "2",
                 name: "Vipers",
                 image: "https://files.catbox.moe/4il6hi.jpeg",
                 role: "Sniper",
                 description: "Precision sniper expert",
             },
             {
-                id: "3",
+                mercenaryId: "3",
                 name: "Sisterhood",
                 image: "https://files.catbox.moe/3o58nb.jpeg",
                 role: "Medic",
                 description: "Support and healing specialist",
             },
             {
-                id: "4",
+                mercenaryId: "4",
                 name: "Black Mamba",
                 image: "https://files.catbox.moe/r26ox6.jpeg",
                 role: "Scout",
                 description: "Fast reconnaissance scout",
             },
             {
-                id: "5",
+                mercenaryId: "5",
                 name: "Arch Honorary",
                 image: "https://files.catbox.moe/ctwnqz.jpeg",
                 role: "Guardian",
                 description: "Protective guardian role",
             },
             {
-                id: "6",
+                mercenaryId: "6",
                 name: "Desperado",
                 image: "https://files.catbox.moe/hh7h5u.jpeg",
                 role: "Engineer",
                 description: "Technical engineer specialist",
             },
             {
-                id: "7",
+                mercenaryId: "7",
                 name: "Ronin",
                 image: "https://files.catbox.moe/eck3jc.jpeg",
                 role: "Samurai",
                 description: "Melee combat warrior",
             },
             {
-                id: "8",
+                mercenaryId: "8",
                 name: "Dean",
                 image: "https://files.catbox.moe/t78mvu.jpeg",
                 role: "Specialist",
                 description: "Specialized tactics expert",
             },
             {
-                id: "9",
+                mercenaryId: "9",
                 name: "Thoth",
                 image: "https://files.catbox.moe/g4zfzn.jpeg",
                 role: "Guardian",
                 description: "Protective guardian role",
             },
             {
-                id: "10",
+                mercenaryId: "10",
                 name: "SFG",
                 image: "https://files.catbox.moe/3bba2g.jpeg",
                 role: "Special Forces",
                 description: "Special forces operative",
             },
         ];
-        mercenaries.forEach((merc) => this.mercenaries.set(merc.id, merc));
+        mercenaries.forEach((merc) => this.mercenaries.set(merc.mercenaryId, merc));
     }
     async getUser(id) {
         const user = await UserModel.findById(id);
@@ -1120,29 +1122,32 @@ var MongoDBStorage = class {
             .lean();
         return mercenaries.map((m) => ({
             ...m,
-            id: m.id || String(m._id),
+            id: m.mercenaryId || String(m._id),
             voiceLines: Array.isArray(m.voiceLines) ? m.voiceLines : [],
         }));
     }
     async createMercenary(merc) {
-        const newMerc = await MercenaryModel.create(merc);
+        const newMerc = await MercenaryModel.create({
+            ...merc,
+            mercenaryId: merc.id || String(new mongoose.Types.ObjectId()),
+        });
         const lean = await MercenaryModel.findById(newMerc._id).lean();
         if (!lean) throw new Error("Failed to create mercenary");
-        return { ...lean, id: lean.id || String(lean._id) };
+        return { ...lean, id: lean.mercenaryId || String(lean._id) };
     }
     async deleteMercenary(id) {
         const res = await MercenaryModel.findByIdAndDelete(id);
         return !!res;
     }
     async updateMercenary(id, data) {
-        let updated = await MercenaryModel.findOneAndUpdate({ id: String(id) }, data, { new: true }).lean();
+        let updated = await MercenaryModel.findOneAndUpdate({ mercenaryId: String(id) }, data, { new: true }).lean();
         if (!updated) {
             if (/^[a-f\d]{24}$/i.test(String(id))) {
                 updated = await MercenaryModel.findByIdAndUpdate(id, data, { new: true }).lean();
             }
         }
         if (!updated) return void 0;
-        return { ...updated, id: updated.id || String(updated._id) };
+        return { ...updated, id: updated.mercenaryId || String(updated._id) };
     }
     async removeDuplicateMercenaries() {
         const all = await MercenaryModel.find().lean().sort({ createdAt: 1 });
@@ -6206,7 +6211,13 @@ app.use((req, res, next) => {
                 log(`🔁 Reseeding mercenaries (${mercs.length}) and ranks (${ranks.length}) from seed module...`);
                 await MercenaryModel.deleteMany({});
                 await RankModel.deleteMany({});
-                if (mercs.length) await MercenaryModel.insertMany(mercs);
+                if (mercs.length) {
+                    const cleanedMercs = mercs.map(m => {
+                        const { id, ...rest } = m;
+                        return { ...rest, mercenaryId: id };
+                    });
+                    await MercenaryModel.insertMany(cleanedMercs);
+                }
                 if (ranks.length) await RankModel.insertMany(ranks);
                 log("✅ Reseeded mercenaries and ranks successfully");
             } catch (err) {

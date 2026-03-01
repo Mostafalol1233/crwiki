@@ -242,6 +242,7 @@ const RankSchema = new Schema({
     updatedAt: { type: Date, default: Date.now },
 });
 const MercenarySchema = new Schema({
+    mercenaryId: { type: String, required: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     role: { type: String, required: true },
@@ -257,25 +258,25 @@ const AdminPermissionSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
-export const UserModel = mongoose.model('User', UserSchema);
-export const PostModel = mongoose.model('Post', PostSchema);
-export const EventModel = mongoose.model('Event', EventSchema);
-export const NewsModel = mongoose.model('News', NewsSchema);
-export const TicketModel = mongoose.model('Ticket', TicketSchema);
-export const TicketReplyModel = mongoose.model('TicketReply', TicketReplySchema);
-export const AdminModel = mongoose.model('Admin', AdminSchema);
-export const NewsletterSubscriberModel = mongoose.model('NewsletterSubscriber', NewsletterSubscriberSchema);
-export const SellerModel = mongoose.model('Seller', SellerSchema);
-export const SellerReviewModel = mongoose.model('SellerReview', SellerReviewSchema);
-export const TutorialModel = mongoose.model('Tutorial', TutorialSchema);
-export const SiteSettingsModel = mongoose.model('SiteSettings', SiteSettingsSchema);
-export const WeaponModel = mongoose.model('Weapon', WeaponSchema);
-export const ModeModel = mongoose.model('Mode', ModeSchema);
-export const RankModel = mongoose.model('Rank', RankSchema);
-export const MercenaryModel = mongoose.model('Mercenary', MercenarySchema);
-export const AdminPermissionModel = mongoose.model('AdminPermission', AdminPermissionSchema);
-export const WikiVersionModel = mongoose.model('WikiVersion', WikiVersionSchema);
-export const WikiTemplateModel = mongoose.model('WikiTemplate', WikiTemplateSchema);
+export const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
+export const PostModel = mongoose.models.Post || mongoose.model('Post', PostSchema);
+export const EventModel = mongoose.models.Event || mongoose.model('Event', EventSchema);
+export const NewsModel = mongoose.models.News || mongoose.model('News', NewsSchema);
+export const TicketModel = mongoose.models.Ticket || mongoose.model('Ticket', TicketSchema);
+export const TicketReplyModel = mongoose.models.TicketReply || mongoose.model('TicketReply', TicketReplySchema);
+export const AdminModel = mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
+export const NewsletterSubscriberModel = mongoose.models.NewsletterSubscriber || mongoose.model('NewsletterSubscriber', NewsletterSubscriberSchema);
+export const SellerModel = mongoose.models.Seller || mongoose.model('Seller', SellerSchema);
+export const SellerReviewModel = mongoose.models.SellerReview || mongoose.model('SellerReview', SellerReviewSchema);
+export const TutorialModel = mongoose.models.Tutorial || mongoose.model('Tutorial', TutorialSchema);
+export const SiteSettingsModel = mongoose.models.SiteSettings || mongoose.model('SiteSettings', SiteSettingsSchema);
+export const WeaponModel = mongoose.models.Weapon || mongoose.model('Weapon', WeaponSchema);
+export const ModeModel = mongoose.models.Mode || mongoose.model('Mode', ModeSchema);
+export const RankModel = mongoose.models.Rank || mongoose.model('Rank', RankSchema);
+export const MercenaryModel = mongoose.models.Mercenary || mongoose.model('Mercenary', MercenarySchema);
+export const AdminPermissionModel = mongoose.models.AdminPermission || mongoose.model('AdminPermission', AdminPermissionSchema);
+export const WikiVersionModel = mongoose.models.WikiVersion || mongoose.model('WikiVersion', WikiVersionSchema);
+export const WikiTemplateModel = mongoose.models.WikiTemplate || mongoose.model('WikiTemplate', WikiTemplateSchema);
 export const insertUserSchema = z.object({
     username: z.string().min(2),
     email: z.string().email(),

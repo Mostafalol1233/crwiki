@@ -4528,7 +4528,8 @@ async function registerRoutes(app2) {
             }
         });
 
-        app2.post("/api/admin/scrape-full-pages", requireAuth, requireAdmin, async (req, res) => {
+        app2.post("/api/admin/scrape-full-pages", requireAuth, requireAdminOnly, async (req, res) => {
+            console.log("[Route] Registered POST /api/admin/scrape-full-pages");
             try {
                 const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
                 if (urls.length === 0) return res.status(400).json({ error: "No URLs provided" });
@@ -4593,6 +4594,7 @@ async function registerRoutes(app2) {
 
         // Admin: list recent media uploads (from UploadedFileModel)
         app2.get("/api/admin/media", requireAuth, async (req, res) => {
+            console.log("[Route] Registered GET /api/admin/media");
             try {
                 const q = String(req.query.q || '').toLowerCase();
                 const t = String(req.query.type || '').toLowerCase();
@@ -4689,6 +4691,7 @@ async function registerRoutes(app2) {
             }
         });
         app2.post("/api/scrape/multiple-events", async (req, res) => {
+            console.log("[Route] Registered POST /api/scrape/multiple-events");
             try {
                 const { urls } = req.body;
                 if (!urls || !Array.isArray(urls))
@@ -6026,6 +6029,11 @@ app.use((req, res, next) => {
         } catch (err) {
             res.status(500).json({ ok: false, error: err?.message || "health check failed" });
         }
+    });
+
+    // 404 handler for API routes
+    app.all("/api/*", (req, res) => {
+        res.status(404).json({ error: "API endpoint not found", path: req.path });
     });
 
     // Serve index.html for all non-API routes (SPA routing)

@@ -52,7 +52,12 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return await res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Failed to parse JSON response: ${text.slice(0, 100)}...`);
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -75,7 +80,12 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error(`Failed to parse JSON response from ${fullUrl}: ${text.slice(0, 100)}...`);
+    }
   };
 
 export const queryClient = new QueryClient({

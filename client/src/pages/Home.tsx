@@ -165,126 +165,55 @@ export default function Home() {
           <HeroSection post={heroPost} bgImageUrl={heroBgUrl} />
           
           <div className="py-12 space-y-16">
-            {/* Top Ribbon */}
+            {/* 1. Events list in the centre column as the primary content block. */}
             <div className="wiki-content-card rounded-2xl overflow-hidden">
               <EventsRibbon events={displayEvents} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <main className="lg:col-span-8 space-y-16">
-                {/* News Section */}
-                <section className="wiki-content-card rounded-2xl p-6 md:p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                      <h2 className="text-3xl font-black uppercase tracking-tight italic">
-                        {t("latestNews") || "Latest News"}
-                      </h2>
-                    </div>
-                    <Link href="/news">
-                      <Button variant="ghost" className="hover:text-primary transition-colors">
-                        View All News →
-                      </Button>
-                    </Link>
+            <div className="max-w-6xl mx-auto space-y-24">
+              {/* 2. Behind it (background) show a “Recent Posts” section. */}
+              <section className="space-y-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <ThumbsUp className="h-6 w-6 text-primary" />
+                    <h2 className="text-3xl font-black uppercase tracking-tight italic">
+                      {t("recentPosts") || "Recent Posts"}
+                    </h2>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {allNews.slice(0, 4).map((item: any) => (
-                      <ArticleCard key={item.id} article={item} />
-                    ))}
-                  </div>
-                </section>
-
-                {/* Tutorials Section */}
-                <section className="wiki-content-card rounded-2xl p-6 md:p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                      <Play className="h-6 w-6 text-red-600" />
-                      <h2 className="text-3xl font-black uppercase tracking-tight italic">
-                        {t("tutorials") || "Tutorials"}
-                      </h2>
-                    </div>
-                    <Link href="/tutorials">
-                      <Button variant="ghost">Watch More →</Button>
-                    </Link>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    {allTutorials.slice(0, 3).map((tutorial) => (
-                      <Link key={tutorial.id} href={`/videos/${tutorial.category || 'general'}`} className="block group">
-                        <div className="relative aspect-video overflow-hidden rounded-xl bg-muted shadow-md group-hover:shadow-xl transition-all duration-300">
-                          {((tutorial as any).thumbnail || (tutorial as any).image) ? (
-                            <img src={(tutorial as any).thumbnail || (tutorial as any).image} alt={tutorial.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-accent/10">
-                              <Play className="w-10 h-10 text-primary opacity-50" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                            <span className="text-white text-xs font-bold uppercase">Play Now</span>
-                          </div>
-                        </div>
-                        <h3 className="mt-3 font-bold text-sm line-clamp-2 group-hover:text-primary transition-colors uppercase tracking-tight">
-                          {tutorial.title}
-                        </h3>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              </main>
-
-              <aside className="lg:col-span-4 space-y-8">
-                {/* Sidebar Cards */}
-                <div className="wiki-content-card rounded-2xl p-6 shadow-xl border-t-4 border-t-primary">
-                  <Sidebar 
-                    recentPosts={recentPosts} 
-                    popularTags={popularTags} 
-                    mostViewed={mostViewed} 
-                    bimoraPicks={bimoraPicks} 
-                  />
+                  <Link href="/posts">
+                    <Button variant="ghost" className="hover:text-primary transition-colors uppercase font-bold tracking-widest text-xs">
+                      View All Posts →
+                    </Button>
+                  </Link>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {allPosts.slice(0, 6).map((post) => (
+                    <ArticleCard key={post.id} article={post} />
+                  ))}
+                </div>
+              </section>
 
-                {/* Most Viewed */}
-                {mostViewed.length > 0 && (
-                  <div className="wiki-content-card rounded-2xl p-6">
-                    <h3 className="text-xl font-black uppercase italic mb-6 flex items-center gap-2">
-                      <Flame className="h-5 w-5 text-red-500" />
-                      Hottest Content
-                    </h3>
-                    <ul className="space-y-4">
-                      {mostViewed.map((post) => (
-                        <li key={post.id} className="group">
-                          <Link href={`/posts/${(post as any).post_slug || post.id}`} className="block">
-                            <div className="font-bold text-sm group-hover:text-primary transition-colors line-clamp-2 uppercase">
-                              {post.title}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-2">
-                              <Flame className="h-3 w-3" />
-                              {post.views} VIEWS
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+              {/* 3. Below that show “Recent News”. */}
+              <section className="space-y-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+                    <h2 className="text-3xl font-black uppercase tracking-tight italic">
+                      {t("latestNews") || "Latest News"}
+                    </h2>
                   </div>
-                )}
-
-                {/* Popular Tags */}
-                {popularTags.length > 0 && (
-                  <div className="wiki-content-card rounded-2xl p-6">
-                    <h3 className="text-xl font-black uppercase italic mb-6">Trending Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {popularTags.map((tag) => (
-                        <Link key={tag.name} href={`/posts?tag=${tag.name}`}>
-                          <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-300 rounded-none px-3 py-1 text-[10px] font-bold uppercase italic">
-                            #{tag.name}
-                          </Badge>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </aside>
+                  <Link href="/news">
+                    <Button variant="ghost" className="hover:text-primary transition-colors uppercase font-bold tracking-widest text-xs">
+                      View All News →
+                    </Button>
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {allNews.slice(0, 4).map((item: any) => (
+                    <ArticleCard key={item.id} article={item} />
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
         </div>

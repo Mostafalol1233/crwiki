@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+declare global {
+  interface Window {
+    CodeMirror: any;
+  }
+}
+
 type Props = {
   value: string;
   onChange: (html: string) => void;
@@ -12,6 +18,30 @@ type Props = {
 export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300 }: Props) {
   const [Editor, setEditor] = useState<any>(null);
   const { toast } = useToast();
+  const [cmLoaded, setCmLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.CodeMirror && window.CodeMirror.fromTextArea) {
+      setCmLoaded(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/lib/codemirror.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.CodeMirror && window.CodeMirror.fromTextArea) {
+        setCmLoaded(true);
+      }
+    };
+    document.head.appendChild(script);
+
+    const style = document.createElement("link");
+    style.rel = "stylesheet";
+    style.href = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/lib/codemirror.css";
+    document.head.appendChild(style);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -50,12 +80,9 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
       imageRotation: true,
       charCounter: true,
       defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`,
-      codeMirror: {
-        src: "https://cdn.jsdelivr.net/npm/codemirror@5.65.0",
-        style: "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/lib/codemirror.css",
-      }
+      codeMirror: cmLoaded && typeof window !== "undefined" && window.CodeMirror ? window.CodeMirror : undefined,
     };
-  }, [direction, height]);
+  }, [direction, height, cmLoaded]);
 
   if (!Editor) {
     return (

@@ -215,24 +215,26 @@ export default function NewsDetail() {
       <div className="min-h-screen" dir={isRTL ? "rtl" : "ltr"}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!(newsItem as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}
-          <div className="mb-8 mt-4 flex items-center gap-3 no-print">
+          <div className="flex items-center gap-3 mb-8 mt-4 no-print">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setLocation("/news")}
+              asChild
               className="rounded-none font-bold uppercase tracking-tight"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("back")}
+              <Link href="/news">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t("backToNews")}
+              </Link>
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={toggleLanguage}
+              onClick={() => setIsRTL(!isRTL)}
               className="rounded-none font-bold uppercase tracking-tight"
             >
               <Globe className="mr-2 h-4 w-4" />
-              {language === 'ar' ? 'English' : 'العربية'}
+              {isRTL ? "LTR" : "Translate"}
             </Button>
           </div>
 

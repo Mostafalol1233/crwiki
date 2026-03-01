@@ -21,6 +21,12 @@ export default function Article() {
   const { t } = useLanguage();
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (article && (article as any).post_slug && slug === (article as any).id) {
+      setLocation(`/posts/${(article as any).post_slug}`, { replace: true });
+    }
+  }, [article, slug, setLocation]);
+
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   const [imgLoaded, setImgLoaded] = useState(false);
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);

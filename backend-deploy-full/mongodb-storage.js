@@ -42,6 +42,15 @@ export class MongoDBStorage {
         };
     }
 
+    slugify(text) {
+        return String(text)
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
     async initialize() {
         if (!this.initialized) {
             if (!process.env.DATABASE_URL) {
@@ -144,11 +153,17 @@ export class MongoDBStorage {
     }
 
     async createPost(post) {
+        if (!post.post_slug && post.title) {
+            post.post_slug = this.slugify(post.title);
+        }
         const newPost = await PostModel.create(post);
         return { ...newPost.toObject(), id: String(newPost._id) };
     }
 
     async updatePost(id, post) {
+        if (post.title && !post.post_slug) {
+            post.post_slug = this.slugify(post.title);
+        }
         const updated = await PostModel.findByIdAndUpdate(id, post, { new: true }).lean();
         if (!updated) return undefined;
         return { ...updated, id: String(updated._id) };
@@ -215,11 +230,17 @@ export class MongoDBStorage {
     }
 
     async createEvent(event) {
+        if (!event.event_name_slug && event.title) {
+            event.event_name_slug = this.slugify(event.title);
+        }
         const newEvent = await EventModel.create(event);
         return { ...newEvent.toObject(), id: String(newEvent._id) };
     }
 
     async updateEvent(id, event) {
+        if (event.title && !event.event_name_slug) {
+            event.event_name_slug = this.slugify(event.title);
+        }
         const updated = await EventModel.findByIdAndUpdate(id, event, { new: true }).lean();
         if (!updated) return undefined;
         return { ...updated, id: String(updated._id) };
@@ -275,11 +296,17 @@ export class MongoDBStorage {
     }
 
     async createNews(news) {
+        if (!news.news_slug && news.title) {
+            news.news_slug = this.slugify(news.title);
+        }
         const newNews = await NewsModel.create(news);
         return { ...newNews.toObject(), id: String(newNews._id) };
     }
 
     async updateNews(id, news) {
+        if (news.title && !news.news_slug) {
+            news.news_slug = this.slugify(news.title);
+        }
         const updated = await NewsModel.findByIdAndUpdate(id, news, { new: true }).lean();
         if (!updated) return undefined;
         return { ...updated, id: String(updated._id) };

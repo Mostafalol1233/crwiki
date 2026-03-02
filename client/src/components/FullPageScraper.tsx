@@ -70,6 +70,7 @@ export default function FullPageScraper() {
         seoTitle: data.title,
         seoDescription: data.excerpt || "",
         seoKeywords: data.keywords || [],
+        fullLayout: data.content?.includes('<html') || data.content?.includes('<body') || !!data.isFallback,
       });
       toast({ title: "Saved as Event" });
     } catch (error: any) {
@@ -88,6 +89,7 @@ export default function FullPageScraper() {
         seoTitle: data.title,
         seoDescription: data.excerpt || "",
         seoKeywords: data.keywords || [],
+        fullLayout: data.content?.includes('<html') || data.content?.includes('<body') || !!data.isFallback,
       });
       toast({ title: "Saved as News" });
     } catch (error: any) {

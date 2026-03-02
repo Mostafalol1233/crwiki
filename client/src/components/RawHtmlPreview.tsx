@@ -1,12 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import DOMPurify from "isomorphic-dompurify";
 
 interface RawHtmlPreviewProps {
   html: string;
   className?: string;
+  isFullPage?: boolean;
 }
 
-const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className }) => {
+const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFullPage }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   const processedHtml = useMemo(() => {
     let out = String(html || "");
     
@@ -16,6 +19,12 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className }) => {
       (_m, id) => `<div class="aspect-video mb-8"><iframe src="https://www.youtube.com/embed/${id}" width="100%" height="100%" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`
     );
 
+    // If it's a full page (contains <html> or <body>), we don't want to sanitize as strictly 
+    // because it will be in an iframe.
+    if (isFullPage || out.includes('<html') || out.includes('<body')) {
+      return out;
+    }
+
     // Sanitize to match the detail pages
     return DOMPurify.sanitize(out, {
       ADD_TAGS: ['style', 'script', 'iframe'],
@@ -23,7 +32,29 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className }) => {
       FORCE_BODY: true,
       ALLOW_UNKNOWN_PROTOCOLS: true,
     });
-  }, [html]);
+  }, [html, isFullPage]);
+
+  useEffect(() => {
+    if (iframeRef.current && (isFullPage || processedHtml.includes('<html') || processedHtml.includes('<body'))) {
+      const doc = iframeRef.current.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(processedHtml);
+        doc.close();
+      }
+    }
+  }, [processedHtml, isFullPage]);
+
+  if (isFullPage || processedHtml.includes('<html') || processedHtml.includes('<body')) {
+    return (
+      <iframe
+        ref={iframeRef}
+        title="Mirrored Content"
+        className={`w-full border-0 min-h-[600px] ${className || ""}`}
+        sandbox="allow-same-origin allow-popups"
+      />
+    );
+  }
 
   return (
     <div className={`raw-html-preview-container ${className || ""}`}>

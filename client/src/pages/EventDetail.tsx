@@ -13,6 +13,7 @@ import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer"
 import { CommentSection } from "@/components/CommentSection";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import RawHtmlPreview from "@/components/RawHtmlPreview";
 
 interface Event {
   id: string;
@@ -348,26 +349,15 @@ export default function EventDetail() {
               )}
 
               <div
-                className={`prose prose-xl dark:prose-invert max-w-none mb-16 ${isRTL ? "text-right" : ""}`}
+                className={`mb-16 ${isRTL ? "text-right" : ""}`}
                 dir={isRTL ? "rtl" : undefined}
                 ref={contentRef}
-                dangerouslySetInnerHTML={{
-                  __html: (() => {
-                    const transformEmbeds = (input: string) => {
-                      let out = String(input || "");
-                      out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video mb-8"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
-                      return out;
-                    };
-                    const html = transformEmbeds(description || "");
-                    return DOMPurify.sanitize(html, {
-                      ADD_TAGS: ['style', 'script', 'iframe'],
-                      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
-                      FORCE_BODY: true,
-                      ALLOW_UNKNOWN_PROTOCOLS: true,
-                    });
-                  })()
-                }}
-              />
+              >
+                <RawHtmlPreview 
+                  html={description || ""} 
+                  isFullPage={(event as any).fullLayout} 
+                />
+              </div>
 
               <div className="border-t pt-12 mt-12">
                 <CommentSection

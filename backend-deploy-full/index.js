@@ -4597,7 +4597,12 @@ async function registerRoutes(app2) {
                             status: 'completed',
                             title: data.title,
                             content: data.content,
-                            pagesScraped: 1 // For backward compatibility or just as a count
+                            excerpt: data.excerpt || (data.content ? data.content.replace(/<[^>]*>/g, '').substring(0, 250).trim() + "..." : ""),
+                            keywords: data.keywords || [],
+                            mainImage: data.mainImage || "",
+                            contentLength: data.content?.length || 0,
+                            pagesScraped: 1,
+                            isFallback: !!data.isFallback
                         });
                     } catch (err) {
                         console.error(`Scrape error for ${url}:`, err.message);

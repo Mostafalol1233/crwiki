@@ -180,37 +180,54 @@ export default function FullPageScraper() {
           </h3>
           <div className="grid gap-4">
             {scrapedData.map((data, idx) => (
-              <Card key={idx} className="overflow-hidden">
-                <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold truncate max-w-[300px]">{data.title}</h4>
+              <Card key={idx} className={`overflow-hidden ${data.status === 'failed' ? 'border-destructive/50' : ''}`}>
+                <div className={`p-4 border-b flex items-center justify-between ${data.status === 'failed' ? 'bg-destructive/5' : 'bg-muted/30'}`}>
+                  <div className="flex-1 min-w-0 mr-4">
+                    <h4 className="font-bold truncate">{data.title || (data.status === 'failed' ? 'Failed to Scrape' : 'Untitled')}</h4>
                     <p className="text-xs text-muted-foreground truncate">{data.url}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => { setPreviewData(data); setIsPreviewOpen(true); }}>
-                      <Eye className="w-4 h-4 mr-1" /> Preview
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleSaveAsEvent(data)}>
-                      Event
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleSaveAsNews(data)}>
-                      News
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleSaveAsPost(data)}>
-                      Post
-                    </Button>
-                    <Badge variant="secondary">{data.contentLength} chars</Badge>
+                  <div className="flex gap-2 shrink-0">
+                    {data.status !== 'failed' ? (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => { setPreviewData(data); setIsPreviewOpen(true); }}>
+                          <Eye className="w-4 h-4 mr-1" /> Preview
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleSaveAsEvent(data)}>
+                          Event
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleSaveAsNews(data)}>
+                          News
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleSaveAsPost(data)}>
+                          Post
+                        </Button>
+                        <Badge variant="secondary">{data.contentLength || 0} chars</Badge>
+                      </>
+                    ) : (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Error
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <CardContent className="p-4">
-                  <div className="text-sm line-clamp-3 text-muted-foreground mb-4">
-                    {data.excerpt || "No preview available"}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {data.keywords?.slice(0, 5).map((k: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-[10px]">{k}</Badge>
-                    ))}
-                  </div>
+                  {data.status === 'failed' ? (
+                    <div className="text-sm text-destructive font-medium p-2 bg-destructive/10 rounded border border-destructive/20">
+                      {data.error || "An unknown error occurred during scraping."}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm line-clamp-3 text-muted-foreground mb-4">
+                        {data.excerpt || "No preview available"}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {data.keywords?.slice(0, 5).map((k: string, i: number) => (
+                          <Badge key={i} variant="outline" className="text-[10px]">{k}</Badge>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             ))}

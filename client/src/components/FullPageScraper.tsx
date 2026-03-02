@@ -3,15 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, ArrowRight } from "lucide-react";
+import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, ArrowRight, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import RawHtmlPreview from "@/components/RawHtmlPreview";
 
 export default function FullPageScraper() {
   const { toast } = useToast();
   const [urls, setUrls] = useState<string[]>([""]);
   const [isScraping, setIsScraping] = useState(false);
   const [scrapedData, setScrapedData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const handleAddUrl = () => setUrls([...urls, ""]);
   const handleRemoveUrl = (index: number) => {
@@ -183,6 +187,9 @@ export default function FullPageScraper() {
                     <p className="text-xs text-muted-foreground truncate">{data.url}</p>
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setPreviewData(data); setIsPreviewOpen(true); }}>
+                      <Eye className="w-4 h-4 mr-1" /> Preview
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => handleSaveAsEvent(data)}>
                       Event
                     </Button>
@@ -222,6 +229,25 @@ export default function FullPageScraper() {
           </p>
         </div>
       </div>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Scraped Content Preview</DialogTitle>
+          </DialogHeader>
+          {previewData && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b pb-4">
+                <h2 className="text-2xl font-bold">{previewData.title}</h2>
+                <Badge variant="outline">{previewData.url}</Badge>
+              </div>
+              <div className="wiki-content-area">
+                <RawHtmlPreview html={previewData.content} />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

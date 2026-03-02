@@ -402,14 +402,29 @@ export async function scrapeEventDetails(url) {
 }
 
 export async function scrapeMultipleEvents(urls) {
+  if (!urls || !Array.isArray(urls)) return [];
+  
+  // Use a smaller batch size to avoid overloading and timeouts
+  const batchSize = 3;
   const results = [];
-  for (const u of urls) {
-    try {
-      const ev = await scrapeEventDetails(u);
-      results.push(ev);
-      await new Promise(res => setTimeout(res, 500));
-    } catch (e) {
-      console.error('Skipping scrape for', u, e?.message || e);
+  
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const batch = urls.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (u) => {
+        try {
+          return await scrapeEventDetails(u);
+        } catch (e) {
+          console.error('Skipping scrape for', u, e?.message || e);
+          return null;
+        }
+      })
+    );
+    results.push(...batchResults.filter(Boolean));
+    
+    // Short delay between batches
+    if (i + batchSize < urls.length) {
+      await new Promise(res => setTimeout(res, 1000));
     }
   }
   return results;

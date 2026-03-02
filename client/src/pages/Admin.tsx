@@ -2455,10 +2455,31 @@ export default function Admin() {
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div />
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold">Events</h2>
-                      <div className="flex gap-2">
-                        {canUseScraper && (
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-semibold">Events</h2>
+                        <div className="flex gap-2">
+                          {isSuperAdmin && (
+                            <Button
+                              variant="secondary"
+                              onClick={async () => {
+                                try {
+                                  const orders = events.map((e: any) => ({
+                                    id: e.id,
+                                    order: parseInt(String((document.getElementById(`event-order-${e.id}`) as HTMLInputElement)?.value || e.order || 0))
+                                  }));
+                                  await apiRequest("/api/events/reorder", "PATCH", { orders });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+                                  toast({ title: "Orders saved successfully" });
+                                } catch (e: any) {
+                                  toast({ title: "Failed to save orders", description: e.message, variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <RotateCw className="h-4 w-4 mr-2" />
+                              Save All Orders
+                            </Button>
+                          )}
+                          {canUseScraper && (
                           <Button
                             variant="outline"
                             onClick={() => scrapeEventsMutation.mutate()}
@@ -2792,52 +2813,38 @@ export default function Admin() {
                                     </Button>
                                   )}
                                   {canManageEvents && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setDeleteConfirmId(event.id);
-                                        setDeleteType("event");
-                                      }}
-                                      data-testid={`button-delete-event-${event.id}`}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                  {canManageEvents && (
-                                    <div className="flex gap-1">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex flex-col items-center">
+                                        <Label htmlFor={`event-order-${event.id}`} className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Order</Label>
+                                        <Input
+                                          id={`event-order-${event.id}`}
+                                          type="number"
+                                          defaultValue={event.order || 0}
+                                          className="w-16 h-8 text-center"
+                                          onBlur={async (e) => {
+                                            const newOrder = parseInt(e.target.value);
+                                            if (!isNaN(newOrder) && newOrder !== event.order) {
+                                              try {
+                                                await apiRequest(`/api/events/${event.id}`, "PATCH", { order: newOrder });
+                                                queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+                                                toast({ title: "Order updated" });
+                                              } catch (err: any) {
+                                                toast({ title: "Failed to update order", description: err.message, variant: "destructive" });
+                                              }
+                                            }
+                                          }}
+                                        />
+                                      </div>
                                       <Button
-                                        variant="outline"
-                                        size="sm"
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => {
-                                          const max = Math.max(...(events?.map((e: any) => e.order || 0) || [0]));
-                                          updateEventMutation.mutate({ id: event.id, data: { order: max + 1 } });
+                                          setDeleteConfirmId(event.id);
+                                          setDeleteType("event");
                                         }}
-                                        data-testid={`button-event-first-${event.id}`}
+                                        data-testid={`button-delete-event-${event.id}`}
                                       >
-                                        First
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          const next = (event.order || 0) + 1;
-                                          updateEventMutation.mutate({ id: event.id, data: { order: next } });
-                                        }}
-                                        data-testid={`button-event-up-${event.id}`}
-                                      >
-                                        Up
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          const next = Math.max(0, (event.order || 0) - 1);
-                                          updateEventMutation.mutate({ id: event.id, data: { order: next } });
-                                        }}
-                                        data-testid={`button-event-down-${event.id}`}
-                                      >
-                                        Down
+                                        <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
                                   )}

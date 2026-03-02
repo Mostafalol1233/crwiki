@@ -64,6 +64,7 @@ const EventSchema = new Schema({
     ogImage: { type: String, default: '' },
     twitterImage: { type: String, default: '' },
     schemaType: { type: String, default: 'Event' },
+    order: { type: Number, default: 9999 },
     breadcrumbs: { type: [{ name: String, url: String }], default: [] },
     sourceUrl: { type: String, default: "" },
     isVerified: { type: Boolean, default: false },
@@ -325,6 +326,7 @@ export const insertEventSchema = z.object({
     ogImage: z.string().optional(),
     twitterImage: z.string().optional(),
     schemaType: z.string().optional(),
+    order: z.number().optional(),
     breadcrumbs: z.array(z.object({ name: z.string(), url: z.string() })).optional(),
 });
 export const insertNewsSchema = z.object({

@@ -922,11 +922,11 @@ var MongoDBStorage = class {
         await PostModel.findByIdAndUpdate(id, { $inc: { views: 1 } });
     }
     async getAllEvents() {
-        const events = await EventModel.find().sort({ order: -1, _id: -1 }).lean();
+        const events = await EventModel.find().sort({ order: 1, createdAt: -1 }).lean();
         return events.map((event) => ({
             ...event,
             id: String(event._id),
-            order: event.order || 0,
+            order: typeof event.order === 'number' ? event.order : 9999,
         }));
     }
     async createEvent(event) {
@@ -1942,8 +1942,12 @@ function suggestKeywords(text, limit = 8) {
     return sorted.slice(0, limit);
 }
 function formatDate(date) {
+    if (!date) return "long ago";
+    const d = (date instanceof Date) ? date : new Date(date);
+    if (isNaN(d.getTime())) return "long ago";
+    
     const now = /* @__PURE__ */ new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 6e4);
     const diffHours = Math.floor(diffMs / 36e5);
     const diffDays = Math.floor(diffMs / 864e5);
@@ -1954,7 +1958,7 @@ function formatDate(date) {
     } else if (diffDays < 7) {
         return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
     } else {
-        return date.toLocaleDateString("en-US", {
+        return d.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
@@ -2665,6 +2669,24 @@ async function registerRoutes(app2) {
         }
     });
 
+    app2.patch("/api/events/reorder", requireAuth, requireAdminOnly, async (req, res) => {
+        try {
+            const { orders } = req.body; // Expecting [{ id: string, order: number }]
+            if (!Array.isArray(orders)) {
+                return res.status(400).json({ error: "Orders array is required" });
+            }
+            
+            const updates = orders.map(item => 
+                EventModel.findByIdAndUpdate(item.id, { order: item.order })
+            );
+            
+            await Promise.all(updates);
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Scrape events endpoint for admin panel
     app2.post("/api/mirror-url", async (req, res) => {
         try {
@@ -2819,8 +2841,10 @@ async function registerRoutes(app2) {
     app2.get("/api/news", async (req, res) => {
         try {
             const q = req.query || {};
-            const limit = Math.max(1, Math.min(100, parseInt(String(q.limit || "20"), 10) || 20));
-            const offset = Math.max(0, parseInt(String(q.offset || "0"), 10) || 0);
+            const limitRaw = parseInt(String(q.limit || "20"), 10);
+            const limit = isNaN(limitRaw) ? 20 : Math.max(1, Math.min(100, limitRaw));
+            const offsetRaw = parseInt(String(q.offset || "0"), 10);
+            const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
             let all = await storage.getAllNews();
             if (q.category) {
                 const cat = String(q.category).toLowerCase();
@@ -4567,44 +4591,23 @@ async function registerRoutes(app2) {
                 const results = [];
                 for (const url of urls) {
                     try {
-                        const response = await fetch(url, {
-                            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
-                        });
-                        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-                        
-                        const html = await response.text();
-                        const $ = cheerio.load(html);
-
-                        // Remove scripts and styles
-                        $('script, style, iframe, noscript').remove();
-
-                        const title = $('title').text() || $('h1').first().text() || "Untitled Page";
-                        const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || "";
-                        const keywords = ($('meta[name="keywords"]').attr('content') || "").split(',').map(k => k.trim()).filter(Boolean);
-                        const mainImage = $('meta[property="og:image"]').attr('content') || $('link[rel="image_src"]').attr('href') || "";
-
-                        // Basic content extraction
-                        const content = $('article').html() || $('.content').html() || $('#content').html() || $('main').html() || $('body').html() || "";
-                        const textOnly = $('article').text() || $('.content').text() || $('#content').text() || $('main').text() || $('body').text() || "";
-                        const excerpt = textOnly.substring(0, 250).trim() + "...";
-
+                        const data = await MirrorService.mirror(url);
                         results.push({
                             url,
-                            title: title.trim(),
-                            description: description.trim(),
-                            keywords,
-                            mainImage,
-                            content: content.trim(),
-                            excerpt,
-                            contentLength: content.length
+                            status: 'completed',
+                            title: data.title,
+                            content: data.content,
+                            pagesScraped: 1 // For backward compatibility or just as a count
                         });
                     } catch (err) {
-                        results.push({ url, error: err.message });
+                        console.error(`Scrape error for ${url}:`, err.message);
+                        results.push({ url, error: err.message, status: 'failed' });
                     }
                 }
 
-                res.json({ ok: true, data: results });
+                res.json({ status: 'completed', pagesScraped: results.filter(r => r.status === 'completed').length, data: results });
             } catch (error) {
+                console.error("Scraping endpoint error:", error.message);
                 res.status(500).json({ error: error.message });
             }
         });
@@ -5702,6 +5705,17 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "x-csrf-token", "X-Analytics-Session", "x-analytics-session", "X-Geo-Country", "x-geo-country"],
     }),
 );
+
+// Request tracking middleware for debugging
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on("finish", () => {
+        if (res.statusCode >= 400) {
+            console.warn(`[DEBUG] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+        }
+    });
+    next();
+});
 // Ensure preflight succeeds for all routes
 app.options("*", cors());
 app.use(
@@ -6047,8 +6061,9 @@ app.use((req, res, next) => {
     app.use((err, _req, res, _next) => {
         const status = err.status || err.statusCode || 500;
         const message = err.message || "Internal Server Error";
-        console.error(`[ERROR] ${status} - ${message}`, err); // Better logging for debugging
-        res.status(status).json({ message, ok: false }); // Ensure consistency in error responses
+        console.error(`[ERROR] ${status} - ${message}`, err);
+        res.setHeader('Content-Type', 'application/json');
+        res.status(status).json({ error: message, ok: false, status });
     });
 
     app.get("/api/health", async (_req, res) => {

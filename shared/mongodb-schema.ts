@@ -75,6 +75,7 @@ export interface IEvent extends Document {
   twitterImage?: string;
   schemaType?: string;
   breadcrumbs?: Array<{ name: string; url: string }>;
+  order?: number;
 }
 
 export interface INews extends Document {
@@ -331,6 +332,7 @@ const EventSchema = new Schema<IEvent>({
   ogImage: { type: String, default: '' },
   twitterImage: { type: String, default: '' },
   schemaType: { type: String, default: 'Event' },
+  order: { type: Number, default: 9999 },
   breadcrumbs: { type: [{ name: String, url: String }], default: [] },
 });
 
@@ -567,6 +569,7 @@ export const insertPostSchema = z.object({
   ogImage: z.string().optional(),
   twitterImage: z.string().optional(),
   schemaType: z.string().optional(),
+  order: z.number().optional(),
   breadcrumbs: z.array(z.object({ name: z.string(), url: z.string() })).optional(),
 });
 

@@ -113,8 +113,10 @@ export class MongoDBStorage {
         }
         
         // Performance: Use limit and lean() for faster queries
-        const limit = parseInt(filters.limit) || 100; // Default to 100 to avoid breaking admin views
-        const offset = parseInt(filters.offset) || 0;
+        const limitRaw = parseInt(filters.limit);
+        const limit = isNaN(limitRaw) ? 100 : Math.max(1, Math.min(1000, limitRaw));
+        const offsetRaw = parseInt(filters.offset);
+        const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
         
         const [posts, total] = await Promise.all([
             PostModel.find(query)

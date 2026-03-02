@@ -125,7 +125,8 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
           uploadHandler({ errorMessage: "Upload error" });
         }
       }}
-    />
+      />
+    </div>
   );
 }
 

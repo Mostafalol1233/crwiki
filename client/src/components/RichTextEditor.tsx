@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 
 declare global {
   interface Window {
@@ -16,7 +18,6 @@ type Props = {
 };
 
 export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300 }: Props) {
-  const [Editor, setEditor] = useState<any>(null);
   const { toast } = useToast();
   const [cmLoaded, setCmLoaded] = useState(false);
 
@@ -43,22 +44,6 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
     document.head.appendChild(style);
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        await import("suneditor/dist/css/suneditor.min.css");
-        const mod = await import("suneditor-react");
-        if (mounted) setEditor(() => mod.default);
-      } catch {
-        setEditor(() => null);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   const options = useMemo(() => {
     return {
       buttonList: [
@@ -75,36 +60,25 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
         ["preview", "print"],
       ],
       katex: null,
-      height,
+      height: typeof height === 'number' ? `${height}px` : height,
       resizingBar: true,
       imageRotation: true,
       charCounter: true,
-      defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`,
+      defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"}; font-family: inherit; font-size: 16px;`,
       codeMirror: cmLoaded && typeof window !== "undefined" && window.CodeMirror ? window.CodeMirror : undefined,
     };
   }, [direction, height, cmLoaded]);
 
-  if (!Editor) {
-    return (
-      <textarea
-        dir={direction}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{ width: "100%", height: typeof height === "number" ? `${height}px` : String(height) }}
-        className="border rounded-md p-2"
-      />
-    );
-  }
-
   return (
-    <Editor
-      setOptions={options as any}
-      defaultValue={value}
-      onChange={(content: string) => onChange(content || "")}
-      placeholder={placeholder}
-      setDefaultStyle={`direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`}
-      onImageUploadBefore={async (files: File[], _: any, uploadHandler: any) => {
+    <div className="rich-text-editor-container" dir="ltr">
+      <SunEditor
+        setOptions={options as any}
+        defaultValue={value}
+        setContents={value}
+        onChange={(content: string) => onChange(content || "")}
+        placeholder={placeholder}
+        setDefaultStyle={`direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`}
+        onImageUploadBefore={async (files: File[], _: any, uploadHandler: any) => {
         try {
           const file = files?.[0];
           if (!file) return;

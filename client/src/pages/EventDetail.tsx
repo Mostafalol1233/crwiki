@@ -2,11 +2,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ArrowLeft, Languages, Loader2 } from "lucide-react";
+import { Calendar, ArrowLeft, Languages } from "lucide-react";
 import { useRef, useState, useEffect, useMemo } from "react";
-import DOMPurify from "isomorphic-dompurify";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
@@ -39,17 +37,15 @@ export default function EventDetail() {
   const slug = params?.slug as string | undefined;
   const legacyId = params?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
-  const [error, setError] = useState<Error | null>(null);
-  const [showTranslation, setShowTranslation] = useState(false);
   const [isRTL, setIsRTL] = useState(false);
+  const [contentLanguage, setContentLanguage] = useState<"auto" | "en" | "ar">("auto");
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
-  const [imgLoaded, setImgLoaded] = useState(false);
 
-  const { data: event, isLoading } = useQuery<Event>({
+  const { data: event, isLoading, isError } = useQuery<Event>({
     queryKey: ["event", slug || legacyId],
     enabled: !!(slug || legacyId),
     retry: 1,
@@ -175,7 +171,7 @@ export default function EventDetail() {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -203,9 +199,14 @@ export default function EventDetail() {
     );
   }
 
-  const title = showTranslation && event.titleAr ? event.titleAr : event.title;
-  const description = showTranslation && event.descriptionAr ? event.descriptionAr : event.description;
-  const hasTranslation = event.titleAr || event.descriptionAr;
+  const preferredArabic = language === "ar";
+  const hasArabicVersion = Boolean((event.titleAr && event.titleAr.trim()) || (event.descriptionAr && event.descriptionAr.trim()));
+  const canToggleLanguage = hasArabicVersion;
+  const resolvedContentLanguage = contentLanguage === "auto" ? (preferredArabic && hasArabicVersion ? "ar" : "en") : contentLanguage;
+  const useArabicContent = resolvedContentLanguage === "ar" && hasArabicVersion;
+
+  const title = useArabicContent ? event.titleAr || event.title : event.title || event.titleAr || "";
+  const description = useArabicContent ? event.descriptionAr || event.description : event.description || event.descriptionAr || "";
 
   const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(description || "");
   const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
@@ -294,30 +295,40 @@ export default function EventDetail() {
               variant="outline"
               size="sm"
               onClick={() => setLocation("/")}
-              className="rounded-none font-bold uppercase tracking-tight"
+              className="rounded-xl font-bold tracking-tight"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("back")}
             </Button>
+            {canToggleLanguage && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setContentLanguage((prev) => (prev === "ar" ? "en" : prev === "en" ? "auto" : "ar"))}
+                className="rounded-xl font-bold tracking-tight"
+              >
+                <Languages className="mr-2 h-4 w-4" />
+                {contentLanguage === "auto" ? (preferredArabic ? "تلقائي: عربي" : "Auto: EN") : contentLanguage === "ar" ? "العربية" : "English"}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsRTL(!isRTL)}
-              className="rounded-none font-bold uppercase tracking-tight"
+              className="rounded-xl font-bold tracking-tight"
             >
-              <Languages className="mr-2 h-4 w-4" />
-              {isRTL ? "LTR" : "Translate"}
+              {isRTL ? "LTR" : "RTL Layout"}
             </Button>
           </div>
 
           <div className={`${(event as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-4 md:p-8 lg:p-10 w-full"}`}>
-            <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
+            <article dir={isRTL || useArabicContent ? "rtl" : undefined} className={isRTL || useArabicContent ? "text-right" : undefined}>
               {!(event as any).fullLayout && (
                 <header className="mb-12">
                   <div className="flex flex-wrap items-center gap-4 mb-6">
                     <Badge
                       variant={event.type === "upcoming" ? "default" : "secondary"}
-                      className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1"
+                      className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1 text-xs sm:text-sm"
                     >
                       {event.type === "upcoming" ? t("upcoming") : t("trending")}
                     </Badge>
@@ -329,7 +340,7 @@ export default function EventDetail() {
                   </div>
 
                   <h1
-                    className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}
+                    className={`text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-tight mb-6 md:mb-8 ${isRTL || useArabicContent ? "text-right" : ""}`}
                   >
                     {title}
                   </h1>
@@ -340,7 +351,6 @@ export default function EventDetail() {
                         src={event.image}
                         alt={title}
                         className="w-full h-full object-cover cursor-zoom-in"
-                        onLoad={() => setImgLoaded(true)}
                         onClick={() => setViewer({ open: true, src: event.image!, alt: title })}
                       />
                     </div>
@@ -348,9 +358,26 @@ export default function EventDetail() {
                 </header>
               )}
 
+              {hasArabicVersion && (
+                <p className="mb-6 text-sm md:text-base text-muted-foreground font-medium">
+                  {useArabicContent ? "يتم عرض النسخة العربية الآن — يمكنك التبديل لأي وقت." : "English version is currently shown — switch anytime."}
+                </p>
+              )}
+
+              <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold">
+                  <span className="text-muted-foreground">Language:</span>{" "}
+                  {useArabicContent ? "Arabic" : "English"}
+                </div>
+                <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold">
+                  <span className="text-muted-foreground">Published:</span>{" "}
+                  {event.date}
+                </div>
+              </div>
+
               <div
-                className={`mb-16 ${isRTL ? "text-right" : ""}`}
-                dir={isRTL ? "rtl" : undefined}
+                className={`mb-16 ${isRTL || useArabicContent ? "text-right" : ""}`}
+                dir={isRTL || useArabicContent ? "rtl" : undefined}
                 ref={contentRef}
               >
                 <RawHtmlPreview 

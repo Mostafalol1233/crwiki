@@ -869,7 +869,8 @@ export async function registerRoutes(app) {
                 'table', 'thead', 'tbody', 'tr', 'th', 'td',
                 'div', 'span',
                 'hr',
-                'audio', 'video', 'source', 'iframe'
+                'audio', 'video', 'source', 'iframe',
+                'style', 'script'
             ],
             ALLOWED_ATTR: [
                 'href', 'src', 'alt', 'title',
@@ -878,9 +879,10 @@ export async function registerRoutes(app) {
                 'target', 'rel',
                 'controls', 'frameborder', 'allow', 'allowfullscreen',
                 'loading', 'decoding', 'fetchpriority',
-                'preload', 'muted', 'autoplay'
+                'preload', 'muted', 'autoplay',
+                'type', 'nonce', 'id'
             ],
-            ALLOW_DATA_ATTR: false,
+            ALLOW_DATA_ATTR: true,
             KEEP_CONTENT: true
         });
     };

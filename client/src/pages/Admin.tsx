@@ -283,6 +283,16 @@ export default function Admin() {
   });
 
   const [, setLocation] = useLocation();
+
+  const normalizeSlugValue = (value: string) =>
+    String(value || "")
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9 ]+/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .substring(0, 60);
   const { toast } = useToast();
   const [adminRole, setAdminRole] = useState<string>("");
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -2552,7 +2562,7 @@ export default function Admin() {
                                 data-testid="input-event-title-ar"
                               />
                               <Input
-                                placeholder="Custom Slug (optional)"
+                                placeholder="Custom Slug (optional - auto if empty)"
                                 value={eventForm.event_name_slug}
                                 onChange={(e) =>
                                   setEventForm({ ...eventForm, event_name_slug: e.target.value })
@@ -2597,14 +2607,6 @@ export default function Admin() {
                                 images={eventForm.images}
                                 onImagesChange={(newImages) => setEventForm({ ...eventForm, images: newImages })}
                                 toast={toast}
-                              />
-                              <Input
-                                placeholder="Custom URL Slug (leave empty to auto-generate)"
-                                value={eventForm.event_name_slug}
-                                onChange={(e) =>
-                                  setEventForm({ ...eventForm, event_name_slug: e.target.value })
-                                }
-                                data-testid="input-event-slug"
                               />
                               <select
                                 value={eventForm.type}
@@ -2695,25 +2697,36 @@ export default function Admin() {
                                   onClick={() => {
                                     const descHtml = eventForm.description;
                                     const descArHtml = eventForm.descriptionAr;
+                                    const cleanTitle = String(eventForm.title || "").trim();
+                                    const cleanTitleAr = String(eventForm.titleAr || "").trim();
+                                    const cleanDescription = String(descHtml || "").trim();
+                                    const cleanDescriptionAr = String(descArHtml || "").trim();
+
+                                    if (!cleanTitle && !cleanTitleAr) {
+                                      toast({ title: "Missing title", description: "Please add English or Arabic title.", variant: "destructive" });
+                                      return;
+                                    }
+                                    if (!cleanDescription && !cleanDescriptionAr) {
+                                      toast({ title: "Missing description", description: "Please add event content in at least one language.", variant: "destructive" });
+                                      return;
+                                    }
+
+                                    const customSlug = normalizeSlugValue(eventForm.event_name_slug || "");
+                                    const generatedSlug = normalizeSlugValue(cleanTitle || cleanTitleAr || "event");
+                                    const finalSlug = customSlug || generatedSlug || "event";
+
                                     const data = {
                                       ...eventForm,
                                       description: descHtml,
                                       descriptionAr: descArHtml,
+                                      event_name_slug: finalSlug,
                                       seoKeywords: eventForm.seoKeywords
-                                        ? eventForm.seoKeywords.split(",").map((k) => k.trim())
+                                        ? eventForm.seoKeywords.split(",").map((k) => k.trim()).filter(Boolean)
                                         : [],
                                     };
                                     const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
-                                    const slug = String((eventForm.title || "").toLowerCase())
-                                      .normalize('NFKD')
-                                      .replace(/\p{Diacritic}/gu, '')
-                                      .replace(/[^a-z0-9 ]+/g, '')
-                                      .trim()
-                                      .replace(/\s+/g, '-')
-                                      .substring(0, 60);
-                                    const canonical = base ? `${base}/events/${slug}` : `https://crossfire.wiki/events/${slug}`;
-                                    (data as any).event_name_slug = slug;
-                                    (data as any).canonicalUrl = data.canonicalUrl || canonical;
+                                    const canonical = base ? `${base}/events/${finalSlug}` : `https://crossfire.wiki/events/${finalSlug}`;
+                                    (data as any).canonicalUrl = String(data.canonicalUrl || "").trim() || canonical;
                                     if (editingEvent) {
                                       updateEventMutation.mutate({ id: editingEvent.id, data });
                                     } else {

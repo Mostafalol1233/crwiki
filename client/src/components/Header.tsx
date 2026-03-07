@@ -196,6 +196,7 @@ export function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setMobileMenuOpen(false);
     }
   };
 
@@ -214,7 +215,7 @@ export function Header() {
       label: t("blog"),
       icon: CFIconBook,
       dropdown: [
-        { path: "/news", label: t("News&Updates"), icon: CFIconBook },
+        { path: "/news", label: t("newsAndUpdates"), icon: CFIconBook },
         { path: "/posts", label: t("posts"), icon: CFIconBook },
         { path: "/category/events", label: t("events"), icon: CFIconTrophy },
         { path: "/videos", label: t("videos"), icon: CFIconBook },
@@ -262,7 +263,10 @@ export function Header() {
             {(() => {
               const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
               const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-              const user = userStr ? JSON.parse(userStr) : null;
+              let user: any = null;
+              if (userStr) {
+                try { user = JSON.parse(userStr); } catch { user = null; }
+              }
 
               if (token && user) {
                 return (
@@ -389,7 +393,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleLanguage}
+                onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}
                 data-testid="button-language-toggle"
                 className="h-9 w-9 rounded-none hover:bg-muted"
                 title={language === 'en' ? 'العربية' : 'English'}
@@ -400,7 +404,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleTheme}
+                onClick={() => { toggleTheme(); setMobileMenuOpen(false); }}
                 data-testid="button-theme-toggle"
                 className="h-9 w-9 rounded-none hover:bg-muted"
                 title={theme === 'light' ? 'Dark mode' : 'Light mode'}
@@ -428,6 +432,16 @@ export function Header() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="md:hidden border-t py-3 px-4 bg-card text-foreground">
+            <form onSubmit={handleSearch} className="relative mb-3">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={t("search") || "Search wiki..."}
+                className="pl-9 h-9 rounded-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </form>
             <div className="grid grid-cols-1 gap-1">
               {menuItems.map((item) => (
                 <div key={`mobile-${item.label}`} className="w-full">
@@ -446,6 +460,7 @@ export function Header() {
                               key={`mobile-${subitem.path}`}
                               href={subitem.path}
                               className="block px-3 py-2 text-sm italic text-muted-foreground hover:text-foreground"
+                              onClick={() => setMobileMenuOpen(false)}
                             >
                               {subitem.label}
                             </Link>
@@ -457,6 +472,7 @@ export function Header() {
                     <Link
                       href={item.path || '#'}
                       className="block px-3 py-2 text-sm uppercase italic font-bold"
+                      onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.label}
                     </Link>

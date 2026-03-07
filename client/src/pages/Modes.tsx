@@ -9,6 +9,8 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
+const MODES_ASSET_BASE = "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes";
+
 interface Mode {
   id: string;
   name: string;
@@ -18,29 +20,32 @@ interface Mode {
 }
 
 const modeImageFallbackByKeyword: Array<{ key: string; url: string }> = [
-  { key: "zombie", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/ZM1_MetalRage_01.jpg.jpeg" },
-  { key: "bio", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/ZM1_EvilDen_01.jpg.jpeg" },
-  { key: "mutation", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/ZM4_ForbiddenZone_01.jpg.jpeg" },
-  { key: "search", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/SIN_Laboratory_05.jpg.jpeg" },
-  { key: "sniper", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Stadium_05.jpg.jpeg" },
-  { key: "team", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg" },
-  { key: "tdm", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg" },
-  { key: "ghost", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Halloween_05.jpg.jpeg" },
-  { key: "escape", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/EM_Christmas_03.jpg.jpeg" },
-  { key: "ai", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
-  { key: "aim", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
+  { key: "zombie", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/ZM1_MetalRage_01.jpg.jpeg" },
+  { key: "bio", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/ZM1_EvilDen_01.jpg.jpeg" },
+  { key: "mutation", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/ZM4_ForbiddenZone_01.jpg.jpeg" },
+  { key: "search", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/SIN_Laboratory_05.jpg.jpeg" },
+  { key: "sniper", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Stadium_05.jpg.jpeg" },
+  { key: "team", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Train_05.jpg.jpeg" },
+  { key: "tdm", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Train_05.jpg.jpeg" },
+  { key: "ghost", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Halloween_05.jpg.jpeg" },
+  { key: "escape", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/EM_Christmas_03.jpg.jpeg" },
+  { key: "ai", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
+  { key: "aim", url: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/AIM_AimMaster_01.jpg.jpeg" },
 ];
 
 function resolveModeImage(mode: Mode) {
   const input = String(mode.image || "").trim();
   if (/^https?:\/\//i.test(input)) return input;
   if (input.startsWith('/attached_assets/modes/')) {
-    return `https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full${input}`;
+    return `${MODES_ASSET_BASE}/${input.replace('/attached_assets/modes/', '')}`;
+  }
+  if (input.startsWith('/backend-deploy-full/attached_assets/modes/')) {
+    return `${MODES_ASSET_BASE}/${input.replace('/backend-deploy-full/attached_assets/modes/', '')}`;
   }
 
   const haystack = `${mode.name || ""} ${mode.type || ""} ${mode.description || ""}`.toLowerCase();
   const match = modeImageFallbackByKeyword.find((m) => haystack.includes(m.key));
-  return match?.url || "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg";
+  return match?.url || "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Train_05.jpg.jpeg";
 }
 
 export default function Modes() {
@@ -137,7 +142,7 @@ export default function Modes() {
                         src={resolveModeImage(mode)}
                         alt={mode.name}
                         className="w-full h-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg"; }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/attached_assets/modes/TDM_Train_05.jpg.jpeg"; }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

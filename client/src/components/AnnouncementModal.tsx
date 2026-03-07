@@ -236,7 +236,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="fixed top-[72px] md:top-[86px] left-0 right-0 z-40 mx-auto max-w-6xl px-3 md:px-4"
+            className="fixed top-[96px] md:top-[118px] left-0 right-0 z-40 mx-auto max-w-6xl px-3 md:px-4"
             role="banner"
           >
             <div className="relative w-full rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl overflow-hidden">

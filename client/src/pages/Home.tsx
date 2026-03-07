@@ -63,7 +63,7 @@ export default function Home() {
     return allEvents
       .filter((e: any) => !e.rawHtmlContent)
       .filter((e: any) => (String(e.title || "").trim().length > 0) && (String(e.description || e.content || "").trim().length > 0))
-      .slice(0, 5);
+      .slice(0, 7);
   }, [allEvents]);
 
   const { data: newsData } = useQuery<{ items: any[], total: number }>({

@@ -201,11 +201,12 @@ export default function AdminAnnouncements() {
     }
   };
 
-  const loadSeller = async () => {
-    if (!sellerSlug) return;
+  const loadSeller = async (slugOverride?: string) => {
+    const targetSlug = (slugOverride || sellerSlug || "").trim();
+    if (!targetSlug) return;
     try {
       setLoadingSeller(true);
-      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`);
+      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(targetSlug)}`);
       if (res.ok) {
         const json: Announcement = await res.json();
         setSContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
@@ -230,7 +231,7 @@ export default function AdminAnnouncements() {
       } catch {}
       // Load reviews for this seller slug
       try {
-        const res3 = await fetch(`/api/reviews/seller/by-slug/${encodeURIComponent(sellerSlug)}`);
+        const res3 = await fetch(`/api/reviews/seller/by-slug/${encodeURIComponent(targetSlug)}`);
         if (res3.ok) {
           const data = await res3.json();
           setActiveSellerForReviews({ id: data?.seller?.id, name: data?.seller?.name });
@@ -443,7 +444,9 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {gEnMode === "rich" ? (
-                  <RichTextEditor value={gContentHtmlEn} onChange={setGContentHtmlEn} direction="ltr" height={260} />
+                  <div className="rounded-md border overflow-hidden max-h-[420px]">
+                    <RichTextEditor value={gContentHtmlEn} onChange={setGContentHtmlEn} direction="ltr" height={260} resizingBar={false} />
+                  </div>
                 ) : (
                   <Textarea
                     rows={8}
@@ -462,7 +465,9 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {gArMode === "rich" ? (
-                  <RichTextEditor value={gContentHtmlAr} onChange={setGContentHtmlAr} direction="rtl" height={260} />
+                  <div className="rounded-md border overflow-hidden max-h-[420px]">
+                    <RichTextEditor value={gContentHtmlAr} onChange={setGContentHtmlAr} direction="rtl" height={260} resizingBar={false} />
+                  </div>
                 ) : (
                   <Textarea
                     rows={8}
@@ -514,7 +519,7 @@ export default function AdminAnnouncements() {
                   <img src={gImageUrl} alt="Global announcement preview" className="w-full max-h-56 object-cover rounded-md mb-3" />
                 )}
                 {gPreviewHtml ? (
-                  <RawHtmlPreview html={gPreviewHtml} className="min-h-[120px]" />
+                  <RawHtmlPreview html={gPreviewHtml} className="min-h-[120px] max-h-[380px] overflow-auto" />
                 ) : (
                   <div className="text-sm text-muted-foreground">Add English or Arabic content to preview.</div>
                 )}
@@ -549,7 +554,7 @@ export default function AdminAnnouncements() {
             <div className="text-xs text-muted-foreground">Slug: {sellerSlug || "(enter name)"}</div>
 
             <div className="flex gap-3">
-              <Button variant="outline" onClick={loadSeller} disabled={!sellerSlug || loadingSeller}>Load</Button>
+              <Button variant="outline" onClick={() => { void loadSeller(); }} disabled={!sellerSlug || loadingSeller}>Load</Button>
             </div>
 
             <label className="text-sm font-medium">Image URL</label>
@@ -574,7 +579,9 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {sEnMode === "rich" ? (
-                  <RichTextEditor value={sContentHtmlEn} onChange={setSContentHtmlEn} direction="ltr" height={260} />
+                  <div className="rounded-md border overflow-hidden max-h-[420px]">
+                    <RichTextEditor value={sContentHtmlEn} onChange={setSContentHtmlEn} direction="ltr" height={260} resizingBar={false} />
+                  </div>
                 ) : (
                   <Textarea
                     rows={8}
@@ -593,7 +600,9 @@ export default function AdminAnnouncements() {
                   </div>
                 </div>
                 {sArMode === "rich" ? (
-                  <RichTextEditor value={sContentHtmlAr} onChange={setSContentHtmlAr} direction="rtl" height={260} />
+                  <div className="rounded-md border overflow-hidden max-h-[420px]">
+                    <RichTextEditor value={sContentHtmlAr} onChange={setSContentHtmlAr} direction="rtl" height={260} resizingBar={false} />
+                  </div>
                 ) : (
                   <Textarea
                     rows={8}
@@ -640,7 +649,7 @@ export default function AdminAnnouncements() {
                   <img src={sImageUrl} alt="Seller announcement preview" className="w-full max-h-56 object-cover rounded-md mb-3" />
                 )}
                 {sPreviewHtml ? (
-                  <RawHtmlPreview html={sPreviewHtml} className="min-h-[120px]" />
+                  <RawHtmlPreview html={sPreviewHtml} className="min-h-[120px] max-h-[380px] overflow-auto" />
                 ) : (
                   <div className="text-sm text-muted-foreground">Add English or Arabic content to preview.</div>
                 )}
@@ -656,7 +665,7 @@ export default function AdminAnnouncements() {
                       <div className="text-xs truncate max-w-[50%]">{s.sellerSlug}</div>
                       <div className="text-xs truncate max-w-[30%]">{s.contentHtml || '(empty)'}</div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setSellerName(s.sellerSlug)}>Load</Button>
+                        <Button variant="outline" size="sm" onClick={() => { setSellerName(s.sellerSlug); void loadSeller(s.sellerSlug); }}>Load</Button>
                       </div>
                     </div>
                   ))}

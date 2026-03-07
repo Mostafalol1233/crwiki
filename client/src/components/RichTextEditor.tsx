@@ -15,9 +15,10 @@ type Props = {
   placeholder?: string;
   direction?: "ltr" | "rtl";
   height?: number | string;
+  resizingBar?: boolean;
 };
 
-export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300 }: Props) {
+export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300, resizingBar = false }: Props) {
   const { toast } = useToast();
   const [cmLoaded, setCmLoaded] = useState(false);
   const [cmModesLoaded, setCmModesLoaded] = useState(false);
@@ -84,7 +85,7 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
       ],
       katex: null,
       height: typeof height === 'number' ? `${height}px` : height,
-      resizingBar: true,
+      resizingBar,
       imageRotation: true,
       charCounter: true,
       defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"}; font-family: inherit; font-size: 16px;`,
@@ -97,13 +98,12 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
         },
       } : undefined,
     };
-  }, [direction, height, cmLoaded, cmModesLoaded]);
+  }, [direction, height, cmLoaded, cmModesLoaded, resizingBar]);
 
   return (
     <div className="rich-text-editor-container" dir="ltr">
       <SunEditor
         setOptions={options as any}
-        defaultValue={value}
         setContents={value}
         onChange={(content: string) => onChange(content || "")}
         placeholder={placeholder}

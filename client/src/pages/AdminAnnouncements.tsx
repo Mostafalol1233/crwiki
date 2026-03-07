@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import imageCompression from 'browser-image-compression';
 import { RichTextEditor } from "@/components/RichTextEditor";
 
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/components/LanguageProvider";
+import RawHtmlPreview from "@/components/RawHtmlPreview";
  
 
 function slugify(input: string) {
@@ -34,6 +36,10 @@ export default function AdminAnnouncements() {
 
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { language } = useLanguage();
+
+  const [gPreviewLang, setGPreviewLang] = useState<"auto" | "en" | "ar">("auto");
+  const [sPreviewLang, setSPreviewLang] = useState<"auto" | "en" | "ar">("auto");
 
  
 
@@ -70,7 +76,6 @@ export default function AdminAnnouncements() {
   const [sEnMode, setSEnMode] = useState<"rich" | "html">("rich");
   const [sArMode, setSArMode] = useState<"rich" | "html">("rich");
 
-  const richTextModules = useMemo(() => ({}), []);
 
   const pickPrimaryContent = (en: string, ar: string) => {
     const normalize = (html: string) =>
@@ -85,7 +90,6 @@ export default function AdminAnnouncements() {
     return "";
   };
 
-  const richTextFormats: string[] = [];
 
   // Load global on mount
   useEffect(() => {
@@ -357,6 +361,44 @@ export default function AdminAnnouncements() {
     }
   };
 
+  const resolvePreviewLang = (mode: "auto" | "en" | "ar", hasEn: boolean, hasAr: boolean) => {
+    if (mode === "en" && hasEn) return "en";
+    if (mode === "ar" && hasAr) return "ar";
+    if (language === "ar" && hasAr) return "ar";
+    if (hasEn) return "en";
+    if (hasAr) return "ar";
+    return language === "ar" ? "ar" : "en";
+  };
+
+  const gHasEn = Boolean(gContentHtmlEn.trim());
+  const gHasAr = Boolean(gContentHtmlAr.trim());
+  const gResolvedLang = resolvePreviewLang(gPreviewLang, gHasEn, gHasAr);
+  const gPreviewHtml = gResolvedLang === "ar" ? (gContentHtmlAr || gContentHtmlEn) : (gContentHtmlEn || gContentHtmlAr);
+  const gPreviewDir = gDirection === "auto" ? (gResolvedLang === "ar" ? "rtl" : "ltr") : gDirection;
+
+  const sHasEn = Boolean(sContentHtmlEn.trim());
+  const sHasAr = Boolean(sContentHtmlAr.trim());
+  const sResolvedLang = resolvePreviewLang(sPreviewLang, sHasEn, sHasAr);
+  const sPreviewHtml = sResolvedLang === "ar" ? (sContentHtmlAr || sContentHtmlEn) : (sContentHtmlEn || sContentHtmlAr);
+  const sPreviewDir = sDirection === "auto" ? (sResolvedLang === "ar" ? "rtl" : "ltr") : sDirection;
+
+  const copyGlobalEnToAr = () => {
+    setGContentHtmlAr(gContentHtmlEn);
+    toast({ title: "Copied", description: "English content copied to Arabic editor." });
+  };
+  const copyGlobalArToEn = () => {
+    setGContentHtmlEn(gContentHtmlAr);
+    toast({ title: "Copied", description: "Arabic content copied to English editor." });
+  };
+  const copySellerEnToAr = () => {
+    setSContentHtmlAr(sContentHtmlEn);
+    toast({ title: "Copied", description: "English content copied to Arabic editor." });
+  };
+  const copySellerArToEn = () => {
+    setSContentHtmlEn(sContentHtmlAr);
+    toast({ title: "Copied", description: "Arabic content copied to English editor." });
+  };
+
   return (
     <div className="min-h-screen bg-background py-10">
       <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-8">
@@ -384,6 +426,12 @@ export default function AdminAnnouncements() {
 
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Button type="button" size="sm" variant="outline" onClick={copyGlobalEnToAr}>Copy EN → AR</Button>
+              <Button type="button" size="sm" variant="outline" onClick={copyGlobalArToEn}>Copy AR → EN</Button>
+              <span className="text-muted-foreground">Tip: Use Auto preview to follow global site language.</span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -452,6 +500,27 @@ export default function AdminAnnouncements() {
               <Button onClick={saveGlobal} disabled={loadingGlobal}>Save</Button>
             </div>
 
+            <div className="rounded-lg border bg-card/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="text-sm font-semibold">Live Preview</div>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant={gResolvedLang === "en" ? "default" : "outline"} onClick={() => setGPreviewLang("en")}>EN</Button>
+                  <Button size="sm" variant={gResolvedLang === "ar" ? "default" : "outline"} onClick={() => setGPreviewLang("ar")}>AR</Button>
+                  <Button size="sm" variant={gPreviewLang === "auto" ? "secondary" : "outline"} onClick={() => setGPreviewLang("auto")}>Auto</Button>
+                </div>
+              </div>
+              <div dir={gPreviewDir} className={gPreviewDir === "rtl" ? "text-right" : "text-left"}>
+                {gImageUrl && (
+                  <img src={gImageUrl} alt="Global announcement preview" className="w-full max-h-56 object-cover rounded-md mb-3" />
+                )}
+                {gPreviewHtml ? (
+                  <RawHtmlPreview html={gPreviewHtml} className="min-h-[120px]" />
+                ) : (
+                  <div className="text-sm text-muted-foreground">Add English or Arabic content to preview.</div>
+                )}
+              </div>
+            </div>
+
             {globalList.length > 0 && (
               <div className="mt-6">
                 <div className="text-sm font-medium mb-2">All Global Announcements</div>
@@ -488,6 +557,12 @@ export default function AdminAnnouncements() {
 
             <label className="text-sm font-medium">Link URL</label>
             <Input value={sLinkUrl} onChange={(e)=>setSLinkUrl(e.target.value)} placeholder="https://..." />
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Button type="button" size="sm" variant="outline" onClick={copySellerEnToAr}>Copy EN → AR</Button>
+              <Button type="button" size="sm" variant="outline" onClick={copySellerArToEn}>Copy AR → EN</Button>
+              <span className="text-muted-foreground">Tip: Fill both editors for best bilingual announcement experience.</span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -549,6 +624,27 @@ export default function AdminAnnouncements() {
             <div className="flex gap-3">
               <Button onClick={saveSeller} disabled={!sellerSlug || loadingSeller}>Save</Button>
               <Button variant="outline" onClick={deleteSellerAnnouncement} disabled={!sellerSlug || loadingSeller}>Delete</Button>
+            </div>
+
+            <div className="rounded-lg border bg-card/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="text-sm font-semibold">Seller Preview</div>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant={sResolvedLang === "en" ? "default" : "outline"} onClick={() => setSPreviewLang("en")}>EN</Button>
+                  <Button size="sm" variant={sResolvedLang === "ar" ? "default" : "outline"} onClick={() => setSPreviewLang("ar")}>AR</Button>
+                  <Button size="sm" variant={sPreviewLang === "auto" ? "secondary" : "outline"} onClick={() => setSPreviewLang("auto")}>Auto</Button>
+                </div>
+              </div>
+              <div dir={sPreviewDir} className={sPreviewDir === "rtl" ? "text-right" : "text-left"}>
+                {sImageUrl && (
+                  <img src={sImageUrl} alt="Seller announcement preview" className="w-full max-h-56 object-cover rounded-md mb-3" />
+                )}
+                {sPreviewHtml ? (
+                  <RawHtmlPreview html={sPreviewHtml} className="min-h-[120px]" />
+                ) : (
+                  <div className="text-sm text-muted-foreground">Add English or Arabic content to preview.</div>
+                )}
+              </div>
             </div>
 
             {sellerAnnouncements.length > 0 && (

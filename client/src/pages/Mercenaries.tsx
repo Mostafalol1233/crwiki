@@ -14,6 +14,33 @@ interface Mercenary {
   voiceLines?: string[];
 }
 
+const mercenaryImageByName: Record<string, string> = {
+  wolf: "https://files.catbox.moe/6npa73.jpeg",
+  vipers: "https://files.catbox.moe/4il6hi.jpeg",
+  sisterhood: "https://files.catbox.moe/3o58nb.jpeg",
+  "black mamba": "https://files.catbox.moe/r26ox6.jpeg",
+  "arch honorary": "https://files.catbox.moe/ctwnqz.jpeg",
+  desperado: "https://files.catbox.moe/hh7h5u.jpeg",
+  ronin: "https://files.catbox.moe/eck3jc.jpeg",
+  dean: "https://files.catbox.moe/t78mvu.jpeg",
+  thoth: "https://files.catbox.moe/g4zfzn.jpeg",
+  sfg: "https://files.catbox.moe/3bba2g.jpeg",
+};
+
+function resolveMercImage(merc: Mercenary) {
+  const image = String(merc.image || "").trim();
+  if (/^https?:\/\//i.test(image)) return image;
+
+  const key = String(merc.name || "").toLowerCase().trim();
+  if (mercenaryImageByName[key]) return mercenaryImageByName[key];
+
+  if (image.startsWith('/assets/merc-blackmamba')) {
+    return "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/merc-blackmamba.jpg";
+  }
+
+  return mercenaryImageByName["wolf"];
+}
+
 export default function Mercenaries() {
   const { t } = useLanguage();
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
@@ -160,8 +187,9 @@ export default function Mercenaries() {
                 >
                   {/* Background image */}
                   <img
-                    src={merc.image}
+                    src={resolveMercImage(merc)}
                     alt={merc.name}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
                     className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                   />
 
@@ -215,8 +243,9 @@ export default function Mercenaries() {
                     className="absolute inset-0 overflow-hidden transition-all duration-500 rounded-lg"
                   >
                     <img
-                      src={merc.image}
+                      src={resolveMercImage(merc)}
                       alt={merc.name}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
                       className="w-full h-full object-cover object-center transition-all duration-300 group-hover:scale-110"
                     />
                     

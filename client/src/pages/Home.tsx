@@ -304,9 +304,21 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                 {[
-                  { title: "Modes", image: "/images/categories/modes.jpg", link: "/modes" },
-                  { title: "Weapons", image: "/images/categories/weapons.jpg", link: "/weapons" },
-                  { title: "Mercenaries", image: "/images/categories/mercenaries.jpg", link: "/mercenaries" }
+                  {
+                    title: "Modes",
+                    image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg",
+                    link: "/modes"
+                  },
+                  {
+                    title: "Weapons",
+                    image: "https://static.wikia.nocookie.net/crossfirefps/images/6/6f/Rifle_AK47.png",
+                    link: "/weapons"
+                  },
+                  {
+                    title: "Mercenaries",
+                    image: "https://files.catbox.moe/r26ox6.jpeg",
+                    link: "/mercenaries"
+                  }
                 ].map((cat) => (
                   <Link key={cat.title} href={cat.link}>
                     <Card className="group relative overflow-hidden aspect-[16/9] border-0 rounded-xl cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/components/LanguageProvider";
+import RawHtmlPreview from "@/components/RawHtmlPreview";
 
 function slugify(input: string) {
   return input
@@ -90,30 +90,27 @@ export default function AnnouncementModal({ location }: { location: string }) {
             }
           }
         } catch {}
-        let res: Response | null = null;
-        let scopeLabel = "global";
+        let hasActiveSellerAnnouncement = false;
 
         if (sellerSlugFromPath) {
-          res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlugFromPath)}`);
-          if (res.ok) {
-            const json = await res.json();
+          const sellerRes = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlugFromPath)}`);
+          if (sellerRes.ok) {
+            const json = await sellerRes.json();
             if (!aborted && json && json.active) {
+              hasActiveSellerAnnouncement = true;
               setData(json);
               setScope(`seller:${sellerSlugFromPath}`);
             }
           }
         }
 
-        if (!res || !res.ok || !(data && data.active)) {
+        if (!hasActiveSellerAnnouncement) {
           const resGlobal = await fetch(`/api/announcements/global`);
           if (resGlobal.ok) {
             const json = await resGlobal.json();
-            if (!aborted && json && json.active) {
-              if (location === "/") {
-                setData(json);
-                scopeLabel = "global";
-                setScope(scopeLabel);
-              }
+            if (!aborted && json && json.active && location === "/") {
+              setData(json);
+              setScope("global");
             }
           }
         }
@@ -126,13 +123,14 @@ export default function AnnouncementModal({ location }: { location: string }) {
     return () => {
       aborted = true;
     };
-  }, [sellerSlugFromPath]);
+  }, [sellerSlugFromPath, location]);
 
   useEffect(() => {
     if (!data) return;
     const hasEn = Boolean(data.contentHtmlEn && data.contentHtmlEn.trim().length > 0);
     const hasAr = Boolean(data.contentHtmlAr && data.contentHtmlAr.trim().length > 0);
-    // If admin explicitly set direction, respect it for initial language when possible
+
+    // If admin explicitly set direction, respect it first.
     if (data.direction === 'rtl' && hasAr) {
       setViewLang("ar");
       return;
@@ -141,12 +139,19 @@ export default function AnnouncementModal({ location }: { location: string }) {
       setViewLang("en");
       return;
     }
+
+    // Sync with global site language when both languages are available.
+    if (hasEn && hasAr) {
+      setViewLang(language === "ar" ? "ar" : "en");
+      return;
+    }
+
     // Fallbacks based on available content
-    if (hasEn && !hasAr) {
+    if (hasEn) {
       setViewLang("en");
-    } else if (hasAr && !hasEn) {
+    } else if (hasAr) {
       setViewLang("ar");
-    } else if (!hasEn && !hasAr) {
+    } else {
       setViewLang(language === "ar" ? "ar" : "en");
     }
   }, [data, language]);
@@ -187,7 +192,6 @@ export default function AnnouncementModal({ location }: { location: string }) {
   const primaryHtml = viewLang === "ar"
     ? (data.contentHtmlAr || data.contentHtml)
     : (data.contentHtmlEn || data.contentHtml);
-  const safeHtml = { __html: DOMPurify.sanitize(String(primaryHtml || "")) };
 
   const explicitDir = (data?.direction === 'rtl' || data?.direction === 'ltr') ? data.direction : undefined;
   const finalDir = explicitDir || (viewLang === 'ar' ? 'rtl' : 'ltr');
@@ -203,19 +207,19 @@ export default function AnnouncementModal({ location }: { location: string }) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed top-[70px] left-0 right-0 z-40 mx-auto max-w-7xl px-4"
+          className="fixed top-[72px] md:top-[86px] left-0 right-0 z-40 mx-auto max-w-6xl px-3 md:px-4"
           role="banner"
         >
           <div
-            className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-slate-900/95 via-indigo-900/95 to-slate-900/95 backdrop-blur-xl border border-indigo-500/30 shadow-2xl text-white ring-1 ring-white/10"
+            className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900/95 via-indigo-900/95 to-slate-900/95 backdrop-blur-xl border border-indigo-500/30 shadow-2xl text-white ring-1 ring-white/10"
             dir={finalDir}
           >
             {/* Header / Controls */}
-            <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setViewLang("en")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded border border-white/10 transition-colors ${viewLang === "en" ? "bg-white text-indigo-950" : "bg-black/20 text-white/70 hover:bg-black/40"}`}
+                className={`px-2 py-0.5 text-[11px] font-bold rounded border border-white/10 transition-colors ${viewLang === "en" ? "bg-white text-indigo-950" : "bg-black/20 text-white/70 hover:bg-black/40"}`}
                 aria-label="Switch to English"
               >
                 EN
@@ -223,7 +227,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
               <button
                 type="button"
                 onClick={() => setViewLang("ar")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded border border-white/10 transition-colors ${viewLang === "ar" ? "bg-white text-indigo-950" : "bg-black/20 text-white/70 hover:bg-black/40"}`}
+                className={`px-2 py-0.5 text-[11px] font-bold rounded border border-white/10 transition-colors ${viewLang === "ar" ? "bg-white text-indigo-950" : "bg-black/20 text-white/70 hover:bg-black/40"}`}
                 aria-label="Switch to Arabic"
               >
                 AR
@@ -237,9 +241,9 @@ export default function AnnouncementModal({ location }: { location: string }) {
               </button>
             </div>
 
-            <div className="flex flex-col md:flex-row">
+            <div className="flex flex-col md:flex-row max-h-[70vh]">
               {data.imageUrl && (
-                <div className="md:w-1/3 h-32 md:h-auto relative">
+                <div className="md:w-2/5 h-44 sm:h-56 md:h-auto relative">
                   <img 
                     src={data.imageUrl} 
                     alt="Announcement" 
@@ -249,10 +253,10 @@ export default function AnnouncementModal({ location }: { location: string }) {
                 </div>
               )}
               
-              <div className={`flex-1 p-4 md:p-6 ${finalAlign}`}>
-                <div 
-                  className="prose prose-invert prose-sm max-w-none text-white/90"
-                  dangerouslySetInnerHTML={safeHtml} 
+              <div className={`flex-1 p-4 md:p-6 ${finalAlign} overflow-y-auto`}>
+                <RawHtmlPreview
+                  html={String(primaryHtml || "")}
+                  className="max-h-[48vh] overflow-y-auto pr-1 announcement-modal-preview"
                 />
                 
                 <div className="flex flex-wrap gap-3 mt-3 items-center">
@@ -284,6 +288,17 @@ export default function AnnouncementModal({ location }: { location: string }) {
                 </div>
               </div>
             </div>
+              <style>{`
+                .announcement-modal-preview .raw-html-preview-container {
+                  color: rgba(255,255,255,0.95);
+                }
+                .announcement-modal-preview .raw-html-preview-container a {
+                  color: #bfdbfe;
+                }
+                .announcement-modal-preview .raw-html-preview-container img {
+                  border-radius: 0.75rem;
+                }
+              `}</style>
           </div>
         </motion.div>
       )}

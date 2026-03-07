@@ -858,30 +858,39 @@ export async function registerRoutes(app) {
             res.status(500).json({ error: error.message });
         }
     });
-    const sanitizeHTML = (html) => {
+    const sanitizeHTML = (html, options = {}) => {
+        const allowAdvanced = Boolean(options?.allowAdvanced);
+        const allowedTags = [
+            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'ul', 'ol', 'li',
+            'a', 'img',
+            'blockquote', 'pre', 'code',
+            'table', 'thead', 'tbody', 'tr', 'th', 'td',
+            'div', 'span',
+            'hr',
+            'audio', 'video', 'source', 'iframe',
+            // keep style tags for event coloring/custom theme blocks
+            'style',
+            ...(allowAdvanced ? ['script'] : [])
+        ];
+        const allowedAttrs = [
+            'href', 'src', 'alt', 'title',
+            'style', 'class',
+            'width', 'height',
+            'target', 'rel',
+            'controls', 'frameborder', 'allow', 'allowfullscreen',
+            'loading', 'decoding', 'fetchpriority',
+            'preload', 'muted', 'autoplay',
+            // keep common styling hooks always
+            'id',
+            ...(allowAdvanced ? ['type', 'nonce'] : [])
+        ];
+
         return DOMPurify.sanitize(html, {
-            ALLOWED_TAGS: [
-                'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'strike', 's', 'del',
-                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                'ul', 'ol', 'li',
-                'a', 'img',
-                'blockquote', 'pre', 'code',
-                'table', 'thead', 'tbody', 'tr', 'th', 'td',
-                'div', 'span',
-                'hr',
-                'audio', 'video', 'source', 'iframe',
-                'style', 'script'
-            ],
-            ALLOWED_ATTR: [
-                'href', 'src', 'alt', 'title',
-                'style', 'class',
-                'width', 'height',
-                'target', 'rel',
-                'controls', 'frameborder', 'allow', 'allowfullscreen',
-                'loading', 'decoding', 'fetchpriority',
-                'preload', 'muted', 'autoplay',
-                'type', 'nonce', 'id'
-            ],
+            ALLOWED_TAGS: allowedTags,
+            ALLOWED_ATTR: allowedAttrs,
+            // keep data-* attributes for styling hooks used by imported forum blocks
             ALLOW_DATA_ATTR: true,
             KEEP_CONTENT: true
         });
@@ -911,10 +920,10 @@ export async function registerRoutes(app) {
         try {
             const data = insertEventSchema.parse(req.body);
             if (data.description) {
-                data.description = sanitizeHTML(data.description);
+                data.description = sanitizeHTML(data.description, { allowAdvanced: Boolean(data.fullLayout) });
             }
             if (data.descriptionAr) {
-                data.descriptionAr = sanitizeHTML(data.descriptionAr);
+                data.descriptionAr = sanitizeHTML(data.descriptionAr, { allowAdvanced: Boolean(data.fullLayout) });
             }
             const baseText = String(data.description || data.title || '');
             const kws = extractKeywords(baseText);
@@ -946,10 +955,10 @@ export async function registerRoutes(app) {
         try {
             const updates = req.body;
             if (updates.description) {
-                updates.description = sanitizeHTML(updates.description);
+                updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
             }
             if (updates.descriptionAr) {
-                updates.descriptionAr = sanitizeHTML(updates.descriptionAr);
+                updates.descriptionAr = sanitizeHTML(updates.descriptionAr, { allowAdvanced: Boolean(updates.fullLayout) });
             }
             if (updates.title || updates.description || updates.seoTitle || updates.seoDescription || updates.seoKeywords) {
                 const title = updates.title || '';

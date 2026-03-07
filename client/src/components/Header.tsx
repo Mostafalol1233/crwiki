@@ -263,7 +263,10 @@ export function Header() {
             {(() => {
               const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
               const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-              const user = userStr ? JSON.parse(userStr) : null;
+              let user: any = null;
+              if (userStr) {
+                try { user = JSON.parse(userStr); } catch { user = null; }
+              }
 
               if (token && user) {
                 return (
@@ -390,7 +393,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleLanguage}
+                onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}
                 data-testid="button-language-toggle"
                 className="h-9 w-9 rounded-none hover:bg-muted"
                 title={language === 'en' ? 'العربية' : 'English'}
@@ -401,7 +404,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleTheme}
+                onClick={() => { toggleTheme(); setMobileMenuOpen(false); }}
                 data-testid="button-theme-toggle"
                 className="h-9 w-9 rounded-none hover:bg-muted"
                 title={theme === 'light' ? 'Dark mode' : 'Light mode'}

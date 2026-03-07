@@ -40,7 +40,7 @@ export default function EventDetail() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const [isRTL, setIsRTL] = useState(false);
-  const [contentLanguage, setContentLanguage] = useState<"auto" | "en" | "ar">("auto");
+  const [contentLanguage, setContentLanguage] = useState<"en" | "ar" | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
@@ -202,7 +202,7 @@ export default function EventDetail() {
   const preferredArabic = language === "ar";
   const hasArabicVersion = Boolean((event.titleAr && event.titleAr.trim()) || (event.descriptionAr && event.descriptionAr.trim()));
   const canToggleLanguage = hasArabicVersion;
-  const resolvedContentLanguage = contentLanguage === "auto" ? (preferredArabic && hasArabicVersion ? "ar" : "en") : contentLanguage;
+  const resolvedContentLanguage = contentLanguage || (preferredArabic && hasArabicVersion ? "ar" : "en");
   const useArabicContent = resolvedContentLanguage === "ar" && hasArabicVersion;
 
   const title = useArabicContent ? event.titleAr || event.title : event.title || event.titleAr || "";
@@ -301,15 +301,32 @@ export default function EventDetail() {
               {t("back")}
             </Button>
             {canToggleLanguage && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setContentLanguage((prev) => (prev === "ar" ? "en" : prev === "en" ? "auto" : "ar"))}
-                className="rounded-xl font-bold tracking-tight"
-              >
-                <Languages className="mr-2 h-4 w-4" />
-                {contentLanguage === "auto" ? (preferredArabic ? "تلقائي: عربي" : "Auto: EN") : contentLanguage === "ar" ? "العربية" : "English"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={resolvedContentLanguage === "ar" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setContentLanguage("ar")}
+                  className="rounded-xl font-bold tracking-tight"
+                >
+                  <Languages className="mr-2 h-4 w-4" /> العربية
+                </Button>
+                <Button
+                  variant={resolvedContentLanguage === "en" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setContentLanguage("en")}
+                  className="rounded-xl font-bold tracking-tight"
+                >
+                  English
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setContentLanguage(null)}
+                  className="rounded-xl font-semibold text-xs"
+                >
+                  Auto
+                </Button>
+              </div>
             )}
             <Button
               variant="outline"
@@ -360,7 +377,7 @@ export default function EventDetail() {
 
               {hasArabicVersion && (
                 <p className="mb-6 text-sm md:text-base text-muted-foreground font-medium">
-                  {useArabicContent ? "يتم عرض النسخة العربية الآن — يمكنك التبديل لأي وقت." : "English version is currently shown — switch anytime."}
+                  {useArabicContent ? "النسخة العربية مفعّلة الآن." : "English version is currently active."}
                 </p>
               )}
 

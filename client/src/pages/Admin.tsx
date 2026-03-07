@@ -2636,6 +2636,9 @@ export default function Admin() {
                                 />
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
+                              <p className="text-xs text-muted-foreground -mt-2">
+                                Advanced CSS/JS blocks are preserved only when Full Layout is enabled.
+                              </p>
 
                               <div className="space-y-4 pt-4 border-t">
                                 <h3 className="text-sm font-semibold">SEO Settings</h3>

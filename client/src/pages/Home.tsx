@@ -16,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
+import modeCategoryImage from "@assets/modes/TDM_Train_05.jpg.jpeg";
+import weaponCategoryImage from "@assets/feature-weap.jpg";
+import mercCategoryImage from "@assets/merc-sisterhood.jpg";
 import type { Tutorial } from "@shared/mongodb-schema";
 
 export default function Home() {
@@ -306,17 +309,17 @@ export default function Home() {
                 {[
                   {
                     title: "Modes",
-                    image: "https://raw.githubusercontent.com/Mostafalol1233/crwiki/main/backend-deploy-full/attached_assets/modes/TDM_Train_05.jpg.jpeg",
+                    image: modeCategoryImage,
                     link: "/modes"
                   },
                   {
                     title: "Weapons",
-                    image: "https://static.wikia.nocookie.net/crossfirefps/images/6/6f/Rifle_AK47.png",
+                    image: weaponCategoryImage,
                     link: "/weapons"
                   },
                   {
                     title: "Mercenaries",
-                    image: "https://files.catbox.moe/r26ox6.jpeg",
+                    image: mercCategoryImage,
                     link: "/mercenaries"
                   }
                 ].map((cat) => (
@@ -326,6 +329,9 @@ export default function Home() {
                         src={cat.image} 
                         alt={cat.title} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = modeCategoryImage;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       <div className="absolute inset-0 flex items-center justify-center">

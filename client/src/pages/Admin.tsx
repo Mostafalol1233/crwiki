@@ -90,6 +90,7 @@ import type { SiteSettings } from "@/types/site-settings";
 import type { ScrapedEvent } from "@shared/types";
 import AdminAnnouncements from "@/pages/AdminAnnouncements";
 import MediaUpload from "@/pages/MediaUpload";
+import CustomPagesManager from "@/components/CustomPagesManager";
 
 const GalleryUploader = ({
   images,
@@ -1664,6 +1665,7 @@ export default function Admin() {
                   {canTickets && <option value="tickets">Tickets</option>}
                   {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
                   {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
+                  {isSuperAdmin && <option value="custom-pages">Custom Pages</option>}
                 </select>
               </div>
 
@@ -1795,6 +1797,12 @@ export default function Admin() {
                   <TabsTrigger value="chat-settings" data-testid="tab-chat-settings">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Chat Settings</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="custom-pages" data-testid="tab-custom-pages">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Custom Pages</span>
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -5975,7 +5983,12 @@ export default function Admin() {
               )}
 
               {isSuperAdmin && (
-                <TabsContent value="chat-settings" className="space-y-6" data-testid="content-chat-settings">
+                <>
+                  <TabsContent value="custom-pages" className="space-y-6" data-testid="content-custom-pages">
+                    <CustomPagesManager />
+                  </TabsContent>
+
+                  <TabsContent value="chat-settings" className="space-y-6" data-testid="content-chat-settings">
                   <div>
                     <h2 className="text-2xl font-semibold mb-6">Chat Settings & Management</h2>
 
@@ -6130,6 +6143,7 @@ export default function Admin() {
                     </Card>
                   </div>
                 </TabsContent>
+                </>
               )}
               <TabsContent value="site-settings" className="space-y-6">
                 <Card className="wiki-content-card">

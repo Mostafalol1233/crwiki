@@ -9,12 +9,52 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
+const bundledModeImages = import.meta.glob("@assets/modes/*", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
+const modeImageByFilename = Object.fromEntries(
+  Object.entries(bundledModeImages).map(([path, url]) => [path.split("/").pop()?.toLowerCase() || "", url])
+);
+
+const defaultModeImage = modeImageByFilename["tdm_train_05.jpg.jpeg"] || Object.values(modeImageByFilename)[0] || "";
+
 interface Mode {
   id: string;
   name: string;
   image: string;
   description?: string;
   type?: string;
+}
+
+const modeFallbackByKeyword: Array<{ key: string; file: string }> = [
+  { key: "zombie", file: "zm1_metalrage_01.jpg.jpeg" },
+  { key: "bio", file: "zm1_evilden_01.jpg.jpeg" },
+  { key: "mutation", file: "zm4_forbiddenzone_01.jpg.jpeg" },
+  { key: "search", file: "sin_laboratory_05.jpg.jpeg" },
+  { key: "sniper", file: "tdm_stadium_05.jpg.jpeg" },
+  { key: "team", file: "tdm_train_05.jpg.jpeg" },
+  { key: "tdm", file: "tdm_train_05.jpg.jpeg" },
+  { key: "ghost", file: "tdm_halloween_05.jpg.jpeg" },
+  { key: "escape", file: "em_christmas_03.jpg.jpeg" },
+  { key: "ai", file: "aim_aimmaster_01.jpg.jpeg" },
+  { key: "aim", file: "aim_aimmaster_01.jpg.jpeg" },
+];
+
+function resolveModeImage(mode: Mode) {
+  const raw = String(mode.image || "").trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const normalized = raw.replace(/\\/g, "/").replace(/\?.*$/, "").replace(/#.*$/, "");
+  const filename = normalized.split("/").pop()?.toLowerCase() || "";
+  if (filename && modeImageByFilename[filename]) return modeImageByFilename[filename];
+
+  const haystack = `${mode.name || ""} ${mode.type || ""} ${mode.description || ""}`.toLowerCase();
+  const keyword = modeFallbackByKeyword.find((m) => haystack.includes(m.key));
+  if (keyword && modeImageByFilename[keyword.file]) return modeImageByFilename[keyword.file];
+
+  return defaultModeImage;
 }
 
 export default function Modes() {
@@ -108,9 +148,12 @@ export default function Modes() {
                   <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted/30">
                     {mode.image ? (
                       <img
-                        src={mode.image}
+                        src={resolveModeImage(mode)}
                         alt={mode.name}
-                        className="w-full h-full object-contain p-4"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          if (defaultModeImage) (e.currentTarget as HTMLImageElement).src = defaultModeImage;
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -151,4 +194,3 @@ export default function Modes() {
     </>
   );
 }
-

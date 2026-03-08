@@ -1978,7 +1978,11 @@ function generateSummary(content, maxLength = 200) {
     return plainText.substring(0, maxLength).trim() + "...";
 }
 function suggestKeywords(text, limit = 8) {
-    const stop = new Set(["the", "and", "a", "an", "to", "of", "in", "on", "for", "with", "by", "is", "are", "was", "were", "be", "as", "at", "from", "that", "this", "it", "or", "if", "but", "about", "into", "over", "after", "before", "under", "above", "between", "الع", "", "", "من", "على", "في", "عن", "و", "47", "45", "43", "46", "29", "ما", "لا", "لم", "لن", "إلى", "الى", "كان", "كانت", "ذلك", "هذه", "هذا", "إذ", "قد", "لقد", "كما"]);
+    const stop = new Set([
+        "the", "and", "a", "an", "to", "of", "in", "on", "for", "with", "by", "is", "are", "was", "were", "be", "as", "at", "from", "that", "this", "it", "or", "if", "but", "about", "into", "over", "after", "before", "under", "above", "between",
+        "من", "على", "في", "عن", "و", "ما", "لا", "لم", "لن", "إلى", "الى", "كان", "كانت", "ذلك", "هذه", "هذا", "قد", "لقد", "كما"
+    ]);
+", "من", "على", "في", "عن", "و", "47", "45", "43", "46", "29", "ما", "لا", "لم", "لن", "إلى", "الى", "كان", "كانت", "ذلك", "هذه", "هذا", "إذ", "قد", "لقد", "كما"]);
     const words = String(text || "")
         .toLowerCase()
         .replace(/<[^>]*>/g, " ")
@@ -5418,40 +5422,15 @@ async function registerRoutes(app2) {
                 robots: String(body.robots || "index, follow"),
                 announcementsEnabled: body.announcementsEnabled === false ? false : !!body.announcementsEnabled,
             };
-            const updated = await SiteSettingsModel.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
             res.json({
-                publicBaseUrl: updated.publicBaseUrl || "",
-                seoTitle: updated.seoTitle || "",
-                seoDescription: updated.seoDescription || "",
-                seoKeywords: updated.seoKeywords || [],
-                seoOgImage: updated.seoOgImage || "",
-                backgroundImageUrl: updated.backgroundImageUrl || "",
-                robots: updated.robots || "index, follow",
-                announcementsEnabled: updated.announcementsEnabled !== false,
+                seoTitle: s?.seoTitle || "",
+                seoDescription: s?.seoDescription || "",
+                seoKeywords: Array.isArray(s?.seoKeywords) ? s.seoKeywords : [],
+                seoOgImage: s?.seoOgImage || "",
+                robots: s?.robots || "index, follow",
             });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    app2.get("/api/public/settings/site", async (_req, res) => {
+    app2.get("/api/public/settings/review-verification", async (_req, res) => {
         try {
-            const s = await SiteSettingsModel.findOne().lean();
-            res.json({
-                backgroundImageUrl: s?.backgroundImageUrl || "",
-            });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    app2.get("/api/public/settings/seo", async (_req, res) => {
-        try {
-            const s = await SiteSettingsModel.findOne().lean();
-            const outBase = String(s?.publicBaseUrl || process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
-            res.json({
-                publicBaseUrl: outBase,
-                contentHtmlEn: doc?.contentHtmlEn || "",
                 contentHtmlAr: doc?.contentHtmlAr || "",
             const contentHtmlEn = String(req.body?.contentHtmlEn || "");
             const contentHtmlAr = String(req.body?.contentHtmlAr || "");

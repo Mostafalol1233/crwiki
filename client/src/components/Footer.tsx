@@ -18,7 +18,7 @@ export function Footer() {
     { label: "News & Updates", path: "/news" },
     { label: "Posts", path: "/posts" },
     { label: "Videos", path: "/videos" },
-    { label: "Events", path: "https://crossfire.wiki/category/events" },
+    { label: "Events", path: "/category/events" },
   ];
 
   const supportLinks = [

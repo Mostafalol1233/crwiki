@@ -15,16 +15,19 @@ type Props = {
   placeholder?: string;
   direction?: "ltr" | "rtl";
   height?: number | string;
+  resizingBar?: boolean;
 };
 
-export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300 }: Props) {
+export function RichTextEditor({ value, onChange, placeholder, direction = "ltr", height = 300, resizingBar = false }: Props) {
   const { toast } = useToast();
   const [cmLoaded, setCmLoaded] = useState(false);
+  const [cmModesLoaded, setCmModesLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.CodeMirror && window.CodeMirror.fromTextArea) {
       setCmLoaded(true);
+      setCmModesLoaded(true);
       return;
     }
 
@@ -34,6 +37,27 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
     script.onload = () => {
       if (window.CodeMirror && window.CodeMirror.fromTextArea) {
         setCmLoaded(true);
+        const modeXml = document.createElement("script");
+        modeXml.src = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/mode/xml/xml.js";
+        modeXml.async = true;
+
+        const modeCss = document.createElement("script");
+        modeCss.src = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/mode/css/css.js";
+        modeCss.async = true;
+
+        const modeJs = document.createElement("script");
+        modeJs.src = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/mode/javascript/javascript.js";
+        modeJs.async = true;
+
+        const modeHtmlMixed = document.createElement("script");
+        modeHtmlMixed.src = "https://cdn.jsdelivr.net/npm/codemirror@5.65.0/mode/htmlmixed/htmlmixed.js";
+        modeHtmlMixed.async = true;
+        modeHtmlMixed.onload = () => setCmModesLoaded(true);
+
+        document.head.appendChild(modeXml);
+        document.head.appendChild(modeCss);
+        document.head.appendChild(modeJs);
+        document.head.appendChild(modeHtmlMixed);
       }
     };
     document.head.appendChild(script);
@@ -61,19 +85,25 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
       ],
       katex: null,
       height: typeof height === 'number' ? `${height}px` : height,
-      resizingBar: true,
+      resizingBar,
       imageRotation: true,
       charCounter: true,
       defaultStyle: `direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"}; font-family: inherit; font-size: 16px;`,
-      codeMirror: cmLoaded && typeof window !== "undefined" && window.CodeMirror ? window.CodeMirror : undefined,
+      codeMirror: cmLoaded && typeof window !== "undefined" && window.CodeMirror ? {
+        src: window.CodeMirror,
+        options: {
+          mode: cmModesLoaded ? "htmlmixed" : "text/html",
+          lineNumbers: true,
+          lineWrapping: true,
+        },
+      } : undefined,
     };
-  }, [direction, height, cmLoaded]);
+  }, [direction, height, cmLoaded, cmModesLoaded, resizingBar]);
 
   return (
     <div className="rich-text-editor-container" dir="ltr">
       <SunEditor
         setOptions={options as any}
-        defaultValue={value}
         setContents={value}
         onChange={(content: string) => onChange(content || "")}
         placeholder={placeholder}

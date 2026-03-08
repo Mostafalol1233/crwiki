@@ -77,13 +77,13 @@ export function SEOHead({
   };
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
-    if (!src) return `${baseUrl}/favicon.png`;
+    if (!src) return `${baseUrl}/feature-crossfire.jpg`;
     try {
       const u = new URL(src, baseUrl);
       const abs = u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
       return toCloudinary1200x630(abs);
     } catch {
-      return `${baseUrl}/favicon.png`;
+      return `${baseUrl}/feature-crossfire.jpg`;
     }
   };
   const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);

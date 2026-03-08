@@ -27,7 +27,7 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
 
     // Sanitize to match the detail pages
     return DOMPurify.sanitize(out, {
-      ADD_TAGS: ['style', 'script', 'iframe'],
+      ADD_TAGS: ['style', 'iframe'],
       ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
       FORCE_BODY: true,
       ALLOW_UNKNOWN_PROTOCOLS: true,
@@ -51,7 +51,7 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
         ref={iframeRef}
         title="Mirrored Content"
         className={`w-full border-0 min-h-[600px] ${className || ""}`}
-        sandbox="allow-same-origin allow-popups"
+        sandbox="allow-same-origin allow-popups allow-scripts"
       />
     );
   }

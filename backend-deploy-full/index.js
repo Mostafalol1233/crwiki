@@ -5401,19 +5401,43 @@ async function registerRoutes(app2) {
             const outBase = String(s?.publicBaseUrl || process.env.PUBLIC_BASE_URL || "https://crossfire.wiki").replace(/\/$/, "");
             res.json({
                 publicBaseUrl: outBase,
-                seoTitle: s?.seoTitle || "",
-                seoDescription: s?.seoDescription || "",
-                seoKeywords: s?.seoKeywords || [],
-                seoOgImage: s?.seoOgImage || "",
-                robots: s?.robots || "index, follow",
-            });
+                contentHtmlEn: doc?.contentHtmlEn || "",
+                contentHtmlAr: doc?.contentHtmlAr || "",
+            const contentHtmlEn = String(req.body?.contentHtmlEn || "");
+            const contentHtmlAr = String(req.body?.contentHtmlAr || "");
+                contentHtml: String(req.body?.contentHtml || contentHtmlEn || contentHtmlAr || ""),
+                contentHtmlEn,
+                contentHtmlAr,
+                contentHtmlEn: updated.contentHtmlEn || "",
+                contentHtmlAr: updated.contentHtmlAr || "",
+                contentHtmlEn: doc.contentHtmlEn || "",
+                contentHtmlAr: doc.contentHtmlAr || "",
+            const contentHtmlEn = String(req.body?.contentHtmlEn || "");
+            const contentHtmlAr = String(req.body?.contentHtmlAr || "");
+                contentHtml: String(req.body?.contentHtml || contentHtmlEn || contentHtmlAr || ""),
+                contentHtmlEn,
+                contentHtmlAr,
+                contentHtmlEn: updated.contentHtmlEn || "",
+                contentHtmlAr: updated.contentHtmlAr || "",
+            const out = docs.map((d) => ({ id: String(d._id), contentHtml: d.contentHtml || "", contentHtmlEn: d.contentHtmlEn || "", contentHtmlAr: d.contentHtmlAr || "", imageUrl: d.imageUrl || "", linkUrl: d.linkUrl || "", active: d.active ?? true, dismissible: d.dismissible !== false, updatedAt: d.updatedAt }));
+            const contentHtmlEn = String(req.body?.contentHtmlEn || "");
+            const contentHtmlAr = String(req.body?.contentHtmlAr || "");
+                contentHtml: String(req.body?.contentHtml || contentHtmlEn || contentHtmlAr || ""),
+                contentHtmlEn,
+                contentHtmlAr,
+            res.status(201).json({ id: String(lean._id), contentHtml: lean.contentHtml || "", contentHtmlEn: lean.contentHtmlEn || "", contentHtmlAr: lean.contentHtmlAr || "", imageUrl: lean.imageUrl || "", linkUrl: lean.linkUrl || "", active: lean.active ?? true, dismissible: lean.dismissible !== false, direction: lean.direction || 'auto', updatedAt: lean.updatedAt });
+            const out = docs.map((d) => ({ id: String(d._id), sellerSlug: d.sellerSlug, contentHtml: d.contentHtml || "", contentHtmlEn: d.contentHtmlEn || "", contentHtmlAr: d.contentHtmlAr || "", imageUrl: d.imageUrl || "", linkUrl: d.linkUrl || "", active: d.active ?? true, updatedAt: d.updatedAt }));
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
     });
 
-    app2.get("/api/public/settings/announcements", async (_req, res) => {
-        try {
+            const contentHtmlEn = String(req.body?.contentHtmlEn || "");
+            const contentHtmlAr = String(req.body?.contentHtmlAr || "");
+                contentHtml: String(req.body?.contentHtml || contentHtmlEn || contentHtmlAr || ""),
+                contentHtmlEn,
+                contentHtmlAr,
+            res.status(201).json({ id: String(updated._id), sellerSlug: slug, contentHtml: updated.contentHtml || "", contentHtmlEn: updated.contentHtmlEn || "", contentHtmlAr: updated.contentHtmlAr || "", imageUrl: updated.imageUrl || "", linkUrl: updated.linkUrl || "", active: !!updated.active, direction: updated.direction || 'auto', updatedAt: updated.updatedAt });
             const s = await SiteSettingsModel.findOne().lean();
             res.json({ enabled: s?.announcementsEnabled !== false });
         } catch (error) {

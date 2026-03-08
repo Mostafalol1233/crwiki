@@ -500,6 +500,18 @@ var SellerPageSchema = new Schema({
     },
 }, { timestamps: true });
 var SellerPageModel = mongoose.models.SellerPage || mongoose.model("SellerPage", SellerPageSchema);
+var CustomPageSchema = new Schema({
+    slug: { type: String, required: true, unique: true, index: true },
+    title: { type: String, default: "" },
+    sourceUrl: { type: String, default: "" },
+    htmlContent: { type: String, default: "" },
+    seoTitle: { type: String, default: "" },
+    seoDescription: { type: String, default: "" },
+    seoKeywords: { type: [String], default: [] },
+    ogImage: { type: String, default: "" },
+    active: { type: Boolean, default: true },
+}, { timestamps: true });
+var CustomPageModel = mongoose.models.CustomPage || mongoose.model("CustomPage", CustomPageSchema);
 var insertUserSchema = z.object({
     username: z.string(),
     password: z.string(),
@@ -1821,6 +1833,43 @@ function slugifyEventName(input) {
     return base.substring(0, 60);
 }
 
+function summarizeSeoDescription(text) {
+    const clean = String(text || "").replace(/\s+/g, " ").trim();
+    if (!clean) return "";
+    return clean.substring(0, 160);
+}
+
+function extractKeywordsFromText(text) {
+    const tokens = String(text || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+    const stopwords = new Set(["the", "and", "for", "with", "that", "this", "from", "have", "your", "you", "are", "was", "were", "they", "their", "has", "had", "not", "but", "all", "can", "will", "its", "into", "our", "out", "about", "more", "than", "when", "what", "where", "which", "who", "why", "how", "a", "an", "to", "of", "on", "in", "at", "by", "is", "it", "as"]);
+    const freq = new Map();
+    for (const token of tokens) {
+        if (token.length < 3 || stopwords.has(token)) continue;
+        freq.set(token, (freq.get(token) || 0) + 1);
+    }
+    return [...freq.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([word]) => word);
+}
+
+function deriveSeoFromHtml(html, fallbackTitle = "") {
+    const $ = cheerio.load(String(html || ""));
+    const titleTag = $("title").first().text().trim();
+    const heading = $("h1").first().text().trim();
+    const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+    const seoTitle = fallbackTitle || titleTag || heading || "Custom Page";
+    const seoDescription = summarizeSeoDescription(bodyText);
+    const seoKeywords = extractKeywordsFromText(`${seoTitle} ${bodyText}`);
+    const ogImage = $("meta[property='og:image']").attr("content") || $("meta[name='og:image']").attr("content") || $("img").first().attr("src") || "";
+    return { seoTitle, seoDescription, seoKeywords, ogImage };
+}
+
+
 function sanitizeSellerNameParam(name) {
     const n = String(name || "").trim();
     if (!/^[A-Za-z0-9 _-]{1,100}$/.test(n)) return null;
@@ -2674,6 +2723,7 @@ async function registerRoutes(app2) {
             const { orders } = req.body; // Expecting [{ id: string, order: number }]
             if (!Array.isArray(orders)) {
                 return res.status(400).json({ error: "Orders array is required" });
+                rawHtml: data.rawHtml || data.content,
             }
             
             const updates = orders.map(item => 
@@ -5677,6 +5727,134 @@ async function registerRoutes(app2) {
             if (images !== undefined) update.images = images;
             if (descriptionHtml !== undefined) update.descriptionHtml = descriptionHtml;
             if (blocks !== undefined) update.blocks = blocks;
+
+    app2.get("/api/admin/custom-pages", requireAuth, requireSuperAdmin, async (_req, res) => {
+        try {
+            const pages = await CustomPageModel.find().sort({ updatedAt: -1 }).lean();
+            res.json(pages.map((page) => ({ ...page, id: String(page._id) })));
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.post("/api/admin/custom-pages", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const sourceUrl = String(req.body?.sourceUrl || "").trim();
+            const inputSlug = String(req.body?.slug || "").trim();
+            if (!sourceUrl) return res.status(400).json({ error: "sourceUrl is required" });
+            const mirrored = await MirrorService.mirror(sourceUrl);
+            const htmlContent = String(mirrored.rawHtml || mirrored.content || "");
+            const title = String(req.body?.title || mirrored.title || "").trim() || "Custom Page";
+            const slug = slugifyEventName(inputSlug || title);
+            if (!slug) return res.status(400).json({ error: "Valid slug is required" });
+            const exists = await CustomPageModel.findOne({ slug }).lean();
+            if (exists) return res.status(409).json({ error: "Slug already exists" });
+            const derived = deriveSeoFromHtml(htmlContent, title);
+            const doc = await CustomPageModel.create({
+                slug,
+                title,
+                sourceUrl,
+                htmlContent,
+                seoTitle: String(req.body?.seoTitle || derived.seoTitle || ""),
+                seoDescription: String(req.body?.seoDescription || derived.seoDescription || ""),
+                seoKeywords: Array.isArray(req.body?.seoKeywords) ? req.body.seoKeywords : derived.seoKeywords,
+                ogImage: String(req.body?.ogImage || derived.ogImage || ""),
+                active: req.body?.active === undefined ? true : !!req.body.active,
+            });
+            res.status(201).json({ ...doc.toObject(), id: String(doc._id) });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/api/admin/custom-pages/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const page = await CustomPageModel.findById(req.params.id).lean();
+            if (!page) return res.status(404).json({ error: "Custom page not found" });
+            res.json({ ...page, id: String(page._id) });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.patch("/api/admin/custom-pages/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const page = await CustomPageModel.findById(req.params.id);
+            if (!page) return res.status(404).json({ error: "Custom page not found" });
+
+            if (req.body?.sourceUrl !== undefined) page.sourceUrl = String(req.body.sourceUrl || "");
+
+            if (req.body?.remirror) {
+                if (!page.sourceUrl) return res.status(400).json({ error: "No sourceUrl to remirror" });
+                const mirrored = await MirrorService.mirror(page.sourceUrl);
+                page.htmlContent = String(mirrored.rawHtml || mirrored.content || page.htmlContent || "");
+                if (!req.body?.title) {
+                    page.title = String(mirrored.title || page.title || "");
+                }
+                const derived = deriveSeoFromHtml(page.htmlContent, page.title);
+                if (!req.body?.seoTitle) page.seoTitle = derived.seoTitle;
+                if (!req.body?.seoDescription) page.seoDescription = derived.seoDescription;
+                if (!Array.isArray(req.body?.seoKeywords)) page.seoKeywords = derived.seoKeywords;
+                if (!req.body?.ogImage) page.ogImage = derived.ogImage;
+            }
+
+            if (req.body?.slug !== undefined) {
+                const nextSlug = slugifyEventName(String(req.body.slug || ""));
+                if (!nextSlug) return res.status(400).json({ error: "Valid slug is required" });
+                const exists = await CustomPageModel.findOne({ slug: nextSlug, _id: { $ne: page._id } }).lean();
+                if (exists) return res.status(409).json({ error: "Slug already exists" });
+                page.slug = nextSlug;
+            }
+            if (req.body?.title !== undefined) page.title = String(req.body.title || "");
+            if (req.body?.htmlContent !== undefined) page.htmlContent = String(req.body.htmlContent || "");
+            if (req.body?.seoTitle !== undefined) page.seoTitle = String(req.body.seoTitle || "");
+            if (req.body?.seoDescription !== undefined) page.seoDescription = String(req.body.seoDescription || "");
+            if (req.body?.seoKeywords !== undefined) page.seoKeywords = Array.isArray(req.body.seoKeywords) ? req.body.seoKeywords : [];
+            if (req.body?.ogImage !== undefined) page.ogImage = String(req.body.ogImage || "");
+            if (req.body?.active !== undefined) page.active = !!req.body.active;
+            await page.save();
+            res.json({ ...page.toObject(), id: String(page._id) });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.delete("/api/admin/custom-pages/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const deleted = await CustomPageModel.findByIdAndDelete(req.params.id);
+            if (!deleted) return res.status(404).json({ error: "Custom page not found" });
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app2.get("/pages/:slug", async (req, res, next) => {
+        try {
+            const slug = slugifyEventName(String(req.params.slug || ""));
+            if (!slug) return res.status(404).send("Not Found");
+            const page = await CustomPageModel.findOne({ slug, active: true }).lean();
+            if (!page || !page.htmlContent) return next();
+
+            const base = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
+            const fullUrl = `${base}/pages/${slug}`;
+            const ogMeta = {
+                title: page.seoTitle || page.title || slug,
+                description: page.seoDescription || "",
+                url: fullUrl,
+                image: page.ogImage || "",
+                type: "article",
+                imageWidth: 1200,
+                imageHeight: 630,
+            };
+            const html = injectOgMeta(String(page.htmlContent || ""), ogMeta);
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+            res.status(200).send(html);
+        } catch (error) {
+            res.status(500).send("Failed to render page");
+        }
+    });
+
             const updated = await SellerPageModel.findOneAndUpdate(
                 { sellerSlug: slug },
                 update,

@@ -112,12 +112,17 @@ if (!fs.existsSync(MIRROR_DIR)) {
 
 export class Fetcher {
     static async get(url, options = {}) {
+        let dynamicReferer = 'https://crossfire.z8games.com/';
+        try {
+            dynamicReferer = `${new URL(url).origin}/`;
+        } catch {}
+
         const headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language': 'en-US,en;q=0.9',
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
-            'Referer': 'https://crossfire.z8games.com/',
+            'Referer': dynamicReferer,
             ...options.headers
         };
 
@@ -350,16 +355,22 @@ export class MirrorService {
             const fullHtml = page.$.html();
             const fullPageSelector = new Selector(fullHtml, url);
             
-            // Remove scripts that might interfere with our domain
-            fullPageSelector.$('script').each((i, el) => {
-                const src = fullPageSelector.$(el).attr('src');
-                if (src && !src.includes('z8games.com')) {
-                    // Keep local/internal scripts if any, but remove external trackers
-                } else if (!src) {
-                    // Remove inline scripts that might cause errors
-                    fullPageSelector.$(el).remove();
+            // Inline external CSS so the mirrored page can render independently.
+            const cssLinks = fullPageSelector.$('link[rel="stylesheet"]');
+            for (let i = 0; i < cssLinks.length; i++) {
+                const link = fullPageSelector.$(cssLinks[i]);
+                const href = link.attr('href');
+                if (!href) continue;
+                try {
+                    const cssUrl = new URL(href, url).toString();
+                    const cssResponse = await axiosInstance.get(cssUrl, { timeout: 15000 });
+                    if (typeof cssResponse.data !== 'string') continue;
+                    const inlineCss = await fullPageSelector.processCssUrls(cssResponse.data);
+                    link.replaceWith(`<style data-mirrored-from="${cssUrl}">\n${inlineCss}\n</style>`);
+                } catch (error) {
+                    console.error(`[MirrorService] Failed to inline stylesheet ${href}:`, error.message);
                 }
-            });
+            }
 
             // Mirror all assets in the full page
             const mirroredHtml = await fullPageSelector.mirrorAssets();
@@ -367,6 +378,7 @@ export class MirrorService {
             return {
                 title: page.css('h1').get() || page.css('title').get() || 'Mirrored Content',
                 content: mirroredHtml,
+                rawHtml: mirroredHtml,
                 url: url,
                 hasSpecificContent: !!mainContent,
                 mainContentSelector: usedSelector
@@ -382,6 +394,7 @@ export class MirrorService {
                 console.log(`[MirrorService] Using pre-defined knowledge fallback for ${url}`);
                 return {
                     ...fallback,
+                    rawHtml: fallback.content,
                     url: url,
                     isFallback: true
                 };

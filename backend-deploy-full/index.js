@@ -9,13 +9,15 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { initializeStorage } from './storage.js';
 import { registerRoutes as registerRoutesImported } from './routes.js';
+import { MirrorService } from './services/mirror.js';
 
 import { 
     UserModel, PostModel, EventModel, NewsModel, TicketModel, 
     AdminModel, NewsletterSubscriberModel, SellerModel, 
     SellerReviewModel, TutorialModel, WeaponModel, ModeModel, 
     MapModel, RankModel, MercenaryModel, UploadedFileModel,
-    SiteSettingsModel, AnalyticsTutorialModel, AnalyticsSellerModel, AnalyticsAnnouncementModel
+    SiteSettingsModel, AnalyticsTutorialModel, AnalyticsSellerModel, AnalyticsAnnouncementModel,
+    EventCommentModel, CustomPageModel
 } from './shared/mongodb-schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -5726,8 +5728,8 @@ app.use((req, res, next) => {
                 await RankModel.deleteMany({});
                 if (mercs.length) {
                     const cleanedMercs = mercs.map(m => {
-                        const { id, ...rest } = m;
-                        return { ...rest, mercenaryId: id };
+                        const { id, mercenaryId, ...rest } = m;
+                        return { ...rest, mercenaryId: mercenaryId || id };
                     });
                     await MercenaryModel.insertMany(cleanedMercs);
                 }

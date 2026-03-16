@@ -15,7 +15,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
-  const [uploadMethod, setUploadMethod] = useState<"server" | "cloudinary">("server");
+  const [uploadMethod, setUploadMethod] = useState<"server" | "cloudinary">("cloudinary");
   const [customName, setCustomName] = useState("");
   const [bucket, setBucket] = useState("uploads");
 

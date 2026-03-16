@@ -265,7 +265,7 @@ const RankSchema = new Schema({
 const MercenarySchema = new Schema({
     mercenaryId: { type: String, required: true },
     name: { type: String, required: true },
-    imageUrl: { type: String, required: true },
+    image: { type: String, required: true },
     role: { type: String, required: true },
     description: { type: String, default: "" },
     voiceLines: { type: [String], default: [] },
@@ -279,6 +279,33 @@ const AdminPermissionSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
+const EventCommentSchema = new Schema({
+    eventId: { type: String, required: true },
+    parentCommentId: { type: String },
+    name: { type: String, required: true },
+    content: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    userId: { type: String },
+    userAvatar: { type: String },
+    email: { type: String, default: "" },
+    likes: { type: Number, default: 0 },
+    likedBy: { type: [String], default: [] }
+});
+
+const CustomPageSchema = new Schema({
+    slug: { type: String, required: true, unique: true },
+    title: { type: String, required: true },
+    sourceUrl: { type: String },
+    htmlContent: { type: String },
+    seoTitle: { type: String },
+    seoDescription: { type: String },
+    seoKeywords: { type: [String] },
+    ogImage: { type: String },
+    active: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+});
+
 export const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
 export const PostModel = mongoose.models.Post || mongoose.model('Post', PostSchema);
 export const EventModel = mongoose.models.Event || mongoose.model('Event', EventSchema);
@@ -299,6 +326,8 @@ export const MercenaryModel = mongoose.models.Mercenary || mongoose.model('Merce
 export const AdminPermissionModel = mongoose.models.AdminPermission || mongoose.model('AdminPermission', AdminPermissionSchema);
 export const WikiVersionModel = mongoose.models.WikiVersion || mongoose.model('WikiVersion', WikiVersionSchema);
 export const WikiTemplateModel = mongoose.models.WikiTemplate || mongoose.model('WikiTemplate', WikiTemplateSchema);
+export const EventCommentModel = mongoose.models.EventComment || mongoose.model('EventComment', EventCommentSchema);
+export const CustomPageModel = mongoose.models.CustomPage || mongoose.model('CustomPage', CustomPageSchema);
 
 // Analytics Schemas
 const AnalyticsTutorialSchema = new mongoose.Schema({

@@ -19,7 +19,7 @@ const ANNOUNCEMENTS_URL = `${FORUM_BASE_URL}/categories/crossfire-announcements`
 // MERCENARIES - 10+ unique mercenary characters with CATBOX URLS AND AUDIO
 export const mercenariesData = [
   {
-    id: "1",
+    mercenaryId: "1",
     name: "Wolf",
     image: "https://files.catbox.moe/6npa73.jpeg",
     role: "Assault",
@@ -29,7 +29,7 @@ export const mercenariesData = [
     stats: { health: 85, speed: 70, attack: 90, defense: 75 }
   },
   {
-    id: "2",
+    mercenaryId: "2",
     name: "Viper",
     image: "https://files.catbox.moe/4il6hi.jpeg",
     role: "Sniper",
@@ -39,7 +39,7 @@ export const mercenariesData = [
     stats: { health: 65, speed: 60, attack: 95, defense: 50 }
   },
   {
-    id: "3",
+    mercenaryId: "3",
     name: "Sisterhood",
     image: "https://files.catbox.moe/3o58nb.jpeg",
     role: "Medic",
@@ -49,7 +49,7 @@ export const mercenariesData = [
     stats: { health: 75, speed: 75, attack: 60, defense: 70 }
   },
   {
-    id: "4",
+    mercenaryId: "4",
     name: "Black Mamba",
     image: "https://files.catbox.moe/r26ox6.jpeg",
     role: "Scout",
@@ -59,7 +59,7 @@ export const mercenariesData = [
     stats: { health: 70, speed: 95, attack: 70, defense: 55 }
   },
   {
-    id: "5",
+    mercenaryId: "5",
     name: "Arch Honorary",
     image: "https://files.catbox.moe/ctwnqz.jpeg",
     role: "Guardian",
@@ -69,7 +69,7 @@ export const mercenariesData = [
     stats: { health: 90, speed: 55, attack: 65, defense: 95 }
   },
   {
-    id: "6",
+    mercenaryId: "6",
     name: "Desperado",
     image: "https://files.catbox.moe/hh7h5u.jpeg",
     role: "Engineer",
@@ -79,7 +79,7 @@ export const mercenariesData = [
     stats: { health: 75, speed: 65, attack: 70, defense: 80 }
   },
   {
-    id: "7",
+    mercenaryId: "7",
     name: "Ronin",
     image: "https://files.catbox.moe/eck3jc.jpeg",
     role: "Samurai",
@@ -89,7 +89,7 @@ export const mercenariesData = [
     stats: { health: 80, speed: 80, attack: 85, defense: 70 }
   },
   {
-    id: "8",
+    mercenaryId: "8",
     name: "Dean",
     image: "https://files.catbox.moe/t78mvu.jpeg",
     role: "Specialist",
@@ -99,25 +99,25 @@ export const mercenariesData = [
     stats: { health: 75, speed: 75, attack: 75, defense: 75 }
   },
   {
-    id: "9",
-    name: "Thoth",
-    image: "https://files.catbox.moe/g4zfzn.jpeg",
-    role: "Guardian",
-    description: "Protective guardian with ancient wisdom and defensive mastery in battlefield control.",
-    audioUrl: "https://files.catbox.moe/zj1nl4.mp3",
-    voiceLines: ["https://files.catbox.moe/zj1nl4.mp3"],
-    stats: { health: 85, speed: 60, attack: 70, defense: 90 }
+    mercenaryId: "9",
+    name: "Saber",
+    image: "https://files.catbox.moe/57l045.jpeg",
+    role: "Warrior",
+    description: "Elite warrior specialized in sword combat and rapid tactical maneuvers on the battlefield.",
+    audioUrl: "https://files.catbox.moe/kadbfb.mp3",
+    voiceLines: ["https://files.catbox.moe/698u1k.mp3"],
+    stats: { health: 85, speed: 85, attack: 80, defense: 75 }
   },
   {
-    id: "10",
-    name: "SFG",
-    image: "https://files.catbox.moe/3bba2g.jpeg",
-    role: "Special Forces",
-    description: "Special forces operative with elite training and multi-role combat capabilities.",
+    mercenaryId: "10",
+    name: "Brimstone",
+    image: "https://files.catbox.moe/4458h6.jpeg",
+    role: "Heavy",
+    description: "Heavy weapons specialist capable of providing massive suppressive fire and area control.",
     audioUrl: "https://files.catbox.moe/kadbfb.mp3",
-    voiceLines: ["https://files.catbox.moe/abgtcf.mp3"],
-    stats: { health: 80, speed: 85, attack: 85, defense: 75 }
-  },
+    voiceLines: ["https://files.catbox.moe/mlt3yr.mp3"],
+    stats: { health: 100, speed: 45, attack: 85, defense: 90 }
+  }
 ];
 
 // WEAPONS - 28 with CATBOX URLS + STATS (damage, recoil, etc) - UPDATED WITH CORRECT NAMES

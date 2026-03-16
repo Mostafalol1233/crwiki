@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import multer from "multer";
 import { rateLimit } from "express-rate-limit";
 import { storage, initializeStorage } from "./storage.js";
-import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema } from "./shared/mongodb-schema.js";
+import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema, insertMercenarySchema } from "./shared/mongodb-schema.js";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps } from "./services/scraper.js";

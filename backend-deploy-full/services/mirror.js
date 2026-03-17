@@ -1,5 +1,6 @@
 import axios from 'axios';
-import axiosRetry from 'axios-retry';
+import * as axiosRetryModule from 'axios-retry';
+const axiosRetry = axiosRetryModule.default || axiosRetryModule;
 import * as cheerio from 'cheerio';
 import fs from 'fs';
 import path from 'path';

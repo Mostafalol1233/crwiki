@@ -1065,54 +1065,11 @@ var MongoDBStorage = class {
 var storage = new MongoDBStorage();
 
 // server/utils/auth.ts
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-var JWT_SECRET =
-    process.env.JWT_SECRET || "your-secret-key-change-in-production";
-var ADMIN_PASSWORD =
-    process.env.ADMIN_PASSWORD || "SuperAdmin#2024$SecurePass!9x";
-async function hashPassword(password) {
-    return bcrypt.hash(password, 10);
-}
-async function comparePassword(password, hash) {
-    return bcrypt.compare(password, hash);
-}
-function generateToken(payload) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
-}
-function verifyToken(token) {
-    try {
-        return jwt.verify(token, JWT_SECRET);
-    } catch (error) {
-        return null;
-    }
-}
-async function verifyAdminPassword(password) {
-    return password === ADMIN_PASSWORD;
-}
-function requireAuth(req, res, next) {
-    const authHeader = req.headers.authorization;
-    console.log(
-        "[AUTH] Authorization header:",
-        authHeader ? "present" : "missing",
-    );
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        console.log("[AUTH] No Bearer token found");
-        return res.status(401).json({ error: "Unauthorized" });
-    }
-    const token = authHeader.substring(7);
-    console.log("[AUTH] Token extracted, length:", token.length);
-    const payload = verifyToken(token);
-    console.log(
-        "[AUTH] Token verification result:",
-        payload ? "valid" : "invalid",
-    );
-    if (!payload) {
-        return res.status(401).json({ error: "Invalid token" });
-    }
-    req.user = payload;
-    next();
-}
+import { 
+    JWT_SECRET, ADMIN_PASSWORD, hashPassword, comparePassword, 
+    generateToken, verifyToken, verifyAdminPassword, requireAuth 
+} from "./utils/auth.js";
+
 function requireSuperAdmin(req, res, next) {
     const user = req.user;
     const isSuper = user && (user.role === "super_admin" || (user.roles && Array.isArray(user.roles) && user.roles.includes("super_admin")));
@@ -3490,54 +3447,8 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
         message: "Too many scraping requests, please try again later",
     });
 
-    // Cloudinary-style upload endpoint (+ dry-run) — register unconditionally
-    app2.options("/images/upload", (_req, res) => res.sendStatus(204));
-    app2.all("/images/upload", (req, res, next) => {
-        if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed", allowed: ["POST"] });
-        next();
-    });
-    app2.post("/images/upload", uploadLimiter, upload.single("file"), async (req, res) => {
-        try {
-            const tokenHeader = String(req.headers["x-csrf-token"] || req.headers["X-CSRF-Token"] || "").trim();
-            const envToken = String(process.env.CSRF_TOKEN || process.env.CSRF_SECRET || "").trim();
-            if (envToken && tokenHeader !== envToken) {
-                return res.status(403).json({ ok: false, error: "CSRF validation failed", code: "csrf_failed" });
-            }
-            if (!req.file) {
-                return res.status(400).json({ ok: false, error: "No file provided" });
-            }
-            const allowed = [
-                "image/jpeg", "image/png", "image/webp", "image/gif",
-                "video/mp4", "video/webm", "video/ogg", "video/mpeg",
-                "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg"
-            ];
-            if (!allowed.includes(req.file.mimetype)) {
-                return res.status(415).json({ ok: false, error: `Unsupported type: ${req.file.mimetype}`, code: "unsupported_type" });
-            }
-            const kind = req.file.mimetype.startsWith("image/") ? "image" : req.file.mimetype.startsWith("video/") ? "video" : req.file.mimetype.startsWith("audio/") ? "audio" : "auto";
-            const sizeLimits = { image: 15 * 1024 * 1024, video: 200 * 1024 * 1024, audio: 30 * 1024 * 1024 };
-            const limit = sizeLimits[kind] || sizeLimits.image;
-            if (req.file.size > limit) {
-                return res.status(413).json({ ok: false, error: "File too large", code: "file_too_large", limit });
-            }
-
-            const DRY = String(process.env.CLOUDINARY_DRY_RUN || "").toLowerCase() === "true";
-            const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || "dkpdidm89").trim();
-            const publicIdBase = String((req.query?.public_id || req.body?.public_id || req.file.originalname || "")).replace(/\.[A-Za-z0-9]+$/i, "").trim() || "upload";
-            const format = (req.file.mimetype.includes("webp") ? "webp" : req.file.mimetype.includes("jpeg") ? "jpg" : req.file.mimetype.includes("png") ? "png" : req.file.mimetype.includes("gif") ? "gif" : req.file.mimetype.includes("mp4") ? "mp4" : req.file.mimetype.includes("webm") ? "webm" : req.file.mimetype.includes("ogg") ? "ogg" : "bin");
-            const secure_url = `https://res.cloudinary.com/${cloudName}/${kind}/upload/v123/${publicIdBase}.${format}`;
-            const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-            const domain_url = `${base}/media/${kind === "image" ? "images" : kind === "video" ? "videos" : "audio"}/${publicIdBase}.${format}`;
-            if (DRY) {
-                return res.json({ ok: true, domain_url, public_id: publicIdBase, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString() });
-            }
-
-            return res.status(501).json({ ok: false, error: "Live Cloudinary upload not configured", code: "not_implemented" });
-        } catch (error) {
-            res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
-        }
-    });
-
+    // Unified Cloudinary-style upload endpoint moved to a single location in routes.js
+    
     // Proxy pretty image path to Cloudinary
     app2.get("/image/:filename", async (req, res) => {
         try {
@@ -3772,92 +3683,7 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
             }
         });
-        app2.post("/images/upload", uploadLimiter, upload.single("file"), async (req, res) => {
-            try {
-                const token = String(req.headers["x-csrf-token"] || req.headers["X-CSRF-Token"] || "");
-                const envToken = String(process.env.CSRF_TOKEN || process.env.CSRF_SECRET || "").trim();
-                if (envToken && token !== envToken) return res.status(403).json({ ok: false, error: "CSRF validation failed", code: "csrf_failed" });
-                if (!req.file) return res.status(400).json({ ok: false, error: "No file provided", code: "no_file" });
-                const MAX_SIZE = 50 * 1024 * 1024;
-                if (req.file.size > MAX_SIZE) return res.status(413).json({ ok: false, error: "File too large", code: "file_too_large", limit: MAX_SIZE });
-                const allowed = [
-                    "image/jpeg", "image/png", "image/webp", "image/gif",
-                    "video/mp4", "video/webm", "video/ogg", "video/mpeg",
-                    "application/pdf"
-                ];
-                if (!allowed.includes(req.file.mimetype)) return res.status(415).json({ ok: false, error: `Unsupported type: ${req.file.mimetype}`, code: "unsupported_type" });
-                const scan = await maybeScan(req.file.buffer);
-                if (!scan.ok) return res.status(400).json({ ok: false, error: scan.error || "Virus scan failed", code: "virus_detected" });
-                const UPLOADS_DIR = path.resolve("uploads");
-                fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-                const baseName = sanitizeFilename(req.file.originalname || req.file.filename || "upload");
-                const ext = mimeToExt(req.file.mimetype);
-                let filename = baseName.endsWith(`.${ext}`) ? baseName : `${baseName}.${ext}`;
-                const existing = await UploadedFileModel.findOne({ bucket: "uploads", filename });
-                if (existing) {
-                    const namePart = filename.substring(0, filename.lastIndexOf("."));
-                    const extPart = filename.substring(filename.lastIndexOf("."));
-                    filename = `${namePart}-${Date.now()}${extPart}`;
-                }
-                const localPath = path.join(UPLOADS_DIR, filename);
-                await fs.promises.writeFile(localPath, req.file.buffer);
-                let cloudinaryUrl = "";
-                let domainUrl = "";
-                let publicId = baseName.replace(/\.[a-z0-9]+$/i, "");
-                let format = ext;
-                let resourceType = pickResourceType(req.file.mimetype);
-                try {
-                    const cloud = await cloudinarySignedUpload(req.file.buffer, filename, req.file.mimetype, { folder: String(req.query.folder || req.body?.folder || "uploads"), public_id: publicId, resource_type: resourceType });
-                    cloudinaryUrl = String(cloud.secure_url || cloud.url || "");
-                    publicId = String(cloud.public_id || publicId);
-                    format = String(cloud.format || format);
-                    resourceType = String(cloud.resource_type || resourceType);
-                    domainUrl = buildDomainUrl(resourceType, publicId, format, req);
-                } catch (e) {
-                    console.warn("[upload] Cloudinary upload failed, falling back to local:", e.message);
-                    cloudinaryUrl = "";
-                    // Fallback to local URL served by /uploads/:filename
-                    const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-                    domainUrl = `${base}/uploads/${filename}`;
-                }
-                const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || "").trim();
-                const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-                const thumb = cloudName && resourceType === "image" ? `${base}/uploads/${publicId}.${format}` : "";
-                const wRaw = Array.isArray(req.body?.width) ? req.body.width[0] : req.body?.width;
-                const hRaw = Array.isArray(req.body?.height) ? req.body.height[0] : req.body?.height;
-                const width = Math.max(0, parseInt(String(wRaw || "0"), 10) || 0);
-                const height = Math.max(0, parseInt(String(hRaw || "0"), 10) || 0);
-                const doc = await UploadedFileModel.create({ filename, mimetype: req.file.mimetype, size: req.file.size, width, height, localPath, cloudinaryPublicId: publicId, cloudinaryUrl, domainUrl, thumbnailUrl: thumb, resourceType });
-                console.log(`[upload] saved ${filename} size=${req.file.size} local=${localPath} cloud=${cloudinaryUrl || "-"}`);
-                res.json({ ok: true, id: String(doc._id), filename, mimetype: req.file.mimetype, size: req.file.size, width, height, localPath, cloudinaryUrl, domainUrl, thumbnailUrl: thumb, resourceType });
-            } catch (error) {
-                console.error("[upload] error", error?.message || error);
-                res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
-            }
-        });
-        app2.get("/api/files/test-list", async (_req, res) => {
-            try {
-                const UPLOADS_DIR = path.resolve("uploads");
-                fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-                const files = await UploadedFileModel.find().sort({ createdAt: -1 }).lean();
-                const localNames = await fs.promises.readdir(UPLOADS_DIR).catch(() => []);
-                const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || "").trim();
-                const items = files.map((f) => ({ filename: f.filename, mimetype: f.mimetype, size: f.size, localPath: f.localPath, cloudinaryUrl: f.cloudinaryUrl, domainUrl: f.domainUrl, thumbnailUrl: f.thumbnailUrl }));
-                for (const name of localNames) {
-                    if (!items.find((x) => x.filename === name)) {
-                        const p = path.join(UPLOADS_DIR, name);
-                        const stat = await fs.promises.stat(p).catch(() => null);
-                        const ext = String(name).split(".").pop() || "";
-                        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
-                        const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-                        items.push({ filename: name, mimetype: isImg ? `image/${ext}` : "application/octet-stream", size: stat ? stat.size : 0, localPath: p, cloudinaryUrl: "", domainUrl: "", thumbnailUrl: isImg && cloudName ? `${base}/uploads/${sanitizeFilename(name).replace(/\.[a-z0-9]+$/i, "")}.${ext}` : "" });
-                    }
-                }
-                res.json({ ok: true, count: items.length, items });
-            } catch (error) {
-                res.status(500).json({ ok: false, error: error?.message || "list_failed" });
-            }
-        });
+
         app2.get("/api/scrape/ranks", requireScraperAuth, scrapeLimiter, async (req, res) => {
             try {
                 const ranks = await scrapeRanks();
@@ -5400,81 +5226,8 @@ app.use((req, res, next) => {
             res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
         }
     });
-    app.post("/images/upload", uploadLimiter, upload.single("file"), async (req, res) => {
-        try {
-            const token = String(req.headers["x-csrf-token"] || req.headers["X-CSRF-Token"] || "");
-            const envToken = String(process.env.CSRF_TOKEN || process.env.CSRF_SECRET || "").trim();
-            if (envToken && token !== envToken) return res.status(403).json({ ok: false, error: "CSRF validation failed", code: "csrf_failed" });
-
-            if (!req.file) return res.status(400).json({ ok: false, error: "No file provided", code: "no_file" });
-
-            const MAX_SIZE = 15 * 1024 * 1024; // 15MB Limit (BSON limit is 16MB)
-            if (req.file.size > MAX_SIZE) return res.status(413).json({ ok: false, error: "File too large for DB storage", code: "file_too_large", limit: MAX_SIZE });
-
-            const allowed = [
-                "image/jpeg", "image/png", "image/webp", "image/gif",
-                "video/mp4", "video/webm", "video/ogg", "video/mpeg",
-                "application/pdf"
-            ];
-            if (!allowed.includes(req.file.mimetype)) return res.status(415).json({ ok: false, error: `Unsupported type: ${req.file.mimetype}`, code: "unsupported_type" });
-
-            const bucket = String(req.body.bucket || "uploads").toLowerCase().replace(/[^a-z0-9-_]/g, "");
-            const customName = String(req.body.customName || "").trim();
-            const ext = mimeToExt(req.file.mimetype);
-
-            let filename = "";
-            if (customName) {
-                filename = sanitizeFilename(customName);
-                if (!filename.toLowerCase().endsWith(`.${ext}`)) {
-                    filename = `${filename}.${ext}`;
-                }
-            } else {
-                filename = `${crypto.randomUUID()}.${ext}`;
-            }
-
-            let existing = await UploadedFileModel.findOne({ bucket, filename });
-            if (existing) {
-                const namePart = filename.substring(0, filename.lastIndexOf("."));
-                const extPart = filename.substring(filename.lastIndexOf("."));
-                filename = `${namePart}-${Date.now()}${extPart}`;
-            }
-
-            const domainUrl = `${process.env.PUBLIC_BASE_URL || "https://crossfire.wiki"}/${bucket}/${filename}`;
-
-            const wRaw = Array.isArray(req.body?.width) ? req.body.width[0] : req.body?.width;
-            const hRaw = Array.isArray(req.body?.height) ? req.body.height[0] : req.body?.height;
-            const width = Math.max(0, parseInt(String(wRaw || "0"), 10) || 0);
-            const height = Math.max(0, parseInt(String(hRaw || "0"), 10) || 0);
-            const doc = await UploadedFileModel.create({
-                filename,
-                mimetype: req.file.mimetype,
-                size: req.file.size,
-                width,
-                height,
-                data: req.file.buffer,
-                bucket,
-                domainUrl,
-                resourceType: pickResourceType(req.file.mimetype)
-            });
-
-            console.log(`[upload] saved to DB: ${bucket}/${filename} size=${req.file.size}`);
-
-            res.json({
-                ok: true,
-                id: String(doc._id),
-                filename,
-                mimetype: req.file.mimetype,
-                size: req.file.size,
-                width,
-                height,
-                domainUrl,
-                bucket
-            });
-        } catch (error) {
-            console.error("[upload] error", error?.message || error);
-            res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
-        }
-    });
+    // Unified /images/upload handler moved to routes.js
+    
     app.get("/api/files/test-list", async (_req, res) => {
         try {
             const UPLOADS_DIR = path.resolve("backend-deploy-full", "backend-deploy-full", "uploads");

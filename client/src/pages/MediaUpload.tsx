@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Server, Globe, Copy, Check, Image as ImageIcon, X, File as FileIcon } from "lucide-react";
+import imageCompression from "browser-image-compression";
 
 export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const { toast } = useToast();
@@ -62,13 +63,24 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
   const uploadSingleFile = async (file: File, index: number) => {
     const fileId = `${index}-${file.name}`;
     try {
+      const options = { 
+        maxSizeMB: 5, 
+        maxWidthOrHeight: 2560, 
+        useWebWorker: true,
+        initialQuality: 0.95 
+      };
+      let uploadFile = file;
+      try { 
+        uploadFile = await imageCompression(file, options); 
+      } catch (e) { console.error("Compression failed", e); }
+
       if (uploadMethod === "server") {
         const tokRes = await fetch("/api/security/csrf-token");
         const tokJson = await tokRes.json();
         const token = tokJson?.csrfToken || "";
 
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", uploadFile);
         fd.append("folder", bucket);
         // Only use custom name if single file
         if (files.length === 1 && customName) fd.append("customName", customName);
@@ -100,7 +112,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
       } else {
         // Cloudinary (Custom Domain Proxy)
         const fd = new FormData();
-        fd.append("image", file);
+        fd.append("image", uploadFile);
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/upload-image", true);

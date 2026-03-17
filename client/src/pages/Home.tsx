@@ -17,8 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import modeCategoryImage from "@assets/modes/TDM_Train_05.jpg.jpeg";
+import mapCategoryImage from "@assets/modes/SND_EagleEye2_06.jpg.jpeg";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
 import mercCategoryImage from "@assets/merc-sisterhood.jpg";
+import fallbackImage from "@assets/feature-crossfire.jpg";
 import type { Tutorial } from "@shared/mongodb-schema";
 
 export default function Home() {
@@ -307,10 +309,9 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                 {[
-                  { title: "Modes", image: "/images/categories/modes.jpg", link: "/modes" },
-                  { title: "Maps", image: "/images/categories/maps.jpg", link: "/maps" },
-                  { title: "Weapons", image: "/images/categories/weapons.jpg", link: "/weapons" },
-                  { title: "Mercenaries", image: "/images/categories/mercenaries.jpg", link: "/mercenaries" }
+                  { title: "Maps", image: mapCategoryImage, link: "/maps" },
+                  { title: "Weapons", image: weaponCategoryImage, link: "/weapons" },
+                  { title: "Mercenaries", image: mercCategoryImage, link: "/mercenaries" }
                 ].map((cat) => (
                   <Link key={cat.title} href={cat.link}>
                     <Card className="group relative overflow-hidden aspect-[16/9] border-0 rounded-xl cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
@@ -319,7 +320,7 @@ export default function Home() {
                         alt={cat.title} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = modeCategoryImage;
+                          (e.currentTarget as HTMLImageElement).src = fallbackImage;
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />

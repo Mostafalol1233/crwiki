@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "SuperAdmin#2024$SecurePass!9x";
+export const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "SuperAdmin#2024$SecurePass!9x";
 export async function hashPassword(password) {
     return bcrypt.hash(password, 10);
 }
@@ -24,17 +24,13 @@ export async function verifyAdminPassword(password) {
 }
 export function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
-    console.log('[AUTH] Authorization header:', authHeader ? 'present' : 'missing');
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        console.log('[AUTH] No Bearer token found');
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized: Missing or invalid token", ok: false });
     }
     const token = authHeader.substring(7);
-    console.log('[AUTH] Token extracted, length:', token.length);
     const payload = verifyToken(token);
-    console.log('[AUTH] Token verification result:', payload ? 'valid' : 'invalid');
     if (!payload) {
-        return res.status(401).json({ error: "Invalid token" });
+        return res.status(401).json({ error: "Unauthorized: Invalid or expired token", ok: false });
     }
     req.user = payload;
     next();

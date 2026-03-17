@@ -72,16 +72,16 @@ async function optimizeToWebP(srcPath, destBase, kind) {
         if (kind === 'graphics') {
             await pipeline.webp({ lossless: true }).toFile(outPath);
         } else {
-            await pipeline.webp({ quality: 72 }).toFile(outPath);
+            await pipeline.webp({ quality: 85 }).toFile(outPath);
         }
         outputs.push({ size: s.name, path: outPath });
     }
     const mainOut = path.join(IMAGES_DIR, `${destBase}.webp`);
-    const mainPipe = sharp(srcPath, { animated: true }).resize({ width: 1920, height: 1080, fit: 'inside' });
+    const mainPipe = sharp(srcPath, { animated: true }).resize({ width: 2560, height: 1440, fit: 'inside' });
     if (kind === 'graphics') {
         await mainPipe.webp({ lossless: true }).toFile(mainOut);
     } else {
-        await mainPipe.webp({ quality: 72 }).toFile(mainOut);
+        await mainPipe.webp({ quality: 90 }).toFile(mainOut);
     }
     outputs.push({ size: 'main', path: mainOut });
     return outputs;
@@ -143,70 +143,16 @@ function mimeToExt(mime) {
 
 export async function registerRoutes(app) {
     await initializeStorage();
-    // Ensure non-POST methods on /images/upload return 405 before static middleware
-    app.get('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
-    app.put('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
-    app.patch('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
-    app.delete('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
-    app.get('/uploads/*', async (req, res) => {
-        try {
-            const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-            const assetPath = req.params[0] || req.path.replace(/^\/uploads\//, '');
-            const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${assetPath}`;
-            
-            const response = await axios({
-                method: 'get',
-                url: cloudinaryUrl,
-                responseType: 'stream',
-                timeout: 10000,
-            });
 
-            res.set({
-                'Content-Type': response.headers['content-type'],
-                'Cache-Control': 'public, max-age=31536000, immutable',
-                'ETag': response.headers['etag'],
-                'Last-Modified': response.headers['last-modified'],
-                'Access-Control-Allow-Origin': '*',
-                'X-Content-Type-Options': 'nosniff',
-            });
-
-            response.data.pipe(res);
-        } catch (error) {
-            if (error.response?.status === 404) {
-                return res.status(404).send('Asset not found');
-            }
-            res.status(500).send('Error proxying to Cloudinary');
-        }
-    });
-
-    app.post("/api/upload", requireAuth, uploadLimiter, upload.single('file'), async (req, res) => {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded.' });
-        }
-
-        try {
-            const start = Date.now();
-            const result = await uploadStream(req.file.buffer, {
-                folder: 'crossfire-wiki',
-                transformation: [
-                    { width: 1200, height: 1200, crop: 'limit' },
-                    { quality: 'auto', fetch_format: 'auto' }
-                ]
-            });
-            recordUpload(true, Date.now() - start);
-            res.json({ 
-                url: result.secure_url, 
-                public_id: result.public_id,
-                domainUrl: result.secure_url,
-                domain_url: result.secure_url
-            });
-        } catch (error) {
-            recordUpload(false, 0);
-            res.status(500).json({ error: 'Error uploading to Cloudinary.' });
-        }
+    // Ensure non-POST methods on /images/upload return 405 early
+    app.all('/images/upload', (req, res, next) => {
+        if (req.method === 'OPTIONS') return res.sendStatus(204);
+        if (req.method === 'POST') return next();
+        res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] });
     });
 
     app.use('/images', express.static(IMAGES_DIR));
+
     async function resolveBaseUrl() {
         let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
         try { base = String(base).trim().replace(/^[`'\"]|[`'\"]$/g, ''); } catch { }
@@ -217,6 +163,7 @@ export async function registerRoutes(app) {
         } catch { }
         return base;
     }
+
     function ensureUniqueSlug(list, field, base) {
         let candidate = slugifySafe(base);
         if (!candidate) candidate = 'item';
@@ -227,6 +174,7 @@ export async function registerRoutes(app) {
         }
         return candidate.slice(0, 60);
     }
+
     // SEO: robots.txt
     app.get('/robots.txt', async (_req, res) => {
         let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
@@ -3250,7 +3198,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
         });
         // Image upload route with rate limiting
-        app.post("/api/upload-image", uploadLimiter, upload.array('images', 10), async (req, res) => {
+        app.post("/api/upload-image", uploadLimiter, upload.fields([{ name: 'images', maxCount: 10 }, { name: 'image', maxCount: 1 }]), async (req, res) => {
             try {
                 const token = String(req.headers['x-csrf-token'] || '');
                 const authHeader = req.headers.authorization;
@@ -3268,7 +3216,13 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(403).json({ ok: false, error: 'Authentication or CSRF validation failed', code: 'auth_failed' });
                 }
 
-                if (!req.files || req.files.length === 0) {
+                const files = [];
+                if (req.files) {
+                    if (req.files.images) files.push(...req.files.images);
+                    if (req.files.image) files.push(...req.files.image);
+                }
+
+                if (files.length === 0) {
                     return res.status(400).json({ ok: false, error: "No image files provided", code: 'no_file' });
                 }
 
@@ -3276,7 +3230,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
                 const MAX_SIZE = 15 * 1024 * 1024; // 15MB
 
-                for (const file of req.files) {
+                for (const file of files) {
                     if (!allowed.includes(file.mimetype)) {
                         results.push({ ok: false, filename: file.originalname, error: "Unsupported image type" });
                         continue;

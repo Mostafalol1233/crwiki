@@ -42,6 +42,12 @@ type NormalizedMode = Mode & {
   sourceLinks: string[];
 };
 
+type FandomModeDetail = {
+  extract: string;
+  thumbnail?: string;
+  sourceUrl: string;
+};
+
 type OfficialMode = {
   id: string;
   name: string;
@@ -201,6 +207,40 @@ export default function Modes() {
     return tabModes.find((m) => m.id === selectedModeId) || tabModes[0];
   }, [tabModes, selectedModeId]);
 
+  const { data: fandomDetail, isLoading: isFandomLoading } = useQuery<FandomModeDetail | null>({
+    queryKey: ["fandom-mode", selectedMode?.name],
+    enabled: !!selectedMode?.name,
+    staleTime: 1000 * 60 * 60,
+    queryFn: async () => {
+      if (!selectedMode?.name) return null;
+
+      const fetchDetails = async (title: string) => {
+        const apiUrl = `https://crossfirefps.fandom.com/api.php?action=query&prop=extracts|pageimages&piprop=thumbnail&pithumbsize=900&exintro=1&explaintext=1&redirects=1&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error(`Fandom API ${res.status}`);
+        const json = await res.json();
+        const pages = json?.query?.pages || {};
+        const page = Object.values(pages)[0] as any;
+        const extract = String(page?.extract || "").trim();
+        const thumbnail = String(page?.thumbnail?.source || "").trim();
+        return {
+          extract,
+          thumbnail,
+          sourceUrl: `https://crossfirefps.fandom.com/wiki/${encodeURIComponent(title.replace(/\s+/g, "_"))}`,
+        };
+      };
+
+      try {
+        const primary = await fetchDetails(selectedMode.name);
+        if (primary.extract.length > 20) return primary;
+        const fallback = await fetchDetails(`${selectedMode.name} Mode`);
+        return fallback.extract.length > 20 ? fallback : primary;
+      } catch {
+        return null;
+      }
+    },
+  });
+
   const breadcrumbs = [{ name: "Game Modes", url: "/modes" }];
 
   return (
@@ -271,8 +311,20 @@ export default function Modes() {
                           <Badge variant="secondary">{selectedMode.type || selectedMode.label}</Badge>
                         </div>
                         <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                          {selectedMode.description || "Detailed gameplay description is being prepared. You can still browse maps and source links below."}
+                          {fandomDetail?.extract || selectedMode.description || "Detailed gameplay description is being prepared. You can still browse maps and source links below."}
                         </p>
+                        {isFandomLoading && (
+                          <p className="text-xs text-muted-foreground mt-2">Loading extra mode details from CrossFire Fandom…</p>
+                        )}
+                        {fandomDetail?.thumbnail && (
+                          <div className="mt-3 rounded-lg overflow-hidden border bg-muted/20">
+                            <img
+                              src={fandomDetail.thumbnail}
+                              alt={`${selectedMode.name} details`}
+                              className="w-full max-h-[260px] object-cover"
+                            />
+                          </div>
+                        )}
                         <div className="mt-3 p-3 rounded-lg border bg-muted/40 text-sm">
                           <div className="font-semibold mb-1">Win Conditions</div>
                           <div>{officialModesCatalog.find((m) => normalizeModeName(m.name) === normalizeModeName(selectedMode.name))?.objective || "Play objective rules for this mode and complete the category goal (kills, mission objective, or survival)."}</div>
@@ -283,6 +335,11 @@ export default function Modes() {
                               Source <ExternalLink className="h-3 w-3" />
                             </a>
                           ))}
+                          {fandomDetail?.sourceUrl && (
+                            <a href={fandomDetail.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs underline underline-offset-2">
+                              Fandom Details <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
                         </div>
                       </div>
 

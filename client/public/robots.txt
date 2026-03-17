@@ -1,6 +1,9 @@
 # CrossFire Wiki - Robots.txt
 User-agent: *
 Allow: /
+Allow: /logo-new.png
+Allow: /crossfire-logo.png
+Allow: /feature-crossfire.jpg
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /login
@@ -28,3 +31,9 @@ Crawl-delay: 0.5
 
 # Sitemap location
 Sitemap: https://crossfire.wiki/sitemap.xml
+
+# Explicit image crawler allowance for branding and previews
+User-agent: Googlebot-Image
+Allow: /logo-new.png
+Allow: /crossfire-logo.png
+Allow: /feature-crossfire.jpg

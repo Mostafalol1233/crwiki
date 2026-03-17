@@ -75,19 +75,20 @@ export function SEOHead({
       return url;
     }
   };
+  const defaultSeoLogo = `${baseUrl}/logo-new.png`;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
-    if (!src) return `${baseUrl}/feature-crossfire.jpg`;
+    if (!src) return defaultSeoLogo;
     try {
       const u = new URL(src, baseUrl);
       const abs = u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
       return toCloudinary1200x630(abs);
     } catch {
-      return `${baseUrl}/feature-crossfire.jpg`;
+      return defaultSeoLogo;
     }
   };
   const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);
-  const finalTwitterImage = twitterImage || finalOgImage;
+  const finalTwitterImage = resolveAbsolute(twitterImage || finalOgImage);
   const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow";
 
   useEffect(() => {

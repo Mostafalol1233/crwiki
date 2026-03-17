@@ -42,6 +42,32 @@ type NormalizedMode = Mode & {
   sourceLinks: string[];
 };
 
+type OfficialMode = {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  category: ModeCategoryTab;
+  objective: string;
+};
+
+const officialModesCatalog: OfficialMode[] = [
+  { id: "official-tdm", name: "Team Deathmatch", type: "PvP", category: "competitive", description: "Classic team-vs-team combat. Eliminate opponents and reach the target score before the enemy team.", objective: "First team to reach the kill limit wins." },
+  { id: "official-snd", name: "Search & Destroy", type: "Objective", category: "competitive", description: "Attackers plant C4 at bomb sites while defenders stop the plant or defuse in time.", objective: "Win rounds by detonation, defuse, or eliminating the enemy team." },
+  { id: "official-ghost", name: "Ghost Mode", type: "Stealth", category: "competitive", description: "Ghosts are mostly invisible and use melee attacks while soldiers use firearms and detection.", objective: "Ghosts win by planting C4 or eliminations; soldiers win by elimination or defuse." },
+  { id: "official-ffa", name: "Free For All", type: "PvP", category: "competitive", description: "Every player fights independently with no teams.", objective: "Reach the highest kill count before the round ends." },
+  { id: "official-elimination", name: "Elimination", type: "PvP", category: "competitive", description: "Players respawn each round with fixed loadouts, emphasizing consistency and economy-free fights.", objective: "Win by out-scoring the opposing team across rounds." },
+  { id: "official-zm", name: "Zombie Mode", type: "Co-op", category: "cooperative", description: "Co-op survival against waves of infected enemies and bosses.", objective: "Survive waves and defeat the final boss objective." },
+  { id: "official-mutation", name: "Mutation Mode", type: "Asymmetrical", category: "cooperative", description: "Humans battle mutating enemies with special abilities in infection-style rounds.", objective: "Humans survive to timer end or mutants convert/eliminate all humans." },
+  { id: "official-hero", name: "Hero Mode", type: "Asymmetrical", category: "cooperative", description: "One side transforms into powerful heroes while others fight to survive.", objective: "Complete side objectives through elimination and timed survival." },
+  { id: "official-escape", name: "Escape Mode", type: "Objective", category: "event", description: "A team must escape through routes and checkpoints while defenders stop their advance.", objective: "Reach extraction points before defenders wipe the attacking team." },
+  { id: "official-ai", name: "AI Mode", type: "PvE", category: "event", description: "Players complete scripted PvE encounters with mission objectives.", objective: "Finish mission objectives and survive scenario phases." },
+];
+
+function normalizeModeName(name: string) {
+  return String(name || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 const modeFallbackByKeyword: Array<{ key: string; file: string; label: string }> = [
   { key: "zombie", file: "zm1_metalrage_01.jpg.jpeg", label: "Zombie Mode" },
   { key: "bio", file: "zm1_evilden_01.jpg.jpeg", label: "Zombie Mode" },
@@ -129,10 +155,32 @@ export default function Modes() {
   });
 
   const normalizedModes: NormalizedMode[] = useMemo(() => {
-    return modes.map((mode) => ({
-      ...mode,
-      ...resolveModeMeta(mode),
-    }));
+    const apiModes = Array.isArray(modes) ? modes.filter((m) => String(m?.name || "").trim().length >= 3) : [];
+    const merged: Mode[] = [];
+
+    for (const official of officialModesCatalog) {
+      const match = apiModes.find((m) => {
+        const left = normalizeModeName(m.name);
+        const right = normalizeModeName(official.name);
+        return left === right || left.includes(right) || right.includes(left);
+      });
+
+      merged.push({
+        id: match?.id || official.id,
+        name: official.name,
+        image: String(match?.image || ""),
+        description: String(match?.description || official.description),
+        type: String(match?.type || official.type),
+        category: official.category,
+      });
+    }
+
+    for (const mode of apiModes) {
+      const exists = merged.some((m) => normalizeModeName(m.name) === normalizeModeName(mode.name));
+      if (!exists) merged.push(mode);
+    }
+
+    return merged.map((mode) => ({ ...mode, ...resolveModeMeta(mode) }));
   }, [modes]);
 
   const filteredModes = useMemo(() => {
@@ -219,7 +267,7 @@ export default function Modes() {
                     <section className="space-y-4">
                       <div className="rounded-xl border p-4 md:p-6 bg-card">
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                          <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tight">{selectedMode.label}</h2>
+                          <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tight">{selectedMode.name}</h2>
                           <Badge variant="secondary">{selectedMode.type || selectedMode.label}</Badge>
                         </div>
                         <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
@@ -227,7 +275,7 @@ export default function Modes() {
                         </p>
                         <div className="mt-3 p-3 rounded-lg border bg-muted/40 text-sm">
                           <div className="font-semibold mb-1">Win Conditions</div>
-                          <div>Play objective rules for this mode and complete the category goal (kills, mission objective, or survival).</div>
+                          <div>{officialModesCatalog.find((m) => normalizeModeName(m.name) === normalizeModeName(selectedMode.name))?.objective || "Play objective rules for this mode and complete the category goal (kills, mission objective, or survival)."}</div>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {selectedMode.sourceLinks.map((link) => (
@@ -251,7 +299,7 @@ export default function Modes() {
                 </div>
               )}
 
-              <div className="mt-6 text-sm text-muted-foreground">Showing {filteredModes.length} of {modes.length} modes.</div>
+              <div className="mt-6 text-sm text-muted-foreground">Showing {filteredModes.length} of {normalizedModes.length} modes.</div>
             </div>
           </div>
         </div>

@@ -2062,7 +2062,7 @@ export default function Admin() {
                             <div data-testid="input-post-content">
                               <RichTextEditor
                                 value={postForm.content}
-                                onChange={(value) => setPostForm({ ...postForm, content: value })}
+                                onChange={(value) => setPostForm((prev) => ({ ...prev, content: value }))}
                                 placeholder="Write your content here..."
                                 direction={postForm.language === 'ar' ? 'rtl' : 'ltr'}
                                 height={600}
@@ -2581,7 +2581,7 @@ export default function Admin() {
                                 <div data-testid="input-event-description">
                                   <RichTextEditor
                                     value={eventForm.description}
-                                    onChange={(value) => setEventForm({ ...eventForm, description: value })}
+                                    onChange={(value) => setEventForm((prev) => ({ ...prev, description: value }))}
                                     height={320}
                                     direction="ltr"
                                   />
@@ -2589,7 +2589,7 @@ export default function Admin() {
                                 <div data-testid="input-event-description-ar">
                                   <RichTextEditor
                                     value={eventForm.descriptionAr}
-                                    onChange={(value) => setEventForm({ ...eventForm, descriptionAr: value })}
+                                    onChange={(value) => setEventForm((prev) => ({ ...prev, descriptionAr: value }))}
                                     height={320}
                                     direction="rtl"
                                   />
@@ -3000,7 +3000,7 @@ export default function Admin() {
                                 <div data-testid="input-news-content">
                                   <RichTextEditor
                                     value={newsForm.content}
-                                    onChange={(value) => setNewsForm({ ...newsForm, content: value })}
+                                    onChange={(value) => setNewsForm((prev) => ({ ...prev, content: value }))}
                                     height={320}
                                     direction="ltr"
                                   />
@@ -3028,7 +3028,7 @@ export default function Admin() {
                                   <div data-testid="input-news-content-ar">
                                     <RichTextEditor
                                       value={newsForm.contentAr}
-                                      onChange={(value) => setNewsForm({ ...newsForm, contentAr: value })}
+                                      onChange={(value) => setNewsForm((prev) => ({ ...prev, contentAr: value }))}
                                       height={320}
                                       direction="rtl"
                                     />

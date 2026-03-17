@@ -1536,7 +1536,7 @@ export async function registerRoutes(app) {
             let image = "";
             let url = `${req.protocol}://${req.get("host")}`;
             const settings = await SiteSettingsModel.findOne().lean();
-            const fallbackOg = settings?.seoOgImage || `${req.protocol}://${req.get("host")}/favicon.png`;
+            const fallbackOg = settings?.seoOgImage || `${req.protocol}://${req.get("host")}/logo-new.png`;
             if (type === "post") {
                 const p = await storage.getPostById(id);
                 if (p) { title = p.title; description = p.summary || p.seoDescription || ""; image = p.ogImage || p.image || fallbackOg; url = `${url}/article/${p.post_slug || p.id}`; }
@@ -5497,21 +5497,30 @@ app.use((req, res, next) => {
             res.status(500).json({ ok: false, error: error?.message || "list_failed" });
         }
     });
-    // Ensure MongoDB is connected before seeding
-    await connectMongoDB();
-
-    // Auto-seed weapons on startup if collection is empty
+    // Ensure MongoDB is connected before seeding (non-fatal in restricted envs)
+    let dbReadyForSeed = false;
     try {
-        const weaponCount = await WeaponModel.countDocuments();
-        if (weaponCount === 0 && weaponsData && weaponsData.length > 0) {
-            console.log(`[seed] Weapons collection is empty. Seeding ${weaponsData.length} weapons...`);
-            await WeaponModel.insertMany(weaponsData);
-            console.log(`[seed] Successfully seeded ${weaponsData.length} weapons from CrossFire wiki.`);
-        } else {
-            console.log(`[seed] Weapons collection already has ${weaponCount} weapons. Skipping seed.`);
+        await connectMongoDB();
+        dbReadyForSeed = true;
+    } catch (dbConnErr) {
+        dbReadyForSeed = false;
+        console.warn(`[seed] MongoDB not reachable, skipping DB seed steps: ${dbConnErr?.message || dbConnErr}`);
+    }
+
+    // Optional weapons startup seed (disabled by default; enable with STARTUP_WEAPON_SEED=true)
+    if (String(process.env.STARTUP_WEAPON_SEED || "false").toLowerCase() === "true" && dbReadyForSeed && isConnected) {
+        try {
+            const weaponCount = await WeaponModel.countDocuments();
+            if (weaponCount === 0 && weaponsData && weaponsData.length > 0) {
+                console.log(`[seed] Weapons collection is empty. Seeding ${weaponsData.length} weapons...`);
+                await WeaponModel.insertMany(weaponsData);
+                console.log(`[seed] Successfully seeded ${weaponsData.length} weapons from CrossFire wiki.`);
+            } else {
+                console.log(`[seed] Weapons collection already has ${weaponCount} weapons. Skipping seed.`);
+            }
+        } catch (seedError) {
+            console.error("[seed] Error seeding weapons:", seedError.message);
         }
-    } catch (seedError) {
-        console.error("[seed] Error seeding weapons:", seedError.message);
     }
 
     const currentFile = fileURLToPath(import.meta.url);
@@ -5694,11 +5703,16 @@ app.use((req, res, next) => {
     });
 
     // Full AUTO_SEED (weapons/modes/mercs/ranks) is now opt-in
+    if (!dbReadyForSeed || !isConnected) process.env.AUTO_SEED = "false";
     if (process.env.AUTO_SEED === void 0) process.env.AUTO_SEED = "false";
     if (String(process.env.AUTO_SEED).toLowerCase() === "true") {
         (async () => {
             try {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
+                if (!isConnected) {
+                    log("⚠️ AUTO_SEED skipped: MongoDB is not connected");
+                    return;
+                }
                 log("🌱 AUTO_SEED enabled: seeding data from seed-from-urls.js...");
                 const seedModule = await import("./seed-from-urls.js");
                 const run = seedModule?.default;
@@ -5720,6 +5734,10 @@ app.use((req, res, next) => {
         (async () => {
             try {
                 await new Promise((resolve) => setTimeout(resolve, 500));
+                if (!isConnected) {
+                    log("⚠️ Merc/Ranks reseed skipped: MongoDB is not connected");
+                    return;
+                }
                 const mod = await import("./seed-from-urls.js");
                 const mercs = Array.isArray(mod.mercenariesData) ? mod.mercenariesData : [];
                 const ranks = Array.isArray(mod.ranksData) ? mod.ranksData : [];

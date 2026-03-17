@@ -7,7 +7,7 @@ import multer from "multer";
 import { rateLimit } from "express-rate-limit";
 import { storage, initializeStorage } from "./storage.js";
 import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema, insertMercenarySchema } from "./shared/mongodb-schema.js";
-import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
+import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword, verifyToken } from "./utils/auth.js";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
 import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps } from "./services/scraper.js";
 import DOMPurify from 'isomorphic-dompurify';
@@ -23,16 +23,17 @@ import { uploadStream, deleteAsset } from './services/cloudinary.js';
 
 const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-            'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg'
+            'video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg',
+            'application/pdf'
         ];
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Invalid file type. Only Images, MP4, WebM, MOV, and Audio are allowed.'), false);
+            cb(new Error('Invalid file type. Only Images, MP4, WebM, MOV, Audio and PDF are allowed.'), false);
         }
     }
 });
@@ -3486,9 +3487,23 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         app.post('/images/upload', uploadLimiter, upload.single('file'), async (req, res) => {
             try {
                 const token = String(req.headers['x-csrf-token'] || req.headers['X-CSRF-Token'] || '');
-                if (!token || token !== CSRF_TOKEN) {
-                    return res.status(403).json({ ok: false, error: 'CSRF validation failed', code: 'csrf_failed' });
+                // Allow upload if token is valid OR if user is authenticated via Bearer token
+                let isAuthenticated = false;
+                if (token && token === CSRF_TOKEN) {
+                    isAuthenticated = true;
+                } else {
+                    const authHeader = req.headers.authorization;
+                    if (authHeader && authHeader.startsWith("Bearer ")) {
+                        const authToken = authHeader.substring(7);
+                        const payload = verifyToken(authToken);
+                        if (payload) isAuthenticated = true;
+                    }
                 }
+
+                if (!isAuthenticated) {
+                    return res.status(403).json({ ok: false, error: 'Authentication or CSRF validation failed', code: 'auth_failed' });
+                }
+
                 if (!req.file) return res.status(400).json({ ok: false, error: 'No file provided' });
                 const allowed = [
                     'image/jpeg',
@@ -3502,7 +3517,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(415).json({ ok: false, error: `Unsupported type: ${req.file.mimetype}`, code: 'unsupported_type' });
                 }
                 const kind = req.file.mimetype.startsWith('image/') ? 'image' : req.file.mimetype.startsWith('video/') ? 'video' : req.file.mimetype === 'application/pdf' ? 'raw' : 'unknown';
-                const sizeLimits = { image: 10 * 1024 * 1024, video: 10 * 1024 * 1024, raw: 10 * 1024 * 1024 };
+                const sizeLimits = { image: 15 * 1024 * 1024, video: 50 * 1024 * 1024, raw: 20 * 1024 * 1024 };
                 if (kind === 'unknown') {
                     return res.status(415).json({ ok: false, error: 'Unsupported type', code: 'unsupported_type' });
                 }

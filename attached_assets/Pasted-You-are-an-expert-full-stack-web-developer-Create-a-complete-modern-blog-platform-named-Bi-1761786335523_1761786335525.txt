@@ -1,0 +1,135 @@
+You are an expert full-stack web developer.
+
+Create a complete **modern blog platform** named **Bimora Blog Pro**  
+with advanced features and clean code.
+
+---
+
+### 🌍 GENERAL OVERVIEW
+A personal blog system for "Bimora" with advanced admin control, article organization, and modern UI.  
+It should NOT use any external API or scraping — all content is stored and managed locally in MongoDB.
+
+---
+
+### ⚛️ FRONTEND (React + TailwindCSS + MongoDB)
+**Goal:** Build a sleek and responsive frontend deployable on Vercel.
+
+Features:
+1. **Home Page**
+   - Display latest posts as cards with images, tags, and short summaries.
+   - Featured article section at the top.
+   - Dynamic category filter (News, Reviews, Tutorials, Events, etc.).
+   - Smooth page transitions with Framer Motion.
+
+2. **Article Page**
+   - Full article view with title, author, date, and cover image.
+   - Markdown or rich text rendering for content.
+   - Show related articles at the bottom.
+   - Comments section (stored in MongoDB).
+
+3. **Sidebar / Widgets**
+   - “Recent Posts”
+   - “Popular Tags”
+   - “Most Viewed”
+   - “Bimora’s Picks” (manually selected by admin)
+
+4. **Events Ribbon**
+   - Horizontal scrolling bar showing upcoming posts, notes, or highlights (added manually by admin).
+
+5. **Search & Filter**
+   - Search by title, tag, or content.
+   - Sort by latest or most viewed.
+
+6. **Dark Mode Toggle**
+   - Save preference in localStorage.
+
+7. **Multilingual Support**
+   - Arabic / English switcher.
+
+---
+
+### 🧩 BACKEND (Node.js + Express)
+**Goal:** Handle all content creation, editing, and viewing logic.
+
+Routes:
+- `/api/posts` → Get all posts
+- `/api/posts/:id` → Get single post
+- `/api/posts/add` → Add new post (admin only)
+- `/api/posts/edit/:id` → Edit post (admin only)
+- `/api/posts/delete/:id` → Delete post (admin only)
+- `/api/comments/:postId` → Add and fetch comments
+- `/api/events` → Add & get events for ribbon
+- `/api/auth/login` → Simple admin login (password-based)
+
+Requirements:
+- Use `mongoose` for MongoDB models.
+- Include models:
+  - `Post` (title, content, summary, image, tags, views)
+  - `Comment` (postId, name, content, date)
+  - `Event` (title, description, date)
+- Store and retrieve all data from MongoDB.
+- Use JWT for admin session (simple authentication).
+- Support `.env` with:
+MONGO_URI=
+ADMIN_PASS=
+JWT_SECRET=
+PORT=3000
+
+yaml
+Copy code
+
+---
+
+### 🎨 DESIGN & UX
+- Use **TailwindCSS** + **Framer Motion** for animations.
+- Use ribbons, badges, and hover effects for cards.
+- Responsive on all devices.
+- Include favicon and title “Bimora Blog Pro”.
+
+---
+
+### 🧠 EXTRA FEATURES
+- Count views per post.
+- Show "reading time" estimation.
+- Option to mark post as “Featured”.
+- Auto-generate short summary from content (locally, no API).
+- Markdown editor for admin post creation.
+- Pagination support.
+
+---
+
+### 🧰 PACKAGING
+1. After finishing, generate:
+ - `/frontend` → React app ready for Vercel
+ - `/backend` → Express API
+2. Compress backend into `backend.zip` containing:
+ - `index.js`
+ - `package.json`
+ - `/routes`
+ - `/models`
+ - `/utils`
+ - `.env.example`
+3. Print the file path for `backend.zip`.
+
+---
+
+### 🚀 DEPLOYMENT NOTES
+- Frontend → Deploy on **Vercel**
+- Backend → Deploy `backend.zip` on **Kataboom**, **Render**, or any Node.js host
+- MongoDB → Use **MongoDB Atlas**
+
+---
+
+### 🏷️ Admin Dashboard
+- `/admin` page protected by password
+- Features:
+- Add / Edit / Delete posts
+- Manage Events Ribbon
+- View comments
+- Statistics dashboard (views, comments count, post count)
+
+---
+
+### 💎 FINAL TOUCH
+Use soft red & dark theme styling with subtle animations.  
+Add footer “© 2025 Bimora Blog Pro — All Rights Reserved”.

@@ -61,7 +61,7 @@ export function generateEventSEO(
   const og = {
     title: title,
     description: meta_description,
-    image: imageUrl || "https://crossfire.wiki/favicon.png",
+    image: imageUrl || "https://crossfire.wiki/logo-new.png",
     url: `https://crossfire.wiki/events/${slug}`
   };
 
@@ -70,7 +70,7 @@ export function generateEventSEO(
     card: "summary_large_image",
     title: title,
     description: meta_description,
-    image: imageUrl || "https://crossfire.wiki/favicon.png"
+    image: imageUrl || "https://crossfire.wiki/logo-new.png"
   };
 
   // 6. Hero Description

@@ -261,7 +261,7 @@ function App() {
               description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates."
               keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter"]}
               ogType="website"
-              ogImage="/logo-new.png"
+              ogImage="https://crossfire.wiki/logo-new.png"
               ogImageAlt="CrossFire Wiki default Open Graph image"
               ogImageWidth={1200}
               ogImageHeight={630}

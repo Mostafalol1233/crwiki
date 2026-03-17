@@ -66,6 +66,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
         const tokRes = await fetch("/api/security/csrf-token");
         const tokJson = await tokRes.json();
         const token = tokJson?.csrfToken || "";
+        const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
 
         const fd = new FormData();
         fd.append("file", file);
@@ -75,7 +76,8 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/images/upload", true);
-        xhr.setRequestHeader("X-CSRF-Token", token);
+        if (token) xhr.setRequestHeader("X-CSRF-Token", token);
+        if (authToken) xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
@@ -104,7 +106,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/upload-image", true);
-        const token = localStorage.getItem("adminToken") || localStorage.getItem("auth_token");
+        const token = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token");
         if (token) {
           xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         }
@@ -124,16 +126,36 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
           xhr.send(fd);
         });
 
+        const rawText = await res.text();
         let url = "";
+        let parsed: any = null;
         try {
-          const json = JSON.parse(await res.text());
-          // Prefer domainUrl, fallback to other URL fields
-          url = json.domainUrl || json.url || json.file || json.secure_url;
-        } catch {
-          url = await res.text();
+          parsed = JSON.parse(rawText);
+          const firstResult = Array.isArray(parsed?.results) ? parsed.results.find((r: any) => r?.ok) : null;
+          url =
+            parsed?.domainUrl ||
+            parsed?.domain_url ||
+            parsed?.url ||
+            parsed?.file ||
+            parsed?.secure_url ||
+            firstResult?.domainUrl ||
+            firstResult?.domain_url ||
+            firstResult?.url ||
+            firstResult?.secure_url ||
+            "";
+          if (!url && Array.isArray(parsed?.results) && parsed.results.length > 0) {
+            const firstErr = parsed.results.find((r: any) => !r?.ok && r?.error)?.error;
+            if (firstErr) throw new Error(firstErr);
+          }
+        } catch (jsonErr) {
+          url = rawText;
         }
-        
-        if (!url || !url.startsWith("http")) throw new Error("Upload failed");
+
+        if (!res.ok) {
+          const errMsg = parsed?.error || parsed?.message || `Upload failed (status ${res.status})`;
+          throw new Error(errMsg);
+        }
+        if (!url || !url.startsWith("http")) throw new Error(parsed?.error || "Upload failed");
         return url.trim();
       }
     } catch (e: any) {
@@ -202,7 +224,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
       <Card>
         <CardHeader>
           <CardTitle>Media Uploader</CardTitle>
-          <CardDescription>Unified upload interface for MongoDB and Catbox</CardDescription>
+          <CardDescription>Unified upload interface for server and Cloudinary media storage</CardDescription>
           <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as any)} className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="server" className="flex items-center gap-2">
@@ -343,7 +365,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
                   Upload Complete ({uploadedUrls.length})
                 </span>
                 <Badge variant={uploadMethod === "server" ? "default" : "secondary"}>
-                  {uploadMethod === "server" ? "Server" : "Catbox"}
+                  {uploadMethod === "server" ? "Server" : "Cloudinary"}
                 </Badge>
               </div>
               

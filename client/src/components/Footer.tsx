@@ -40,7 +40,11 @@ export function Footer() {
                 <img 
                   src="/logo-new.png" 
                   alt="CrossFire Official Logo" 
-                  className="h-16 md:h-20 w-auto object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                  className="h-16 md:h-20 w-auto object-contain [image-rendering:auto] drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                  width="384"
+                  height="256"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <h3 className="text-3xl font-black bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent italic uppercase tracking-tighter">
                   Wiki

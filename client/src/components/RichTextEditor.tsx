@@ -129,6 +129,8 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
 
         const headers: Record<string, string> = {};
         if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+        const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
+        if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
 
         const res = await fetch("/images/upload", {
           method: "POST",

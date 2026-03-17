@@ -75,19 +75,20 @@ export function SEOHead({
       return url;
     }
   };
+  const defaultSeoLogo = `${baseUrl}/logo-new.png`;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
-    if (!src) return `${baseUrl}/feature-crossfire.jpg`;
+    if (!src) return defaultSeoLogo;
     try {
       const u = new URL(src, baseUrl);
       const abs = u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
       return toCloudinary1200x630(abs);
     } catch {
-      return `${baseUrl}/feature-crossfire.jpg`;
+      return defaultSeoLogo;
     }
   };
   const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);
-  const finalTwitterImage = twitterImage || finalOgImage;
+  const finalTwitterImage = resolveAbsolute(twitterImage || finalOgImage);
   const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow";
 
   useEffect(() => {
@@ -128,6 +129,11 @@ export function SEOHead({
       "CF",
       "Cross Fire",
       "CrossFire Wiki",
+      "كروس فاير ويكي",
+      "شرح كروس فاير",
+      "ايفنتات كروس فاير",
+      "خرائط كروس فاير",
+      "أسلحة كروس فاير",
       "Z8Games",
       "FPS",
       "Shooter",
@@ -143,6 +149,8 @@ export function SEOHead({
           { name: "keywords", content: uniqueKeywords.join(", ") },
           { name: "robots", content: robotsValue },
           { property: "og:site_name", content: "CrossFire Wiki" },
+          { property: "og:locale", content: "en_US" },
+          { property: "og:locale:alternate", content: "ar_AR" },
           { property: "og:title", content: finalOgTitle },
           { property: "og:description", content: finalOgDescription },
           { property: "og:image", content: finalOgImage },
@@ -154,6 +162,7 @@ export function SEOHead({
           { property: "og:type", content: ogType },
           { property: "og:url", content: finalOgUrl },
           { name: "twitter:card", content: "summary_large_image" },
+          { name: "twitter:site", content: "@crossfirewiki" },
           { name: "twitter:title", content: finalOgTitle },
           { name: "twitter:description", content: finalOgDescription },
           { name: "twitter:image", content: finalTwitterImage },

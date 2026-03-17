@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
-const logoLightImage = "/logo-new.png";
-const logoDarkImage = "/logo-new.png";
+const siteLogoImage = "/logo-new.png";
 
 function CFIconHome(props: any) {
   return (
@@ -256,7 +255,7 @@ export function Header() {
       <div className="w-full bg-muted text-foreground">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between text-xs md:text-sm">
           <Link href="/" aria-label="Home" className="flex items-center gap-2 font-extrabold uppercase tracking-wide text-foreground text-sm md:text-base group">
-            <img src="/logo-new.png" alt="CrossFire logo" className="h-8 w-8 object-contain group-hover:rotate-12 transition-transform duration-300" width="32" height="32" onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }} />
+            <img src={siteLogoImage} alt="CrossFire logo" className="h-10 w-10 object-contain [image-rendering:auto] group-hover:rotate-12 transition-transform duration-300" width="64" height="64" onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }} />
             <span className="crossfire-pro">Crossfire</span>
           </Link>
           <div className="flex items-center gap-4">
@@ -321,13 +320,15 @@ export function Header() {
           <div className="flex h-16 md:h-20 items-center gap-4">
             <Link href="/" aria-label="Home" className="flex items-center space-x-3 flex-shrink-0 group" data-testid="link-logo">
               <img
-                src={theme === 'dark' ? logoDarkImage : logoLightImage}
+                src={siteLogoImage}
                 alt="CrossFire"
                 className="h-16 md:h-20 lg:h-24 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
-                onError={(e) => { (e.target as HTMLImageElement).src = "/favicon.png"; }}
+                width="384"
+                height="256"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }}
                 draggable={false}
                 data-testid="img-logo"
               />

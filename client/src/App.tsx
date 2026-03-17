@@ -258,10 +258,10 @@ function App() {
           <LanguageProvider>
             <SEOHead
               title="CrossFire Wiki — Complete CrossFire Gaming Guide"
-              description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates."
-              keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter"]}
+              description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
+              keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
               ogType="website"
-              ogImage="/logo-new.png"
+              ogImage="https://crossfire.wiki/logo-new.png"
               ogImageAlt="CrossFire Wiki default Open Graph image"
               ogImageWidth={1200}
               ogImageHeight={630}

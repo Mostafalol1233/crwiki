@@ -306,6 +306,23 @@ export async function scrapeEventDetails(url) {
     timeout: 15000
   });
 
+  const toAbsoluteUrl = (raw) => {
+    const candidate = String(raw || '').trim();
+    if (!candidate) return '';
+    if (candidate.startsWith('//')) return `https:${candidate}`;
+    try {
+      return new URL(candidate, url).toString();
+    } catch {
+      return candidate.startsWith('/') ? `${FORUM_BASE_URL}${candidate}` : candidate;
+    }
+  };
+
+  const isPlaceholderImage = (raw) => {
+    const candidate = String(raw || '').toLowerCase();
+    if (!candidate) return true;
+    return candidate.includes('wof38b') || candidate.includes('placeholder') || candidate.includes('default');
+  };
+
   const $ = cheerio.load(response.data);
   const title = $('h1').first().text().trim() || $('title').first().text().trim() || 'Untitled Event';
   const date = $('time').attr('datetime') || $('time').text().trim() || new Date().toLocaleDateString();
@@ -326,26 +343,26 @@ export async function scrapeEventDetails(url) {
   const bodyBg = $('body').css('background-color');
   if (bodyBg && !colors.includes(bodyBg)) colors.push(bodyBg);
 
-  // Find a main image
-  let imageUrl = '';
-  // Try to find large images or og:image first
-  const ogImage = $('meta[property="og:image"]').attr('content');
-  if (ogImage) {
-    imageUrl = ogImage;
-  } else {
-    const img = $('img').filter((i, el) => {
-      const w = $(el).attr('width');
-      const h = $(el).attr('height');
-      return (!w || parseInt(w) > 200) && (!h || parseInt(h) > 100);
-    }).first();
+  // Find a main image (prioritize event-specific/custom images over defaults)
+  const preferredImageCandidates = [
+    $('meta[property="og:image"]').attr('content'),
+    $('meta[name="twitter:image"]').attr('content'),
+    $('meta[property="og:image:secure_url"]').attr('content'),
+    $('meta[itemprop="image"]').attr('content'),
+  ]
+    .map(toAbsoluteUrl)
+    .filter(Boolean);
 
-    if (img.length > 0) {
-      imageUrl = img.attr('src') || img.attr('data-src') || '';
-      if (imageUrl && !imageUrl.startsWith('http')) {
-        imageUrl = imageUrl.startsWith('//') ? `https:${imageUrl}` : `${FORUM_BASE_URL}${imageUrl}`;
-      }
-    }
-  }
+  $('img').each((_, el) => {
+    const src = toAbsoluteUrl($(el).attr('data-src') || $(el).attr('src') || $(el).attr('data-original') || '');
+    if (!src) return;
+    const cls = `${$(el).attr('class') || ''} ${$(el).attr('id') || ''}`.toLowerCase();
+    const isLikelyDecorative = cls.includes('avatar') || cls.includes('icon') || cls.includes('logo') || cls.includes('emoji');
+    if (isLikelyDecorative) return;
+    preferredImageCandidates.push(src);
+  });
+
+  const imageUrl = preferredImageCandidates.find((candidate) => !isPlaceholderImage(candidate)) || preferredImageCandidates[0] || '';
 
   // Logo extraction (try to find logo-like images)
   let logoUrl = '';
@@ -375,7 +392,7 @@ export async function scrapeEventDetails(url) {
   }
 
   const localList = await getLocalAssetList();
-  const finalImage = imageUrl || findLocalAssetInList(title, localList);
+  const finalImage = imageUrl || findLocalAssetInList(title, localList) || 'https://files.catbox.moe/wof38b.jpeg';
 
   // Preview text generation
   const preview = $(contentEl).text().trim().substring(0, 150) + "...";

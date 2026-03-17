@@ -524,7 +524,7 @@ export default function ScrapingManager() {
                   <label className="text-sm font-medium mb-2 block">Title</label>
                   <Input
                     value={editedEvent.title}
-                    onChange={(e) => setEditedEvent({ ...editedEvent, title: e.target.value })}
+                    onChange={(e) => setEditedEvent((prev) => prev ? { ...prev, title: e.target.value } : prev)}
                     data-testid="input-title"
                   />
                 </div>
@@ -533,7 +533,7 @@ export default function ScrapingManager() {
                   <label className="text-sm font-medium mb-2 block">Date</label>
                   <Input
                     value={editedEvent.date}
-                    onChange={(e) => setEditedEvent({ ...editedEvent, date: e.target.value })}
+                    onChange={(e) => setEditedEvent((prev) => prev ? { ...prev, date: e.target.value } : prev)}
                     data-testid="input-date"
                   />
                 </div>
@@ -542,7 +542,7 @@ export default function ScrapingManager() {
                   <label className="text-sm font-medium mb-2 block">Category</label>
                   <Input
                     value={editedEvent.category}
-                    onChange={(e) => setEditedEvent({ ...editedEvent, category: e.target.value })}
+                    onChange={(e) => setEditedEvent((prev) => prev ? { ...prev, category: e.target.value } : prev)}
                     data-testid="input-category"
                   />
                 </div>
@@ -551,7 +551,7 @@ export default function ScrapingManager() {
                   <label className="text-sm font-medium mb-2 block">Content HTML</label>
                   <Textarea
                     value={editedEvent?.content || ''}
-                    onChange={(e) => setEditedEvent({ ...editedEvent, content: e.target.value })}
+                    onChange={(e) => setEditedEvent((prev) => prev ? { ...prev, content: e.target.value } : prev)}
                     rows={8}
                     className="font-mono text-xs"
                     data-testid="textarea-content"
@@ -680,4 +680,3 @@ export default function ScrapingManager() {
     </div>
   );
 }
-

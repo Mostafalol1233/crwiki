@@ -150,7 +150,7 @@ export async function registerRoutes(app) {
     app.delete('/images/upload', (_req, res) => res.status(405).json({ ok: false, error: 'Method not allowed', allowed: ['POST'] }));
     app.get('/uploads/*', async (req, res) => {
         try {
-            const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+            const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
             const assetPath = req.params[0] || req.path.replace(/^\/uploads\//, '');
             const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${assetPath}`;
             
@@ -3385,7 +3385,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     const duration = Date.now() - started;
                     const secureUrl = json.secure_url;
                     const domainUrl = await buildDomainUrl(secureUrl, req);
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     let thumbnail_secure_url = '';
                     let thumbnail_domain_url = '';
                     try {
@@ -3399,7 +3399,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: 'video', thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = 'mp4';
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
                     const parts = ['video', 'upload', folder, `${publicId}.${ext}`];
@@ -3447,7 +3447,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         }
         // Signed Cloudinary upload with retries and domain URL mapping
         async function cloudinarySignedUpload(buffer, filename, mimetype, opts = {}) {
-            const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+            const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
             const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
             const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
             const resourceType = 'auto';
@@ -3564,7 +3564,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     const duration = Date.now() - started;
                     const secureUrl = json.secure_url;
                     const domainUrl = await buildDomainUrl(secureUrl, req);
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     let thumbnail_secure_url = '';
                     let thumbnail_domain_url = '';
                     try {
@@ -3580,7 +3580,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', bytes: json.bytes, created_at: json.created_at, thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (error) {
                     // Fallback to local server, while preserving Cloudinary-style domain URL
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
                     const localPathParts = [resource, 'upload'];
@@ -3699,7 +3699,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
 
         app.get('/media/*', async (req, res) => {
             try {
-                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 let rest = String(req.params[0] || '').replace(/^\/+/, '');
                 if (!rest) return res.status(400).json({ ok: false, error: 'Missing path' });
                 if (!/^([a-z0-9_-]+)\//i.test(rest)) {
@@ -3726,7 +3726,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             try {
                 const name = String(req.params.filename || '').replace(/[^A-Za-z0-9._-]+/g, '');
                 if (!name) return res.status(400).json({ ok: false, error: 'Invalid image name' });
-                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${name}`;
                 const u = new URL(url);
                 if (!/res\.cloudinary\.com$/i.test(u.hostname)) {
@@ -3835,7 +3835,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
@@ -3935,7 +3935,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     }
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'image', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || 'bin';
                     const resource = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
@@ -3984,7 +3984,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || 'bin';
                     const resource = req.file.mimetype === 'application/pdf' ? 'raw' : (req.file.mimetype.startsWith('image/') ? 'image' : 'video');
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
@@ -4039,7 +4039,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');

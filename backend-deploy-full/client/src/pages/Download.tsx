@@ -90,13 +90,13 @@ export default function DownloadPage() {
   return (
     <>
       <PageSEO
-        title={"Download — CrossFire Wiki"}
-        description={"Official CrossFire downloader and system requirements. Download the game and join the action."}
+        title={"Download CrossFire West - Official Version | Crossfire Wiki"}
+        description={"Download the official CrossFire West version (Z8Games). System requirements, minimum and recommended specs for the main CrossFire version."}
         canonicalPath="/download"
         schemaType="WebPage"
         schemaData={{
-          name: "CrossFire Download",
-          description: "Official downloader and system requirements for CrossFire.",
+          name: "CrossFire West Download",
+          description: "Official downloader and system requirements for CrossFire West (Main Version).",
           url: "/download",
         }}
       />
@@ -123,18 +123,24 @@ export default function DownloadPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
         {/* Header */}
         <div className="mb-16 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Download className="h-8 w-8 text-destructive" />
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Download CrossFire
-            </h1>
+          <div className="flex flex-col items-center justify-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <Download className="h-8 w-8 text-destructive" />
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
+                Download CrossFire West
+              </h1>
+            </div>
+            <Badge variant="outline" className="text-primary border-primary/50 font-bold px-4 py-1">
+              Official Main Version
+            </Badge>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Official Downloader — Get CrossFire today and join the action
+            The standard CrossFire West version (Z8Games) for North America, Europe, and Latin America.
           </p>
           <Button
-            size="sm"
-            className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
+            size="lg"
+            className="bg-destructive hover:bg-destructive/90 text-white font-bold tracking-wide uppercase px-8 py-6 text-lg shadow-xl hover:scale-105 transition-transform"
+            onClick={() => window.location.href = 'https://crossfire.z8games.com/download.html'}
           >
             Download Now
           </Button>
@@ -195,10 +201,11 @@ export default function DownloadPage() {
             Download CrossFire now and experience intense multiplayer action. Check the system requirements above to ensure your PC meets the minimum specifications.
           </p>
           <Button
-            size="sm"
-            className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
+            size="lg"
+            className="bg-destructive hover:bg-destructive/90 text-white font-bold tracking-wide uppercase px-8 py-6 text-lg shadow-xl"
+            onClick={() => window.location.href = 'https://crossfire.z8games.com/download.html'}
           >
-            <Download className="mr-2 h-3 w-3" />
+            <Download className="mr-2 h-5 w-5" />
             Download CrossFire
           </Button>
         </div>

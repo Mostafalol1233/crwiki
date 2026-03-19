@@ -7,6 +7,8 @@ import path from 'path';
 import crypto from 'crypto';
 import { storage } from '../storage.js';
 
+import { downloadAndUploadImage } from '../utils/cloudinary-helper.js';
+
 // Pre-defined knowledge fallback for specific URLs that are known to be difficult to scrape
 const KNOWN_CONTENT_FALLBACKS = {
     'https://crossfire.z8games.com/patches/nov2014': {
@@ -188,13 +190,13 @@ export class Selector {
             if (src) {
                 try {
                     const absoluteUrl = new URL(src, this.baseUrl).toString();
-                    const localPath = await this.downloadAsset(absoluteUrl);
-                    if (localPath) {
-                        img.attr('src', `/uploads/mirrored/${localPath}`);
+                    const { url: cloudinaryUrl } = await downloadAndUploadImage(absoluteUrl, 'mirrored');
+                    if (cloudinaryUrl) {
+                        img.attr('src', cloudinaryUrl);
                         img.attr('data-mirrored', 'true');
                     }
                 } catch (e) {
-                    console.error(`Failed to mirror image: ${src}`, e.message);
+                    console.error(`Failed to mirror image to Cloudinary: ${src}`, e.message);
                 }
             }
         }
@@ -274,10 +276,9 @@ export class Selector {
             if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) continue;
             try {
                 const absoluteUrl = new URL(originalUrl, this.baseUrl).toString();
-                const localPath = await this.downloadAsset(absoluteUrl);
-                if (localPath) {
-                    const localUrl = `/uploads/mirrored/${localPath}`;
-                    processedCss = processedCss.split(originalUrl).join(localUrl);
+                const { url: cloudinaryUrl } = await downloadAndUploadImage(absoluteUrl, 'mirrored_css');
+                if (cloudinaryUrl) {
+                    processedCss = processedCss.split(originalUrl).join(cloudinaryUrl);
                 }
             } catch (e) {}
         }

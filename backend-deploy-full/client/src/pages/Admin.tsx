@@ -68,8 +68,6 @@ import {
 import { useLocation } from "wouter";
 import imageCompression from 'browser-image-compression';
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { SEOEditor } from "@/components/SEOEditor";
-import { BulkSEOEditor } from "@/components/BulkSEOEditor";
 
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
@@ -185,8 +183,7 @@ export default function Admin() {
     post_slug: "",
     content: "",
     summary: "",
-    imageUrl: "",
-    imageAlt: "",
+    image: "",
     images: [] as string[],
     category: "Tutorials",
     tags: "",
@@ -199,22 +196,14 @@ export default function Admin() {
     seoDescription: "",
     seoKeywords: "",
     canonicalUrl: "",
-    ogTitle: "",
-    ogDescription: "",
     ogImage: "",
-    ogImageAlt: "",
-    ogType: "article",
-    ogUrl: "",
-    twitterTitle: "",
-    twitterDescription: "",
     twitterImage: "",
-    twitterImageAlt: "",
     schemaType: "Article",
-    schemaData: "",
     fullLayout: false,
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [eventForm, setEventForm] = useState({
@@ -224,30 +213,21 @@ export default function Admin() {
     descriptionAr: "",
     date: "",
     type: "upcoming" as "upcoming" | "trending",
-    imageUrl: "",
-    imageAlt: "",
+    image: "",
     images: [] as string[],
     event_name_slug: "",
     seoTitle: "",
     seoDescription: "",
     seoKeywords: "",
     canonicalUrl: "",
-    ogTitle: "",
-    ogDescription: "",
     ogImage: "",
-    ogImageAlt: "",
-    ogType: "website",
-    ogUrl: "",
-    twitterTitle: "",
-    twitterDescription: "",
     twitterImage: "",
-    twitterImageAlt: "",
     schemaType: "Event",
-    schemaData: "",
     fullLayout: false,
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [newsForm, setNewsForm] = useState({
@@ -255,8 +235,7 @@ export default function Admin() {
     news_slug: "",
     titleAr: "",
     dateRange: "",
-    imageUrl: "",
-    imageAlt: "",
+    image: "",
     images: [] as string[],
     category: "News",
     content: "",
@@ -268,22 +247,14 @@ export default function Admin() {
     seoDescription: "",
     seoKeywords: "",
     canonicalUrl: "",
-    ogTitle: "",
-    ogDescription: "",
     ogImage: "",
-    ogImageAlt: "",
-    ogType: "article",
-    ogUrl: "",
-    twitterTitle: "",
-    twitterDescription: "",
     twitterImage: "",
-    twitterImageAlt: "",
     schemaType: "NewsArticle",
-    schemaData: "",
     fullLayout: false,
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [sellerForm, setSellerForm] = useState({
@@ -1010,8 +981,8 @@ export default function Admin() {
       resetEventForm();
       toast({ title: "Event created successfully" });
     },
-    onError: (error: any) => {
-      toast({ title: "Failed to create event", description: error?.message || "", variant: "destructive" });
+    onError: () => {
+      toast({ title: "Failed to create event", variant: "destructive" });
     },
   });
 
@@ -1051,10 +1022,10 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       setIsCreatingNews(false);
       resetNewsForm();
-      toast({ title: "News created successfully" });
+      toast({ title: "News item created successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Failed to create news", description: error?.message || "", variant: "destructive" });
+      toast({ title: "Failed to create news item", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -1066,10 +1037,10 @@ export default function Admin() {
       setEditingNews(null);
       setIsCreatingNews(false);
       resetNewsForm();
-      toast({ title: "News updated successfully" });
+      toast({ title: "News item updated successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Failed to update news", description: error?.message || "", variant: "destructive" });
+      toast({ title: "Failed to update news item", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -1459,7 +1430,6 @@ export default function Admin() {
       content: "",
       summary: "",
       image: "",
-      imageAlt: "",
       images: [],
       category: "Tutorials",
       tags: "",
@@ -1472,22 +1442,14 @@ export default function Admin() {
       seoDescription: "",
       seoKeywords: "",
       canonicalUrl: "",
-      ogTitle: "",
-      ogDescription: "",
       ogImage: "",
-      ogImageAlt: "",
-      ogType: "",
-      ogUrl: "",
-      twitterTitle: "",
-      twitterDescription: "",
       twitterImage: "",
-      twitterImageAlt: "",
       schemaType: "Article",
-      schemaData: "",
       fullLayout: false,
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -1500,29 +1462,20 @@ export default function Admin() {
       date: "",
       type: "upcoming",
       image: "",
-      imageAlt: "",
       images: [],
       event_name_slug: "",
       seoTitle: "",
       seoDescription: "",
       seoKeywords: "",
       canonicalUrl: "",
-      ogTitle: "",
-      ogDescription: "",
       ogImage: "",
-      ogImageAlt: "",
-      ogType: "",
-      ogUrl: "",
-      twitterTitle: "",
-      twitterDescription: "",
       twitterImage: "",
-      twitterImageAlt: "",
       schemaType: "Event",
-      schemaData: "",
       fullLayout: false,
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -1533,7 +1486,6 @@ export default function Admin() {
       titleAr: "",
       dateRange: "",
       image: "",
-      imageAlt: "",
       images: [],
       category: "News",
       content: "",
@@ -1545,22 +1497,14 @@ export default function Admin() {
       seoDescription: "",
       seoKeywords: "",
       canonicalUrl: "",
-      ogTitle: "",
-      ogDescription: "",
       ogImage: "",
-      ogImageAlt: "",
-      ogType: "",
-      ogUrl: "",
-      twitterTitle: "",
-      twitterDescription: "",
       twitterImage: "",
-      twitterImageAlt: "",
       schemaType: "NewsArticle",
-      schemaData: "",
       fullLayout: false,
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -1856,12 +1800,6 @@ export default function Admin() {
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="bulk-seo" data-testid="tab-bulk-seo">
-                    <Search className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Bulk SEO</span>
-                  </TabsTrigger>
-                )}
-                {isSuperAdmin && (
                   <TabsTrigger value="chat-settings" data-testid="tab-chat-settings">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Chat Settings</span>
@@ -1877,10 +1815,6 @@ export default function Admin() {
             </div>
 
             <div className="flex-1">
-              <TabsContent value="bulk-seo">
-                <BulkSEOEditor />
-              </TabsContent>
-
               <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card>
@@ -2152,72 +2086,17 @@ export default function Admin() {
                           />
                           <Input
                             placeholder="Image URL"
-                            value={postForm.imageUrl}
+                            value={postForm.image}
                             onChange={(e) =>
-                              setPostForm({ ...postForm, imageUrl: e.target.value })
+                              setPostForm({ ...postForm, image: e.target.value })
                             }
                             data-testid="input-post-image"
-                          />
-                          <Input
-                            placeholder="Image Alt Text"
-                            value={postForm.imageAlt}
-                            onChange={(e) =>
-                              setPostForm({ ...postForm, imageAlt: e.target.value })
-                            }
-                            data-testid="input-post-image-alt"
                           />
                           <GalleryUploader
                             images={postForm.images}
                             onImagesChange={(newImages) => setPostForm({ ...postForm, images: newImages })}
                             toast={toast}
                           />
-                          
-                          <SEOEditor 
-                            data={{
-                              seoTitle: postForm.seoTitle,
-                              seoDescription: postForm.seoDescription,
-                              seoKeywords: postForm.seoKeywords ? postForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
-                              canonicalUrl: postForm.canonicalUrl,
-                              ogTitle: postForm.ogTitle,
-                              ogDescription: postForm.ogDescription,
-                              ogImage: postForm.ogImage,
-                              ogImageAlt: postForm.ogImageAlt,
-                              ogType: postForm.ogType,
-                              ogUrl: postForm.ogUrl,
-                              twitterTitle: postForm.twitterTitle,
-                              twitterDescription: postForm.twitterDescription,
-                              twitterImage: postForm.twitterImage,
-                              twitterImageAlt: postForm.twitterImageAlt,
-                              schemaType: postForm.schemaType,
-                              schemaData: postForm.schemaData,
-                            }}
-                            onChange={(data) => setPostForm({
-                              ...postForm,
-                              seoTitle: data.seoTitle || "",
-                              seoDescription: data.seoDescription || "",
-                              seoKeywords: data.seoKeywords?.join(", ") || "",
-                              canonicalUrl: data.canonicalUrl || "",
-                              ogTitle: data.ogTitle || "",
-                              ogDescription: data.ogDescription || "",
-                              ogImage: data.ogImage || "",
-                              ogImageAlt: data.ogImageAlt || "",
-                              ogType: data.ogType || "article",
-                              ogUrl: data.ogUrl || "",
-                              twitterTitle: data.twitterTitle || "",
-                              twitterDescription: data.twitterDescription || "",
-                              twitterImage: data.twitterImage || "",
-                              twitterImageAlt: data.twitterImageAlt || "",
-                              schemaType: data.schemaType || "Article",
-                              schemaData: data.schemaData || "",
-                            })}
-                            autoFill={{
-                              title: postForm.title,
-                              description: postForm.summary || postForm.content.replace(/<[^>]*>/g, '').slice(0, 160),
-                              image: postForm.imageUrl,
-                              slug: postForm.post_slug
-                            }}
-                          />
-
                           <select
                             value={postForm.category}
                             onChange={(e) =>
@@ -2289,7 +2168,107 @@ export default function Admin() {
                             <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                           </label>
 
-                          <div className="flex gap-2 pt-4 border-t">
+                          <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                            <input
+                              type="checkbox"
+                              checked={postForm.wikiMode}
+                              onChange={(e) =>
+                                setPostForm({
+                                  ...postForm,
+                                  wikiMode: e.target.checked,
+                                })
+                              }
+                            />
+                            <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                          </label>
+
+                          <div className="space-y-4 pt-4 border-t">
+                            <h3 className="text-sm font-semibold">SEO Settings</h3>
+                            <Input
+                              placeholder="SEO Title (50-60 chars, optional)"
+                              value={postForm.seoTitle}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, seoTitle: e.target.value })
+                              }
+                              maxLength={60}
+                              data-testid="input-post-seo-title"
+                            />
+                            <Textarea
+                              placeholder="Meta Description (120-155 chars, optional)"
+                              value={postForm.seoDescription}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, seoDescription: e.target.value })
+                              }
+                              rows={2}
+                              maxLength={155}
+                              data-testid="input-post-seo-description"
+                            />
+                            <Input
+                              placeholder="Keywords (comma separated, optional)"
+                              value={postForm.seoKeywords}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, seoKeywords: e.target.value })
+                              }
+                              data-testid="input-post-seo-keywords"
+                            />
+                            {(() => {
+                              const text = [postForm.title, postForm.summary, postForm.content].join(' ');
+                              const plain = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+                              const stop = new Set(["the", "and", "a", "an", "to", "of", "in", "on", "for", "with", "by", "is", "are", "was", "were", "be", "as", "at", "from", "that", "this", "it", "or", "if", "but", "about", "into", "over", "after", "before", "under", "above", "between", "من", "على", "في", "عن", "و", "ما", "لا", "لم", "لن", "إلى", "الى", "كان", "كانت", "ذلك", "هذه", "هذا", "قد", "لقد", "كما"]);
+                              const parts = plain.replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter((w) => w && w.length > 2 && !stop.has(w));
+                              const freq = new Map<string, number>();
+                              for (const w of parts) freq.set(w, (freq.get(w) || 0) + 1);
+                              const suggestions = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]).map(([w]) => w).slice(0, 8);
+                              const current = (postForm.seoKeywords || '').split(',').map(s => s.trim()).filter(Boolean);
+                              return suggestions.length ? (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {suggestions.map((s) => (
+                                    <Badge key={s} variant={current.includes(s) ? 'default' : 'outline'} onClick={() => {
+                                      const next = Array.from(new Set([...current, s]));
+                                      setPostForm({ ...postForm, seoKeywords: next.join(', ') });
+                                    }} className="cursor-pointer">
+                                      {s}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : null;
+                            })()}
+                            <Input
+                              placeholder="Canonical URL (optional)"
+                              value={postForm.canonicalUrl}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, canonicalUrl: e.target.value })
+                              }
+                              data-testid="input-post-canonical"
+                            />
+                            <Input
+                              placeholder="OG Image URL (optional)"
+                              value={postForm.ogImage}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, ogImage: e.target.value })
+                              }
+                              data-testid="input-post-og-image"
+                            />
+                            <Input
+                              placeholder="Twitter Image URL (optional)"
+                              value={postForm.twitterImage}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, twitterImage: e.target.value })
+                              }
+                              data-testid="input-post-twitter-image"
+                            />
+                            <select
+                              value={postForm.schemaType}
+                              onChange={(e) =>
+                                setPostForm({ ...postForm, schemaType: e.target.value })
+                              }
+                              className="w-full h-9 px-3 rounded-md border border-input bg-background"
+                              data-testid="select-post-schema-type"
+                            >
+                              <option value="Article">Article</option>
+                              <option value="BlogPosting">BlogPosting</option>
+                              <option value="NewsArticle">NewsArticle</option>
+                            </select>
                           </div>
 
                           <Button
@@ -2300,15 +2279,6 @@ export default function Admin() {
                               if (!seoDesc || seoDesc.length < 60 || seoDesc.length > 160) {
                                 const d = plain.substring(0, 160).trim();
                                 seoDesc = d.length < 60 ? plain.substring(0, Math.min(160, Math.max(60, plain.length))).trim() : d;
-                              }
-                              let schemaDataParsed: any = undefined;
-                              if (postForm.schemaData && postForm.schemaData.trim()) {
-                                try {
-                                  schemaDataParsed = JSON.parse(postForm.schemaData);
-                                } catch (error) {
-                                  toast({ title: "Invalid JSON-LD", description: "Schema data must be valid JSON.", variant: "destructive" });
-                                  return;
-                                }
                               }
                               const kwStr = (postForm.seoKeywords || '').trim();
                               let kws = kwStr ? kwStr.split(',').map(k => k.trim()).filter(Boolean) : [];
@@ -2328,7 +2298,6 @@ export default function Admin() {
                                 seoDescription: seoDesc,
                                 tags: postForm.tags.split(",").map((t) => t.trim()),
                                 seoKeywords: kws,
-                                schemaData: schemaDataParsed,
                               };
                               if (editingPost) {
                                 updatePostMutation.mutate({ id: editingPost.id, data });
@@ -2372,6 +2341,11 @@ export default function Admin() {
                                 <Badge variant="outline" className="text-xs">
                                   {post.category}
                                 </Badge>
+                                {post.wikiMode && (
+                                  <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                    Wiki Mode
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                                 {post.summary}
@@ -2406,7 +2380,6 @@ export default function Admin() {
                                       content: post.content,
                                       summary: post.summary,
                                       image: post.image,
-                                      imageAlt: post.imageAlt || "",
                                       images: post.images || [],
                                       category: post.category,
                                       tags: post.tags.join(", "),
@@ -2419,22 +2392,14 @@ export default function Admin() {
                                       seoDescription: post.seoDescription || "",
                                       seoKeywords: post.seoKeywords?.join(", ") || "",
                                       canonicalUrl: post.canonicalUrl || "",
-                                      ogTitle: post.ogTitle || "",
-                                      ogDescription: post.ogDescription || "",
                                       ogImage: post.ogImage || "",
-                                      ogImageAlt: post.ogImageAlt || "",
-                                      ogType: post.ogType || "",
-                                      ogUrl: post.ogUrl || "",
-                                      twitterTitle: post.twitterTitle || "",
-                                      twitterDescription: post.twitterDescription || "",
                                       twitterImage: post.twitterImage || "",
-                                      twitterImageAlt: post.twitterImageAlt || "",
                                       schemaType: post.schemaType || "Article",
-                                      schemaData: post.schemaData ? JSON.stringify(post.schemaData, null, 2) : "",
                                       fullLayout: post.fullLayout || false,
                                       sourceUrl: post.sourceUrl || "",
                                       isVerified: post.isVerified || false,
                                       externalLinks: post.externalLinks || [],
+                                      wikiMode: post.wikiMode || false,
                                     });
                                     setIsCreatingPost(true);
                                   }}
@@ -2666,69 +2631,16 @@ export default function Admin() {
                               />
                               <Input
                                 placeholder="Image URL (optional)"
-                                value={eventForm.imageUrl}
+                                value={eventForm.image}
                                 onChange={(e) =>
-                                  setEventForm({ ...eventForm, imageUrl: e.target.value })
+                                  setEventForm({ ...eventForm, image: e.target.value })
                                 }
                                 data-testid="input-event-image"
-                              />
-                              <Input
-                                placeholder="Image Alt Text"
-                                value={eventForm.imageAlt}
-                                onChange={(e) =>
-                                  setEventForm({ ...eventForm, imageAlt: e.target.value })
-                                }
-                                data-testid="input-event-image-alt"
                               />
                               <GalleryUploader
                                 images={eventForm.images}
                                 onImagesChange={(newImages) => setEventForm({ ...eventForm, images: newImages })}
                                 toast={toast}
-                              />
-                              <SEOEditor 
-                                data={{
-                                  seoTitle: eventForm.seoTitle,
-                                  seoDescription: eventForm.seoDescription,
-                                  seoKeywords: eventForm.seoKeywords ? eventForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
-                                  canonicalUrl: eventForm.canonicalUrl,
-                                  ogTitle: eventForm.ogTitle,
-                                  ogDescription: eventForm.ogDescription,
-                                  ogImage: eventForm.ogImage,
-                                  ogImageAlt: eventForm.ogImageAlt,
-                                  ogType: eventForm.ogType,
-                                  ogUrl: eventForm.ogUrl,
-                                  twitterTitle: eventForm.twitterTitle,
-                                  twitterDescription: eventForm.twitterDescription,
-                                  twitterImage: eventForm.twitterImage,
-                                  twitterImageAlt: eventForm.twitterImageAlt,
-                                  schemaType: eventForm.schemaType,
-                                  schemaData: eventForm.schemaData,
-                                }}
-                                onChange={(data) => setEventForm({
-                                  ...eventForm,
-                                  seoTitle: data.seoTitle || "",
-                                  seoDescription: data.seoDescription || "",
-                                  seoKeywords: data.seoKeywords?.join(", ") || "",
-                                  canonicalUrl: data.canonicalUrl || "",
-                                  ogTitle: data.ogTitle || "",
-                                  ogDescription: data.ogDescription || "",
-                                  ogImage: data.ogImage || "",
-                                  ogImageAlt: data.ogImageAlt || "",
-                                  ogType: data.ogType || "website",
-                                  ogUrl: data.ogUrl || "",
-                                  twitterTitle: data.twitterTitle || "",
-                                  twitterDescription: data.twitterDescription || "",
-                                  twitterImage: data.twitterImage || "",
-                                  twitterImageAlt: data.twitterImageAlt || "",
-                                  schemaType: data.schemaType || "Event",
-                                  schemaData: data.schemaData || "",
-                                })}
-                                autoFill={{
-                                  title: eventForm.title,
-                                  description: eventForm.description.replace(/<[^>]*>/g, '').slice(0, 160),
-                                  image: eventForm.imageUrl,
-                                  slug: eventForm.event_name_slug
-                                }}
                               />
                               <select
                                 value={eventForm.type}
@@ -2758,11 +2670,77 @@ export default function Admin() {
                                 />
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
+
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={eventForm.wikiMode}
+                                  onChange={(e) =>
+                                    setEventForm({
+                                      ...eventForm,
+                                      wikiMode: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                              </label>
                               <p className="text-xs text-muted-foreground -mt-2">
                                 Advanced CSS/JS blocks are preserved only when Full Layout is enabled.
                               </p>
 
-                              <div className="flex gap-2 pt-4">
+                              <div className="space-y-4 pt-4 border-t">
+                                <h3 className="text-sm font-semibold">SEO Settings</h3>
+                                <Input
+                                  placeholder="SEO Title (50-60 chars, optional)"
+                                  value={eventForm.seoTitle}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, seoTitle: e.target.value })
+                                  }
+                                  maxLength={60}
+                                  data-testid="input-event-seo-title"
+                                />
+                                <Textarea
+                                  placeholder="Meta Description (120-155 chars, optional)"
+                                  value={eventForm.seoDescription}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, seoDescription: e.target.value })
+                                  }
+                                  rows={2}
+                                  maxLength={155}
+                                  data-testid="input-event-seo-description"
+                                />
+                                <Input
+                                  placeholder="Keywords (comma separated, optional)"
+                                  value={eventForm.seoKeywords}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, seoKeywords: e.target.value })
+                                  }
+                                  data-testid="input-event-seo-keywords"
+                                />
+                                <Input
+                                  placeholder="Canonical URL (optional)"
+                                  value={eventForm.canonicalUrl}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, canonicalUrl: e.target.value })
+                                  }
+                                  data-testid="input-event-canonical"
+                                />
+                                <Input
+                                  placeholder="OG Image URL (optional)"
+                                  value={eventForm.ogImage}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, ogImage: e.target.value })
+                                  }
+                                  data-testid="input-event-og-image"
+                                />
+                                <Input
+                                  placeholder="Twitter Image URL (optional)"
+                                  value={eventForm.twitterImage}
+                                  onChange={(e) =>
+                                    setEventForm({ ...eventForm, twitterImage: e.target.value })
+                                  }
+                                  data-testid="input-event-twitter-image"
+                                />
                               </div>
 
                               <div className="flex gap-2">
@@ -2787,15 +2765,6 @@ export default function Admin() {
                                     const customSlug = normalizeSlugValue(eventForm.event_name_slug || "");
                                     const generatedSlug = normalizeSlugValue(cleanTitle || cleanTitleAr || "event");
                                     const finalSlug = customSlug || generatedSlug || "event";
-                                  let schemaDataParsed: any = undefined;
-                                  if (eventForm.schemaData && eventForm.schemaData.trim()) {
-                                    try {
-                                      schemaDataParsed = JSON.parse(eventForm.schemaData);
-                                    } catch (error) {
-                                      toast({ title: "Invalid JSON-LD", description: "Schema data must be valid JSON.", variant: "destructive" });
-                                      return;
-                                    }
-                                  }
 
                                     const data = {
                                       ...eventForm,
@@ -2805,7 +2774,6 @@ export default function Admin() {
                                       seoKeywords: eventForm.seoKeywords
                                         ? eventForm.seoKeywords.split(",").map((k) => k.trim()).filter(Boolean)
                                         : [],
-                                    schemaData: schemaDataParsed,
                                     };
                                     const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
                                     const canonical = base ? `${base}/events/${finalSlug}` : `https://crossfire.wiki/events/${finalSlug}`;
@@ -2861,6 +2829,11 @@ export default function Admin() {
                                     <Badge variant="outline" className="text-xs">
                                       {event.type}
                                     </Badge>
+                                    {event.wikiMode && (
+                                      <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                        Wiki Mode
+                                      </Badge>
+                                    )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">{event.date}</p>
                                 </div>
@@ -2887,29 +2860,20 @@ export default function Admin() {
                                           date: event.date,
                                           type: event.type,
                                           image: event.image || "",
-                                          imageAlt: event.imageAlt || "",
                                           images: event.images || [],
                                           event_name_slug: event.event_name_slug || "",
                                           seoTitle: event.seoTitle || "",
                                           seoDescription: event.seoDescription || "",
                                           seoKeywords: event.seoKeywords?.join(", ") || "",
                                           canonicalUrl: event.canonicalUrl || "",
-                                          ogTitle: event.ogTitle || "",
-                                          ogDescription: event.ogDescription || "",
                                           ogImage: event.ogImage || "",
-                                          ogImageAlt: event.ogImageAlt || "",
-                                          ogType: event.ogType || "",
-                                          ogUrl: event.ogUrl || "",
-                                          twitterTitle: event.twitterTitle || "",
-                                          twitterDescription: event.twitterDescription || "",
                                           twitterImage: event.twitterImage || "",
-                                          twitterImageAlt: event.twitterImageAlt || "",
                                           schemaType: event.schemaType || "Event",
-                                          schemaData: event.schemaData ? JSON.stringify(event.schemaData, null, 2) : "",
                                           fullLayout: event.fullLayout || false,
                                           sourceUrl: event.sourceUrl || "",
                                           isVerified: event.isVerified || false,
                                           externalLinks: event.externalLinks || [],
+                                          wikiMode: event.wikiMode || false,
                                         });
                                         setIsCreatingEvent(true);
                                       }}
@@ -3037,70 +3001,16 @@ export default function Admin() {
                               />
                               <Input
                                 placeholder="Image URL"
-                                value={newsForm.imageUrl}
+                                value={newsForm.image}
                                 onChange={(e) =>
-                                  setNewsForm({ ...newsForm, imageUrl: e.target.value })
+                                  setNewsForm({ ...newsForm, image: e.target.value })
                                 }
                                 data-testid="input-news-image"
-                              />
-                              <Input
-                                placeholder="Image Alt Text"
-                                value={newsForm.imageAlt}
-                                onChange={(e) =>
-                                  setNewsForm({ ...newsForm, imageAlt: e.target.value })
-                                }
-                                data-testid="input-news-image-alt"
                               />
                               <GalleryUploader
                                 images={newsForm.images}
                                 onImagesChange={(newImages) => setNewsForm({ ...newsForm, images: newImages })}
                                 toast={toast}
-                              />
-                              
-                              <SEOEditor 
-                                data={{
-                                  seoTitle: newsForm.seoTitle,
-                                  seoDescription: newsForm.seoDescription,
-                                  seoKeywords: newsForm.seoKeywords ? newsForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
-                                  canonicalUrl: newsForm.canonicalUrl,
-                                  ogTitle: newsForm.ogTitle,
-                                  ogDescription: newsForm.ogDescription,
-                                  ogImage: newsForm.ogImage,
-                                  ogImageAlt: newsForm.ogImageAlt,
-                                  ogType: newsForm.ogType,
-                                  ogUrl: newsForm.ogUrl,
-                                  twitterTitle: newsForm.twitterTitle,
-                                  twitterDescription: newsForm.twitterDescription,
-                                  twitterImage: newsForm.twitterImage,
-                                  twitterImageAlt: newsForm.twitterImageAlt,
-                                  schemaType: newsForm.schemaType,
-                                  schemaData: newsForm.schemaData,
-                                }}
-                                onChange={(data) => setNewsForm({
-                                  ...newsForm,
-                                  seoTitle: data.seoTitle || "",
-                                  seoDescription: data.seoDescription || "",
-                                  seoKeywords: data.seoKeywords?.join(", ") || "",
-                                  canonicalUrl: data.canonicalUrl || "",
-                                  ogTitle: data.ogTitle || "",
-                                  ogDescription: data.ogDescription || "",
-                                  ogImage: data.ogImage || "",
-                                  ogImageAlt: data.ogImageAlt || "",
-                                  ogType: data.ogType || "article",
-                                  ogUrl: data.ogUrl || "",
-                                  twitterTitle: data.twitterTitle || "",
-                                  twitterDescription: data.twitterDescription || "",
-                                  twitterImage: data.twitterImage || "",
-                                  twitterImageAlt: data.twitterImageAlt || "",
-                                  schemaType: data.schemaType || "NewsArticle",
-                                  schemaData: data.schemaData || "",
-                                })}
-                                autoFill={{
-                                  title: newsForm.title,
-                                  description: newsForm.content.replace(/<[^>]*>/g, '').slice(0, 160),
-                                  image: newsForm.imageUrl,
-                                  slug: newsForm.news_slug
-                                }}
                               />
                               <select
                                 value={newsForm.category}
@@ -3221,7 +3131,101 @@ export default function Admin() {
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
 
-                              <div className="flex gap-2 pt-4 border-t">
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={newsForm.wikiMode}
+                                  onChange={(e) =>
+                                    setNewsForm({
+                                      ...newsForm,
+                                      wikiMode: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                              </label>
+
+                              <div className="space-y-4 pt-4 border-t">
+                                <h3 className="text-sm font-semibold">SEO Settings</h3>
+                                {editingNews && (
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <Badge variant={(editingNews.seoTitle && editingNews.seoTitle.trim()) ? "default" : "secondary"}>SEO Title</Badge>
+                                    <Badge variant={(editingNews.seoDescription && editingNews.seoDescription.trim()) ? "default" : "secondary"}>Meta Description</Badge>
+                                    <Badge variant={(Array.isArray(editingNews.seoKeywords) && editingNews.seoKeywords.length) ? "default" : "secondary"}>Keywords</Badge>
+                                    <Badge variant={(editingNews.canonicalUrl && editingNews.canonicalUrl.trim()) ? "default" : "secondary"}>Canonical</Badge>
+                                    <Badge variant={(editingNews.ogImage && editingNews.ogImage.trim()) ? "default" : "secondary"}>OG Image</Badge>
+                                    <Badge variant={(editingNews.twitterImage && editingNews.twitterImage.trim()) ? "default" : "secondary"}>Twitter Image</Badge>
+                                    <div className="col-span-2 flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={async () => {
+                                          try {
+                                            await queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+                                            const refreshed = await apiRequest(`/api/news/${editingNews.id}`, "GET");
+                                            setEditingNews(refreshed);
+                                            toast({ title: "SEO/OG refreshed" });
+                                          } catch (e: any) {
+                                            toast({ title: "Refresh failed", description: e?.message || String(e), variant: "destructive" });
+                                          }
+                                        }}
+                                      >
+                                        Refresh SEO/OG
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                                <Input
+                                  placeholder="SEO Title (50-60 chars, optional)"
+                                  value={newsForm.seoTitle}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, seoTitle: e.target.value })
+                                  }
+                                  maxLength={60}
+                                  data-testid="input-news-seo-title"
+                                />
+                                <Textarea
+                                  placeholder="Meta Description (120-155 chars, optional)"
+                                  value={newsForm.seoDescription}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, seoDescription: e.target.value })
+                                  }
+                                  rows={2}
+                                  maxLength={155}
+                                  data-testid="input-news-seo-description"
+                                />
+                                <Input
+                                  placeholder="Keywords (comma separated, optional)"
+                                  value={newsForm.seoKeywords}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, seoKeywords: e.target.value })
+                                  }
+                                  data-testid="input-news-seo-keywords"
+                                />
+                                <Input
+                                  placeholder="Canonical URL (optional)"
+                                  value={newsForm.canonicalUrl}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, canonicalUrl: e.target.value })
+                                  }
+                                  data-testid="input-news-canonical"
+                                />
+                                <Input
+                                  placeholder="OG Image URL (optional)"
+                                  value={newsForm.ogImage}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, ogImage: e.target.value })
+                                  }
+                                  data-testid="input-news-og-image"
+                                />
+                                <Input
+                                  placeholder="Twitter Image URL (optional)"
+                                  value={newsForm.twitterImage}
+                                  onChange={(e) =>
+                                    setNewsForm({ ...newsForm, twitterImage: e.target.value })
+                                  }
+                                  data-testid="input-news-twitter-image"
+                                />
                               </div>
 
                               <Button
@@ -3279,15 +3283,6 @@ export default function Admin() {
                                     toast({ title: "Invalid media URL in content", description: bad, variant: "destructive" });
                                     return;
                                   }
-                                  let schemaDataParsed: any = undefined;
-                                  if (newsForm.schemaData && newsForm.schemaData.trim()) {
-                                    try {
-                                      schemaDataParsed = JSON.parse(newsForm.schemaData);
-                                    } catch (error) {
-                                      toast({ title: "Invalid JSON-LD", description: "Schema data must be valid JSON.", variant: "destructive" });
-                                      return;
-                                    }
-                                  }
                                   const data = {
                                     ...newsForm,
                                     content: htmlNow,
@@ -3295,7 +3290,6 @@ export default function Admin() {
                                     seoKeywords: newsForm.seoKeywords
                                       ? newsForm.seoKeywords.split(",").map((k) => k.trim())
                                       : [],
-                                    schemaData: schemaDataParsed,
                                   };
                                   if (editingNews) {
                                     updateNewsMutation.mutate({ id: editingNews.id, data });
@@ -3361,6 +3355,11 @@ export default function Admin() {
                                   </div>
                                   <p className="text-xs text-muted-foreground mb-1">{news.dateRange}</p>
                                   <Badge variant="outline" className="text-xs">{news.category}</Badge>
+                                  {news.wikiMode && (
+                                    <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                      Wiki Mode
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="flex gap-2">
                                   <Button
@@ -3383,7 +3382,6 @@ export default function Admin() {
                                           titleAr: news.titleAr || "",
                                           dateRange: news.dateRange,
                                           image: news.image,
-                                          imageAlt: news.imageAlt || "",
                                           images: news.images || [],
                                           category: news.category,
                                           content: news.content,
@@ -3395,22 +3393,14 @@ export default function Admin() {
                                           seoDescription: news.seoDescription || "",
                                           seoKeywords: news.seoKeywords?.join(", ") || "",
                                           canonicalUrl: news.canonicalUrl || "",
-                                          ogTitle: news.ogTitle || "",
-                                          ogDescription: news.ogDescription || "",
                                           ogImage: news.ogImage || "",
-                                          ogImageAlt: news.ogImageAlt || "",
-                                          ogType: news.ogType || "",
-                                          ogUrl: news.ogUrl || "",
-                                          twitterTitle: news.twitterTitle || "",
-                                          twitterDescription: news.twitterDescription || "",
                                           twitterImage: news.twitterImage || "",
-                                          twitterImageAlt: news.twitterImageAlt || "",
                                           schemaType: news.schemaType || "NewsArticle",
-                                          schemaData: news.schemaData ? JSON.stringify(news.schemaData, null, 2) : "",
                                           fullLayout: news.fullLayout || false,
                                           sourceUrl: news.sourceUrl || "",
                                           isVerified: news.isVerified || false,
                                           externalLinks: news.externalLinks || [],
+                                          wikiMode: news.wikiMode || false,
                                         });
                                         setIsCreatingNews(true);
                                       }}

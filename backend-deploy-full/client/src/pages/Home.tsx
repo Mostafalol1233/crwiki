@@ -17,8 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import modeCategoryImage from "@assets/modes/TDM_Train_05.jpg.jpeg";
+import mapCategoryImage from "@assets/modes/SND_EagleEye2_06.jpg.jpeg";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
 import mercCategoryImage from "@assets/merc-sisterhood.jpg";
+import fallbackImage from "@assets/feature-crossfire.jpg";
 import type { Tutorial } from "@shared/mongodb-schema";
 
 export default function Home() {
@@ -237,20 +239,30 @@ export default function Home() {
               ) : (
                 <>
                   {/* Top Row: 4 Cards - Responsive Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     {displayEvents.slice(0, 4).map((event: any) => (
                       <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
-                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1">
-                          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1 md:min-h-[350px]">
+                          <div className="relative w-full overflow-hidden flex-1" style={{ aspectRatio: '16/9' }}>
                             <img
                               src={event.image || 'https://files.catbox.moe/wof38b.jpeg'}
                               alt={event.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
-                            <Badge className="absolute top-3 left-3 rounded-md text-[10px] uppercase tracking-widest bg-primary/90 text-primary-foreground">
-                              {event.type === 'upcoming' ? 'Upcoming' : 'Event'}
-                            </Badge>
+                            
+                            <div className="absolute top-3 left-3 flex gap-2">
+                              {event.type === 'upcoming' && (
+                                <Badge className="bg-blue-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Upcoming
+                                </Badge>
+                              )}
+                              {event.type === 'trending' && (
+                                <Badge className="bg-orange-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Trending
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="p-4 md:p-5 space-y-2 md:space-y-3 flex-grow bg-card min-h-[120px] md:min-h-[150px]">
                             <h3 className="font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-tight line-clamp-2 text-foreground leading-tight">
@@ -266,20 +278,30 @@ export default function Home() {
                   </div>
 
                   {/* Bottom Row: 3 Cards - Better Mobile Layout */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                     {displayEvents.slice(4, 7).map((event: any) => (
                       <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
-                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1">
-                          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1 md:min-h-[350px]">
+                          <div className="relative w-full overflow-hidden flex-1" style={{ aspectRatio: '16/9' }}>
                             <img
                               src={event.image || 'https://files.catbox.moe/wof38b.jpeg'}
                               alt={event.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
-                            <Badge className="absolute top-3 left-3 rounded-md text-[10px] uppercase tracking-widest bg-primary/90 text-primary-foreground">
-                              {event.type === 'upcoming' ? 'Upcoming' : 'Event'}
-                            </Badge>
+                            
+                            <div className="absolute top-3 left-3 flex gap-2">
+                              {event.type === 'upcoming' && (
+                                <Badge className="bg-blue-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Upcoming
+                                </Badge>
+                              )}
+                              {event.type === 'trending' && (
+                                <Badge className="bg-orange-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Trending
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="p-4 md:p-5 space-y-2 md:space-y-3 flex-grow bg-card min-h-[120px] md:min-h-[150px]">
                             <h3 className="font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-tight line-clamp-2 text-foreground leading-tight">
@@ -307,10 +329,9 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                 {[
-                  { title: "Modes", image: "/images/categories/modes.jpg", link: "/modes" },
-                  { title: "Maps", image: "/images/categories/maps.jpg", link: "/maps" },
-                  { title: "Weapons", image: "/images/categories/weapons.jpg", link: "/weapons" },
-                  { title: "Mercenaries", image: "/images/categories/mercenaries.jpg", link: "/mercenaries" }
+                  { title: "Maps", image: mapCategoryImage, link: "/maps" },
+                  { title: "Weapons", image: weaponCategoryImage, link: "/weapons" },
+                  { title: "Mercenaries", image: mercCategoryImage, link: "/mercenaries" }
                 ].map((cat) => (
                   <Link key={cat.title} href={cat.link}>
                     <Card className="group relative overflow-hidden aspect-[16/9] border-0 rounded-xl cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
@@ -319,7 +340,7 @@ export default function Home() {
                         alt={cat.title} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = modeCategoryImage;
+                          (e.currentTarget as HTMLImageElement).src = fallbackImage;
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />

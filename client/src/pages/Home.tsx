@@ -239,20 +239,30 @@ export default function Home() {
               ) : (
                 <>
                   {/* Top Row: 4 Cards - Responsive Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     {displayEvents.slice(0, 4).map((event: any) => (
                       <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
-                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1">
-                          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1 md:min-h-[350px]">
+                          <div className="relative w-full overflow-hidden flex-1" style={{ aspectRatio: '16/9' }}>
                             <img
                               src={event.image || 'https://files.catbox.moe/wof38b.jpeg'}
                               alt={event.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
-                            <Badge className="absolute top-3 left-3 rounded-md text-[10px] uppercase tracking-widest bg-primary/90 text-primary-foreground">
-                              {event.type === 'upcoming' ? 'Upcoming' : 'Event'}
-                            </Badge>
+                            
+                            <div className="absolute top-3 left-3 flex gap-2">
+                              {event.type === 'upcoming' && (
+                                <Badge className="bg-blue-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Upcoming
+                                </Badge>
+                              )}
+                              {event.type === 'trending' && (
+                                <Badge className="bg-orange-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Trending
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="p-4 md:p-5 space-y-2 md:space-y-3 flex-grow bg-card min-h-[120px] md:min-h-[150px]">
                             <h3 className="font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-tight line-clamp-2 text-foreground leading-tight">
@@ -268,20 +278,30 @@ export default function Home() {
                   </div>
 
                   {/* Bottom Row: 3 Cards - Better Mobile Layout */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                     {displayEvents.slice(4, 7).map((event: any) => (
                       <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}>
-                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1">
-                          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                        <Card className="group relative overflow-hidden border border-primary/10 rounded-xl md:rounded-2xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full bg-black/5 hover:border-primary/40 hover:-translate-y-1 md:min-h-[350px]">
+                          <div className="relative w-full overflow-hidden flex-1" style={{ aspectRatio: '16/9' }}>
                             <img
                               src={event.image || 'https://files.catbox.moe/wof38b.jpeg'}
                               alt={event.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
-                            <Badge className="absolute top-3 left-3 rounded-md text-[10px] uppercase tracking-widest bg-primary/90 text-primary-foreground">
-                              {event.type === 'upcoming' ? 'Upcoming' : 'Event'}
-                            </Badge>
+                            
+                            <div className="absolute top-3 left-3 flex gap-2">
+                              {event.type === 'upcoming' && (
+                                <Badge className="bg-blue-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Upcoming
+                                </Badge>
+                              )}
+                              {event.type === 'trending' && (
+                                <Badge className="bg-orange-600 text-white border-none font-bold uppercase tracking-wider text-[10px]">
+                                  Trending
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="p-4 md:p-5 space-y-2 md:space-y-3 flex-grow bg-card min-h-[120px] md:min-h-[150px]">
                             <h3 className="font-extrabold text-base sm:text-lg md:text-xl uppercase tracking-tight line-clamp-2 text-foreground leading-tight">

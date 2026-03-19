@@ -203,6 +203,7 @@ export default function Admin() {
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [eventForm, setEventForm] = useState({
@@ -226,6 +227,7 @@ export default function Admin() {
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [newsForm, setNewsForm] = useState({
@@ -252,6 +254,7 @@ export default function Admin() {
     sourceUrl: "",
     isVerified: false,
     externalLinks: [] as { name: string; url: string }[],
+    wikiMode: false,
   });
 
   const [sellerForm, setSellerForm] = useState({
@@ -1446,6 +1449,7 @@ export default function Admin() {
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -1471,6 +1475,7 @@ export default function Admin() {
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -1499,6 +1504,7 @@ export default function Admin() {
       sourceUrl: "",
       isVerified: false,
       externalLinks: [],
+      wikiMode: false,
     });
   };
 
@@ -2162,6 +2168,20 @@ export default function Admin() {
                             <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                           </label>
 
+                          <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                            <input
+                              type="checkbox"
+                              checked={postForm.wikiMode}
+                              onChange={(e) =>
+                                setPostForm({
+                                  ...postForm,
+                                  wikiMode: e.target.checked,
+                                })
+                              }
+                            />
+                            <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                          </label>
+
                           <div className="space-y-4 pt-4 border-t">
                             <h3 className="text-sm font-semibold">SEO Settings</h3>
                             <Input
@@ -2321,6 +2341,11 @@ export default function Admin() {
                                 <Badge variant="outline" className="text-xs">
                                   {post.category}
                                 </Badge>
+                                {post.wikiMode && (
+                                  <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                    Wiki Mode
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                                 {post.summary}
@@ -2374,6 +2399,7 @@ export default function Admin() {
                                       sourceUrl: post.sourceUrl || "",
                                       isVerified: post.isVerified || false,
                                       externalLinks: post.externalLinks || [],
+                                      wikiMode: post.wikiMode || false,
                                     });
                                     setIsCreatingPost(true);
                                   }}
@@ -2644,6 +2670,20 @@ export default function Admin() {
                                 />
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
+
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={eventForm.wikiMode}
+                                  onChange={(e) =>
+                                    setEventForm({
+                                      ...eventForm,
+                                      wikiMode: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                              </label>
                               <p className="text-xs text-muted-foreground -mt-2">
                                 Advanced CSS/JS blocks are preserved only when Full Layout is enabled.
                               </p>
@@ -2789,6 +2829,11 @@ export default function Admin() {
                                     <Badge variant="outline" className="text-xs">
                                       {event.type}
                                     </Badge>
+                                    {event.wikiMode && (
+                                      <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                        Wiki Mode
+                                      </Badge>
+                                    )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">{event.date}</p>
                                 </div>
@@ -2828,6 +2873,7 @@ export default function Admin() {
                                           sourceUrl: event.sourceUrl || "",
                                           isVerified: event.isVerified || false,
                                           externalLinks: event.externalLinks || [],
+                                          wikiMode: event.wikiMode || false,
                                         });
                                         setIsCreatingEvent(true);
                                       }}
@@ -3085,6 +3131,20 @@ export default function Admin() {
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
 
+                              <label className="flex items-center gap-2 p-2 border border-primary/20 bg-primary/5 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={newsForm.wikiMode}
+                                  onChange={(e) =>
+                                    setNewsForm({
+                                      ...newsForm,
+                                      wikiMode: e.target.checked,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm font-bold text-primary uppercase">Wiki Mode</span>
+                              </label>
+
                               <div className="space-y-4 pt-4 border-t">
                                 <h3 className="text-sm font-semibold">SEO Settings</h3>
                                 {editingNews && (
@@ -3295,6 +3355,11 @@ export default function Admin() {
                                   </div>
                                   <p className="text-xs text-muted-foreground mb-1">{news.dateRange}</p>
                                   <Badge variant="outline" className="text-xs">{news.category}</Badge>
+                                  {news.wikiMode && (
+                                    <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                      Wiki Mode
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="flex gap-2">
                                   <Button
@@ -3335,6 +3400,7 @@ export default function Admin() {
                                           sourceUrl: news.sourceUrl || "",
                                           isVerified: news.isVerified || false,
                                           externalLinks: news.externalLinks || [],
+                                          wikiMode: news.wikiMode || false,
                                         });
                                         setIsCreatingNews(true);
                                       }}

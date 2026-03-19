@@ -480,6 +480,42 @@ export async function scrapeModes() {
   }
 }
 
+export async function scrapeWeapons() {
+  try {
+    const response = await axios.get(`${CF_BASE_URL}/weapons.html`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      timeout: 30000
+    });
+    const $ = cheerio.load(response.data);
+    const weapons = [];
+    
+    $('.weapon_item, .weapon-card, div[class*="weapon"]').each((i, el) => {
+      const $el = $(el);
+      const name = $el.find('h2, h3, .name, .title').first().text().trim();
+      if (!name) return;
+      
+      const description = $el.find('p, .desc, .description').first().text().trim();
+      let image = $el.find('img').first().attr('src') || '';
+      if (image && !image.startsWith('http')) {
+        image = image.startsWith('//') ? `https:${image}` : `${CF_BASE_URL}${image}`;
+      }
+      
+      weapons.push({
+        id: `weapon-${i}`,
+        name,
+        description,
+        image,
+        category: 'Weapon'
+      });
+    });
+
+    return weapons;
+  } catch (err) {
+    console.error('scrapeWeapons error:', err.message);
+    return [];
+  }
+}
+
 export async function scrapeMaps() {
   try {
     // Try Fandom Wiki first as it has more details

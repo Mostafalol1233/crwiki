@@ -3,6 +3,26 @@ import * as cheerio from 'cheerio';
 import DOMPurify from 'isomorphic-dompurify';
 import fs from 'fs/promises';
 import path from 'path';
+import { uploadStream } from './cloudinary.js';
+
+async function downloadAndUploadImage(url, folder = 'scraped') {
+  if (!url || !url.startsWith('http')) return { url: '', publicId: '' };
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
+    const buffer = Buffer.from(response.data);
+    const filename = path.basename(new URL(url).pathname) || 'image.jpg';
+    const result = await uploadStream(buffer, {
+      folder: `crossfire-wiki/${folder}`,
+      public_id: slugify(path.parse(filename).name) + '-' + Date.now(),
+      overwrite: true,
+      invalidate: true
+    });
+    return { url: result.secure_url, publicId: result.public_id };
+  } catch (error) {
+    console.error(`Error downloading/uploading image from ${url}:`, error.message);
+    return { url: url, publicId: '' }; // Fallback to original URL
+  }
+}
 
 function slugify(input) {
   if (!input) return '';
@@ -375,7 +395,8 @@ export async function scrapeEventDetails(url) {
   }
 
   const localList = await getLocalAssetList();
-  const finalImage = imageUrl || findLocalAssetInList(title, localList);
+  const rawImage = imageUrl || findLocalAssetInList(title, localList);
+  const { url: finalImage, publicId: imagePublicId } = await downloadAndUploadImage(rawImage, 'events');
 
   // Preview text generation
   const preview = $(contentEl).text().trim().substring(0, 150) + "...";
@@ -385,6 +406,7 @@ export async function scrapeEventDetails(url) {
     title,
     date,
     image: finalImage,
+    imagePublicId,
     content,
     rawHtmlContent,
     category: 'Announcement',
@@ -473,6 +495,108 @@ export async function scrapeModes() {
     return modes;
   } catch (err) {
     console.error('scrapeModes error:', err.message);
+    return [];
+  }
+}
+
+export async function scrapeMaps() {
+  try {
+    // Try Fandom Wiki first as it has more details
+    const FANDOM_API = 'https://crossfire.fandom.com/api.php';
+    const response = await axios.get(FANDOM_API, {
+      params: {
+        action: 'query',
+        format: 'json',
+        list: 'categorymembers',
+        cmtitle: 'Category:Maps',
+        cmlimit: 50
+      }
+    });
+
+    const members = response.data?.query?.categorymembers || [];
+    const maps = [];
+
+    for (const member of members) {
+      try {
+        const pageRes = await axios.get(FANDOM_API, {
+          params: {
+            action: 'parse',
+            format: 'json',
+            page: member.title,
+            prop: 'text|images'
+          }
+        });
+
+        const html = pageRes.data?.parse?.text?.['*'];
+        if (!html) continue;
+
+        const $ = cheerio.load(html);
+        const infoBox = $('.portable-infobox');
+        
+        const name = infoBox.find('[data-source="title"]').text().trim() || member.title;
+        const description = $('.mw-parser-output > p').first().text().trim();
+        const lore = $('.mw-parser-output > p').slice(0, 3).text().trim();
+        const releaseDate = infoBox.find('[data-source="release_date"] .pi-data-value').text().trim();
+        const designer = infoBox.find('[data-source="designer"] .pi-data-value').text().trim();
+        
+        let imageUrl = '';
+        const img = infoBox.find('img').first();
+        if (img.length) {
+          imageUrl = img.attr('src') || '';
+        }
+
+        const supportedModes = [];
+        infoBox.find('[data-source="modes"] .pi-data-value a').each((_, el) => {
+          supportedModes.push($(el).text().trim());
+        });
+
+        // Mode specific details (e.g. Bomb Sites)
+        const modeDetails = {};
+        if (supportedModes.includes('Search & Destroy')) {
+          const bombSites = [];
+          $('h2:contains("Bomb Sites")').nextUntil('h2').find('li').each((_, el) => {
+            bombSites.push($(el).text().trim());
+          });
+          if (bombSites.length) modeDetails['Search & Destroy'] = { bombSites };
+        }
+
+        const { url: finalImage, publicId: imagePublicId } = await downloadAndUploadImage(imageUrl, 'maps');
+
+        maps.push({
+          name,
+          imageUrl: finalImage,
+          imagePublicId,
+          description,
+          lore,
+          releaseDate,
+          designer,
+          supportedModes,
+          modeDetails,
+          category: 'Official'
+        });
+      } catch (e) {
+        console.error(`Error scraping map ${member.title}:`, e.message);
+      }
+    }
+
+    // Fallback to official site if Fandom fails or returns empty
+    if (maps.length === 0) {
+      const offRes = await axios.get(`${CF_BASE_URL}/maps.html`);
+      const $off = cheerio.load(offRes.data);
+      $off('.map_item').each((i, el) => {
+        const $el = $off(el);
+        maps.push({
+          name: $el.find('.name').text().trim(),
+          imageUrl: $el.find('img').attr('src'),
+          description: $el.find('.desc').text().trim(),
+          category: 'Official'
+        });
+      });
+    }
+
+    return maps;
+  } catch (err) {
+    console.error('scrapeMaps error:', err.message);
     return [];
   }
 }

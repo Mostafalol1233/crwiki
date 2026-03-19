@@ -244,10 +244,16 @@ const ModeSchema = new Schema({
 const MapSchema = new Schema({
     name: { type: String, required: true },
     imageUrl: { type: String, default: "" },
-    imageHistory: [{ url: String, timestamp: { type: Date, default: Date.now } }], // Archive for images
+    thumbnailUrl: { type: String, default: "" },
+    minimapUrl: { type: String, default: "" },
+    imageHistory: [{ url: String, timestamp: { type: Date, default: Date.now } }],
     description: { type: String, default: "" },
-    mode: { type: String, default: "" },
+    lore: { type: String, default: "" },
+    releaseDate: { type: String, default: "" },
+    designer: { type: String, default: "" },
     category: { type: String, default: "" },
+    supportedModes: { type: [String], default: [] },
+    modeDetails: { type: Schema.Types.Mixed, default: {} }, // mode -> { bombSites: [], spawns: [], etc }
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
@@ -534,10 +540,16 @@ export const insertModeSchema = z.object({
 export const insertMapSchema = z.object({
     name: z.string().min(1),
     imageUrl: z.string().optional(),
+    thumbnailUrl: z.string().optional(),
+    minimapUrl: z.string().optional(),
     imageHistory: z.array(z.object({ url: z.string() })).optional(),
     description: z.string().optional(),
-    mode: z.string().optional(),
+    lore: z.string().optional(),
+    releaseDate: z.string().optional(),
+    designer: z.string().optional(),
     category: z.string().optional(),
+    supportedModes: z.array(z.string()).optional(),
+    modeDetails: z.record(z.any()).optional(),
 });
 export const insertRankSchema = z.object({
     name: z.string().min(1),

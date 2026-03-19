@@ -782,9 +782,14 @@ export async function registerRoutes(app) {
             res.status(400).json({ error: error.message });
         }
     });
-    app.patch("/api/posts/:id", requireAuth, requirePostManager, async (req, res) => {
+    app.patch("/api/posts/:id", requireAuth, requirePostManager, upload.single('image'), async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = insertPostSchema.partial().parse(req.body);
+            if (req.file) {
+                const result = await uploadStream(req.file.buffer, { folder: 'posts' });
+                updates.imageUrl = result.secure_url;
+                updates.imagePublicId = result.public_id;
+            }
             if (updates.content && !updates.readingTime) {
                 updates.readingTime = calculateReadingTime(updates.content);
             }
@@ -1020,9 +1025,14 @@ export async function registerRoutes(app) {
             res.status(400).json({ error: error.message });
         }
     });
-    app.patch("/api/events/:id", requireAuth, requireEventManager, async (req, res) => {
+    app.patch("/api/events/:id", requireAuth, requireEventManager, upload.single('image'), async (req, res) => {
         try {
-            const updates = req.body;
+            const updates = insertEventSchema.partial().parse(req.body);
+            if (req.file) {
+                const result = await uploadStream(req.file.buffer, { folder: 'events' });
+                updates.imageUrl = result.secure_url;
+                updates.imagePublicId = result.public_id;
+            }
             if (updates.description) {
                 updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
             }
@@ -1765,25 +1775,38 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             for (const m of maps) {
                 if (!m.name) continue;
 
-                const isGood = await isValidImage(m.image);
                 const existingList = await storage.getAllMaps();
                 const exists = existingList.find((x) => x.name === m.name);
 
                 if (!exists) {
                     const data = insertMapSchema.parse({
                         name: m.name,
-                        image: isGood ? m.image : "",
-                        imageHistory: isGood ? [{ url: m.image }] : [],
+                        imageUrl: m.imageUrl || "",
+                        imagePublicId: m.imagePublicId || "",
+                        imageHistory: m.imageUrl ? [{ url: m.imageUrl }] : [],
                         description: m.description || '',
+                        lore: m.lore || '',
+                        releaseDate: m.releaseDate || '',
+                        designer: m.designer || '',
+                        supportedModes: m.supportedModes || [],
+                        modeDetails: m.modeDetails || {},
                         category: m.category || 'Official'
                     });
                     await storage.createMap(data);
                     results.created++;
                 } else {
-                    const updateData = {};
-                    if (isGood && m.image !== exists.image) {
-                        updateData.image = m.image;
-                        updateData.imageHistory = [...(exists.imageHistory || []), { url: m.image }];
+                    const updateData = {
+                        description: m.description || exists.description,
+                        lore: m.lore || exists.lore,
+                        releaseDate: m.releaseDate || exists.releaseDate,
+                        designer: m.designer || exists.designer,
+                        supportedModes: m.supportedModes || exists.supportedModes,
+                        modeDetails: m.modeDetails || exists.modeDetails,
+                    };
+                    if (m.imageUrl && m.imageUrl !== exists.imageUrl) {
+                        updateData.imageUrl = m.imageUrl;
+                        updateData.imagePublicId = m.imagePublicId;
+                        updateData.imageHistory = [...(exists.imageHistory || []), { url: m.imageUrl }];
                     }
                     await storage.updateMap(exists.id, updateData);
                     results.updated++;
@@ -2333,16 +2356,21 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 res.status(400).json({ error: error.message });
             }
         });
-        app.patch("/api/news/:id", requireAuth, requireNewsManager, async (req, res) => {
+        app.patch("/api/news/:id", requireAuth, requireNewsManager, upload.single('image'), async (req, res) => {
             try {
-                const updates = req.body;
+                const updates = insertNewsSchema.partial().parse(req.body);
+                if (req.file) {
+                    const result = await uploadStream(req.file.buffer, { folder: 'news' });
+                    updates.imageUrl = result.secure_url;
+                    updates.imagePublicId = result.public_id;
+                }
                 if (updates.content) {
                     updates.content = sanitizeHTML(updates.content);
                 }
                 if (updates.contentAr) {
                     updates.contentAr = sanitizeHTML(updates.contentAr);
                 }
-                if (updates.image && !isAllowedMediaUrl(updates.image)) {
+                if (updates.imageUrl && !isAllowedMediaUrl(updates.imageUrl)) {
                     return res.status(400).json({ error: "Invalid image URL" });
                 }
                 const check = validateMediaUrlsInHtml((updates.htmlContent && String(updates.htmlContent)) || String(updates.content || ''));
@@ -2355,7 +2383,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 }
                 const rebuild = String((req.query.rebuildSeo || '')).toLowerCase() === 'true';
                 if (rebuild || !updates.seoTitle || !updates.seoDescription || !updates.seoKeywords || !updates.ogImage) {
-                    const title = updates.title;
+                    const title = updates.title || '';
                     const content = updates.content || updates.htmlContent || '';
                     const kws = extractKeywords(content);
                     updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
@@ -2364,7 +2392,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     try {
                         const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
-                        const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
+                        const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'news', title: updates.seoTitle || title, keywords: updates.seoKeywords });
                         updates.ogImage = seoImage.url;
                         updates.twitterImage = seoImage.url;
                     } catch { }

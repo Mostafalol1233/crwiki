@@ -1,0 +1,75 @@
+/* Layout Shift Prevention Styles */
+
+/* Image containers with aspect ratio to prevent CLS */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+/* Prevent layout shift from images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+img[width][height] {
+  height: auto;
+}
+
+/* Reserve space for lazy-loaded images */
+img[loading="lazy"] {
+  content-visibility: auto;
+}
+
+/* Skeleton loader for images */
+.image-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Font loading optimization */
+@font-face {
+  font-display: swap;
+}
+
+/* Prevent layout shift from web fonts */
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Reserve minimum height for content sections */
+.min-content-height {
+  min-height: 400px;
+}
+
+/* Stable card heights */
+.card-stable {
+  min-height: 300px;
+}
+
+/* Fix for dynamic content containers */
+.dynamic-content {
+  min-height: 200px;
+}

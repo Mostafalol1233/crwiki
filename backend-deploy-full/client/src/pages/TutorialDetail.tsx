@@ -1,0 +1,234 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useParams, useLocation } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ThumbsUp, ArrowLeft, Frown, Smile } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Tutorial } from "@shared/mongodb-schema";
+import { format } from "date-fns";
+
+export default function TutorialDetailPage() {
+  const params = useParams();
+  const slug = (params as any)?.slug as string | undefined;
+  const legacyId = (params as any)?.legacyId as string | undefined;
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const [showLikeDialog, setShowLikeDialog] = useState(false);
+
+  const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<Tutorial>({
+    queryKey: ["tutorial", slug || legacyId || ""],
+    enabled: !!(slug || legacyId),
+    queryFn: async () => {
+      if (slug) {
+        const res = await fetch(`/api/tutorials/slug/${slug}`);
+        if (!res.ok) {
+          const resp = await fetch(`/api/tutorials`).then(r => r.json());
+          const all = Array.isArray(resp) ? resp : (resp?.items || []);
+          const found = all.find((t: any) => t.tutorial_slug === slug || t.id === slug);
+          if (found) return found;
+          throw new Error("Tutorial not found");
+        }
+        return res.json();
+      }
+      if (!legacyId) throw new Error("No tutorial identifier provided");
+      const res = await fetch(`/api/tutorials/${legacyId}`);
+      if (!res.ok) {
+        const resp = await fetch(`/api/tutorials`).then(r => r.json());
+        const all = Array.isArray(resp) ? resp : (resp?.items || []);
+        const found = all.find((t: any) => t.id === legacyId);
+        if (found) return found;
+        throw new Error("Tutorial not found");
+      }
+      return res.json();
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      const id = (tutorial as any)?.id || legacyId;
+      return await apiRequest(`/api/tutorials/${id}/like`, "POST", {});
+    },
+    onSuccess: () => {
+      const id = (tutorial as any)?.id || legacyId || "";
+      queryClient.invalidateQueries({ queryKey: ["/api/tutorials", id] });
+      toast({
+        title: "Liked!",
+        description: "Thank you for your support!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to like tutorial",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (legacyId && (tutorial as any)?.tutorial_slug) {
+      const target = `/tutorials/${(tutorial as any).tutorial_slug}`;
+      if (typeof window !== "undefined" && window.location.pathname !== target) {
+        setLocation(target);
+      }
+    }
+  }, [legacyId, tutorial, setLocation]);
+
+  const handleLikeClick = () => {
+    setShowLikeDialog(true);
+  };
+
+  const handleLikeHere = () => {
+    likeMutation.mutate();
+    setShowLikeDialog(false);
+  };
+
+  const handleLikeYoutube = () => {
+    if (tutorial) {
+      window.open(tutorial.youtubeUrl, "_blank");
+    }
+    setShowLikeDialog(false);
+  };
+
+  if (tutorialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-lg text-muted-foreground">Loading tutorial...</div>
+      </div>
+    );
+  }
+
+  if (tutorialError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-semibold">Failed to load tutorial</h2>
+          <Button onClick={() => setLocation("/videos")} data-testid="button-back-tutorials-error">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tutorials
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tutorial) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-semibold">Tutorial Not Found</h2>
+          <p className="text-muted-foreground">The tutorial you're looking for doesn't exist.</p>
+          <Button onClick={() => setLocation("/videos")} data-testid="button-back-tutorials">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tutorials
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/videos")}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tutorials
+          </Button>
+        </div>
+
+        <Card className="overflow-hidden">
+          <div className="aspect-video w-full bg-black">
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube.com/embed/${tutorial.youtubeId}`}
+              title={tutorial.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              data-testid="iframe-youtube"
+            />
+          </div>
+
+          <CardContent className="p-6 md:p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h1 className="text-3xl md:text-4xl font-bold" data-testid="text-title">
+                  {tutorial.title}
+                </h1>
+                <Button
+                  onClick={handleLikeClick}
+                  variant="outline"
+                  className="gap-2"
+                  data-testid="button-like"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  {tutorial.likes || 0} Likes
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {tutorial.createdAt && format(new Date(tutorial.createdAt), "MMMM d, yyyy")}
+              </div>
+
+              {tutorial.description && (
+                <div className="text-lg" data-testid="text-description">
+                  {tutorial.description}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={showLikeDialog} onOpenChange={setShowLikeDialog}>
+        <DialogContent data-testid="dialog-like-choice">
+          <DialogHeader>
+            <DialogTitle>Where would you like to like this video?</DialogTitle>
+            <DialogDescription>
+              Choose where you'd like to show your support
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={handleLikeHere}
+              className="flex flex-col gap-2 h-auto py-6"
+              data-testid="button-like-here"
+            >
+              <Frown className="h-8 w-8 text-muted-foreground" />
+              <span>Like Here</span>
+              <span className="text-xs text-muted-foreground">Internal counter only</span>
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleLikeYoutube}
+              className="flex flex-col gap-2 h-auto py-6"
+              data-testid="button-like-youtube"
+            >
+              <Smile className="h-8 w-8" />
+              <span>Like on YouTube</span>
+              <span className="text-xs">Real support for creators!</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

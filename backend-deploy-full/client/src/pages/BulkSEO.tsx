@@ -1,0 +1,245 @@
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Save, RefreshCw, Search, Wand2, Trash2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+interface ContentItem {
+  id: string;
+  title: string;
+  type: 'news' | 'post' | 'event' | 'seller';
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  ogImage?: string;
+  content?: string;
+  description?: string;
+  summary?: string;
+  displayTitle?: string;
+}
+
+export default function BulkSEO() {
+  const { toast } = useToast();
+  const [items, setItems] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [edits, setEdits] = useState<Record<string, Partial<ContentItem>>>({});
+  const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const data = await apiRequest("/api/admin/seo/bulk", "GET");
+      setItems(Array.isArray(data) ? data : []);
+      setSelectedIds(new Set()); // Reset selection on refresh
+    } catch (error) {
+      toast({ title: "Error", description: String(error), variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (id: string, field: keyof ContentItem, value: any) => {
+    setEdits(prev => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || {}),
+        [field]: value
+      }
+    }));
+  };
+
+  const getDisplayValue = (item: ContentItem, field: keyof ContentItem) => {
+    if (edits[item.id] && edits[item.id][field] !== undefined) {
+      return edits[item.id][field];
+    }
+    return item[field];
+  };
+
+  const handleAutoGenerate = (item: ContentItem) => {
+    const baseText = item.description || item.summary || item.content || "";
+    const cleanText = baseText.replace(/<[^>]*>/g, '').slice(0, 160);
+    
+    setEdits(prev => ({
+      ...prev,
+      [item.id]: {
+        ...(prev[item.id] || {}),
+        seoTitle: item.displayTitle || item.title,
+        seoDescription: cleanText,
+        // Don't auto-set keywords as they are specific
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const itemsToSave = Object.keys(edits).map(id => {
+        const item = items.find(i => i.id === id);
+        return {
+          id,
+          type: item?.type,
+          ...edits[id]
+        };
+      });
+
+      if (itemsToSave.length === 0) return;
+
+      await apiRequest("/api/admin/seo/bulk", "POST", { items: itemsToSave });
+
+      toast({ title: "Success", description: "SEO settings updated successfully" });
+      setEdits({});
+      fetchItems();
+    } catch (error) {
+      toast({ title: "Error", description: String(error), variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const filteredItems = items.filter(item => {
+    const matchesFilter = (item.displayTitle || item.title || "").toLowerCase().includes(filter.toLowerCase());
+    const matchesType = typeFilter === "all" || item.type === typeFilter;
+    return matchesFilter && matchesType;
+  });
+
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" asChild>
+              <Link href="/admin">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+              </Link>
+            </Button>
+            <h1 className="text-3xl font-bold">Bulk SEO Editor</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchItems} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={handleSave} disabled={saving || Object.keys(edits).length === 0}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 items-center bg-card p-4 rounded-lg border">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Filter by title..." 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value)} 
+              className="pl-9"
+            />
+          </div>
+          <select 
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="all">All Types</option>
+            <option value="post">Posts</option>
+            <option value="news">News</option>
+            <option value="event">Events</option>
+            <option value="seller">Sellers</option>
+          </select>
+        </div>
+
+        <div className="border rounded-lg bg-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px]">Content</TableHead>
+                <TableHead>SEO Title</TableHead>
+                <TableHead>Meta Description</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">Loading content...</TableCell>
+                </TableRow>
+              ) : filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">No content found</TableCell>
+                </TableRow>
+              ) : (
+                filteredItems.map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div className="font-medium">{item.displayTitle || item.title}</div>
+                      <Badge variant="outline" className="mt-1 capitalize">{item.type}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        value={getDisplayValue(item, 'seoTitle') || ""} 
+                        onChange={(e) => handleEdit(item.id, 'seoTitle', e.target.value)}
+                        placeholder="SEO Title"
+                      />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {(getDisplayValue(item, 'seoTitle') || "").length} / 60 chars
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Textarea 
+                        value={getDisplayValue(item, 'seoDescription') || ""} 
+                        onChange={(e) => handleEdit(item.id, 'seoDescription', e.target.value)}
+                        placeholder="Meta Description"
+                        className="h-20"
+                      />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {(getDisplayValue(item, 'seoDescription') || "").length} / 160 chars
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleAutoGenerate(item)}
+                        title="Auto-generate from content"
+                      >
+                        <Wand2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+}

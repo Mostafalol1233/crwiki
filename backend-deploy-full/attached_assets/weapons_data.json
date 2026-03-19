@@ -1,0 +1,300 @@
+{
+  "scrapedAt": "2025-12-09T17:53:55.182Z",
+  "totalWeapons": 49,
+  "weapons": [
+    {
+      "name": "9A-91",
+      "image": "/attached_assets/scraped_weapons/9A-91.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - 9A-91"
+    },
+    {
+      "name": "AA-12",
+      "image": "/attached_assets/scraped_weapons/AA-12.png",
+      "category": "Shotguns",
+      "description": "CrossFire weapon - AA-12"
+    },
+    {
+      "name": "AK12",
+      "image": "/attached_assets/scraped_weapons/AK12.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - AK12"
+    },
+    {
+      "name": "AK47",
+      "image": "/attached_assets/scraped_weapons/AK47.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - AK47"
+    },
+    {
+      "name": "AK74",
+      "image": "/attached_assets/scraped_weapons/AK74.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - AK74"
+    },
+    {
+      "name": "AN94",
+      "image": "/attached_assets/scraped_weapons/AN94.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - AN94"
+    },
+    {
+      "name": "AS Val",
+      "image": "/attached_assets/scraped_weapons/AS_Val.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - AS Val"
+    },
+    {
+      "name": "AWM",
+      "image": "/attached_assets/scraped_weapons/AWM.png",
+      "category": "Sniper Rifles",
+      "description": "CrossFire weapon - AWM"
+    },
+    {
+      "name": "Barrett M82A1",
+      "image": "/attached_assets/scraped_weapons/Barrett_M82A1.png",
+      "category": "Sniper Rifles",
+      "description": "CrossFire weapon - Barrett M82A1"
+    },
+    {
+      "name": "Colt 1911",
+      "image": "/attached_assets/scraped_weapons/Colt_1911.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - Colt 1911"
+    },
+    {
+      "name": "Colt Python",
+      "image": "/attached_assets/scraped_weapons/Colt_Python.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - Colt Python"
+    },
+    {
+      "name": "Desert Eagle",
+      "image": "/attached_assets/scraped_weapons/Desert_Eagle.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - Desert Eagle"
+    },
+    {
+      "name": "Dragunov",
+      "image": "/attached_assets/scraped_weapons/Dragunov.png",
+      "category": "Sniper Rifles",
+      "description": "CrossFire weapon - Dragunov"
+    },
+    {
+      "name": "Dual Uzi",
+      "image": "/attached_assets/scraped_weapons/Dual_Uzi.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - Dual Uzi"
+    },
+    {
+      "name": "FAMAS",
+      "image": "/attached_assets/scraped_weapons/FAMAS.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - FAMAS"
+    },
+    {
+      "name": "FN F2000",
+      "image": "/attached_assets/scraped_weapons/FN_F2000.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - FN F2000"
+    },
+    {
+      "name": "G36K",
+      "image": "/attached_assets/scraped_weapons/G36K.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - G36K"
+    },
+    {
+      "name": "Galil ACE",
+      "image": "/attached_assets/scraped_weapons/Galil_ACE.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - Galil ACE"
+    },
+    {
+      "name": "Glock-18",
+      "image": "/attached_assets/scraped_weapons/Glock-18.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - Glock-18"
+    },
+    {
+      "name": "HK416C",
+      "image": "/attached_assets/scraped_weapons/HK416C.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - HK416C"
+    },
+    {
+      "name": "Jackhammer",
+      "image": "/attached_assets/scraped_weapons/Jackhammer.png",
+      "category": "Shotguns",
+      "description": "CrossFire weapon - Jackhammer"
+    },
+    {
+      "name": "Kriss Super V",
+      "image": "/attached_assets/scraped_weapons/Kriss_Super_V.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - Kriss Super V"
+    },
+    {
+      "name": "M14 EBR",
+      "image": "/attached_assets/scraped_weapons/M14_EBR.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - M14 EBR"
+    },
+    {
+      "name": "M16",
+      "image": "/attached_assets/scraped_weapons/M16.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - M16"
+    },
+    {
+      "name": "M249 Minimi",
+      "image": "/attached_assets/scraped_weapons/M249_Minimi.png",
+      "category": "Machine Guns",
+      "description": "CrossFire weapon - M249 Minimi"
+    },
+    {
+      "name": "M4A1",
+      "image": "/attached_assets/scraped_weapons/M4A1.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - M4A1"
+    },
+    {
+      "name": "M60",
+      "image": "/attached_assets/scraped_weapons/M60.png",
+      "category": "Machine Guns",
+      "description": "CrossFire weapon - M60"
+    },
+    {
+      "name": "M700",
+      "image": "/attached_assets/scraped_weapons/M700.png",
+      "category": "Sniper Rifles",
+      "description": "CrossFire weapon - M700"
+    },
+    {
+      "name": "MG3",
+      "image": "/attached_assets/scraped_weapons/MG3.png",
+      "category": "Machine Guns",
+      "description": "CrossFire weapon - MG3"
+    },
+    {
+      "name": "MP5",
+      "image": "/attached_assets/scraped_weapons/MP5.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - MP5"
+    },
+    {
+      "name": "P90",
+      "image": "/attached_assets/scraped_weapons/P90.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - P90"
+    },
+    {
+      "name": "PP-19 Bizon",
+      "image": "/attached_assets/scraped_weapons/PP-19_Bizon.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - PP-19 Bizon"
+    },
+    {
+      "name": "QBZ-03",
+      "image": "/attached_assets/scraped_weapons/QBZ-03.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - QBZ-03"
+    },
+    {
+      "name": "QBZ-95",
+      "image": "/attached_assets/scraped_weapons/QBZ-95.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - QBZ-95"
+    },
+    {
+      "name": "RPK",
+      "image": "/attached_assets/scraped_weapons/RPK.png",
+      "category": "Machine Guns",
+      "description": "CrossFire weapon - RPK"
+    },
+    {
+      "name": "Ruger Bisley",
+      "image": "/attached_assets/scraped_weapons/Ruger_Bisley.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - Ruger Bisley"
+    },
+    {
+      "name": "SCAR Heavy",
+      "image": "/attached_assets/scraped_weapons/SCAR_Heavy.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - SCAR Heavy"
+    },
+    {
+      "name": "SCAR Light",
+      "image": "/attached_assets/scraped_weapons/SCAR_Light.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - SCAR Light"
+    },
+    {
+      "name": "SG552",
+      "image": "/attached_assets/scraped_weapons/SG552.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - SG552"
+    },
+    {
+      "name": "SPAS-12",
+      "image": "/attached_assets/scraped_weapons/SPAS-12.png",
+      "category": "Shotguns",
+      "description": "CrossFire weapon - SPAS-12"
+    },
+    {
+      "name": "Scorpion EVO3A1",
+      "image": "/attached_assets/scraped_weapons/Scorpion_EVO3A1.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - Scorpion EVO3A1"
+    },
+    {
+      "name": "Steyr AUG A1",
+      "image": "/attached_assets/scraped_weapons/Steyr_AUG_A1.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - Steyr AUG A1"
+    },
+    {
+      "name": "TAR21",
+      "image": "/attached_assets/scraped_weapons/TAR21.png",
+      "category": "Assault Rifles",
+      "description": "CrossFire weapon - TAR21"
+    },
+    {
+      "name": "Thompson",
+      "image": "/attached_assets/scraped_weapons/Thompson.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - Thompson"
+    },
+    {
+      "name": "UMP-45",
+      "image": "/attached_assets/scraped_weapons/UMP-45.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - UMP-45"
+    },
+    {
+      "name": "USP",
+      "image": "/attached_assets/scraped_weapons/USP.png",
+      "category": "Pistols",
+      "description": "CrossFire weapon - USP"
+    },
+    {
+      "name": "Uzi",
+      "image": "/attached_assets/scraped_weapons/Uzi.png",
+      "category": "SMG",
+      "description": "CrossFire weapon - Uzi"
+    },
+    {
+      "name": "Winchester",
+      "image": "/attached_assets/scraped_weapons/Winchester.png",
+      "category": "Rifles",
+      "description": "CrossFire weapon - Winchester"
+    },
+    {
+      "name": "XM1014",
+      "image": "/attached_assets/scraped_weapons/XM1014.png",
+      "category": "Shotguns",
+      "description": "CrossFire weapon - XM1014"
+    }
+  ]
+}

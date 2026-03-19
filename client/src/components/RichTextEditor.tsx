@@ -108,54 +108,70 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
       onChange={(content: string) => onChange(content || "")}
       placeholder={placeholder}
       setDefaultStyle={`direction:${direction}; text-align:${direction === "rtl" ? "right" : "left"};`}
-      onImageUploadBefore={async (files: File[], _: any, uploadHandler: any) => {
-      try {
-        const file = files?.[0];
-        if (!file) return;
-        let csrfToken = localStorage.getItem("csrfToken") || "";
+      onImageUploadBefore={async (files: File[], _info: any, uploadHandler: any) => {
         try {
-          const tokRes = await fetch("/api/security/csrf-token", { method: "GET", credentials: "include" });
-          const tokJson = await tokRes.json().catch(() => ({}));
-          if (tokJson?.csrfToken) {
-            csrfToken = tokJson.csrfToken;
-            localStorage.setItem("csrfToken", csrfToken);
+          const file = files[0];
+          if (!file) return;
+
+          // Get CSRF token
+          let csrfToken = localStorage.getItem("csrfToken") || "";
+          try {
+            const tokRes = await fetch("/api/security/csrf-token");
+            const tokJson = await tokRes.json();
+            if (tokJson?.csrfToken) {
+              csrfToken = tokJson.csrfToken;
+              localStorage.setItem("csrfToken", csrfToken);
+            }
+          } catch { }
+
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("folder", "editor");
+
+          const headers: Record<string, string> = {};
+          if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+
+          // Use the unified upload endpoint
+          const res = await fetch("/images/upload", {
+            method: "POST",
+            headers,
+            body: fd,
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Upload failed");
           }
-        } catch { }
 
-        const fd = new FormData();
-        fd.append("file", file);
-        // Upload to 'editor' folder. Backend handles Cloudinary upload automatically.
-        fd.append("folder", "editor"); 
+          // Prefer domainUrl (proxy) or secure_url (direct Cloudinary)
+          const url = data.domainUrl || data.domain_url || data.secure_url || data.url;
+          
+          if (!url) throw new Error("No URL returned from server");
 
-        const headers: Record<string, string> = {};
-        if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
-
-        const res = await fetch("/images/upload", {
-          method: "POST",
-          headers: Object.keys(headers).length ? headers : undefined,
-          body: fd,
-          credentials: "include",
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data?.ok === false) {
-          throw new Error(data?.error || "Upload failed");
+          // Return the response in the format SunEditor expects
+          const response = {
+            result: [
+              {
+                url: url,
+                name: file.name,
+                size: file.size
+              }
+            ]
+          };
+          
+          uploadHandler(response);
+          return undefined; // Important: return undefined to prevent default upload behavior
+        } catch (e: any) {
+          console.error("Editor upload error:", e);
+          toast({ 
+            title: "Upload Failed", 
+            description: e.message || "Could not upload image", 
+            variant: "destructive" 
+          });
+          uploadHandler(e.toString());
+          return undefined;
         }
-        const url =
-          data?.domainUrl ||
-          data?.domain_url ||
-          data?.cloudinaryUrl ||
-          data?.cloudinary_url ||
-          data?.secure_url ||
-          data?.url ||
-          "";
-        if (!url) throw new Error("No URL returned");
-
-        uploadHandler({ result: [{ url, name: file.name, size: file.size }] });
-      } catch (e: any) {
-        toast?.({ title: "Upload error", description: e?.message || String(e), variant: "destructive" });
-        uploadHandler({ errorMessage: "Upload error" });
-      }
-    }}
+      }}
     />
     </div>
   );

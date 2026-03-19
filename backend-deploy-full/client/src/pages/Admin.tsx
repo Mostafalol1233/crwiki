@@ -68,6 +68,8 @@ import {
 import { useLocation } from "wouter";
 import imageCompression from 'browser-image-compression';
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { SEOEditor } from "@/components/SEOEditor";
+import { BulkSEOEditor } from "@/components/BulkSEOEditor";
 
 import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
@@ -183,7 +185,7 @@ export default function Admin() {
     post_slug: "",
     content: "",
     summary: "",
-    image: "",
+    imageUrl: "",
     imageAlt: "",
     images: [] as string[],
     category: "Tutorials",
@@ -201,7 +203,7 @@ export default function Admin() {
     ogDescription: "",
     ogImage: "",
     ogImageAlt: "",
-    ogType: "",
+    ogType: "article",
     ogUrl: "",
     twitterTitle: "",
     twitterDescription: "",
@@ -222,7 +224,7 @@ export default function Admin() {
     descriptionAr: "",
     date: "",
     type: "upcoming" as "upcoming" | "trending",
-    image: "",
+    imageUrl: "",
     imageAlt: "",
     images: [] as string[],
     event_name_slug: "",
@@ -234,7 +236,7 @@ export default function Admin() {
     ogDescription: "",
     ogImage: "",
     ogImageAlt: "",
-    ogType: "",
+    ogType: "website",
     ogUrl: "",
     twitterTitle: "",
     twitterDescription: "",
@@ -253,7 +255,7 @@ export default function Admin() {
     news_slug: "",
     titleAr: "",
     dateRange: "",
-    image: "",
+    imageUrl: "",
     imageAlt: "",
     images: [] as string[],
     category: "News",
@@ -270,7 +272,7 @@ export default function Admin() {
     ogDescription: "",
     ogImage: "",
     ogImageAlt: "",
-    ogType: "",
+    ogType: "article",
     ogUrl: "",
     twitterTitle: "",
     twitterDescription: "",
@@ -1008,8 +1010,8 @@ export default function Admin() {
       resetEventForm();
       toast({ title: "Event created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create event", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to create event", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -1049,10 +1051,10 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       setIsCreatingNews(false);
       resetNewsForm();
-      toast({ title: "News item created successfully" });
+      toast({ title: "News created successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Failed to create news item", description: error?.message || "", variant: "destructive" });
+      toast({ title: "Failed to create news", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -1064,10 +1066,10 @@ export default function Admin() {
       setEditingNews(null);
       setIsCreatingNews(false);
       resetNewsForm();
-      toast({ title: "News item updated successfully" });
+      toast({ title: "News updated successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Failed to update news item", description: error?.message || "", variant: "destructive" });
+      toast({ title: "Failed to update news", description: error?.message || "", variant: "destructive" });
     },
   });
 
@@ -1854,6 +1856,12 @@ export default function Admin() {
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
+                  <TabsTrigger value="bulk-seo" data-testid="tab-bulk-seo">
+                    <Search className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Bulk SEO</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
                   <TabsTrigger value="chat-settings" data-testid="tab-chat-settings">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Chat Settings</span>
@@ -1869,6 +1877,10 @@ export default function Admin() {
             </div>
 
             <div className="flex-1">
+              <TabsContent value="bulk-seo">
+                <BulkSEOEditor />
+              </TabsContent>
+
               <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card>
@@ -2140,9 +2152,9 @@ export default function Admin() {
                           />
                           <Input
                             placeholder="Image URL"
-                            value={postForm.image}
+                            value={postForm.imageUrl}
                             onChange={(e) =>
-                              setPostForm({ ...postForm, image: e.target.value })
+                              setPostForm({ ...postForm, imageUrl: e.target.value })
                             }
                             data-testid="input-post-image"
                           />
@@ -2159,6 +2171,53 @@ export default function Admin() {
                             onImagesChange={(newImages) => setPostForm({ ...postForm, images: newImages })}
                             toast={toast}
                           />
+                          
+                          <SEOEditor 
+                            data={{
+                              seoTitle: postForm.seoTitle,
+                              seoDescription: postForm.seoDescription,
+                              seoKeywords: postForm.seoKeywords ? postForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
+                              canonicalUrl: postForm.canonicalUrl,
+                              ogTitle: postForm.ogTitle,
+                              ogDescription: postForm.ogDescription,
+                              ogImage: postForm.ogImage,
+                              ogImageAlt: postForm.ogImageAlt,
+                              ogType: postForm.ogType,
+                              ogUrl: postForm.ogUrl,
+                              twitterTitle: postForm.twitterTitle,
+                              twitterDescription: postForm.twitterDescription,
+                              twitterImage: postForm.twitterImage,
+                              twitterImageAlt: postForm.twitterImageAlt,
+                              schemaType: postForm.schemaType,
+                              schemaData: postForm.schemaData,
+                            }}
+                            onChange={(data) => setPostForm({
+                              ...postForm,
+                              seoTitle: data.seoTitle || "",
+                              seoDescription: data.seoDescription || "",
+                              seoKeywords: data.seoKeywords?.join(", ") || "",
+                              canonicalUrl: data.canonicalUrl || "",
+                              ogTitle: data.ogTitle || "",
+                              ogDescription: data.ogDescription || "",
+                              ogImage: data.ogImage || "",
+                              ogImageAlt: data.ogImageAlt || "",
+                              ogType: data.ogType || "article",
+                              ogUrl: data.ogUrl || "",
+                              twitterTitle: data.twitterTitle || "",
+                              twitterDescription: data.twitterDescription || "",
+                              twitterImage: data.twitterImage || "",
+                              twitterImageAlt: data.twitterImageAlt || "",
+                              schemaType: data.schemaType || "Article",
+                              schemaData: data.schemaData || "",
+                            })}
+                            autoFill={{
+                              title: postForm.title,
+                              description: postForm.summary || postForm.content.replace(/<[^>]*>/g, '').slice(0, 160),
+                              image: postForm.imageUrl,
+                              slug: postForm.post_slug
+                            }}
+                          />
+
                           <select
                             value={postForm.category}
                             onChange={(e) =>
@@ -2230,166 +2289,7 @@ export default function Admin() {
                             <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                           </label>
 
-                          <div className="space-y-4 pt-4 border-t">
-                            <h3 className="text-sm font-semibold">SEO Settings</h3>
-                            <Input
-                              placeholder="SEO Title (50-60 chars, optional)"
-                              value={postForm.seoTitle}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, seoTitle: e.target.value })
-                              }
-                              maxLength={60}
-                              data-testid="input-post-seo-title"
-                            />
-                            <Textarea
-                              placeholder="Meta Description (120-155 chars, optional)"
-                              value={postForm.seoDescription}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, seoDescription: e.target.value })
-                              }
-                              rows={2}
-                              maxLength={155}
-                              data-testid="input-post-seo-description"
-                            />
-                            <Input
-                              placeholder="Keywords (comma separated, optional)"
-                              value={postForm.seoKeywords}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, seoKeywords: e.target.value })
-                              }
-                              data-testid="input-post-seo-keywords"
-                            />
-                            {(() => {
-                              const text = [postForm.title, postForm.summary, postForm.content].join(' ');
-                              const plain = String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
-                              const stop = new Set(["the", "and", "a", "an", "to", "of", "in", "on", "for", "with", "by", "is", "are", "was", "were", "be", "as", "at", "from", "that", "this", "it", "or", "if", "but", "about", "into", "over", "after", "before", "under", "above", "between", "من", "على", "في", "عن", "و", "ما", "لا", "لم", "لن", "إلى", "الى", "كان", "كانت", "ذلك", "هذه", "هذا", "قد", "لقد", "كما"]);
-                              const parts = plain.replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter((w) => w && w.length > 2 && !stop.has(w));
-                              const freq = new Map<string, number>();
-                              for (const w of parts) freq.set(w, (freq.get(w) || 0) + 1);
-                              const suggestions = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]).map(([w]) => w).slice(0, 8);
-                              const current = (postForm.seoKeywords || '').split(',').map(s => s.trim()).filter(Boolean);
-                              return suggestions.length ? (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {suggestions.map((s) => (
-                                    <Badge key={s} variant={current.includes(s) ? 'default' : 'outline'} onClick={() => {
-                                      const next = Array.from(new Set([...current, s]));
-                                      setPostForm({ ...postForm, seoKeywords: next.join(', ') });
-                                    }} className="cursor-pointer">
-                                      {s}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : null;
-                            })()}
-                            <Input
-                              placeholder="Canonical URL (optional)"
-                              value={postForm.canonicalUrl}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, canonicalUrl: e.target.value })
-                              }
-                              data-testid="input-post-canonical"
-                            />
-                            <Input
-                              placeholder="OG Image URL (optional)"
-                              value={postForm.ogImage}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogImage: e.target.value })
-                              }
-                              data-testid="input-post-og-image"
-                            />
-                            <Input
-                              placeholder="OG Image Alt Text"
-                              value={postForm.ogImageAlt}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogImageAlt: e.target.value })
-                              }
-                              data-testid="input-post-og-image-alt"
-                            />
-                            <Input
-                              placeholder="OG Title"
-                              value={postForm.ogTitle}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogTitle: e.target.value })
-                              }
-                              data-testid="input-post-og-title"
-                            />
-                            <Input
-                              placeholder="OG Description"
-                              value={postForm.ogDescription}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogDescription: e.target.value })
-                              }
-                              data-testid="input-post-og-description"
-                            />
-                            <Input
-                              placeholder="OG Type"
-                              value={postForm.ogType}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogType: e.target.value })
-                              }
-                              data-testid="input-post-og-type"
-                            />
-                            <Input
-                              placeholder="OG URL"
-                              value={postForm.ogUrl}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, ogUrl: e.target.value })
-                              }
-                              data-testid="input-post-og-url"
-                            />
-                            <Input
-                              placeholder="Twitter Image URL (optional)"
-                              value={postForm.twitterImage}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, twitterImage: e.target.value })
-                              }
-                              data-testid="input-post-twitter-image"
-                            />
-                            <Input
-                              placeholder="Twitter Image Alt Text"
-                              value={postForm.twitterImageAlt}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, twitterImageAlt: e.target.value })
-                              }
-                              data-testid="input-post-twitter-image-alt"
-                            />
-                            <Input
-                              placeholder="Twitter Title"
-                              value={postForm.twitterTitle}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, twitterTitle: e.target.value })
-                              }
-                              data-testid="input-post-twitter-title"
-                            />
-                            <Input
-                              placeholder="Twitter Description"
-                              value={postForm.twitterDescription}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, twitterDescription: e.target.value })
-                              }
-                              data-testid="input-post-twitter-description"
-                            />
-                            <select
-                              value={postForm.schemaType}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, schemaType: e.target.value })
-                              }
-                              className="w-full h-9 px-3 rounded-md border border-input bg-background"
-                              data-testid="select-post-schema-type"
-                            >
-                              <option value="Article">Article</option>
-                              <option value="BlogPosting">BlogPosting</option>
-                              <option value="NewsArticle">NewsArticle</option>
-                            </select>
-                            <Textarea
-                              placeholder="JSON-LD Schema Data (JSON)"
-                              value={postForm.schemaData}
-                              onChange={(e) =>
-                                setPostForm({ ...postForm, schemaData: e.target.value })
-                              }
-                              rows={4}
-                              data-testid="input-post-schema-data"
-                            />
+                          <div className="flex gap-2 pt-4 border-t">
                           </div>
 
                           <Button
@@ -2766,9 +2666,9 @@ export default function Admin() {
                               />
                               <Input
                                 placeholder="Image URL (optional)"
-                                value={eventForm.image}
+                                value={eventForm.imageUrl}
                                 onChange={(e) =>
-                                  setEventForm({ ...eventForm, image: e.target.value })
+                                  setEventForm({ ...eventForm, imageUrl: e.target.value })
                                 }
                                 data-testid="input-event-image"
                               />
@@ -2784,6 +2684,51 @@ export default function Admin() {
                                 images={eventForm.images}
                                 onImagesChange={(newImages) => setEventForm({ ...eventForm, images: newImages })}
                                 toast={toast}
+                              />
+                              <SEOEditor 
+                                data={{
+                                  seoTitle: eventForm.seoTitle,
+                                  seoDescription: eventForm.seoDescription,
+                                  seoKeywords: eventForm.seoKeywords ? eventForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
+                                  canonicalUrl: eventForm.canonicalUrl,
+                                  ogTitle: eventForm.ogTitle,
+                                  ogDescription: eventForm.ogDescription,
+                                  ogImage: eventForm.ogImage,
+                                  ogImageAlt: eventForm.ogImageAlt,
+                                  ogType: eventForm.ogType,
+                                  ogUrl: eventForm.ogUrl,
+                                  twitterTitle: eventForm.twitterTitle,
+                                  twitterDescription: eventForm.twitterDescription,
+                                  twitterImage: eventForm.twitterImage,
+                                  twitterImageAlt: eventForm.twitterImageAlt,
+                                  schemaType: eventForm.schemaType,
+                                  schemaData: eventForm.schemaData,
+                                }}
+                                onChange={(data) => setEventForm({
+                                  ...eventForm,
+                                  seoTitle: data.seoTitle || "",
+                                  seoDescription: data.seoDescription || "",
+                                  seoKeywords: data.seoKeywords?.join(", ") || "",
+                                  canonicalUrl: data.canonicalUrl || "",
+                                  ogTitle: data.ogTitle || "",
+                                  ogDescription: data.ogDescription || "",
+                                  ogImage: data.ogImage || "",
+                                  ogImageAlt: data.ogImageAlt || "",
+                                  ogType: data.ogType || "website",
+                                  ogUrl: data.ogUrl || "",
+                                  twitterTitle: data.twitterTitle || "",
+                                  twitterDescription: data.twitterDescription || "",
+                                  twitterImage: data.twitterImage || "",
+                                  twitterImageAlt: data.twitterImageAlt || "",
+                                  schemaType: data.schemaType || "Event",
+                                  schemaData: data.schemaData || "",
+                                })}
+                                autoFill={{
+                                  title: eventForm.title,
+                                  description: eventForm.description.replace(/<[^>]*>/g, '').slice(0, 160),
+                                  image: eventForm.imageUrl,
+                                  slug: eventForm.event_name_slug
+                                }}
                               />
                               <select
                                 value={eventForm.type}
@@ -2817,132 +2762,7 @@ export default function Admin() {
                                 Advanced CSS/JS blocks are preserved only when Full Layout is enabled.
                               </p>
 
-                              <div className="space-y-4 pt-4 border-t">
-                                <h3 className="text-sm font-semibold">SEO Settings</h3>
-                                <Input
-                                  placeholder="SEO Title (50-60 chars, optional)"
-                                  value={eventForm.seoTitle}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, seoTitle: e.target.value })
-                                  }
-                                  maxLength={60}
-                                  data-testid="input-event-seo-title"
-                                />
-                                <Textarea
-                                  placeholder="Meta Description (120-155 chars, optional)"
-                                  value={eventForm.seoDescription}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, seoDescription: e.target.value })
-                                  }
-                                  rows={2}
-                                  maxLength={155}
-                                  data-testid="input-event-seo-description"
-                                />
-                                <Input
-                                  placeholder="Keywords (comma separated, optional)"
-                                  value={eventForm.seoKeywords}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, seoKeywords: e.target.value })
-                                  }
-                                  data-testid="input-event-seo-keywords"
-                                />
-                                <Input
-                                  placeholder="Canonical URL (optional)"
-                                  value={eventForm.canonicalUrl}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, canonicalUrl: e.target.value })
-                                  }
-                                  data-testid="input-event-canonical"
-                                />
-                                <Input
-                                  placeholder="OG Image URL (optional)"
-                                  value={eventForm.ogImage}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogImage: e.target.value })
-                                  }
-                                  data-testid="input-event-og-image"
-                                />
-                                <Input
-                                  placeholder="OG Image Alt Text"
-                                  value={eventForm.ogImageAlt}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogImageAlt: e.target.value })
-                                  }
-                                  data-testid="input-event-og-image-alt"
-                                />
-                                <Input
-                                  placeholder="OG Title"
-                                  value={eventForm.ogTitle}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogTitle: e.target.value })
-                                  }
-                                  data-testid="input-event-og-title"
-                                />
-                                <Input
-                                  placeholder="OG Description"
-                                  value={eventForm.ogDescription}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogDescription: e.target.value })
-                                  }
-                                  data-testid="input-event-og-description"
-                                />
-                                <Input
-                                  placeholder="OG Type"
-                                  value={eventForm.ogType}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogType: e.target.value })
-                                  }
-                                  data-testid="input-event-og-type"
-                                />
-                                <Input
-                                  placeholder="OG URL"
-                                  value={eventForm.ogUrl}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, ogUrl: e.target.value })
-                                  }
-                                  data-testid="input-event-og-url"
-                                />
-                                <Input
-                                  placeholder="Twitter Image URL (optional)"
-                                  value={eventForm.twitterImage}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, twitterImage: e.target.value })
-                                  }
-                                  data-testid="input-event-twitter-image"
-                                />
-                                <Input
-                                  placeholder="Twitter Image Alt Text"
-                                  value={eventForm.twitterImageAlt}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, twitterImageAlt: e.target.value })
-                                  }
-                                  data-testid="input-event-twitter-image-alt"
-                                />
-                                <Input
-                                  placeholder="Twitter Title"
-                                  value={eventForm.twitterTitle}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, twitterTitle: e.target.value })
-                                  }
-                                  data-testid="input-event-twitter-title"
-                                />
-                                <Input
-                                  placeholder="Twitter Description"
-                                  value={eventForm.twitterDescription}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, twitterDescription: e.target.value })
-                                  }
-                                  data-testid="input-event-twitter-description"
-                                />
-                                <Textarea
-                                  placeholder="JSON-LD Schema Data (JSON)"
-                                  value={eventForm.schemaData}
-                                  onChange={(e) =>
-                                    setEventForm({ ...eventForm, schemaData: e.target.value })
-                                  }
-                                  rows={4}
-                                  data-testid="input-event-schema-data"
-                                />
+                              <div className="flex gap-2 pt-4">
                               </div>
 
                               <div className="flex gap-2">
@@ -3217,9 +3037,9 @@ export default function Admin() {
                               />
                               <Input
                                 placeholder="Image URL"
-                                value={newsForm.image}
+                                value={newsForm.imageUrl}
                                 onChange={(e) =>
-                                  setNewsForm({ ...newsForm, image: e.target.value })
+                                  setNewsForm({ ...newsForm, imageUrl: e.target.value })
                                 }
                                 data-testid="input-news-image"
                               />
@@ -3235,6 +3055,52 @@ export default function Admin() {
                                 images={newsForm.images}
                                 onImagesChange={(newImages) => setNewsForm({ ...newsForm, images: newImages })}
                                 toast={toast}
+                              />
+                              
+                              <SEOEditor 
+                                data={{
+                                  seoTitle: newsForm.seoTitle,
+                                  seoDescription: newsForm.seoDescription,
+                                  seoKeywords: newsForm.seoKeywords ? newsForm.seoKeywords.split(",").map(s => s.trim()).filter(Boolean) : [],
+                                  canonicalUrl: newsForm.canonicalUrl,
+                                  ogTitle: newsForm.ogTitle,
+                                  ogDescription: newsForm.ogDescription,
+                                  ogImage: newsForm.ogImage,
+                                  ogImageAlt: newsForm.ogImageAlt,
+                                  ogType: newsForm.ogType,
+                                  ogUrl: newsForm.ogUrl,
+                                  twitterTitle: newsForm.twitterTitle,
+                                  twitterDescription: newsForm.twitterDescription,
+                                  twitterImage: newsForm.twitterImage,
+                                  twitterImageAlt: newsForm.twitterImageAlt,
+                                  schemaType: newsForm.schemaType,
+                                  schemaData: newsForm.schemaData,
+                                }}
+                                onChange={(data) => setNewsForm({
+                                  ...newsForm,
+                                  seoTitle: data.seoTitle || "",
+                                  seoDescription: data.seoDescription || "",
+                                  seoKeywords: data.seoKeywords?.join(", ") || "",
+                                  canonicalUrl: data.canonicalUrl || "",
+                                  ogTitle: data.ogTitle || "",
+                                  ogDescription: data.ogDescription || "",
+                                  ogImage: data.ogImage || "",
+                                  ogImageAlt: data.ogImageAlt || "",
+                                  ogType: data.ogType || "article",
+                                  ogUrl: data.ogUrl || "",
+                                  twitterTitle: data.twitterTitle || "",
+                                  twitterDescription: data.twitterDescription || "",
+                                  twitterImage: data.twitterImage || "",
+                                  twitterImageAlt: data.twitterImageAlt || "",
+                                  schemaType: data.schemaType || "NewsArticle",
+                                  schemaData: data.schemaData || "",
+                                })}
+                                autoFill={{
+                                  title: newsForm.title,
+                                  description: newsForm.content.replace(/<[^>]*>/g, '').slice(0, 160),
+                                  image: newsForm.imageUrl,
+                                  slug: newsForm.news_slug
+                                }}
                               />
                               <select
                                 value={newsForm.category}
@@ -3355,160 +3221,7 @@ export default function Admin() {
                                 <span className="text-sm font-bold text-primary uppercase">Full Layout Mode (Wiki Style)</span>
                               </label>
 
-                              <div className="space-y-4 pt-4 border-t">
-                                <h3 className="text-sm font-semibold">SEO Settings</h3>
-                                {editingNews && (
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <Badge variant={(editingNews.seoTitle && editingNews.seoTitle.trim()) ? "default" : "secondary"}>SEO Title</Badge>
-                                    <Badge variant={(editingNews.seoDescription && editingNews.seoDescription.trim()) ? "default" : "secondary"}>Meta Description</Badge>
-                                    <Badge variant={(Array.isArray(editingNews.seoKeywords) && editingNews.seoKeywords.length) ? "default" : "secondary"}>Keywords</Badge>
-                                    <Badge variant={(editingNews.canonicalUrl && editingNews.canonicalUrl.trim()) ? "default" : "secondary"}>Canonical</Badge>
-                                    <Badge variant={(editingNews.ogImage && editingNews.ogImage.trim()) ? "default" : "secondary"}>OG Image</Badge>
-                                    <Badge variant={(editingNews.twitterImage && editingNews.twitterImage.trim()) ? "default" : "secondary"}>Twitter Image</Badge>
-                                    <div className="col-span-2 flex gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={async () => {
-                                          try {
-                                            await queryClient.invalidateQueries({ queryKey: ["/api/news"] });
-                                            const refreshed = await apiRequest(`/api/news/${editingNews.id}`, "GET");
-                                            setEditingNews(refreshed);
-                                            toast({ title: "SEO/OG refreshed" });
-                                          } catch (e: any) {
-                                            toast({ title: "Refresh failed", description: e?.message || String(e), variant: "destructive" });
-                                          }
-                                        }}
-                                      >
-                                        Refresh SEO/OG
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )}
-                                <Input
-                                  placeholder="SEO Title (50-60 chars, optional)"
-                                  value={newsForm.seoTitle}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, seoTitle: e.target.value })
-                                  }
-                                  maxLength={60}
-                                  data-testid="input-news-seo-title"
-                                />
-                                <Textarea
-                                  placeholder="Meta Description (120-155 chars, optional)"
-                                  value={newsForm.seoDescription}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, seoDescription: e.target.value })
-                                  }
-                                  rows={2}
-                                  maxLength={155}
-                                  data-testid="input-news-seo-description"
-                                />
-                                <Input
-                                  placeholder="Keywords (comma separated, optional)"
-                                  value={newsForm.seoKeywords}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, seoKeywords: e.target.value })
-                                  }
-                                  data-testid="input-news-seo-keywords"
-                                />
-                                <Input
-                                  placeholder="Canonical URL (optional)"
-                                  value={newsForm.canonicalUrl}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, canonicalUrl: e.target.value })
-                                  }
-                                  data-testid="input-news-canonical"
-                                />
-                                <Input
-                                  placeholder="OG Image URL (optional)"
-                                  value={newsForm.ogImage}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogImage: e.target.value })
-                                  }
-                                  data-testid="input-news-og-image"
-                                />
-                                <Input
-                                  placeholder="OG Image Alt Text"
-                                  value={newsForm.ogImageAlt}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogImageAlt: e.target.value })
-                                  }
-                                  data-testid="input-news-og-image-alt"
-                                />
-                                <Input
-                                  placeholder="OG Title"
-                                  value={newsForm.ogTitle}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogTitle: e.target.value })
-                                  }
-                                  data-testid="input-news-og-title"
-                                />
-                                <Input
-                                  placeholder="OG Description"
-                                  value={newsForm.ogDescription}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogDescription: e.target.value })
-                                  }
-                                  data-testid="input-news-og-description"
-                                />
-                                <Input
-                                  placeholder="OG Type"
-                                  value={newsForm.ogType}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogType: e.target.value })
-                                  }
-                                  data-testid="input-news-og-type"
-                                />
-                                <Input
-                                  placeholder="OG URL"
-                                  value={newsForm.ogUrl}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, ogUrl: e.target.value })
-                                  }
-                                  data-testid="input-news-og-url"
-                                />
-                                <Input
-                                  placeholder="Twitter Image URL (optional)"
-                                  value={newsForm.twitterImage}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, twitterImage: e.target.value })
-                                  }
-                                  data-testid="input-news-twitter-image"
-                                />
-                                <Input
-                                  placeholder="Twitter Image Alt Text"
-                                  value={newsForm.twitterImageAlt}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, twitterImageAlt: e.target.value })
-                                  }
-                                  data-testid="input-news-twitter-image-alt"
-                                />
-                                <Input
-                                  placeholder="Twitter Title"
-                                  value={newsForm.twitterTitle}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, twitterTitle: e.target.value })
-                                  }
-                                  data-testid="input-news-twitter-title"
-                                />
-                                <Input
-                                  placeholder="Twitter Description"
-                                  value={newsForm.twitterDescription}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, twitterDescription: e.target.value })
-                                  }
-                                  data-testid="input-news-twitter-description"
-                                />
-                                <Textarea
-                                  placeholder="JSON-LD Schema Data (JSON)"
-                                  value={newsForm.schemaData}
-                                  onChange={(e) =>
-                                    setNewsForm({ ...newsForm, schemaData: e.target.value })
-                                  }
-                                  rows={4}
-                                  data-testid="input-news-schema-data"
-                                />
+                              <div className="flex gap-2 pt-4 border-t">
                               </div>
 
                               <Button

@@ -3,26 +3,7 @@ import * as cheerio from 'cheerio';
 import DOMPurify from 'isomorphic-dompurify';
 import fs from 'fs/promises';
 import path from 'path';
-import { uploadStream } from './cloudinary.js';
-
-async function downloadAndUploadImage(url, folder = 'scraped') {
-  if (!url || !url.startsWith('http')) return { url: '', publicId: '' };
-  try {
-    const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
-    const buffer = Buffer.from(response.data);
-    const filename = path.basename(new URL(url).pathname) || 'image.jpg';
-    const result = await uploadStream(buffer, {
-      folder: `crossfire-wiki/${folder}`,
-      public_id: slugify(path.parse(filename).name) + '-' + Date.now(),
-      overwrite: true,
-      invalidate: true
-    });
-    return { url: result.secure_url, publicId: result.public_id };
-  } catch (error) {
-    console.error(`Error downloading/uploading image from ${url}:`, error.message);
-    return { url: url, publicId: '' }; // Fallback to original URL
-  }
-}
+import { downloadAndUploadImage } from '../utils/cloudinary-helper.js';
 
 function slugify(input) {
   if (!input) return '';
@@ -552,7 +533,7 @@ export async function scrapeMaps() {
 
         // Mode specific details (e.g. Bomb Sites)
         const modeDetails = {};
-        if (supportedModes.includes('Search & Destroy')) {
+        if (supportedModes.some(m => m.includes('Search & Destroy'))) {
           const bombSites = [];
           $('h2:contains("Bomb Sites")').nextUntil('h2').find('li').each((_, el) => {
             bombSites.push($(el).text().trim());
@@ -560,12 +541,20 @@ export async function scrapeMaps() {
           if (bombSites.length) modeDetails['Search & Destroy'] = { bombSites };
         }
 
+        // Minimap extraction (try to find images with 'minimap' in name)
+        let minimapUrl = '';
+        $('img[src*="minimap"], img[src*="Minimap"]').each((_, el) => {
+          minimapUrl = $(el).attr('src');
+        });
+
         const { url: finalImage, publicId: imagePublicId } = await downloadAndUploadImage(imageUrl, 'maps');
+        const { url: finalMinimap } = await downloadAndUploadImage(minimapUrl, 'maps/minimaps');
 
         maps.push({
           name,
           imageUrl: finalImage,
           imagePublicId,
+          minimapUrl: finalMinimap,
           description,
           lore,
           releaseDate,
@@ -594,78 +583,6 @@ export async function scrapeMaps() {
       });
     }
 
-    return maps;
-  } catch (err) {
-    console.error('scrapeMaps error:', err.message);
-    return [];
-  }
-}
-
-export async function scrapeWeapons() {
-  try {
-    const response = await axios.get(`${CF_BASE_URL}/weapons.html`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 30000
-    });
-    const $ = cheerio.load(response.data);
-    const weapons = [];
-    
-    $('.weapon_item, .weapon-card, div[class*="weapon"]').each((i, el) => {
-      const $el = $(el);
-      const name = $el.find('h2, h3, .name, .title').first().text().trim();
-      if (!name) return;
-      
-      const description = $el.find('p, .desc, .description').first().text().trim();
-      let image = $el.find('img').first().attr('src') || '';
-      if (image && !image.startsWith('http')) {
-        image = image.startsWith('//') ? `https:${image}` : `${CF_BASE_URL}${image}`;
-      }
-      
-      weapons.push({
-        id: `weapon-${i}`,
-        name,
-        description,
-        image,
-        category: 'Weapon'
-      });
-    });
-
-    return weapons;
-  } catch (err) {
-    console.error('scrapeWeapons error:', err.message);
-    return [];
-  }
-}
-
-export async function scrapeMaps() {
-  try {
-    // Try Z8Games first for maps as it's more reliable
-    const response = await axios.get(`${CF_BASE_URL}/modes.html`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 30000
-    });
-    const $ = cheerio.load(response.data);
-    const maps = [];
-    
-    // In modes.html, maps are often listed under each mode
-    $('.mode_item, .mode-card, .mode_list li').each((i, el) => {
-      const modeName = $(el).find('h2, h3, .name, .title, strong').first().text().trim();
-      $(el).find('.map_list li, .maps li, span, a').each((j, mapEl) => {
-        const mapName = $(mapEl).text().trim();
-        if (mapName && mapName.length > 2 && mapName.length < 50 && !mapName.includes(' ') && !['Win', 'Loss', 'Limit'].some(word => mapName.includes(word))) {
-          if (!maps.find(m => m.name === mapName)) {
-            maps.push({
-              id: `map-z8-${maps.length}`,
-              name: mapName,
-              image: '',
-              mode: modeName,
-              category: 'Official'
-            });
-          }
-        }
-      });
-    });
-
     // Fallback list of iconic CF maps if scraping fails to get enough
     const iconicMaps = [
       { name: 'Ship', mode: 'Team Deathmatch' },
@@ -683,10 +600,9 @@ export async function scrapeMaps() {
     iconicMaps.forEach(m => {
       if (!maps.find(existing => existing.name === m.name)) {
         maps.push({
-          id: `map-iconic-${maps.length}`,
           name: m.name,
-          image: '',
-          mode: m.mode,
+          description: `Iconic CrossFire map for ${m.mode}.`,
+          supportedModes: [m.mode],
           category: 'Official'
         });
       }

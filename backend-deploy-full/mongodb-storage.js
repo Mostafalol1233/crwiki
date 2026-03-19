@@ -23,6 +23,28 @@ import {
 } from './shared/mongodb-schema.js';
 
 export class MongoDBStorage {
+    async getAllUsers() {
+        const users = await UserModel.find().sort({ createdAt: -1 }).lean();
+        return users.map(u => ({
+            id: String(u._id),
+            username: u.username,
+            email: u.email,
+            phone: u.phone,
+            verifiedEmail: !!u.verifiedEmail,
+            verifiedPhone: !!u.verifiedPhone,
+            emailVerificationCode: u.emailVerificationCode || "",
+            phoneVerificationCode: u.phoneVerificationCode || "",
+            createdAt: u.createdAt,
+        }));
+    }
+
+    async updateUser(id, updates) {
+        return await UserModel.findByIdAndUpdate(id, { $set: updates }, { new: true }).lean();
+    }
+
+    async deleteUser(id) {
+        return await UserModel.findByIdAndDelete(id).lean();
+    }
     constructor() {
         this.initialized = false;
         this.mercenaries = new Map();

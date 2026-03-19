@@ -19,7 +19,7 @@ import mongoose from 'mongoose';
 import { weaponsData, modesData, ranksData } from './data/seed-data.js';
 import { extractKeywords, generateSeoTitle, summarize, generateSeoImage, parseFlexibleDate, formatEnglishDate, slugifySafe } from './seo-utils.js';
 // Configure multer for memory storage
-import { uploadStream, deleteAsset } from './services/cloudinary.js';
+import { uploadStream, deleteAsset, downloadAndUploadImage } from './utils/cloudinary-helper.js';
 
 const upload = multer({ 
     storage: multer.memoryStorage(),
@@ -140,6 +140,31 @@ function mimeToExt(mime) {
         'audio/wav': 'wav',
     };
     return map[mime] || 'bin';
+}
+
+function isAllowedMediaUrl(url) {
+    if (!url) return true;
+    const u = String(url).toLowerCase();
+    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+    return u.includes('cloudinary.com') || u.includes(CLOUDINARY_CLOUD_NAME) || u.includes('crossfire.wiki') || u.startsWith('/') || u.startsWith('http://localhost') || u.startsWith('https://res.cloudinary.com');
+}
+
+async function processImageUrl(url, folder = 'uploads') {
+    if (!url) return { url: '', publicId: '' };
+    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+    const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+    
+    // If it's already our domain or Cloudinary, return as is
+    if (url.includes(CLOUDINARY_CLOUD_NAME) || url.startsWith(PUBLIC_BASE_URL) || url.startsWith('/')) {
+        return { url, publicId: '' };
+    }
+    
+    // If it's an external URL, re-upload to Cloudinary
+    if (/^https?:\/\//i.test(url)) {
+        return await downloadAndUploadImage(url, folder);
+    }
+    
+    return { url, publicId: '' };
 }
 
 export async function registerRoutes(app) {
@@ -592,7 +617,48 @@ export async function registerRoutes(app) {
             res.status(500).json({ error: error.message });
         }
     });
-    app.post("/api/admin/users/reset-code", requireAuth, requireSuperAdmin, async (req, res) => {
+    app.get("/api/admin/users", requireAuth, requireSuperAdmin, async (_req, res) => {
+            try {
+                const users = await storage.getAllUsers();
+                res.json(users);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        app.post("/api/admin/users/:id/generate-phone-code", requireAuth, requireSuperAdmin, async (req, res) => {
+            try {
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+                await storage.updateUser(req.params.id, { phoneVerificationCode: code });
+                res.json({ ok: true, code });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        app.patch("/api/admin/users/:id/verify", requireAuth, requireSuperAdmin, async (req, res) => {
+            try {
+                const { type, verified } = req.body;
+                const updates = {};
+                if (type === 'email') updates.verifiedEmail = verified;
+                if (type === 'phone') updates.verifiedPhone = verified;
+                await storage.updateUser(req.params.id, updates);
+                res.json({ ok: true });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        app.delete("/api/admin/users/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+            try {
+                await storage.deleteUser(req.params.id);
+                res.json({ ok: true });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        app.post("/api/admin/users/reset-code", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const { email } = req.body;
             const user = await storage.getUserByEmail(email);
@@ -755,6 +821,11 @@ export async function registerRoutes(app) {
                 const result = await uploadStream(req.file.buffer, { folder: 'posts' });
                 data.imageUrl = result.secure_url;
                 data.imagePublicId = result.public_id;
+            } else if (data.imageUrl) {
+                // Handle case where imageUrl is an external URL
+                const { url: finalUrl, publicId } = await processImageUrl(data.imageUrl, 'posts');
+                data.imageUrl = finalUrl;
+                data.imagePublicId = publicId || data.imagePublicId;
             }
             const readingTime = data.readingTime || calculateReadingTime(data.content);
             const summary = data.summary || generateSummary(data.content);
@@ -789,6 +860,10 @@ export async function registerRoutes(app) {
                 const result = await uploadStream(req.file.buffer, { folder: 'posts' });
                 updates.imageUrl = result.secure_url;
                 updates.imagePublicId = result.public_id;
+            } else if (updates.imageUrl) {
+                const { url: finalUrl, publicId } = await processImageUrl(updates.imageUrl, 'posts');
+                updates.imageUrl = finalUrl;
+                updates.imagePublicId = publicId || updates.imagePublicId;
             }
             if (updates.content && !updates.readingTime) {
                 updates.readingTime = calculateReadingTime(updates.content);
@@ -999,6 +1074,10 @@ export async function registerRoutes(app) {
                 const result = await uploadStream(req.file.buffer, { folder: 'events' });
                 data.imageUrl = result.secure_url;
                 data.imagePublicId = result.public_id;
+            } else if (data.imageUrl) {
+                const { url: finalUrl, publicId } = await processImageUrl(data.imageUrl, 'events');
+                data.imageUrl = finalUrl;
+                data.imagePublicId = publicId || data.imagePublicId;
             }
             if (data.description) {
                 data.description = sanitizeHTML(data.description, { allowAdvanced: Boolean(data.fullLayout) });
@@ -1032,6 +1111,10 @@ export async function registerRoutes(app) {
                 const result = await uploadStream(req.file.buffer, { folder: 'events' });
                 updates.imageUrl = result.secure_url;
                 updates.imagePublicId = result.public_id;
+            } else if (updates.imageUrl) {
+                const { url: finalUrl, publicId } = await processImageUrl(updates.imageUrl, 'events');
+                updates.imageUrl = finalUrl;
+                updates.imagePublicId = publicId || updates.imagePublicId;
             }
             if (updates.description) {
                 updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
@@ -2322,6 +2405,11 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 if (req.file) {
                     const result = await uploadStream(req.file.buffer, { folder: 'news' });
                     data.imageUrl = result.secure_url;
+                    data.imagePublicId = result.public_id;
+                } else if (data.imageUrl) {
+                    const { url: finalUrl, publicId } = await processImageUrl(data.imageUrl, 'news');
+                    data.imageUrl = finalUrl;
+                    data.imagePublicId = publicId || data.imagePublicId;
                 }
                 if (data.content) {
                     data.content = sanitizeHTML(data.content);
@@ -2363,6 +2451,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     const result = await uploadStream(req.file.buffer, { folder: 'news' });
                     updates.imageUrl = result.secure_url;
                     updates.imagePublicId = result.public_id;
+                } else if (updates.imageUrl) {
+                    const { url: finalUrl, publicId } = await processImageUrl(updates.imageUrl, 'news');
+                    updates.imageUrl = finalUrl;
+                    updates.imagePublicId = publicId || updates.imagePublicId;
                 }
                 if (updates.content) {
                     updates.content = sanitizeHTML(updates.content);
@@ -3057,18 +3149,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         // Admin: Bulk SEO Editor routes
         app.get("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req, res) => {
             try {
-                const [news, posts, events, sellers] = await Promise.all([
-                    storage.getAllNews(),
-                    storage.getAllPosts(),
-                    storage.getAllEvents(),
-                    storage.getAllSellers()
+                const [newsResult, postsResult, eventsResult, sellersResult] = await Promise.all([
+                    storage.getAllNews().catch(() => ({ items: [] })),
+                    storage.getAllPosts().catch(() => ({ items: [] })),
+                    storage.getAllEvents().catch(() => ({ items: [] })),
+                    storage.getAllSellers().catch(() => ({ items: [] }))
                 ]);
 
                 const allContent = [
-                    ...news.map(n => ({ ...n, type: 'news', displayTitle: n.title })),
-                    ...posts.map(p => ({ ...p, type: 'post', displayTitle: p.title })),
-                    ...events.map(e => ({ ...e, type: 'event', displayTitle: e.title })),
-                    ...sellers.map(s => ({ ...s, type: 'seller', displayTitle: s.name }))
+                    ...(newsResult.items || []).map(n => ({ ...n, type: 'news', displayTitle: n.title })),
+                    ...(postsResult.items || []).map(p => ({ ...p, type: 'post', displayTitle: p.title })),
+                    ...(eventsResult.items || []).map(e => ({ ...e, type: 'event', displayTitle: e.title })),
+                    ...(sellersResult.items || []).map(s => ({ ...s, type: 'seller', displayTitle: s.name }))
                 ];
 
                 res.json(allContent);
@@ -3405,14 +3497,15 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         async function buildDomainUrl(secureUrl, req) {
             try {
                 const u = new URL(String(secureUrl));
+                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
-                if (!/res\.cloudinary\.com$/i.test(u.hostname)) return String(secureUrl);
+                if (!u.hostname.includes('cloudinary.com')) return String(secureUrl);
                 const parts = u.pathname.split('/').filter(Boolean);
                 const isImage = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
                 const last = parts[parts.length - 1] || '';
                 const domainUrl = isImage && /\.[A-Za-z0-9]+$/.test(last)
                     ? `${base}/image/${last}`
-                    : `${base}/media/${u.pathname.replace(/^\//, '')}`;
+                    : `${base}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${u.pathname.replace(/^\//, '')}`;
                 const ctrl = new AbortController();
                 const id = setTimeout(() => ctrl.abort(), 1200);
                 try {
@@ -3658,13 +3751,14 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         // Pretty path proxy: /media/cloudinary/<cloud>/<resource>/<...>
         app.all('/media/cloudinary/*', async (req, res) => {
             try {
+                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 const rest = String(req.params[0] || '').replace(/^\/+/, '');
-                if (!rest || !/^dkpdidm89\//.test(rest)) {
+                if (!rest || !rest.startsWith(CLOUDINARY_CLOUD_NAME + '/')) {
                     return res.status(400).json({ ok: false, error: 'Invalid Cloudinary path' });
                 }
                 const url = `https://res.cloudinary.com/${rest}`;
                 const u = new URL(url);
-                if (!/res\.cloudinary\.com$/i.test(u.hostname)) {
+                if (!u.hostname.includes('cloudinary.com')) {
                     return res.status(400).json({ ok: false, error: 'Only Cloudinary resources allowed' });
                 }
                 const method = (req.method || 'GET').toUpperCase();

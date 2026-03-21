@@ -16,11 +16,26 @@ interface Rank {
   tier?: number;
   emblem?: string;
   image?: string;
+  imageUrl?: string;
   description?: string;
   requirements?: string;
   bonus?: string;
   expRequired?: number;
 }
+
+const extractExpRequired = (rank: Rank) => {
+  if (typeof rank.expRequired === "number" && rank.expRequired > 0) return rank.expRequired;
+  const match = String(rank.requirements || "").match(/exp required:\s*([\d,]+)/i);
+  return match ? Number(match[1].replace(/,/g, "")) : 0;
+};
+
+const extractBonus = (rank: Rank) => {
+  if (rank.bonus) return rank.bonus;
+  const match = String(rank.requirements || "").match(/bonus:\s*([^|]+)/i);
+  return match ? match[1].trim() : "";
+};
+
+const getRankImage = (rank: Rank) => rank.emblem || rank.image || rank.imageUrl || "";
 
 export default function Ranks() {
   const { t } = useLanguage();
@@ -37,17 +52,17 @@ export default function Ranks() {
   });
 
   const filteredRanks = useMemo(() => {
-    const filtered = ranks.filter((rank) => {
-      const matchesSearch =
-        rank.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rank.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rank.requirements?.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
-    });
+      const filtered = ranks.filter((rank) => {
+        const matchesSearch =
+          rank.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          rank.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          rank.requirements?.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      });
 
-    return filtered.sort((a, b) => {
-      const expA = a.expRequired || 0;
-      const expB = b.expRequired || 0;
+      return filtered.sort((a, b) => {
+      const expA = extractExpRequired(a);
+      const expB = extractExpRequired(b);
       return sortOrder === 'asc' ? expA - expB : expB - expA;
     });
   }, [ranks, searchQuery, sortOrder]);
@@ -150,9 +165,9 @@ export default function Ranks() {
                       className="border-b border-border hover:bg-muted/30 transition-colors"
                     >
                       <td className="px-6 py-4 flex items-center gap-4">
-                        {rank.emblem || rank.image ? (
+                        {getRankImage(rank) ? (
                           <img
-                            src={rank.emblem || rank.image}
+                            src={getRankImage(rank)}
                             alt={rank.name}
                             className="w-12 h-12 object-contain flex-shrink-0"
                             width="48"
@@ -167,8 +182,8 @@ export default function Ranks() {
                         )}
                         <span className="font-bold italic">{rank.name}</span>
                       </td>
-                      <td className="px-6 py-4 text-sm">{rank.expRequired?.toLocaleString() || "-"}</td>
-                      <td className="px-6 py-4 text-sm">{rank.bonus || "-"}</td>
+                      <td className="px-6 py-4 text-sm">{extractExpRequired(rank)?.toLocaleString() || "-"}</td>
+                      <td className="px-6 py-4 text-sm">{extractBonus(rank) || "-"}</td>
                     </tr>
                   ))}
                 </tbody>

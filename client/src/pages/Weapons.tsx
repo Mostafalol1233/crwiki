@@ -13,11 +13,25 @@ interface Weapon {
   id: string;
   name: string;
   image: string;
+  imageUrl?: string;
+  backgroundUrl?: string;
   category?: string;
   description?: string;
   stats?: Record<string, any>;
   highlightedName?: string;
 }
+
+const normalizeWeapon = (weapon: Partial<Weapon> & Record<string, any>): Weapon => ({
+  id: String(weapon.id || weapon._id || weapon.name || ""),
+  name: String(weapon.name || "Unknown weapon"),
+  image: String(weapon.image || weapon.imageUrl || ""),
+  imageUrl: String(weapon.imageUrl || weapon.image || ""),
+  backgroundUrl: String(weapon.backgroundUrl || weapon.background || ""),
+  category: String(weapon.category || "Uncategorized"),
+  description: String(weapon.description || ""),
+  stats: weapon.stats || {},
+  highlightedName: weapon.highlightedName,
+});
 
 export default function Weapons() {
   const { t } = useLanguage();
@@ -52,11 +66,12 @@ export default function Weapons() {
       const res = await fetch(`/api/weapons/search?${params.toString()}`);
       if (!res.ok) throw new Error(await res.text());
       const data: { items: Weapon[]; total: number; page: number; pageSize: number } = await res.json();
+      const normalizedItems = (data.items || []).map(normalizeWeapon);
       setTotal(data.total || 0);
       if (opts?.reset) {
-        setResults(data.items || []);
+        setResults(normalizedItems);
       } else {
-        setResults((prev) => [...prev, ...(data.items || [])]);
+        setResults((prev) => [...prev, ...normalizedItems]);
       }
     } catch (e: any) {
       setIsError(true);

@@ -2,11 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Server, Globe, Copy, Check, Image as ImageIcon, X, File as FileIcon } from "lucide-react";
+import { Upload, Globe, Copy, Check, X, File as FileIcon } from "lucide-react";
 
 export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const { toast } = useToast();
@@ -15,7 +14,6 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
-  const [uploadMethod, setUploadMethod] = useState<"server" | "cloudinary">("cloudinary");
   const [customName, setCustomName] = useState("");
   const [bucket, setBucket] = useState("uploads");
 
@@ -62,102 +60,39 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
   const uploadSingleFile = async (file: File, index: number) => {
     const fileId = `${index}-${file.name}`;
     try {
-      if (uploadMethod === "server") {
-        const tokRes = await fetch("/api/security/csrf-token");
-        const tokJson = await tokRes.json();
-        const token = tokJson?.csrfToken || "";
-        const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
+      const tokRes = await fetch("/api/security/csrf-token");
+      const tokJson = await tokRes.json();
+      const token = tokJson?.csrfToken || "";
+      const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", bucket);
+      if (files.length === 1 && customName) fd.append("customName", customName);
 
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("folder", bucket);
-        // Only use custom name if single file
-        if (files.length === 1 && customName) fd.append("customName", customName);
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/images/upload", true);
+      if (token) xhr.setRequestHeader("X-CSRF-Token", token);
+      if (authToken) xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/images/upload", true);
-        if (token) xhr.setRequestHeader("X-CSRF-Token", token);
-        if (authToken) xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-             const pct = Math.round((e.loaded / e.total) * 100);
-             setProgress(prev => ({ ...prev, [fileId]: pct }));
-          }
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          setProgress(prev => ({ ...prev, [fileId]: pct }));
+        }
+      };
+
+      const res: any = await new Promise((resolve, reject) => {
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: async () => JSON.parse(xhr.responseText || "{}") });
         };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(fd);
+      });
 
-        const res: any = await new Promise((resolve, reject) => {
-          xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: async () => JSON.parse(xhr.responseText || "{}") });
-          };
-          xhr.onerror = () => reject(new Error("Network error"));
-          xhr.send(fd);
-        });
-
-        const data = await res.json();
-        const url = data?.domainUrl || data?.domain_url || data?.secure_url || "";
-        if (!res.ok || !url) throw new Error(data?.error || "Upload failed");
-        return url;
-
-      } else {
-        // Cloudinary (Custom Domain Proxy)
-        const fd = new FormData();
-        fd.append("image", file);
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/upload-image", true);
-        const token = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token");
-        if (token) {
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        }
-        
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setProgress(prev => ({ ...prev, [fileId]: pct }));
-          }
-        };
-
-        const res: any = await new Promise((resolve, reject) => {
-          xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, text: async () => xhr.responseText });
-          };
-          xhr.onerror = () => reject(new Error("Network error"));
-          xhr.send(fd);
-        });
-
-        const rawText = await res.text();
-        let url = "";
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(rawText);
-          const firstResult = Array.isArray(parsed?.results) ? parsed.results.find((r: any) => r?.ok) : null;
-          url =
-            parsed?.domainUrl ||
-            parsed?.domain_url ||
-            parsed?.url ||
-            parsed?.file ||
-            parsed?.secure_url ||
-            firstResult?.domainUrl ||
-            firstResult?.domain_url ||
-            firstResult?.url ||
-            firstResult?.secure_url ||
-            "";
-          if (!url && Array.isArray(parsed?.results) && parsed.results.length > 0) {
-            const firstErr = parsed.results.find((r: any) => !r?.ok && r?.error)?.error;
-            if (firstErr) throw new Error(firstErr);
-          }
-        } catch (jsonErr) {
-          url = rawText;
-        }
-
-        if (!res.ok) {
-          const errMsg = parsed?.error || parsed?.message || `Upload failed (status ${res.status})`;
-          throw new Error(errMsg);
-        }
-        if (!url || !url.startsWith("http")) throw new Error(parsed?.error || "Upload failed");
-        return url.trim();
-      }
+      const data = await res.json();
+      const url = data?.domainUrl || data?.domain_url || data?.secure_url || data?.url || "";
+      if (!res.ok || !url) throw new Error(data?.error || "Upload failed");
+      return url.trim();
     } catch (e: any) {
       console.error(`Upload failed for ${file.name}:`, e);
       toast({ title: "Upload failed", description: `${file.name}: ${e.message}`, variant: "destructive" });
@@ -224,19 +159,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
       <Card>
         <CardHeader>
           <CardTitle>Media Uploader</CardTitle>
-          <CardDescription>Unified upload interface for server and Cloudinary media storage</CardDescription>
-          <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as any)} className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="server" className="flex items-center gap-2">
-                <Server className="h-4 w-4" />
-                Local Server
-              </TabsTrigger>
-              <TabsTrigger value="cloudinary" className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                Cloudinary / Custom Domain
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <CardDescription>Cloudinary uploader with direct URL output for editors and admin pages</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
@@ -291,41 +214,33 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
             </div>
 
             <div className="space-y-4">
-              {uploadMethod === "server" && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Bucket / Folder</label>
-                    <Input 
-                      placeholder="e.g. events, news" 
-                      value={bucket} 
-                      onChange={(e) => setBucket(e.target.value)} 
-                    />
-                  </div>
-                  {files.length <= 1 && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Custom Name (Optional)</label>
-                      <Input 
-                        placeholder="e.g. my-image" 
-                        value={customName} 
-                        onChange={(e) => setCustomName(e.target.value)} 
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {uploadMethod === "cloudinary" && (
-                <div className="bg-muted p-4 rounded-lg">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    Custom Domain Upload
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Uploads to Cloudinary (if configured) and serves via your custom domain.
-                    If Cloudinary is unavailable, it falls back to local storage automatically.
-                  </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cloudinary Folder</label>
+                <Input
+                  placeholder="e.g. events, news, editor"
+                  value={bucket}
+                  onChange={(e) => setBucket(e.target.value)}
+                />
+              </div>
+              {files.length <= 1 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Custom Name (Optional)</label>
+                  <Input
+                    placeholder="e.g. my-image"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                  />
                 </div>
               )}
+              <div className="bg-muted p-4 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Cloudinary Upload
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Uploaded files return a ready-to-copy URL that you can paste directly into editors, posts, news, events, and media fields.
+                </p>
+              </div>
 
               <Button 
                 className="w-full" 
@@ -364,9 +279,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
                   <Check className="h-4 w-4 text-green-500" />
                   Upload Complete ({uploadedUrls.length})
                 </span>
-                <Badge variant={uploadMethod === "server" ? "default" : "secondary"}>
-                  {uploadMethod === "server" ? "Server" : "Cloudinary"}
-                </Badge>
+                <Badge variant="secondary">Cloudinary</Badge>
               </div>
               
               <div className="grid gap-2">
@@ -378,7 +291,7 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(url)}>
                       <Copy className="h-4 w-4" />
                     </Button>
-                    {(url.match(/\.(jpeg|jpg|gif|png)$/i) || uploadMethod === 'server') && (
+                    {url.match(/\.(jpeg|jpg|gif|png|webp|avif)$/i) && (
                        <div className="h-8 w-8 rounded overflow-hidden bg-background border flex-shrink-0">
                          <img src={url} alt="Preview" className="w-full h-full object-cover" />
                        </div>

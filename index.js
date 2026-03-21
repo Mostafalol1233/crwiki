@@ -5702,8 +5702,8 @@ async function maybeScan(buffer) {
     if (!enable) return { ok: true };
     return { ok: true };
 }
-app.get("/admin/dashboard", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "public/admin/dashboard.html"));
+app.get("/admin/dashboard", (_req, res) => {
+    res.redirect(302, "/admin");
 });
 /* moved into registerRoutes (app2) */
 app.get("/api/files/test-list", async (_req, res) => {

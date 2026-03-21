@@ -9,5 +9,12 @@ export interface ReviewVerificationSettings {
 export interface SiteSettings extends ReviewVerificationSettings {
   reviewVerificationPassphrase: string;
   backgroundImageUrl?: string;
+  monetizationVerifiedSellersEnabled?: boolean;
+  monetizationVerifiedSellerFee?: number;
+  monetizationBoostingEnabled?: boolean;
+  monetizationBoostingCommissionPct?: number;
+  monetizationPremiumEnabled?: boolean;
+  monetizationPremiumMonthlyPrice?: number;
+  monetizationAffiliateEnabled?: boolean;
+  monetizationAffiliateCommissionPct?: number;
 }
-

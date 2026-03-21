@@ -4708,6 +4708,10 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
     app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const body = req.body || {};
+            const asNumber = (value, fallback = 0) => {
+                const n = Number(value);
+                return Number.isFinite(n) ? n : fallback;
+            };
             const payload = {
                 publicBaseUrl: String(body.publicBaseUrl || ""),
                 seoTitle: String(body.seoTitle || ""),
@@ -4717,6 +4721,14 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 backgroundImageUrl: String(body.backgroundImageUrl || ""),
                 robots: String(body.robots || "index, follow"),
                 announcementsEnabled: body.announcementsEnabled === false ? false : !!body.announcementsEnabled,
+                monetizationVerifiedSellersEnabled: body.monetizationVerifiedSellersEnabled === false ? false : !!body.monetizationVerifiedSellersEnabled,
+                monetizationVerifiedSellerFee: Math.max(0, asNumber(body.monetizationVerifiedSellerFee, 30)),
+                monetizationBoostingEnabled: body.monetizationBoostingEnabled === false ? false : !!body.monetizationBoostingEnabled,
+                monetizationBoostingCommissionPct: Math.max(0, Math.min(100, asNumber(body.monetizationBoostingCommissionPct, 12))),
+                monetizationPremiumEnabled: body.monetizationPremiumEnabled === false ? false : !!body.monetizationPremiumEnabled,
+                monetizationPremiumMonthlyPrice: Math.max(0, asNumber(body.monetizationPremiumMonthlyPrice, 2)),
+                monetizationAffiliateEnabled: body.monetizationAffiliateEnabled === false ? false : !!body.monetizationAffiliateEnabled,
+                monetizationAffiliateCommissionPct: Math.max(0, Math.min(100, asNumber(body.monetizationAffiliateCommissionPct, 4))),
             };
             const s = await storage.updateSiteSettings(payload);
             res.json({
@@ -4727,6 +4739,14 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 backgroundImageUrl: s?.backgroundImageUrl || "",
                 robots: s?.robots || "index, follow",
                 announcementsEnabled: !!s?.announcementsEnabled,
+                monetizationVerifiedSellersEnabled: s?.monetizationVerifiedSellersEnabled !== false,
+                monetizationVerifiedSellerFee: Number.isFinite(s?.monetizationVerifiedSellerFee) ? s.monetizationVerifiedSellerFee : 30,
+                monetizationBoostingEnabled: s?.monetizationBoostingEnabled !== false,
+                monetizationBoostingCommissionPct: Number.isFinite(s?.monetizationBoostingCommissionPct) ? s.monetizationBoostingCommissionPct : 12,
+                monetizationPremiumEnabled: s?.monetizationPremiumEnabled !== false,
+                monetizationPremiumMonthlyPrice: Number.isFinite(s?.monetizationPremiumMonthlyPrice) ? s.monetizationPremiumMonthlyPrice : 2,
+                monetizationAffiliateEnabled: s?.monetizationAffiliateEnabled !== false,
+                monetizationAffiliateCommissionPct: Number.isFinite(s?.monetizationAffiliateCommissionPct) ? s.monetizationAffiliateCommissionPct : 4,
             });
         } catch (error) {
             res.status(500).json({ error: error.message });

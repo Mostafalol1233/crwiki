@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   CheckCircle2,
@@ -16,6 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useEffect, useMemo, useState } from "react";
 
 const offers = [
   {
@@ -135,6 +139,55 @@ const roadmap = [
 ];
 
 export default function PricingPage() {
+  const [verifiedSellers, setVerifiedSellers] = useState(20);
+  const [sellerMonthlyFee, setSellerMonthlyFee] = useState(30);
+  const [monthlyServiceOrders, setMonthlyServiceOrders] = useState(100);
+  const [avgServiceOrderValue, setAvgServiceOrderValue] = useState(12);
+  const [serviceCommissionPct, setServiceCommissionPct] = useState(12);
+  const [premiumMembers, setPremiumMembers] = useState(300);
+  const [premiumMonthlyPrice, setPremiumMonthlyPrice] = useState(2);
+  const [affiliateMonthlySales, setAffiliateMonthlySales] = useState(2000);
+  const [affiliateCommissionPct, setAffiliateCommissionPct] = useState(4);
+  const { data: monetizationDefaults } = useQuery<any>({
+    queryKey: ["/api/public/settings/site"],
+  });
+
+  useEffect(() => {
+    if (!monetizationDefaults) return;
+    setSellerMonthlyFee(monetizationDefaults.monetizationVerifiedSellerFee ?? 30);
+    setServiceCommissionPct(monetizationDefaults.monetizationBoostingCommissionPct ?? 12);
+    setPremiumMonthlyPrice(monetizationDefaults.monetizationPremiumMonthlyPrice ?? 2);
+    setAffiliateCommissionPct(monetizationDefaults.monetizationAffiliateCommissionPct ?? 4);
+  }, [monetizationDefaults]);
+
+  const estimatedRevenue = useMemo(() => {
+    const sellersRevenue = verifiedSellers * sellerMonthlyFee;
+    const servicesRevenue =
+      monthlyServiceOrders * avgServiceOrderValue * (serviceCommissionPct / 100);
+    const premiumRevenue = premiumMembers * premiumMonthlyPrice;
+    const affiliateRevenue = affiliateMonthlySales * (affiliateCommissionPct / 100);
+    const monthlyTotal = sellersRevenue + servicesRevenue + premiumRevenue + affiliateRevenue;
+
+    return {
+      sellersRevenue,
+      servicesRevenue,
+      premiumRevenue,
+      affiliateRevenue,
+      monthlyTotal,
+      yearlyTotal: monthlyTotal * 12,
+    };
+  }, [
+    verifiedSellers,
+    sellerMonthlyFee,
+    monthlyServiceOrders,
+    avgServiceOrderValue,
+    serviceCommissionPct,
+    premiumMembers,
+    premiumMonthlyPrice,
+    affiliateMonthlySales,
+    affiliateCommissionPct,
+  ]);
+
   return (
     <>
       <PageSEO
@@ -281,6 +334,164 @@ export default function PricingPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="mt-8 border-border/70">
+            <CardHeader>
+              <CardTitle className="text-2xl">Revenue estimator (quick planning tool)</CardTitle>
+              <CardDescription>
+                Change the assumptions to estimate monthly and yearly revenue potential from core
+                monetization streams.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="verified-sellers">Verified sellers count</Label>
+                  <Input
+                    id="verified-sellers"
+                    type="number"
+                    min={0}
+                    value={verifiedSellers}
+                    onChange={(e) => setVerifiedSellers(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="seller-monthly-fee">Seller monthly fee ($)</Label>
+                  <Input
+                    id="seller-monthly-fee"
+                    type="number"
+                    min={0}
+                    value={sellerMonthlyFee}
+                    onChange={(e) => setSellerMonthlyFee(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="service-orders">Monthly boosting/coaching orders</Label>
+                  <Input
+                    id="service-orders"
+                    type="number"
+                    min={0}
+                    value={monthlyServiceOrders}
+                    onChange={(e) =>
+                      setMonthlyServiceOrders(Math.max(0, Number(e.target.value) || 0))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service-order-value">Average service order value ($)</Label>
+                  <Input
+                    id="service-order-value"
+                    type="number"
+                    min={0}
+                    value={avgServiceOrderValue}
+                    onChange={(e) =>
+                      setAvgServiceOrderValue(Math.max(0, Number(e.target.value) || 0))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service-commission">Service commission (%)</Label>
+                  <Input
+                    id="service-commission"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={serviceCommissionPct}
+                    onChange={(e) =>
+                      setServiceCommissionPct(Math.min(100, Math.max(0, Number(e.target.value) || 0)))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="premium-members">Premium members</Label>
+                  <Input
+                    id="premium-members"
+                    type="number"
+                    min={0}
+                    value={premiumMembers}
+                    onChange={(e) => setPremiumMembers(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="premium-price">Premium price per month ($)</Label>
+                  <Input
+                    id="premium-price"
+                    type="number"
+                    min={0}
+                    value={premiumMonthlyPrice}
+                    onChange={(e) =>
+                      setPremiumMonthlyPrice(Math.max(0, Number(e.target.value) || 0))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="affiliate-sales">Affiliate tracked sales ($/month)</Label>
+                  <Input
+                    id="affiliate-sales"
+                    type="number"
+                    min={0}
+                    value={affiliateMonthlySales}
+                    onChange={(e) =>
+                      setAffiliateMonthlySales(Math.max(0, Number(e.target.value) || 0))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="affiliate-commission">Affiliate commission (%)</Label>
+                  <Input
+                    id="affiliate-commission"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={affiliateCommissionPct}
+                    onChange={(e) =>
+                      setAffiliateCommissionPct(
+                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+                <h3 className="text-lg font-semibold">Estimated revenue breakdown</h3>
+                <div className="space-y-2 text-sm">
+                  <p className="flex items-center justify-between">
+                    <span>Verified sellers</span>
+                    <strong>${estimatedRevenue.sellersRevenue.toFixed(2)}</strong>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span>Boosting/coaching commissions</span>
+                    <strong>${estimatedRevenue.servicesRevenue.toFixed(2)}</strong>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span>Premium subscriptions</span>
+                    <strong>${estimatedRevenue.premiumRevenue.toFixed(2)}</strong>
+                  </p>
+                  <p className="flex items-center justify-between">
+                    <span>Affiliate commission</span>
+                    <strong>${estimatedRevenue.affiliateRevenue.toFixed(2)}</strong>
+                  </p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="flex items-center justify-between text-base">
+                    <span className="font-medium">Total monthly</span>
+                    <strong className="text-primary">${estimatedRevenue.monthlyTotal.toFixed(2)}</strong>
+                  </p>
+                  <p className="mt-1 flex items-center justify-between text-base">
+                    <span className="font-medium">Total yearly</span>
+                    <strong>${estimatedRevenue.yearlyTotal.toFixed(2)}</strong>
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Tip: these default commission/price values can now be managed from Admin → Dashboard → Monetization Controls.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>

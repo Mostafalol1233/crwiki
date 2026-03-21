@@ -571,6 +571,7 @@ export default function Admin() {
 
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [pagePreviewTarget, setPagePreviewTarget] = useState<string>("/");
 
   useEffect(() => { if (activeTab === 'media') loadServerMedia(); }, [activeTab, mediaQuery, mediaTypeFilter, mediaSort]);
 
@@ -2123,6 +2124,52 @@ export default function Admin() {
                         </div>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">Quick page preview menu</CardTitle>
+                    <CardDescription>
+                      Jump to common public pages quickly from admin so you can preview the site without hunting through the navigation.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <select
+                      value={pagePreviewTarget}
+                      onChange={(e) => setPagePreviewTarget(e.target.value)}
+                      className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm md:min-w-[260px]"
+                    >
+                      {[
+                        ["/", "Home"],
+                        ["/news", "News"],
+                        ["/videos", "Videos"],
+                        ["/pricing", "Pricing"],
+                        ["/sellers", "Sellers"],
+                        ["/support", "Support"],
+                        ["/contact", "Contact"],
+                        ["/my-tickets", "My Tickets"],
+                        ["/download", "Download"],
+                        ["/weapons", "Weapons"],
+                        ["/maps", "Maps"],
+                        ["/ranks", "Ranks"],
+                      ].map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => setLocation(pagePreviewTarget)}>
+                        Open here
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          try { window.open(pagePreviewTarget, "_blank", "noopener,noreferrer"); } catch { }
+                        }}
+                      >
+                        Open in new tab
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

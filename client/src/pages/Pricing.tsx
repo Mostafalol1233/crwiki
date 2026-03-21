@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   Crown,
   Gem,
-  Link as LinkIcon,
+  Link2,
   ShieldCheck,
   ShoppingBag,
   Swords,
@@ -307,8 +307,8 @@ export default function PricingPage() {
             <Card className="border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                  <LinkIcon className="h-5 w-5 text-primary" />
-                  {isArabic ? "مدعوم بالفعل داخل الموقع" : "Already supported by the site"}
+                  <Link2 className="h-5 w-5 text-primary" />
+                  Already supported by the site
                 </CardTitle>
                 <CardDescription>
                   {isArabic ? "لديك بالفعل أساس قوي يمكن تحويله إلى باقات وخدمات أوضح." : "You already have strong building blocks that can be monetized with cleaner packaging."}

@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { RotateCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { RotateCw, CheckCircle2, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 
 export default function RestorationManager() {
   const { toast } = useToast();
   const [isRestoring, setIsRestoring] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isLoadingOverview, setIsLoadingOverview] = useState(false);
   const [verificationData, setVerificationData] = useState<any>(null);
+  const [overviewData, setOverviewData] = useState<any>(null);
 
   const handleRestore = async () => {
     if (!window.confirm("⚠️ This will restore all historical events and grave modes. Continue?")) {
@@ -62,6 +64,22 @@ export default function RestorationManager() {
     }
   };
 
+  const loadRecoveryOverview = async () => {
+    setIsLoadingOverview(true);
+    try {
+      const response = await apiRequest("/api/admin/recovery-overview", "GET");
+      setOverviewData(response);
+    } catch (error: any) {
+      toast({
+        title: "❌ Recovery snapshot failed",
+        description: error.message || "Failed to load content recovery overview",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingOverview(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -79,7 +97,7 @@ export default function RestorationManager() {
           <div className="flex gap-2">
             <Button
               onClick={handleRestore}
-              disabled={isRestoring || isVerifying}
+              disabled={isRestoring || isVerifying || isLoadingOverview}
               variant="default"
               size="lg"
               className="flex-1"
@@ -98,7 +116,7 @@ export default function RestorationManager() {
             </Button>
             <Button
               onClick={handleVerify}
-              disabled={isRestoring || isVerifying}
+              disabled={isRestoring || isVerifying || isLoadingOverview}
               variant="outline"
               size="lg"
             >
@@ -116,9 +134,142 @@ export default function RestorationManager() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Click "Restore" to recover all historical events and grave modes. Use "Verify" to check database status.
+            Use this area to restore historical data and preview your old pages quickly (events, posts, news, announcements, chat users, admins, and settings status).
           </p>
+          <div>
+            <Button
+              onClick={loadRecoveryOverview}
+              disabled={isRestoring || isVerifying || isLoadingOverview}
+              variant="secondary"
+              size="sm"
+            >
+              {isLoadingOverview ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading Snapshot...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Load Recovery Snapshot
+                </>
+              )}
+            </Button>
+          </div>
         </div>
+
+        {overviewData?.success && (
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Recovery Snapshot (All Core Sections)
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Posts</p>
+                <p className="text-2xl font-bold">{overviewData.counts.posts}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Events</p>
+                <p className="text-2xl font-bold">{overviewData.counts.events}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">News</p>
+                <p className="text-2xl font-bold">{overviewData.counts.news}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Custom Pages</p>
+                <p className="text-2xl font-bold">{overviewData.counts.customPages}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Global Announcements</p>
+                <p className="text-2xl font-bold">{overviewData.counts.globalAnnouncements}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Seller Announcements</p>
+                <p className="text-2xl font-bold">{overviewData.counts.sellerAnnouncements}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Admins</p>
+                <p className="text-2xl font-bold">{overviewData.counts.admins}</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">Chat Users</p>
+                <p className="text-2xl font-bold">{overviewData.counts.chatUsers}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="border rounded-lg p-3">
+                <p className="font-medium">Settings Status</p>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                  <li>Site settings configured: {overviewData.settings.siteSettingsConfigured ? "✅ Yes" : "❌ No"}</li>
+                  <li>Chat registration enabled: {overviewData.settings.chatRegistrationEnabled ? "✅ Open" : "⛔ Closed"}</li>
+                </ul>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="font-medium">Quick Admin Checklist</p>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                  <li>Events & News tab → verify restored event history</li>
+                  <li>Posts tab → confirm old posts render and open links</li>
+                  <li>Announcements tab → confirm active banners</li>
+                  <li>Chat Settings tab → verify users and registration mode</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="border rounded-lg p-3">
+                <p className="font-medium mb-2">Latest Posts Preview</p>
+                <div className="space-y-2">
+                  {(overviewData.previews?.posts || []).map((item: any) => (
+                    <a key={item.id} href={item.publicUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm hover:underline">
+                      <span className="truncate">{item.title}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="font-medium mb-2">Latest Events Preview</p>
+                <div className="space-y-2">
+                  {(overviewData.previews?.events || []).map((item: any) => (
+                    <a key={item.id} href={item.publicUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm hover:underline">
+                      <span className="truncate">{item.title}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="border rounded-lg p-3">
+                <p className="font-medium mb-2">Latest News Preview</p>
+                <div className="space-y-2">
+                  {(overviewData.previews?.news || []).map((item: any) => (
+                    <a key={item.id} href={item.publicUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm hover:underline">
+                      <span className="truncate">{item.title}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="font-medium mb-2">Latest Custom Pages Preview</p>
+                <div className="space-y-2">
+                  {(overviewData.previews?.customPages || []).map((item: any) => (
+                    <a key={item.id} href={item.publicUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between text-sm hover:underline">
+                      <span className="truncate">{item.title}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Verification Results */}
         {verificationData && (

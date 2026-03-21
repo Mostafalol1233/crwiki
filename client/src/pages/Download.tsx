@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageSEO from "@/components/PageSEO";
 
 export default function DownloadPage() {
+  const downloadUrl = "https://crossfire.z8games.com/download.html";
+  const patchNotesUrl = "https://crossfire.z8games.com/news.html";
+
   const specs = [
     {
       category: "Processor (CPU)",
@@ -133,11 +136,41 @@ export default function DownloadPage() {
             Official Downloader — Get CrossFire today and join the action
           </p>
           <Button
+            asChild
             size="sm"
             className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
           >
-            Download Now
+            <a href={downloadUrl} target="_blank" rel="noreferrer">
+              Download Now
+            </a>
           </Button>
+        </div>
+
+        <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-lg">Official installer</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Download the latest CrossFire installer from the official Z8Games page to avoid broken or outdated mirrors.
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-lg">Check updates first</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Review current announcements and patch notes before reinstalling so you know whether maintenance or launcher updates are active.
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-lg">Use enough storage</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Keep extra free disk space available for updates, anticheat files, and temporary installer extraction.
+            </CardContent>
+          </Card>
         </div>
 
         {/* System Requirements */}
@@ -195,11 +228,19 @@ export default function DownloadPage() {
             Download CrossFire now and experience intense multiplayer action. Check the system requirements above to ensure your PC meets the minimum specifications.
           </p>
           <Button
+            asChild
             size="sm"
             className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
           >
-            <Download className="mr-2 h-3 w-3" />
-            Download CrossFire
+            <a href={downloadUrl} target="_blank" rel="noreferrer">
+              <Download className="mr-2 h-3 w-3" />
+              Download CrossFire
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="ml-3">
+            <a href={patchNotesUrl} target="_blank" rel="noreferrer">
+              Latest announcements
+            </a>
           </Button>
         </div>
       </div>

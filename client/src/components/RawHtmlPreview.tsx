@@ -5,9 +5,10 @@ interface RawHtmlPreviewProps {
   html: string;
   className?: string;
   isFullPage?: boolean;
+  isRTL?: boolean;
 }
 
-const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFullPage }) => {
+const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFullPage, isRTL = false }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const processedHtml = useMemo(() => {
@@ -57,12 +58,13 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
   }
 
   return (
-    <div className={`raw-html-preview-container ${className || ""}`}>
+    <div className={`raw-html-preview-container ${className || ""}`} dir={isRTL ? "rtl" : "ltr"}>
       <div 
-        className="prose prose-sm sm:prose-base md:prose-lg lg:prose-xl dark:prose-invert max-w-none 
-                   prose-img:rounded-xl prose-img:shadow-lg prose-img:mx-auto
-                   prose-headings:text-primary prose-a:text-primary hover:prose-a:text-primary/80
-                   prose-table:border prose-table:border-collapse prose-td:border prose-td:p-2 prose-th:bg-muted"
+        className={`prose prose-sm sm:prose-base md:prose-lg lg:prose-xl dark:prose-invert max-w-none
+                   prose-img:mx-auto prose-img:rounded-2xl prose-img:border prose-img:border-primary/10 prose-img:shadow-2xl
+                   prose-headings:scroll-mt-24 prose-headings:text-primary prose-a:text-primary hover:prose-a:text-primary/80
+                   prose-strong:text-foreground prose-li:marker:text-primary prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
+                   prose-table:border prose-table:border-collapse prose-td:border prose-td:p-2 prose-th:bg-muted prose-th:text-foreground ${isRTL ? "text-right prose-table:[direction:rtl]" : "text-left"}`}
         dangerouslySetInnerHTML={{ __html: processedHtml }} 
       />
       <style>{`
@@ -71,6 +73,23 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
           height: auto;
           display: block;
           margin: 1.5rem auto;
+        }
+        .raw-html-preview-container h2,
+        .raw-html-preview-container h3,
+        .raw-html-preview-container h4 {
+          position: relative;
+        }
+        .raw-html-preview-container h2::before,
+        .raw-html-preview-container h3::before,
+        .raw-html-preview-container h4::before {
+          content: "";
+          position: absolute;
+          inset-inline-start: -1rem;
+          top: 0.25em;
+          width: 4px;
+          height: calc(100% - 0.5em);
+          border-radius: 9999px;
+          background: linear-gradient(180deg, rgba(234,179,8,0.9), rgba(239,68,68,0.65));
         }
         .raw-html-preview-container table {
           width: 100% !important;

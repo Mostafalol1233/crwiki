@@ -53,17 +53,24 @@ export default function ScrapingManager() {
 
   const [isMirroring, setIsMirroring] = useState(false);
 
+  const upsertScrapedEvent = (event: ScrapedEvent) => {
+    setScrapedEvents((prev) => prev.map((item) => (item.url === event.url ? event : item)));
+    setPreviewEvent(event);
+    setEditedEvent(event);
+  };
+
   const handleMirror = async (url: string) => {
     setIsMirroring(true);
     try {
       const response = await apiRequest("/api/mirror-url", "POST", { url });
       if (response.success) {
-        setEditedEvent({
+        const nextEvent = {
           ...editedEvent!,
           content: response.content,
           rawHtmlContent: response.content,
           title: response.title || editedEvent?.title
-        });
+        };
+        upsertScrapedEvent(nextEvent);
         toast({ title: "Mirroring Successful", description: "Content has been mirrored with local assets." });
       }
     } catch (error: any) {
@@ -192,10 +199,7 @@ export default function ScrapingManager() {
 
   const handleSaveEdit = () => {
     if (editedEvent) {
-      setScrapedEvents(prev =>
-        prev.map(e => e.url === editedEvent.url ? editedEvent : e)
-      );
-      setPreviewEvent(editedEvent);
+      upsertScrapedEvent(editedEvent);
       toast({
         title: "Changes Saved",
         description: "Event details updated in preview",
@@ -235,7 +239,7 @@ export default function ScrapingManager() {
   const handleCleanContent = () => {
     if (!editedEvent) return;
     const cleaned = cleanEventHtml(editedEvent.content || '');
-    setEditedEvent({ ...editedEvent, content: cleaned });
+    setEditedEvent({ ...editedEvent, content: cleaned, rawHtmlContent: cleaned });
     toast({
       title: 'Content cleaned',
       description: 'Removed common location/place placeholders from the event body.',
@@ -255,7 +259,11 @@ export default function ScrapingManager() {
     setIsPublishing(true);
     
     try {
-      const eventsToPublish = scrapedEvents.filter(e => selectedEvents.has(e.url));
+      const eventMap = new Map(scrapedEvents.map((event) => [event.url, event]));
+      if (editedEvent) {
+        eventMap.set(editedEvent.url, editedEvent);
+      }
+      const eventsToPublish = Array.from(eventMap.values()).filter(e => selectedEvents.has(e.url));
       
       const response = await apiRequest("/api/events/bulk-create", "POST", {
         events: eventsToPublish,
@@ -609,7 +617,7 @@ export default function ScrapingManager() {
                   <label className="text-sm font-medium mb-2 block">Preview</label>
                   <div className="p-4 rounded-md border bg-muted/50 overflow-auto max-h-64">
                     <RawHtmlPreview 
-                      html={editedEvent?.rawHtmlContent || editedEvent?.content || ''} 
+                      html={editedEvent?.content || editedEvent?.rawHtmlContent || ''} 
                       data-testid="div-content-preview"
                     />
                   </div>
@@ -664,6 +672,7 @@ export default function ScrapingManager() {
               <Button
                 onClick={() => {
                   if (editedEvent) {
+                    upsertScrapedEvent(editedEvent);
                     setSelectedEvents(new Set([editedEvent.url]));
                     setIsPreviewOpen(false);
                     setTimeout(() => handlePublishSelected(), 100);

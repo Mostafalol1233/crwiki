@@ -64,6 +64,9 @@ import {
   Search,
   ExternalLink,
   Edit2,
+  AlertCircle,
+  DollarSign,
+  Gem,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import imageCompression from 'browser-image-compression';
@@ -294,6 +297,21 @@ export default function Admin() {
       .trim()
       .replace(/\s+/g, '-')
       .substring(0, 60);
+  const validateEventForm = (form: typeof eventForm) => {
+    const errors: string[] = [];
+    const cleanTitle = String(form.title || "").trim();
+    const cleanTitleAr = String(form.titleAr || "").trim();
+    const cleanDescription = String(form.description || "").replace(/<[^>]*>/g, " ").trim();
+    const cleanDescriptionAr = String(form.descriptionAr || "").replace(/<[^>]*>/g, " ").trim();
+    const cleanDate = String(form.date || "").trim();
+
+    if (!cleanTitle && !cleanTitleAr) errors.push("Add an English or Arabic title.");
+    if (!cleanDescription && !cleanDescriptionAr) errors.push("Add event content in at least one language.");
+    if (!cleanDate) errors.push("Choose or enter an event date.");
+    if (cleanDate && Number.isNaN(Date.parse(cleanDate))) errors.push("Use a valid event date so countdowns and sorting work correctly.");
+
+    return errors;
+  };
   const { toast } = useToast();
   const [adminRole, setAdminRole] = useState<string>("");
   const [adminUsername, setAdminUsername] = useState<string>("");
@@ -302,6 +320,7 @@ export default function Admin() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [eventValidationErrors, setEventValidationErrors] = useState<string[]>([]);
   const [isCreatingNews, setIsCreatingNews] = useState(false);
   const [editingNews, setEditingNews] = useState<any>(null);
   const [isCreatingSeller, setIsCreatingSeller] = useState(false);
@@ -552,6 +571,7 @@ export default function Admin() {
 
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [pagePreviewTarget, setPagePreviewTarget] = useState<string>("/");
 
   useEffect(() => { if (activeTab === 'media') loadServerMedia(); }, [activeTab, mediaQuery, mediaTypeFilter, mediaSort]);
 
@@ -743,6 +763,9 @@ export default function Admin() {
   const [eventsPage, setEventsPage] = useState(1);
   const [newsPage, setNewsPage] = useState(1);
   const limit = 20;
+  const [postSearch, setPostSearch] = useState("");
+  const [eventSearch, setEventSearch] = useState("");
+  const [newsSearch, setNewsSearch] = useState("");
 
   const { data: stats } = useQuery<{
     totalPosts: number;
@@ -773,6 +796,24 @@ export default function Admin() {
   });
   const newsItems = newsData?.items || [];
   const totalNews = newsData?.total || 0;
+
+  const filteredPosts = useMemo(() => {
+    const q = postSearch.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((post) => [post.title, post.post_slug, post.author, post.category].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [postSearch, posts]);
+
+  const filteredEvents = useMemo(() => {
+    const q = eventSearch.trim().toLowerCase();
+    if (!q) return events;
+    return events.filter((event) => [event.title, event.titleAr, event.event_name_slug, event.date, event.type].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [eventSearch, events]);
+
+  const filteredNews = useMemo(() => {
+    const q = newsSearch.trim().toLowerCase();
+    if (!q) return newsItems;
+    return newsItems.filter((news) => [news.title, news.titleAr, news.news_slug, news.author, news.category, news.dateRange].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [newsItems, newsSearch]);
 
   const renderPagination = (currentPage: number, totalItems: number, onPageChange: (page: number) => void) => {
     const totalPages = Math.ceil(totalItems / limit);
@@ -976,10 +1017,11 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       setIsCreatingEvent(false);
       resetEventForm();
+      setEventValidationErrors([]);
       toast({ title: "Event created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create event", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Failed to create event", description: error?.message || "Unknown error", variant: "destructive" });
     },
   });
 
@@ -991,6 +1033,7 @@ export default function Admin() {
       setEditingEvent(null);
       setIsCreatingEvent(false);
       resetEventForm();
+      setEventValidationErrors([]);
       toast({ title: "Event updated successfully" });
     },
     onError: (error: any) => {
@@ -1637,7 +1680,7 @@ export default function Admin() {
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} defaultValue="dashboard" className="space-y-6" data-testid="tabs-admin">
           <div className="flex flex-col lg:flex-row gap-6">
-            <div className="w-full lg:w-56">
+            <div className="w-full lg:w-72 lg:shrink-0">
               {/* small screen: select picker */}
               <div className="block lg:hidden mb-3">
                 <select
@@ -1670,139 +1713,139 @@ export default function Admin() {
               </div>
 
               {/* large screen: vertical tabs list */}
-              <TabsList className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-2">
-                <TabsTrigger value="dashboard" data-testid="tab-dashboard">
+              <TabsList className="hidden lg:flex lg:max-h-[calc(100vh-10rem)] lg:flex-col lg:flex-wrap-0 lg:gap-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card/80 lg:p-2 lg:sticky lg:top-6">
+                <TabsTrigger value="dashboard" className="justify-start" data-testid="tab-dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="truncate">Dashboard</span>
                 </TabsTrigger>
-                <TabsTrigger value="media" data-testid="tab-media">
+                <TabsTrigger value="media" className="justify-start" data-testid="tab-media">
                   <Upload className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Media Uploads</span>
+                  <span className="truncate">Media Uploads</span>
                 </TabsTrigger>
                 {isSuperAdmin && (
-                  <TabsTrigger value="analytics" data-testid="tab-analytics">
+                  <TabsTrigger value="analytics" className="justify-start" data-testid="tab-analytics">
                     <Eye className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Analytics</span>
+                    <span className="truncate">Analytics</span>
                   </TabsTrigger>
                 )}
                 {canPosts && (
-                  <TabsTrigger value="posts" data-testid="tab-posts">
+                  <TabsTrigger value="posts" className="justify-start" data-testid="tab-posts">
                     <FileText className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Posts</span>
+                    <span className="truncate">Posts</span>
                   </TabsTrigger>
                 )}
                 {canEventsNews && (
-                  <TabsTrigger value="events-news" data-testid="tab-events-news">
+                  <TabsTrigger value="events-news" className="justify-start" data-testid="tab-events-news">
                     <Calendar className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Events & News</span>
+                    <span className="truncate">Events & News</span>
                   </TabsTrigger>
                 )}
                 {canTutorials && (
-                  <TabsTrigger value="tutorials" data-testid="tab-tutorials">
+                  <TabsTrigger value="tutorials" className="justify-start" data-testid="tab-tutorials">
                     <FileText className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Tutorials</span>
+                    <span className="truncate">Tutorials</span>
                   </TabsTrigger>
                 )}
                 {canSellers && (
-                  <TabsTrigger value="sellers" data-testid="tab-sellers">
+                  <TabsTrigger value="sellers" className="justify-start" data-testid="tab-sellers">
                     <Store className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Sellers</span>
+                    <span className="truncate">Sellers</span>
                   </TabsTrigger>
                 )}
                 {canCFData && (
-                  <TabsTrigger value="cf-data" data-testid="tab-cf-data">
+                  <TabsTrigger value="cf-data" className="justify-start" data-testid="tab-cf-data">
                     <Shield className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">CF Data</span>
+                    <span className="truncate">CF Data</span>
                   </TabsTrigger>
                 )}
                 {canRestoration && (
-                  <TabsTrigger value="restoration" data-testid="tab-restoration">
+                  <TabsTrigger value="restoration" className="justify-start" data-testid="tab-restoration">
                     <RotateCw className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Restore Data</span>
+                    <span className="truncate">Restore Data</span>
                   </TabsTrigger>
                 )}
                 {canTranslations && (
-                  <TabsTrigger value="translations" data-testid="tab-translations">
+                  <TabsTrigger value="translations" className="justify-start" data-testid="tab-translations">
                     <Languages className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Translations</span>
+                    <span className="truncate">Translations</span>
                   </TabsTrigger>
                 )}
                 {canVerification && (
-                  <TabsTrigger value="verification" data-testid="tab-verification">
+                  <TabsTrigger value="verification" className="justify-start" data-testid="tab-verification">
                     <Shield className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Review Verification</span>
+                    <span className="truncate">Review Verification</span>
                   </TabsTrigger>
                 )}
                 {canSiteSettings && (
-                  <TabsTrigger value="appearance" data-testid="tab-appearance">
+                  <TabsTrigger value="appearance" className="justify-start" data-testid="tab-appearance">
                     <LayoutDashboard className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Appearance</span>
+                    <span className="truncate">Appearance</span>
                   </TabsTrigger>
                 )}
                 {canSiteSettings && (
-                  <TabsTrigger value="site-settings" data-testid="tab-site-settings">
+                  <TabsTrigger value="site-settings" className="justify-start" data-testid="tab-site-settings">
                     <Shield className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Site Settings</span>
+                    <span className="truncate">Site Settings</span>
                   </TabsTrigger>
                 )}
                 {canAdmins && (
-                  <TabsTrigger value="admins" data-testid="tab-admins">
+                  <TabsTrigger value="admins" className="justify-start" data-testid="tab-admins">
                     <Users className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Admins</span>
+                    <span className="truncate">Admins</span>
                   </TabsTrigger>
                 )}
                 {canSubscribers && (
-                  <TabsTrigger value="subscribers" data-testid="tab-subscribers">
+                  <TabsTrigger value="subscribers" className="justify-start" data-testid="tab-subscribers">
                     <Mail className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Subscribers</span>
+                    <span className="truncate">Subscribers</span>
                   </TabsTrigger>
                 )}
                 {canScraper && (
-                  <TabsTrigger value="scraper" data-testid="tab-scraper">
+                  <TabsTrigger value="scraper" className="justify-start" data-testid="tab-scraper">
                     <Upload className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Scraper</span>
+                    <span className="truncate">Scraper</span>
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="announcements" data-testid="tab-announcements">
+                  <TabsTrigger value="announcements" className="justify-start" data-testid="tab-announcements">
                     <Newspaper className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Announcements</span>
+                    <span className="truncate">Announcements</span>
                   </TabsTrigger>
                 )}
                 {canMercenaries && (
-                  <TabsTrigger value="mercenaries" data-testid="tab-mercenaries">
+                  <TabsTrigger value="mercenaries" className="justify-start" data-testid="tab-mercenaries">
                     <Star className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Mercenaries</span>
+                    <span className="truncate">Mercenaries</span>
                   </TabsTrigger>
                 )}
                 {canTickets && (
-                  <TabsTrigger value="tickets" data-testid="tab-tickets">
+                  <TabsTrigger value="tickets" className="justify-start" data-testid="tab-tickets">
                     <LifeBuoy className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Tickets</span>
+                    <span className="truncate">Tickets</span>
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="seller-reviews" data-testid="tab-seller-reviews">
+                  <TabsTrigger value="seller-reviews" className="justify-start" data-testid="tab-seller-reviews">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Seller Review Verification</span>
+                    <span className="truncate">Seller Review Verification</span>
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="reset-codes" data-testid="tab-reset-codes">
+                  <TabsTrigger value="reset-codes" className="justify-start" data-testid="tab-reset-codes">
                     <Shield className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Password Reset Codes</span>
+                    <span className="truncate">Password Reset Codes</span>
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="chat-settings" data-testid="tab-chat-settings">
+                  <TabsTrigger value="chat-settings" className="justify-start" data-testid="tab-chat-settings">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Chat Settings</span>
+                    <span className="truncate">Chat Settings</span>
                   </TabsTrigger>
                 )}
                 {isSuperAdmin && (
-                  <TabsTrigger value="custom-pages" data-testid="tab-custom-pages">
+                  <TabsTrigger value="custom-pages" className="justify-start" data-testid="tab-custom-pages">
                     <FileText className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Custom Pages</span>
+                    <span className="truncate">Custom Pages</span>
                   </TabsTrigger>
                 )}
               </TabsList>
@@ -1853,6 +1896,108 @@ export default function Admin() {
                     </Card>
                   )}
                 </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      Revenue Roadmap
+                    </CardTitle>
+                    <CardDescription>
+                      Suggested ways to turn the current wiki into a cleaner revenue engine without relying only on intrusive ads.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {[
+                        {
+                          title: "Verified sellers",
+                          text: "Use the existing seller pages, reviews, and rankings to sell featured placements and verified packages.",
+                        },
+                        {
+                          title: "Boosting & coaching",
+                          text: "Add request intake and admin assignment flow for rank boosting, scrim prep, or coaching services.",
+                        },
+                        {
+                          title: "Premium membership",
+                          text: "Package exclusive guides, calculators, and early event analysis into a low-cost recurring plan.",
+                        },
+                        {
+                          title: "Affiliate offers",
+                          text: "Place gaming gear, top-up, and creator-equipment recommendations on high-intent pages.",
+                        },
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-xl border bg-muted/30 p-4">
+                          <div className="flex items-center gap-2 font-semibold">
+                            <Gem className="h-4 w-4 text-primary" />
+                            {item.title}
+                          </div>
+                          <p className="mt-2 text-sm text-muted-foreground">{item.text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => setLocation("/pricing")}>
+                        Open pricing page
+                      </Button>
+                      {canSellers && (
+                        <Button variant="outline" onClick={() => setActiveTab("sellers")}>
+                          Open sellers manager
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => setLocation("/contact")}>
+                        Partnership contact page
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">Quick page preview menu</CardTitle>
+                    <CardDescription>
+                      Jump to common public pages quickly from admin so you can preview the site without hunting through the navigation.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <select
+                      value={pagePreviewTarget}
+                      onChange={(e) => setPagePreviewTarget(e.target.value)}
+                      className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm md:min-w-[260px]"
+                    >
+                      {[
+                        ["/", "Home"],
+                        ["/news", "News"],
+                        ["/videos", "Videos"],
+                        ["/pricing", "Pricing"],
+                        ["/sellers", "Sellers"],
+                        ["/support", "Support"],
+                        ["/contact", "Contact"],
+                        ["/my-tickets", "My Tickets"],
+                        ["/download", "Download"],
+                        ["/weapons", "Weapons"],
+                        ["/maps", "Maps"],
+                        ["/ranks", "Ranks"],
+                      ].map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => setLocation(pagePreviewTarget)}>
+                        Open here
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          try { window.open(pagePreviewTarget, "_blank", "noopener,noreferrer"); } catch { }
+                        }}
+                      >
+                        Open in new tab
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
               <TabsContent value="media" className="space-y-6" data-testid="content-media">
                 <MediaUpload onUploadSuccess={loadServerMedia} />
@@ -1988,8 +2133,20 @@ export default function Admin() {
 
               {canPosts && (
                 <TabsContent value="posts" className="space-y-6" data-testid="content-posts">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold">Posts Management</h2>
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <h2 className="text-2xl font-semibold">Posts Management</h2>
+                      <p className="text-sm text-muted-foreground">Find any post quickly and jump straight into edit mode.</p>
+                    </div>
+                    <div className="flex w-full max-w-md items-center gap-2">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={postSearch}
+                        onChange={(e) => setPostSearch(e.target.value)}
+                        placeholder="Search posts by title, slug, author, or category"
+                        data-testid="input-search-posts"
+                      />
+                    </div>
                     <Dialog open={isCreatingPost} onOpenChange={(open) => {
                       setIsCreatingPost(open);
                       if (!open) {
@@ -2473,9 +2630,22 @@ export default function Admin() {
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div />
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold">Events</h2>
-                        <div className="flex gap-2">
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <h2 className="text-2xl font-semibold">Events</h2>
+                          <p className="text-sm text-muted-foreground">Search existing events and edit any record from the list below.</p>
+                        </div>
+                        <div className="flex w-full max-w-md items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={eventSearch}
+                            onChange={(e) => setEventSearch(e.target.value)}
+                            placeholder="Search events by title, slug, date, or type"
+                            data-testid="input-search-events"
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           {isSuperAdmin && (
                             <Button
                               variant="secondary"
@@ -2498,38 +2668,40 @@ export default function Admin() {
                             </Button>
                           )}
                           {canUseScraper && (
-                          <Button
-                            variant="outline"
-                            onClick={() => scrapeEventsMutation.mutate()}
-                            disabled={scrapeEventsMutation.isPending}
-                            data-testid="button-scrape-events"
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
-                          </Button>
-                        )}
-                        {isSuperAdmin && (
-                          <Button
-                            variant="outline"
-                            onClick={() => migrateSlugsMutation.mutate()}
-                            disabled={migrateSlugsMutation.isPending}
-                            data-testid="button-migrate-slugs"
-                          >
-                            {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
-                          </Button>
-                        )}
-                        {migrationCounts && (
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">Events: {migrationCounts.events}</Badge>
-                            <Badge variant="secondary">Posts: {migrationCounts.posts}</Badge>
-                            <Badge variant="secondary">News: {migrationCounts.news}</Badge>
-                          </div>
-                        )}
+                            <Button
+                              variant="outline"
+                              onClick={() => scrapeEventsMutation.mutate()}
+                              disabled={scrapeEventsMutation.isPending}
+                              data-testid="button-scrape-events"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
+                            </Button>
+                          )}
+                          {isSuperAdmin && (
+                            <Button
+                              variant="outline"
+                              onClick={() => migrateSlugsMutation.mutate()}
+                              disabled={migrateSlugsMutation.isPending}
+                              data-testid="button-migrate-slugs"
+                            >
+                              {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
+                            </Button>
+                          )}
+                          {migrationCounts && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">Events: {migrationCounts.events}</Badge>
+                              <Badge variant="secondary">Posts: {migrationCounts.posts}</Badge>
+                              <Badge variant="secondary">News: {migrationCounts.news}</Badge>
+                            </div>
+                          )}
+                        </div>
                         <Dialog open={isCreatingEvent} onOpenChange={(open) => {
                           setIsCreatingEvent(open);
                           if (!open) {
                             setEditingEvent(null);
                             resetEventForm();
+                            setEventValidationErrors([]);
                           }
                         }}>
                           <DialogTrigger asChild>
@@ -2703,25 +2875,37 @@ export default function Admin() {
                                 />
                               </div>
 
+                              {eventValidationErrors.length > 0 && (
+                                <Alert variant="destructive">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <AlertTitle>Fix the highlighted event form issues</AlertTitle>
+                                  <AlertDescription>
+                                    <ul className="list-disc space-y-1 pl-5">
+                                      {eventValidationErrors.map((error) => (
+                                        <li key={error}>{error}</li>
+                                      ))}
+                                    </ul>
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+
                               <div className="flex gap-2">
                                 <Button
                                   onClick={() => {
                                     const descHtml = eventForm.description;
                                     const descArHtml = eventForm.descriptionAr;
+                                    const errors = validateEventForm(eventForm);
+
+                                    if (errors.length > 0) {
+                                      setEventValidationErrors(errors);
+                                      toast({ title: "Event form needs attention", description: errors[0], variant: "destructive" });
+                                      return;
+                                    }
+
+                                    setEventValidationErrors([]);
+
                                     const cleanTitle = String(eventForm.title || "").trim();
                                     const cleanTitleAr = String(eventForm.titleAr || "").trim();
-                                    const cleanDescription = String(descHtml || "").trim();
-                                    const cleanDescriptionAr = String(descArHtml || "").trim();
-
-                                    if (!cleanTitle && !cleanTitleAr) {
-                                      toast({ title: "Missing title", description: "Please add English or Arabic title.", variant: "destructive" });
-                                      return;
-                                    }
-                                    if (!cleanDescription && !cleanDescriptionAr) {
-                                      toast({ title: "Missing description", description: "Please add event content in at least one language.", variant: "destructive" });
-                                      return;
-                                    }
-
                                     const customSlug = normalizeSlugValue(eventForm.event_name_slug || "");
                                     const generatedSlug = normalizeSlugValue(cleanTitle || cleanTitleAr || "event");
                                     const finalSlug = customSlug || generatedSlug || "event";
@@ -2745,9 +2929,10 @@ export default function Admin() {
                                     }
                                   }}
                                   className="flex-1"
+                                  disabled={createEventMutation.isPending || updateEventMutation.isPending}
                                   data-testid="button-submit-event"
                                 >
-                                  {editingEvent ? "Update Event" : "Create Event"}
+                                  {createEventMutation.isPending || updateEventMutation.isPending ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
                                 </Button>
                                 {editingEvent && (
                                   <Button
@@ -2881,9 +3066,21 @@ export default function Admin() {
                       {renderPagination(eventsPage, totalEvents, setEventsPage)}
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold">News</h2>
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <h2 className="text-2xl font-semibold">News</h2>
+                          <p className="text-sm text-muted-foreground">Search and edit any published news item without leaving the table.</p>
+                        </div>
+                        <div className="flex w-full max-w-md items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={newsSearch}
+                            onChange={(e) => setNewsSearch(e.target.value)}
+                            placeholder="Search news by title, slug, author, or category"
+                            data-testid="input-search-news"
+                          />
+                        </div>
                         <Dialog open={isCreatingNews} onOpenChange={(open) => {
                           setIsCreatingNews(open);
                           if (!open) {
@@ -5035,9 +5232,10 @@ export default function Admin() {
                           )}
                           <div className="pt-2">
                             <p className="text-sm font-medium mb-2">Permissions</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="max-h-72 overflow-y-auto rounded-lg border border-border/60 bg-muted/20 p-3">
+                              <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
                               {AVAILABLE_PERMISSIONS.map((p) => (
-                                <label key={p.key} className="flex items-center gap-2 text-sm">
+                                <label key={p.key} className="flex items-start gap-3 rounded-md border border-border/50 bg-background px-3 py-2 text-sm">
                                   <input
                                     type="checkbox"
                                     checked={!!adminPermissionsForm[p.key]}
@@ -5046,6 +5244,7 @@ export default function Admin() {
                                   <span>{p.label}</span>
                                 </label>
                               ))}
+                            </div>
                             </div>
                           </div>
                           <Button

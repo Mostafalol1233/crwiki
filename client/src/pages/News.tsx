@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import PageSEO from "@/components/PageSEO";
+import { ImageIcon } from "lucide-react";
 
 type NewsItemBase = {
   id: string;
@@ -36,6 +37,23 @@ type NewsItem = NewsItemNews | NewsItemPost;
 
 export default function News() {
   const { t, language, toggleLanguage } = useLanguage();
+
+  const normalizeAuthor = (author?: string) => {
+    const raw = String(author || "").trim();
+    if (!raw) return "Wiki Updates";
+    if (/forum\s*scraper/i.test(raw)) return "Wiki Updates";
+    if (/scraper/i.test(raw)) return "Community News";
+    return raw;
+  };
+
+  const buildExcerpt = (item: any) => {
+    const raw =
+      (language === "ar" && item?.contentAr ? item.contentAr : "") ||
+      item?.summary ||
+      item?.content ||
+      "";
+    return String(raw).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 180);
+  };
 
   const [page, setPage] = useState(1);
   const limit = 20;
@@ -190,12 +208,44 @@ export default function News() {
                     })();
                     return (
                       <Link key={item.id} href={href}>
-                        <Card className="bg-transparent border-b border-muted/40 rounded-none shadow-none py-3" data-testid={`card-news-${item.id}`}>
-                          <h3 className={`text-xl md:text-2xl font-semibold ${language === 'ar' ? 'text-right' : ''}`}>{titleText}</h3>
-                          <div className={`text-sm text-muted-foreground ${language === 'ar' ? 'text-right' : ''}`}>
-                            <span className={`date-text ${gradientClass}`}>{dateText}</span>
-                            <span> • </span>
-                            <span>{item.author}</span>
+                        <Card
+                          className="overflow-hidden border border-border/60 bg-card/70 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                          data-testid={`card-news-${item.id}`}
+                        >
+                          <div className="grid gap-4 p-4 md:grid-cols-[220px_minmax(0,1fr)] md:p-5">
+                            <div className="relative overflow-hidden rounded-xl border bg-muted/30 aspect-[16/10]">
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={titleText}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                  <ImageIcon className="h-8 w-8" />
+                                </div>
+                              )}
+                              {item.featured && (
+                                <Badge className="absolute left-3 top-3">Featured</Badge>
+                              )}
+                            </div>
+
+                            <div className={`space-y-3 ${language === 'ar' ? 'text-right' : ''}`}>
+                              <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+                                <Badge variant="outline">{item.type === "post" ? "Article" : item.category || "News"}</Badge>
+                                <span className={`date-text ${gradientClass}`}>{dateText}</span>
+                              </div>
+                              <h3 className="text-xl font-semibold md:text-2xl">{titleText}</h3>
+                              <p className="text-sm leading-6 text-muted-foreground">
+                                {buildExcerpt(item) || "Open this update to read the full story, official details, and related CrossFire coverage."}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                <span className="font-medium text-foreground">{normalizeAuthor(item.author)}</span>
+                                <span>•</span>
+                                <span>{item.type === "post" ? "Editorial" : "News Update"}</span>
+                              </div>
+                            </div>
                           </div>
                         </Card>
                       </Link>

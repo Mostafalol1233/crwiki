@@ -611,6 +611,31 @@ export default function Admin() {
   const canManageMercenaries = canMercenaries;
   const canManageSubscribers = canSubscribers;
   const canUseScraper = canScraper;
+  const quickAccessTabs = [
+    { key: "dashboard", label: "Dashboard", enabled: true },
+    { key: "media", label: "Media", enabled: true },
+    { key: "analytics", label: "Analytics", enabled: isSuperAdmin },
+    { key: "posts", label: "Posts", enabled: canPosts },
+    { key: "events-news", label: "Events & News", enabled: canEventsNews },
+    { key: "tutorials", label: "Tutorials", enabled: canTutorials },
+    { key: "sellers", label: "Sellers", enabled: canSellers },
+    { key: "cf-data", label: "CF Data", enabled: canCFData },
+    { key: "restoration", label: "Restoration", enabled: canRestoration },
+    { key: "translations", label: "Translations", enabled: canTranslations },
+    { key: "verification", label: "Verification", enabled: canVerification },
+    { key: "appearance", label: "Appearance", enabled: isSuperAdmin },
+    { key: "site-settings", label: "Site Settings", enabled: canSiteSettings },
+    { key: "admins", label: "Admins", enabled: canAdmins },
+    { key: "subscribers", label: "Subscribers", enabled: canSubscribers },
+    { key: "scraper", label: "Scraper", enabled: canScraper },
+    { key: "announcements", label: "Announcements", enabled: isSuperAdmin },
+    { key: "mercenaries", label: "Mercenaries", enabled: canMercenaries },
+    { key: "tickets", label: "Tickets", enabled: canTickets },
+    { key: "seller-reviews", label: "Seller Reviews", enabled: isSuperAdmin },
+    { key: "reset-codes", label: "Reset Codes", enabled: isSuperAdmin },
+    { key: "chat-settings", label: "Chat Settings", enabled: canChat },
+    { key: "custom-pages", label: "Custom Pages", enabled: isSuperAdmin },
+  ].filter((item) => item.enabled);
 
   useEffect(() => {
     const allowed = new Set<string>([
@@ -1681,7 +1706,7 @@ export default function Admin() {
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-72 lg:shrink-0">
               {/* small screen: select picker */}
-              <div className="block lg:hidden mb-3">
+              <div className="block mb-3">
                 <select
                   value={activeTab}
                   onChange={(e) => setActiveTab(e.target.value)}
@@ -1712,7 +1737,7 @@ export default function Admin() {
               </div>
 
               {/* large screen: vertical tabs list */}
-              <TabsList className="hidden lg:flex lg:max-h-[calc(100vh-10rem)] lg:flex-col lg:flex-wrap-0 lg:gap-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card/80 lg:p-2 lg:sticky lg:top-6">
+              <TabsList className="hidden">
                 <TabsTrigger value="dashboard" className="justify-start" data-testid="tab-dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   <span className="truncate">Dashboard</span>
@@ -1948,6 +1973,33 @@ export default function Admin() {
                       <Button variant="outline" onClick={() => setLocation("/contact")}>
                         Partnership contact page
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <LayoutDashboard className="h-5 w-5 text-primary" />
+                      Full Admin Menu
+                    </CardTitle>
+                    <CardDescription>
+                      Quick buttons to open every available section from one place.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {quickAccessTabs.map((tab) => (
+                        <Button
+                          key={tab.key}
+                          variant={activeTab === tab.key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveTab(tab.key)}
+                          data-testid={`quick-menu-${tab.key}`}
+                        >
+                          {tab.label}
+                        </Button>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>

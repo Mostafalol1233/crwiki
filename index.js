@@ -3977,6 +3977,96 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
         },
     );
 
+    app2.get(
+        "/api/admin/recovery-overview",
+        requireAuth,
+        requireSuperAdmin,
+        async (_req, res) => {
+            try {
+                const [
+                    postsCount,
+                    eventsCount,
+                    newsCount,
+                    adminsCount,
+                    chatUsersCount,
+                    globalAnnouncementsCount,
+                    sellerAnnouncementsCount,
+                    customPagesCount,
+                    siteSettingsDoc,
+                    chatSettingsDoc,
+                    recentPosts,
+                    recentEvents,
+                    recentNews,
+                    recentCustomPages,
+                ] = await Promise.all([
+                    PostModel.countDocuments(),
+                    EventModel.countDocuments(),
+                    NewsModel.countDocuments(),
+                    AdminModel.countDocuments(),
+                    ChatUserModel.countDocuments(),
+                    GlobalAnnouncementModel.countDocuments(),
+                    SellerAnnouncementModel.countDocuments(),
+                    CustomPageModel.countDocuments(),
+                    SiteSettingsModel.findOne().lean(),
+                    ChatSettingsModel.findOne({ name: "chat" }).lean(),
+                    PostModel.find().sort({ createdAt: -1 }).limit(5).lean(),
+                    EventModel.find().sort({ createdAt: -1 }).limit(5).lean(),
+                    NewsModel.find().sort({ createdAt: -1 }).limit(5).lean(),
+                    CustomPageModel.find().sort({ createdAt: -1 }).limit(5).lean(),
+                ]);
+
+                res.json({
+                    success: true,
+                    counts: {
+                        posts: postsCount,
+                        events: eventsCount,
+                        news: newsCount,
+                        admins: adminsCount,
+                        chatUsers: chatUsersCount,
+                        globalAnnouncements: globalAnnouncementsCount,
+                        sellerAnnouncements: sellerAnnouncementsCount,
+                        customPages: customPagesCount,
+                    },
+                    settings: {
+                        siteSettingsConfigured: !!siteSettingsDoc,
+                        chatRegistrationEnabled: !!chatSettingsDoc?.registrationEnabled,
+                    },
+                    previews: {
+                        posts: recentPosts.map((post) => ({
+                            id: String(post._id),
+                            title: post.title,
+                            slug: post.post_slug || "",
+                            publicUrl: post.post_slug ? `/article/${post.post_slug}` : `/article/${post._id}`,
+                        })),
+                        events: recentEvents.map((event) => ({
+                            id: String(event._id),
+                            title: event.title,
+                            slug: event.event_name_slug || "",
+                            publicUrl: event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event._id}`,
+                        })),
+                        news: recentNews.map((item) => ({
+                            id: String(item._id),
+                            title: item.title,
+                            slug: item.news_slug || "",
+                            publicUrl: item.news_slug ? `/news/${item.news_slug}` : `/news/${item._id}`,
+                        })),
+                        customPages: recentCustomPages.map((page) => ({
+                            id: String(page._id),
+                            title: page.title,
+                            slug: page.slug || "",
+                            publicUrl: page.slug ? `/${page.slug}` : "",
+                        })),
+                    },
+                });
+            } catch (error) {
+                res.status(500).json({
+                    success: false,
+                    error: error.message || "Failed to build recovery overview",
+                });
+            }
+        },
+    );
+
     // Mercenary API routes
     app2.get("/api/mercenaries", async (req, res) => {
         try {
@@ -5984,10 +6074,10 @@ app.get("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req, 
         const events = await storage.getAllEvents();
         const sellers = await storage.getAllSellers();
         const results = [
-            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage })),
-            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage })),
-            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage })),
-            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "" }))
+            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage, image: p.image, slug: p.post_slug })),
+            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage, image: n.image, slug: n.news_slug })),
+            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage, image: e.image, slug: e.event_name_slug })),
+            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "", image: s.images && s.images[0] ? s.images[0] : "", slug: s.seller_name_slug }))
         ];
         res.json(results);
     } catch (error) {
@@ -6008,6 +6098,7 @@ app.post("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req,
                 if (item.seoDescription !== undefined) updateData.seoDescription = item.seoDescription;
                 if (item.seoKeywords !== undefined) updateData.seoKeywords = item.seoKeywords;
                 if (item.ogImage !== undefined) updateData.ogImage = item.ogImage;
+                if (item.image !== undefined) updateData.image = item.image;
 
                 let updated = null;
                 if (item.type === 'news') {

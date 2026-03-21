@@ -40,6 +40,14 @@ export class MongoDBStorage {
             seoKeywords: [],
             seoOgImage: "",
             robots: "index, follow",
+            monetizationVerifiedSellersEnabled: true,
+            monetizationVerifiedSellerFee: 30,
+            monetizationBoostingEnabled: true,
+            monetizationBoostingCommissionPct: 12,
+            monetizationPremiumEnabled: true,
+            monetizationPremiumMonthlyPrice: 2,
+            monetizationAffiliateEnabled: true,
+            monetizationAffiliateCommissionPct: 4,
         };
     }
 
@@ -599,6 +607,14 @@ export class MongoDBStorage {
             seoKeywords: doc.seoKeywords || [],
             seoOgImage: doc.seoOgImage || "",
             robots: doc.robots || "index, follow",
+            monetizationVerifiedSellersEnabled: doc.monetizationVerifiedSellersEnabled !== false,
+            monetizationVerifiedSellerFee: Number.isFinite(doc.monetizationVerifiedSellerFee) ? Number(doc.monetizationVerifiedSellerFee) : 30,
+            monetizationBoostingEnabled: doc.monetizationBoostingEnabled !== false,
+            monetizationBoostingCommissionPct: Number.isFinite(doc.monetizationBoostingCommissionPct) ? Number(doc.monetizationBoostingCommissionPct) : 12,
+            monetizationPremiumEnabled: doc.monetizationPremiumEnabled !== false,
+            monetizationPremiumMonthlyPrice: Number.isFinite(doc.monetizationPremiumMonthlyPrice) ? Number(doc.monetizationPremiumMonthlyPrice) : 2,
+            monetizationAffiliateEnabled: doc.monetizationAffiliateEnabled !== false,
+            monetizationAffiliateCommissionPct: Number.isFinite(doc.monetizationAffiliateCommissionPct) ? Number(doc.monetizationAffiliateCommissionPct) : 4,
         };
     }
 

@@ -571,6 +571,7 @@ export default function Admin() {
 
   // Controlled active tab so we can provide a responsive selector on small screens
   const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [pagePreviewTarget, setPagePreviewTarget] = useState<string>("/");
 
   useEffect(() => { if (activeTab === 'media') loadServerMedia(); }, [activeTab, mediaQuery, mediaTypeFilter, mediaSort]);
 
@@ -776,6 +777,14 @@ export default function Admin() {
     reviewVerificationPassphrase: "",
     reviewVerificationTimecode: "",
     reviewVerificationYouTubeChannelUrl: "",
+    monetizationVerifiedSellersEnabled: true,
+    monetizationVerifiedSellerFee: 30,
+    monetizationBoostingEnabled: true,
+    monetizationBoostingCommissionPct: 12,
+    monetizationPremiumEnabled: true,
+    monetizationPremiumMonthlyPrice: 2,
+    monetizationAffiliateEnabled: true,
+    monetizationAffiliateCommissionPct: 4,
   });
 
   const isVerificationReady = !siteSettingsForm.reviewVerificationEnabled || (
@@ -989,6 +998,14 @@ export default function Admin() {
         reviewVerificationPassphrase: siteSettings.reviewVerificationPassphrase || "",
         reviewVerificationTimecode: siteSettings.reviewVerificationTimecode || "",
         reviewVerificationYouTubeChannelUrl: siteSettings.reviewVerificationYouTubeChannelUrl || "",
+        monetizationVerifiedSellersEnabled: siteSettings.monetizationVerifiedSellersEnabled !== false,
+        monetizationVerifiedSellerFee: siteSettings.monetizationVerifiedSellerFee ?? 30,
+        monetizationBoostingEnabled: siteSettings.monetizationBoostingEnabled !== false,
+        monetizationBoostingCommissionPct: siteSettings.monetizationBoostingCommissionPct ?? 12,
+        monetizationPremiumEnabled: siteSettings.monetizationPremiumEnabled !== false,
+        monetizationPremiumMonthlyPrice: siteSettings.monetizationPremiumMonthlyPrice ?? 2,
+        monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
+        monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
       });
     }
   }, [siteSettings]);
@@ -1331,12 +1348,20 @@ export default function Admin() {
         reviewVerificationPassphrase: data.reviewVerificationPassphrase || "",
         reviewVerificationTimecode: data.reviewVerificationTimecode || "",
         reviewVerificationYouTubeChannelUrl: data.reviewVerificationYouTubeChannelUrl || "",
+        monetizationVerifiedSellersEnabled: data.monetizationVerifiedSellersEnabled !== false,
+        monetizationVerifiedSellerFee: data.monetizationVerifiedSellerFee ?? 30,
+        monetizationBoostingEnabled: data.monetizationBoostingEnabled !== false,
+        monetizationBoostingCommissionPct: data.monetizationBoostingCommissionPct ?? 12,
+        monetizationPremiumEnabled: data.monetizationPremiumEnabled !== false,
+        monetizationPremiumMonthlyPrice: data.monetizationPremiumMonthlyPrice ?? 2,
+        monetizationAffiliateEnabled: data.monetizationAffiliateEnabled !== false,
+        monetizationAffiliateCommissionPct: data.monetizationAffiliateCommissionPct ?? 4,
       });
-      toast({ title: "Verification settings updated" });
+      toast({ title: "Site settings updated" });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to update verification settings",
+        title: "Failed to update site settings",
         description: error.message || "Could not save settings",
         variant: "destructive",
       });
@@ -1973,6 +1998,229 @@ export default function Admin() {
                       <Button variant="outline" onClick={() => setLocation("/contact")}>
                         Partnership contact page
                       </Button>
+                    </div>
+
+                    {canSiteSettings && (
+                      <div className="space-y-4 rounded-xl border border-border/60 p-4">
+                        <div>
+                          <h3 className="font-semibold">Monetization Controls (Admin)</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Control pricing and enable/disable each revenue stream from admin. These values are reused in planning pages.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2 rounded-lg border p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <Label htmlFor="mon-verified-enabled">Verified sellers</Label>
+                              <Switch
+                                id="mon-verified-enabled"
+                                checked={siteSettingsForm.monetizationVerifiedSellersEnabled}
+                                onCheckedChange={(checked) =>
+                                  setSiteSettingsForm((prev) => ({ ...prev, monetizationVerifiedSellersEnabled: checked }))
+                                }
+                              />
+                            </div>
+                            <Label htmlFor="mon-verified-fee" className="text-xs text-muted-foreground">Monthly fee ($)</Label>
+                            <Input
+                              id="mon-verified-fee"
+                              type="number"
+                              min={0}
+                              value={siteSettingsForm.monetizationVerifiedSellerFee}
+                              onChange={(e) =>
+                                setSiteSettingsForm((prev) => ({
+                                  ...prev,
+                                  monetizationVerifiedSellerFee: Math.max(0, Number(e.target.value) || 0),
+                                }))
+                              }
+                            />
+                          </div>
+
+                          <div className="space-y-2 rounded-lg border p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <Label htmlFor="mon-boosting-enabled">Boosting & coaching</Label>
+                              <Switch
+                                id="mon-boosting-enabled"
+                                checked={siteSettingsForm.monetizationBoostingEnabled}
+                                onCheckedChange={(checked) =>
+                                  setSiteSettingsForm((prev) => ({ ...prev, monetizationBoostingEnabled: checked }))
+                                }
+                              />
+                            </div>
+                            <Label htmlFor="mon-boosting-commission" className="text-xs text-muted-foreground">Commission (%)</Label>
+                            <Input
+                              id="mon-boosting-commission"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={siteSettingsForm.monetizationBoostingCommissionPct}
+                              onChange={(e) =>
+                                setSiteSettingsForm((prev) => ({
+                                  ...prev,
+                                  monetizationBoostingCommissionPct: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                                }))
+                              }
+                            />
+                          </div>
+
+                          <div className="space-y-2 rounded-lg border p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <Label htmlFor="mon-premium-enabled">Premium membership</Label>
+                              <Switch
+                                id="mon-premium-enabled"
+                                checked={siteSettingsForm.monetizationPremiumEnabled}
+                                onCheckedChange={(checked) =>
+                                  setSiteSettingsForm((prev) => ({ ...prev, monetizationPremiumEnabled: checked }))
+                                }
+                              />
+                            </div>
+                            <Label htmlFor="mon-premium-price" className="text-xs text-muted-foreground">Price / month ($)</Label>
+                            <Input
+                              id="mon-premium-price"
+                              type="number"
+                              min={0}
+                              value={siteSettingsForm.monetizationPremiumMonthlyPrice}
+                              onChange={(e) =>
+                                setSiteSettingsForm((prev) => ({
+                                  ...prev,
+                                  monetizationPremiumMonthlyPrice: Math.max(0, Number(e.target.value) || 0),
+                                }))
+                              }
+                            />
+                          </div>
+
+                          <div className="space-y-2 rounded-lg border p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <Label htmlFor="mon-affiliate-enabled">Affiliate offers</Label>
+                              <Switch
+                                id="mon-affiliate-enabled"
+                                checked={siteSettingsForm.monetizationAffiliateEnabled}
+                                onCheckedChange={(checked) =>
+                                  setSiteSettingsForm((prev) => ({ ...prev, monetizationAffiliateEnabled: checked }))
+                                }
+                              />
+                            </div>
+                            <Label htmlFor="mon-affiliate-commission" className="text-xs text-muted-foreground">Commission (%)</Label>
+                            <Input
+                              id="mon-affiliate-commission"
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={siteSettingsForm.monetizationAffiliateCommissionPct}
+                              onChange={(e) =>
+                                setSiteSettingsForm((prev) => ({
+                                  ...prev,
+                                  monetizationAffiliateCommissionPct: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={!siteSettings || updateSiteSettingsMutation.isPending}
+                            onClick={() => {
+                              if (!siteSettings) return;
+                              setSiteSettingsForm((prev) => ({
+                                ...prev,
+                                monetizationVerifiedSellersEnabled: siteSettings.monetizationVerifiedSellersEnabled !== false,
+                                monetizationVerifiedSellerFee: siteSettings.monetizationVerifiedSellerFee ?? 30,
+                                monetizationBoostingEnabled: siteSettings.monetizationBoostingEnabled !== false,
+                                monetizationBoostingCommissionPct: siteSettings.monetizationBoostingCommissionPct ?? 12,
+                                monetizationPremiumEnabled: siteSettings.monetizationPremiumEnabled !== false,
+                                monetizationPremiumMonthlyPrice: siteSettings.monetizationPremiumMonthlyPrice ?? 2,
+                                monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
+                                monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
+                              }));
+                            }}
+                          >
+                            Reset monetization
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => updateSiteSettingsMutation.mutate(siteSettingsForm)}
+                            disabled={updateSiteSettingsMutation.isPending}
+                          >
+                            {updateSiteSettingsMutation.isPending ? "Saving..." : "Save monetization"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">Quick page preview menu</CardTitle>
+                    <CardDescription>
+                      Jump to common public pages quickly from admin so you can preview the site without hunting through the navigation.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <select
+                      value={pagePreviewTarget}
+                      onChange={(e) => setPagePreviewTarget(e.target.value)}
+                      className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm md:min-w-[260px]"
+                    >
+                      {[
+                        ["/", "Home"],
+                        ["/news", "News"],
+                        ["/videos", "Videos"],
+                        ["/pricing", "Pricing"],
+                        ["/sellers", "Sellers"],
+                        ["/support", "Support"],
+                        ["/contact", "Contact"],
+                        ["/my-tickets", "My Tickets"],
+                        ["/download", "Download"],
+                        ["/weapons", "Weapons"],
+                        ["/maps", "Maps"],
+                        ["/ranks", "Ranks"],
+                      ].map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => setLocation(pagePreviewTarget)}>
+                        Open here
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          try { window.open(pagePreviewTarget, "_blank", "noopener,noreferrer"); } catch { }
+                        }}
+                      >
+                        Open in new tab
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <LayoutDashboard className="h-5 w-5 text-primary" />
+                      Full Admin Menu
+                    </CardTitle>
+                    <CardDescription>
+                      Quick buttons to open every available section from one place.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {quickAccessTabs.map((tab) => (
+                        <Button
+                          key={tab.key}
+                          variant={activeTab === tab.key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveTab(tab.key)}
+                          data-testid={`quick-menu-${tab.key}`}
+                        >
+                          {tab.label}
+                        </Button>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -3732,6 +3980,14 @@ export default function Admin() {
                                   reviewVerificationPassphrase: siteSettings.reviewVerificationPassphrase || "",
                                   reviewVerificationTimecode: siteSettings.reviewVerificationTimecode || "",
                                   reviewVerificationYouTubeChannelUrl: siteSettings.reviewVerificationYouTubeChannelUrl || "",
+                                  monetizationVerifiedSellersEnabled: siteSettings.monetizationVerifiedSellersEnabled !== false,
+                                  monetizationVerifiedSellerFee: siteSettings.monetizationVerifiedSellerFee ?? 30,
+                                  monetizationBoostingEnabled: siteSettings.monetizationBoostingEnabled !== false,
+                                  monetizationBoostingCommissionPct: siteSettings.monetizationBoostingCommissionPct ?? 12,
+                                  monetizationPremiumEnabled: siteSettings.monetizationPremiumEnabled !== false,
+                                  monetizationPremiumMonthlyPrice: siteSettings.monetizationPremiumMonthlyPrice ?? 2,
+                                  monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
+                                  monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
                                 });
                               }
                             }}

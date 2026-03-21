@@ -2121,6 +2121,14 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
                     seoOgImage: raw.seoOgImage ?? "",
                     robots: raw.robots ?? "index, follow",
+                    monetizationVerifiedSellersEnabled: toBoolean(raw.monetizationVerifiedSellersEnabled ?? true),
+                    monetizationVerifiedSellerFee: Number.isFinite(Number(raw.monetizationVerifiedSellerFee)) ? Math.max(0, Number(raw.monetizationVerifiedSellerFee)) : 30,
+                    monetizationBoostingEnabled: toBoolean(raw.monetizationBoostingEnabled ?? true),
+                    monetizationBoostingCommissionPct: Number.isFinite(Number(raw.monetizationBoostingCommissionPct)) ? Math.max(0, Math.min(100, Number(raw.monetizationBoostingCommissionPct))) : 12,
+                    monetizationPremiumEnabled: toBoolean(raw.monetizationPremiumEnabled ?? true),
+                    monetizationPremiumMonthlyPrice: Number.isFinite(Number(raw.monetizationPremiumMonthlyPrice)) ? Math.max(0, Number(raw.monetizationPremiumMonthlyPrice)) : 2,
+                    monetizationAffiliateEnabled: toBoolean(raw.monetizationAffiliateEnabled ?? true),
+                    monetizationAffiliateCommissionPct: Number.isFinite(Number(raw.monetizationAffiliateCommissionPct)) ? Math.max(0, Math.min(100, Number(raw.monetizationAffiliateCommissionPct))) : 4,
                 };
                 const parsed = siteSettingsSchema.parse(normalized);
                 if (parsed.reviewVerificationEnabled) {
@@ -2145,6 +2153,14 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     seoKeywords: Array.isArray(parsed.seoKeywords) ? parsed.seoKeywords.filter(Boolean) : [],
                     seoOgImage: (parsed.seoOgImage || '').trim(),
                     robots: (parsed.robots || 'index, follow').trim(),
+                    monetizationVerifiedSellersEnabled: parsed.monetizationVerifiedSellersEnabled,
+                    monetizationVerifiedSellerFee: parsed.monetizationVerifiedSellerFee,
+                    monetizationBoostingEnabled: parsed.monetizationBoostingEnabled,
+                    monetizationBoostingCommissionPct: parsed.monetizationBoostingCommissionPct,
+                    monetizationPremiumEnabled: parsed.monetizationPremiumEnabled,
+                    monetizationPremiumMonthlyPrice: parsed.monetizationPremiumMonthlyPrice,
+                    monetizationAffiliateEnabled: parsed.monetizationAffiliateEnabled,
+                    monetizationAffiliateCommissionPct: parsed.monetizationAffiliateCommissionPct,
                 });
                 try {
                     const diff = {};

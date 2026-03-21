@@ -14,6 +14,7 @@ interface GameMap {
   id: string;
   name: string;
   image: string;
+  imageUrl?: string;
   description?: string;
   mode?: string;
   category?: string;
@@ -28,7 +29,10 @@ export default function Maps() {
     queryKey: ["/api/maps"],
     queryFn: async () => {
       const data = await apiRequest("/api/maps", "GET");
-      return data || [];
+      return (data || []).map((map: any) => ({
+        ...map,
+        image: map.image || map.imageUrl || "",
+      }));
     },
     staleTime: 1000 * 60 * 5,
   });

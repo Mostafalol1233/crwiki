@@ -5,6 +5,7 @@ import { ArrowLeft, Video, Play, Star, BookOpen, Radio, Zap, Crosshair } from "l
 import PageSEO from "@/components/PageSEO";
 import { useQuery } from "@tanstack/react-query";
 import { ITutorial } from "@shared/mongodb-schema";
+import { useEffect, useMemo, useState } from "react";
 
 const CATEGORIES: Array<{ key: string; title: string; description: string; icon: any }> = [
   { key: "tutorial", title: "Tutorial", description: "Guides and how-to videos", icon: BookOpen },
@@ -20,6 +21,18 @@ export default function VideosPage() {
   const tutorials = tutorialsData?.items || [];
 
   const featuredVideos = tutorials.slice(0, 3);
+  const [activeVideoId, setActiveVideoId] = useState<string>("");
+
+  useEffect(() => {
+    if (!activeVideoId && featuredVideos[0]?.id) {
+      setActiveVideoId(featuredVideos[0].id);
+    }
+  }, [activeVideoId, featuredVideos]);
+
+  const activeVideo = useMemo(
+    () => featuredVideos.find((video) => video.id === activeVideoId) || featuredVideos[0],
+    [activeVideoId, featuredVideos]
+  );
 
   return (
     <>
@@ -51,48 +64,66 @@ export default function VideosPage() {
                 <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
                 <h2 className="text-2xl font-bold">Featured Videos</h2>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Main Featured Video */}
-                {featuredVideos[0] && (
-                  <Link href={`/tutorials/${featuredVideos[0].tutorial_slug || featuredVideos[0].id}`}>
-                    <div className="group cursor-pointer relative rounded-xl overflow-hidden aspect-video border bg-muted h-full shadow-lg hover:shadow-xl transition-all">
-                      <img
-                        src={`https://img.youtube.com/vi/${featuredVideos[0].youtubeId}/maxresdefault.jpg`}
-                        alt={featuredVideos[0].title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (target.src.includes('maxresdefault')) {
-                            target.src = `https://img.youtube.com/vi/${featuredVideos[0].youtubeId}/hqdefault.jpg`;
-                          } else if (target.src.includes('hqdefault')) {
-                            target.src = `https://img.youtube.com/vi/${featuredVideos[0].youtubeId}/mqdefault.jpg`;
-                          }
-                        }}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                {activeVideo && (
+                  <Card className="overflow-hidden border-border/60">
+                    <div className="aspect-video bg-black">
+                      <iframe
+                        title={activeVideo.title}
+                        src={`https://www.youtube.com/embed/${activeVideo.youtubeId}`}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
                       />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="bg-background/80 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover:scale-100 transition-all">
-                          <Play className="h-8 w-8 text-primary fill-primary" />
-                        </div>
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                        <h3 className="text-white text-xl md:text-2xl font-bold mb-2 line-clamp-2">{featuredVideos[0].title}</h3>
-                        {featuredVideos[0].description && (
-                          <p className="text-white/80 line-clamp-2 hidden md:block">{featuredVideos[0].description}</p>
-                        )}
-                      </div>
                     </div>
-                  </Link>
+                    <CardContent className="space-y-4 p-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Video className="h-4 w-4 text-primary" />
+                        <span className="text-sm uppercase tracking-widest text-muted-foreground">
+                          Featured player
+                        </span>
+                      </div>
+                      <h3 className="text-2xl font-bold">{activeVideo.title}</h3>
+                      {activeVideo.description && (
+                        <p className="text-muted-foreground">{activeVideo.description}</p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button asChild>
+                          <Link href={`/tutorials/${activeVideo.tutorial_slug || activeVideo.id}`}>
+                            Open full video page
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                          <a
+                            href={`https://www.youtube.com/watch?v=${activeVideo.youtubeId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Watch on YouTube
+                          </a>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
-                {/* Secondary Featured Videos */}
-                <div className="flex flex-col gap-6">
-                  {featuredVideos.slice(1, 3).map((video) => (
-                    <Link key={video.id} href={`/tutorials/${video.tutorial_slug || video.id}`}>
-                      <div className="group cursor-pointer relative rounded-xl overflow-hidden aspect-video border bg-muted shadow-md hover:shadow-lg transition-all">
+                <div className="flex flex-col gap-4">
+                  {featuredVideos.map((video) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      onClick={() => setActiveVideoId(video.id)}
+                      className={`group overflow-hidden rounded-xl border text-left shadow-md transition-all hover:shadow-lg ${
+                        activeVideo?.id === video.id
+                          ? "border-primary ring-1 ring-primary/50"
+                          : "border-border/60"
+                      }`}
+                    >
+                      <div className="relative aspect-video bg-muted">
                         <img
                           src={`https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`}
                           alt={video.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
                             const target = e.currentTarget;
                             if (target.src.includes('maxresdefault')) {
@@ -102,16 +133,21 @@ export default function VideosPage() {
                             }
                           }}
                         />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <div className="bg-background/80 backdrop-blur-sm rounded-full p-3 transform scale-75 group-hover:scale-100 transition-all">
-                            <Play className="h-6 w-6 text-primary fill-primary" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/15">
+                          <div className="rounded-full bg-background/85 p-3 backdrop-blur-sm">
+                            <Play className="h-5 w-5 fill-primary text-primary" />
                           </div>
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                          <h3 className="text-white font-semibold line-clamp-2">{video.title}</h3>
-                        </div>
                       </div>
-                    </Link>
+                      <div className="space-y-2 p-4">
+                        <h3 className="line-clamp-2 font-semibold">{video.title}</h3>
+                        {video.category && (
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            {video.category}
+                          </p>
+                        )}
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>

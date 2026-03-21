@@ -114,6 +114,18 @@ const translations: Record<Language, Record<string, string>> = {
     supportTickets: "Support Tickets",
     createTicket: "Create Ticket",
     download: "Download",
+    noArticlesFound: "No articles found",
+
+    tableOfContents: "Table of Contents",
+    quickTips: "Quick Tips",
+    backToTop: "Back to top",
+    countdown: "Countdown",
+    eventStatus: "Event status",
+    published: "Published",
+    currentLanguage: "Language",
+    headingsPlaceholder: "Headings will appear here when the event content includes sections.",
+    eventDatePending: "Event date will be updated soon",
+    eventLiveOrEnded: "Event is live or already ended",
   },
   ar: {
     home: "الرئيسية",
@@ -220,6 +232,18 @@ const translations: Record<Language, Record<string, string>> = {
     supportTickets: "تذاكر الدعم",
     createTicket: "إنشاء تذكرة",
     download: "تحميل",
+    noArticlesFound: "لم يتم العثور على مقالات",
+
+    tableOfContents: "محتويات الصفحة",
+    quickTips: "نصائح سريعة",
+    backToTop: "العودة للأعلى",
+    countdown: "العد التنازلي",
+    eventStatus: "حالة الحدث",
+    published: "تاريخ النشر",
+    currentLanguage: "اللغة",
+    headingsPlaceholder: "ستظهر العناوين هنا عندما يحتوي محتوى الحدث على أقسام واضحة.",
+    eventDatePending: "سيتم تحديث الموعد قريباً",
+    eventLiveOrEnded: "انتهى الحدث أو بدأ بالفعل",
   },
 };
 
@@ -242,12 +266,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("lang", language);
+    root.setAttribute("dir", language === "ar" ? "rtl" : "ltr");
+    document.body.setAttribute("dir", language === "ar" ? "rtl" : "ltr");
 
     // Add/remove Arabic font class for smoother font switching
     if (language === "ar") {
       root.classList.add("font-arabic");
+      document.body.classList.add("rtl");
     } else {
       root.classList.remove("font-arabic");
+      document.body.classList.remove("rtl");
     }
 
     localStorage.setItem("language", language);

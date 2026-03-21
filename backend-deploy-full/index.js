@@ -1553,7 +1553,7 @@ export async function registerRoutes(app) {
             } catch {
                 image = fallbackOg;
             }
-            const absImage = toCloudinary1200x630(resolveAbsoluteUrl(image, url) || fallbackOg);
+            const absImage = resolveAbsoluteUrl(image, url) || fallbackOg;
             const absUrl = resolveAbsoluteUrl(url, url);
             const html = `<!doctype html><html lang="en"><head>
     <meta charset="utf-8" />
@@ -3523,16 +3523,20 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
 
             const DRY = String(process.env.CLOUDINARY_DRY_RUN || "").toLowerCase() === "true";
             const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || "dkpdidm89").trim();
-            const publicIdBase = String((req.query?.public_id || req.body?.public_id || req.file.originalname || "")).replace(/\.[A-Za-z0-9]+$/i, "").trim() || "upload";
+            const folder = String(req.body?.folder || req.query?.folder || kind).trim().replace(/^\/+|\/+$/g, "") || kind;
+            const publicIdBase = String((req.query?.public_id || req.body?.public_id || req.body?.customName || req.file.originalname || "")).replace(/\.[A-Za-z0-9]+$/i, "").trim() || "upload";
             const format = (req.file.mimetype.includes("webp") ? "webp" : req.file.mimetype.includes("jpeg") ? "jpg" : req.file.mimetype.includes("png") ? "png" : req.file.mimetype.includes("gif") ? "gif" : req.file.mimetype.includes("mp4") ? "mp4" : req.file.mimetype.includes("webm") ? "webm" : req.file.mimetype.includes("ogg") ? "ogg" : "bin");
-            const secure_url = `https://res.cloudinary.com/${cloudName}/${kind}/upload/v123/${publicIdBase}.${format}`;
+            const predictablePublicId = folder ? `${folder}/${publicIdBase}` : publicIdBase;
             const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-            const domain_url = `${base}/media/${kind === "image" ? "images" : kind === "video" ? "videos" : "audio"}/${publicIdBase}.${format}`;
+            const domain_url = `${base}/media/${kind === "image" ? "images" : kind === "video" ? "videos" : "audio"}/${predictablePublicId}.${format}`;
             if (DRY) {
-                return res.json({ ok: true, domain_url, public_id: publicIdBase, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString() });
+                return res.json({ ok: true, secure_url: `https://res.cloudinary.com/${cloudName}/${kind}/upload/v123/${predictablePublicId}.${format}`, domain_url, domainUrl: domain_url, public_id: predictablePublicId, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString() });
             }
-
-            return res.status(501).json({ ok: false, error: "Live Cloudinary upload not configured", code: "not_implemented" });
+            const json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder, public_id: publicIdBase });
+            const resourceType = json.resource_type || kind;
+            const publicId = json.public_id || predictablePublicId;
+            const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
+            return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
         } catch (error) {
             res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
         }
@@ -5610,7 +5614,7 @@ app.use((req, res, next) => {
                 if (isCrawlerUserAgent(req.headers["user-agent"])) {
                     const settings = await SiteSettingsModel.findOne().lean();
                     const base = String(settings?.publicBaseUrl || process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-                    const fallbackOg = toCloudinary1200x630(resolveAbsoluteUrl(settings?.seoOgImage || "", base) || `${base}/feature-crossfire.jpg`);
+                    const fallbackOg = resolveAbsoluteUrl(settings?.seoOgImage || "", base) || `${base}/feature-crossfire.jpg`;
                     const pathname = String(req.path || "");
                     const fullUrl = `${base}${pathname}`;
 
@@ -5624,7 +5628,7 @@ app.use((req, res, next) => {
                                 const m = String(ev.description).match(/<img[^>]+src=["']([^"']+)["']/i);
                                 if (m && m[1]) ogImage = m[1];
                             }
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(ogImage || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(ogImage || "", base) || fallbackOg;
                             meta = {
                                 title: ev.seoTitle || ev.title,
                                 description: ev.seoDescription || String(ev.description || "").replace(/<[^>]*>/g, "").slice(0, 200),
@@ -5640,7 +5644,7 @@ app.use((req, res, next) => {
                         const slug = pathname.replace(/^\/news\//i, "").split("?")[0];
                         const nw = await storage.getNewsByIdOrSlug(slug);
                         if (nw) {
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(nw.ogImage || nw.image || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(nw.ogImage || nw.image || "", base) || fallbackOg;
                             meta = {
                                 title: nw.seoTitle || nw.title,
                                 description: nw.seoDescription || String(nw.content || "").replace(/<[^>]*>/g, "").slice(0, 200),
@@ -5656,7 +5660,7 @@ app.use((req, res, next) => {
                         const slug = pathname.replace(/^\/article\//i, "").split("?")[0];
                         const post = await storage.getPostByIdOrSlug(slug);
                         if (post) {
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(post.ogImage || post.image || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(post.ogImage || post.image || "", base) || fallbackOg;
                             meta = {
                                 title: post.seoTitle || post.title,
                                 description: post.seoDescription || post.summary || String(post.content || "").replace(/<[^>]*>/g, "").slice(0, 200),
@@ -5949,8 +5953,8 @@ async function maybeScan(buffer) {
     if (!enable) return { ok: true };
     return { ok: true };
 }
-app.get("/admin/dashboard", (req, res) => {
-    res.sendFile(path.join(process.cwd(), "public/admin/dashboard.html"));
+app.get("/admin/dashboard", (_req, res) => {
+    res.redirect(302, "/admin");
 });
 /* moved into registerRoutes (app2) */
 app.get("/api/files/test-list", async (_req, res) => {

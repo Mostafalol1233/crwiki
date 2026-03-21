@@ -235,6 +235,7 @@ export function Header() {
       label: t("pricing"),
       icon: CFIconCart,
       dropdown: [
+        { path: "/pricing", label: t("pricing"), icon: CFIconCart },
         { path: "/sellers", label: t("sellers"), icon: CFIconCart },
         { path: "/reviews", label: t("reviews"), icon: CFIconBook },
       ],

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Lock, User } from "lucide-react";
+import { Lock, RefreshCcw, ShieldCheck, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Orb from "@/components/Orb";
 
@@ -16,11 +16,42 @@ export default function AdminLogin() {
   const [adminPassword, setAdminPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const [challengeSeed, setChallengeSeed] = useState(() => Math.floor(Math.random() * 10_000));
+  const [adminChallengeAnswer, setAdminChallengeAnswer] = useState("");
+  const [superChallengeAnswer, setSuperChallengeAnswer] = useState("");
+
+  const adminChallenge = useMemo(() => {
+    const left = (challengeSeed % 7) + 3;
+    const right = (challengeSeed % 5) + 2;
+    return { left, right, answer: left + right };
+  }, [challengeSeed]);
+
+  const superChallenge = useMemo(() => {
+    const left = (challengeSeed % 8) + 4;
+    const right = (challengeSeed % 6) + 3;
+    return { left, right, answer: left + right };
+  }, [challengeSeed]);
+
+  const resetChallenges = () => {
+    setChallengeSeed(Math.floor(Math.random() * 10_000));
+    setAdminChallengeAnswer("");
+    setSuperChallengeAnswer("");
+  };
+
   const handleAdminLogin = async () => {
     if (!username || !adminPassword) {
       toast({
         title: "Missing credentials",
         description: "Please enter both username and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Number(adminChallengeAnswer) !== adminChallenge.answer) {
+      toast({
+        title: "Verification failed",
+        description: "Please solve the verification challenge before logging in.",
         variant: "destructive",
       });
       return;
@@ -50,6 +81,7 @@ export default function AdminLogin() {
       } catch {
         localStorage.setItem("adminPermissions", "{}");
       }
+      resetChallenges();
       setLocation("/admin");
     } catch (error) {
       toast({
@@ -67,6 +99,15 @@ export default function AdminLogin() {
       toast({
         title: "Missing password",
         description: "Please enter the super admin password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Number(superChallengeAnswer) !== superChallenge.answer) {
+      toast({
+        title: "Verification failed",
+        description: "Please solve the verification challenge before logging in.",
         variant: "destructive",
       });
       return;
@@ -95,6 +136,7 @@ export default function AdminLogin() {
       } catch {
         localStorage.setItem("adminPermissions", "{}");
       }
+      resetChallenges();
       setLocation("/admin");
     } catch (error) {
       toast({
@@ -154,6 +196,24 @@ export default function AdminLogin() {
                   data-testid="input-admin-password"
                 />
               </div>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3 text-sm font-medium">
+                  <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Human verification</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={resetChallenges}>
+                    <RefreshCcw className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="mb-2 text-sm text-muted-foreground">Solve: {adminChallenge.left} + {adminChallenge.right}</p>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Enter answer"
+                  value={adminChallengeAnswer}
+                  onChange={(e) => setAdminChallengeAnswer(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
+                  data-testid="input-admin-challenge"
+                />
+              </div>
               <Button
                 onClick={handleAdminLogin}
                 className="w-full"
@@ -173,6 +233,24 @@ export default function AdminLogin() {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSuperAdminLogin()}
                   data-testid="input-super-password"
+                />
+              </div>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3 text-sm font-medium">
+                  <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Human verification</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={resetChallenges}>
+                    <RefreshCcw className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="mb-2 text-sm text-muted-foreground">Solve: {superChallenge.left} + {superChallenge.right}</p>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Enter answer"
+                  value={superChallengeAnswer}
+                  onChange={(e) => setSuperChallengeAnswer(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSuperAdminLogin()}
+                  data-testid="input-super-challenge"
                 />
               </div>
               <Button

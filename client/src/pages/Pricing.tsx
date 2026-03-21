@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   CheckCircle2,
@@ -18,7 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Link } from "wouter";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const offers = [
   {
@@ -147,6 +148,17 @@ export default function PricingPage() {
   const [premiumMonthlyPrice, setPremiumMonthlyPrice] = useState(2);
   const [affiliateMonthlySales, setAffiliateMonthlySales] = useState(2000);
   const [affiliateCommissionPct, setAffiliateCommissionPct] = useState(4);
+  const { data: monetizationDefaults } = useQuery<any>({
+    queryKey: ["/api/public/settings/site"],
+  });
+
+  useEffect(() => {
+    if (!monetizationDefaults) return;
+    setSellerMonthlyFee(monetizationDefaults.monetizationVerifiedSellerFee ?? 30);
+    setServiceCommissionPct(monetizationDefaults.monetizationBoostingCommissionPct ?? 12);
+    setPremiumMonthlyPrice(monetizationDefaults.monetizationPremiumMonthlyPrice ?? 2);
+    setAffiliateCommissionPct(monetizationDefaults.monetizationAffiliateCommissionPct ?? 4);
+  }, [monetizationDefaults]);
 
   const estimatedRevenue = useMemo(() => {
     const sellersRevenue = verifiedSellers * sellerMonthlyFee;
@@ -474,6 +486,9 @@ export default function PricingPage() {
                     <strong>${estimatedRevenue.yearlyTotal.toFixed(2)}</strong>
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Tip: these default commission/price values can now be managed from Admin → Dashboard → Monetization Controls.
+                </p>
               </div>
             </CardContent>
           </Card>

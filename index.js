@@ -6074,10 +6074,10 @@ app.get("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req, 
         const events = await storage.getAllEvents();
         const sellers = await storage.getAllSellers();
         const results = [
-            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage })),
-            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage })),
-            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage })),
-            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "" }))
+            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage, twitterImage: p.twitterImage || "", image: p.image || "", content: p.content || "", summary: p.summary || "", canonicalUrl: p.canonicalUrl || "", slug: p.post_slug || "" })),
+            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage, twitterImage: n.twitterImage || "", image: n.image || "", content: n.content || "", summary: n.summary || "", canonicalUrl: n.canonicalUrl || "", slug: n.news_slug || "" })),
+            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage, twitterImage: e.twitterImage || "", image: e.image || "", content: e.description || "", summary: "", canonicalUrl: e.canonicalUrl || "", slug: e.event_name_slug || "" })),
+            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "", twitterImage: "", image: s.images && s.images[0] ? s.images[0] : "", content: s.description || "", summary: "", canonicalUrl: "", slug: s.seller_name_slug || "" }))
         ];
         res.json(results);
     } catch (error) {
@@ -6098,6 +6098,15 @@ app.post("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req,
                 if (item.seoDescription !== undefined) updateData.seoDescription = item.seoDescription;
                 if (item.seoKeywords !== undefined) updateData.seoKeywords = item.seoKeywords;
                 if (item.ogImage !== undefined) updateData.ogImage = item.ogImage;
+                if (item.twitterImage !== undefined) updateData.twitterImage = item.twitterImage;
+                if (item.image !== undefined) updateData.image = item.image;
+                if (item.canonicalUrl !== undefined) updateData.canonicalUrl = item.canonicalUrl;
+                if (item.title !== undefined) updateData.title = item.title;
+                if (item.summary !== undefined) updateData.summary = item.summary;
+                if (item.content !== undefined) {
+                    if (item.type === 'event') updateData.description = item.content;
+                    else updateData.content = item.content;
+                }
 
                 let updated = null;
                 if (item.type === 'news') {

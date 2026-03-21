@@ -218,6 +218,14 @@ const SiteSettingsSchema = new Schema({
     seoKeywords: { type: [String], default: [] },
     seoOgImageUrl: { type: String, default: "" },
     robots: { type: String, default: "index, follow" },
+    monetizationVerifiedSellersEnabled: { type: Boolean, default: true },
+    monetizationVerifiedSellerFee: { type: Number, default: 30 },
+    monetizationBoostingEnabled: { type: Boolean, default: true },
+    monetizationBoostingCommissionPct: { type: Number, default: 12 },
+    monetizationPremiumEnabled: { type: Boolean, default: true },
+    monetizationPremiumMonthlyPrice: { type: Number, default: 2 },
+    monetizationAffiliateEnabled: { type: Boolean, default: true },
+    monetizationAffiliateCommissionPct: { type: Number, default: 4 },
 }, {
     timestamps: true,
 });
@@ -583,6 +591,14 @@ export const siteSettingsSchema = z.object({
         const allowed = new Set(["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"]);
         return allowed.has(v.toLowerCase());
     }, { message: "Robots must be one of: index, follow | noindex, follow | index, nofollow | noindex, nofollow" }),
+    monetizationVerifiedSellersEnabled: z.boolean().optional().default(true),
+    monetizationVerifiedSellerFee: z.number().min(0).max(100000).optional().default(30),
+    monetizationBoostingEnabled: z.boolean().optional().default(true),
+    monetizationBoostingCommissionPct: z.number().min(0).max(100).optional().default(12),
+    monetizationPremiumEnabled: z.boolean().optional().default(true),
+    monetizationPremiumMonthlyPrice: z.number().min(0).max(100000).optional().default(2),
+    monetizationAffiliateEnabled: z.boolean().optional().default(true),
+    monetizationAffiliateCommissionPct: z.number().min(0).max(100).optional().default(4),
 });
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
 const ConversationSchema = new Schema({

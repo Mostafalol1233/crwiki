@@ -4708,6 +4708,10 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
     app2.put("/api/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const body = req.body || {};
+            const asNumber = (value, fallback = 0) => {
+                const n = Number(value);
+                return Number.isFinite(n) ? n : fallback;
+            };
             const payload = {
                 publicBaseUrl: String(body.publicBaseUrl || ""),
                 seoTitle: String(body.seoTitle || ""),
@@ -4717,6 +4721,14 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 backgroundImageUrl: String(body.backgroundImageUrl || ""),
                 robots: String(body.robots || "index, follow"),
                 announcementsEnabled: body.announcementsEnabled === false ? false : !!body.announcementsEnabled,
+                monetizationVerifiedSellersEnabled: body.monetizationVerifiedSellersEnabled === false ? false : !!body.monetizationVerifiedSellersEnabled,
+                monetizationVerifiedSellerFee: Math.max(0, asNumber(body.monetizationVerifiedSellerFee, 30)),
+                monetizationBoostingEnabled: body.monetizationBoostingEnabled === false ? false : !!body.monetizationBoostingEnabled,
+                monetizationBoostingCommissionPct: Math.max(0, Math.min(100, asNumber(body.monetizationBoostingCommissionPct, 12))),
+                monetizationPremiumEnabled: body.monetizationPremiumEnabled === false ? false : !!body.monetizationPremiumEnabled,
+                monetizationPremiumMonthlyPrice: Math.max(0, asNumber(body.monetizationPremiumMonthlyPrice, 2)),
+                monetizationAffiliateEnabled: body.monetizationAffiliateEnabled === false ? false : !!body.monetizationAffiliateEnabled,
+                monetizationAffiliateCommissionPct: Math.max(0, Math.min(100, asNumber(body.monetizationAffiliateCommissionPct, 4))),
             };
             const s = await storage.updateSiteSettings(payload);
             res.json({
@@ -4727,6 +4739,14 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 backgroundImageUrl: s?.backgroundImageUrl || "",
                 robots: s?.robots || "index, follow",
                 announcementsEnabled: !!s?.announcementsEnabled,
+                monetizationVerifiedSellersEnabled: s?.monetizationVerifiedSellersEnabled !== false,
+                monetizationVerifiedSellerFee: Number.isFinite(s?.monetizationVerifiedSellerFee) ? s.monetizationVerifiedSellerFee : 30,
+                monetizationBoostingEnabled: s?.monetizationBoostingEnabled !== false,
+                monetizationBoostingCommissionPct: Number.isFinite(s?.monetizationBoostingCommissionPct) ? s.monetizationBoostingCommissionPct : 12,
+                monetizationPremiumEnabled: s?.monetizationPremiumEnabled !== false,
+                monetizationPremiumMonthlyPrice: Number.isFinite(s?.monetizationPremiumMonthlyPrice) ? s.monetizationPremiumMonthlyPrice : 2,
+                monetizationAffiliateEnabled: s?.monetizationAffiliateEnabled !== false,
+                monetizationAffiliateCommissionPct: Number.isFinite(s?.monetizationAffiliateCommissionPct) ? s.monetizationAffiliateCommissionPct : 4,
             });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -6235,10 +6255,10 @@ app.get("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req, 
         const events = await storage.getAllEvents();
         const sellers = await storage.getAllSellers();
         const results = [
-            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage })),
-            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage })),
-            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage })),
-            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "" }))
+            ...posts.map(p => ({ id: p.id, title: p.title, type: 'post', seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoKeywords: p.seoKeywords, ogImage: p.ogImage, twitterImage: p.twitterImage || "", image: p.image || "", content: p.content || "", summary: p.summary || "", canonicalUrl: p.canonicalUrl || "", slug: p.post_slug || "" })),
+            ...news.map(n => ({ id: n.id, title: n.title, type: 'news', seoTitle: n.seoTitle, seoDescription: n.seoDescription, seoKeywords: n.seoKeywords, ogImage: n.ogImage, twitterImage: n.twitterImage || "", image: n.image || "", content: n.content || "", summary: n.summary || "", canonicalUrl: n.canonicalUrl || "", slug: n.news_slug || "" })),
+            ...events.map(e => ({ id: e.id, title: e.title, type: 'event', seoTitle: e.seoTitle, seoDescription: e.seoDescription, seoKeywords: e.seoKeywords, ogImage: e.ogImage, twitterImage: e.twitterImage || "", image: e.image || "", content: e.description || "", summary: "", canonicalUrl: e.canonicalUrl || "", slug: e.event_name_slug || "" })),
+            ...sellers.map(s => ({ id: s.id, title: s.name, type: 'seller', seoTitle: s.name, seoDescription: s.description ? s.description.substring(0, 160) : "", seoKeywords: [], ogImage: s.images && s.images[0] ? s.images[0] : "", twitterImage: "", image: s.images && s.images[0] ? s.images[0] : "", content: s.description || "", summary: "", canonicalUrl: "", slug: s.seller_name_slug || "" }))
         ];
         res.json(results);
     } catch (error) {
@@ -6259,6 +6279,15 @@ app.post("/api/admin/seo/bulk", requireAuth, requireSettingsManager, async (req,
                 if (item.seoDescription !== undefined) updateData.seoDescription = item.seoDescription;
                 if (item.seoKeywords !== undefined) updateData.seoKeywords = item.seoKeywords;
                 if (item.ogImage !== undefined) updateData.ogImage = item.ogImage;
+                if (item.twitterImage !== undefined) updateData.twitterImage = item.twitterImage;
+                if (item.image !== undefined) updateData.image = item.image;
+                if (item.canonicalUrl !== undefined) updateData.canonicalUrl = item.canonicalUrl;
+                if (item.title !== undefined) updateData.title = item.title;
+                if (item.summary !== undefined) updateData.summary = item.summary;
+                if (item.content !== undefined) {
+                    if (item.type === 'event') updateData.description = item.content;
+                    else updateData.content = item.content;
+                }
 
                 let updated = null;
                 if (item.type === 'news') {

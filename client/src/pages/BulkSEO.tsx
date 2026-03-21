@@ -30,6 +30,10 @@ interface ContentItem {
   seoDescription?: string;
   seoKeywords?: string[];
   ogImage?: string;
+  twitterImage?: string;
+  image?: string;
+  canonicalUrl?: string;
+  slug?: string;
   content?: string;
   description?: string;
   summary?: string;
@@ -46,6 +50,7 @@ export default function BulkSEO() {
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
 
   useEffect(() => {
     fetchItems();
@@ -55,7 +60,9 @@ export default function BulkSEO() {
     try {
       setLoading(true);
       const data = await apiRequest("/api/admin/seo/bulk", "GET");
-      setItems(Array.isArray(data) ? data : []);
+      const nextItems = Array.isArray(data) ? data : [];
+      setItems(nextItems);
+      if (nextItems[0]?.id) setSelectedItemId(nextItems[0].id);
       setSelectedIds(new Set()); // Reset selection on refresh
     } catch (error) {
       toast({ title: "Error", description: String(error), variant: "destructive" });
@@ -128,6 +135,12 @@ export default function BulkSEO() {
     return matchesFilter && matchesType;
   });
 
+  const selectedItem = filteredItems.find((item) => item.id === selectedItemId) || items.find((item) => item.id === selectedItemId) || filteredItems[0];
+  const previewValue = (field: keyof ContentItem) => {
+    if (!selectedItem) return "";
+    return getDisplayValue(selectedItem, field) || "";
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -197,10 +210,10 @@ export default function BulkSEO() {
                 </TableRow>
               ) : (
                 filteredItems.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="font-medium">{item.displayTitle || item.title}</div>
-                      <Badge variant="outline" className="mt-1 capitalize">{item.type}</Badge>
+                    <TableRow key={item.id} className={selectedItemId === item.id ? "bg-primary/5" : ""}>
+                      <TableCell>
+                        <div className="font-medium">{item.displayTitle || item.title}</div>
+                        <Badge variant="outline" className="mt-1 capitalize">{item.type}</Badge>
                     </TableCell>
                     <TableCell>
                       <Input 
@@ -223,22 +236,78 @@ export default function BulkSEO() {
                         {(getDisplayValue(item, 'seoDescription') || "").length} / 160 chars
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleAutoGenerate(item)}
-                        title="Auto-generate from content"
-                      >
-                        <Wand2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleAutoGenerate(item)}
+                            title="Auto-generate from content"
+                          >
+                            <Wand2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedItemId(item.id)}>
+                            Edit
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
         </div>
+
+        {selectedItem && (
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Detailed Bulk SEO Editor</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input value={String(previewValue("title"))} onChange={(e) => handleEdit(selectedItem.id, "title", e.target.value)} placeholder="Public title" />
+                <Input value={String(previewValue("seoTitle"))} onChange={(e) => handleEdit(selectedItem.id, "seoTitle", e.target.value)} placeholder="SEO title" />
+                <Textarea value={String(previewValue("seoDescription"))} onChange={(e) => handleEdit(selectedItem.id, "seoDescription", e.target.value)} placeholder="SEO description" className="h-24" />
+                <Input value={Array.isArray(previewValue("seoKeywords")) ? (previewValue("seoKeywords") as string[]).join(", ") : String(previewValue("seoKeywords") || "")} onChange={(e) => handleEdit(selectedItem.id, "seoKeywords", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="keyword1, keyword2" />
+                <Input value={String(previewValue("image"))} onChange={(e) => handleEdit(selectedItem.id, "image", e.target.value)} placeholder="Main image URL" />
+                <Input value={String(previewValue("ogImage"))} onChange={(e) => handleEdit(selectedItem.id, "ogImage", e.target.value)} placeholder="Open Graph image URL" />
+                <Input value={String(previewValue("twitterImage"))} onChange={(e) => handleEdit(selectedItem.id, "twitterImage", e.target.value)} placeholder="Twitter / large image URL" />
+                <Input value={String(previewValue("canonicalUrl"))} onChange={(e) => handleEdit(selectedItem.id, "canonicalUrl", e.target.value)} placeholder="Canonical URL" />
+                <Textarea value={String(previewValue("summary"))} onChange={(e) => handleEdit(selectedItem.id, "summary", e.target.value)} placeholder="Summary / short excerpt" className="h-24" />
+                <Textarea value={String(previewValue("content"))} onChange={(e) => handleEdit(selectedItem.id, "content", e.target.value)} placeholder={selectedItem.type === "event" ? "Event description / content" : "Main content"} className="min-h-[220px]" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Live preview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl border overflow-hidden bg-muted/20">
+                  {String(previewValue("ogImage") || previewValue("image")) ? (
+                    <img src={String(previewValue("ogImage") || previewValue("image"))} alt="Preview" className="w-full aspect-[1200/630] object-cover" />
+                  ) : (
+                    <div className="aspect-[1200/630] flex items-center justify-center text-muted-foreground">No preview image</div>
+                  )}
+                </div>
+                <div className="space-y-2 rounded-xl border p-4">
+                  <Badge variant="outline" className="capitalize">{selectedItem.type}</Badge>
+                  <h3 className="text-2xl font-bold">{String(previewValue("seoTitle") || previewValue("title") || selectedItem.title)}</h3>
+                  <p className="text-sm text-muted-foreground">{String(previewValue("seoDescription") || previewValue("summary") || "").slice(0, 220)}</p>
+                  <div className="text-xs text-muted-foreground break-all">
+                    Canonical: {String(previewValue("canonicalUrl") || `/preview/${selectedItem.type}/${selectedItem.slug || selectedItem.id}`)}
+                  </div>
+                  <div className="text-xs text-muted-foreground break-all">
+                    Large image: {String(previewValue("twitterImage") || previewValue("ogImage") || previewValue("image") || "—")}
+                  </div>
+                  <div className="rounded-lg bg-muted/30 p-3 text-sm whitespace-pre-wrap max-h-48 overflow-auto">
+                    {String(previewValue("content") || previewValue("summary") || "No body preview yet.")}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

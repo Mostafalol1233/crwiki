@@ -1510,7 +1510,7 @@ export async function registerRoutes(app) {
             } catch {
                 image = fallbackOg;
             }
-            const absImage = toCloudinary1200x630(resolveAbsoluteUrl(image, url) || fallbackOg);
+            const absImage = resolveAbsoluteUrl(image, url) || fallbackOg;
             const absUrl = resolveAbsoluteUrl(url, url);
             const html = `<!doctype html><html lang="en"><head>
     <meta charset="utf-8" />
@@ -5363,7 +5363,7 @@ app.use((req, res, next) => {
                 if (isCrawlerUserAgent(req.headers["user-agent"])) {
                     const settings = await SiteSettingsModel.findOne().lean();
                     const base = String(settings?.publicBaseUrl || process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-                    const fallbackOg = toCloudinary1200x630(resolveAbsoluteUrl(settings?.seoOgImage || "", base) || `${base}/feature-crossfire.jpg`);
+                    const fallbackOg = resolveAbsoluteUrl(settings?.seoOgImage || "", base) || `${base}/feature-crossfire.jpg`;
                     const pathname = String(req.path || "");
                     const fullUrl = `${base}${pathname}`;
 
@@ -5377,7 +5377,7 @@ app.use((req, res, next) => {
                                 const m = String(ev.description).match(/<img[^>]+src=["']([^"']+)["']/i);
                                 if (m && m[1]) ogImage = m[1];
                             }
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(ogImage || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(ogImage || "", base) || fallbackOg;
                             meta = {
                                 title: ev.seoTitle || ev.title,
                                 description: ev.seoDescription || String(ev.description || "").replace(/<[^>]*>/g, "").slice(0, 200),
@@ -5393,7 +5393,7 @@ app.use((req, res, next) => {
                         const slug = pathname.replace(/^\/news\//i, "").split("?")[0];
                         const nw = await storage.getNewsByIdOrSlug(slug);
                         if (nw) {
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(nw.ogImage || nw.image || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(nw.ogImage || nw.image || "", base) || fallbackOg;
                             meta = {
                                 title: nw.seoTitle || nw.title,
                                 description: nw.seoDescription || String(nw.content || "").replace(/<[^>]*>/g, "").slice(0, 200),
@@ -5409,7 +5409,7 @@ app.use((req, res, next) => {
                         const slug = pathname.replace(/^\/article\//i, "").split("?")[0];
                         const post = await storage.getPostByIdOrSlug(slug);
                         if (post) {
-                            const img = toCloudinary1200x630(resolveAbsoluteUrl(post.ogImage || post.image || "", base) || fallbackOg);
+                            const img = resolveAbsoluteUrl(post.ogImage || post.image || "", base) || fallbackOg;
                             meta = {
                                 title: post.seoTitle || post.title,
                                 description: post.seoDescription || post.summary || String(post.content || "").replace(/<[^>]*>/g, "").slice(0, 200),

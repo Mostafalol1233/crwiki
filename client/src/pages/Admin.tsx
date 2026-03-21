@@ -65,6 +65,8 @@ import {
   ExternalLink,
   Edit2,
   AlertCircle,
+  DollarSign,
+  Gem,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import imageCompression from 'browser-image-compression';
@@ -1893,6 +1895,62 @@ export default function Admin() {
                     </Card>
                   )}
                 </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      Revenue Roadmap
+                    </CardTitle>
+                    <CardDescription>
+                      Suggested ways to turn the current wiki into a cleaner revenue engine without relying only on intrusive ads.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {[
+                        {
+                          title: "Verified sellers",
+                          text: "Use the existing seller pages, reviews, and rankings to sell featured placements and verified packages.",
+                        },
+                        {
+                          title: "Boosting & coaching",
+                          text: "Add request intake and admin assignment flow for rank boosting, scrim prep, or coaching services.",
+                        },
+                        {
+                          title: "Premium membership",
+                          text: "Package exclusive guides, calculators, and early event analysis into a low-cost recurring plan.",
+                        },
+                        {
+                          title: "Affiliate offers",
+                          text: "Place gaming gear, top-up, and creator-equipment recommendations on high-intent pages.",
+                        },
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-xl border bg-muted/30 p-4">
+                          <div className="flex items-center gap-2 font-semibold">
+                            <Gem className="h-4 w-4 text-primary" />
+                            {item.title}
+                          </div>
+                          <p className="mt-2 text-sm text-muted-foreground">{item.text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => setLocation("/pricing")}>
+                        Open pricing page
+                      </Button>
+                      {canSellers && (
+                        <Button variant="outline" onClick={() => setActiveTab("sellers")}>
+                          Open sellers manager
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => setLocation("/contact")}>
+                        Partnership contact page
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
               <TabsContent value="media" className="space-y-6" data-testid="content-media">
                 <MediaUpload onUploadSuccess={loadServerMedia} />

@@ -760,6 +760,9 @@ export default function Admin() {
   const [eventsPage, setEventsPage] = useState(1);
   const [newsPage, setNewsPage] = useState(1);
   const limit = 20;
+  const [postSearch, setPostSearch] = useState("");
+  const [eventSearch, setEventSearch] = useState("");
+  const [newsSearch, setNewsSearch] = useState("");
 
   const { data: stats } = useQuery<{
     totalPosts: number;
@@ -790,6 +793,24 @@ export default function Admin() {
   });
   const newsItems = newsData?.items || [];
   const totalNews = newsData?.total || 0;
+
+  const filteredPosts = useMemo(() => {
+    const q = postSearch.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((post) => [post.title, post.post_slug, post.author, post.category].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [postSearch, posts]);
+
+  const filteredEvents = useMemo(() => {
+    const q = eventSearch.trim().toLowerCase();
+    if (!q) return events;
+    return events.filter((event) => [event.title, event.titleAr, event.event_name_slug, event.date, event.type].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [eventSearch, events]);
+
+  const filteredNews = useMemo(() => {
+    const q = newsSearch.trim().toLowerCase();
+    if (!q) return newsItems;
+    return newsItems.filter((news) => [news.title, news.titleAr, news.news_slug, news.author, news.category, news.dateRange].some((value) => String(value || "").toLowerCase().includes(q)));
+  }, [newsItems, newsSearch]);
 
   const renderPagination = (currentPage: number, totalItems: number, onPageChange: (page: number) => void) => {
     const totalPages = Math.ceil(totalItems / limit);
@@ -2007,8 +2028,20 @@ export default function Admin() {
 
               {canPosts && (
                 <TabsContent value="posts" className="space-y-6" data-testid="content-posts">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold">Posts Management</h2>
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <h2 className="text-2xl font-semibold">Posts Management</h2>
+                      <p className="text-sm text-muted-foreground">Find any post quickly and jump straight into edit mode.</p>
+                    </div>
+                    <div className="flex w-full max-w-md items-center gap-2">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={postSearch}
+                        onChange={(e) => setPostSearch(e.target.value)}
+                        placeholder="Search posts by title, slug, author, or category"
+                        data-testid="input-search-posts"
+                      />
+                    </div>
                     <Dialog open={isCreatingPost} onOpenChange={(open) => {
                       setIsCreatingPost(open);
                       if (!open) {
@@ -2492,9 +2525,22 @@ export default function Admin() {
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div />
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold">Events</h2>
-                        <div className="flex gap-2">
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <h2 className="text-2xl font-semibold">Events</h2>
+                          <p className="text-sm text-muted-foreground">Search existing events and edit any record from the list below.</p>
+                        </div>
+                        <div className="flex w-full max-w-md items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={eventSearch}
+                            onChange={(e) => setEventSearch(e.target.value)}
+                            placeholder="Search events by title, slug, date, or type"
+                            data-testid="input-search-events"
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           {isSuperAdmin && (
                             <Button
                               variant="secondary"
@@ -2517,33 +2563,34 @@ export default function Admin() {
                             </Button>
                           )}
                           {canUseScraper && (
-                          <Button
-                            variant="outline"
-                            onClick={() => scrapeEventsMutation.mutate()}
-                            disabled={scrapeEventsMutation.isPending}
-                            data-testid="button-scrape-events"
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
-                          </Button>
-                        )}
-                        {isSuperAdmin && (
-                          <Button
-                            variant="outline"
-                            onClick={() => migrateSlugsMutation.mutate()}
-                            disabled={migrateSlugsMutation.isPending}
-                            data-testid="button-migrate-slugs"
-                          >
-                            {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
-                          </Button>
-                        )}
-                        {migrationCounts && (
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">Events: {migrationCounts.events}</Badge>
-                            <Badge variant="secondary">Posts: {migrationCounts.posts}</Badge>
-                            <Badge variant="secondary">News: {migrationCounts.news}</Badge>
-                          </div>
-                        )}
+                            <Button
+                              variant="outline"
+                              onClick={() => scrapeEventsMutation.mutate()}
+                              disabled={scrapeEventsMutation.isPending}
+                              data-testid="button-scrape-events"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
+                            </Button>
+                          )}
+                          {isSuperAdmin && (
+                            <Button
+                              variant="outline"
+                              onClick={() => migrateSlugsMutation.mutate()}
+                              disabled={migrateSlugsMutation.isPending}
+                              data-testid="button-migrate-slugs"
+                            >
+                              {migrateSlugsMutation.isPending ? "Migrating..." : "Migrate Slugs"}
+                            </Button>
+                          )}
+                          {migrationCounts && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">Events: {migrationCounts.events}</Badge>
+                              <Badge variant="secondary">Posts: {migrationCounts.posts}</Badge>
+                              <Badge variant="secondary">News: {migrationCounts.news}</Badge>
+                            </div>
+                          )}
+                        </div>
                         <Dialog open={isCreatingEvent} onOpenChange={(open) => {
                           setIsCreatingEvent(open);
                           if (!open) {
@@ -2914,9 +2961,21 @@ export default function Admin() {
                       {renderPagination(eventsPage, totalEvents, setEventsPage)}
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold">News</h2>
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <h2 className="text-2xl font-semibold">News</h2>
+                          <p className="text-sm text-muted-foreground">Search and edit any published news item without leaving the table.</p>
+                        </div>
+                        <div className="flex w-full max-w-md items-center gap-2">
+                          <Search className="h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={newsSearch}
+                            onChange={(e) => setNewsSearch(e.target.value)}
+                            placeholder="Search news by title, slug, author, or category"
+                            data-testid="input-search-news"
+                          />
+                        </div>
                         <Dialog open={isCreatingNews} onOpenChange={(open) => {
                           setIsCreatingNews(open);
                           if (!open) {

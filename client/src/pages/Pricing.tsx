@@ -16,6 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const offers = [
   {
@@ -135,48 +136,104 @@ const roadmap = [
 ];
 
 export default function PricingPage() {
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
+  const offers = isArabic ? [
+    {
+      icon: ShieldCheck,
+      title: "المتاجر الموثوقة",
+      badge: "جاهز للتشغيل",
+      description: "حوّل قسم البائعين الحالي إلى قناة تجارية موثوقة مع شارات توثيق، وترتيب أفضل، وصفحات أغنى بالمحتوى والتقييمات.",
+      monetization: "فرض اشتراك شهري أو رسوم ظهور مميز أو باقات ترويج للبائعين المعتمدين وشركاء الشحن.",
+      operations: ["اعتماد البائعين وترتيبهم من لوحة الإدارة", "بيع مساحات ظهور مميز", "قياس النقرات والتفاعل والمراجعات"],
+    },
+    {
+      icon: Swords,
+      title: "طلبات البوستينج والتدريب",
+      badge: "طلب مرتفع",
+      description: "أضف نماذج واضحة لطلبات رفع الرتبة أو التدريب أو تجهيز السكريم مع إدارة الطلبات من الموقع بدل الرسائل العشوائية.",
+      monetization: "أخذ عمولة من كل طلب ناجح أو بيع ترتيب أولوية للمدربين المميزين.",
+      operations: ["استقبال تفاصيل الطلب والمهلة", "إدارة الإسناد والمتابعة من الأدمن", "تأكيد الإنجاز قبل إنهاء الطلب"],
+    },
+    {
+      icon: Crown,
+      title: "عضوية ويكي مميزة",
+      badge: "دخل متكرر",
+      description: "قدّم محتوى حصرياً مثل تحليلات متقدمة، وأدوات مقارنة، وتسريبات منظمة، وأدلة احترافية للمشتركين فقط.",
+      monetization: "اشتراك شهري منخفض مقابل أدوات ومحتوى حصري بدون إزعاج.",
+      operations: ["حجب محتوى محدد للأعضاء", "حزم تنبيهات وأدوات خاصة", "صفحات مخصصة للعروض والباقات"],
+    },
+    {
+      icon: ShoppingBag,
+      title: "روابط أفلييت للأدوات والشحن",
+      badge: "تنفيذ سريع",
+      description: "أضف عروضاً مرتبطة بالمحتوى مثل ماوسات اللاعبين، الكيبوردات، السماعات أو بطاقات الشحن.",
+      monetization: "عمولة على الشراء بدون تكلفة إضافية على اللاعب.",
+      operations: ["ويدجتات مخصصة داخل الصفحات", "تقسيم حسب نوع اللاعب", "قياس معدل النقر والتحويل"],
+    },
+    {
+      icon: Trophy,
+      title: "رعاية الكلانات والفعاليات",
+      badge: "نمو العلامة",
+      description: "استخدم الأخبار والإيفينتات لبيع ظهور مدفوع للبطولات، والكلانات، وشركاء المجتمع.",
+      monetization: "باقات رعاية، وظهور في الصفحة الرئيسية، وصفحات هبوط مخصصة.",
+      operations: ["بطاقات فعاليات ممولة", "تقارير أداء للشركاء", "إبراز الشركاء في الأخبار والفعاليات"],
+    },
+    {
+      icon: Wrench,
+      title: "أدوات برمجية وبيانات",
+      badge: "تقني",
+      description: "ابنِ أدوات مثل حاسبة الضرر، وتخطيط الخرائط، ولوحات الأداء، وواجهات API للكلانات وصناع المحتوى.",
+      monetization: "اشتراك مميز أو API مدفوعة أو أدوات خاصة قابلة للترخيص.",
+      operations: ["إطلاق الأدوات كخدمات مدفوعة", "واجهات API للمشتركين", "صفحات مخصصة للأدوات عبر Custom Pages"],
+    },
+  ] : offers;
+  const roadmap = isArabic ? [
+    { phase: "المرحلة 1", title: "استثمار الموجود حالياً", items: ["إبراز البائعين الموثوقين", "إضافة باقات ظهور مميز", "إدخال ويدجتات أفلييت في الصفحات المهمة"] },
+    { phase: "المرحلة 2", title: "خدمات الطلبات", items: ["نماذج بوستينج وتدريب", "إدارة الإسناد والمتابعة", "البدء في العمولات"] },
+    { phase: "المرحلة 3", title: "الأدوات المميزة", items: ["أدلة وآلات حاسبة", "تنبيهات وأدوات للأعضاء", "وصول بيانات وواجهات API"] },
+  ] : roadmap;
   return (
     <>
       <PageSEO
-        title="Pricing & Revenue Programs — CrossFire Wiki"
-        description="Explore CrossFire Wiki monetization programs including verified sellers, premium access, affiliate gear offers, coaching services, and sponsor packages."
+        title={isArabic ? "التسعير وبرامج الربح — CrossFire Wiki" : "Pricing & Revenue Programs — CrossFire Wiki"}
+        description={isArabic ? "استكشف برامج الربح في CrossFire Wiki مثل البائعين الموثوقين، والعضويات المميزة، والأفلييت، والخدمات." : "Explore CrossFire Wiki monetization programs including verified sellers, premium access, affiliate gear offers, coaching services, and sponsor packages."}
         canonicalPath="/pricing"
         schemaType="WebPage"
         schemaData={{
-          name: "CrossFire Wiki Pricing & Revenue Programs",
-          description:
-            "Revenue program overview for CrossFire Wiki including verified sellers, premium memberships, affiliate recommendations, and service offerings.",
+          name: isArabic ? "برامج الربح في CrossFire Wiki" : "CrossFire Wiki Pricing & Revenue Programs",
+          description: isArabic ? "نظرة عامة على برامج الربح والباقات والخدمات." : "Revenue program overview for CrossFire Wiki including verified sellers, premium memberships, affiliate recommendations, and service offerings.",
           url: "/pricing",
         }}
       />
 
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20" dir={isArabic ? "rtl" : "ltr"}>
         <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
             <Badge variant="outline" className="mb-4">
-              Monetization blueprint
+              {isArabic ? "خطة الربح" : "Monetization blueprint"}
             </Badge>
             <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-              Build revenue streams around the CrossFire Wiki community
+              {isArabic ? "ابنِ مصادر دخل حول مجتمع CrossFire Wiki" : "Build revenue streams around the CrossFire Wiki community"}
             </h1>
             <p className="mx-auto mt-5 max-w-3xl text-lg text-muted-foreground">
-              Instead of relying only on distracting ads, the site can earn from trusted commerce,
-              premium tools, sponsored visibility, and player services that actually help the
-              CrossFire audience.
+              {isArabic
+                ? "بدلاً من الاعتماد فقط على الإعلانات المزعجة، يمكن للموقع تحقيق دخل من التجارة الموثوقة، والأدوات المميزة، والرعايات، والخدمات المفيدة للاعبين."
+                : "Instead of relying only on distracting ads, the site can earn from trusted commerce, premium tools, sponsored visibility, and player services that actually help the CrossFire audience."}
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg">
                 <Link href="/sellers">
-                  Explore sellers
+                  {isArabic ? "استعرض البائعين" : "Explore sellers"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/support">Request a feature</Link>
+                <Link href="/support">{isArabic ? "اطلب ميزة" : "Request a feature"}</Link>
               </Button>
               <Button asChild variant="secondary" size="lg">
-                <Link href="/contact">Become a partner</Link>
+                <Link href="/contact">{isArabic ? "كن شريكاً" : "Become a partner"}</Link>
               </Button>
             </div>
           </div>
@@ -203,10 +260,11 @@ export default function PricingPage() {
                   <CardContent className="space-y-4">
                     <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                       <p className="text-sm font-semibold text-primary">How it makes money</p>
+                      {isArabic && <p className="text-sm font-semibold text-primary">كيف يحقق دخلاً</p>}
                       <p className="mt-1 text-sm text-muted-foreground">{offer.monetization}</p>
                     </div>
                     <div>
-                      <p className="mb-2 text-sm font-semibold">What to manage in dashboard</p>
+                      <p className="mb-2 text-sm font-semibold">{isArabic ? "ماذا تدير من لوحة التحكم" : "What to manage in dashboard"}</p>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         {offer.operations.map((item) => (
                           <li key={item} className="flex items-start gap-2">
@@ -227,10 +285,10 @@ export default function PricingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
                   <Target className="h-5 w-5 text-primary" />
-                  Recommended rollout order
+                  {isArabic ? "ترتيب التنفيذ المقترح" : "Recommended rollout order"}
                 </CardTitle>
                 <CardDescription>
-                  Start with features that use the current stack, then add higher-value services and tools.
+                  {isArabic ? "ابدأ بالموجود حالياً ثم أضف الخدمات والأدوات الأعلى قيمة." : "Start with features that use the current stack, then add higher-value services and tools."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
@@ -255,28 +313,28 @@ export default function PricingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
                   <LinkIcon className="h-5 w-5 text-primary" />
-                  Already supported by the site
+                  {isArabic ? "مدعوم بالفعل داخل الموقع" : "Already supported by the site"}
                 </CardTitle>
                 <CardDescription>
-                  You already have strong building blocks that can be monetized with cleaner packaging.
+                  {isArabic ? "لديك بالفعل أساس قوي يمكن تحويله إلى باقات وخدمات أوضح." : "You already have strong building blocks that can be monetized with cleaner packaging."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">Seller pages + reviews</p>
-                  <p className="mt-1">Use them as the foundation for verified vendors and featured placements.</p>
+                  <p className="font-medium text-foreground">{isArabic ? "صفحات البائعين + المراجعات" : "Seller pages + reviews"}</p>
+                  <p className="mt-1">{isArabic ? "استخدمها كأساس للبائعين الموثوقين والباقات المميزة." : "Use them as the foundation for verified vendors and featured placements."}</p>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">Events + news content engine</p>
-                  <p className="mt-1">Perfect for sponsored events, partner posts, and affiliate placements.</p>
+                  <p className="font-medium text-foreground">{isArabic ? "الأخبار + الإيفينتات" : "Events + news content engine"}</p>
+                  <p className="mt-1">{isArabic ? "مناسبة للرعايات، وصفحات الشركاء، وروابط الأفلييت." : "Perfect for sponsored events, partner posts, and affiliate placements."}</p>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">Admin + custom pages</p>
-                  <p className="mt-1">Useful for landing pages, premium offers, and future calculators or gated tools.</p>
+                  <p className="font-medium text-foreground">{isArabic ? "الإدارة + الصفحات المخصصة" : "Admin + custom pages"}</p>
+                  <p className="mt-1">{isArabic ? "مفيدة لصفحات الهبوط، والعروض المميزة، والأدوات المستقبلية." : "Useful for landing pages, premium offers, and future calculators or gated tools."}</p>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">Analytics</p>
-                  <p className="mt-1">Track seller views, clicks, and engagement so partners can see measurable value.</p>
+                  <p className="font-medium text-foreground">{isArabic ? "التحليلات" : "Analytics"}</p>
+                  <p className="mt-1">{isArabic ? "تابع الزيارات والنقرات والتفاعل لتقديم قيمة واضحة للشركاء." : "Track seller views, clicks, and engagement so partners can see measurable value."}</p>
                 </div>
               </CardContent>
             </Card>

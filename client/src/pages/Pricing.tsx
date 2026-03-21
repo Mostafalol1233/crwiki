@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   Crown,
   Gem,
-  Link as LinkIcon,
+  Link2,
   ShieldCheck,
   ShoppingBag,
   Swords,
@@ -254,7 +254,7 @@ export default function PricingPage() {
             <Card className="border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                  <LinkIcon className="h-5 w-5 text-primary" />
+                  <Link2 className="h-5 w-5 text-primary" />
                   Already supported by the site
                 </CardTitle>
                 <CardDescription>

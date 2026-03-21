@@ -54,9 +54,9 @@ export class MongoDBStorage {
 
     async initialize() {
         if (!this.initialized) {
-            const mongoUri = process.env.DATABASE_URL || process.env.MONGODB_URI;
+            const mongoUri = process.env.DATABASE_URL || process.env.MONGODB_URI || process.env.MONGO_URL;
             if (!mongoUri) {
-                throw new Error("DATABASE_URL or MONGODB_URI environment variable must be set");
+                throw new Error("DATABASE_URL, MONGODB_URI, or MONGO_URL environment variable must be set");
             }
             await mongoose.connect(mongoUri);
             this.initialized = true;

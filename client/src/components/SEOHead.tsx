@@ -63,18 +63,6 @@ export function SEOHead({
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
   const finalOgTitle = ogTitle || finalTitle;
   const finalOgDescription = ogDescription || finalDescription;
-  const toCloudinary1200x630 = (url: string) => {
-    try {
-      const u = new URL(url);
-      if (/res\.cloudinary\.com/i.test(u.hostname) && /\/image\/upload\//.test(u.pathname)) {
-        const p = u.pathname.replace(/\/image\/upload\//, "/image/upload/c_fill,w_1200,h_630,f_auto,q_auto/");
-        return `${u.protocol}//${u.host}${p}${u.search}${u.hash}`;
-      }
-      return url;
-    } catch {
-      return url;
-    }
-  };
   const defaultSeoLogo = `${baseUrl}/logo-new.png`;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
@@ -82,7 +70,7 @@ export function SEOHead({
     try {
       const u = new URL(src, baseUrl);
       const abs = u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
-      return toCloudinary1200x630(abs);
+      return abs;
     } catch {
       return defaultSeoLogo;
     }

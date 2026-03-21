@@ -36,8 +36,8 @@ const limiter = rateLimit({
 app.use("/images/upload", limiter);
 app.use("/cdn/fetch", limiter);
 
-// Optional DB connection (connects only if MONGO_URL provided)
-const MONGO_URL = process.env.MONGO_URL || "";
+// Optional DB connection (supports both legacy MONGO_URL and MONGODB_URI)
+const MONGO_URL = process.env.MONGODB_URI || process.env.MONGO_URL || "";
 if (MONGO_URL) {
   mongoose
     .connect(MONGO_URL)
@@ -76,6 +76,7 @@ import sharp from "sharp";
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dkpdidm89";
 const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || "crossfire";
 const CLOUDINARY_RESOURCE_TYPE = process.env.CLOUDINARY_RESOURCE_TYPE || "auto";
+const PRESERVE_ORIGINAL_UPLOADS = String(process.env.PRESERVE_ORIGINAL_UPLOADS || "true").toLowerCase() !== "false";
 
 app.post("/images/upload", upload.single("file"), async (req, res, next) => {
   try {
@@ -85,8 +86,9 @@ app.post("/images/upload", upload.single("file"), async (req, res, next) => {
       return res.status(415).json({ ok: false, error: `Unsupported file type: ${mimetype}` });
     }
 
-    // Server-side image optimization with sharp
-    if (mimetype.startsWith("image/")) {
+    // Preserve original event/admin/frontend-uploaded images by default.
+    // Set PRESERVE_ORIGINAL_UPLOADS=false only if you explicitly want server-side recompression.
+    if (!PRESERVE_ORIGINAL_UPLOADS && mimetype.startsWith("image/")) {
       try {
         buffer = await sharp(buffer)
           .resize({ width: 1920, height: 1080, fit: "inside", withoutEnlargement: true })
@@ -156,4 +158,3 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);
 });
-

@@ -556,6 +556,37 @@ export class MemoryStorage {
     async getAllWeapons() {
         return this.weapons;
     }
+    async searchWeaponsPaged(params) {
+        const page = Math.max(1, Number(params?.page || 1));
+        const pageSize = Math.min(200, Math.max(1, Number(params?.pageSize || 50)));
+        const q = String(params?.q || '').trim().toLowerCase();
+        const letter = String(params?.letter || '').trim().toLowerCase();
+        const category = String(params?.category || '').trim().toLowerCase();
+        const sort = String(params?.sort || 'alpha').toLowerCase();
+        const order = String(params?.order || 'asc').toLowerCase();
+        let rows = [...this.weapons];
+        if (q) {
+            rows = rows.filter((weapon) => String(weapon?.name || '').toLowerCase().includes(q) || String(weapon?.description || '').toLowerCase().includes(q));
+        }
+        if (letter) {
+            rows = rows.filter((weapon) => String(weapon?.name || '').toLowerCase().startsWith(letter));
+        }
+        if (category) {
+            rows = rows.filter((weapon) => String(weapon?.category || '').toLowerCase() === category);
+        }
+        rows.sort((a, b) => {
+            if (sort === 'date') {
+                const av = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bv = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return order === 'desc' ? bv - av : av - bv;
+            }
+            const cmp = String(a?.name || '').localeCompare(String(b?.name || ''));
+            return order === 'desc' ? -cmp : cmp;
+        });
+        const total = rows.length;
+        const start = (page - 1) * pageSize;
+        return { items: rows.slice(start, start + pageSize), total, page, pageSize };
+    }
     async getWeaponById(id) {
         return this.weapons.find((w) => w.id === id);
     }

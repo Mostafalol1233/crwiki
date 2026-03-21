@@ -54,9 +54,9 @@ export class MongoDBStorage {
 
     async initialize() {
         if (!this.initialized) {
-            const mongoUri = process.env.DATABASE_URL || process.env.MONGODB_URI;
+            const mongoUri = process.env.DATABASE_URL || process.env.MONGODB_URI || process.env.MONGO_URL;
             if (!mongoUri) {
-                throw new Error("DATABASE_URL or MONGODB_URI environment variable must be set");
+                throw new Error("DATABASE_URL, MONGODB_URI, or MONGO_URL environment variable must be set");
             }
             await mongoose.connect(mongoUri);
             this.initialized = true;
@@ -624,6 +624,42 @@ export class MongoDBStorage {
     async getAllWeapons() {
         const weapons = await WeaponModel.find().sort({ createdAt: -1 });
         return weapons.map(w => ({ ...w.toObject(), id: String(w._id) }));
+    }
+    async searchWeaponsPaged(params) {
+        const page = Math.max(1, Number(params?.page || 1));
+        const pageSize = Math.min(200, Math.max(1, Number(params?.pageSize || 50)));
+        const q = String(params?.q || '').trim();
+        const letter = String(params?.letter || '').trim();
+        const category = String(params?.category || '').trim();
+        const sort = String(params?.sort || 'alpha').toLowerCase();
+        const order = String(params?.order || 'asc').toLowerCase();
+        const filter = {};
+        if (q) {
+            filter.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } }
+            ];
+        }
+        if (letter) {
+            filter.name = { ...(filter.name || {}), $regex: `^${letter.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`, $options: 'i' };
+        }
+        if (category) {
+            filter.category = category;
+        }
+        const rows = await WeaponModel.find(filter).lean();
+        rows.sort((a, b) => {
+            if (sort === 'date') {
+                const av = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bv = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return order === 'desc' ? bv - av : av - bv;
+            }
+            const cmp = String(a?.name || '').localeCompare(String(b?.name || ''));
+            return order === 'desc' ? -cmp : cmp;
+        });
+        const total = rows.length;
+        const start = (page - 1) * pageSize;
+        const items = rows.slice(start, start + pageSize).map((weapon) => ({ ...weapon, id: String(weapon._id) }));
+        return { items, total, page, pageSize };
     }
 
     async getWeaponById(id) {

@@ -320,7 +320,17 @@ export async function scrapeEventDetails(url) {
   const isPlaceholderImage = (raw) => {
     const candidate = String(raw || '').toLowerCase();
     if (!candidate) return true;
-    return candidate.includes('wof38b') || candidate.includes('placeholder') || candidate.includes('default');
+    return candidate.includes('wof38b') || candidate.includes('placeholder') || candidate.includes('default') || candidate.includes('/avatar') || candidate.includes('/emoji');
+  };
+
+  const hasValidImageExtension = (raw) => {
+    const candidate = String(raw || '').toLowerCase().split('?')[0].split('#')[0];
+    return /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(candidate);
+  };
+
+  const isPreferredZ8Image = (raw) => {
+    const candidate = String(raw || '').toLowerCase();
+    return candidate.includes('z8games.com') || candidate.includes('akamaized.net');
   };
 
   const $ = cheerio.load(response.data);
@@ -362,7 +372,12 @@ export async function scrapeEventDetails(url) {
     preferredImageCandidates.push(src);
   });
 
-  const imageUrl = preferredImageCandidates.find((candidate) => !isPlaceholderImage(candidate)) || preferredImageCandidates[0] || '';
+  const imageUrl =
+    preferredImageCandidates.find((candidate) => isPreferredZ8Image(candidate) && hasValidImageExtension(candidate) && !isPlaceholderImage(candidate)) ||
+    preferredImageCandidates.find((candidate) => hasValidImageExtension(candidate) && !isPlaceholderImage(candidate)) ||
+    preferredImageCandidates.find((candidate) => isPreferredZ8Image(candidate) && !isPlaceholderImage(candidate)) ||
+    preferredImageCandidates.find((candidate) => !isPlaceholderImage(candidate)) ||
+    '';
 
   // Logo extraction (try to find logo-like images)
   let logoUrl = '';
@@ -392,7 +407,8 @@ export async function scrapeEventDetails(url) {
   }
 
   const localList = await getLocalAssetList();
-  const finalImage = imageUrl || findLocalAssetInList(title, localList) || 'https://files.catbox.moe/wof38b.jpeg';
+  const matchedLocalAsset = !imageUrl ? findLocalAssetInList(title, localList) : '';
+  const finalImage = imageUrl || matchedLocalAsset || '';
 
   // Preview text generation
   const preview = $(contentEl).text().trim().substring(0, 150) + "...";
@@ -591,4 +607,3 @@ export async function scrapeMaps() {
     return [];
   }
 }
-

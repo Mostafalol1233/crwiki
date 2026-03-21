@@ -14,12 +14,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User } from "lucide-react";
+import { Sparkles, ThumbsUp, Play, Flame, Calendar, ExternalLink, Globe, User, Crosshair, Shield } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
 import mercCategoryImage from "@assets/merc-sisterhood.jpg";
 import mapsCategoryImage from "@assets/modes/TDM_Mexico2_05.jpg.jpeg";
 import type { Tutorial } from "@shared/mongodb-schema";
+
+type HomeWeapon = {
+  id: string;
+  name: string;
+  image?: string;
+  imageUrl?: string;
+  category?: string;
+  stats?: Record<string, any>;
+};
 
 export default function Home() {
   function RatioBox({ src, alt, mdHeightClass = "", children }: { src: string; alt: string; mdHeightClass?: string; children?: React.ReactNode }) {
@@ -76,6 +85,12 @@ export default function Home() {
     queryKey: ["/api/tutorials"],
   });
   const allTutorials = tutorialsData?.items || [];
+
+  const { data: recentWeaponsData } = useQuery<{ items: HomeWeapon[]; total: number }>({
+    queryKey: ["/api/weapons/search", "home-recent"],
+    queryFn: () => apiRequest("/api/weapons/search?page=1&pageSize=4&sort=date&order=desc", "GET"),
+  });
+  const recentWeapons = recentWeaponsData?.items || [];
 
   const [zoom, setZoom] = useState(1);
 
@@ -295,6 +310,66 @@ export default function Home() {
                   </div>
                 </>
               )}
+            </section>
+
+            <section className="space-y-6 md:space-y-10 pt-8 border-t border-primary/10">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <Crosshair className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight italic">
+                    Latest Weapons
+                  </h2>
+                </div>
+                <Link href="/weapons">
+                  <Button variant="outline" className="rounded-xl font-bold uppercase tracking-wide text-xs sm:text-sm">
+                    Explore Weapons
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {recentWeapons.map((weapon) => {
+                  const image = weapon.image || weapon.imageUrl || "";
+                  const damage = weapon.stats?.damage ?? weapon.stats?.Damage;
+                  const recoil = weapon.stats?.recoil ?? weapon.stats?.Recoil;
+                  return (
+                    <Card key={weapon.id} className="overflow-hidden border border-primary/10 bg-card/80 shadow-lg">
+                      <div className="aspect-[4/3] bg-muted/30">
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={weapon.name}
+                            className="h-full w-full object-contain p-4"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-muted-foreground">
+                            <Shield className="h-8 w-8" />
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="space-y-3 p-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-primary">
+                            {weapon.category || "Weapon"}
+                          </p>
+                          <h3 className="mt-1 text-lg font-bold line-clamp-2">{weapon.name}</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="rounded-lg border bg-muted/20 p-2">
+                            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Damage</p>
+                            <p className="font-semibold">{damage ?? "—"}</p>
+                          </div>
+                          <div className="rounded-lg border bg-muted/20 p-2">
+                            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Recoil</p>
+                            <p className="font-semibold">{recoil ?? "—"}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </section>
 
             {/* 3. Categories Section */}

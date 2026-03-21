@@ -1731,7 +1731,7 @@ export default function Admin() {
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="w-full lg:w-72 lg:shrink-0">
               {/* small screen: select picker */}
-              <div className="block lg:hidden mb-3">
+              <div className="block mb-3">
                 <select
                   value={activeTab}
                   onChange={(e) => setActiveTab(e.target.value)}
@@ -1762,7 +1762,7 @@ export default function Admin() {
               </div>
 
               {/* large screen: vertical tabs list */}
-              <TabsList className="hidden lg:flex lg:max-h-[calc(100vh-10rem)] lg:flex-col lg:flex-wrap-0 lg:gap-2 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card/80 lg:p-2 lg:sticky lg:top-6">
+              <TabsList className="hidden">
                 <TabsTrigger value="dashboard" className="justify-start" data-testid="tab-dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   <span className="truncate">Dashboard</span>
@@ -2194,6 +2194,33 @@ export default function Admin() {
                       >
                         Open in new tab
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <LayoutDashboard className="h-5 w-5 text-primary" />
+                      Full Admin Menu
+                    </CardTitle>
+                    <CardDescription>
+                      Quick buttons to open every available section from one place.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {quickAccessTabs.map((tab) => (
+                        <Button
+                          key={tab.key}
+                          variant={activeTab === tab.key ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveTab(tab.key)}
+                          data-testid={`quick-menu-${tab.key}`}
+                        >
+                          {tab.label}
+                        </Button>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>

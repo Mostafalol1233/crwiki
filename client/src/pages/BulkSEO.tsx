@@ -26,14 +26,12 @@ interface ContentItem {
   id: string;
   title: string;
   type: 'news' | 'post' | 'event' | 'seller';
+  slug?: string;
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string[];
   ogImage?: string;
-  twitterImage?: string;
   image?: string;
-  canonicalUrl?: string;
-  slug?: string;
   content?: string;
   description?: string;
   summary?: string;
@@ -135,10 +133,25 @@ export default function BulkSEO() {
     return matchesFilter && matchesType;
   });
 
-  const selectedItem = filteredItems.find((item) => item.id === selectedItemId) || items.find((item) => item.id === selectedItemId) || filteredItems[0];
-  const previewValue = (field: keyof ContentItem) => {
-    if (!selectedItem) return "";
-    return getDisplayValue(selectedItem, field) || "";
+  const getPublicPath = (item: ContentItem) => {
+    if (item.type === "post") return `/article/${item.slug || item.id}`;
+    if (item.type === "event") return `/events/${item.slug || item.id}`;
+    if (item.type === "news") return `/news/${item.slug || item.id}`;
+    if (item.type === "seller") return `/sellers/${item.slug || item.id}`;
+    return "/";
+  };
+
+  const getGooglePreview = (item: ContentItem) => {
+    const title = String(getDisplayValue(item, "seoTitle") || item.displayTitle || item.title || "Untitled").slice(0, 60);
+    const description = String(getDisplayValue(item, "seoDescription") || item.summary || item.description || "").slice(0, 160);
+    const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || "https://crossfire.wiki";
+    const base = String(envBase).replace(/\/$/, "");
+    const path = getPublicPath(item);
+    return {
+      title,
+      description,
+      url: `${base}${path}`,
+    };
   };
 
   return (
@@ -196,17 +209,18 @@ export default function BulkSEO() {
                 <TableHead className="w-[300px]">Content</TableHead>
                 <TableHead>SEO Title</TableHead>
                 <TableHead>Meta Description</TableHead>
+                <TableHead>Main Image URL</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">Loading content...</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8">Loading content...</TableCell>
                 </TableRow>
               ) : filteredItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">No content found</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8">No content found</TableCell>
                 </TableRow>
               ) : (
                 filteredItems.map(item => (
@@ -234,6 +248,30 @@ export default function BulkSEO() {
                       />
                       <div className="text-xs text-muted-foreground mt-1">
                         {(getDisplayValue(item, 'seoDescription') || "").length} / 160 chars
+                      </div>
+                      <div className="mt-2 rounded-md border border-border/70 p-2 bg-muted/20">
+                        <div className="text-[11px] text-emerald-700 truncate">{getGooglePreview(item).url}</div>
+                        <div className="text-sm text-blue-700 font-medium truncate">{getGooglePreview(item).title}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">{getGooglePreview(item).description || "No meta description yet."}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={getDisplayValue(item, 'image') || ""}
+                        onChange={(e) => handleEdit(item.id, 'image', e.target.value)}
+                        placeholder="Main image URL"
+                      />
+                      <div className="mt-2 rounded-md border p-2">
+                        {String(getDisplayValue(item, "image") || "").trim() ? (
+                          <img
+                            src={String(getDisplayValue(item, "image") || "")}
+                            alt={item.title}
+                            className="h-16 w-full object-cover rounded"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No main image set.</p>
+                        )}
                       </div>
                     </TableCell>
                       <TableCell>

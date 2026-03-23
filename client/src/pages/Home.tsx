@@ -86,6 +86,23 @@ export default function Home() {
   });
   const recentWeapons = recentWeaponsData?.items || [];
 
+  const { data: sitePublicSettings } = useQuery<{ featuredWeapons: string[] }>({
+    queryKey: ["/api/public/settings/site"],
+    queryFn: () => apiRequest("/api/public/settings/site", "GET"),
+    staleTime: 1000 * 60 * 5,
+  });
+  const featuredWeaponIds = sitePublicSettings?.featuredWeapons || [];
+
+  const { data: featuredWeaponsData } = useQuery<HomeWeapon[]>({
+    queryKey: ["/api/weapons/batch/by-ids", featuredWeaponIds.join(",")],
+    queryFn: () => apiRequest(`/api/weapons/batch/by-ids?ids=${featuredWeaponIds.join(",")}`, "GET"),
+    enabled: featuredWeaponIds.length > 0,
+  });
+
+  const displayWeapons = featuredWeaponIds.length > 0 && featuredWeaponsData
+    ? featuredWeaponsData
+    : recentWeapons;
+
   const heroPost = allPosts.filter((p: any) => p.previewOnHome !== false).find((p) => p.featured) || {
     id: "1",
     title: "Bimora Gaming — Quick, Simple & Massive",
@@ -205,9 +222,10 @@ export default function Home() {
                     >
                       <div className="relative overflow-hidden rounded-2xl h-full min-h-[280px] md:min-h-[380px] cursor-pointer">
                         <img
-                          src={featuredEvent.image || FALLBACK_EVENT_IMG}
+                          src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
                           alt={featuredEvent.title}
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                         />
                         {/* Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
@@ -244,9 +262,10 @@ export default function Home() {
                       >
                         <div className="relative overflow-hidden rounded-xl flex-1 h-full min-h-[100px] md:min-h-[115px] cursor-pointer">
                           <img
-                            src={event.image || FALLBACK_EVENT_IMG}
+                            src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
                           <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-5">
@@ -277,9 +296,10 @@ export default function Home() {
                       >
                         <div className="relative overflow-hidden rounded-xl aspect-video cursor-pointer">
                           <img
-                            src={event.image || FALLBACK_EVENT_IMG}
+                            src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           <span className="absolute top-3 left-3 bg-primary/80 text-primary-foreground text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">
@@ -318,11 +338,11 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {recentWeapons.length === 0
+              {displayWeapons.length === 0
                 ? Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="h-64 rounded-xl bg-muted/20 animate-pulse" />
                 ))
-                : recentWeapons.map((weapon) => {
+                : displayWeapons.map((weapon) => {
                   const image = weapon.image || weapon.imageUrl || "";
                   const damage = weapon.stats?.damage ?? weapon.stats?.Damage;
                   const recoil = weapon.stats?.recoil ?? weapon.stats?.Recoil;

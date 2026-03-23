@@ -229,6 +229,7 @@ const SiteSettingsSchema = new Schema({
     monetizationPremiumMonthlyPrice: { type: Number, default: 2 },
     monetizationAffiliateEnabled: { type: Boolean, default: true },
     monetizationAffiliateCommissionPct: { type: Number, default: 4 },
+    featuredWeapons: { type: [String], default: [] },
 }, {
     timestamps: true,
 });
@@ -265,6 +266,8 @@ const MapSchema = new Schema({
 const RankSchema = new Schema({
     name: { type: String, required: true },
     imageUrl: { type: String, default: "" },
+    image: { type: String, default: "" },
+    emblem: { type: String, default: "" },
     tier: { type: Number, default: 0 },
     expRequired: { type: Number, default: 0 },
     description: { type: String, default: "" },
@@ -602,6 +605,7 @@ export const siteSettingsSchema = z.object({
     monetizationPremiumMonthlyPrice: z.number().min(0).max(100000).optional().default(2),
     monetizationAffiliateEnabled: z.boolean().optional().default(true),
     monetizationAffiliateCommissionPct: z.number().min(0).max(100).optional().default(4),
+    featuredWeapons: z.array(z.string()).optional().default([]),
 });
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
 const ConversationSchema = new Schema({

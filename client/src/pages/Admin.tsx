@@ -788,6 +788,7 @@ export default function Admin() {
     monetizationPremiumMonthlyPrice: 2,
     monetizationAffiliateEnabled: true,
     monetizationAffiliateCommissionPct: 4,
+    featuredWeapons: [] as string[],
   });
 
   const isVerificationReady = !siteSettingsForm.reviewVerificationEnabled || (
@@ -1009,6 +1010,7 @@ export default function Admin() {
         monetizationPremiumMonthlyPrice: siteSettings.monetizationPremiumMonthlyPrice ?? 2,
         monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
         monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
+        featuredWeapons: Array.isArray((siteSettings as any).featuredWeapons) ? (siteSettings as any).featuredWeapons : [],
       });
     }
   }, [siteSettings]);
@@ -2152,6 +2154,118 @@ export default function Admin() {
                         </div>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <span>🔫</span> Featured Weapons (Homepage)
+                    </CardTitle>
+                    <CardDescription>
+                      Choose up to 4 weapons to feature on the homepage. Leave empty to automatically show the 4 most recently added weapons.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {siteSettingsForm.featuredWeapons.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Currently featured ({siteSettingsForm.featuredWeapons.length}/4):</p>
+                        <div className="flex flex-wrap gap-2">
+                          {siteSettingsForm.featuredWeapons.map((wid) => {
+                            const w = (weapons || []).find((x: any) => String(x.id || x._id) === wid);
+                            return (
+                              <div key={wid} className="flex items-center gap-1 bg-primary/10 border border-primary/30 rounded px-2 py-1 text-sm">
+                                {w?.imageUrl || w?.image ? (
+                                  <img src={w.imageUrl || w.image} alt={w.name} className="w-6 h-6 object-contain" />
+                                ) : null}
+                                <span>{w?.name || wid}</span>
+                                <button
+                                  onClick={() => setSiteSettingsForm(prev => ({
+                                    ...prev,
+                                    featuredWeapons: prev.featuredWeapons.filter(id => id !== wid)
+                                  }))}
+                                  className="ml-1 text-destructive hover:text-destructive/80 font-bold"
+                                >×</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <Input
+                        placeholder="Search weapons to feature..."
+                        value={weaponSearch}
+                        onChange={(e) => setWeaponSearch(e.target.value)}
+                        className="mb-2"
+                      />
+                      <div className="max-h-64 overflow-y-auto border rounded-md divide-y">
+                        {(weapons || [])
+                          .filter((w: any) => {
+                            if (!weaponSearch.trim()) return true;
+                            return w.name?.toLowerCase().includes(weaponSearch.toLowerCase()) ||
+                              w.category?.toLowerCase().includes(weaponSearch.toLowerCase());
+                          })
+                          .slice(0, 30)
+                          .map((w: any) => {
+                            const wid = String(w.id || w._id);
+                            const isSelected = siteSettingsForm.featuredWeapons.includes(wid);
+                            return (
+                              <div
+                                key={wid}
+                                className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors ${isSelected ? 'bg-primary/10' : ''}`}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSiteSettingsForm(prev => ({
+                                      ...prev,
+                                      featuredWeapons: prev.featuredWeapons.filter(id => id !== wid)
+                                    }));
+                                  } else if (siteSettingsForm.featuredWeapons.length < 4) {
+                                    setSiteSettingsForm(prev => ({
+                                      ...prev,
+                                      featuredWeapons: [...prev.featuredWeapons, wid]
+                                    }));
+                                  }
+                                }}
+                              >
+                                {w.imageUrl || w.image ? (
+                                  <img src={w.imageUrl || w.image} alt={w.name} className="w-8 h-8 object-contain flex-shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 bg-muted rounded flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{w.name}</p>
+                                  <p className="text-xs text-muted-foreground">{w.category}</p>
+                                </div>
+                                {isSelected && <span className="text-primary text-xs font-bold">✓ Featured</span>}
+                                {!isSelected && siteSettingsForm.featuredWeapons.length >= 4 && (
+                                  <span className="text-xs text-muted-foreground">Max 4</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        {(weapons || []).length === 0 && (
+                          <p className="text-sm text-muted-foreground px-3 py-4 text-center">No weapons found. Add weapons in the CF Data tab first.</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSiteSettingsForm(prev => ({ ...prev, featuredWeapons: [] }))}
+                        disabled={siteSettingsForm.featuredWeapons.length === 0}
+                      >
+                        Clear selection (use latest)
+                      </Button>
+                      <Button
+                        onClick={() => updateSiteSettingsMutation.mutate(siteSettingsForm)}
+                        disabled={updateSiteSettingsMutation.isPending}
+                        size="sm"
+                      >
+                        {updateSiteSettingsMutation.isPending ? "Saving..." : "Save featured weapons"}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 

@@ -750,7 +750,7 @@ export async function registerRoutes(app) {
                 offset: offset ? parseInt(offset) : undefined
             });
 
-            const formattedItems = result.items.map((post) => ({
+            const formattedItems = (result?.items || []).map((post) => ({
                 ...post,
                 date: formatDate(post.createdAt),
             }));
@@ -1650,6 +1650,17 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
+    app.get("/api/weapons/batch/by-ids", async (req, res) => {
+        try {
+            const ids = String(req.query.ids || "").split(",").map(s => s.trim()).filter(Boolean);
+            if (!ids.length) return res.json([]);
+            const weapons = await Promise.all(ids.map(id => storage.getWeaponById(id).catch(() => null)));
+            res.json(weapons.filter(Boolean));
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app.get("/api/weapons/:id", async (req, res) => {
         try {
             const weapon = await storage.getWeaponById(req.params.id);
@@ -2211,6 +2222,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             try {
                 const settings = await storage.getSiteSettings();
                 res.json({ enabled: settings.announcementsEnabled });
+            }
+            catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        app.get("/api/public/settings/site", async (_req, res) => {
+            try {
+                const s = await storage.getSiteSettings();
+                res.json({
+                    featuredWeapons: Array.isArray(s?.featuredWeapons) ? s.featuredWeapons : [],
+                });
             }
             catch (error) {
                 res.status(500).json({ error: error.message });

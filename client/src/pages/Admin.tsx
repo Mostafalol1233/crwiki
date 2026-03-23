@@ -1845,9 +1845,15 @@ export default function Admin() {
                     <span className="truncate">Site Settings</span>
                   </TabsTrigger>
                 )}
+                {canUsers && (
+                  <TabsTrigger value="users" className="justify-start" data-testid="tab-users">
+                    <Users className="h-4 w-4 mr-2" />
+                    <span className="truncate">Users</span>
+                  </TabsTrigger>
+                )}
                 {canAdmins && (
                   <TabsTrigger value="admins" className="justify-start" data-testid="tab-admins">
-                    <Users className="h-4 w-4 mr-2" />
+                    <Shield className="h-4 w-4 mr-2" />
                     <span className="truncate">Admins</span>
                   </TabsTrigger>
                 )}
@@ -1857,7 +1863,7 @@ export default function Admin() {
                     <span className="truncate">Subscribers</span>
                   </TabsTrigger>
                 )}
-                {canScraper && (
+                {false && canScraper && (
                   <TabsTrigger value="scraper" className="justify-start" data-testid="tab-scraper">
                     <Upload className="h-4 w-4 mr-2" />
                     <span className="truncate">Scraper</span>
@@ -1881,7 +1887,7 @@ export default function Admin() {
                     <span className="truncate">Tickets</span>
                   </TabsTrigger>
                 )}
-                {isSuperAdmin && (
+                {false && isSuperAdmin && (
                   <TabsTrigger value="seller-reviews" className="justify-start" data-testid="tab-seller-reviews">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     <span className="truncate">Seller Review Verification</span>

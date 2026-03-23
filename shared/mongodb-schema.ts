@@ -218,6 +218,7 @@ export interface IWeapon extends Document {
   category?: string;
   description?: string;
   stats?: Record<string, any>;
+  order?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -479,9 +480,10 @@ const WeaponSchema = new Schema<IWeapon>({
   category: { type: String, default: "" },
   description: { type: String, default: "" },
   stats: { type: Schema.Types.Mixed, default: {} },
+  order: { type: Number, default: 9999 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-});
+}, { strict: false });
 
 const ModeSchema = new Schema<IMode>({
   name: { type: String, required: true },

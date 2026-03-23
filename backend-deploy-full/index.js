@@ -1190,9 +1190,17 @@ function requireOwnershipOrAdmin(contentType) {
         const user = req.user;
         const role = user?.role || "";
         const roles = user?.roles || [];
+        const perms = user?.permissions || {};
         const isSuper = role === "super_admin" || (Array.isArray(roles) && roles.includes("super_admin"));
         if (isSuper) return next();
-        
+        const isAdmin = role === "admin" || (Array.isArray(roles) && roles.includes("admin"));
+        if (isAdmin) {
+            const canManageAll =
+                (contentType === "post" && (perms["posts:manage"] || perms["posts:edit"] || perms["posts:add"])) ||
+                (contentType === "event" && (perms["events:manage"] || perms["events:edit"] || perms["events:add"] || perms["events:scrape"])) ||
+                (contentType === "news" && (perms["news:manage"] || perms["news:edit"] || perms["news:add"] || perms["news:scrape"]));
+            if (canManageAll) return next();
+        }
         const id = req.params.id;
         if (!id) return res.status(400).json({ error: "Missing ID" });
         try {
@@ -1206,10 +1214,10 @@ function requireOwnershipOrAdmin(contentType) {
             }
             if (!content) return res.status(404).json({ error: "Not found" });
             const adminId = user?.id || "";
-            if (content.createdByAdminId !== adminId) {
-                return res.status(403).json({ error: "Forbidden: Can only edit/delete your own content" });
+            if (!content.createdByAdminId || content.createdByAdminId === adminId) {
+                return next();
             }
-            return next();
+            return res.status(403).json({ error: "Forbidden: Can only edit/delete your own content" });
         } catch (err) {
             return res.status(500).json({ error: "Permission check failed" });
         }
@@ -3549,11 +3557,31 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
             if (DRY) {
                 return res.json({ ok: true, secure_url: `https://res.cloudinary.com/${cloudName}/${kind}/upload/v123/${predictablePublicId}.${format}`, domain_url, domainUrl: domain_url, public_id: predictablePublicId, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString() });
             }
-            const json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder, public_id: publicIdBase });
-            const resourceType = json.resource_type || kind;
-            const publicId = json.public_id || predictablePublicId;
-            const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
-            return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
+            try {
+                const json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder, public_id: publicIdBase });
+                const resourceType = json.resource_type || kind;
+                const publicId = json.public_id || predictablePublicId;
+                const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
+                return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
+            } catch (cloudErr) {
+                console.warn("[images/upload] Cloudinary failed, falling back to catbox.moe:", cloudErr?.message);
+                try {
+                    const catboxForm = new FormData();
+                    catboxForm.append("reqtype", "fileupload");
+                    catboxForm.append("fileToUpload", req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 30000);
+                    const catResp = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: catboxForm, signal: controller.signal });
+                    clearTimeout(timeout);
+                    if (!catResp.ok) throw new Error(`catbox failed: ${catResp.status}`);
+                    const catUrl = (await catResp.text()).trim();
+                    if (!catUrl || !catUrl.startsWith("http")) throw new Error("catbox returned invalid URL");
+                    return res.json({ ok: true, secure_url: catUrl, domain_url: catUrl, domainUrl: catUrl, public_id: predictablePublicId, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString(), provider: "catbox" });
+                } catch (catErr) {
+                    console.error("[images/upload] catbox fallback also failed:", catErr?.message);
+                    return res.status(500).json({ ok: false, error: `Upload failed: ${cloudErr?.message}`, code: "server_error" });
+                }
+            }
         } catch (error) {
             res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
         }
@@ -6006,7 +6034,14 @@ async function cloudinarySignedUpload(buffer, filename, mimetype, opts) {
     form.append("api_key", apiKey);
     form.append("signature", signature);
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-    const resp = await fetch(url, { method: "POST", body: form, headers: form.getHeaders() });
+    const cloudController = new AbortController();
+    const cloudTimeout = setTimeout(() => cloudController.abort(), 45000);
+    let resp;
+    try {
+        resp = await fetch(url, { method: "POST", body: form, headers: form.getHeaders(), signal: cloudController.signal });
+    } finally {
+        clearTimeout(cloudTimeout);
+    }
     if (!resp.ok) {
         const text = await resp.text();
         const err = new Error(`cloudinary_upload_failed:${resp.status}`);

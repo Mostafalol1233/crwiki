@@ -1344,15 +1344,17 @@ export default function Admin() {
 
   const updateSiteSettingsMutation = useMutation({
     mutationFn: (data: typeof siteSettingsForm) => apiRequest("/api/settings/site", "PUT", data),
-    onSuccess: (data: SiteSettings) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings/site"] });
-      setSiteSettingsForm({
-        reviewVerificationEnabled: data.reviewVerificationEnabled,
-        reviewVerificationVideoUrl: data.reviewVerificationVideoUrl || "",
-        reviewVerificationPrompt: data.reviewVerificationPrompt || "",
-        reviewVerificationPassphrase: data.reviewVerificationPassphrase || "",
-        reviewVerificationTimecode: data.reviewVerificationTimecode || "",
-        reviewVerificationYouTubeChannelUrl: data.reviewVerificationYouTubeChannelUrl || "",
+      queryClient.invalidateQueries({ queryKey: ["/api/public/settings/site"] });
+      setSiteSettingsForm(prev => ({
+        ...prev,
+        reviewVerificationEnabled: data.reviewVerificationEnabled ?? prev.reviewVerificationEnabled,
+        reviewVerificationVideoUrl: data.reviewVerificationVideoUrl || prev.reviewVerificationVideoUrl || "",
+        reviewVerificationPrompt: data.reviewVerificationPrompt || prev.reviewVerificationPrompt || "",
+        reviewVerificationPassphrase: data.reviewVerificationPassphrase || prev.reviewVerificationPassphrase || "",
+        reviewVerificationTimecode: data.reviewVerificationTimecode || prev.reviewVerificationTimecode || "",
+        reviewVerificationYouTubeChannelUrl: data.reviewVerificationYouTubeChannelUrl || prev.reviewVerificationYouTubeChannelUrl || "",
         monetizationVerifiedSellersEnabled: data.monetizationVerifiedSellersEnabled !== false,
         monetizationVerifiedSellerFee: data.monetizationVerifiedSellerFee ?? 30,
         monetizationBoostingEnabled: data.monetizationBoostingEnabled !== false,
@@ -1361,7 +1363,8 @@ export default function Admin() {
         monetizationPremiumMonthlyPrice: data.monetizationPremiumMonthlyPrice ?? 2,
         monetizationAffiliateEnabled: data.monetizationAffiliateEnabled !== false,
         monetizationAffiliateCommissionPct: data.monetizationAffiliateCommissionPct ?? 4,
-      });
+        featuredWeapons: Array.isArray(data.featuredWeapons) ? data.featuredWeapons : prev.featuredWeapons,
+      }));
       toast({ title: "Site settings updated" });
     },
     onError: (error: any) => {

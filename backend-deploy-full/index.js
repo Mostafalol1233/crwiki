@@ -1644,15 +1644,18 @@ export async function registerRoutes(app) {
     app2.get("/api/public/settings/site", async (req, res) => {
         try {
             const data = fs.readFileSync(path.join(__dirname, "settings.json"), "utf8");
-            res.json(JSON.parse(data));
+            const parsed = JSON.parse(data);
+            if (!Array.isArray(parsed.featuredWeapons)) parsed.featuredWeapons = [];
+            res.json(parsed);
         } catch (e) {
-            res.json({ backgroundImageUrl: "" });
+            res.json({ backgroundImageUrl: "", featuredWeapons: [] });
         }
     });
 
     app2.post("/api/admin/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
             const settings = req.body;
+            if (!Array.isArray(settings.featuredWeapons)) settings.featuredWeapons = [];
             fs.writeFileSync(path.join(__dirname, "settings.json"), JSON.stringify(settings, null, 2));
             res.json({ success: true });
         } catch (e) {
@@ -2644,6 +2647,17 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
             const { page, pageSize, q, letter, category, sort, order } = req.query || {};
             const result = await storage.searchWeaponsPaged({ page, pageSize, q, letter, category, sort, order });
             res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // Batch fetch weapons by ids (must be before /:id)
+    app2.get("/api/weapons/batch/by-ids", async (req, res) => {
+        try {
+            const ids = String(req.query.ids || "").split(",").map(s => s.trim()).filter(Boolean);
+            if (!ids.length) return res.json([]);
+            const items = await Promise.all(ids.map(id => storage.getWeaponById(id).catch(() => null)));
+            res.json(items.filter(Boolean));
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -4712,6 +4726,7 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 const n = Number(value);
                 return Number.isFinite(n) ? n : fallback;
             };
+            const featuredWeapons = Array.isArray(body.featuredWeapons) ? body.featuredWeapons.map(String) : [];
             const payload = {
                 publicBaseUrl: String(body.publicBaseUrl || ""),
                 seoTitle: String(body.seoTitle || ""),
@@ -4729,8 +4744,17 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 monetizationPremiumMonthlyPrice: Math.max(0, asNumber(body.monetizationPremiumMonthlyPrice, 2)),
                 monetizationAffiliateEnabled: body.monetizationAffiliateEnabled === false ? false : !!body.monetizationAffiliateEnabled,
                 monetizationAffiliateCommissionPct: Math.max(0, Math.min(100, asNumber(body.monetizationAffiliateCommissionPct, 4))),
+                featuredWeapons,
             };
             const s = await storage.updateSiteSettings(payload);
+            // Also persist featuredWeapons to settings.json so public endpoint can read it
+            try {
+                const settingsPath = path.join(__dirname, "settings.json");
+                let existingSettings = {};
+                try { existingSettings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
+                existingSettings.featuredWeapons = featuredWeapons;
+                fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
+            } catch {}
             res.json({
                 seoTitle: s?.seoTitle || "",
                 seoDescription: s?.seoDescription || "",
@@ -4747,6 +4771,7 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 monetizationPremiumMonthlyPrice: Number.isFinite(s?.monetizationPremiumMonthlyPrice) ? s.monetizationPremiumMonthlyPrice : 2,
                 monetizationAffiliateEnabled: s?.monetizationAffiliateEnabled !== false,
                 monetizationAffiliateCommissionPct: Number.isFinite(s?.monetizationAffiliateCommissionPct) ? s.monetizationAffiliateCommissionPct : 4,
+                featuredWeapons: featuredWeapons,
             });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -5779,14 +5804,23 @@ app.use((req, res, next) => {
                 log(`🔁 Reseeding mercenaries (${mercs.length}) and ranks (${ranks.length}) from seed module...`);
                 await MercenaryModel.deleteMany({});
                 await RankModel.deleteMany({});
+                // Drop indexes to avoid duplicate key issues, then re-create
+                try { await MercenaryModel.collection.dropIndexes(); } catch {}
+                try { await RankModel.collection.dropIndexes(); } catch {}
                 if (mercs.length) {
                     const cleanedMercs = mercs.map(m => {
                         const { id, mercenaryId, ...rest } = m;
                         return { ...rest, mercenaryId: mercenaryId || id };
                     });
-                    await MercenaryModel.insertMany(cleanedMercs);
+                    await MercenaryModel.insertMany(cleanedMercs, { ordered: false }).catch(() => {});
                 }
-                if (ranks.length) await RankModel.insertMany(ranks);
+                if (ranks.length) {
+                    const cleanedRanks = ranks.map(r => {
+                        const { id, emblem, ...rest } = r;
+                        return { ...rest, image: rest.image || emblem || "" };
+                    });
+                    await RankModel.insertMany(cleanedRanks, { ordered: false }).catch(() => {});
+                }
                 log("✅ Reseeded mercenaries and ranks successfully");
             } catch (err) {
                 log(`⚠️ Merc/Ranks reseed error: ${err?.message || err}`);

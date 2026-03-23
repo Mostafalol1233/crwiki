@@ -1,10 +1,8 @@
 import { Link } from "wouter";
-import { /*Clock, Eye*/ } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "./LanguageProvider";
+import { ArrowRight, Flame } from "lucide-react";
 import fallbackImage from "@assets/feature-crossfire.jpg";
-// Define background URL directly to avoid import issues
+
 const bgImage = "https://files.catbox.moe/16kyiz.jpg";
 
 interface HeroPost {
@@ -26,72 +24,94 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ post, isPlaceholder, bgImageUrl }: HeroSectionProps) {
-  const { t } = useLanguage();
   const heroBg = bgImageUrl || bgImage;
 
   return (
-    <section className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden">
+    <section className="relative w-full overflow-hidden" style={{ minHeight: "78vh" }}>
+      {/* Background */}
       <div
-        className="absolute inset-0 bg-contain md:bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
         style={{ backgroundImage: `url(${heroBg}), url(${fallbackImage})` }}
-        onError={(e: any) => {
-          e.target.style.backgroundImage = `url(${fallbackImage})`;
-        }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/70" />
-      {/* subtle noise & scanlines for game-like atmosphere */}
-      <div className="absolute inset-0 opacity-[0.12] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,.08), transparent 60%)' }} />
-      <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,.06) 0px, rgba(255,255,255,.06) 1px, transparent 2px, transparent 4px)' }} />
 
-      <div className="relative max-w-7xl mx-auto px-4 md:px-8 h-full min-h-[60vh] md:min-h-[70vh] flex items-end justify-center md:justify-end pb-10 md:pb-16 overflow-x-hidden md:overflow-visible">
-        <div className="max-w-3xl border-2 border-primary/30 bg-gradient-to-br from-card/30 to-card/10 backdrop-blur-md rounded-xl md:rounded-2xl p-5 md:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.45)] w-full md:w-auto">
-          <Badge
-            variant="default"
-            className="mb-4"
-            data-testid={`badge-category-${post.category.toLowerCase()}`}
-          >
-            {post.category}
-          </Badge>
+      {/* Layered gradients for drama */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wide uppercase mb-4 leading-tight bg-gradient-to-r from-foreground via-white to-foreground bg-clip-text text-transparent drop-shadow-[0_2px_0_rgba(0,0,0,0.5)]">
-            {post.title}
-          </h1>
+      {/* Accent line at top */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
 
-          <p className="text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
-            {post.summary}
-          </p>
+      {/* Content — left-aligned, bottom-anchored */}
+      <div className="relative h-full flex items-end" style={{ minHeight: "78vh" }}>
+        <div className="w-full max-w-[1400px] mx-auto px-6 md:px-10 pb-12 md:pb-16">
+          <div className="max-w-2xl">
+            {/* Category pill */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-sm">
+                <Flame className="h-3 w-3" />
+                {post.category}
+              </span>
+              <span className="text-white/40 text-xs font-bold uppercase tracking-widest">{post.date}</span>
+            </div>
 
-          <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
-            <span className="font-medium">{post.author}</span>
-            <span>•</span>
-            <span>{post.date}</span>
-          </div>
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.9] mb-5 text-white drop-shadow-2xl">
+              {post.title}
+            </h1>
 
-          {isPlaceholder ? (
-            <Button
-              asChild
-              size="lg"
-              variant="default"
-              className="bg-destructive hover:bg-destructive/90 text-white font-extrabold tracking-wider uppercase px-8 py-6 shadow-xl border-2 border-destructive/50 rounded-lg md:rounded-xl"
-              data-testid="button-play-free"
-            >
-              <Link href="/download">Download Now</Link>
-            </Button>
-          ) : (
-            post.id && (
+            {/* Summary */}
+            <p className="text-white/65 text-base md:text-lg leading-relaxed mb-8 max-w-xl font-medium">
+              {post.summary}
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center gap-3">
+              {isPlaceholder ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest px-7 rounded-sm h-12 shadow-xl shadow-primary/30"
+                >
+                  <Link href="/download">
+                    Download Now <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                post.id && (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest px-7 rounded-sm h-12 shadow-xl shadow-primary/30"
+                  >
+                    <Link href={`/posts/${(post as any).post_slug || post.id}`}>
+                      Read More <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )
+              )}
               <Button
                 asChild
                 size="lg"
-                variant="default"
-                className="backdrop-blur-md bg-primary hover:bg-primary/90 border-2 border-primary-foreground/30 text-primary-foreground font-extrabold tracking-wider uppercase rounded-lg md:rounded-xl shadow-lg"
-                data-testid="button-read-featured"
+                variant="ghost"
+                className="text-white/70 hover:text-white hover:bg-white/10 font-bold uppercase tracking-widest px-6 rounded-sm h-12 border border-white/15"
               >
-                <Link href={`/posts/${(post as any).post_slug || post.id}`}>{t("readMore")}: {post.title}</Link>
+                <Link href="/category/events">Latest Events</Link>
               </Button>
-            )
-          )}
+            </div>
+
+            {/* Author strip */}
+            <div className="flex items-center gap-2 mt-6">
+              <div className="w-6 h-6 rounded-full bg-primary/30 border border-primary/50 flex items-center justify-center text-[9px] font-black text-primary uppercase">
+                {post.author?.[0] || "B"}
+              </div>
+              <span className="text-white/40 text-xs font-bold">{post.author}</span>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Bottom fade into page */}
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }

@@ -802,8 +802,8 @@ export async function registerRoutes(app) {
                     const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                     fs.mkdirSync(imagesDir, { recursive: true });
                     const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'post', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'post' });
-                    updates.ogImage = seoImage.url;
-                    updates.twitterImage = seoImage.url;
+                    if (!updates.ogImage) updates.ogImage = seoImage.url;
+                    if (!updates.twitterImage) updates.twitterImage = seoImage.url;
                 } catch { }
                 updates.schemaType = updates.schemaType || 'Article';
             }
@@ -1023,6 +1023,9 @@ export async function registerRoutes(app) {
     app.patch("/api/events/:id", requireAuth, requireEventManager, async (req, res) => {
         try {
             const updates = req.body;
+            if (updates.image === '' || updates.image === null) {
+                delete updates.image;
+            }
             if (updates.description) {
                 updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
             }
@@ -1040,8 +1043,8 @@ export async function registerRoutes(app) {
                     const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                     fs.mkdirSync(imagesDir, { recursive: true });
                     const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'event', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'event' });
-                    updates.ogImage = seoImage.url;
-                    updates.twitterImage = seoImage.url;
+                    if (!updates.ogImage) updates.ogImage = seoImage.url;
+                    if (!updates.twitterImage) updates.twitterImage = seoImage.url;
                 } catch { }
                 updates.schemaType = updates.schemaType || 'Event';
             }
@@ -1144,18 +1147,19 @@ export async function registerRoutes(app) {
                         descriptionAr: '',
                         date: details.date ? new Date(details.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                         type: 'upcoming',
-                        image: details.image || 'https://files.catbox.moe/wof38b.jpeg',
+                        image: details.image || '',
                         seoDescription: details.preview || summarize(title),
                     };
 
-                    // Generate SEO image if missing or generic
-                    if (!eventData.image || eventData.image.includes('wof38b')) {
+                    // Generate SEO image if missing, generic, or from an untrusted external source
+                    const isTrustedImageUrl = (url) => !url || url.includes('wof38b') || url.includes('catbox.moe') || url.includes('cloudinary.com') || url.includes('crossfire.wiki') || url.startsWith('/images/');
+                    if (!eventData.image || !isTrustedImageUrl(eventData.image)) {
                         try {
                             const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
                             if (seoImage?.url) eventData.image = seoImage.url;
-                        } catch { }
+                        } catch { eventData.image = eventData.image || 'https://files.catbox.moe/wof38b.jpeg'; }
                     }
 
                     const validated = insertEventSchema.parse(eventData);
@@ -1218,18 +1222,19 @@ export async function registerRoutes(app) {
                         description: description,
                         date: details.date ? new Date(details.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                         type: 'announcement',
-                        image: details.image || 'https://files.catbox.moe/wof38b.jpeg',
+                        image: details.image || '',
                         seoDescription: details.preview || summarize(title),
                     };
 
-                    // Generate SEO image if missing or generic
-                    if (!eventData.image || eventData.image.includes('wof38b')) {
+                    // Generate SEO image if missing, generic, or from an untrusted external source
+                    const isTrustedImg = (url) => !url || url.includes('wof38b') || url.includes('catbox.moe') || url.includes('cloudinary.com') || url.includes('crossfire.wiki') || url.startsWith('/images/');
+                    if (!eventData.image || !isTrustedImg(eventData.image)) {
                         try {
                             const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
                             if (seoImage?.url) eventData.image = seoImage.url;
-                        } catch { }
+                        } catch { eventData.image = eventData.image || 'https://files.catbox.moe/wof38b.jpeg'; }
                     }
 
                     const event = await storage.createEvent(eventData);
@@ -2365,8 +2370,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                         const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
                         const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
-                        updates.ogImage = seoImage.url;
-                        updates.twitterImage = seoImage.url;
+                        if (!updates.ogImage) updates.ogImage = seoImage.url;
+                        if (!updates.twitterImage) updates.twitterImage = seoImage.url;
                     } catch { }
                     updates.schemaType = updates.schemaType || 'NewsArticle';
                 }
@@ -2550,8 +2555,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                         const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
                         const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: n.title, title: updates.seoTitle || n.title, keywords: updates.seoKeywords });
-                        updates.ogImage = seoImage.url;
-                        updates.twitterImage = seoImage.url;
+                        if (!n.ogImage) updates.ogImage = seoImage.url;
+                        if (!n.twitterImage) updates.twitterImage = seoImage.url;
                     } catch { }
                     updates.schemaType = n.schemaType || 'NewsArticle';
                     if (Object.keys(updates).length > 0) {
@@ -3764,6 +3769,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     const tb = Date.parse(b.created_at || '');
                     return sort === 'asc' ? (ta - tb) : (tb - ta);
                 });
+                res.setHeader('Cache-Control', 'no-store');
                 res.json({ items: out });
             } catch (error) {
                 res.status(500).json({ ok: false, error: error?.message || 'failed' });

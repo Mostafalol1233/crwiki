@@ -2275,6 +2275,60 @@ export default function Admin() {
                         <option value="asc">Oldest</option>
                       </select>
                       <Button variant="outline" onClick={loadServerMedia} disabled={mediaLoading}>Refresh</Button>
+                      <input
+                        type="file"
+                        accept="image/*,video/*,application/pdf"
+                        multiple
+                        className="hidden"
+                        id="media-library-upload-input"
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length === 0) return;
+                          setMediaUploading(true);
+                          try {
+                            const tokRes = await fetch('/api/security/csrf-token');
+                            const tokJson = await tokRes.json();
+                            const csrfToken = tokJson?.csrfToken || '';
+                            let uploadedCount = 0;
+                            for (const file of files) {
+                              try {
+                                const fd = new FormData();
+                                fd.append('file', file);
+                                const res = await fetch('/images/upload', {
+                                  method: 'POST',
+                                  headers: {
+                                    'X-CSRF-Token': csrfToken,
+                                    'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                  },
+                                  body: fd,
+                                });
+                                const json = await res.json();
+                                if (json.ok) uploadedCount++;
+                                else toast({ title: `Upload failed: ${file.name}`, description: json.error || 'Unknown error', variant: 'destructive' });
+                              } catch {
+                                toast({ title: `Upload failed: ${file.name}`, variant: 'destructive' });
+                              }
+                            }
+                            if (uploadedCount > 0) {
+                              toast({ title: `${uploadedCount} file(s) uploaded successfully` });
+                              await loadServerMedia();
+                            }
+                          } catch (err: any) {
+                            toast({ title: 'Upload failed', description: err?.message, variant: 'destructive' });
+                          } finally {
+                            setMediaUploading(false);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="default"
+                        disabled={mediaUploading}
+                        onClick={() => document.getElementById('media-library-upload-input')?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {mediaUploading ? 'Uploading...' : 'Upload Files'}
+                      </Button>
                     </div>
                     {serverMedia.length === 0 ? (
                       <div className="text-sm text-muted-foreground">{mediaLoading ? 'Loading…' : 'No media found yet.'}</div>

@@ -5589,7 +5589,18 @@ app.use((req, res, next) => {
     const localDistClient = path.resolve(currentDir, "dist", "client");
     const clientDistPath = fs.existsSync(rootDistClient) ? rootDistClient : localDistClient;
     app.use("/assets", express.static(path.join(clientDistPath, "assets"), { maxAge: "7d", immutable: true }));
-    app.use(express.static(clientDistPath, { maxAge: "7d", immutable: true }));
+    app.use(express.static(clientDistPath, {
+        index: false,
+        setHeaders(res, filePath) {
+            if (filePath.endsWith(".html")) {
+                res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+                res.setHeader("Pragma", "no-cache");
+                res.setHeader("Expires", "0");
+            } else {
+                res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+            }
+        }
+    }));
 
     app.use((err, _req, res, _next) => {
         const status = err.status || err.statusCode || 500;

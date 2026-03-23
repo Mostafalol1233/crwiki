@@ -769,6 +769,9 @@ export default function Admin() {
   const [editingWeapon, setEditingWeapon] = useState<any>(null);
   const [editingMode, setEditingMode] = useState<any>(null);
   const [editingRank, setEditingRank] = useState<any>(null);
+  const [weaponSearch, setWeaponSearch] = useState("");
+  const [weaponPage, setWeaponPage] = useState(1);
+  const WEAPON_PAGE_SIZE = 20;
 
   const [siteSettingsForm, setSiteSettingsForm] = useState({
     reviewVerificationEnabled: false,
@@ -2488,14 +2491,65 @@ export default function Admin() {
                             rows={2}
                             data-testid="input-post-summary"
                           />
-                          <Input
-                            placeholder="Image URL"
-                            value={postForm.image}
-                            onChange={(e) =>
-                              setPostForm({ ...postForm, image: e.target.value })
-                            }
-                            data-testid="input-post-image"
-                          />
+                          <div className="space-y-1">
+                            <Label className="text-sm font-medium">Main Image</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Image URL (paste or upload)"
+                                value={postForm.image}
+                                onChange={(e) =>
+                                  setPostForm({ ...postForm, image: e.target.value })
+                                }
+                                data-testid="input-post-image"
+                                className="flex-1"
+                              />
+                              <div>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  id="post-main-image-upload"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    try {
+                                      const tokRes = await fetch('/api/security/csrf-token');
+                                      const tokJson = await tokRes.json();
+                                      const fd = new FormData();
+                                      fd.append('file', file);
+                                      fd.append('folder', 'posts');
+                                      const xhr = new XMLHttpRequest();
+                                      xhr.open('POST', '/images/upload', true);
+                                      xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
+                                      const result: any = await new Promise((resolve, reject) => {
+                                        xhr.onreadystatechange = () => {
+                                          if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
+                                        };
+                                        xhr.onerror = () => reject(new Error('Network error'));
+                                        xhr.send(fd);
+                                      });
+                                      const url = result.body?.domain_url || result.body?.secure_url || '';
+                                      if (result.ok && url) {
+                                        setPostForm(prev => ({ ...prev, image: url }));
+                                        toast({ title: "Image uploaded!", description: "Image URL set." });
+                                      } else {
+                                        toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
+                                      }
+                                    } catch (err: any) {
+                                      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                                    }
+                                  }}
+                                />
+                                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('post-main-image-upload')?.click()}>
+                                  <Upload className="h-4 w-4 mr-1" />
+                                  Upload
+                                </Button>
+                              </div>
+                            </div>
+                            {postForm.image && (
+                              <img src={postForm.image} alt="Post preview" className="mt-1 h-20 w-full object-cover rounded border" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                            )}
+                          </div>
                           <GalleryUploader
                             images={postForm.images}
                             onImagesChange={(newImages) => setPostForm({ ...postForm, images: newImages })}
@@ -3028,14 +3082,65 @@ export default function Admin() {
                                 }
                                 data-testid="input-event-date"
                               />
-                              <Input
-                                placeholder="Image URL (optional)"
-                                value={eventForm.image}
-                                onChange={(e) =>
-                                  setEventForm({ ...eventForm, image: e.target.value })
-                                }
-                                data-testid="input-event-image"
-                              />
+                              <div className="space-y-1">
+                                <Label className="text-sm font-medium">Main Image</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Image URL (paste or upload below)"
+                                    value={eventForm.image}
+                                    onChange={(e) =>
+                                      setEventForm({ ...eventForm, image: e.target.value })
+                                    }
+                                    data-testid="input-event-image"
+                                    className="flex-1"
+                                  />
+                                  <div>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id="event-main-image-upload"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        try {
+                                          const tokRes = await fetch('/api/security/csrf-token');
+                                          const tokJson = await tokRes.json();
+                                          const fd = new FormData();
+                                          fd.append('file', file);
+                                          fd.append('folder', 'events');
+                                          const xhr = new XMLHttpRequest();
+                                          xhr.open('POST', '/images/upload', true);
+                                          xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
+                                          const result: any = await new Promise((resolve, reject) => {
+                                            xhr.onreadystatechange = () => {
+                                              if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
+                                            };
+                                            xhr.onerror = () => reject(new Error('Network error'));
+                                            xhr.send(fd);
+                                          });
+                                          const url = result.body?.domain_url || result.body?.secure_url || '';
+                                          if (result.ok && url) {
+                                            setEventForm(prev => ({ ...prev, image: url }));
+                                            toast({ title: "Image uploaded!", description: "Image URL set." });
+                                          } else {
+                                            toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
+                                          }
+                                        } catch (err: any) {
+                                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                                        }
+                                      }}
+                                    />
+                                    <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('event-main-image-upload')?.click()}>
+                                      <Upload className="h-4 w-4 mr-1" />
+                                      Upload
+                                    </Button>
+                                  </div>
+                                </div>
+                                {eventForm.image && (
+                                  <img src={eventForm.image} alt="Event preview" className="mt-2 h-24 w-full object-cover rounded border" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                )}
+                              </div>
                               <GalleryUploader
                                 images={eventForm.images}
                                 onImagesChange={(newImages) => setEventForm({ ...eventForm, images: newImages })}
@@ -3403,14 +3508,65 @@ export default function Admin() {
                                 }
                                 data-testid="input-news-daterange"
                               />
-                              <Input
-                                placeholder="Image URL"
-                                value={newsForm.image}
-                                onChange={(e) =>
-                                  setNewsForm({ ...newsForm, image: e.target.value })
-                                }
-                                data-testid="input-news-image"
-                              />
+                              <div className="space-y-1">
+                                <Label className="text-sm font-medium">Main Image</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Image URL (paste or upload)"
+                                    value={newsForm.image}
+                                    onChange={(e) =>
+                                      setNewsForm({ ...newsForm, image: e.target.value })
+                                    }
+                                    data-testid="input-news-image"
+                                    className="flex-1"
+                                  />
+                                  <div>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id="news-main-image-upload"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        try {
+                                          const tokRes = await fetch('/api/security/csrf-token');
+                                          const tokJson = await tokRes.json();
+                                          const fd = new FormData();
+                                          fd.append('file', file);
+                                          fd.append('folder', 'news');
+                                          const xhr = new XMLHttpRequest();
+                                          xhr.open('POST', '/images/upload', true);
+                                          xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
+                                          const result: any = await new Promise((resolve, reject) => {
+                                            xhr.onreadystatechange = () => {
+                                              if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
+                                            };
+                                            xhr.onerror = () => reject(new Error('Network error'));
+                                            xhr.send(fd);
+                                          });
+                                          const url = result.body?.domain_url || result.body?.secure_url || '';
+                                          if (result.ok && url) {
+                                            setNewsForm(prev => ({ ...prev, image: url }));
+                                            toast({ title: "Image uploaded!", description: "Image URL set." });
+                                          } else {
+                                            toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
+                                          }
+                                        } catch (err: any) {
+                                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                                        }
+                                      }}
+                                    />
+                                    <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('news-main-image-upload')?.click()}>
+                                      <Upload className="h-4 w-4 mr-1" />
+                                      Upload
+                                    </Button>
+                                  </div>
+                                </div>
+                                {newsForm.image && (
+                                  <img src={newsForm.image} alt="News preview" className="mt-1 h-20 w-full object-cover rounded border" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                )}
+                              </div>
                               <GalleryUploader
                                 images={newsForm.images}
                                 onImagesChange={(newImages) => setNewsForm({ ...newsForm, images: newImages })}
@@ -4334,27 +4490,34 @@ export default function Admin() {
                                     <Input
                                       type="file"
                                       accept="image/*"
-                                      onChange={(e) => {
+                                      onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                          const formData = new FormData();
-                                          formData.append('image', file);
-                                          fetch('/api/upload-image', {
-                                            method: 'POST',
-                                            headers: {
-                                              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-                                              'x-csrf-token': localStorage.getItem('csrfToken') || '',
-                                            },
-                                            body: formData,
-                                          })
-                                            .then(res => res.json())
-                                            .then(data => {
-                                              if (data.url) {
-                                                setWeaponForm({ ...weaponForm, image: data.url });
-                                                toast({ title: "Image uploaded successfully!" });
-                                              }
-                                            })
-                                            .catch(() => toast({ title: "Failed to upload image", variant: "destructive" }));
+                                          try {
+                                            const tokRes = await fetch('/api/security/csrf-token');
+                                            const tokJson = await tokRes.json();
+                                            const csrfToken = tokJson?.csrfToken || '';
+                                            const formData = new FormData();
+                                            formData.append('images', file);
+                                            const res = await fetch('/api/upload-image', {
+                                              method: 'POST',
+                                              headers: {
+                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                                'x-csrf-token': csrfToken,
+                                              },
+                                              body: formData,
+                                            });
+                                            const data = await res.json();
+                                            const url = data.results?.[0]?.url || data.url || '';
+                                            if (url) {
+                                              setWeaponForm(prev => ({ ...prev, image: url }));
+                                              toast({ title: "Image uploaded successfully!" });
+                                            } else {
+                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
+                                            }
+                                          } catch {
+                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          }
                                         }
                                       }}
                                       className="hidden"
@@ -4401,44 +4564,90 @@ export default function Admin() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
-                          {weapons?.map((weapon: any) => (
-                            <div key={weapon.id} className="flex items-center justify-between p-3 border rounded-md">
-                              <div className="flex items-center gap-3">
-                                {weapon.image && (
-                                  <img src={weapon.image} alt={weapon.name} className="w-16 h-16 object-contain rounded" />
+                          <Input
+                            placeholder="Search weapons by name or category..."
+                            value={weaponSearch}
+                            onChange={(e) => { setWeaponSearch(e.target.value); setWeaponPage(1); }}
+                          />
+                          {(() => {
+                            const filtered = (weapons || []).filter((w: any) =>
+                              !weaponSearch || w.name?.toLowerCase().includes(weaponSearch.toLowerCase()) || w.category?.toLowerCase().includes(weaponSearch.toLowerCase())
+                            );
+                            const totalPages = Math.ceil(filtered.length / WEAPON_PAGE_SIZE);
+                            const paginated = filtered.slice((weaponPage - 1) * WEAPON_PAGE_SIZE, weaponPage * WEAPON_PAGE_SIZE);
+                            return (
+                              <>
+                                <p className="text-xs text-muted-foreground">{filtered.length} weapons {weaponSearch ? "found" : "total"} — showing {paginated.length}</p>
+                                {paginated.map((weapon: any) => (
+                                  <div key={weapon.id} className="flex items-center justify-between p-3 border rounded-md gap-2">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      {weapon.image && (
+                                        <img src={weapon.image} alt={weapon.name} className="w-14 h-14 object-contain rounded flex-shrink-0" />
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="font-medium truncate">{weapon.name}</p>
+                                        {weapon.category && <Badge variant="outline" className="text-xs">{weapon.category}</Badge>}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {canManageCFData && (
+                                        <div className="flex flex-col items-center">
+                                          <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Order</Label>
+                                          <Input
+                                            type="number"
+                                            defaultValue={weapon.order ?? 0}
+                                            className="w-16 h-8 text-center"
+                                            onBlur={async (e) => {
+                                              const newOrder = parseInt(e.target.value);
+                                              if (!isNaN(newOrder)) {
+                                                try {
+                                                  await apiRequest(`/api/weapons/${weapon.id}`, "PATCH", { order: newOrder });
+                                                  queryClient.invalidateQueries({ queryKey: ["/api/weapons"] });
+                                                  toast({ title: "Order updated" });
+                                                } catch (err: any) {
+                                                  toast({ title: "Failed to update order", description: err.message, variant: "destructive" });
+                                                }
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      {canManageCFData && (
+                                        <Button variant="ghost" size="icon" onClick={() => {
+                                          setEditingWeapon(weapon);
+                                          setWeaponForm({
+                                            name: weapon.name,
+                                            image: weapon.image,
+                                            category: weapon.category || "",
+                                            description: weapon.description || "",
+                                            stats: weapon.stats || {},
+                                          });
+                                          setIsCreatingWeapon(true);
+                                        }}>
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {canManageCFData && (
+                                        <Button variant="ghost" size="icon" onClick={() => {
+                                          setDeleteConfirmId(weapon.id);
+                                          setDeleteType("weapon");
+                                        }}>
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {totalPages > 1 && (
+                                  <div className="flex items-center justify-center gap-2 pt-2">
+                                    <Button variant="outline" size="sm" disabled={weaponPage <= 1} onClick={() => setWeaponPage(p => p - 1)}>Previous</Button>
+                                    <span className="text-sm text-muted-foreground">Page {weaponPage} of {totalPages}</span>
+                                    <Button variant="outline" size="sm" disabled={weaponPage >= totalPages} onClick={() => setWeaponPage(p => p + 1)}>Next</Button>
+                                  </div>
                                 )}
-                                <div>
-                                  <p className="font-medium">{weapon.name}</p>
-                                  {weapon.category && <Badge variant="outline" className="text-xs">{weapon.category}</Badge>}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                {canManageCFData && (
-                                  <Button variant="ghost" size="icon" onClick={() => {
-                                    setEditingWeapon(weapon);
-                                    setWeaponForm({
-                                      name: weapon.name,
-                                      image: weapon.image,
-                                      category: weapon.category || "",
-                                      description: weapon.description || "",
-                                      stats: weapon.stats || {},
-                                    });
-                                    setIsCreatingWeapon(true);
-                                  }}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {canManageCFData && (
-                                  <Button variant="ghost" size="icon" onClick={() => {
-                                    setDeleteConfirmId(weapon.id);
-                                    setDeleteType("weapon");
-                                  }}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                              </>
+                            );
+                          })()}
                         </div>
                       </CardContent>
                     </Card>
@@ -4481,27 +4690,34 @@ export default function Admin() {
                                     <Input
                                       type="file"
                                       accept="image/*"
-                                      onChange={(e) => {
+                                      onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                          const formData = new FormData();
-                                          formData.append('image', file);
-                                          fetch('/api/upload-image', {
-                                            method: 'POST',
-                                            headers: {
-                                              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-                                              'x-csrf-token': localStorage.getItem('csrfToken') || '',
-                                            },
-                                            body: formData,
-                                          })
-                                            .then(res => res.json())
-                                            .then(data => {
-                                              if (data.url) {
-                                                setModeForm({ ...modeForm, image: data.url });
-                                                toast({ title: "Image uploaded successfully!" });
-                                              }
-                                            })
-                                            .catch(() => toast({ title: "Failed to upload image", variant: "destructive" }));
+                                          try {
+                                            const tokRes = await fetch('/api/security/csrf-token');
+                                            const tokJson = await tokRes.json();
+                                            const csrfToken = tokJson?.csrfToken || '';
+                                            const formData = new FormData();
+                                            formData.append('images', file);
+                                            const res = await fetch('/api/upload-image', {
+                                              method: 'POST',
+                                              headers: {
+                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                                'x-csrf-token': csrfToken,
+                                              },
+                                              body: formData,
+                                            });
+                                            const data = await res.json();
+                                            const url = data.results?.[0]?.url || data.url || '';
+                                            if (url) {
+                                              setModeForm(prev => ({ ...prev, image: url }));
+                                              toast({ title: "Image uploaded successfully!" });
+                                            } else {
+                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
+                                            }
+                                          } catch {
+                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          }
                                         }
                                       }}
                                       className="hidden"
@@ -4627,27 +4843,34 @@ export default function Admin() {
                                     <Input
                                       type="file"
                                       accept="image/*"
-                                      onChange={(e) => {
+                                      onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                          const formData = new FormData();
-                                          formData.append('image', file);
-                                          fetch('/api/upload-image', {
-                                            method: 'POST',
-                                            headers: {
-                                              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-                                              'x-csrf-token': localStorage.getItem('csrfToken') || '',
-                                            },
-                                            body: formData,
-                                          })
-                                            .then(res => res.json())
-                                            .then(data => {
-                                              if (data.url) {
-                                                setRankForm({ ...rankForm, image: data.url });
-                                                toast({ title: "Image uploaded successfully!" });
-                                              }
-                                            })
-                                            .catch(() => toast({ title: "Failed to upload image", variant: "destructive" }));
+                                          try {
+                                            const tokRes = await fetch('/api/security/csrf-token');
+                                            const tokJson = await tokRes.json();
+                                            const csrfToken = tokJson?.csrfToken || '';
+                                            const formData = new FormData();
+                                            formData.append('images', file);
+                                            const res = await fetch('/api/upload-image', {
+                                              method: 'POST',
+                                              headers: {
+                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+                                                'x-csrf-token': csrfToken,
+                                              },
+                                              body: formData,
+                                            });
+                                            const data = await res.json();
+                                            const url = data.results?.[0]?.url || data.url || '';
+                                            if (url) {
+                                              setRankForm(prev => ({ ...prev, image: url }));
+                                              toast({ title: "Image uploaded successfully!" });
+                                            } else {
+                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
+                                            }
+                                          } catch {
+                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          }
                                         }
                                       }}
                                       className="hidden"

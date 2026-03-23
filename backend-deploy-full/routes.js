@@ -36,10 +36,10 @@ const upload = multer({
         }
     }
 });
-// Rate limiter for image uploads - 10 uploads per hour per IP
+// Rate limiter for image uploads - 200 uploads per hour per IP
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // Limit each IP to 10 uploads per hour
+    max: 200,
     message: "Too many upload requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
@@ -836,6 +836,8 @@ export async function registerRoutes(app) {
     app.patch("/api/posts/:id", requireAuth, requirePostManager, async (req, res) => {
         try {
             const updates = req.body;
+            const userOgImage = req.body.ogImage !== undefined ? req.body.ogImage : undefined;
+            const userTwitterImage = req.body.twitterImage !== undefined ? req.body.twitterImage : undefined;
             if (updates.content && !updates.readingTime) {
                 updates.readingTime = calculateReadingTime(updates.content);
             }
@@ -849,13 +851,18 @@ export async function registerRoutes(app) {
                 updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
                 updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                 updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
-                try {
-                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
-                    fs.mkdirSync(imagesDir, { recursive: true });
-                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'post', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'post' });
-                    updates.ogImage = seoImage.url;
-                    updates.twitterImage = seoImage.url;
-                } catch { }
+                if (!userOgImage && !userTwitterImage) {
+                    try {
+                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                        fs.mkdirSync(imagesDir, { recursive: true });
+                        const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'post', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'post' });
+                        updates.ogImage = seoImage.url;
+                        updates.twitterImage = seoImage.url;
+                    } catch { }
+                } else {
+                    if (userOgImage !== undefined) updates.ogImage = userOgImage;
+                    if (userTwitterImage !== undefined) updates.twitterImage = userTwitterImage;
+                }
                 updates.schemaType = updates.schemaType || 'Article';
             }
             const post = await storage.updatePost(req.params.id, updates);
@@ -1074,6 +1081,8 @@ export async function registerRoutes(app) {
     app.patch("/api/events/:id", requireAuth, requireEventManager, async (req, res) => {
         try {
             const updates = req.body;
+            const userOgImage = req.body.ogImage !== undefined ? req.body.ogImage : undefined;
+            const userTwitterImage = req.body.twitterImage !== undefined ? req.body.twitterImage : undefined;
             if (updates.description) {
                 updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
             }
@@ -1087,13 +1096,18 @@ export async function registerRoutes(app) {
                 updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
                 updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                 updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
-                try {
-                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
-                    fs.mkdirSync(imagesDir, { recursive: true });
-                    const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'event', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'event' });
-                    updates.ogImage = seoImage.url;
-                    updates.twitterImage = seoImage.url;
-                } catch { }
+                if (!userOgImage && !userTwitterImage) {
+                    try {
+                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                        fs.mkdirSync(imagesDir, { recursive: true });
+                        const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'event', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'event' });
+                        updates.ogImage = seoImage.url;
+                        updates.twitterImage = seoImage.url;
+                    } catch { }
+                } else {
+                    if (userOgImage !== undefined) updates.ogImage = userOgImage;
+                    if (userTwitterImage !== undefined) updates.twitterImage = userTwitterImage;
+                }
                 updates.schemaType = updates.schemaType || 'Event';
             }
             const event = await storage.updateEvent(req.params.id, updates);
@@ -2403,6 +2417,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         app.patch("/api/news/:id", requireAuth, requireNewsManager, async (req, res) => {
             try {
                 const updates = req.body;
+                const userOgImage = req.body.ogImage !== undefined ? req.body.ogImage : undefined;
+                const userTwitterImage = req.body.twitterImage !== undefined ? req.body.twitterImage : undefined;
                 if (updates.content) {
                     updates.content = sanitizeHTML(updates.content);
                 }
@@ -2421,20 +2437,25 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     updates.dateRange = formatEnglishDate(parsedDate);
                 }
                 const rebuild = String((req.query.rebuildSeo || '')).toLowerCase() === 'true';
-                if (rebuild || !updates.seoTitle || !updates.seoDescription || !updates.seoKeywords || !updates.ogImage) {
+                if (rebuild || !updates.seoTitle || !updates.seoDescription || !updates.seoKeywords) {
                     const title = updates.title;
                     const content = updates.content || updates.htmlContent || '';
                     const kws = extractKeywords(content);
                     updates.seoKeywords = Array.from(new Set([...(updates.seoKeywords || []), ...kws]));
                     updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                     updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
-                    try {
-                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
-                        fs.mkdirSync(imagesDir, { recursive: true });
-                        const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
-                        updates.ogImage = seoImage.url;
-                        updates.twitterImage = seoImage.url;
-                    } catch { }
+                    if (!userOgImage && !userTwitterImage) {
+                        try {
+                            const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                            fs.mkdirSync(imagesDir, { recursive: true });
+                            const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
+                            updates.ogImage = seoImage.url;
+                            updates.twitterImage = seoImage.url;
+                        } catch { }
+                    } else {
+                        if (userOgImage !== undefined) updates.ogImage = userOgImage;
+                        if (userTwitterImage !== undefined) updates.twitterImage = userTwitterImage;
+                    }
                     updates.schemaType = updates.schemaType || 'NewsArticle';
                 }
                 const news = await storage.updateNews(req.params.id, updates);

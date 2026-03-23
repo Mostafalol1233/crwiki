@@ -1188,7 +1188,7 @@ export async function registerRoutes(app) {
                         if (u.startsWith('/')) return true;
                         try {
                             const h = new URL(u).hostname.replace(/^www\./, '');
-                            return ['catbox.moe','cloudinary.com','res.cloudinary.com','crossfire.wiki'].some(d => h === d || h.endsWith('.' + d));
+                            return ['catbox.moe','cloudinary.com','res.cloudinary.com','crossfire.wiki','z8games.com','akamaized.net','files.catbox.moe'].some(d => h === d || h.endsWith('.' + d));
                         } catch { return false; }
                     };
                     const eventData = {
@@ -1272,7 +1272,7 @@ export async function registerRoutes(app) {
                         if (u.startsWith('/')) return true;
                         try {
                             const h = new URL(u).hostname.replace(/^www\./, '');
-                            return ['catbox.moe','cloudinary.com','res.cloudinary.com','crossfire.wiki'].some(d => h === d || h.endsWith('.' + d));
+                            return ['catbox.moe','cloudinary.com','res.cloudinary.com','crossfire.wiki','z8games.com','akamaized.net','files.catbox.moe'].some(d => h === d || h.endsWith('.' + d));
                         } catch { return false; }
                     };
                     const eventData = {

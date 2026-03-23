@@ -1654,9 +1654,12 @@ export async function registerRoutes(app) {
 
     app2.post("/api/admin/settings/site", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const settings = req.body;
-            if (!Array.isArray(settings.featuredWeapons)) settings.featuredWeapons = [];
-            fs.writeFileSync(path.join(__dirname, "settings.json"), JSON.stringify(settings, null, 2));
+            const settingsPath = path.join(__dirname, "settings.json");
+            let existing = {};
+            try { existing = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
+            const merged = { ...existing, ...req.body };
+            if (!Array.isArray(merged.featuredWeapons)) merged.featuredWeapons = [];
+            fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2));
             res.json({ success: true });
         } catch (e) {
             res.status(500).send("Error saving settings");
@@ -4747,12 +4750,13 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 featuredWeapons,
             };
             const s = await storage.updateSiteSettings(payload);
-            // Also persist featuredWeapons to settings.json so public endpoint can read it
+            // Sync key settings to settings.json so public endpoint can read them
             try {
                 const settingsPath = path.join(__dirname, "settings.json");
                 let existingSettings = {};
                 try { existingSettings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
                 existingSettings.featuredWeapons = featuredWeapons;
+                if (body.backgroundImageUrl !== undefined) existingSettings.backgroundImageUrl = String(body.backgroundImageUrl || "");
                 fs.writeFileSync(settingsPath, JSON.stringify(existingSettings, null, 2));
             } catch {}
             res.json({

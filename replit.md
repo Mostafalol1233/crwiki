@@ -165,11 +165,12 @@ Preferred communication style: Simple, everyday language.
 - Connection via MONGODB_URI environment variable
 - Sample: mongodb+srv://user:pass@cluster.mongodb.net/database
 
-**Vercel (Deployment):**
-- Frontend static site hosting
-- Serverless API functions in /api directory
-- Environment variables via dashboard
-- Automatic deployments from GitHub
+**Replit (Deployment):**
+- Backend serves both API and built frontend from dist/client
+- Port 5000 (mapped to external port 80)
+- Environment variables via Replit Secrets
+- Build frontend with: npm run build (outputs to dist/client)
+- Start server with: npm run dev (or npm start)
 
 **Google Analytics:**
 - Tracking ID: G-LJSL5CQGP3

@@ -5862,15 +5862,14 @@ app.use((req, res, next) => {
         });
     }
 
-    const port = 20126;
+    const port = parseInt(process.env.PORT || "5000", 10);
     server.listen(
         port,
         "0.0.0.0",
         () => {
-            log(`\u{1F680} Backend API server running on port ${port}`);
-            log(`\u{1F4E1} Serving API endpoints at /api/*`);
-            log(`\u{1F5BC}\uFE0F  Serving assets at /assets/*`);
-            log(`\u{1F310} Frontend should be deployed to Netlify`);
+            log(`Backend API server running on port ${port}`);
+            log(`Serving API endpoints at /api/*`);
+            log(`Serving assets at /assets/*`);
         },
     );
 })();

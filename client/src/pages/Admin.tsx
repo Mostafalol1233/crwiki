@@ -1899,7 +1899,7 @@ export default function Admin() {
                     <span className="truncate">Subscribers</span>
                   </TabsTrigger>
                 )}
-                {false && canScraper && (
+                {canScraper && (
                   <TabsTrigger value="scraper" className="justify-start" data-testid="tab-scraper">
                     <Upload className="h-4 w-4 mr-2" />
                     <span className="truncate">Scraper</span>
@@ -3121,37 +3121,6 @@ export default function Admin() {
 
               {canEventsNews && (
                 <TabsContent value="events-news" className="space-y-6" data-testid="content-events-news">
-                  <div className="space-y-6">
-                    {isSuperAdmin ? (
-                      <>
-                        <div>
-                          <h2 className="text-2xl font-semibold mb-4">Event Scraper</h2>
-                          <ScrapingManager />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-semibold mb-4">CrossFire Data Scraper</h2>
-                          <CFDataScraper />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
-                          <FullPageScraper />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-semibold mb-4">إصلاح المحتوى القديم (Re-scrape)</h2>
-                          <WikiRescraper />
-                        </div>
-                      </>
-                    ) : (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Event Scraper</CardTitle>
-                          <CardDescription>
-                            Only super admins can import events directly from the forum. Reach out to a super admin if you need new events published.
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    )}
-                  </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div />
                     <div className="space-y-4">
@@ -4746,6 +4715,40 @@ export default function Admin() {
               {canTutorials && (
                 <TabsContent value="tutorials" className="space-y-6" data-testid="content-tutorials">
                   <TutorialManager />
+                </TabsContent>
+              )}
+
+              {canScraper && (
+                <TabsContent value="scraper" className="space-y-6" data-testid="content-scraper">
+                  {isSuperAdmin ? (
+                    <div className="space-y-8">
+                      <div>
+                        <h2 className="text-2xl font-semibold mb-4">Event Scraper</h2>
+                        <ScrapingManager />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-semibold mb-4">CrossFire Data Scraper</h2>
+                        <CFDataScraper />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
+                        <FullPageScraper />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-semibold mb-4">إصلاح المحتوى القديم (Re-scrape)</h2>
+                        <WikiRescraper />
+                      </div>
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Scraper Tools</CardTitle>
+                        <CardDescription>
+                          Only super admins can access scraper tools.
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+                  )}
                 </TabsContent>
               )}
 

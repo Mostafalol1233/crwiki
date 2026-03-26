@@ -2287,6 +2287,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     monetizationPremiumMonthlyPrice: Number.isFinite(Number(raw.monetizationPremiumMonthlyPrice)) ? Math.max(0, Number(raw.monetizationPremiumMonthlyPrice)) : 2,
                     monetizationAffiliateEnabled: toBoolean(raw.monetizationAffiliateEnabled ?? true),
                     monetizationAffiliateCommissionPct: Number.isFinite(Number(raw.monetizationAffiliateCommissionPct)) ? Math.max(0, Math.min(100, Number(raw.monetizationAffiliateCommissionPct))) : 4,
+                    featuredWeapons: Array.isArray(raw.featuredWeapons) ? raw.featuredWeapons.filter(Boolean) : [],
                 };
                 const parsed = siteSettingsSchema.parse(normalized);
                 if (parsed.reviewVerificationEnabled) {

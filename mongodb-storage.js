@@ -599,6 +599,7 @@ export class MongoDBStorage {
             seoKeywords: doc.seoKeywords || [],
             seoOgImage: doc.seoOgImage || "",
             robots: doc.robots || "index, follow",
+            featuredWeapons: Array.isArray(doc.featuredWeapons) ? doc.featuredWeapons : [],
         };
     }
 

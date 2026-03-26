@@ -1729,6 +1729,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             res.status(500).json({ error: error.message });
         }
     });
+    app.get("/api/weapons/batch/by-ids", async (req, res) => {
+        try {
+            const raw = req.query.ids || "";
+            const ids = String(raw).split(",").map(s => s.trim()).filter(Boolean);
+            if (!ids.length) return res.json([]);
+            const weapons = await Promise.all(ids.map(id => storage.getWeaponById(id).catch(() => null)));
+            res.json(weapons.filter(Boolean));
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app.get("/api/weapons/:id", async (req, res) => {
         try {
             const weapon = await storage.getWeaponById(req.params.id);
@@ -2211,6 +2223,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
                     seoOgImage: raw.seoOgImage ?? "",
                     robots: raw.robots ?? "index, follow",
+                    featuredWeapons: Array.isArray(raw.featuredWeapons) ? raw.featuredWeapons.filter(Boolean) : [],
                 };
                 const parsed = siteSettingsSchema.parse(normalized);
                 if (parsed.reviewVerificationEnabled) {
@@ -2252,6 +2265,17 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
             catch (error) {
                 res.status(400).json({ error: error.message });
+            }
+        });
+        app.get("/api/public/settings/site", async (_req, res) => {
+            try {
+                const s = await storage.getSiteSettings();
+                res.json({
+                    featuredWeapons: Array.isArray(s.featuredWeapons) ? s.featuredWeapons : [],
+                });
+            }
+            catch (error) {
+                res.status(500).json({ error: error.message });
             }
         });
         app.get("/api/public/settings/seo", async (_req, res) => {

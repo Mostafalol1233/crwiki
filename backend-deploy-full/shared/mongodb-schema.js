@@ -583,6 +583,7 @@ export const siteSettingsSchema = z.object({
         const allowed = new Set(["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"]);
         return allowed.has(v.toLowerCase());
     }, { message: "Robots must be one of: index, follow | noindex, follow | index, nofollow | noindex, nofollow" }),
+    featuredWeapons: z.array(z.string()).optional().transform((v) => v ?? []),
 });
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
 const ConversationSchema = new Schema({

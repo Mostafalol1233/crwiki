@@ -628,6 +628,7 @@ export class MongoDBStorage {
             seoKeywords: doc.seoKeywords || [],
             seoOgImage: doc.seoOgImage || "",
             robots: doc.robots || "index, follow",
+            featuredWeapons: Array.isArray(doc.featuredWeapons) ? doc.featuredWeapons : [],
             monetizationVerifiedSellersEnabled: doc.monetizationVerifiedSellersEnabled !== false,
             monetizationVerifiedSellerFee: Number.isFinite(doc.monetizationVerifiedSellerFee) ? Number(doc.monetizationVerifiedSellerFee) : 30,
             monetizationBoostingEnabled: doc.monetizationBoostingEnabled !== false,

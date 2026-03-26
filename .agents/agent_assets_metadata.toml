@@ -5,4 +5,4 @@ generated = []
 id = "SEX12I0kGyBnR0F8EoDU1"
 uri = "file://backend-latest.zip"
 type = "unspecified"
-title = "Backend Latest - Fixed MongoDB (جاهز للسيرفر)"
+title = "Backend + .env جاهز للسيرفر"

@@ -267,3 +267,13 @@ node scripts/seed-weapons.js --execute
 **Frontend:**
 - VITE_API_URL: Backend API base URL
 - NODE_ENV: production/development
+
+## Recent Fixes & Features
+
+- **Orb WebGL graceful degradation**: `Orb.tsx` now wraps WebGL initialization in try-catch so it fails silently on headless/no-GPU environments
+- **`requireOwnershipOrAdmin` middleware**: Admins with events:manage/edit/add/scrape permissions can now edit ANY event/news including scraped content without `createdByAdminId`
+- **Pricing page `isArabic`**: Local variable computed from `localStorage`/`document.documentElement.lang`
+- **Events category page**: Magazine-style layout with featured full-width card + responsive grid
+- **Fandom wiki import**: `/api/admin/fandom-import` (bulk by category) and `/api/admin/fandom-import-article` (single page) + admin panel dialog
+- **Weapon cache invalidation**: `updateWeaponMutation.onSuccess` now invalidates both `/api/weapons` and `/api/weapons/search`
+- **Admin panel tabs**: Users tab trigger visible; scraper and seller-reviews tabs hidden (`{false && ...}`)

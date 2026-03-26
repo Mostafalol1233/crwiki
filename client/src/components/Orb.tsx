@@ -175,10 +175,17 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
     const container = ctnDom.current;
     if (!container) return;
 
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
-    const gl = renderer.gl as any;
-    gl.clearColor(0, 0, 0, 0);
-    container.appendChild(gl.canvas as unknown as Node);
+    let renderer: any;
+    let gl: any;
+    try {
+      renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
+      gl = renderer.gl as any;
+      if (!gl || !gl.canvas) return;
+      gl.clearColor(0, 0, 0, 0);
+      container.appendChild(gl.canvas as unknown as Node);
+    } catch {
+      return;
+    }
     (gl.canvas as any).style.position = "absolute";
     (gl.canvas as any).style.inset = "0";
     (gl.canvas as any).style.zIndex = "1";

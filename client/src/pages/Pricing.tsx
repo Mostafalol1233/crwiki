@@ -139,6 +139,7 @@ const roadmap = [
 ];
 
 export default function PricingPage() {
+  const isArabic = typeof window !== "undefined" && (document.documentElement.lang === "ar" || localStorage.getItem("lang") === "ar");
   const [verifiedSellers, setVerifiedSellers] = useState(20);
   const [sellerMonthlyFee, setSellerMonthlyFee] = useState(30);
   const [monthlyServiceOrders, setMonthlyServiceOrders] = useState(100);

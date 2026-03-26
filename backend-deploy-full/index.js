@@ -2044,6 +2044,174 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
         }
     });
 
+    // Fandom Wiki Import endpoint
+    app2.post("/api/admin/fandom-import", requireAuth, requireContentCreator, async (req, res) => {
+        try {
+            const { category = "Weapons", limit = 20, importAs = "weapon" } = req.body || {};
+            const FANDOM_API = "https://crossfirefps.fandom.com/api.php";
+            const categoryMap = {
+                "Weapons": "Weapons",
+                "Events": "Events",
+                "Characters": "Characters",
+                "Maps": "Maps",
+                "Game Modes": "Game_modes",
+                "Items": "Items",
+            };
+            const fandomCategory = categoryMap[category] || category;
+            const listUrl = `${FANDOM_API}?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(fandomCategory)}&cmlimit=${Math.min(limit, 50)}&cmtype=page&format=json&origin=*`;
+            const listResp = await fetch(listUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+            if (!listResp.ok) return res.status(502).json({ error: "Failed to reach Fandom API" });
+            const listData = await listResp.json();
+            const pages = (listData?.query?.categorymembers || []).slice(0, limit);
+            if (!pages.length) return res.status(404).json({ error: `No pages found in Category:${fandomCategory}` });
+
+            const results = { imported: [], failed: [], skipped: [] };
+            for (const page of pages) {
+                try {
+                    const pageTitle = page.title;
+                    const parseUrl = `${FANDOM_API}?action=parse&page=${encodeURIComponent(pageTitle)}&prop=wikitext|images|displaytitle&format=json&origin=*`;
+                    const parseResp = await fetch(parseUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                    if (!parseResp.ok) { results.failed.push({ title: pageTitle, reason: "parse failed" }); continue; }
+                    const parseData = await parseResp.json();
+                    const wikitext = parseData?.parse?.wikitext?.["*"] || "";
+                    const displayTitle = parseData?.parse?.displaytitle || pageTitle;
+                    const imageFiles = parseData?.parse?.images || [];
+
+                    let imageUrl = "";
+                    if (imageFiles.length > 0) {
+                        const imgTitle = `File:${imageFiles[0]}`;
+                        const imgUrl2 = `${FANDOM_API}?action=query&titles=${encodeURIComponent(imgTitle)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                        const imgResp = await fetch(imgUrl2, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                        if (imgResp.ok) {
+                            const imgData = await imgResp.json();
+                            const imgPages = imgData?.query?.pages || {};
+                            const firstPage = Object.values(imgPages)[0];
+                            imageUrl = firstPage?.imageinfo?.[0]?.url || "";
+                        }
+                    }
+
+                    const cleanText = wikitext
+                        .replace(/\{\{[^}]+\}\}/g, "")
+                        .replace(/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/g, "$1")
+                        .replace(/'''([^']+)'''/g, "$1")
+                        .replace(/''([^']+)''/g, "$1")
+                        .replace(/==+([^=]+)==+/g, "$1")
+                        .replace(/\n{3,}/g, "\n\n")
+                        .trim();
+                    const summary = cleanText.substring(0, 200).trim();
+
+                    const extractStat = (key, text) => {
+                        const m = new RegExp(`${key}\\s*=\\s*([\\d.]+)`, "i").exec(text);
+                        return m ? parseFloat(m[1]) : null;
+                    };
+
+                    if (importAs === "weapon") {
+                        const stats = {};
+                        const dmg = extractStat("damage", wikitext);
+                        const acc = extractStat("accuracy", wikitext);
+                        const rng = extractStat("range", wikitext);
+                        const rld = extractStat("reload", wikitext);
+                        const rec = extractStat("recoil", wikitext);
+                        if (dmg) stats.damage = dmg;
+                        if (acc) stats.accuracy = acc;
+                        if (rng) stats.range = rng;
+                        if (rld) stats.reload = rld;
+                        if (rec) stats.recoil = rec;
+                        const cleanName = displayTitle.replace(/<[^>]+>/g, "");
+                        const exists = await WeaponModel.findOne({ name: cleanName }).lean();
+                        if (exists) {
+                            results.skipped.push({ title: pageTitle, reason: "already exists" });
+                        } else {
+                            const weapData = { name: cleanName, category, image: imageUrl, description: summary, stats };
+                            const created = await WeaponModel.create(weapData);
+                            results.imported.push({ title: pageTitle, id: String(created._id) });
+                        }
+                    } else {
+                        const postData = {
+                            title: displayTitle.replace(/<[^>]+>/g, ""),
+                            content: cleanText.substring(0, 5000),
+                            summary,
+                            image: imageUrl,
+                            category: category,
+                            tags: ["Fandom Import", category],
+                            author: "Fandom Wiki",
+                            readingTime: Math.max(1, Math.ceil(cleanText.split(/\s+/).length / 200)),
+                            featured: false,
+                            sourceUrl: `https://crossfirefps.fandom.com/wiki/${encodeURIComponent(pageTitle)}`,
+                        };
+                        try {
+                            const created = await storage.createPost(insertPostSchema.parse(postData));
+                            results.imported.push({ title: pageTitle, id: String(created?.id || "") });
+                        } catch {
+                            results.skipped.push({ title: pageTitle, reason: "already exists or validation failed" });
+                        }
+                    }
+                    await new Promise(r => setTimeout(r, 300));
+                } catch (pageErr) {
+                    results.failed.push({ title: page.title, reason: pageErr.message });
+                }
+            }
+            res.json({
+                success: true,
+                message: `Imported ${results.imported.length} | Skipped ${results.skipped.length} | Failed ${results.failed.length}`,
+                results,
+            });
+        } catch (err) {
+            res.status(500).json({ error: err.message || "Fandom import failed" });
+        }
+    });
+
+    // Fandom single article import
+    app2.post("/api/admin/fandom-import-article", requireAuth, requireContentCreator, async (req, res) => {
+        try {
+            const { pageTitle, importAs = "post" } = req.body || {};
+            if (!pageTitle) return res.status(400).json({ error: "pageTitle is required" });
+            const FANDOM_API = "https://crossfirefps.fandom.com/api.php";
+            const parseUrl = `${FANDOM_API}?action=parse&page=${encodeURIComponent(pageTitle)}&prop=wikitext|images|displaytitle&format=json&origin=*`;
+            const parseResp = await fetch(parseUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+            if (!parseResp.ok) return res.status(502).json({ error: "Failed to reach Fandom API" });
+            const parseData = await parseResp.json();
+            if (parseData?.error) return res.status(404).json({ error: parseData.error.info || "Page not found" });
+            const wikitext = parseData?.parse?.wikitext?.["*"] || "";
+            const displayTitle = (parseData?.parse?.displaytitle || pageTitle).replace(/<[^>]+>/g, "");
+            const imageFiles = parseData?.parse?.images || [];
+            let imageUrl = "";
+            if (imageFiles.length > 0) {
+                const imgTitle = `File:${imageFiles[0]}`;
+                const imgResp = await fetch(`${FANDOM_API}?action=query&titles=${encodeURIComponent(imgTitle)}&prop=imageinfo&iiprop=url&format=json&origin=*`, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                if (imgResp.ok) {
+                    const imgData = await imgResp.json();
+                    const imgPages = imgData?.query?.pages || {};
+                    imageUrl = Object.values(imgPages)[0]?.imageinfo?.[0]?.url || "";
+                }
+            }
+            const cleanText = wikitext
+                .replace(/\{\{[^}]+\}\}/g, "")
+                .replace(/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/g, "$1")
+                .replace(/'''([^']+)'''/g, "$1")
+                .replace(/''([^']+)''/g, "$1")
+                .replace(/==+([^=]+)==+/g, "\n## $1\n")
+                .replace(/\n{3,}/g, "\n\n")
+                .trim();
+            const postData = {
+                title: displayTitle,
+                content: cleanText.substring(0, 8000),
+                summary: cleanText.substring(0, 200).trim(),
+                image: imageUrl,
+                category: "Weapons",
+                tags: ["Fandom Import", "CrossFire Wiki"],
+                author: "Fandom Wiki",
+                readingTime: Math.max(1, Math.ceil(cleanText.split(/\s+/).length / 200)),
+                featured: false,
+                sourceUrl: `https://crossfirefps.fandom.com/wiki/${encodeURIComponent(pageTitle)}`,
+            };
+            const created = await storage.createPost(insertPostSchema.parse(postData));
+            res.json({ success: true, item: created, message: `Imported "${displayTitle}" successfully` });
+        } catch (err) {
+            res.status(500).json({ error: err.message || "Failed to import article" });
+        }
+    });
+
     // Bulk create weapons endpoint
     app2.post("/api/weapons/bulk-create", async (req, res) => {
         try {

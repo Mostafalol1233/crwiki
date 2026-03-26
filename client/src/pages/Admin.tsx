@@ -20,6 +20,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -67,6 +68,7 @@ import {
   AlertCircle,
   DollarSign,
   Gem,
+  Globe,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import imageCompression from 'browser-image-compression';
@@ -1160,6 +1162,7 @@ export default function Admin() {
       apiRequest(`/api/weapons/${id}`, "PATCH", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/weapons"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/weapons/search"] });
       setEditingWeapon(null);
       setIsCreatingWeapon(false);
       setWeaponForm({ name: "", image: "", category: "", description: "", stats: {} });
@@ -1501,6 +1504,38 @@ export default function Admin() {
     },
     onError: (error: any) => {
       toast({ title: "Failed to scrape events", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const [fandomCategory, setFandomCategory] = useState("Weapons");
+  const [fandomLimit, setFandomLimit] = useState(10);
+  const [fandomImportAs, setFandomImportAs] = useState("weapon");
+  const [fandomSingleArticle, setFandomSingleArticle] = useState("");
+  const [fandomImportResult, setFandomImportResult] = useState<any>(null);
+  const [showFandomDialog, setShowFandomDialog] = useState(false);
+
+  const fandomImportMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/admin/fandom-import", "POST", data),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/weapons"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      setFandomImportResult(data);
+      toast({ title: data.message || "Import complete" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Fandom import failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const fandomArticleMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/admin/fandom-import-article", "POST", data),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      setFandomSingleArticle("");
+      toast({ title: data.message || "Article imported" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to import article", description: error.message, variant: "destructive" });
     },
   });
 
@@ -3161,6 +3196,107 @@ export default function Admin() {
                               <Upload className="h-4 w-4 mr-2" />
                               {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
                             </Button>
+                          )}
+                          {canEventsNews && (
+                            <Dialog open={showFandomDialog} onOpenChange={setShowFandomDialog}>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Globe className="h-4 w-4 mr-2" />
+                                  Import from Fandom Wiki
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-lg">
+                                <DialogHeader>
+                                  <DialogTitle>Import from CrossFire Fandom Wiki</DialogTitle>
+                                  <DialogDescription>
+                                    Fetch articles, weapons, and content from the official CrossFire Fandom wiki and import them into your site.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label>Import single article (by page title)</Label>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        placeholder="e.g. AK-47, Barrett M82A1..."
+                                        value={fandomSingleArticle}
+                                        onChange={e => setFandomSingleArticle(e.target.value)}
+                                      />
+                                      <Button
+                                        onClick={() => fandomArticleMutation.mutate({ pageTitle: fandomSingleArticle, importAs: "post" })}
+                                        disabled={fandomArticleMutation.isPending || !fandomSingleArticle.trim()}
+                                      >
+                                        {fandomArticleMutation.isPending ? "..." : "Import"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="border-t pt-4 space-y-3">
+                                    <Label className="font-bold">Bulk import by category</Label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Category</Label>
+                                        <select
+                                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                          value={fandomCategory}
+                                          onChange={e => setFandomCategory(e.target.value)}
+                                        >
+                                          <option>Weapons</option>
+                                          <option>Characters</option>
+                                          <option>Maps</option>
+                                          <option>Game Modes</option>
+                                          <option>Items</option>
+                                        </select>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Import as</Label>
+                                        <select
+                                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                          value={fandomImportAs}
+                                          onChange={e => setFandomImportAs(e.target.value)}
+                                        >
+                                          <option value="weapon">Weapon</option>
+                                          <option value="post">Article / Post</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-xs text-muted-foreground">Limit (max 50)</Label>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        max={50}
+                                        value={fandomLimit}
+                                        onChange={e => setFandomLimit(Math.min(50, Math.max(1, parseInt(e.target.value) || 10)))}
+                                      />
+                                    </div>
+                                    <Button
+                                      className="w-full"
+                                      onClick={() => fandomImportMutation.mutate({ category: fandomCategory, limit: fandomLimit, importAs: fandomImportAs })}
+                                      disabled={fandomImportMutation.isPending}
+                                    >
+                                      {fandomImportMutation.isPending ? "Importing... (this may take a minute)" : `Import ${fandomLimit} ${fandomCategory} from Fandom`}
+                                    </Button>
+                                  </div>
+                                  {fandomImportResult && (
+                                    <div className="border rounded-lg p-3 bg-muted/50 text-sm space-y-2">
+                                      <p className="font-bold">{fandomImportResult.message}</p>
+                                      {fandomImportResult.results?.imported?.length > 0 && (
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Imported:</p>
+                                          <div className="flex flex-wrap gap-1">
+                                            {fandomImportResult.results.imported.slice(0, 10).map((r: any) => (
+                                              <Badge key={r.title} variant="secondary" className="text-xs">{r.title}</Badge>
+                                            ))}
+                                            {fandomImportResult.results.imported.length > 10 && (
+                                              <Badge variant="outline" className="text-xs">+{fandomImportResult.results.imported.length - 10} more</Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           )}
                           {isSuperAdmin && (
                             <Button

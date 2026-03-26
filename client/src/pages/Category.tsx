@@ -151,43 +151,76 @@ export default function Category() {
 
             {/* Show Events if category is Events */}
             {category?.toLowerCase() === "events" && allEvents.length > 0 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-semibold">Events</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {allEvents.map((event: any) => (
-                    <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`} className="block">
-                      <Card className="h-full hover-elevate transition-all">
-                        {event.image && (
-                          <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg bg-muted/30">
+              <div className="space-y-5">
+                {/* Featured first event */}
+                {(() => {
+                  const [featured, ...rest] = allEvents;
+                  const FALLBACK = "https://files.catbox.moe/wof38b.jpeg";
+                  return (
+                    <>
+                      {featured && (
+                        <Link href={featured.event_name_slug ? `/events/${featured.event_name_slug}` : `/events/${featured.id}`} className="group block">
+                          <div className="relative overflow-hidden rounded-2xl h-72 md:h-96 cursor-pointer">
                             <img
-                              src={event.image}
-                              alt={event.title}
-                              className="w-full h-full object-cover rounded-xl"
+                              src={featured.image || featured.imageUrl || FALLBACK}
+                              alt={featured.title}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              onError={(e) => { const i = e.currentTarget; if (i.src !== FALLBACK) i.src = FALLBACK; }}
                             />
-                            <Badge
-                              variant={event.type === "upcoming" ? "default" : "secondary"}
-                              className="absolute top-2 right-2"
-                            >
-                              {event.type}
-                            </Badge>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                            <div className="absolute top-4 left-4">
+                              <Badge className="bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest px-2.5 py-1">
+                                {featured.type === "upcoming" ? "Upcoming" : "Featured"}
+                              </Badge>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
+                              <p className="text-white/50 text-[10px] font-black uppercase tracking-widest mb-2">{featured.date}</p>
+                              <h3 className="text-white font-black text-2xl md:text-4xl uppercase tracking-tight leading-tight line-clamp-2 drop-shadow-lg">
+                                {featured.title}
+                              </h3>
+                              {featured.description && (
+                                <p className="text-white/60 text-sm mt-2 line-clamp-2">
+                                  {featured.description.replace(/<[^>]*>/g, '').substring(0, 120)}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        <CardContent className="p-6">
-                          <h3 className="text-xl font-semibold mb-2 line-clamp-2">{event.title}</h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                            <Calendar className="h-4 w-4" />
-                            <span className="date-text">{event.date}</span>
-                          </div>
-                          {event.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-3">
-                              {event.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
+                        </Link>
+                      )}
+                      {rest.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {rest.map((event: any) => (
+                            <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`} className="group block">
+                              <div className="relative overflow-hidden rounded-xl aspect-video cursor-pointer border border-border/30 hover:border-primary/40 transition-colors">
+                                <img
+                                  src={event.image || event.imageUrl || FALLBACK}
+                                  alt={event.title}
+                                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  onError={(e) => { const i = e.currentTarget; if (i.src !== FALLBACK) i.src = FALLBACK; }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
+                                <div className="absolute top-2.5 left-2.5">
+                                  <span className="bg-primary/80 text-primary-foreground text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">
+                                    {event.type === "upcoming" ? "Upcoming" : "Event"}
+                                  </span>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
+                                  <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">
+                                    {event.title}
+                                  </h3>
+                                  <p className="text-white/40 text-[10px] font-bold mt-1 uppercase tracking-widest flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {event.date}
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 

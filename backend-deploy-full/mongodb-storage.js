@@ -40,14 +40,6 @@ export class MongoDBStorage {
             seoKeywords: [],
             seoOgImage: "",
             robots: "index, follow",
-            monetizationVerifiedSellersEnabled: true,
-            monetizationVerifiedSellerFee: 30,
-            monetizationBoostingEnabled: true,
-            monetizationBoostingCommissionPct: 12,
-            monetizationPremiumEnabled: true,
-            monetizationPremiumMonthlyPrice: 2,
-            monetizationAffiliateEnabled: true,
-            monetizationAffiliateCommissionPct: 4,
         };
     }
 
@@ -62,14 +54,9 @@ export class MongoDBStorage {
 
     async initialize() {
         if (!this.initialized) {
-            const readyState = mongoose.connection.readyState;
-            if (readyState === 1) {
-                this.initialized = true;
-                return;
-            }
-            const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL;
+            const mongoUri = process.env.DATABASE_URL || process.env.MONGODB_URI;
             if (!mongoUri) {
-                throw new Error("MONGODB_URI environment variable must be set");
+                throw new Error("DATABASE_URL or MONGODB_URI environment variable must be set");
             }
             await mongoose.connect(mongoUri);
             this.initialized = true;
@@ -612,14 +599,6 @@ export class MongoDBStorage {
             seoKeywords: doc.seoKeywords || [],
             seoOgImage: doc.seoOgImage || "",
             robots: doc.robots || "index, follow",
-            monetizationVerifiedSellersEnabled: doc.monetizationVerifiedSellersEnabled !== false,
-            monetizationVerifiedSellerFee: Number.isFinite(doc.monetizationVerifiedSellerFee) ? Number(doc.monetizationVerifiedSellerFee) : 30,
-            monetizationBoostingEnabled: doc.monetizationBoostingEnabled !== false,
-            monetizationBoostingCommissionPct: Number.isFinite(doc.monetizationBoostingCommissionPct) ? Number(doc.monetizationBoostingCommissionPct) : 12,
-            monetizationPremiumEnabled: doc.monetizationPremiumEnabled !== false,
-            monetizationPremiumMonthlyPrice: Number.isFinite(doc.monetizationPremiumMonthlyPrice) ? Number(doc.monetizationPremiumMonthlyPrice) : 2,
-            monetizationAffiliateEnabled: doc.monetizationAffiliateEnabled !== false,
-            monetizationAffiliateCommissionPct: Number.isFinite(doc.monetizationAffiliateCommissionPct) ? Number(doc.monetizationAffiliateCommissionPct) : 4,
         };
     }
 

@@ -20,7 +20,6 @@ const PostSchema = new Schema({
     post_slug: { type: String, default: "", index: true },
     content: { type: String, required: true },
     summary: { type: String, required: true },
-    image: { type: String, default: "" },
     imageUrl: { type: String, default: "" },
     imagePublicId: { type: String, default: "" },
     images: { type: [String], default: [] },
@@ -47,7 +46,6 @@ const PostSchema = new Schema({
     externalLinks: { type: [{ name: String, url: String }], default: [] },
     version: { type: Number, default: 1 },
     updatedAt: { type: Date, default: Date.now },
-    wikiTabs: { type: [{ title: String, content: String, image: String }], default: [] },
 });
 const EventSchema = new Schema({
     title: { type: String, required: true },
@@ -59,7 +57,6 @@ const EventSchema = new Schema({
     date: { type: String, required: true },
     location: { type: String, default: '' },
     type: { type: String, required: true },
-    image: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     imagePublicId: { type: String, default: '' },
     images: { type: [String], default: [] },
@@ -85,7 +82,6 @@ const NewsSchema = new Schema({
     news_slug: { type: String, default: "", index: true },
     titleAr: { type: String, default: '' },
     dateRange: { type: String, required: true },
-    image: { type: String, default: "" },
     imageUrl: { type: String, default: "" },
     imagePublicId: { type: String, default: "" },
     images: { type: [String], default: [] },
@@ -222,31 +218,19 @@ const SiteSettingsSchema = new Schema({
     seoKeywords: { type: [String], default: [] },
     seoOgImageUrl: { type: String, default: "" },
     robots: { type: String, default: "index, follow" },
-    monetizationVerifiedSellersEnabled: { type: Boolean, default: true },
-    monetizationVerifiedSellerFee: { type: Number, default: 30 },
-    monetizationBoostingEnabled: { type: Boolean, default: true },
-    monetizationBoostingCommissionPct: { type: Number, default: 12 },
-    monetizationPremiumEnabled: { type: Boolean, default: true },
-    monetizationPremiumMonthlyPrice: { type: Number, default: 2 },
-    monetizationAffiliateEnabled: { type: Boolean, default: true },
-    monetizationAffiliateCommissionPct: { type: Number, default: 4 },
-    featuredWeapons: { type: [String], default: [] },
 }, {
     timestamps: true,
 });
 const WeaponSchema = new Schema({
     name: { type: String, required: true },
     imageUrl: { type: String, default: "" },
-    image: { type: String, default: "" },
     backgroundUrl: { type: String, default: "" },
-    background: { type: String, default: "" },
     category: { type: String, default: "" },
     description: { type: String, default: "" },
     stats: { type: Schema.Types.Mixed, default: {} },
-    order: { type: Number, default: 9999 },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
-}, { strict: false });
+});
 const ModeSchema = new Schema({
     name: { type: String, required: true },
     imageUrl: { type: String, default: "" },
@@ -270,8 +254,6 @@ const MapSchema = new Schema({
 const RankSchema = new Schema({
     name: { type: String, required: true },
     imageUrl: { type: String, default: "" },
-    image: { type: String, default: "" },
-    emblem: { type: String, default: "" },
     tier: { type: Number, default: 0 },
     expRequired: { type: Number, default: 0 },
     description: { type: String, default: "" },
@@ -601,15 +583,6 @@ export const siteSettingsSchema = z.object({
         const allowed = new Set(["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"]);
         return allowed.has(v.toLowerCase());
     }, { message: "Robots must be one of: index, follow | noindex, follow | index, nofollow | noindex, nofollow" }),
-    monetizationVerifiedSellersEnabled: z.boolean().optional().default(true),
-    monetizationVerifiedSellerFee: z.number().min(0).max(100000).optional().default(30),
-    monetizationBoostingEnabled: z.boolean().optional().default(true),
-    monetizationBoostingCommissionPct: z.number().min(0).max(100).optional().default(12),
-    monetizationPremiumEnabled: z.boolean().optional().default(true),
-    monetizationPremiumMonthlyPrice: z.number().min(0).max(100000).optional().default(2),
-    monetizationAffiliateEnabled: z.boolean().optional().default(true),
-    monetizationAffiliateCommissionPct: z.number().min(0).max(100).optional().default(4),
-    featuredWeapons: z.array(z.string()).optional().default([]),
 });
 export const updateSiteSettingsSchema = siteSettingsSchema.partial();
 const ConversationSchema = new Schema({

@@ -3160,17 +3160,6 @@ export default function Admin() {
                               Save All Orders
                             </Button>
                           )}
-                          {canUseScraper && (
-                            <Button
-                              variant="outline"
-                              onClick={() => scrapeEventsMutation.mutate()}
-                              disabled={scrapeEventsMutation.isPending}
-                              data-testid="button-scrape-events"
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              {scrapeEventsMutation.isPending ? "Scraping..." : "Scrape Events"}
-                            </Button>
-                          )}
                           {canEventsNews && (
                             <Dialog open={showFandomDialog} onOpenChange={setShowFandomDialog}>
                               <DialogTrigger asChild>
@@ -4720,35 +4709,28 @@ export default function Admin() {
 
               {canScraper && (
                 <TabsContent value="scraper" className="space-y-6" data-testid="content-scraper">
-                  {isSuperAdmin ? (
-                    <div className="space-y-8">
-                      <div>
-                        <h2 className="text-2xl font-semibold mb-4">Event Scraper</h2>
-                        <ScrapingManager />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-semibold mb-4">CrossFire Data Scraper</h2>
-                        <CFDataScraper />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
-                        <FullPageScraper />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-semibold mb-4">إصلاح المحتوى القديم (Re-scrape)</h2>
-                        <WikiRescraper />
-                      </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-semibold mb-4">Event Scraper</h2>
+                      <ScrapingManager />
                     </div>
-                  ) : (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Scraper Tools</CardTitle>
-                        <CardDescription>
-                          Only super admins can access scraper tools.
-                        </CardDescription>
-                      </CardHeader>
-                    </Card>
-                  )}
+                    {isSuperAdmin && (
+                      <>
+                        <div>
+                          <h2 className="text-2xl font-semibold mb-4">CrossFire Data Scraper</h2>
+                          <CFDataScraper />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
+                          <FullPageScraper />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-semibold mb-4">إصلاح المحتوى القديم (Re-scrape)</h2>
+                          <WikiRescraper />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </TabsContent>
               )}
 

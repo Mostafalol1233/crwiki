@@ -9,7 +9,7 @@ import { storage, initializeStorage } from "./storage.js";
 import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema, insertMercenarySchema } from "./shared/mongodb-schema.js";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword, verifyToken } from "./utils/auth.js";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
-import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps } from "./services/scraper.js";
+import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps, scrapePage } from "./services/scraper.js";
 import DOMPurify from 'isomorphic-dompurify';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
@@ -1360,6 +1360,142 @@ export async function registerRoutes(app) {
             res.status(500).json({ error: error.message });
         }
     });
+    // Single URL scraper endpoint
+    app.post("/api/scrape/single-url", requireAuth, async (req, res) => {
+        try {
+            const { url } = req.body;
+            if (!url || !url.startsWith('http')) {
+                return res.status(400).json({ error: "Valid URL required" });
+            }
+            const result = await scrapePage(url);
+            if (!result) {
+                return res.status(500).json({ error: "Failed to scrape page" });
+            }
+            const isWiki = url.includes('fandom.com') || url.includes('wiki');
+            const contentLength = (result.content || '').replace(/<[^>]*>/g, '').length;
+            const cheerioLib = await import('cheerio');
+            const $ = cheerioLib.load(result.content || '');
+            const tabSections = $('.tabber, .tabbertab, [data-tab], .wds-tab__content').length;
+            res.json({
+                title: result.title,
+                content: result.content,
+                excerpt: result.summary,
+                seoDescription: result.summary,
+                seoTitle: result.title,
+                keywords: [],
+                mainImage: result.image,
+                image: result.image,
+                sourceUrl: url,
+                url: url,
+                isWiki,
+                tabSections,
+                contentLength,
+                status: 'success',
+            });
+        } catch (error) {
+            console.error('Error in /api/scrape/single-url:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Rebuild all mercenary posts from Fandom Wiki
+    app.post("/api/admin/rebuild-mercenary-posts", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const mercenaries = [
+                { name: "Wolf", wikiSlug: "Wolf_(CrossFire)" },
+                { name: "Vipers", wikiSlug: "Vipers" },
+                { name: "Sisterhood", wikiSlug: "Sisterhood" },
+                { name: "Black_Mamba", wikiSlug: "Black_Mamba_(CrossFire)" },
+                { name: "Desperado", wikiSlug: "Desperado" },
+                { name: "Ronin", wikiSlug: "Ronin_(CrossFire)" },
+                { name: "Dean", wikiSlug: "Dean" },
+                { name: "Saber", wikiSlug: "Saber_(CrossFire)" },
+                { name: "Brimstone", wikiSlug: "Brimstone_(CrossFire)" },
+                { name: "Arch_Honorary", wikiSlug: "Arch_Honorary" },
+            ];
+            const allPosts = await storage.getAllPosts();
+            const posts = Array.isArray(allPosts) ? allPosts : (allPosts.items || []);
+            let deletedCount = 0;
+            for (const post of posts) {
+                try {
+                    await storage.deletePost(post._id || post.id);
+                    deletedCount++;
+                } catch (e) {}
+            }
+            let created = 0, failed = 0;
+            for (const merc of mercenaries) {
+                try {
+                    const wikiUrl = `https://crossfire.fandom.com/wiki/${merc.wikiSlug}`;
+                    const scraped = await scrapePage(wikiUrl);
+                    if (!scraped) { failed++; continue; }
+                    await storage.createPost({
+                        title: scraped.title || merc.name,
+                        content: scraped.content || '',
+                        summary: scraped.summary || '',
+                        category: "Mercenaries",
+                        tags: "mercenary,crossfire",
+                        author: "CrossFire Wiki",
+                        image: scraped.image || '',
+                        sourceUrl: wikiUrl,
+                        featured: false,
+                        seoTitle: scraped.title || merc.name,
+                        seoDescription: scraped.summary || '',
+                        seoKeywords: ['mercenary', 'crossfire', merc.name.toLowerCase()],
+                    });
+                    created++;
+                } catch (e) {
+                    console.error(`Failed to create post for ${merc.name}:`, e.message);
+                    failed++;
+                }
+            }
+            res.json({ deletedCount, created, failed });
+        } catch (error) {
+            console.error('Error in /api/admin/rebuild-mercenary-posts:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Rescrape and update existing item content
+    app.post("/api/admin/rescrape-item", requireAuth, async (req, res) => {
+        try {
+            const { type, id, url } = req.body;
+            if (!type || !id || !url || !url.startsWith('http')) {
+                return res.status(400).json({ error: "type, id, and valid url are required" });
+            }
+            const scraped = await scrapePage(url);
+            if (!scraped) {
+                return res.status(500).json({ error: "Failed to scrape URL" });
+            }
+            const contentLength = (scraped.content || '').replace(/<[^>]*>/g, '').length;
+            const updateData = {
+                content: scraped.content || '',
+                image: scraped.image || '',
+            };
+            if (type === 'events') {
+                updateData.description = scraped.content || '';
+                await storage.updateEvent(id, updateData);
+            } else if (type === 'news') {
+                updateData.htmlContent = scraped.content || '';
+                await storage.updateNews(id, updateData);
+            } else if (type === 'posts') {
+                await storage.updatePost(id, updateData);
+            } else {
+                return res.status(400).json({ error: "Invalid type. Use events, news, or posts" });
+            }
+            res.json({
+                success: true,
+                scraped: {
+                    title: scraped.title,
+                    image: scraped.image,
+                    contentLength,
+                }
+            });
+        } catch (error) {
+            console.error('Error in /api/admin/rescrape-item:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Public API routes for CF data (cached scraped data)
     app.get("/api/cf/ranks", async (req, res) => {
         try {

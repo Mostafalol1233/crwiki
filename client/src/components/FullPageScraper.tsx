@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, Eye, Link2, ExternalLink, Zap } from "lucide-react";
+import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, Eye, ExternalLink, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -151,22 +151,24 @@ export default function FullPageScraper() {
     <Card className={`overflow-hidden ${data.status === "failed" ? "border-destructive/50" : ""}`}>
       <div className={`p-4 border-b flex items-start justify-between gap-3 ${data.status === "failed" ? "bg-destructive/5" : "bg-muted/30"}`}>
         <div className="flex-1 min-w-0">
-          <h4 className="font-bold truncate mb-1">{data.title || (data.status === "failed" ? "فشل السكراب" : "بدون عنوان")}</h4>
-          <div className="flex items-center gap-2 flex-wrap">
+          {data.status !== "failed" ? (
             <a
               href={data.url || data.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 hover:underline truncate max-w-xs"
+              className="font-bold text-base hover:underline hover:text-primary flex items-center gap-1 group truncate"
               onClick={e => e.stopPropagation()}
             >
-              <Link2 className="w-3 h-3 shrink-0" />
-              {data.url || data.sourceUrl}
-              <ExternalLink className="w-3 h-3 shrink-0" />
+              <span className="truncate">{data.title || "بدون عنوان"}</span>
+              <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" />
             </a>
-            {data.isWiki && <Badge variant="secondary" className="text-[10px]">Wiki</Badge>}
+          ) : (
+            <h4 className="font-bold text-destructive">فشل السكراب</h4>
+          )}
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {data.isWiki && <Badge variant="secondary" className="text-[10px]">Fandom Wiki</Badge>}
             {data.tabSections > 0 && <Badge variant="outline" className="text-[10px]">{data.tabSections} Tabs</Badge>}
-            {data.contentLength && <Badge variant="outline" className="text-[10px]">{data.contentLength} chars</Badge>}
+            {data.contentLength && <Badge variant="outline" className="text-[10px]">{data.contentLength.toLocaleString()} chars</Badge>}
           </div>
         </div>
         <div className="flex gap-2 shrink-0 flex-wrap justify-end">
@@ -192,27 +194,18 @@ export default function FullPageScraper() {
             {data.error || "حدث خطأ غير معروف أثناء السكراب"}
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex gap-4">
-              {(data.mainImage || data.image) && (
-                <img
-                  src={data.mainImage || data.image}
-                  alt={data.title}
-                  className="w-24 h-16 object-cover rounded border flex-shrink-0"
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              )}
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {data.excerpt || data.seoDescription || "لا يوجد معاينة"}
-              </p>
-            </div>
-            {data.keywords && data.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {data.keywords.slice(0, 6).map((k: string, i: number) => (
-                  <Badge key={i} variant="outline" className="text-[10px]">{k}</Badge>
-                ))}
-              </div>
+          <div className="flex gap-4">
+            {(data.mainImage || data.image) && (
+              <img
+                src={data.mainImage || data.image}
+                alt={data.title}
+                className="w-24 h-16 object-cover rounded border flex-shrink-0"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
             )}
+            <p className="text-sm text-muted-foreground line-clamp-3">
+              {data.excerpt || data.seoDescription || "لا يوجد معاينة"}
+            </p>
           </div>
         )}
       </CardContent>

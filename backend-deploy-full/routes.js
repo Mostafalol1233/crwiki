@@ -1375,6 +1375,62 @@ export async function registerRoutes(app) {
         }
     });
     // Validate content - extract colors, font info, and SEO meta from HTML
+    // Re-scrape existing content item and update it in the database
+    app.post("/api/admin/rescrape-item", requireAuth, async (req, res) => {
+        try {
+            const { type, id, url } = req.body;
+            if (!url || !url.startsWith('http')) return res.status(400).json({ error: "Valid URL is required" });
+            if (!type || !id) return res.status(400).json({ error: "type and id are required" });
+
+            const scraped = await scrapeSingleUrl(url);
+            if (!scraped || scraped.status === 'failed') {
+                return res.status(500).json({ error: scraped?.error || "Scraping failed" });
+            }
+
+            const content = scraped.content || '';
+            const image = scraped.mainImage || scraped.image || '';
+            const title = scraped.title || '';
+            const seoDesc = scraped.seoDescription || scraped.excerpt || '';
+
+            let updated;
+            if (type === 'events') {
+                updated = await storage.updateEvent(id, {
+                    title,
+                    description: content,
+                    image,
+                    seoTitle: title,
+                    seoDescription: seoDesc,
+                    sourceUrl: url,
+                });
+            } else if (type === 'news') {
+                updated = await storage.updateNews(id, {
+                    title,
+                    content,
+                    htmlContent: content,
+                    image,
+                    seoTitle: title,
+                    seoDescription: seoDesc,
+                    sourceUrl: url,
+                });
+            } else if (type === 'posts') {
+                updated = await storage.updatePost(id, {
+                    title,
+                    content,
+                    image,
+                    seoTitle: title,
+                    seoDescription: seoDesc,
+                    sourceUrl: url,
+                });
+            } else {
+                return res.status(400).json({ error: "Invalid type. Use: events, news, or posts" });
+            }
+
+            res.json({ success: true, updated, scraped: { title, contentLength: content.length, image } });
+        } catch (error) {
+            res.status(500).json({ error: error.message || "Re-scrape failed" });
+        }
+    });
+
     app.post("/api/scrape/single-url", async (req, res) => {
         try {
             const { url } = req.body;

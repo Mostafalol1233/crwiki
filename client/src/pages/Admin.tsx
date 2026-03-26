@@ -78,6 +78,7 @@ import ScrapingManager from "@/components/ScrapingManager";
 import TutorialManager from "@/components/TutorialManager";
 import CFDataScraper from "@/components/CFDataScraper";
 import FullPageScraper from "@/components/FullPageScraper";
+import WikiRescraper from "@/components/WikiRescraper";
 import RestorationManager from "@/components/RestorationManager";
 import { PasteFormatter } from "@/components/PasteFormatter";
 import { ImageEditorModal, type ImageEditorConfig } from "@/components/ImageEditorModal";
@@ -3134,6 +3135,10 @@ export default function Admin() {
                         <div>
                           <h2 className="text-2xl font-semibold mb-4">Full Page URL Scraper</h2>
                           <FullPageScraper />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-semibold mb-4">إصلاح المحتوى القديم (Re-scrape)</h2>
+                          <WikiRescraper />
                         </div>
                       </>
                     ) : (

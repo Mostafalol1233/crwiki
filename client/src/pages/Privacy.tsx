@@ -1,13 +1,9 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, Eye, Lock, Mail } from "lucide-react";
-import { useLanguage } from "@/components/LanguageProvider";
-import { format } from "date-fns";
+import { ArrowLeft, Shield, Eye, Lock, Mail, Cookie, UserCheck } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 export default function Privacy() {
-  const { t } = useLanguage();
-
   return (
     <>
       <PageSEO
@@ -35,7 +31,13 @@ export default function Privacy() {
               Privacy Policy
             </h1>
             <p className="text-lg text-muted-foreground">
-              Last updated: {format(new Date(), "MMM d, yyyy")}
+              Last updated: March 26, 2026
+            </p>
+          </div>
+
+          <div className="rounded-xl border bg-muted/40 p-5 md:p-6">
+            <p className="text-muted-foreground leading-relaxed">
+              Your privacy matters to us. This page explains what data we collect, why we collect it, and the controls you have over your information.
             </p>
           </div>
 
@@ -93,7 +95,10 @@ export default function Privacy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4">Cookies and Tracking</h2>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <Cookie className="h-6 w-6" />
+                Cookies and Tracking
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
                 We use cookies and similar technologies to enhance your experience on our website. You can control cookie settings through your browser preferences. We may use analytics services to understand how our website is used.
               </p>
@@ -114,7 +119,10 @@ export default function Privacy() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4">Your Rights</h2>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <UserCheck className="h-6 w-6" />
+                Your Rights
+              </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 Depending on your location, you may have the following rights regarding your personal information:
               </p>
@@ -150,7 +158,7 @@ export default function Privacy() {
 
           <div className="text-center pt-8 border-t">
             <p className="text-sm text-muted-foreground">
-              © 2024 CrossFire Wiki by Bimora Gaming. All rights reserved.
+              © 2026 CrossFire Wiki by Bimora Gaming. All rights reserved.
             </p>
           </div>
         </div>

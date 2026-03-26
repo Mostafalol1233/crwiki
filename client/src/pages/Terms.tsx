@@ -1,13 +1,9 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Shield, Users, Mail } from "lucide-react";
-import { useLanguage } from "@/components/LanguageProvider";
-import { format } from "date-fns";
+import { ArrowLeft, FileText, Shield, Users, Mail, Gavel, AlertTriangle } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 export default function Terms() {
-  const { t } = useLanguage();
-
   return (
     <>
       <PageSEO
@@ -35,7 +31,13 @@ export default function Terms() {
               Terms of Service
             </h1>
             <p className="text-lg text-muted-foreground">
-              Last updated: {format(new Date(), "MMM d, yyyy")}
+              Last updated: March 26, 2026
+            </p>
+          </div>
+
+          <div className="rounded-xl border bg-muted/40 p-5 md:p-6">
+            <p className="text-muted-foreground leading-relaxed">
+              These terms explain your rights and responsibilities when using CrossFire Wiki. By continuing to browse, register, or submit content, you agree to follow this policy.
             </p>
           </div>
 
@@ -65,7 +67,10 @@ export default function Terms() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4">Content Guidelines</h2>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <Gavel className="h-6 w-6" />
+                Content Guidelines
+              </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 All content on CrossFire Wiki must adhere to the following guidelines:
               </p>
@@ -86,7 +91,10 @@ export default function Terms() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4">Disclaimer</h2>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6" />
+                Disclaimer
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
                 The information provided on CrossFire Wiki is for general informational purposes only. While we strive for accuracy, we cannot guarantee the completeness or timeliness of information. Use of this website is at your own risk.
               </p>
@@ -115,7 +123,7 @@ export default function Terms() {
 
           <div className="text-center pt-8 border-t">
             <p className="text-sm text-muted-foreground">
-              © 2024 CrossFire Wiki by Bimora Gaming. All rights reserved.
+              © 2026 CrossFire Wiki by Bimora Gaming. All rights reserved.
             </p>
           </div>
         </div>

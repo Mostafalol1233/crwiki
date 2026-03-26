@@ -12,7 +12,7 @@ export default function About() {
         canonicalPath="/about"
       />
       <div className="min-h-screen py-12 md:py-20 bg-background">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-12 md:py-20">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <h1 className="text-4xl md:text-5xl font-bold mb-8">
           {t("aboutBimora")}
         </h1>
@@ -46,6 +46,27 @@ export default function About() {
           <p className="leading-relaxed">
             {t("communityText")}
           </p>
+
+          <div className="grid gap-4 md:grid-cols-3 mt-10">
+            <div className="rounded-xl border bg-card p-5">
+              <h3 className="font-semibold mb-2">Reliable Updates</h3>
+              <p className="text-sm text-muted-foreground">
+                We regularly refresh guides, patch details, and gameplay references so players can quickly find current information.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-5">
+              <h3 className="font-semibold mb-2">Community-First</h3>
+              <p className="text-sm text-muted-foreground">
+                CrossFire Wiki is built to help new and veteran players with practical content and clear explanations.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-5">
+              <h3 className="font-semibold mb-2">Clear & Fast</h3>
+              <p className="text-sm text-muted-foreground">
+                We focus on easy navigation, structured pages, and direct answers so you can get what you need faster.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

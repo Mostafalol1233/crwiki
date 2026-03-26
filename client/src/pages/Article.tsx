@@ -13,6 +13,12 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import DOMPurify from "isomorphic-dompurify";
 
+interface WikiTab {
+  title: string;
+  content: string;
+  image?: string;
+}
+
 export default function Article() {
   const params = useParams();
   const slug = (params as any)?.slug as string | undefined;
@@ -41,6 +47,7 @@ export default function Article() {
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   const [imgLoaded, setImgLoaded] = useState(false);
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);
+  const [activeTab, setActiveTab] = useState<number>(0);
 
   const { data: postsData } = useQuery<{ items: Article[]; total: number }>({
     queryKey: ["/api/posts"],
@@ -296,6 +303,52 @@ export default function Article() {
                   </div>
                 )}
 
+                {(finalArticle.wikiTabs as WikiTab[] | undefined)?.length ? (
+                  <div className="wiki-article-body mt-12">
+                    <div className="flex flex-wrap gap-0 border-b border-border/60 mb-8 overflow-x-auto">
+                      <button
+                        onClick={() => setActiveTab(-1)}
+                        className={`px-5 py-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === -1 ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
+                      >
+                        Overview
+                      </button>
+                      {(finalArticle.wikiTabs as WikiTab[]).map((tab, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveTab(i)}
+                          className={`px-5 py-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === i ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
+                        >
+                          {tab.title}
+                        </button>
+                      ))}
+                    </div>
+                    {activeTab === -1 ? (
+                      <div
+                        ref={contentRef}
+                        className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawContent, { ADD_TAGS: ['style','iframe'], ADD_ATTR: ['allow','allowfullscreen','frameborder','scrolling','target'], FORCE_BODY: true, ALLOW_UNKNOWN_PROTOCOLS: true }) }}
+                      />
+                    ) : (
+                      <div>
+                        {(finalArticle.wikiTabs as WikiTab[])[activeTab]?.image && (
+                          <div className="mb-8 flex justify-center">
+                            <img
+                              src={(finalArticle.wikiTabs as WikiTab[])[activeTab].image}
+                              alt={(finalArticle.wikiTabs as WikiTab[])[activeTab].title}
+                              className="max-h-80 object-contain rounded border border-border/50 shadow-lg cursor-zoom-in"
+                              onClick={() => setViewer({ open: true, src: (finalArticle.wikiTabs as WikiTab[])[activeTab].image || "", alt: (finalArticle.wikiTabs as WikiTab[])[activeTab].title })}
+                            />
+                          </div>
+                        )}
+                        <div
+                          ref={contentRef}
+                          className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "", { ADD_TAGS: ['style','iframe'], ADD_ATTR: ['allow','allowfullscreen','frameborder','scrolling','target'], FORCE_BODY: true, ALLOW_UNKNOWN_PROTOCOLS: true }) }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div className="wiki-article-body mt-12">
                   <div
                     ref={contentRef}
@@ -315,6 +368,7 @@ export default function Article() {
                     }}
                   />
                 </div>
+                )}
 
                 {finalArticle.externalLinks && finalArticle.externalLinks.length > 0 && (
                   <div className="mt-16 p-8 border border-border/50 bg-muted/5 rounded-none no-print">

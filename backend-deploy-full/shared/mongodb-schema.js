@@ -47,6 +47,7 @@ const PostSchema = new Schema({
     externalLinks: { type: [{ name: String, url: String }], default: [] },
     version: { type: Number, default: 1 },
     updatedAt: { type: Date, default: Date.now },
+    wikiTabs: { type: [{ title: String, content: String, image: String }], default: [] },
 });
 const EventSchema = new Schema({
     title: { type: String, required: true },

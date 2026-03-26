@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Eye, Wand2, Globe } from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Eye, Wand2, Globe, Swords } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
@@ -50,6 +50,7 @@ export default function WikiRescraper() {
   const [tab, setTab] = useState<ContentType>("events");
   const [items, setItems] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRebuildingMercs, setIsRebuildingMercs] = useState(false);
 
   // Per-item state
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
@@ -61,13 +62,30 @@ export default function WikiRescraper() {
   const [previewTitle, setPreviewTitle] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const handleRebuildMercenaryPosts = async () => {
+    if (!confirm("هيحذف كل المقالات الموجودة وينشئ مقالات جديدة عن المرتزقة من فاندوم ويكي — متأكد؟")) return;
+    setIsRebuildingMercs(true);
+    try {
+      const result = await apiRequest("/api/admin/rebuild-mercenary-posts", "POST", {});
+      toast({
+        title: "تم بناء مقالات المرتزقة",
+        description: `حذف ${result.deletedCount} مقال قديم — أنشأ ${result.created} جديد — فشل ${result.failed}`,
+      });
+      if (tab === "posts") fetchItems("posts");
+    } catch (e: any) {
+      toast({ title: "فشل البناء", description: e.message, variant: "destructive" });
+    } finally {
+      setIsRebuildingMercs(false);
+    }
+  };
+
   const fetchItems = async (type: ContentType) => {
     setIsLoading(true);
     setItems([]);
     setUrlInputs({});
     setDone({});
     try {
-      const data = await apiRequest(`/api/${type}`, "GET");
+      const data = await apiRequest(`/api/${type}?limit=1000`, "GET");
       const list: ContentItem[] = Array.isArray(data) ? data : (data?.data || data?.items || data?.events || data?.news || data?.posts || []);
       setItems(list);
 
@@ -160,6 +178,33 @@ export default function WikiRescraper() {
 
   return (
     <div className="space-y-6">
+
+      {/* Rebuild Mercenary Posts */}
+      <Card className="border-orange-700/50 bg-orange-950/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-orange-300">
+            <Swords className="w-5 h-5" />
+            بناء مقالات المرتزقة من الفاندوم ويكي
+          </CardTitle>
+          <CardDescription className="text-orange-200/70">
+            يحذف كل المقالات (Posts) الموجودة ويبني مقالات جديدة عن مرتزقة CrossFire من الفاندوم ويكي — Wolf, Viper, Sisterhood, Black Mamba, Desperado, Ronin, Dean, Saber, Brimstone, Arch Honorary
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleRebuildMercenaryPosts}
+            disabled={isRebuildingMercs}
+            className="bg-orange-700 hover:bg-orange-600 text-white"
+          >
+            {isRebuildingMercs ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />جاري البناء... (قد يأخذ 2-3 دقائق)</>
+            ) : (
+              <><Swords className="w-4 h-4 mr-2" />احذف القديم وابنِ مقالات المرتزقة</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

@@ -1376,6 +1376,101 @@ export async function registerRoutes(app) {
     });
     // Validate content - extract colors, font info, and SEO meta from HTML
     // Re-scrape existing content item and update it in the database
+    // Delete all old wiki posts and rebuild with mercenary articles from fandom wiki
+    app.post("/api/admin/rebuild-mercenary-posts", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const MERC_WIKI_URLS = [
+                { name: 'Black Mamba', url: 'https://crossfire.fandom.com/wiki/Black_Mamba_(Mercenary)' },
+                { name: 'Viper', url: 'https://crossfire.fandom.com/wiki/Viper_(Mercenary)' },
+                { name: 'Wolf', url: 'https://crossfire.fandom.com/wiki/Wolf_(Mercenary)' },
+                { name: 'Sisterhood', url: 'https://crossfire.fandom.com/wiki/Sisterhood_(Mercenary)' },
+                { name: 'Desperado', url: 'https://crossfire.fandom.com/wiki/Desperado_(Mercenary)' },
+                { name: 'Ronin', url: 'https://crossfire.fandom.com/wiki/Ronin_(Mercenary)' },
+                { name: 'Dean', url: 'https://crossfire.fandom.com/wiki/Dean_(Mercenary)' },
+                { name: 'Saber', url: 'https://crossfire.fandom.com/wiki/Saber_(Mercenary)' },
+                { name: 'Brimstone', url: 'https://crossfire.fandom.com/wiki/Brimstone_(Mercenary)' },
+                { name: 'Arch Honorary', url: 'https://crossfire.fandom.com/wiki/Arch_Honorary_(Mercenary)' },
+            ];
+
+            // Delete ALL existing posts first (pass high limit to ensure we get all)
+            const existingPosts = await storage.getAllPosts({ limit: 1000 });
+            const existingList = existingPosts?.items || existingPosts || [];
+            let deletedCount = 0;
+            for (const post of existingList) {
+                const id = post._id?.toString() || post.id;
+                if (id) {
+                    try { await storage.deletePost(id); deletedCount++; } catch (e) {}
+                }
+            }
+
+            // Scrape and create mercenary posts
+            const created = [];
+            const failed = [];
+            for (const merc of MERC_WIKI_URLS) {
+                try {
+                    const scraped = await scrapeFandomWikiPage(merc.url);
+                    const slug = merc.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    const allPosts = await storage.getAllPosts().catch(() => ({ items: [] }));
+                    const allList = (allPosts?.items || allPosts || []);
+                    const ensureUniqueSlugLocal = (base) => {
+                        let candidate = base; let counter = 1;
+                        while (allList.some(p => (p.post_slug || '') === candidate)) {
+                            candidate = `${base}-${counter++}`;
+                        }
+                        return candidate;
+                    };
+                    const uniqueSlug = ensureUniqueSlugLocal(slug);
+                    const post = await storage.createPost({
+                        title: scraped.title || merc.name,
+                        content: scraped.content || '',
+                        summary: scraped.excerpt || scraped.seoDescription || '',
+                        image: scraped.mainImage || scraped.image || '',
+                        category: 'Mercenaries',
+                        tags: ['mercenary', 'character', 'crossfire'],
+                        author: 'CrossFire Wiki',
+                        post_slug: uniqueSlug,
+                        seoTitle: scraped.title || merc.name,
+                        seoDescription: scraped.seoDescription || scraped.excerpt || '',
+                        seoKeywords: ['mercenary', 'crossfire', merc.name],
+                        sourceUrl: merc.url,
+                        featured: false,
+                        views: 0,
+                        readingTime: Math.ceil((scraped.content || '').length / 1500),
+                    });
+                    created.push({ name: merc.name, id: post?._id || post?.id });
+                } catch (e) {
+                    console.error(`Failed to scrape ${merc.name}:`, e.message);
+                    // Create a placeholder post if scraping fails
+                    try {
+                        const slug = merc.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        await storage.createPost({
+                            title: merc.name,
+                            content: `<p>Information about CrossFire mercenary <strong>${merc.name}</strong> coming soon. Visit <a href="${merc.url}" target="_blank">CrossFire Fandom Wiki</a> for details.</p>`,
+                            summary: `CrossFire mercenary: ${merc.name}`,
+                            image: '',
+                            category: 'Mercenaries',
+                            tags: ['mercenary', 'character', 'crossfire'],
+                            author: 'CrossFire Wiki',
+                            post_slug: slug,
+                            seoTitle: `${merc.name} - CrossFire Mercenary`,
+                            seoDescription: `Learn about ${merc.name}, a CrossFire mercenary character.`,
+                            seoKeywords: ['mercenary', 'crossfire', merc.name],
+                            sourceUrl: merc.url,
+                        });
+                        failed.push({ name: merc.name, error: e.message, created: 'placeholder' });
+                    } catch (e2) {
+                        failed.push({ name: merc.name, error: e.message });
+                    }
+                }
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            res.json({ success: true, deletedCount, created: created.length, failed: failed.length, details: { created, failed } });
+        } catch (error) {
+            res.status(500).json({ error: error.message || 'Failed to rebuild mercenary posts' });
+        }
+    });
+
     app.post("/api/admin/rescrape-item", requireAuth, async (req, res) => {
         try {
             const { type, id, url } = req.body;
@@ -2212,6 +2307,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     seoKeywords: Array.isArray(raw.seoKeywords) ? raw.seoKeywords : [],
                     seoOgImage: raw.seoOgImage ?? "",
                     robots: raw.robots ?? "index, follow",
+                    featuredWeapons: Array.isArray(raw.featuredWeapons) ? raw.featuredWeapons : [],
                     monetizationVerifiedSellersEnabled: toBoolean(raw.monetizationVerifiedSellersEnabled ?? true),
                     monetizationVerifiedSellerFee: Number.isFinite(Number(raw.monetizationVerifiedSellerFee)) ? Math.max(0, Number(raw.monetizationVerifiedSellerFee)) : 30,
                     monetizationBoostingEnabled: toBoolean(raw.monetizationBoostingEnabled ?? true),

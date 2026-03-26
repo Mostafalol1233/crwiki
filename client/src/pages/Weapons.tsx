@@ -37,7 +37,7 @@ export default function Weapons() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [letter, setLetter] = useState<string>("");
+  const [letter, setLetter] = useState<string>("M");
   const [sort, setSort] = useState<"alpha" | "date">("alpha");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
@@ -160,7 +160,10 @@ export default function Weapons() {
               <Input
                 placeholder="Search weapons..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value) setLetter("");
+                }}
                 className="pl-10"
               />
               {isLoading && (

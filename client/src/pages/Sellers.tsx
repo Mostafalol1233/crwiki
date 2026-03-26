@@ -667,18 +667,41 @@ export default function Sellers() {
           description={"Find trusted CrossFire card sellers with ratings and contact info."}
           canonicalPath="/sellers"
         />
-        <div className="min-h-screen bg-background py-12 md:py-20">
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
-            {/* Hero */}
-            <div className="mb-10 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary/60">
-                Trusted Sellers Market
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Verified sellers for CrossFire accounts, items, and game cards. Compare prices and read community reviews.
-              </p>
+        <div className="min-h-screen bg-background">
+          {/* Hero Section */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border-b border-border/40">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, hsl(var(--primary)) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--primary)) 0%, transparent 40%)' }} />
+            <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
+              <div className="max-w-3xl mx-auto text-center">
+                <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Verified & Trusted
+                </div>
+                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
+                  Sellers Market
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
+                  Find the best CrossFire accounts, game cards, and items. All sellers are verified by our community with real reviews and ratings.
+                </p>
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+                  {[
+                    { label: "Verified Sellers", value: String(filteredSellers.length || sellers.length) },
+                    { label: "Featured Partners", value: String(sellers.filter(s => s.featured).length) },
+                    { label: "Community Reviews", value: String(sellers.reduce((acc, s) => acc + (s.totalReviews || 0), 0)) },
+                  ].map(stat => (
+                    <div key={stat.label} className="text-center p-3 rounded-xl bg-card/60 border border-border/50 backdrop-blur-sm">
+                      <div className="text-2xl font-black text-primary">{stat.value}</div>
+                      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          </div>
 
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-16">
             {/* Search & Filter */}
             <div className="flex flex-col md:flex-row gap-3 mb-10 bg-card/80 backdrop-blur-sm p-4 rounded-xl border shadow-sm sticky top-20 z-10">
               <div className="relative flex-1">
@@ -831,6 +854,14 @@ export default function Sellers() {
               )}
             </DialogContent>
           </Dialog>
+
+          {lightbox && (
+            <GalleryLightbox
+              images={lightbox.images}
+              initialIndex={lightbox.index}
+              onClose={() => setLightbox(null)}
+            />
+          )}
         </div>
       </>
     </LocalErrorBoundary>

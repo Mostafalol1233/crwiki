@@ -89,7 +89,7 @@ export default function Home() {
   const { data: sitePublicSettings } = useQuery<{ featuredWeapons: string[] }>({
     queryKey: ["/api/public/settings/site"],
     queryFn: () => apiRequest("/api/public/settings/site", "GET"),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 30 * 1000,
   });
   const featuredWeaponIds = sitePublicSettings?.featuredWeapons || [];
 
@@ -130,7 +130,7 @@ export default function Home() {
   }, []);
 
   const scrapedEvents = allEvents.filter((e: any) => e.rawHtmlContent);
-  const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(7, 15);
+  const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(0, 10);
 
   const [featuredEvent, ...restEvents] = displayEvents;
   const secondaryEvents = restEvents.slice(0, 3);

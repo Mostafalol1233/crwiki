@@ -9,7 +9,7 @@ import { storage, initializeStorage } from "./storage.js";
 import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema, insertMercenarySchema } from "./shared/mongodb-schema.js";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
 import { calculateReadingTime, generateSummary, formatDate } from "./utils/helpers.js";
-import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps } from "./services/scraper.js";
+import { scrapeForumAnnouncements, scrapeEventDetails, scrapeMultipleEvents, scrapeFirstFiveEvents, scrapeRanks, scrapeModes, scrapeWeapons, scrapeMaps, scrapeSingleUrl, scrapeFandomWikiPage, scrapeGenericArticlePage } from "./services/scraper.js";
 import DOMPurify from 'isomorphic-dompurify';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
@@ -1375,6 +1375,19 @@ export async function registerRoutes(app) {
         }
     });
     // Validate content - extract colors, font info, and SEO meta from HTML
+    app.post("/api/scrape/single-url", async (req, res) => {
+        try {
+            const { url } = req.body;
+            if (!url || !url.startsWith('http')) {
+                return res.status(400).json({ error: "Valid URL starting with http/https is required" });
+            }
+            const result = await scrapeSingleUrl(url);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ error: error.message || "Failed to scrape URL", status: 'failed', url: req.body?.url });
+        }
+    });
+
     app.post("/api/scrape/validate-content", async (req, res) => {
         try {
             const { html, url } = req.body;

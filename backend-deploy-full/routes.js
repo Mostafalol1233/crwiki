@@ -1512,6 +1512,108 @@ export async function registerRoutes(app) {
         }
     });
 
+    // Rebuild all posts with Maps, Characters and Events from CrossFire Fandom Wiki
+    app.post("/api/admin/rebuild-wiki-posts", requireAuth, requireSuperAdmin, async (req, res) => {
+        try {
+            const FANDOM_API = "https://crossfirefps.fandom.com/api.php";
+            const categories = [
+                { name: "Maps", category: "Maps" },
+                { name: "Characters", category: "Characters" },
+                { name: "Events", category: "Events" },
+            ];
+            const limit = 15;
+
+            // Delete all existing posts
+            const allPosts = await storage.getAllPosts();
+            const posts = Array.isArray(allPosts) ? allPosts : (allPosts.items || []);
+            let deletedCount = 0;
+            for (const post of posts) {
+                try {
+                    await storage.deletePost(post._id || post.id);
+                    deletedCount++;
+                } catch (e) {}
+            }
+
+            let created = 0, failed = 0;
+
+            for (const { name: catName, category: catKey } of categories) {
+                try {
+                    const listUrl = `${FANDOM_API}?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(catKey)}&cmlimit=${limit}&cmtype=page&format=json&origin=*`;
+                    const listResp = await fetch(listUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                    if (!listResp.ok) { failed++; continue; }
+                    const listData = await listResp.json();
+                    const pages = (listData?.query?.categorymembers || []).slice(0, limit);
+
+                    for (const page of pages) {
+                        try {
+                            const pageTitle = page.title;
+                            const parseUrl = `${FANDOM_API}?action=parse&page=${encodeURIComponent(pageTitle)}&prop=wikitext|images|displaytitle&format=json&origin=*`;
+                            const parseResp = await fetch(parseUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                            if (!parseResp.ok) { failed++; continue; }
+                            const parseData = await parseResp.json();
+                            const wikitext = parseData?.parse?.wikitext?.["*"] || "";
+                            const displayTitle = (parseData?.parse?.displaytitle || pageTitle).replace(/<[^>]+>/g, "");
+                            const imageFiles = parseData?.parse?.images || [];
+
+                            let imageUrl = "";
+                            if (imageFiles.length > 0) {
+                                const imgTitle = `File:${imageFiles[0]}`;
+                                const imgApiUrl = `${FANDOM_API}?action=query&titles=${encodeURIComponent(imgTitle)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+                                const imgResp = await fetch(imgApiUrl, { headers: { "User-Agent": "CrossFireWiki-Bot/1.0" } });
+                                if (imgResp.ok) {
+                                    const imgData = await imgResp.json();
+                                    const imgPages = imgData?.query?.pages || {};
+                                    const firstPage = Object.values(imgPages)[0];
+                                    imageUrl = firstPage?.imageinfo?.[0]?.url || "";
+                                }
+                            }
+
+                            const cleanText = wikitext
+                                .replace(/\{\{[^}]+\}\}/g, "")
+                                .replace(/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/g, "$1")
+                                .replace(/'''([^']+)'''/g, "$1")
+                                .replace(/''([^']+)''/g, "$1")
+                                .replace(/==+([^=]+)==+/g, "\n$1\n")
+                                .replace(/\n{3,}/g, "\n\n")
+                                .trim();
+                            const summary = cleanText.substring(0, 200).trim();
+
+                            const postData = {
+                                title: displayTitle,
+                                content: cleanText.substring(0, 5000),
+                                summary,
+                                image: imageUrl,
+                                category: catName,
+                                tags: ["Fandom Wiki", catName, "CrossFire"],
+                                author: "CrossFire Fandom Wiki",
+                                readingTime: Math.max(1, Math.ceil(cleanText.split(/\s+/).length / 200)),
+                                featured: false,
+                                sourceUrl: `https://crossfirefps.fandom.com/wiki/${encodeURIComponent(pageTitle)}`,
+                                seoTitle: displayTitle,
+                                seoDescription: summary,
+                                seoKeywords: [catName.toLowerCase(), "crossfire", displayTitle.toLowerCase()],
+                            };
+                            await storage.createPost(postData);
+                            created++;
+                            await new Promise(r => setTimeout(r, 400));
+                        } catch (e) {
+                            console.error(`Failed to create post for ${page.title}:`, e.message);
+                            failed++;
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to fetch category ${catKey}:`, e.message);
+                    failed++;
+                }
+            }
+
+            res.json({ deletedCount, created, failed });
+        } catch (error) {
+            console.error('Error in /api/admin/rebuild-wiki-posts:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Rescrape and update existing item content
     app.post("/api/admin/rescrape-item", requireAuth, async (req, res) => {
         try {

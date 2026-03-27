@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Eye, Wand2, Globe, Swords } from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, Eye, Wand2, Globe, Swords, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
@@ -51,6 +51,7 @@ export default function WikiRescraper() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRebuildingMercs, setIsRebuildingMercs] = useState(false);
+  const [isRebuildingWiki, setIsRebuildingWiki] = useState(false);
 
   // Per-item state
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
@@ -60,7 +61,27 @@ export default function WikiRescraper() {
   // Preview
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewTitle, setPreviewTitle] = useState<string>("");
+  const [previewImage, setPreviewImage] = useState<string>("");
+  const [previewItemId, setPreviewItemId] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
+
+  const handleRebuildWikiPosts = async () => {
+    if (!confirm("هيحذف كل المقالات الموجودة وينشئ مقالات جديدة عن الخرائط والشخصيات والأحداث من فاندوم ويكي — متأكد؟")) return;
+    setIsRebuildingWiki(true);
+    try {
+      const result = await apiRequest("/api/admin/rebuild-wiki-posts", "POST", {});
+      toast({
+        title: "تم بناء مقالات الويكي",
+        description: `حذف ${result.deletedCount} مقال قديم — أنشأ ${result.created} جديد — فشل ${result.failed}`,
+      });
+      if (tab === "posts") fetchItems("posts");
+    } catch (e: any) {
+      toast({ title: "فشل البناء", description: e.message, variant: "destructive" });
+    } finally {
+      setIsRebuildingWiki(false);
+    }
+  };
 
   const handleRebuildMercenaryPosts = async () => {
     if (!confirm("هيحذف كل المقالات الموجودة وينشئ مقالات جديدة عن المرتزقة من فاندوم ويكي — متأكد؟")) return;
@@ -149,11 +170,32 @@ export default function WikiRescraper() {
       const result = await apiRequest("/api/scrape/single-url", "POST", { url });
       setPreviewHtml(result.content || '');
       setPreviewTitle(result.title || item.title);
+      setPreviewImage(result.image || result.mainImage || '');
+      setPreviewItemId(id);
       setIsPreviewOpen(true);
     } catch (e: any) {
       toast({ title: "فشل المعاينة", description: e.message, variant: "destructive" });
     } finally {
       setRescraping(prev => ({ ...prev, [id + '_preview']: false }));
+    }
+  };
+
+  const handleSavePreviewImageToItem = async () => {
+    if (!previewImage || !previewItemId) return;
+    setIsSavingImage(true);
+    try {
+      const endpoint = tab === 'events' ? `/api/events/${previewItemId}`
+        : tab === 'news' ? `/api/news/${previewItemId}`
+        : `/api/posts/${previewItemId}`;
+      const method = tab === 'posts' ? 'PATCH' : 'PATCH';
+      await apiRequest(endpoint, method, { image: previewImage });
+      setItems(prev => prev.map(i => (i._id === previewItemId || i.id === previewItemId) ? { ...i, image: previewImage } : i));
+      toast({ title: "تم حفظ الصورة", description: "تم تعيين صورة الإيفينت تلقائياً" });
+      setIsPreviewOpen(false);
+    } catch (e: any) {
+      toast({ title: "فشل حفظ الصورة", description: e.message, variant: "destructive" });
+    } finally {
+      setIsSavingImage(false);
     }
   };
 
@@ -178,6 +220,32 @@ export default function WikiRescraper() {
 
   return (
     <div className="space-y-6">
+
+      {/* Rebuild Maps/Characters/Events Posts */}
+      <Card className="border-blue-700/50 bg-blue-950/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-300">
+            <Map className="w-5 h-5" />
+            بناء مقالات الخرائط والشخصيات والأحداث من فاندوم ويكي
+          </CardTitle>
+          <CardDescription className="text-blue-200/70">
+            يحذف كل المقالات (Posts) الموجودة وينشئ مقالات جديدة عن الخرائط والشخصيات والأحداث من CrossFire Fandom Wiki
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleRebuildWikiPosts}
+            disabled={isRebuildingWiki}
+            className="bg-blue-700 hover:bg-blue-600 text-white"
+          >
+            {isRebuildingWiki ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />جاري البناء... (قد يأخذ 3-5 دقائق)</>
+            ) : (
+              <><Map className="w-4 h-4 mr-2" />احذف القديم وابنِ مقالات الخرائط والشخصيات والأحداث</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Rebuild Mercenary Posts */}
       <Card className="border-orange-700/50 bg-orange-950/10">
@@ -335,6 +403,21 @@ export default function WikiRescraper() {
           <DialogHeader>
             <DialogTitle>{previewTitle}</DialogTitle>
           </DialogHeader>
+          {previewImage && (
+            <div className="border rounded-lg p-3 bg-muted/30 flex items-center gap-4">
+              <img src={previewImage} alt="Preview" className="h-24 w-40 object-cover rounded border shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground mb-1 truncate" dir="ltr">{previewImage}</p>
+                <button
+                  onClick={handleSavePreviewImageToItem}
+                  disabled={isSavingImage}
+                  className="text-sm px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isSavingImage ? "جاري الحفظ..." : "✓ استخدم هذه الصورة كصورة خارجية"}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="border rounded-lg p-4 bg-background">
             <RawHtmlPreview html={previewHtml} />
           </div>

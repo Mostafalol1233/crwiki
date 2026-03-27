@@ -50,6 +50,13 @@ export default function BulkSEO() {
   const [deleting, setDeleting] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
 
+  const selectedItem = items.find(i => i.id === selectedItemId) ?? null;
+
+  const previewValue = (field: keyof ContentItem): any => {
+    if (!selectedItem) return '';
+    return edits[selectedItem.id]?.[field] ?? (selectedItem as any)[field] ?? '';
+  };
+
   useEffect(() => {
     fetchItems();
   }, []);

@@ -931,8 +931,13 @@ export async function registerRoutes(app) {
                 limit: limit ? parseInt(limit) : undefined,
                 offset: offset ? parseInt(offset) : undefined
             });
+            const items = (result.items || []).map(e => ({
+                ...e,
+                image: e.image || e.imageUrl || '',
+                imageUrl: e.imageUrl || e.image || '',
+            }));
             res.json({
-                items: result.items,
+                items,
                 total: result.total
             });
         }
@@ -959,7 +964,7 @@ export async function registerRoutes(app) {
             if (!event) {
                 return res.status(404).json({ error: "Event not found" });
             }
-            res.json(event);
+            res.json({ ...event, image: event.image || event.imageUrl || '', imageUrl: event.imageUrl || event.image || '' });
         }
         catch (error) {
             res.status(500).json({ error: error.message });
@@ -971,7 +976,7 @@ export async function registerRoutes(app) {
             if (!event) {
                 return res.status(404).json({ error: "Event not found" });
             }
-            res.json(event);
+            res.json({ ...event, image: event.image || event.imageUrl || '', imageUrl: event.imageUrl || event.image || '' });
         }
         catch (error) {
             res.status(500).json({ error: error.message });
@@ -1037,7 +1042,9 @@ export async function registerRoutes(app) {
     };
     app.post("/api/events", requireAuth, requireEventManager, upload.single('image'), async (req, res) => {
         try {
-            const data = insertEventSchema.parse(req.body);
+            const rawBody = { ...req.body };
+            if (rawBody.image && !rawBody.imageUrl) { rawBody.imageUrl = rawBody.image; }
+            const data = insertEventSchema.parse(rawBody);
             if (req.file) {
                 const result = await uploadStream(req.file.buffer, { folder: 'events' });
                 data.imageUrl = result.secure_url;
@@ -1073,7 +1080,9 @@ export async function registerRoutes(app) {
             const updates = req.body;
             const userOgImage = req.body.ogImage !== undefined ? req.body.ogImage : undefined;
             const userTwitterImage = req.body.twitterImage !== undefined ? req.body.twitterImage : undefined;
-            if (updates.image === '') delete updates.image;
+            if (updates.image === '') { delete updates.image; } else if (updates.image) { updates.imageUrl = updates.image; }
+            if (!updates.ogImage && updates.imageUrl) updates.ogImage = updates.imageUrl;
+            if (!updates.twitterImage && (updates.ogImage || updates.imageUrl)) updates.twitterImage = updates.ogImage || updates.imageUrl;
             if (updates.description) {
                 updates.description = sanitizeHTML(updates.description, { allowAdvanced: Boolean(updates.fullLayout) });
             }
@@ -1198,19 +1207,21 @@ export async function registerRoutes(app) {
                         descriptionAr: '',
                         date: details.date ? new Date(details.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                         type: 'upcoming',
-                        image: isTrustedScrapedImage(details.image) ? details.image : 'https://files.catbox.moe/wof38b.jpeg',
+                        imageUrl: isTrustedScrapedImage(details.image) ? details.image : 'https://files.catbox.moe/wof38b.jpeg',
+                        ogImage: isTrustedScrapedImage(details.image) ? details.image : 'https://files.catbox.moe/wof38b.jpeg',
                         seoDescription: details.preview || summarize(title),
                     };
 
                     // Generate SEO image if missing or generic
-                    if (!eventData.image || eventData.image.includes('wof38b')) {
+                    if (!eventData.imageUrl || eventData.imageUrl.includes('wof38b')) {
                         try {
                             const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
-                            if (seoImage?.url) eventData.image = seoImage.url;
+                            if (seoImage?.url) eventData.imageUrl = seoImage.url;
                         } catch { }
                     }
+                    if (!eventData.ogImage && eventData.imageUrl) eventData.ogImage = eventData.imageUrl;
 
                     const validated = insertEventSchema.parse(eventData);
                     const event = await storage.createEvent(validated);
@@ -1275,22 +1286,25 @@ export async function registerRoutes(app) {
                             return ['catbox.moe','cloudinary.com','res.cloudinary.com','crossfire.wiki','z8games.com','akamaized.net','files.catbox.moe'].some(d => h === d || h.endsWith('.' + d));
                         } catch { return false; }
                     };
+                    const imgVal2 = isTrustedScrapedImage2(details.image) ? details.image : 'https://files.catbox.moe/wof38b.jpeg';
                     const eventData = {
                         title: title,
                         description: description,
                         date: details.date ? new Date(details.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                         type: 'announcement',
-                        image: isTrustedScrapedImage2(details.image) ? details.image : 'https://files.catbox.moe/wof38b.jpeg',
+                        imageUrl: imgVal2,
+                        ogImage: imgVal2,
+                        twitterImage: imgVal2,
                         seoDescription: details.preview || summarize(title),
                     };
 
                     // Generate SEO image if missing or generic
-                    if (!eventData.image || eventData.image.includes('wof38b')) {
+                    if (!eventData.imageUrl || eventData.imageUrl.includes('wof38b')) {
                         try {
                             const imagesDir = path.resolve('backend-deploy-full/uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
-                            if (seoImage?.url) eventData.image = seoImage.url;
+                            if (seoImage?.url) { eventData.imageUrl = seoImage.url; eventData.ogImage = seoImage.url; }
                         } catch { }
                     }
 
@@ -1515,9 +1529,9 @@ export async function registerRoutes(app) {
     // Rebuild all posts with Maps, Characters and Events from CrossFire Fandom Wiki
     app.post("/api/admin/rebuild-wiki-posts", requireAuth, requireSuperAdmin, async (req, res) => {
         try {
-            const FANDOM_API = "https://crossfirefps.fandom.com/api.php";
+            const FANDOM_API = "https://crossfire.fandom.com/api.php";
             const categories = [
-                { name: "Maps", category: "Maps" },
+                { name: "Weapons", category: "Weapons" },
                 { name: "Characters", category: "Characters" },
                 { name: "Events", category: "Events" },
             ];
@@ -2280,9 +2294,9 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                         descriptionAr: '',
                         date: scrapedEvent.date,
                         type: 'upcoming',
-                        image: scrapedEvent.image,
-                        ogImage: scrapedEvent.image || scrapedEvent.ogImage || '',
-                        twitterImage: scrapedEvent.image || scrapedEvent.ogImage || '',
+                        imageUrl: scrapedEvent.imageUrl || scrapedEvent.image || '',
+                        ogImage: scrapedEvent.image || scrapedEvent.ogImage || scrapedEvent.imageUrl || '',
+                        twitterImage: scrapedEvent.image || scrapedEvent.ogImage || scrapedEvent.imageUrl || '',
                         seoTitle: scrapedEvent.seoTitle || scrapedEvent.title || '',
                         seoDescription: scrapedEvent.seoDescription || scrapedEvent.preview || '',
                         seoKeywords: scrapedEvent.seoKeywords || [],

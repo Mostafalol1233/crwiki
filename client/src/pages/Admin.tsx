@@ -4423,6 +4423,7 @@ export default function Admin() {
                                   monetizationPremiumMonthlyPrice: siteSettings.monetizationPremiumMonthlyPrice ?? 2,
                                   monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
                                   monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
+                                  featuredWeapons: Array.isArray((siteSettings as any).featuredWeapons) ? (siteSettings as any).featuredWeapons : [],
                                 });
                               }
                             }}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, Eye, ExternalLink, Zap } from "lucide-react";
+import { Loader2, Globe, FileCode, CheckCircle, AlertCircle, Trash2, Plus, Eye, ExternalLink, Zap, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

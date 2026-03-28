@@ -31,6 +31,8 @@ interface ContentItem {
   seoDescription?: string;
   seoKeywords?: string[];
   ogImage?: string;
+  twitterImage?: string;
+  canonicalUrl?: string;
   image?: string;
   content?: string;
   description?: string;

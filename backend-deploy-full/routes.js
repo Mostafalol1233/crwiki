@@ -3034,7 +3034,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         });
         // Ticket routes
         // FAQ routes - file-based storage
-        const FAQ_FILE = path.join(process.cwd(), 'data', 'faq-data.json');
+        const FAQ_FILE = new URL('./data/faq-data.json', import.meta.url).pathname;
         const getDefaultFaqData = () => [];
 
         const readFaqData = () => {

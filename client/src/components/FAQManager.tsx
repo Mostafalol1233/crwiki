@@ -390,7 +390,10 @@ export default function FAQManager() {
                     <div>
                       <span className="font-bold text-base">{cat.name}</span>
                       {cat.nameAr && cat.nameAr !== cat.name && (
-                        <span className="text-muted-foreground text-sm mx-2" dir="rtl">— {cat.nameAr}</span>
+                        <span className="text-muted-foreground text-sm mx-2">·</span>
+                      )}
+                      {cat.nameAr && cat.nameAr !== cat.name && (
+                        <span className="text-muted-foreground text-sm" dir="rtl" style={{ unicodeBidi: "embed" }}>{cat.nameAr}</span>
                       )}
                     </div>
                     <Badge variant="secondary">{cat.articles.length} question{cat.articles.length !== 1 ? "s" : ""}</Badge>
@@ -450,9 +453,9 @@ export default function FAQManager() {
                         <div className="flex items-start gap-2.5 flex-1 min-w-0 mr-2">
                           <span className="text-xs font-bold text-muted-foreground mt-0.5 flex-shrink-0 w-5 text-center">{idx + 1}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{art.title}</p>
+                            <p className="text-sm font-medium leading-snug">{art.title}</p>
                             {art.titleAr && art.titleAr !== art.title && (
-                              <p className="text-xs text-muted-foreground truncate mt-0.5" dir="rtl">{art.titleAr}</p>
+                              <p className="text-xs text-muted-foreground mt-1 leading-snug" dir="rtl" style={{ textAlign: "right", fontFamily: "inherit" }}>{art.titleAr}</p>
                             )}
                           </div>
                         </div>

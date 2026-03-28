@@ -8,11 +8,7 @@ import { EventsRibbon } from "@/components/EventsRibbon";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 import { useLanguage } from "@/components/LanguageProvider";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Sparkles, Calendar, Crosshair, Globe,
-  ChevronRight, Zap, Shield, ArrowUpRight,
-  Swords, MapPin, Users
-} from "lucide-react";
+import { ArrowRight, Shield, ChevronRight } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
 import mercCategoryImage from "@assets/merc-sisterhood.jpg";
@@ -30,29 +26,57 @@ type HomeWeapon = {
 
 const FALLBACK_EVENT_IMG = "https://files.catbox.moe/wof38b.jpeg";
 
-function StatBar({ label, value, color = "bg-primary" }: { label: string; value: number | string; color?: string }) {
-  const num = Math.min(parseFloat(String(value)) || 0, 100);
+function CFSectionHeader({
+  label,
+  title,
+  linkHref,
+  linkLabel = "View All",
+}: {
+  label: string;
+  title: string;
+  linkHref?: string;
+  linkLabel?: string;
+}) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-center">
-        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
-        <span className="text-[11px] font-black tabular-nums text-foreground">{value ?? "—"}</span>
+    <div className="flex items-end justify-between mb-8 pb-0">
+      <div className="flex items-stretch gap-4">
+        {/* Left golden accent bar */}
+        <div className="w-1 rounded-full flex-shrink-0" style={{ background: "linear-gradient(to bottom, #f5a623, #c96f00)" }} />
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-1" style={{ color: "#f5a623" }}>
+            {label}
+          </p>
+          <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight leading-none" style={{ color: "var(--foreground)" }}>
+            {title}
+          </h2>
+        </div>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted/30 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all duration-1000`}
-          style={{ width: `${num}%` }}
-        />
-      </div>
+      {linkHref && (
+        <Link href={linkHref}>
+          <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all hover:gap-2.5 group" style={{ color: "#666" }}>
+            {linkLabel}
+            <ArrowRight className="h-3.5 w-3.5 group-hover:text-[#f5a623] transition-colors" />
+          </span>
+        </Link>
+      )}
     </div>
   );
 }
 
-function SectionLabel({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function StatBar({ label, value }: { label: string; value: number | string }) {
+  const num = Math.min(parseFloat(String(value)) || 0, 100);
   return (
-    <div className="flex items-center gap-2 mb-1">
-      <span className="text-primary">{icon}</span>
-      <span className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">{children}</span>
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#666" }}>{label}</span>
+        <span className="text-[11px] font-black tabular-nums" style={{ color: "#f5a623" }}>{value ?? "—"}</span>
+      </div>
+      <div className="h-1 w-full rounded-full overflow-hidden" style={{ background: "#1a1a1a" }}>
+        <div
+          className="h-full rounded-full transition-all duration-1000"
+          style={{ width: `${num}%`, background: "linear-gradient(to right, #c96f00, #f5a623)" }}
+        />
+      </div>
     </div>
   );
 }
@@ -99,9 +123,7 @@ export default function Home() {
     enabled: featuredWeaponIds.length > 0,
   });
 
-  const displayWeapons = featuredWeaponIds.length > 0 && featuredWeaponsData
-    ? featuredWeaponsData
-    : recentWeapons;
+  const displayWeapons = featuredWeaponIds.length > 0 && featuredWeaponsData ? featuredWeaponsData : recentWeapons;
 
   const heroPost = allPosts.filter((p: any) => p.previewOnHome !== false).find((p) => p.featured) || {
     id: "1",
@@ -131,50 +153,45 @@ export default function Home() {
 
   const scrapedEvents = allEvents.filter((e: any) => e.rawHtmlContent);
   const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(0, 10);
-
   const [featuredEvent, ...restEvents] = displayEvents;
   const secondaryEvents = restEvents.slice(0, 3);
   const bottomRowEvents = restEvents.slice(3, 6);
 
   const categories = [
-    { title: "Maps", subtitle: "Battle Arenas", icon: <MapPin className="h-5 w-5" />, image: "/images/categories/maps.jpg", fallback: mapsCategoryImage, link: "/maps", accent: "#2563eb" },
-    { title: "Weapons", subtitle: "Arsenal & Stats", icon: <Swords className="h-5 w-5" />, image: "/images/categories/weapons.jpg", fallback: weaponCategoryImage, link: "/weapons", accent: "var(--primary)" },
-    { title: "Mercenaries", subtitle: "Elite Operators", icon: <Users className="h-5 w-5" />, image: "/images/categories/mercenaries.jpg", fallback: mercCategoryImage, link: "/mercenaries", accent: "#7c3aed" },
+    { title: "Maps", subtitle: "Battle Arenas", image: "/images/categories/maps.jpg", fallback: mapsCategoryImage, link: "/maps", color: "#2563eb" },
+    { title: "Weapons", subtitle: "Full Arsenal & Stats", image: "/images/categories/weapons.jpg", fallback: weaponCategoryImage, link: "/weapons", color: "#f5a623" },
+    { title: "Mercenaries", subtitle: "Elite Operators", image: "/images/categories/mercenaries.jpg", fallback: mercCategoryImage, link: "/mercenaries", color: "#7c3aed" },
   ];
 
   return (
     <>
       <PageSEO
         title="CrossFire Wiki — Guides, Weapons, Modes & Community"
-        description="CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master Crossfire with up-to-date guides, maps and competitive intel."
+        description="CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources."
       />
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
-        {/* ────────────────────────── HERO ────────────────────────── */}
+        {/* HERO */}
         <HeroSection post={heroPost} bgImageUrl={heroBgUrl} />
 
-        {/* ────────────────────────── RIBBON ────────────────────────── */}
-        <div className="sticky top-0 z-20 border-y border-primary/20 bg-background/95 backdrop-blur-sm shadow-md shadow-black/20">
+        {/* EVENTS RIBBON */}
+        <div className="sticky top-0 z-20 shadow-md shadow-black/30" style={{ borderTop: "1px solid rgba(245,166,35,0.15)", borderBottom: "1px solid rgba(245,166,35,0.15)", background: "rgba(var(--background), 0.97)", backdropFilter: "blur(8px)" }}>
           <EventsRibbon events={ribbonEvents} />
         </div>
 
-        {/* ────────────────────────── MAIN CONTENT ────────────────────────── */}
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10">
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 md:px-10">
 
-          {/* ── Forum / Scraped Announcements ── */}
+          {/* Forum/Scraped Announcements */}
           {scrapedEvents.map((event: any) => (
-            <div key={event.id} className="mt-10 md:mt-14 relative overflow-hidden rounded-2xl border border-primary/25 bg-card">
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-transparent" />
-              <div className="flex items-center justify-between px-5 md:px-8 py-3.5 border-b border-primary/10">
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Forum Announcement</span>
-                </div>
-                <span className="text-[10px] font-bold text-muted-foreground">{event.date}</span>
+            <div key={event.id} className="mt-10 md:mt-14 relative overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px" }}>
+              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
+              <div className="flex items-center justify-between px-5 md:px-8 py-3" style={{ borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>Forum Announcement</span>
+                <span className="text-[10px] font-bold" style={{ color: "#666" }}>{event.date}</span>
               </div>
               <div className="p-5 sm:p-8 md:p-12">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight mb-6 text-foreground">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight mb-6" style={{ color: "var(--foreground)" }}>
                   {event.title}
                 </h2>
                 <RawHtmlPreview html={event.rawHtmlContent} className="min-h-[150px]" />
@@ -182,70 +199,60 @@ export default function Home() {
               {event.image && (
                 <div className="relative w-full h-56 sm:h-80">
                   <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to top, var(--card) 0%, transparent 60%)" }} />
                 </div>
               )}
             </div>
           ))}
 
-          {/* ────────── EVENTS ────────── */}
+          {/* ── EVENTS ── */}
           <section className="mt-14 md:mt-20">
-            {/* Section header */}
-            <div className="flex items-end justify-between mb-6 md:mb-8 pb-4 border-b border-border/60">
-              <div>
-                <SectionLabel icon={<Calendar className="h-3.5 w-3.5" />}>Latest Events</SectionLabel>
-                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-foreground leading-none mt-1">
-                  What's Happening
-                </h2>
-              </div>
-              <Link href="/category/events">
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors group">
-                  All Events
-                  <ArrowUpRight className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
-                </span>
-              </Link>
-            </div>
+            <CFSectionHeader label="Latest" title="Events & News" linkHref="/category/events" linkLabel="All Events" />
 
             {displayEvents.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-muted py-16 text-center text-muted-foreground text-sm font-semibold">
+              <div className="py-16 text-center text-sm font-bold uppercase tracking-widest" style={{ color: "#555", border: "1px dashed #2a2a2a", borderRadius: "4px" }}>
                 No events yet — check back soon.
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* Big + stacked magazine row */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  {/* Featured big card */}
+              <div className="space-y-3">
+                {/* Main grid: Featured large + 3 stacked */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+
+                  {/* Featured card */}
                   {featuredEvent && (
                     <Link
                       href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}
                       className="lg:col-span-7 group block"
                     >
-                      <div className="relative overflow-hidden rounded-2xl h-full min-h-[280px] md:min-h-[380px] cursor-pointer">
+                      <div className="relative overflow-hidden h-full min-h-[300px] md:min-h-[400px]" style={{ borderRadius: "2px" }}>
                         <img
                           src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
                           alt={featuredEvent.title}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
+                          style={{ transform: "scale(1)" }}
                           onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                         />
-                        {/* Gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)" }} />
+                        {/* Top accent */}
+                        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
 
                         {/* Badge */}
-                        <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-sm">
-                          <Zap className="h-3 w-3" />
+                        <div
+                          className="absolute top-4 left-4 text-black text-[9px] font-black uppercase tracking-widest px-2.5 py-1"
+                          style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)", clipPath: "polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px)" }}
+                        >
                           {featuredEvent.type === "upcoming" ? "Upcoming" : "Featured"}
                         </div>
 
-                        {/* Text overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8">
-                          <p className="text-white/50 text-[10px] font-black uppercase tracking-widest mb-2">
+                        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>
                             {featuredEvent.date}
                           </p>
-                          <h3 className="text-white font-black text-xl md:text-2xl lg:text-3xl uppercase tracking-tight leading-tight line-clamp-3 drop-shadow-lg">
+                          <h3 className="text-white font-black text-xl md:text-2xl uppercase tracking-tight leading-tight line-clamp-3 drop-shadow-lg">
                             {featuredEvent.title}
                           </h3>
-                          <div className="mt-4 inline-flex items-center gap-1.5 text-white/60 text-xs font-bold uppercase tracking-widest group-hover:text-white transition-colors">
-                            View Event <ArrowUpRight className="h-3.5 w-3.5" />
+                          <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all group-hover:gap-2.5" style={{ color: "#f5a623" }}>
+                            View Event <ChevronRight className="h-3.5 w-3.5" />
                           </div>
                         </div>
                       </div>
@@ -253,31 +260,31 @@ export default function Home() {
                   )}
 
                   {/* 3 stacked secondary cards */}
-                  <div className="lg:col-span-5 flex flex-col gap-3 md:gap-4">
+                  <div className="lg:col-span-5 flex flex-col gap-3">
                     {secondaryEvents.map((event: any) => (
                       <Link
                         key={event.id}
                         href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
                         className="group block flex-1"
                       >
-                        <div className="relative overflow-hidden rounded-xl flex-1 h-full min-h-[100px] md:min-h-[115px] cursor-pointer">
+                        <div className="relative overflow-hidden flex-1 h-full min-h-[105px] md:min-h-[122px]" style={{ borderRadius: "2px" }}>
                           <img
                             src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
-                          <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-5">
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <span className="bg-primary/80 text-primary-foreground text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">
-                                {event.type === "upcoming" ? "Upcoming" : "Event"}
-                              </span>
-                            </div>
-                            <h3 className="text-white font-black text-sm md:text-base uppercase tracking-tight line-clamp-2 leading-snug">
+                          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.1) 100%)" }} />
+                          {/* Left accent line */}
+                          <div className="absolute left-0 top-0 bottom-0 w-[2px]" style={{ background: "#f5a623" }} />
+                          <div className="absolute inset-0 flex flex-col justify-center pl-5 pr-4">
+                            <span className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: "#f5a623" }}>
+                              {event.type === "upcoming" ? "Upcoming" : "Event"}
+                            </span>
+                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">
                               {event.title}
                             </h3>
-                            <p className="text-white/40 text-[10px] font-bold mt-1 uppercase tracking-widest">{event.date}</p>
+                            <p className="text-[10px] font-bold mt-1 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>{event.date}</p>
                           </div>
                         </div>
                       </Link>
@@ -287,29 +294,29 @@ export default function Home() {
 
                 {/* Bottom 3-card row */}
                 {bottomRowEvents.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {bottomRowEvents.map((event: any) => (
                       <Link
                         key={event.id}
                         href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
                         className="group block"
                       >
-                        <div className="relative overflow-hidden rounded-xl aspect-video cursor-pointer">
+                        <div className="relative overflow-hidden aspect-video" style={{ borderRadius: "2px" }}>
                           <img
                             src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          <span className="absolute top-3 left-3 bg-primary/80 text-primary-foreground text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm">
-                            {event.type === "upcoming" ? "Upcoming" : "Event"}
-                          </span>
+                          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)" }} />
+                          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
                           <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
+                            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: "#f5a623" }}>
+                              {event.type === "upcoming" ? "Upcoming" : "Event"}
+                            </span>
                             <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">
                               {event.title}
                             </h3>
-                            <p className="text-white/40 text-[10px] font-bold mt-1 uppercase tracking-widest">{event.date}</p>
                           </div>
                         </div>
                       </Link>
@@ -320,27 +327,14 @@ export default function Home() {
             )}
           </section>
 
-          {/* ────────── WEAPONS ────────── */}
+          {/* ── WEAPONS ── */}
           <section className="mt-14 md:mt-20">
-            <div className="flex items-end justify-between mb-6 md:mb-8 pb-4 border-b border-border/60">
-              <div>
-                <SectionLabel icon={<Crosshair className="h-3.5 w-3.5" />}>Arsenal</SectionLabel>
-                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-foreground leading-none mt-1">
-                  Latest Weapons
-                </h2>
-              </div>
-              <Link href="/weapons">
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors group">
-                  Full Arsenal
-                  <ArrowUpRight className="h-3.5 w-3.5 group-hover:text-primary" />
-                </span>
-              </Link>
-            </div>
+            <CFSectionHeader label="Arsenal" title="Latest Weapons" linkHref="/weapons" linkLabel="Full Arsenal" />
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {displayWeapons.length === 0
                 ? Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-64 rounded-xl bg-muted/20 animate-pulse" />
+                  <div key={i} className="h-64 animate-pulse" style={{ background: "#111", borderRadius: "2px" }} />
                 ))
                 : displayWeapons.map((weapon) => {
                   const image = weapon.image || weapon.imageUrl || "";
@@ -348,9 +342,20 @@ export default function Home() {
                   const recoil = weapon.stats?.recoil ?? weapon.stats?.Recoil;
                   return (
                     <Link key={weapon.id} href="/weapons" className="group block">
-                      <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
+                      <div
+                        className="relative overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                        style={{
+                          background: "var(--card)",
+                          border: "1px solid rgba(245,166,35,0.1)",
+                          borderRadius: "2px",
+                          boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        {/* Top accent on hover */}
+                        <div className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
+
                         {/* Image */}
-                        <div className="relative bg-gradient-to-b from-muted/20 to-transparent aspect-[5/4] overflow-hidden">
+                        <div className="relative aspect-[5/4] overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #141414 100%)" }}>
                           {image ? (
                             <img
                               src={image}
@@ -360,23 +365,25 @@ export default function Home() {
                             />
                           ) : (
                             <div className="flex h-full items-center justify-center">
-                              <Shield className="h-10 w-10 text-muted-foreground/20" />
+                              <Shield className="h-10 w-10" style={{ color: "#2a2a2a" }} />
                             </div>
                           )}
-                          {/* Category tag */}
-                          <span className="absolute top-2.5 left-2.5 text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-sm">
+                          <span
+                            className="absolute bottom-2 right-2 text-[9px] font-black uppercase tracking-widest px-2 py-0.5"
+                            style={{ background: "rgba(245,166,35,0.12)", color: "#f5a623", border: "1px solid rgba(245,166,35,0.2)" }}
+                          >
                             {weapon.category || "Weapon"}
                           </span>
                         </div>
 
-                        {/* Details */}
-                        <div className="px-3 pt-2 pb-4 space-y-3">
-                          <h3 className="font-black text-sm uppercase tracking-tight line-clamp-2 leading-tight text-foreground">
+                        {/* Info */}
+                        <div className="px-3 pt-3 pb-4 space-y-3">
+                          <h3 className="font-black text-sm uppercase tracking-tight line-clamp-1 leading-tight" style={{ color: "var(--foreground)" }}>
                             {weapon.name}
                           </h3>
                           <div className="space-y-2">
-                            <StatBar label="Damage" value={damage ?? "—"} color="bg-primary" />
-                            <StatBar label="Recoil" value={recoil ?? "—"} color="bg-orange-500" />
+                            <StatBar label="Damage" value={damage ?? "—"} />
+                            <StatBar label="Recoil" value={recoil ?? "—"} />
                           </div>
                         </div>
                       </div>
@@ -386,21 +393,14 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ────────── CATEGORIES ────────── */}
+          {/* ── CATEGORIES ── */}
           <section className="mt-14 md:mt-20 mb-16 md:mb-24">
-            <div className="flex items-end justify-between mb-6 md:mb-8 pb-4 border-b border-border/60">
-              <div>
-                <SectionLabel icon={<Globe className="h-3.5 w-3.5" />}>Database</SectionLabel>
-                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-foreground leading-none mt-1">
-                  Explore Categories
-                </h2>
-              </div>
-            </div>
+            <CFSectionHeader label="Database" title="Explore Categories" />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
               {categories.map((cat) => (
                 <Link key={cat.title} href={cat.link} className="group block">
-                  <div className="relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer">
+                  <div className="relative overflow-hidden aspect-[4/3] cursor-pointer" style={{ borderRadius: "2px" }}>
                     <img
                       src={cat.image}
                       alt={cat.title}
@@ -411,33 +411,34 @@ export default function Home() {
                       }}
                     />
                     {/* Dark overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/10 transition-opacity duration-300 group-hover:opacity-90" />
+                    <div className="absolute inset-0 transition-opacity duration-300" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%)" }} />
 
-                    {/* Top accent line with category color */}
+                    {/* Top golden accent that appears on hover */}
                     <div
-                      className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ background: `linear-gradient(to right, ${cat.accent}, transparent)` }}
+                      className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: `linear-gradient(to right, ${cat.color}, transparent)` }}
+                    />
+
+                    {/* Bottom-left accent line */}
+                    <div
+                      className="absolute bottom-0 left-0 top-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: `linear-gradient(to bottom, transparent, ${cat.color})` }}
                     />
 
                     {/* Content */}
-                    <div className="absolute inset-0 flex flex-col justify-between p-5 md:p-6">
-                      {/* Icon top-right */}
-                      <div className="self-end">
-                        <div className="w-9 h-9 rounded-lg bg-white/10 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 group-hover:bg-white/20 group-hover:text-white transition-all duration-300">
-                          {cat.icon}
-                        </div>
-                      </div>
-
-                      {/* Title bottom */}
-                      <div>
-                        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.15em] mb-1">
-                          {cat.subtitle}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-white font-black text-2xl md:text-3xl uppercase tracking-tighter leading-none">
-                            {cat.title}
-                          </h3>
-                          <ChevronRight className="h-5 w-5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        {cat.subtitle}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-white font-black text-2xl md:text-3xl uppercase tracking-tighter leading-none">
+                          {cat.title}
+                        </h3>
+                        <div
+                          className="w-8 h-8 flex items-center justify-center transition-all duration-300 group-hover:translate-x-1"
+                          style={{ border: "1px solid rgba(255,255,255,0.2)" }}
+                        >
+                          <ChevronRight className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
                         </div>
                       </div>
                     </div>

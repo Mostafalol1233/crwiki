@@ -7,19 +7,21 @@ export function Footer() {
     { label: "News", path: "/news" },
     { label: "Updates", path: "/posts" },
     { label: "Events", path: "/category/events" },
-    { label: "New Feeds", path: "/news" },
+    { label: "Video Feeds", path: "/videos" },
   ];
 
   const gameLinks = [
     { label: "Overview", path: "/about" },
-    { label: "Getting Started", path: "/download" },
+    { label: "Game Modes", path: "/modes" },
+    { label: "Weapons", path: "/weapons" },
+    { label: "Maps", path: "/maps" },
     { label: "Download", path: "/download" },
-    { label: "Media", path: "/videos" },
   ];
 
   const communityLinks = [
     { label: "Forum", path: "/posts" },
-    { label: "Shop", path: "/pricing" },
+    { label: "Mercenaries", path: "/mercenaries" },
+    { label: "Reviews", path: "/reviews" },
   ];
 
   const rankingLinks = [
@@ -31,26 +33,24 @@ export function Footer() {
   const supportLinks = [
     { label: "Support", path: "/support" },
     { label: "FAQ", path: "/faq" },
-    { label: "Redeem Code", path: "/support" },
-    { label: "Recover ID/PW", path: "/support" },
+    { label: "Create Ticket", path: "/support" },
+    { label: "Contact Us", path: "/contact" },
     { label: "Purchase ZP", path: "/pricing" },
   ];
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
-    <footer className="cf-footer relative" style={{ background: "#111111", borderTop: "1px solid #222" }}>
+    <footer className="cf-footer" style={{ background: "#0f0f0f", borderTop: "1px solid #1e1e1e" }}>
 
       {/* Back to Top */}
-      <div className="flex justify-center" style={{ borderBottom: "1px solid #1e1e1e" }}>
+      <div style={{ borderBottom: "1px solid #1a1a1a" }}>
         <button
           onClick={scrollToTop}
-          className="flex items-center gap-2 px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors hover:text-[#f5a623]"
-          style={{ color: "#888" }}
+          className="flex items-center gap-2 mx-auto px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all hover:text-[#f5a623] group"
+          style={{ color: "#666" }}
         >
-          <ChevronUp className="h-4 w-4" />
+          <ChevronUp className="h-4 w-4 group-hover:-translate-y-0.5 transition-transform" />
           BACK TO TOP
         </button>
       </div>
@@ -61,17 +61,13 @@ export function Footer() {
 
           {/* NEWS */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               NEWS
             </h4>
             <ul className="space-y-2.5">
               {newsLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.path}
-                    className="text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
+                  <Link href={link.path} className="text-[12px] transition-all hover:text-[#f5a623] hover:translate-x-1 inline-block" style={{ color: "#888" }}>
                     {link.label}
                   </Link>
                 </li>
@@ -81,17 +77,13 @@ export function Footer() {
 
           {/* GAME */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               GAME
             </h4>
             <ul className="space-y-2.5">
               {gameLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.path}
-                    className="text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
+                  <Link href={link.path} className="text-[12px] transition-all hover:text-[#f5a623] hover:translate-x-1 inline-block" style={{ color: "#888" }}>
                     {link.label}
                   </Link>
                 </li>
@@ -101,17 +93,13 @@ export function Footer() {
 
           {/* COMMUNITY */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               COMMUNITY
             </h4>
             <ul className="space-y-2.5">
               {communityLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.path}
-                    className="text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
+                  <Link href={link.path} className="text-[12px] transition-all hover:text-[#f5a623] hover:translate-x-1 inline-block" style={{ color: "#888" }}>
                     {link.label}
                   </Link>
                 </li>
@@ -121,17 +109,13 @@ export function Footer() {
 
           {/* RANKING */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               RANKING
             </h4>
             <ul className="space-y-2.5">
               {rankingLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.path}
-                    className="text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
+                  <Link href={link.path} className="text-[12px] transition-all hover:text-[#f5a623] hover:translate-x-1 inline-block" style={{ color: "#888" }}>
                     {link.label}
                   </Link>
                 </li>
@@ -141,17 +125,13 @@ export function Footer() {
 
           {/* SUPPORT */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               SUPPORT
             </h4>
             <ul className="space-y-2.5">
               {supportLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.path}
-                    className="text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
+                  <Link href={link.path} className="text-[12px] transition-all hover:text-[#f5a623] hover:translate-x-1 inline-block" style={{ color: "#888" }}>
                     {link.label}
                   </Link>
                 </li>
@@ -161,95 +141,60 @@ export function Footer() {
 
           {/* STAY CONNECTED */}
           <div>
-            <h4 className="font-black uppercase tracking-[0.18em] text-xs mb-5" style={{ color: "#f5a623" }}>
+            <h4 className="font-black uppercase tracking-[0.2em] text-[11px] mb-5 pb-2" style={{ color: "#f5a623", borderBottom: "1px solid #1e1e1e" }}>
               STAY CONNECTED
             </h4>
             <div className="grid grid-cols-3 gap-2">
-              <a
-                href="https://www.facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:bg-[#f5a623]/20"
-                style={{ background: "#1e1e1e", color: "#aaa" }}
-                title="Facebook"
-              >
-                <SiFacebook className="h-4 w-4" />
-              </a>
-              <a
-                href="https://twitter.com/Bemora_BEMO"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:bg-[#f5a623]/20"
-                style={{ background: "#1e1e1e", color: "#aaa" }}
-                title="X / Twitter"
-              >
-                <SiX className="h-4 w-4" />
-              </a>
-              <a
-                href="https://www.youtube.com/@Bemora-site"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:bg-[#f5a623]/20"
-                style={{ background: "#1e1e1e", color: "#aaa" }}
-                title="YouTube"
-              >
-                <SiYoutube className="h-4 w-4" />
-              </a>
-              <a
-                href="https://discord.gg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:bg-[#f5a623]/20"
-                style={{ background: "#1e1e1e", color: "#aaa" }}
-                title="Discord"
-              >
-                <SiDiscord className="h-4 w-4" />
-              </a>
-              <a
-                href="https://www.instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:bg-[#f5a623]/20"
-                style={{ background: "#1e1e1e", color: "#aaa" }}
-                title="Instagram"
-              >
-                <SiInstagram className="h-4 w-4" />
-              </a>
+              {[
+                { href: "https://www.facebook.com", icon: <SiFacebook className="h-4 w-4" />, title: "Facebook" },
+                { href: "https://twitter.com/Bemora_BEMO", icon: <SiX className="h-4 w-4" />, title: "X / Twitter" },
+                { href: "https://www.youtube.com/@Bemora-site", icon: <SiYoutube className="h-4 w-4" />, title: "YouTube" },
+                { href: "https://discord.gg", icon: <SiDiscord className="h-4 w-4" />, title: "Discord" },
+                { href: "https://www.instagram.com", icon: <SiInstagram className="h-4 w-4" />, title: "Instagram" },
+              ].map(({ href, icon, title }) => (
+                <a
+                  key={title}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={title}
+                  className="flex items-center justify-center w-9 h-9 transition-all hover:bg-[#f5a623]/15 hover:text-[#f5a623] hover:-translate-y-0.5"
+                  style={{ background: "#1a1a1a", color: "#666", borderRadius: "3px" }}
+                >
+                  {icon}
+                </a>
+              ))}
             </div>
           </div>
+
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ borderTop: "1px solid #1e1e1e" }}>
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <img src="/logo-new.png" alt="CrossFire" className="h-8 w-auto object-contain opacity-70" />
-            <span className="text-xs" style={{ color: "#555" }}>
-              © Smilegate West, Inc. All rights reserved.
+      <div style={{ borderTop: "1px solid #1a1a1a" }}>
+        <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-5">
+            <img src="/logo-new.png" alt="Bimora" className="h-7 w-auto object-contain" style={{ opacity: 0.5 }} />
+            <span className="text-[11px]" style={{ color: "#444" }}>
+              © Bimora Gaming. All rights reserved.
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/privacy"
-              className="text-xs transition-colors hover:text-[#f5a623]"
-              style={{ color: "#f5a623" }}
-            >
+          <div className="flex items-center gap-4 text-[11px]">
+            <Link href="/privacy" className="transition-colors hover:text-[#f5a623]" style={{ color: "#f5a623" }}>
               Privacy Policy
             </Link>
-            <span style={{ color: "#333" }}>|</span>
-            <Link
-              href="/terms"
-              className="text-xs transition-colors hover:text-[#f5a623]"
-              style={{ color: "#f5a623" }}
-            >
-              Terms and Conditions
+            <span style={{ color: "#2a2a2a" }}>|</span>
+            <Link href="/terms" className="transition-colors hover:text-[#f5a623]" style={{ color: "#f5a623" }}>
+              Terms & Conditions
             </Link>
-            <span style={{ color: "#333" }}>|</span>
-            <span className="text-xs" style={{ color: "#555" }}>Imprint</span>
+            <span style={{ color: "#2a2a2a" }}>|</span>
+            <Link href="/about" className="transition-colors hover:text-[#f5a623]" style={{ color: "#555" }}>
+              About
+            </Link>
           </div>
         </div>
       </div>
+
     </footer>
   );
 }

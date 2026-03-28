@@ -90,7 +90,7 @@ export function Footer() {
                 { href: "https://www.facebook.com", icon: <SiFacebook className="h-4 w-4" />, title: "Facebook" },
                 { href: "https://twitter.com", icon: <SiX className="h-4 w-4" />, title: "X / Twitter" },
                 { href: "https://www.youtube.com/@Bemora-site", icon: <SiYoutube className="h-4 w-4" />, title: "YouTube" },
-                { href: "https://discord.gg", icon: <SiDiscord className="h-4 w-4" />, title: "Discord" },
+                { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-4 w-4" />, title: "Discord" },
                 { href: "https://www.instagram.com", icon: <SiInstagram className="h-4 w-4" />, title: "Instagram" },
               ].map(({ href, icon, title }) => (
                 <a

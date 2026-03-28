@@ -117,6 +117,8 @@ export default function Category() {
     );
   }
 
+  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("adminToken");
+
   return (
     <>
       <PageSEO
@@ -126,8 +128,8 @@ export default function Category() {
       />
       <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
-          <main className="lg:col-span-8 space-y-8 md:space-y-12">
+        <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-12" : ""} gap-8 md:gap-12`}>
+          <main className={`${isAdmin ? "lg:col-span-8" : ""} space-y-8 md:space-y-12`}>
             <div className="space-y-6">
               <h1 
                 className="text-3xl md:text-4xl font-bold"
@@ -290,16 +292,18 @@ export default function Category() {
             )}
           </main>
 
-          <aside className="lg:col-span-4">
-            <div className="lg:sticky lg:top-24">
-              <Sidebar
-                recentPosts={recentPosts}
-                popularTags={popularTags}
-                mostViewed={mostViewed}
-                bimoraPicks={bimoraPicks}
-              />
-            </div>
-          </aside>
+          {isAdmin && (
+            <aside className="lg:col-span-4">
+              <div className="lg:sticky lg:top-24">
+                <Sidebar
+                  recentPosts={recentPosts}
+                  popularTags={popularTags}
+                  mostViewed={mostViewed}
+                  bimoraPicks={bimoraPicks}
+                />
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
-import { Calendar, ArrowLeft, Languages, ChevronRight, Flag, ThumbsUp, ThumbsDown, Star, Zap, Smile, MessageSquare, Send } from "lucide-react";
+import { Calendar, ArrowLeft, Languages, ChevronRight, ThumbsUp, ThumbsDown, MessageSquare, Send } from "lucide-react";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -54,27 +54,51 @@ function CommentAvatar({ name }: { name: string }) {
 }
 
 function CommentReactions({ commentId, likes, onLike }: { commentId: string; likes?: number; onLike?: (id: string) => void }) {
-  const reactions = [
-    { icon: <Flag className="h-3 w-3" />, label: "Flag" },
-    { icon: <ThumbsDown className="h-3 w-3" />, label: "Disagree" },
-    { icon: <ThumbsUp className="h-3 w-3" />, label: "Agree" },
-    { icon: <Star className="h-3 w-3" />, label: likes !== undefined ? `${likes} Like` : "Like", action: () => onLike?.(commentId) },
-    { icon: <Zap className="h-3 w-3" />, label: "Vote Up" },
-    { icon: <Smile className="h-3 w-3" />, label: "Awesome" },
-    { icon: <Smile className="h-3 w-3" />, label: "LOL" },
-  ];
+  const [localLikes, setLocalLikes] = useState(likes ?? 0);
+  const [localDislikes, setLocalDislikes] = useState(0);
+  const [localLoves, setLocalLoves] = useState(0);
+  const [voted, setVoted] = useState<"like" | "dislike" | "love" | null>(null);
+
+  const handleVote = (type: "like" | "dislike" | "love") => {
+    if (voted === type) {
+      if (type === "like") setLocalLikes((v) => Math.max(0, v - 1));
+      if (type === "dislike") setLocalDislikes((v) => Math.max(0, v - 1));
+      if (type === "love") setLocalLoves((v) => Math.max(0, v - 1));
+      setVoted(null);
+    } else {
+      if (voted === "like") setLocalLikes((v) => Math.max(0, v - 1));
+      if (voted === "dislike") setLocalDislikes((v) => Math.max(0, v - 1));
+      if (voted === "love") setLocalLoves((v) => Math.max(0, v - 1));
+      if (type === "like") { setLocalLikes((v) => v + 1); onLike?.(commentId); }
+      if (type === "dislike") setLocalDislikes((v) => v + 1);
+      if (type === "love") setLocalLoves((v) => v + 1);
+      setVoted(type);
+    }
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-3 mt-3">
-      {reactions.map((r) => (
-        <button
-          key={r.label}
-          onClick={r.action}
-          className="flex items-center gap-1 text-[11px] font-bold transition-colors hover:text-[#f5a623]"
-          style={{ color: "#555" }}
-        >
-          {r.icon} {r.label}
-        </button>
-      ))}
+      <button
+        onClick={() => handleVote("like")}
+        className="flex items-center gap-1 text-[11px] font-bold transition-colors hover:text-[#f5a623]"
+        style={{ color: voted === "like" ? "#f5a623" : "#555" }}
+      >
+        <ThumbsUp className="h-3 w-3" /> {localLikes > 0 ? localLikes : ""} Like
+      </button>
+      <button
+        onClick={() => handleVote("dislike")}
+        className="flex items-center gap-1 text-[11px] font-bold transition-colors hover:text-red-500"
+        style={{ color: voted === "dislike" ? "#ef4444" : "#555" }}
+      >
+        <ThumbsDown className="h-3 w-3" /> {localDislikes > 0 ? localDislikes : ""} Dislike
+      </button>
+      <button
+        onClick={() => handleVote("love")}
+        className="flex items-center gap-1 text-[11px] font-bold transition-colors hover:text-pink-500"
+        style={{ color: voted === "love" ? "#ec4899" : "#555" }}
+      >
+        <span className="text-[13px]">❤️</span> {localLoves > 0 ? localLoves : ""} Love
+      </button>
     </div>
   );
 }
@@ -174,6 +198,7 @@ export default function EventDetail() {
   }, [description]);
 
   const isLoggedIn = typeof window !== "undefined" && !!localStorage.getItem("token");
+  const isAdmin = typeof window !== "undefined" && !!localStorage.getItem("adminToken");
 
   if (isLoading) {
     return (
@@ -407,7 +432,7 @@ export default function EventDetail() {
                     </div>
                   ))}
                   <a
-                    href="https://discord.gg"
+                    href="https://discord.com/invite/CxUJx54s?utm_source=Discord%20Widget&utm_medium=Connect"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block mt-3 text-center py-2 font-black text-[12px] uppercase tracking-widest transition-opacity hover:opacity-90"
@@ -440,46 +465,50 @@ export default function EventDetail() {
                 )}
               </div>
 
-              {/* Quick Links */}
-              <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
-                <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: "1px solid #1a1a1a" }}>
-                  Quick Links
-                </div>
-                <div className="py-1">
-                  {QUICK_LINKS.map((link) => (
-                    <Link
-                      key={link.path}
-                      href={link.path}
-                      className="flex items-center justify-between px-4 py-2 text-[12px] transition-all hover:text-[#f5a623] hover:bg-[#1a1a1a]"
-                      style={{ color: "#666" }}
-                    >
-                      {link.label} <ChevronRight className="h-3 w-3" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
-                <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: "1px solid #1a1a1a" }}>
-                  Categories
-                </div>
-                {SIDEBAR_CATEGORIES.map((section) => (
-                  <div key={section.section}>
-                    <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest" style={{ color: "#f5a623", background: "#111", borderBottom: "1px solid #181818" }}>
-                      {section.section}
-                    </div>
-                    {section.items.map((item) => (
-                      <div key={item.label} className="flex items-center justify-between px-4 py-1.5" style={{ borderBottom: "1px solid #181818" }}>
-                        <span className="text-[11px] hover:text-[#f5a623] cursor-pointer transition-colors" style={{ color: "#666" }}>{item.label}</span>
-                        {item.count !== null && (
-                          <span className="text-[10px] font-bold" style={{ color: "#333" }}>{item.count}</span>
-                        )}
-                      </div>
+              {/* Quick Links — admin only */}
+              {isAdmin && (
+                <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
+                  <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: "1px solid #1a1a1a" }}>
+                    Quick Links
+                  </div>
+                  <div className="py-1">
+                    {QUICK_LINKS.map((link) => (
+                      <Link
+                        key={link.path}
+                        href={link.path}
+                        className="flex items-center justify-between px-4 py-2 text-[12px] transition-all hover:text-[#f5a623] hover:bg-[#1a1a1a]"
+                        style={{ color: "#666" }}
+                      >
+                        {link.label} <ChevronRight className="h-3 w-3" />
+                      </Link>
                     ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Categories — admin only */}
+              {isAdmin && (
+                <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
+                  <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: "1px solid #1a1a1a" }}>
+                    Categories
+                  </div>
+                  {SIDEBAR_CATEGORIES.map((section) => (
+                    <div key={section.section}>
+                      <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest" style={{ color: "#f5a623", background: "#111", borderBottom: "1px solid #181818" }}>
+                        {section.section}
+                      </div>
+                      {section.items.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between px-4 py-1.5" style={{ borderBottom: "1px solid #181818" }}>
+                          <span className="text-[11px] hover:text-[#f5a623] cursor-pointer transition-colors" style={{ color: "#666" }}>{item.label}</span>
+                          {item.count !== null && (
+                            <span className="text-[10px] font-bold" style={{ color: "#333" }}>{item.count}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </aside>
           </div>

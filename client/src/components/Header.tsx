@@ -158,21 +158,30 @@ export function Header() {
         </div>
       </div>
 
-      {/* ── Main nav — exact CF style ── */}
+      {/* ── Main nav — CF style ── */}
       <div
         className="w-full relative"
         style={{
-          background: "linear-gradient(180deg,#242424 0%,#161616 50%,#0f0f0f 100%)",
-          borderBottom: "2px solid #f5a623",
-          boxShadow: "0 4px 30px rgba(0,0,0,0.9)",
+          background: "linear-gradient(180deg,#1c1c1c 0%,#111111 40%,#0a0a0a 100%)",
+          borderBottom: "2px solid #c8820a",
+          boxShadow: "0 4px 30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
-        {/* Angled dark corners */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 hidden xl:block pointer-events-none" style={{ background: "linear-gradient(to right,#040404,transparent)", clipPath: "polygon(0 0,80% 0,100% 100%,0 100%)" }} />
-        <div className="absolute right-0 top-0 bottom-0 w-24 hidden xl:block pointer-events-none" style={{ background: "linear-gradient(to left,#040404,transparent)", clipPath: "polygon(20% 0,100% 0,100% 100%,0 100%)" }} />
+        {/* Nav decoration overlay image (arrows / brackets) */}
+        <div
+          className="absolute inset-0 pointer-events-none hidden xl:block"
+          style={{
+            backgroundImage: "url(/nav-decoration.png)",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            opacity: 0.85,
+            zIndex: 0,
+          }}
+        />
 
         {/* Desktop */}
-        <div className="hidden md:flex items-stretch h-[62px] max-w-7xl mx-auto px-4 md:px-8">
+        <div className="hidden md:flex items-stretch h-[62px] max-w-7xl mx-auto px-4 md:px-8 relative" style={{ zIndex: 2 }}>
           {/* LEFT NAV */}
           <nav className="flex items-stretch flex-1">
             {leftMenuItems.map((item) => <NavItem key={item.label} item={item} />)}

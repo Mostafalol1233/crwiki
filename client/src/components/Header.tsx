@@ -25,11 +25,40 @@ export function Header() {
 
   const leftMenuItems: MenuItem[] = [
     {
-      label: "ESPORTS",
+      label: "NEWS",
       dropdown: [
-        { path: "/faq", label: "ESports Hub" },
-        { path: "/support", label: "Support" },
-        { path: "/my-tickets", label: "Tickets" },
+        { path: "/news", label: "News" },
+        { path: "/posts", label: "Updates" },
+        { path: "/category/events", label: "Events" },
+        { path: "/videos", label: "Feeds" },
+      ],
+    },
+    {
+      label: "GAME",
+      dropdown: [
+        { path: "/about", label: "Game Overview" },
+        { path: "/modes", label: "Modes" },
+        { path: "/maps", label: "Maps" },
+        { path: "/weapons", label: "Weapons" },
+        { path: "/mercenaries", label: "Mercenaries" },
+        { path: "/download", label: "Download" },
+      ],
+    },
+    {
+      label: "SHOP",
+      dropdown: [
+        { path: "/pricing", label: "Buy ZP" },
+        { path: "/sellers", label: "Sellers" },
+      ],
+    },
+  ];
+
+  const rightMenuItems: MenuItem[] = [
+    {
+      label: "RANKING",
+      dropdown: [
+        { path: "/ranks#exp", label: "EXP Ranking" },
+        { path: "/ranks#competitive", label: "Competitive Ranking" },
       ],
     },
     {
@@ -41,39 +70,11 @@ export function Header() {
       ],
     },
     {
-      label: "RANKING",
+      label: "ESPORTS",
       dropdown: [
-        { path: "/ranks", label: "Player Ranking" },
-        { path: "/mercenaries", label: "Mercenaries" },
-      ],
-    },
-  ];
-
-  const rightMenuItems: MenuItem[] = [
-    {
-      label: "SHOP",
-      dropdown: [
-        { path: "/pricing", label: "Buy ZP" },
-        { path: "/sellers", label: "Sellers" },
-      ],
-    },
-    {
-      label: "GAME",
-      dropdown: [
-        { path: "/about", label: "Game Overview" },
-        { path: "/modes", label: "Modes" },
-        { path: "/maps", label: "Maps" },
-        { path: "/weapons", label: "Weapons" },
-        { path: "/download", label: "Download" },
-      ],
-    },
-    {
-      label: "NEWS",
-      dropdown: [
-        { path: "/news", label: "News" },
-        { path: "/posts", label: "Updates" },
-        { path: "/category/events", label: "Events" },
-        { path: "/videos", label: "Feeds" },
+        { path: "/category/events", label: "Tournaments" },
+        { path: "/videos", label: "Highlights" },
+        { path: "/ranks", label: "Leaderboards" },
       ],
     },
   ];

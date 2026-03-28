@@ -215,42 +215,34 @@ export default function Home() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Main grid: Featured large + 3 stacked */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-                  {/* Featured card */}
+                {/* ── Top row: Featured 7col + 3 side cards 5col, fixed 380px total height ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3" style={{ height: "380px" }}>
+
+                  {/* Featured card — fills full height */}
                   {featuredEvent && (
                     <Link
                       href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}
-                      className="lg:col-span-7 group block"
+                      className="lg:col-span-7 group block h-full"
                     >
-                      <div className="relative overflow-hidden h-full min-h-[300px] md:min-h-[400px]" style={{ borderRadius: "2px" }}>
+                      <div className="relative overflow-hidden w-full h-full" style={{ borderRadius: "2px" }}>
                         <img
                           src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
                           alt={featuredEvent.title}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
-                          style={{ transform: "scale(1)" }}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                         />
-                        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)" }} />
-                        {/* Top accent */}
+                        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.25) 55%, transparent 100%)" }} />
                         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-
-                        {/* Badge */}
                         <div
                           className="absolute top-4 left-4 text-black text-[9px] font-black uppercase tracking-widest px-2.5 py-1"
                           style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)", clipPath: "polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px)" }}
                         >
                           {featuredEvent.type === "upcoming" ? "Upcoming" : "Featured"}
                         </div>
-
                         <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
-                          <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>
-                            {featuredEvent.date}
-                          </p>
-                          <h3 className="text-white font-black text-xl md:text-2xl uppercase tracking-tight leading-tight line-clamp-3 drop-shadow-lg">
-                            {featuredEvent.title}
-                          </h3>
+                          <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>{featuredEvent.date}</p>
+                          <h3 className="text-white font-black text-xl md:text-2xl uppercase tracking-tight leading-tight line-clamp-3 drop-shadow-lg">{featuredEvent.title}</h3>
                           <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all group-hover:gap-2.5" style={{ color: "#f5a623" }}>
                             View Event <ChevronRight className="h-3.5 w-3.5" />
                           </div>
@@ -259,31 +251,28 @@ export default function Home() {
                     </Link>
                   )}
 
-                  {/* 3 stacked secondary cards */}
-                  <div className="lg:col-span-5 flex flex-col gap-3">
+                  {/* 3 side cards — each exactly 1/3 of the 380px column */}
+                  <div className="lg:col-span-5 h-full flex flex-col gap-3">
                     {secondaryEvents.map((event: any) => (
                       <Link
                         key={event.id}
                         href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
-                        className="group block flex-1"
+                        className="group block flex-1 min-h-0"
                       >
-                        <div className="relative overflow-hidden flex-1 h-full min-h-[105px] md:min-h-[122px]" style={{ borderRadius: "2px" }}>
+                        <div className="relative overflow-hidden w-full h-full" style={{ borderRadius: "2px" }}>
                           <img
                             src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
-                          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.1) 100%)" }} />
-                          {/* Left accent line */}
+                          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.05) 100%)" }} />
                           <div className="absolute left-0 top-0 bottom-0 w-[2px]" style={{ background: "#f5a623" }} />
                           <div className="absolute inset-0 flex flex-col justify-center pl-5 pr-4">
-                            <span className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: "#f5a623" }}>
+                            <span className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: "#f5a623" }}>
                               {event.type === "upcoming" ? "Upcoming" : "Event"}
                             </span>
-                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">
-                              {event.title}
-                            </h3>
+                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">{event.title}</h3>
                             <p className="text-[10px] font-bold mt-1 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>{event.date}</p>
                           </div>
                         </div>
@@ -292,7 +281,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Bottom 3-card row */}
+                {/* ── Bottom uniform card row ── */}
                 {bottomRowEvents.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {bottomRowEvents.map((event: any) => (
@@ -301,22 +290,20 @@ export default function Home() {
                         href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
                         className="group block"
                       >
-                        <div className="relative overflow-hidden aspect-video" style={{ borderRadius: "2px" }}>
+                        <div className="relative overflow-hidden" style={{ borderRadius: "2px", paddingTop: "56.25%" /* 16:9 */ }}>
                           <img
                             src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                             alt={event.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
-                          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)" }} />
+                          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)" }} />
                           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
                           <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
                             <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: "#f5a623" }}>
                               {event.type === "upcoming" ? "Upcoming" : "Event"}
                             </span>
-                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">
-                              {event.title}
-                            </h3>
+                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">{event.title}</h3>
                           </div>
                         </div>
                       </Link>

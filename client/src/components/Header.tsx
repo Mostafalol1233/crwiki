@@ -1,21 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, ChevronDown, Search, MessageSquare } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, Search, MessageSquare, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
 const siteLogoImage = "/logo-new.png";
 
-interface DropdownItem {
-  path: string;
-  label: string;
-}
-
-interface MenuItem {
-  label: string;
-  path?: string;
-  dropdown?: DropdownItem[];
-}
+interface DropdownItem { path: string; label: string }
+interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -27,10 +19,7 @@ export function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setMobileMenuOpen(false);
-    }
+    if (searchQuery.trim()) { setLocation(`/search?q=${encodeURIComponent(searchQuery)}`); setMobileMenuOpen(false); }
   };
 
   const leftMenuItems: MenuItem[] = [
@@ -50,6 +39,8 @@ export function Header() {
         { path: "/modes", label: "Game Modes" },
         { path: "/maps", label: "Maps" },
         { path: "/weapons", label: "Weapons" },
+        { path: "/ranks", label: "Ranking" },
+        { path: "/mercenaries", label: "Mercenaries" },
         { path: "/download", label: "Download" },
       ],
     },
@@ -58,23 +49,20 @@ export function Header() {
       dropdown: [
         { path: "/pricing", label: "Buy ZP" },
         { path: "/sellers", label: "Sellers" },
-        { path: "/reviews", label: "Reviews" },
       ],
     },
   ];
 
   const rightMenuItems: MenuItem[] = [
-    { path: "/ranks", label: "RANKING" },
     {
       label: "COMMUNITY",
       dropdown: [
         { path: "/posts", label: "Forum" },
-        { path: "/mercenaries", label: "Mercenaries" },
         { path: "/reviews", label: "Reviews" },
       ],
     },
     {
-      label: "SUPPORT",
+      label: "ESPORTS",
       dropdown: [
         { path: "/faq", label: "FAQ" },
         { path: "/support", label: "Create Ticket" },
@@ -84,41 +72,30 @@ export function Header() {
     },
   ];
 
-  const isActiveDropdown = (items: DropdownItem[]) =>
-    items.some((item) => location === item.path);
+  const isActiveDrop = (items: DropdownItem[]) => items.some((i) => location === i.path);
+  const toggleMobileSub = (label: string) => setMobileExpandedMenu(mobileExpandedMenu === label ? null : label);
 
-  const toggleMobileSubmenu = (label: string) => {
-    setMobileExpandedMenu(mobileExpandedMenu === label ? null : label);
-  };
-
-  const renderNavItem = (item: MenuItem) => {
+  const NavItem = ({ item }: { item: MenuItem }) => {
     if (item.dropdown) {
-      const isActive = isActiveDropdown(item.dropdown);
+      const active = isActiveDrop(item.dropdown);
       return (
-        <div key={item.label} className="relative group h-full flex items-center">
+        <div className="relative group h-full flex items-center">
           <button
-            className="cf-nav-item flex items-center gap-1 px-3 py-2 text-[13px] font-black italic uppercase tracking-wider transition-colors hover:text-[#f5a623]"
-            style={{ color: isActive ? "#f5a623" : "#d4d4d4" }}
+            className="cf-nav-item h-full flex items-center px-4 text-[13px] font-black uppercase tracking-wider transition-colors hover:text-[#f5a623]"
+            style={{ color: active ? "#f5a623" : "#ccc", letterSpacing: "0.08em" }}
           >
             {item.label}
-            <ChevronDown className="h-3 w-3 opacity-50 transition-transform group-hover:rotate-180" />
           </button>
           <div
-            className="absolute left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
-            style={{
-              background: "linear-gradient(180deg, #1c1c1c 0%, #111 100%)",
-              border: "1px solid #2a2a2a",
-              borderTop: "2px solid #f5a623",
-              top: "100%",
-              minWidth: "180px",
-            }}
+            className="absolute left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pt-0"
+            style={{ top: "100%", minWidth: "190px", background: "linear-gradient(180deg,#1e1e1e 0%,#131313 100%)", border: "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}
           >
             {item.dropdown.map((sub) => (
               <Link
                 key={sub.path}
                 href={sub.path}
-                className="block px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all hover:text-[#f5a623] hover:bg-[#f5a623]/5"
-                style={{ color: location === sub.path ? "#f5a623" : "#999" }}
+                className="block px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all hover:text-[#f5a623] hover:pl-6"
+                style={{ color: location === sub.path ? "#f5a623" : "#888", borderBottom: "1px solid #1a1a1a" }}
               >
                 {sub.label}
               </Link>
@@ -129,10 +106,9 @@ export function Header() {
     }
     return (
       <Link
-        key={item.label}
         href={item.path || "#"}
-        className="cf-nav-item px-3 py-2 text-[13px] font-black italic uppercase tracking-wider transition-colors hover:text-[#f5a623]"
-        style={{ color: location === item.path ? "#f5a623" : "#d4d4d4" }}
+        className="cf-nav-item h-full flex items-center px-4 text-[13px] font-black uppercase tracking-wider transition-colors hover:text-[#f5a623]"
+        style={{ color: location === item.path ? "#f5a623" : "#ccc", letterSpacing: "0.08em" }}
       >
         {item.label}
       </Link>
@@ -142,67 +118,38 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* ── Top utility bar ── */}
-      <div style={{ background: "#060606", borderBottom: "1px solid #1c1c1c" }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-3">
+      <div style={{ background: "#060606", borderBottom: "1px solid #181818" }}>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-3 text-[12px]">
           {(() => {
             const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
             const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
             let user: any = null;
-            if (userStr) { try { user = JSON.parse(userStr); } catch { user = null; } }
+            if (userStr) { try { user = JSON.parse(userStr); } catch { } }
             if (token && user) {
               return (
                 <>
-                  <Link
-                    href="/chat"
-                    className="flex items-center gap-1.5 text-xs transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#aaa" }}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Chat</span>
+                  <Link href="/chat" className="flex items-center gap-1.5 transition-colors hover:text-[#f5a623]" style={{ color: "#888" }}>
+                    <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Chat</span>
                   </Link>
                   <div className="relative group">
-                    <button
-                      className="flex items-center gap-1.5 text-xs px-3 py-1 transition-colors hover:text-[#f5a623]"
-                      style={{
-                        color: "#ccc",
-                        background: "#1a1a1a",
-                        border: "1px solid #2a2a2a",
-                        borderRadius: "2px",
-                      }}
-                    >
-                      {user.username || "Profile"}
-                      <ChevronDown className="h-3 w-3" />
+                    <button className="flex items-center gap-1.5 px-3 py-1 transition-colors hover:text-[#f5a623]" style={{ color: "#ccc", background: "#151515", border: "1px solid #2a2a2a" }}>
+                      {user.username || "Profile"} <ChevronDown className="h-3 w-3" />
                     </button>
-                    <div
-                      className="absolute right-0 mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
-                      style={{ background: "#141414", border: "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}
-                    >
-                      <Link href="/profile" className="block px-4 py-2 text-xs transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>Profile</Link>
-                      <Link href="/my-tickets" className="block px-4 py-2 text-xs transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>My Tickets</Link>
-                      <button
-                        onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
-                        className="block w-full text-left px-4 py-2 text-xs transition-colors hover:text-[#f5a623]"
-                        style={{ color: "#aaa" }}
-                      >Logout</button>
+                    <div className="absolute right-0 mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50" style={{ background: "#141414", border: "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}>
+                      <Link href="/profile" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>Profile</Link>
+                      <Link href="/my-tickets" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>My Tickets</Link>
+                      <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="block w-full text-left px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>Logout</button>
                     </div>
                   </div>
                 </>
               );
             }
             return (
-              <div className="flex items-center gap-0 text-xs" style={{ border: "1px solid #2a2a2a", borderRadius: "2px", overflow: "hidden" }}>
-                <Link
-                  href="/login"
-                  className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]"
-                  style={{ color: "#bbb", borderRight: "1px solid #2a2a2a" }}
-                >
+              <div className="flex items-center overflow-hidden" style={{ border: "1px solid #282828", background: "#0e0e0e" }}>
+                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: "#aaa", borderRight: "1px solid #282828" }}>
                   Login
                 </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10 hover:text-[#f5a623]"
-                  style={{ color: "#f5a623" }}
-                >
+                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623" }}>
                   Sign Up
                 </Link>
               </div>
@@ -211,73 +158,63 @@ export function Header() {
         </div>
       </div>
 
-      {/* ── Main nav bar ── */}
+      {/* ── Main nav — exact CF style ── */}
       <div
         className="w-full relative"
         style={{
-          background: "linear-gradient(180deg, #1e1e1e 0%, #111 60%, #0d0d0d 100%)",
+          background: "linear-gradient(180deg,#242424 0%,#161616 50%,#0f0f0f 100%)",
           borderBottom: "2px solid #f5a623",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.8)",
+          boxShadow: "0 4px 30px rgba(0,0,0,0.9)",
         }}
       >
-        {/* Angled corner overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 hidden lg:block pointer-events-none"
-          style={{ background: "linear-gradient(to right, #050505, transparent)", clipPath: "polygon(0 0, 75% 0, 100% 100%, 0 100%)" }} />
-        <div className="absolute right-0 top-0 bottom-0 w-20 hidden lg:block pointer-events-none"
-          style={{ background: "linear-gradient(to left, #050505, transparent)", clipPath: "polygon(25% 0, 100% 0, 100% 100%, 0 100%)" }} />
+        {/* Angled dark corners */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 hidden xl:block pointer-events-none" style={{ background: "linear-gradient(to right,#040404,transparent)", clipPath: "polygon(0 0,80% 0,100% 100%,0 100%)" }} />
+        <div className="absolute right-0 top-0 bottom-0 w-24 hidden xl:block pointer-events-none" style={{ background: "linear-gradient(to left,#040404,transparent)", clipPath: "polygon(20% 0,100% 0,100% 100%,0 100%)" }} />
 
-        {/* Desktop: left nav | center logo | right nav */}
-        <div className="hidden md:flex items-stretch h-[64px] max-w-7xl mx-auto px-4 md:px-8">
-
-          {/* LEFT */}
-          <nav className="flex items-stretch flex-1 justify-end pr-6">
-            {leftMenuItems.map(renderNavItem)}
+        {/* Desktop */}
+        <div className="hidden md:flex items-stretch h-[62px] max-w-7xl mx-auto px-4 md:px-8">
+          {/* LEFT NAV */}
+          <nav className="flex items-stretch flex-1">
+            {leftMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
           </nav>
 
           {/* CENTER LOGO */}
-          <Link href="/" aria-label="Home" className="flex-shrink-0 flex items-center group px-3">
+          <Link href="/" aria-label="Home" className="flex-shrink-0 flex items-center px-4 group">
             <img
               src={siteLogoImage}
               alt="CrossFire"
-              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
+              className="h-11 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
               loading="eager"
-              width="240"
-              height="140"
+              width="220"
+              height="130"
               onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }}
               draggable={false}
             />
           </Link>
 
-          {/* RIGHT */}
-          <nav className="flex items-stretch flex-1 justify-start pl-6">
-            {rightMenuItems.map(renderNavItem)}
+          {/* RIGHT NAV */}
+          <nav className="flex items-stretch flex-1 justify-end">
+            {rightMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
 
-            {/* Search bar */}
-            <form onSubmit={handleSearch} className="relative ml-auto flex items-center">
-              <Search className="absolute left-2.5 h-3.5 w-3.5 pointer-events-none" style={{ color: "#555" }} />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="pl-8 w-32 h-7 text-xs focus:w-48 transition-all duration-300 rounded-sm"
-                style={{ background: "#0a0a0a", border: "1px solid #252525", color: "#ccc" }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            {/* Search */}
+            <form onSubmit={handleSearch} className="flex items-center ml-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "#444" }} />
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  className="pl-8 w-28 h-7 text-xs focus:w-44 transition-all rounded-none border-0"
+                  style={{ background: "#0c0c0c", borderBottom: "1px solid #2a2a2a", color: "#ccc", outline: "none", boxShadow: "none" }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </form>
 
-            <button
-              onClick={() => toggleLanguage()}
-              className="ml-2 h-7 w-7 flex items-center justify-center transition-colors hover:text-[#f5a623]"
-              style={{ color: "#666" }}
-              title={language === "en" ? "العربية" : "English"}
-            >
+            <button onClick={toggleLanguage} className="ml-1 h-full px-2 flex items-center transition-colors hover:text-[#f5a623]" style={{ color: "#555" }} title={language === "en" ? "العربية" : "English"}>
               <Globe className="h-4 w-4" />
             </button>
-            <button
-              onClick={() => toggleTheme()}
-              className="h-7 w-7 flex items-center justify-center transition-colors hover:text-[#f5a623]"
-              style={{ color: "#666" }}
-            >
+            <button onClick={toggleTheme} className="h-full px-2 flex items-center transition-colors hover:text-[#f5a623]" style={{ color: "#555" }}>
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
           </nav>
@@ -285,27 +222,13 @@ export function Header() {
 
         {/* Mobile */}
         <div className="md:hidden flex items-center h-14 px-4">
-          <Link href="/" className="flex-shrink-0 mr-auto">
-            <img
-              src={siteLogoImage}
-              alt="CrossFire"
-              className="h-9 w-auto object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }}
-              draggable={false}
-            />
+          <Link href="/" className="mr-auto">
+            <img src={siteLogoImage} alt="CrossFire" className="h-9 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }} draggable={false} />
           </Link>
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => toggleLanguage()} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#777" }}>
-              <Globe className="h-4 w-4" />
-            </button>
-            <button onClick={() => toggleTheme()} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#777" }}>
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
-            <button
-              className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]"
-              style={{ color: "#ccc" }}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
+          <div className="flex items-center gap-1">
+            <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#666" }}><Globe className="h-4 w-4" /></button>
+            <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#666" }}>{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
+            <button className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
@@ -314,41 +237,24 @@ export function Header() {
 
       {/* Mobile dropdown */}
       {mobileMenuOpen && (
-        <nav className="md:hidden py-3 px-4" style={{ background: "#0d0d0d", borderTop: "1px solid #1a1a1a" }}>
+        <nav className="md:hidden py-3 px-4" style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
           <form onSubmit={handleSearch} className="relative mb-3">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4" style={{ color: "#555" }} />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-9 h-9"
-              style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", color: "#ccc" }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4" style={{ color: "#444" }} />
+            <Input type="search" placeholder="Search..." className="pl-9 h-9" style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", color: "#ccc" }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </form>
           <div className="space-y-0.5">
             {[...leftMenuItems, ...rightMenuItems].map((item) => (
               <div key={`m-${item.label}`}>
                 {item.dropdown ? (
                   <>
-                    <button
-                      className="w-full text-left px-3 py-2 text-sm uppercase italic font-black transition-colors hover:text-[#f5a623] flex items-center justify-between"
-                      style={{ color: "#ccc" }}
-                      onClick={() => toggleMobileSubmenu(item.label)}
-                    >
+                    <button className="w-full text-left px-3 py-2 text-sm font-black uppercase tracking-wider flex items-center justify-between hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => toggleMobileSub(item.label)}>
                       {item.label}
                       <ChevronDown className={`h-3 w-3 transition-transform ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
                     </button>
                     {mobileExpandedMenu === item.label && (
                       <div className="pl-4 pb-1" style={{ borderLeft: "2px solid #f5a623", marginLeft: "12px" }}>
                         {item.dropdown.map((sub) => (
-                          <Link
-                            key={`ms-${sub.path}`}
-                            href={sub.path}
-                            className="block px-3 py-1.5 text-xs uppercase tracking-wide transition-colors hover:text-[#f5a623]"
-                            style={{ color: "#888" }}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
+                          <Link key={`ms-${sub.path}`} href={sub.path} className="block px-3 py-1.5 text-xs uppercase tracking-wide transition-colors hover:text-[#f5a623]" style={{ color: "#777" }} onClick={() => setMobileMenuOpen(false)}>
                             {sub.label}
                           </Link>
                         ))}
@@ -356,12 +262,7 @@ export function Header() {
                     )}
                   </>
                 ) : (
-                  <Link
-                    href={item.path || "#"}
-                    className="block px-3 py-2 text-sm uppercase italic font-black transition-colors hover:text-[#f5a623]"
-                    style={{ color: "#ccc" }}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link href={item.path || "#"} className="block px-3 py-2 text-sm font-black uppercase tracking-wider hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => setMobileMenuOpen(false)}>
                     {item.label}
                   </Link>
                 )}

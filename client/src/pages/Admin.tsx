@@ -6705,6 +6705,7 @@ export default function Admin() {
               )}
 
               {canTickets && (
+                <>
                 <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
                   <h2 className="text-2xl font-semibold">Support Tickets</h2>
                   <Card>
@@ -6884,6 +6885,7 @@ export default function Admin() {
                 <TabsContent value="faq" className="space-y-6" data-testid="content-faq">
                   <FAQManager />
                 </TabsContent>
+                </>
               )}
               {isSuperAdmin && (
                 <TabsContent value="analytics" className="space-y-6" data-testid="content-analytics">

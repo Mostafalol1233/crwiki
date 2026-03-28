@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { SiX, SiYoutube, SiDiscord, SiFacebook, SiInstagram } from "react-icons/si";
+import { SiX, SiYoutube, SiDiscord, SiFacebook, SiInstagram, SiTwitch } from "react-icons/si";
 import { ChevronUp } from "lucide-react";
 
 export function Footer() {
@@ -87,11 +87,12 @@ export function Footer() {
             <SectionTitle label="STAY CONNECTED" />
             <div className="grid grid-cols-3 gap-2 mb-5">
               {[
-                { href: "https://www.facebook.com", icon: <SiFacebook className="h-4 w-4" />, title: "Facebook" },
-                { href: "https://twitter.com", icon: <SiX className="h-4 w-4" />, title: "X / Twitter" },
-                { href: "https://www.youtube.com/@Bemora-site", icon: <SiYoutube className="h-4 w-4" />, title: "YouTube" },
+                { href: "https://www.facebook.com/crossfireonline", icon: <SiFacebook className="h-4 w-4" />, title: "Facebook" },
+                { href: "https://x.com/CrossFireOnline", icon: <SiX className="h-4 w-4" />, title: "X / Twitter" },
+                { href: "https://www.youtube.com/c/CrossFireWest", icon: <SiYoutube className="h-4 w-4" />, title: "YouTube" },
                 { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-4 w-4" />, title: "Discord" },
-                { href: "https://www.instagram.com", icon: <SiInstagram className="h-4 w-4" />, title: "Instagram" },
+                { href: "https://www.instagram.com/crossfirewest/", icon: <SiInstagram className="h-4 w-4" />, title: "Instagram" },
+                { href: "https://www.twitch.tv/cfonline/", icon: <SiTwitch className="h-4 w-4" />, title: "Twitch" },
               ].map(({ href, icon, title }) => (
                 <a
                   key={title}

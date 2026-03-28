@@ -119,7 +119,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       {/* ── Top utility bar ── */}
       <div style={{ background: "#060606", borderBottom: "1px solid #181818" }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-end gap-3 text-[12px]">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between gap-3 text-[12px]">
+          {/* Site logo — left */}
+          <Link href="/" aria-label="Home" className="flex items-center flex-shrink-0">
+            <img src="/logo-new.png" alt="Bimora Gaming" className="h-7 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
+          </Link>
           {(() => {
             const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
             const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -162,23 +166,15 @@ export function Header() {
       <div
         className="w-full relative"
         style={{
-          background: "linear-gradient(180deg,#1c1c1c 0%,#111111 40%,#0a0a0a 100%)",
+          backgroundImage: "url(/nav-decoration.png)",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "100% 100%",
+          backgroundPosition: "center",
+          backgroundColor: "#0e0e0e",
           borderBottom: "2px solid #c8820a",
-          boxShadow: "0 4px 30px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.04)",
+          boxShadow: "0 4px 30px rgba(0,0,0,0.95)",
         }}
       >
-        {/* Nav decoration overlay image (arrows / brackets) */}
-        <div
-          className="absolute inset-0 pointer-events-none hidden xl:block"
-          style={{
-            backgroundImage: "url(/nav-decoration.png)",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "100% 100%",
-            backgroundPosition: "center",
-            opacity: 0.85,
-            zIndex: 0,
-          }}
-        />
 
         {/* Desktop */}
         <div className="hidden md:flex items-stretch h-[62px] max-w-7xl mx-auto px-4 md:px-8 relative" style={{ zIndex: 2 }}>
@@ -187,16 +183,16 @@ export function Header() {
             {leftMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
           </nav>
 
-          {/* CENTER LOGO */}
+          {/* CENTER LOGO — CF logo bar image */}
           <Link href="/" aria-label="Home" className="flex-shrink-0 flex items-center px-4 group">
             <img
-              src={siteLogoImage}
+              src="/nav-logo-bar.png"
               alt="CrossFire"
-              className="h-11 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
+              className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
               loading="eager"
-              width="220"
-              height="130"
-              onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }}
+              width="300"
+              height="62"
+              onError={(e) => { (e.target as HTMLImageElement).src = siteLogoImage; }}
               draggable={false}
             />
           </Link>

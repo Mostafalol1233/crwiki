@@ -26,6 +26,7 @@ import CategoryNews from "@/pages/CategoryNews";
 import Reviews from "@/pages/Reviews";
 import Sellers from "@/pages/Sellers";
 import Support from "@/pages/Support";
+import FAQ from "@/pages/FAQ";
 import MyTickets from "@/pages/MyTickets";
 import Tutorials from "@/pages/Tutorials";
 import TutorialDetail from "@/pages/TutorialDetail";
@@ -80,6 +81,7 @@ function Router() {
       <Route path="/article/:slug" component={Article} />
       <Route path="/article/id/:legacyId" component={Article} />
       <Route path="/support" component={Support} />
+      <Route path="/faq" component={FAQ} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/my-tickets" component={MyTickets} />
       <Route path="/about" component={About} />

@@ -97,6 +97,7 @@ import type { ScrapedEvent } from "@shared/types";
 import AdminAnnouncements from "@/pages/AdminAnnouncements";
 import MediaUpload from "@/pages/MediaUpload";
 import CustomPagesManager from "@/components/CustomPagesManager";
+import FAQManager from "@/components/FAQManager";
 
 const GalleryUploader = ({
   images,
@@ -635,6 +636,7 @@ export default function Admin() {
     { key: "announcements", label: "Announcements", enabled: isSuperAdmin },
     { key: "mercenaries", label: "Mercenaries", enabled: canMercenaries },
     { key: "tickets", label: "Tickets", enabled: canTickets },
+    { key: "faq", label: "FAQ", enabled: isSuperAdmin || !!adminPerms["tickets:manage"] },
     { key: "seller-reviews", label: "Seller Reviews", enabled: isSuperAdmin },
     { key: "reset-codes", label: "Reset Codes", enabled: isSuperAdmin },
     { key: "chat-settings", label: "Chat Settings", enabled: canChat },
@@ -1799,6 +1801,7 @@ export default function Admin() {
                   {isSuperAdmin && <option value="announcements">Announcements</option>}
                   {canMercenaries && <option value="mercenaries">Mercenaries</option>}
                   {canTickets && <option value="tickets">Tickets</option>}
+                  {(isSuperAdmin || !!adminPerms["tickets:manage"]) && <option value="faq">FAQ</option>}
                   {isSuperAdmin && <option value="reset-codes">Password Reset Codes</option>}
                   {isSuperAdmin && <option value="chat-settings">Chat Settings</option>}
                   {isSuperAdmin && <option value="custom-pages">Custom Pages</option>}
@@ -6876,6 +6879,10 @@ export default function Admin() {
                       </Table>
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                <TabsContent value="faq" className="space-y-6" data-testid="content-faq">
+                  <FAQManager />
                 </TabsContent>
               )}
               {isSuperAdmin && (

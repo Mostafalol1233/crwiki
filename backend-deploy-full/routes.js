@@ -3033,6 +3033,52 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
         });
         // Ticket routes
+        // FAQ routes - file-based storage
+        const FAQ_FILE = path.join(process.cwd(), 'data', 'faq-data.json');
+        const getDefaultFaqData = () => [];
+
+        const readFaqData = () => {
+            try {
+                if (fs.existsSync(FAQ_FILE)) {
+                    return JSON.parse(fs.readFileSync(FAQ_FILE, 'utf8'));
+                }
+            } catch (e) { /* ignore */ }
+            return getDefaultFaqData();
+        };
+
+        const writeFaqData = (data) => {
+            try {
+                const dir = path.dirname(FAQ_FILE);
+                if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+                fs.writeFileSync(FAQ_FILE, JSON.stringify(data, null, 2), 'utf8');
+            } catch (e) {
+                console.error('Error writing FAQ data:', e);
+                throw e;
+            }
+        };
+
+        app.get("/api/faq-categories", async (req, res) => {
+            try {
+                const data = readFaqData();
+                res.json(data);
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
+        app.put("/api/faq-categories", requireAuth, async (req, res) => {
+            try {
+                const data = req.body;
+                if (!Array.isArray(data)) {
+                    return res.status(400).json({ error: "Expected an array of FAQ categories" });
+                }
+                writeFaqData(data);
+                res.json({ success: true, count: data.length });
+            } catch (e) {
+                res.status(500).json({ error: e.message });
+            }
+        });
+
         app.get("/api/tickets", requireAuth, async (req, res) => {
             try {
                 const user = req.user;

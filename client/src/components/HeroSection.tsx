@@ -53,6 +53,11 @@ export function HeroSection({ post, isPlaceholder, bgImageUrl }: HeroSectionProp
             <h2 className="text-white text-xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-2xl">
               {post.title}
             </h2>
+            {post.summary && (
+              <p className="mt-3 text-sm md:text-base text-white/75 leading-relaxed max-w-xl mx-auto drop-shadow-md">
+                {post.summary}
+              </p>
+            )}
           </div>
         )}
 

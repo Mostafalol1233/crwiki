@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, HelpCircle, FolderPlus } from "lucide-react";
+import { Plus, Pencil, Trash2, HelpCircle, FolderPlus, ArrowLeft, Save, X, ChevronRight } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,14 +60,16 @@ type FaqCategory = {
   articles: FaqArticle[];
 };
 
-type FormMode = "none" | "add-category" | "edit-category" | "add-article" | "edit-article";
+type ViewMode =
+  | { type: "list" }
+  | { type: "add-category" }
+  | { type: "edit-category"; cat: FaqCategory }
+  | { type: "add-article"; cat: FaqCategory }
+  | { type: "edit-article"; cat: FaqCategory; art: FaqArticle };
 
 export default function FAQManager() {
   const { toast } = useToast();
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [formMode, setFormMode] = useState<FormMode>("none");
-  const [selectedCategory, setSelectedCategory] = useState<FaqCategory | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<FaqArticle | null>(null);
+  const [view, setView] = useState<ViewMode>({ type: "list" });
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "article"; id: string; categoryId?: string } | null>(null);
 
   const [catForm, setCatForm] = useState({ name: "", nameAr: "" });
@@ -91,9 +93,13 @@ export default function FAQManager() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: FaqCategory[]) => {
+      const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") || "" : "";
       const res = await fetch("/api/faq-categories", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
         credentials: "include",
         body: JSON.stringify(data),
       });
@@ -102,13 +108,11 @@ export default function FAQManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/faq-categories"] });
-      toast({ title: "FAQ saved successfully!" });
-      setFormMode("none");
-      setSelectedCategory(null);
-      setSelectedArticle(null);
+      toast({ title: "Saved!" });
+      setView({ type: "list" });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error saving", description: err.message, variant: "destructive" });
     },
   });
 
@@ -126,22 +130,23 @@ export default function FAQManager() {
     saveMutation.mutate([...faqData, newCat]);
   };
 
-  const handleEditCategory = () => {
-    if (!selectedCategory || !catForm.name.trim()) return;
-    const updated = faqData.map((cat) =>
-      cat.id === selectedCategory.id
-        ? { ...cat, name: catForm.name.trim(), nameAr: catForm.nameAr.trim() || catForm.name.trim() }
-        : cat
+  const handleEditCategory = (cat: FaqCategory) => {
+    if (!catForm.name.trim()) return;
+    const updated = faqData.map((c) =>
+      c.id === cat.id ? { ...c, name: catForm.name.trim(), nameAr: catForm.nameAr.trim() || catForm.name.trim() } : c
     );
     saveMutation.mutate(updated);
   };
 
   const handleDeleteCategory = (catId: string) => {
-    saveMutation.mutate(faqData.filter((cat) => cat.id !== catId));
+    saveMutation.mutate(faqData.filter((c) => c.id !== catId));
   };
 
-  const handleAddArticle = () => {
-    if (!selectedCategory || !artForm.title.trim() || !artForm.body.trim()) return;
+  const handleAddArticle = (cat: FaqCategory) => {
+    if (!artForm.title.trim() || !artForm.body.trim()) {
+      toast({ title: "Please fill in the question and English answer", variant: "destructive" });
+      return;
+    }
     const newArt: FaqArticle = {
       id: Date.now().toString(),
       title: artForm.title.trim(),
@@ -149,75 +154,201 @@ export default function FAQManager() {
       body: artForm.body.trim(),
       bodyAr: artForm.bodyAr.trim() || artForm.body.trim(),
     };
-    const updated = faqData.map((cat) =>
-      cat.id === selectedCategory.id ? { ...cat, articles: [...cat.articles, newArt] } : cat
+    const updated = faqData.map((c) =>
+      c.id === cat.id ? { ...c, articles: [...c.articles, newArt] } : c
     );
     saveMutation.mutate(updated);
   };
 
-  const handleEditArticle = () => {
-    if (!selectedCategory || !selectedArticle || !artForm.title.trim()) return;
-    const updated = faqData.map((cat) =>
-      cat.id === selectedCategory.id
+  const handleEditArticle = (cat: FaqCategory, art: FaqArticle) => {
+    if (!artForm.title.trim()) return;
+    const updated = faqData.map((c) =>
+      c.id === cat.id
         ? {
-            ...cat,
-            articles: cat.articles.map((a) =>
-              a.id === selectedArticle.id
-                ? {
-                    ...a,
-                    title: artForm.title.trim(),
-                    titleAr: artForm.titleAr.trim() || artForm.title.trim(),
-                    body: artForm.body.trim(),
-                    bodyAr: artForm.bodyAr.trim() || artForm.body.trim(),
-                  }
+            ...c,
+            articles: c.articles.map((a) =>
+              a.id === art.id
+                ? { ...a, title: artForm.title.trim(), titleAr: artForm.titleAr.trim() || artForm.title.trim(), body: artForm.body.trim(), bodyAr: artForm.bodyAr.trim() || artForm.body.trim() }
                 : a
             ),
           }
-        : cat
+        : c
     );
     saveMutation.mutate(updated);
   };
 
   const handleDeleteArticle = (catId: string, artId: string) => {
-    const updated = faqData.map((cat) =>
-      cat.id === catId ? { ...cat, articles: cat.articles.filter((a) => a.id !== artId) } : cat
+    const updated = faqData.map((c) =>
+      c.id === catId ? { ...c, articles: c.articles.filter((a) => a.id !== artId) } : c
     );
     saveMutation.mutate(updated);
   };
 
-  const openAddCategory = () => {
-    setCatForm({ name: "", nameAr: "" });
-    setFormMode("add-category");
-  };
-
-  const openEditCategory = (cat: FaqCategory) => {
-    setSelectedCategory(cat);
-    setCatForm({ name: cat.name, nameAr: cat.nameAr });
-    setFormMode("edit-category");
-  };
-
-  const openAddArticle = (cat: FaqCategory) => {
-    setSelectedCategory(cat);
-    setArtForm({ title: "", titleAr: "", body: "", bodyAr: "" });
-    setFormMode("add-article");
-  };
-
-  const openEditArticle = (cat: FaqCategory, art: FaqArticle) => {
-    setSelectedCategory(cat);
-    setSelectedArticle(art);
-    setArtForm({ title: art.title, titleAr: art.titleAr, body: art.body, bodyAr: art.bodyAr });
-    setFormMode("edit-article");
-  };
-
   const handleDeleteConfirm = () => {
     if (!deleteTarget) return;
-    if (deleteTarget.type === "category") {
-      handleDeleteCategory(deleteTarget.id);
-    } else if (deleteTarget.type === "article" && deleteTarget.categoryId) {
-      handleDeleteArticle(deleteTarget.categoryId, deleteTarget.id);
-    }
+    if (deleteTarget.type === "category") handleDeleteCategory(deleteTarget.id);
+    else if (deleteTarget.type === "article" && deleteTarget.categoryId) handleDeleteArticle(deleteTarget.categoryId, deleteTarget.id);
     setDeleteTarget(null);
   };
+
+  if (view.type === "add-category" || view.type === "edit-category") {
+    const isEdit = view.type === "edit-category";
+    const cat = isEdit ? view.cat : null;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setView({ type: "list" })} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to FAQ List
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">{isEdit ? "Edit Category" : "Add New Category"}</CardTitle>
+            <CardDescription>Categories group related questions together. Give it a clear name in both languages.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Category Name (English) *</label>
+                <Input
+                  value={catForm.name}
+                  onChange={(e) => setCatForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Game Mechanics"
+                  className="text-base"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">اسم التصنيف (عربي)</label>
+                <Input
+                  value={catForm.nameAr}
+                  onChange={(e) => setCatForm((f) => ({ ...f, nameAr: e.target.value }))}
+                  placeholder="مثلاً: ميكانيكا اللعبة"
+                  dir="rtl"
+                  className="text-base"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => isEdit && cat ? handleEditCategory(cat) : handleAddCategory()}
+                disabled={saveMutation.isPending || !catForm.name.trim()}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {saveMutation.isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Category"}
+              </Button>
+              <Button variant="outline" onClick={() => setView({ type: "list" })} className="gap-2">
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (view.type === "add-article" || view.type === "edit-article") {
+    const isEdit = view.type === "edit-article";
+    const cat = view.cat;
+    const art = isEdit ? view.art : null;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setView({ type: "list" })} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to FAQ List
+          </Button>
+          <span className="text-muted-foreground text-sm">
+            <ChevronRight className="inline h-3.5 w-3.5" />
+            {cat.name}
+            <ChevronRight className="inline h-3.5 w-3.5 ml-1" />
+            {isEdit ? "Edit Question" : "New Question"}
+          </span>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">
+              {isEdit ? "Edit Question" : "Add New Question"}
+              <span className="text-muted-foreground font-normal text-base ml-2">— {cat.name}</span>
+            </CardTitle>
+            <CardDescription>
+              Write the question and a detailed answer. Both English and Arabic are shown to users based on their language setting.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Question (English) *</label>
+                <Input
+                  value={artForm.title}
+                  onChange={(e) => setArtForm((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="e.g. How do I redeem a code?"
+                  className="text-base"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">السؤال (عربي)</label>
+                <Input
+                  value={artForm.titleAr}
+                  onChange={(e) => setArtForm((f) => ({ ...f, titleAr: e.target.value }))}
+                  placeholder="مثلاً: إزاي أسترد كود؟"
+                  dir="rtl"
+                  className="text-base"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Answer (English) *</label>
+              <p className="text-xs text-muted-foreground">Use the toolbar to add bold, images, or YouTube embeds.</p>
+              <RichTextEditor
+                value={artForm.body}
+                onChange={(val) => setArtForm((f) => ({ ...f, body: val }))}
+                placeholder="Detailed answer in English..."
+                direction="ltr"
+                height={300}
+                resizingBar={true}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">الإجابة (عربي)</label>
+              <p className="text-xs text-muted-foreground" dir="rtl">استخدم شريط الأدوات لإضافة تنسيق أو صور أو فيديوهات.</p>
+              <RichTextEditor
+                value={artForm.bodyAr}
+                onChange={(val) => setArtForm((f) => ({ ...f, bodyAr: val }))}
+                placeholder="الإجابة التفصيلية بالعربي..."
+                direction="rtl"
+                height={300}
+                resizingBar={true}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t">
+              <Button
+                onClick={() => isEdit && art ? handleEditArticle(cat, art) : handleAddArticle(cat)}
+                disabled={saveMutation.isPending || !artForm.title.trim()}
+                className="gap-2"
+                size="lg"
+              >
+                <Save className="h-4 w-4" />
+                {saveMutation.isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Question"}
+              </Button>
+              <Button variant="outline" onClick={() => setView({ type: "list" })} className="gap-2" size="lg">
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -225,165 +356,65 @@ export default function FAQManager() {
         <div>
           <h2 className="text-2xl font-semibold">FAQ Management</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage FAQ categories and questions. Changes are reflected immediately on the FAQ page.
+            All categories and questions are shown below. Click a question to edit it on its own page.
           </p>
         </div>
-        <Button onClick={openAddCategory} className="gap-2">
+        <Button
+          onClick={() => { setCatForm({ name: "", nameAr: "" }); setView({ type: "add-category" }); }}
+          className="gap-2"
+        >
           <FolderPlus className="h-4 w-4" />
           Add Category
         </Button>
       </div>
 
-      {(formMode === "add-category" || formMode === "edit-category") && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{formMode === "add-category" ? "Add New Category" : "Edit Category"}</CardTitle>
-            <CardDescription>Provide the category name in both English and Arabic.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Category Name (English)</label>
-                <Input
-                  value={catForm.name}
-                  onChange={(e) => setCatForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Game Mechanics"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Category Name (Arabic — Egyptian)</label>
-                <Input
-                  value={catForm.nameAr}
-                  onChange={(e) => setCatForm((f) => ({ ...f, nameAr: e.target.value }))}
-                  placeholder="مثلاً: ميكانيكا اللعبة"
-                  dir="rtl"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={formMode === "add-category" ? handleAddCategory : handleEditCategory}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? "Saving..." : formMode === "add-category" ? "Create Category" : "Save Changes"}
-              </Button>
-              <Button variant="outline" onClick={() => setFormMode("none")}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {(formMode === "add-article" || formMode === "edit-article") && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {formMode === "add-article" ? "Add Question" : "Edit Question"}
-              {selectedCategory && <span className="text-muted-foreground font-normal"> — {selectedCategory.name}</span>}
-            </CardTitle>
-            <CardDescription>
-              Provide the question and answer in both English and Arabic. You can insert images and YouTube videos in the editor.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Question (English)</label>
-                <Input
-                  value={artForm.title}
-                  onChange={(e) => setArtForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. How do I report a hacker?"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Question (Arabic — Egyptian)</label>
-                <Input
-                  value={artForm.titleAr}
-                  onChange={(e) => setArtForm((f) => ({ ...f, titleAr: e.target.value }))}
-                  placeholder="مثلاً: إزاي أبلغ عن هاكر؟"
-                  dir="rtl"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Answer (English)</label>
-              <p className="text-xs text-muted-foreground">Use the toolbar to add formatting, images, or YouTube videos.</p>
-              <RichTextEditor
-                value={artForm.body}
-                onChange={(val) => setArtForm((f) => ({ ...f, body: val }))}
-                placeholder="Detailed answer in English..."
-                direction="ltr"
-                height={250}
-                resizingBar={true}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Answer (Arabic — Egyptian)</label>
-              <p className="text-xs text-muted-foreground" dir="rtl">استخدم شريط الأدوات لإضافة تنسيق أو صور أو فيديوهات يوتيوب.</p>
-              <RichTextEditor
-                value={artForm.bodyAr}
-                onChange={(val) => setArtForm((f) => ({ ...f, bodyAr: val }))}
-                placeholder="الإجابة التفصيلية بالعربي المصري..."
-                direction="rtl"
-                height={250}
-                resizingBar={true}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={formMode === "add-article" ? handleAddArticle : handleEditArticle}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? "Saving..." : formMode === "add-article" ? "Add Question" : "Save Changes"}
-              </Button>
-              <Button variant="outline" onClick={() => { setFormMode("none"); setSelectedArticle(null); }}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading FAQ data...</div>
+        <div className="text-center py-12 text-muted-foreground">Loading FAQ data...</div>
+      ) : faqData.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <HelpCircle className="h-14 w-14 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-semibold">No FAQ categories yet</p>
+          <p className="text-sm mb-4">Start by creating your first category, then add questions to it.</p>
+          <Button onClick={() => { setCatForm({ name: "", nameAr: "" }); setView({ type: "add-category" }); }} className="gap-2">
+            <FolderPlus className="h-4 w-4" />
+            Add First Category
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {faqData.map((cat) => (
-            <Card key={cat.id}>
-              <CardHeader className="pb-3">
+            <Card key={cat.id} className="overflow-hidden">
+              <CardHeader className="py-4 bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <button
-                    className="flex items-center gap-2 text-left flex-1"
-                    onClick={() => setExpandedCategory(expandedCategory === cat.id ? null : cat.id)}
-                  >
-                    {expandedCategory === cat.id ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
+                  <div className="flex items-center gap-3">
                     <div>
-                      <span className="font-semibold">{cat.name}</span>
-                      <span className="text-muted-foreground text-sm mr-2 ml-2">·</span>
-                      <span className="text-muted-foreground text-sm" dir="rtl">{cat.nameAr}</span>
+                      <span className="font-bold text-base">{cat.name}</span>
+                      {cat.nameAr && cat.nameAr !== cat.name && (
+                        <span className="text-muted-foreground text-sm mx-2" dir="rtl">— {cat.nameAr}</span>
+                      )}
                     </div>
-                    <Badge variant="secondary" className="ml-2">{cat.articles.length} Q&A</Badge>
-                  </button>
-                  <div className="flex gap-1 ml-2">
+                    <Badge variant="secondary">{cat.articles.length} question{cat.articles.length !== 1 ? "s" : ""}</Badge>
+                  </div>
+                  <div className="flex gap-1">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => openAddArticle(cat)}
-                      title="Add question"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setArtForm({ title: "", titleAr: "", body: "", bodyAr: "" });
+                        setView({ type: "add-article", cat });
+                      }}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Question
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => openEditCategory(cat)}
-                      title="Edit category"
+                      onClick={() => { setCatForm({ name: cat.name, nameAr: cat.nameAr }); setView({ type: "edit-category", cat }); }}
+                      title="Edit category name"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -392,94 +423,77 @@ export default function FAQManager() {
                       title="Delete category"
                       className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
 
-              {expandedCategory === cat.id && (
-                <CardContent className="pt-0">
-                  {cat.articles.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground text-sm">
-                      No questions yet.{" "}
-                      <button
-                        className="text-primary hover:underline"
-                        onClick={() => openAddArticle(cat)}
-                      >
-                        Add the first question
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {cat.articles.map((art) => (
-                        <div
-                          key={art.id}
-                          className="flex items-start justify-between p-3 bg-muted/30 rounded-lg border border-border"
-                        >
-                          <div className="flex-1 mr-2">
-                            <div className="flex items-start gap-2">
-                              <HelpCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="text-sm font-medium">{art.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5" dir="rtl">{art.titleAr}</p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditArticle(cat, art)}
-                              title="Edit question"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeleteTarget({ type: "article", id: art.id, categoryId: cat.id })}
-                              title="Delete question"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+              <CardContent className="pt-0 pb-0">
+                {cat.articles.length === 0 ? (
+                  <div className="py-6 text-center text-muted-foreground text-sm">
+                    No questions in this category yet.{" "}
+                    <button
+                      className="text-primary hover:underline font-medium"
+                      onClick={() => {
+                        setArtForm({ title: "", titleAr: "", body: "", bodyAr: "" });
+                        setView({ type: "add-article", cat });
+                      }}
+                    >
+                      Add the first question
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {cat.articles.map((art, idx) => (
+                      <div key={art.id} className="flex items-start justify-between py-3.5 px-1 hover:bg-muted/20 transition-colors group">
+                        <div className="flex items-start gap-2.5 flex-1 min-w-0 mr-2">
+                          <span className="text-xs font-bold text-muted-foreground mt-0.5 flex-shrink-0 w-5 text-center">{idx + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{art.title}</p>
+                            {art.titleAr && art.titleAr !== art.title && (
+                              <p className="text-xs text-muted-foreground truncate mt-0.5" dir="rtl">{art.titleAr}</p>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 w-full gap-2"
-                    onClick={() => openAddArticle(cat)}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Question to "{cat.name}"
-                  </Button>
-                </CardContent>
-              )}
+                        <div className="flex gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setArtForm({ title: art.title, titleAr: art.titleAr, body: art.body, bodyAr: art.bodyAr });
+                              setView({ type: "edit-article", cat, art });
+                            }}
+                            title="Edit this question"
+                            className="h-7 px-2 gap-1 text-xs"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget({ type: "article", id: art.id, categoryId: cat.id })}
+                            title="Delete question"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
             </Card>
           ))}
-
-          {faqData.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>No FAQ categories yet.</p>
-              <Button onClick={openAddCategory} className="mt-4 gap-2">
-                <FolderPlus className="h-4 w-4" />
-                Add First Category
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.type === "category"
                 ? "This will permanently delete this category and ALL its questions. This cannot be undone."

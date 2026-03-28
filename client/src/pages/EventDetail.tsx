@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useTheme } from "@/components/ThemeProvider";
-import { Calendar, ArrowLeft, ChevronRight, ThumbsUp, ThumbsDown, MessageSquare, Send } from "lucide-react";
+import { Calendar, ArrowLeft, ChevronRight, ThumbsUp, ThumbsDown, MessageSquare, Send, Trash2 } from "lucide-react";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -178,6 +178,8 @@ export default function EventDetail() {
     onError: (err: any) => toast({ title: "Failed to post", description: err.message, variant: "destructive" }),
   });
 
+  const isAdminUser = !!(typeof window !== "undefined" && localStorage.getItem("adminToken"));
+
   const likeCommentMutation = useMutation({
     mutationFn: async (id: string) => {
       const userId = localStorage.getItem("userId");
@@ -185,6 +187,24 @@ export default function EventDetail() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] }),
     onError: (err: any) => toast({ title: "Failed to like", description: err.message, variant: "destructive" }),
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      const adminToken = localStorage.getItem("adminToken");
+      const res = await fetch(`/api/events/${event!.id}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken || ""}` },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete comment");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] });
+      toast({ title: "Comment deleted" });
+    },
+    onError: (err: any) => toast({ title: "Failed to delete", description: err.message, variant: "destructive" }),
   });
 
   useEffect(() => {
@@ -375,11 +395,31 @@ export default function EventDetail() {
                         className="px-6 py-5 flex gap-4"
                         style={{ borderBottom: `1px solid ${borderSub}`, background: idx % 2 === 0 ? bgCard : commentAlt }}
                       >
-                        <CommentAvatar name={comment.author || "User"} />
+                        <CommentAvatar name={comment.name || comment.author || "User"} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-[13px] font-black" style={{ color: textMain }}>{String(comment.author || "").trim() || "Anonymous"}</span>
-                            <span className="text-[11px]" style={{ color: textFaint }}>{comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ""}</span>
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="text-[13px] font-black" style={{ color: textMain }}>{String(comment.name || comment.author || "").trim() || "Anonymous"}</span>
+                            <span className="text-[11px]" style={{ color: textFaint }}>
+                              {comment.createdAt ? (() => {
+                                const d = new Date(comment.createdAt);
+                                const day = String(d.getDate()).padStart(2, "0");
+                                const month = String(d.getMonth() + 1).padStart(2, "0");
+                                const year = d.getFullYear();
+                                const hours = String(d.getHours()).padStart(2, "0");
+                                const mins = String(d.getMinutes()).padStart(2, "0");
+                                return `${day}-${month}-${year} ${hours}:${mins}`;
+                              })() : ""}
+                            </span>
+                            {isAdminUser && (
+                              <button
+                                onClick={() => deleteCommentMutation.mutate(comment.id)}
+                                className="ml-auto text-[11px] font-bold flex items-center gap-1 px-2 py-0.5 rounded transition-colors hover:bg-red-500/20"
+                                style={{ color: "#ef4444" }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            )}
                           </div>
                           <p className="text-[13px] leading-relaxed" style={{ color: textMuted }}>{comment.content}</p>
                           <CommentReactions commentId={comment.id} likes={comment.likes} onLike={(id) => likeCommentMutation.mutate(id)} />

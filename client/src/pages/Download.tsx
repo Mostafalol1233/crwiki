@@ -1,9 +1,11 @@
-import { Download, Cpu, Zap, HardDrive, Monitor, CircleDot, CheckCircle2 } from "lucide-react";
+import { Download, Cpu, Zap, HardDrive, Monitor, CircleDot, CheckCircle2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageSEO from "@/components/PageSEO";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function DownloadPage() {
+  const { t } = useLanguage();
   const downloadUrl = "https://crossfire.z8games.com/download.html";
   const patchNotesUrl = "https://crossfire.z8games.com/news.html";
 
@@ -13,14 +15,14 @@ export default function DownloadPage() {
       icon: Cpu,
       items: [
         {
-          label: "Minimum:",
+          label: t("minimum"),
           specs: [
             "AMD Athlon™ 64 X2 Dual Core Processor 4600+ 2.4GHz",
             "Intel® Core™2 Duo Processor T6400 2.0GHz",
           ],
         },
         {
-          label: "Recommended:",
+          label: t("recommended"),
           specs: [
             "AMD Ryzen™ 3 1200 Processor @ 3.1GHz (4 Cores), ~3.4GHz",
             "Intel® Core™ i5-3470 Processor @ 3.20GHz (4 Cores), ~3.2GHz",
@@ -32,8 +34,8 @@ export default function DownloadPage() {
       category: "Memory (RAM)",
       icon: Zap,
       items: [
-        { label: "Minimum:", specs: ["4 GB"] },
-        { label: "Recommended:", specs: ["8 GB"] },
+        { label: t("minimum"), specs: ["4 GB"] },
+        { label: t("recommended"), specs: ["8 GB"] },
       ],
     },
     {
@@ -41,7 +43,7 @@ export default function DownloadPage() {
       icon: Monitor,
       items: [
         {
-          label: "Minimum:",
+          label: t("minimum"),
           specs: [
             "NVIDIA® GeForce® 9500 GT",
             "AMD Radeon™ HD 6450",
@@ -49,7 +51,7 @@ export default function DownloadPage() {
           ],
         },
         {
-          label: "Recommended:",
+          label: t("recommended"),
           specs: [
             "NVIDIA® GeForce® GT 630",
             "AMD Radeon™ HD 6570",
@@ -62,30 +64,30 @@ export default function DownloadPage() {
       category: "Storage (HDD)",
       icon: HardDrive,
       items: [
-        { label: "Minimum:", specs: ["15 GB of free space"] },
+        { label: t("minimum"), specs: ["15 GB of free space"] },
       ],
     },
     {
       category: "Operating System",
       icon: CircleDot,
       items: [
-        { label: "Minimum:", specs: ["Windows 7/8/10 64-bit"] },
+        { label: t("minimum"), specs: ["Windows 7/8/10 64-bit"] },
       ],
     },
     {
       category: "DirectX©",
       icon: Zap,
       items: [
-        { label: "Minimum:", specs: ["DirectX© 9.0c"] },
-        { label: "Recommended:", specs: ["DirectX© 9.0c or higher"] },
+        { label: t("minimum"), specs: ["DirectX© 9.0c"] },
+        { label: t("recommended"), specs: ["DirectX© 9.0c or higher"] },
       ],
     },
     {
       category: "Internet Connection",
       icon: CircleDot,
       items: [
-        { label: "Minimum:", specs: ["Cable/DSL"] },
-        { label: "Recommended:", specs: ["Cable / DSL or better"] },
+        { label: t("minimum"), specs: ["Cable/DSL"] },
+        { label: t("recommended"), specs: ["Cable / DSL or better"] },
       ],
     },
   ];
@@ -93,13 +95,13 @@ export default function DownloadPage() {
   return (
     <>
       <PageSEO
-        title={"Download — CrossFire Wiki"}
-        description={"Official CrossFire downloader and system requirements. Download the game and join the action."}
+        title={"Download — CrossFire West Wiki"}
+        description={"Download CrossFire West (crossfirewest) — the North American server by Z8Games. Learn about in-game events, missions, and system requirements."}
         canonicalPath="/download"
         schemaType="WebPage"
         schemaData={{
-          name: "CrossFire Download",
-          description: "Official downloader and system requirements for CrossFire.",
+          name: "CrossFire West Download",
+          description: "Download CrossFire West and learn about events and missions.",
           url: "/download",
         }}
       />
@@ -125,15 +127,15 @@ export default function DownloadPage() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
         {/* Header */}
-        <div className="mb-16 text-center">
+        <div className="mb-10 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Download className="h-8 w-8 text-destructive" />
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Download CrossFire
+              CrossFire West
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Official Downloader — Get CrossFire today and join the action
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-3">
+            {t("officialInstallerDesc")}
           </p>
           <Button
             asChild
@@ -141,34 +143,47 @@ export default function DownloadPage() {
             className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
           >
             <a href={downloadUrl} target="_blank" rel="noreferrer">
-              Download Now
+              {t("downloadNow")}
             </a>
           </Button>
+        </div>
+
+        {/* Important notice */}
+        <div className="mb-10 p-5 rounded-lg border border-primary/40 bg-primary/5 flex gap-4 items-start max-w-3xl mx-auto">
+          <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-bold text-foreground mb-1">
+              هذا الموقع عن CrossFire West (crossfirewest) — مش إصدار جديد
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              بنشرح للاعبين الأيفنتات والمهمات والمحتوى الموجود داخل اللعبة. مش بنقدم أي نسخة جديدة أو تعديلات — فقط معلومات وشرح عن اللعبة الأصلية الخاصة بـ Z8Games.
+            </p>
+          </div>
         </div>
 
         <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-border/60">
             <CardHeader>
-              <CardTitle className="text-lg">Official installer</CardTitle>
+              <CardTitle className="text-lg">{t("officialInstaller")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Download the latest CrossFire installer from the official Z8Games page to avoid broken or outdated mirrors.
+              {t("officialInstallerDesc")}
             </CardContent>
           </Card>
           <Card className="border-border/60">
             <CardHeader>
-              <CardTitle className="text-lg">Check updates first</CardTitle>
+              <CardTitle className="text-lg">{t("checkUpdatesFirst")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Review current announcements and patch notes before reinstalling so you know whether maintenance or launcher updates are active.
+              {t("checkUpdatesDesc")}
             </CardContent>
           </Card>
           <Card className="border-border/60">
             <CardHeader>
-              <CardTitle className="text-lg">Use enough storage</CardTitle>
+              <CardTitle className="text-lg">{t("useEnoughStorage")}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              Keep extra free disk space available for updates, anticheat files, and temporary installer extraction.
+              {t("useEnoughStorageDesc")}
             </CardContent>
           </Card>
         </div>
@@ -176,7 +191,7 @@ export default function DownloadPage() {
         {/* System Requirements */}
         <div className="mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center text-foreground">
-            System Requirements
+            {t("systemRequirements")}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -222,10 +237,10 @@ export default function DownloadPage() {
         {/* CTA Section */}
         <div className="bg-gradient-to-r from-destructive/20 via-primary/10 to-destructive/20 rounded-lg border border-destructive/30 p-8 md:p-12 text-center">
           <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-            Ready to join the battle?
+            {t("readyToJoin")}
           </h3>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Download CrossFire now and experience intense multiplayer action. Check the system requirements above to ensure your PC meets the minimum specifications.
+            {t("readyToJoinDesc")}
           </p>
           <Button
             asChild
@@ -234,12 +249,12 @@ export default function DownloadPage() {
           >
             <a href={downloadUrl} target="_blank" rel="noreferrer">
               <Download className="mr-2 h-3 w-3" />
-              Download CrossFire
+              {t("downloadCrossFire")}
             </a>
           </Button>
           <Button asChild variant="outline" size="sm" className="ml-3">
             <a href={patchNotesUrl} target="_blank" rel="noreferrer">
-              Latest announcements
+              {t("latestAnnouncements")}
             </a>
           </Button>
         </div>

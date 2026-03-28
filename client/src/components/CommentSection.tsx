@@ -137,7 +137,16 @@ function CommentItemBase({
                   {comment.name}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {comment.date}
+                  {comment.date ? (() => {
+                    const d = new Date(comment.date);
+                    if (isNaN(d.getTime())) return comment.date;
+                    const day = String(d.getDate()).padStart(2, "0");
+                    const month = String(d.getMonth() + 1).padStart(2, "0");
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, "0");
+                    const mins = String(d.getMinutes()).padStart(2, "0");
+                    return `${day}-${month}-${year} ${hours}:${mins}`;
+                  })() : ""}
                 </span>
               </div>
               <p className="text-sm text-foreground leading-relaxed mb-2">
@@ -164,7 +173,7 @@ function CommentItemBase({
                     className="h-8 px-2 text-muted-foreground hover:text-primary"
                   >
                     <MessageSquare className="h-4 w-4 mr-1" />
-                    Reply
+                    رد
                   </Button>
                 )}
 
@@ -176,7 +185,7 @@ function CommentItemBase({
                     data-testid={`button-delete-comment-${comment.id}`}
                     className="h-8 ml-2 text-destructive hover:bg-destructive/10"
                   >
-                    Delete
+                    حذف
                   </Button>
                 )}
               </div>
@@ -187,14 +196,14 @@ function CommentItemBase({
             <div className="mt-4 ml-14 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  placeholder="Your name (Required)"
+                  placeholder="اسمك (مطلوب)"
                   value={replyName}
                   onChange={(e) => onReplyNameChange(e.target.value)}
                   autoComplete="off"
                   data-testid={`input-reply-name-${comment.id}`}
                 />
                 <Input
-                  placeholder="Email (Optional)"
+                  placeholder="البريد الإلكتروني (اختياري)"
                   type="email"
                   value={replyEmail}
                   onChange={(e) => onReplyEmailChange(e.target.value)}
@@ -203,7 +212,7 @@ function CommentItemBase({
                 />
               </div>
               <Textarea
-                placeholder={`Reply to @${comment.name}...`}
+                placeholder={`رد على @${comment.name}...`}
                 value={replyContent}
                 onChange={(e) => onReplyContentChange(e.target.value)}
                 rows={3}
@@ -215,7 +224,7 @@ function CommentItemBase({
                   onClick={() => onReplySubmit(comment.id)}
                   data-testid={`button-submit-reply-${comment.id}`}
                 >
-                  Submit Reply
+                  إرسال الرد
                 </Button>
                 <Button
                   variant="outline"
@@ -223,7 +232,7 @@ function CommentItemBase({
                   onClick={onReplyCancel}
                   data-testid={`button-cancel-reply-${comment.id}`}
                 >
-                  Cancel
+                  إلغاء
                 </Button>
               </div>
             </div>
@@ -387,14 +396,14 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              placeholder="Your name (Required)"
+              placeholder="اسمك (مطلوب)"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="off"
               data-testid="input-comment-name"
             />
             <Input
-              placeholder="Email (Optional)"
+              placeholder="البريد الإلكتروني (اختياري)"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -427,7 +436,7 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
               </Button>
             </div>
             <Textarea
-              placeholder="Write your comment..."
+              placeholder="اكتب تعليقك..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}

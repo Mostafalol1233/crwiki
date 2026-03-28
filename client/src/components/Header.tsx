@@ -9,7 +9,7 @@ interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
@@ -24,47 +24,47 @@ export function Header() {
 
   const navItems: MenuItem[] = [
     {
-      label: "NEWS",
+      label: t("navNews"),
       dropdown: [
-        { path: "/news", label: "News" },
-        { path: "/posts", label: "Updates" },
-        { path: "/category/events", label: "Events" },
-        { path: "/videos", label: "Videos" },
+        { path: "/news", label: t("news") },
+        { path: "/posts", label: t("navUpdates") },
+        { path: "/category/events", label: t("navEvents") },
+        { path: "/videos", label: t("navVideos") },
       ],
     },
     {
-      label: "GAME",
+      label: t("navGame"),
       dropdown: [
-        { path: "/about", label: "Game Overview" },
-        { path: "/modes", label: "Modes" },
-        { path: "/maps", label: "Maps" },
-        { path: "/weapons", label: "Weapons" },
-        { path: "/mercenaries", label: "Mercenaries" },
-        { path: "/ranks", label: "Rankings" },
-        { path: "/download", label: "Download" },
+        { path: "/about", label: t("navGameOverview") },
+        { path: "/modes", label: t("navModes") },
+        { path: "/maps", label: t("navMaps") },
+        { path: "/weapons", label: t("navWeapons") },
+        { path: "/mercenaries", label: t("navMercenaries") },
+        { path: "/ranks", label: t("navRankings") },
+        { path: "/download", label: t("navDownload") },
       ],
     },
     {
-      label: "SHOP",
+      label: t("navShop"),
       dropdown: [
-        { path: "/sellers", label: "Sellers" },
-        { path: "/sellers", label: "Browse Items" },
+        { path: "/sellers", label: t("navSellers") },
+        { path: "/sellers", label: t("navBrowseItems") },
       ],
     },
     {
-      label: "COMMUNITY",
+      label: t("navCommunity"),
       dropdown: [
-        { path: "/posts", label: "Forum" },
-        { path: "/reviews", label: "Reviews" },
-        { path: "/contact", label: "Contact" },
+        { path: "/posts", label: t("navForum") },
+        { path: "/reviews", label: t("navReviews") },
+        { path: "/contact", label: t("navContact") },
       ],
     },
     {
-      label: "SUPPORT",
+      label: t("navSupport"),
       dropdown: [
-        { path: "/faq", label: "FAQ" },
-        { path: "/support", label: "Submit Ticket" },
-        { path: "/my-tickets", label: "My Tickets" },
+        { path: "/faq", label: t("navFAQ") },
+        { path: "/support", label: t("navSubmitTicket") },
+        { path: "/my-tickets", label: t("navMyTickets") },
       ],
     },
   ];
@@ -150,19 +150,19 @@ export function Header() {
                     {user?.username || "Profile"} <ChevronDown className="h-3 w-3" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50" style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}>
-                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>Profile</Link>
-                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>My Tickets</Link>
-                    <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText }}>Logout</button>
+                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>{t("navProfile")}</Link>
+                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>{t("navMyTickets")}</Link>
+                    <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText }}>{t("navLogout")}</button>
                   </div>
                 </div>
               </>
             ) : (
               <div className="hidden md:flex items-center gap-1 ml-1">
                 <Link href="/login" className="h-8 px-4 flex items-center text-[12px] font-semibold rounded transition-colors hover:text-[#f5a623]" style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}>
-                  Login
+                  {t("login")}
                 </Link>
                 <Link href="/register" className="h-8 px-4 flex items-center text-[12px] font-bold rounded transition-opacity hover:opacity-90" style={{ background: navAccent, color: "#000000" }}>
-                  Sign Up
+                  {t("signUp")}
                 </Link>
               </div>
             )}
@@ -227,7 +227,7 @@ export function Header() {
           </nav>
 
           {/* Center: Download button */}
-          <div className="flex-shrink-0 flex flex-col items-center" style={{ position: "relative" }}>
+          <div className="flex-shrink-0 flex flex-col items-center mx-5" style={{ position: "relative" }}>
             <Link href="/download">
               <button
                 className="group relative overflow-hidden font-black uppercase tracking-[0.22em] text-[13px] transition-all duration-200 hover:brightness-110 active:scale-95"
@@ -364,8 +364,8 @@ export function Header() {
             </div>
             {!isLoggedIn ? (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: textColor, border: `1px solid ${navBorder}` }} onClick={() => setMobileMenuOpen(false)}>Login</Link>
-                <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: textColor, border: `1px solid ${navBorder}` }} onClick={() => setMobileMenuOpen(false)}>{t("login")}</Link>
+                <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>{t("signUp")}</Link>
               </div>
             ) : (
               <Link href="/profile" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: navAccent, border: `1px solid ${navAccent}` }} onClick={() => setMobileMenuOpen(false)}>{user?.username}</Link>

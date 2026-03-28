@@ -70,11 +70,11 @@ export function Header() {
       ],
     },
     {
-      label: "ESPORTS",
+      label: "SUPPORT",
       dropdown: [
-        { path: "/category/events", label: "Tournaments" },
-        { path: "/videos", label: "Highlights" },
-        { path: "/ranks", label: "Leaderboards" },
+        { path: "/faq", label: "FAQ" },
+        { path: "/support", label: "Submit Ticket" },
+        { path: "/my-tickets", label: "My Tickets" },
       ],
     },
   ];
@@ -89,20 +89,20 @@ export function Header() {
         <div className="relative group h-full flex items-center">
           <button
             className="cf-nav-item h-full flex items-center px-4 text-[13px] font-black uppercase tracking-wider transition-colors hover:text-[#f5a623]"
-            style={{ color: active ? "#f5a623" : "#ccc", letterSpacing: "0.08em" }}
+            style={{ color: active ? "#f5a623" : (theme === "light" ? "#444" : "#ccc"), letterSpacing: "0.08em" }}
           >
             {item.label}
           </button>
           <div
             className="absolute left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pt-0"
-            style={{ top: "100%", minWidth: "190px", background: "linear-gradient(180deg,#1e1e1e 0%,#131313 100%)", border: "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}
+            style={{ top: "100%", minWidth: "190px", background: theme === "light" ? "linear-gradient(180deg,#ffffff 0%,#f7f7f7 100%)" : "linear-gradient(180deg,#1e1e1e 0%,#131313 100%)", border: theme === "light" ? "1px solid #dadada" : "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}
           >
             {item.dropdown.map((sub) => (
               <Link
                 key={sub.path}
                 href={sub.path}
                 className="block px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all hover:text-[#f5a623] hover:pl-6"
-                style={{ color: location === sub.path ? "#f5a623" : "#888", borderBottom: "1px solid #1a1a1a" }}
+                style={{ color: location === sub.path ? "#f5a623" : (theme === "light" ? "#555" : "#888"), borderBottom: theme === "light" ? "1px solid #ececec" : "1px solid #1a1a1a" }}
               >
                 {sub.label}
               </Link>
@@ -115,7 +115,7 @@ export function Header() {
       <Link
         href={item.path || "#"}
         className="cf-nav-item h-full flex items-center px-4 text-[13px] font-black uppercase tracking-wider transition-colors hover:text-[#f5a623]"
-        style={{ color: location === item.path ? "#f5a623" : "#ccc", letterSpacing: "0.08em" }}
+        style={{ color: location === item.path ? "#f5a623" : (theme === "light" ? "#444" : "#ccc"), letterSpacing: "0.08em" }}
       >
         {item.label}
       </Link>
@@ -125,7 +125,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* ── Top utility bar ── */}
-      <div style={{ background: "#060606", borderBottom: "1px solid #181818" }}>
+      <div style={{ background: theme === "light" ? "#f7f7f7" : "#060606", borderBottom: theme === "light" ? "1px solid #d9d9d9" : "1px solid #181818" }}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between gap-3 text-[12px]">
           {/* Site logo — left */}
           <Link href="/" aria-label="Home" className="flex items-center flex-shrink-0">
@@ -143,24 +143,24 @@ export function Header() {
                     <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Chat</span>
                   </Link>
                   <div className="relative group">
-                    <button className="flex items-center gap-1.5 px-3 py-1 transition-colors hover:text-[#f5a623]" style={{ color: "#ccc", background: "#151515", border: "1px solid #2a2a2a" }}>
+                    <button className="flex items-center gap-1.5 px-3 py-1 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#333" : "#ccc", background: theme === "light" ? "#ffffff" : "#151515", border: theme === "light" ? "1px solid #d6d6d6" : "1px solid #2a2a2a" }}>
                       {user.username || "Profile"} <ChevronDown className="h-3 w-3" />
                     </button>
-                    <div className="absolute right-0 mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50" style={{ background: "#141414", border: "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}>
-                      <Link href="/profile" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>Profile</Link>
-                      <Link href="/my-tickets" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>My Tickets</Link>
-                      <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="block w-full text-left px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: "#aaa" }}>Logout</button>
+                    <div className="absolute right-0 mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50" style={{ background: theme === "light" ? "#ffffff" : "#141414", border: theme === "light" ? "1px solid #d6d6d6" : "1px solid #2a2a2a", borderTop: "2px solid #f5a623" }}>
+                      <Link href="/profile" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>Profile</Link>
+                      <Link href="/my-tickets" className="block px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>My Tickets</Link>
+                      <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="block w-full text-left px-4 py-2 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>Logout</button>
                     </div>
                   </div>
                 </>
               );
             }
             return (
-              <div className="flex items-center overflow-hidden" style={{ border: "1px solid #282828", background: "#0e0e0e" }}>
-                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623", borderRight: "1px solid #282828" }}>
+              <div className="flex items-center overflow-hidden" style={{ border: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828", background: theme === "light" ? "#ffffff" : "#0e0e0e" }}>
+                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623", borderRight: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828" }}>
                   Sign Up
                 </Link>
-                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: "#aaa" }}>
+                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>
                   Login
                 </Link>
               </div>
@@ -177,8 +177,8 @@ export function Header() {
           backgroundRepeat: "no-repeat",
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
-          backgroundColor: "#0f0f0f",
-          borderTop: "1px solid #2b2b2b",
+          backgroundColor: theme === "light" ? "#f3f3f3" : "#0f0f0f",
+          borderTop: theme === "light" ? "1px solid #dadada" : "1px solid #2b2b2b",
           borderBottom: "2px solid #7a5310",
           boxShadow: "0 4px 30px rgba(0,0,0,0.95)",
         }}
@@ -222,14 +222,14 @@ export function Header() {
         </div>
 
         {/* Mobile */}
-        <div className="md:hidden flex items-center h-14 px-4">
+        <div className="md:hidden flex items-center h-14 px-4" style={{ background: theme === "light" ? "#fafafa" : "transparent" }}>
           <Link href="/" className="mr-auto">
             <img src={siteLogoImage} alt="CrossFire" className="h-9 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/crossfire-favicon.png"; }} draggable={false} />
           </Link>
           <div className="flex items-center gap-1">
-            <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#666" }}><Globe className="h-4 w-4" /></button>
-            <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#666" }}>{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
-            <button className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: theme === "light" ? "#555" : "#666" }}><Globe className="h-4 w-4" /></button>
+            <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: theme === "light" ? "#555" : "#666" }}>{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
+            <button className="h-8 w-8 flex items-center justify-center hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#ccc" }} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
@@ -238,24 +238,24 @@ export function Header() {
 
       {/* Mobile dropdown */}
       {mobileMenuOpen && (
-        <nav className="md:hidden py-3 px-4" style={{ background: "#0d0d0d", borderBottom: "1px solid #1a1a1a" }}>
+        <nav className="md:hidden py-3 px-4" style={{ background: theme === "light" ? "#ffffff" : "#0d0d0d", borderBottom: theme === "light" ? "1px solid #e3e3e3" : "1px solid #1a1a1a" }}>
           <form onSubmit={handleSearch} className="relative mb-3">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4" style={{ color: "#444" }} />
-            <Input type="search" placeholder="Search..." className="pl-9 h-9" style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", color: "#ccc" }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input type="search" placeholder="Search..." className="pl-9 h-9" style={{ background: theme === "light" ? "#f5f5f5" : "#0a0a0a", border: theme === "light" ? "1px solid #d8d8d8" : "1px solid #2a2a2a", color: theme === "light" ? "#333" : "#ccc" }} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </form>
           <div className="space-y-0.5">
             {[...leftMenuItems, ...rightMenuItems].map((item) => (
               <div key={`m-${item.label}`}>
                 {item.dropdown ? (
                   <>
-                    <button className="w-full text-left px-3 py-2 text-sm font-black uppercase tracking-wider flex items-center justify-between hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => toggleMobileSub(item.label)}>
+                    <button className="w-full text-left px-3 py-2 text-sm font-black uppercase tracking-wider flex items-center justify-between hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#ccc" }} onClick={() => toggleMobileSub(item.label)}>
                       {item.label}
                       <ChevronDown className={`h-3 w-3 transition-transform ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
                     </button>
                     {mobileExpandedMenu === item.label && (
                       <div className="pl-4 pb-1" style={{ borderLeft: "2px solid #f5a623", marginLeft: "12px" }}>
                         {item.dropdown.map((sub) => (
-                          <Link key={`ms-${sub.path}`} href={sub.path} className="block px-3 py-1.5 text-xs uppercase tracking-wide transition-colors hover:text-[#f5a623]" style={{ color: "#777" }} onClick={() => setMobileMenuOpen(false)}>
+                          <Link key={`ms-${sub.path}`} href={sub.path} className="block px-3 py-1.5 text-xs uppercase tracking-wide transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#666" : "#777" }} onClick={() => setMobileMenuOpen(false)}>
                             {sub.label}
                           </Link>
                         ))}
@@ -263,7 +263,7 @@ export function Header() {
                     )}
                   </>
                 ) : (
-                  <Link href={item.path || "#"} className="block px-3 py-2 text-sm font-black uppercase tracking-wider hover:text-[#f5a623]" style={{ color: "#ccc" }} onClick={() => setMobileMenuOpen(false)}>
+                  <Link href={item.path || "#"} className="block px-3 py-2 text-sm font-black uppercase tracking-wider hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#ccc" }} onClick={() => setMobileMenuOpen(false)}>
                     {item.label}
                   </Link>
                 )}

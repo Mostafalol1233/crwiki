@@ -130,6 +130,8 @@ export function Header() {
                   <Link href="/chat" className="flex items-center gap-1.5 transition-colors hover:text-[#f5a623]" style={{ color: "#888" }}>
                     <MessageSquare className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Chat</span>
                   </Link>
+                  <button onClick={toggleLanguage} className="hidden md:flex h-7 w-7 items-center justify-center hover:text-[#f5a623] transition-colors" style={{ color: theme === "light" ? "#555" : "#666" }}><Globe className="h-3.5 w-3.5" /></button>
+                  <button onClick={toggleTheme} className="hidden md:flex h-7 w-7 items-center justify-center hover:text-[#f5a623] transition-colors" style={{ color: theme === "light" ? "#555" : "#666" }}>{theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}</button>
                   <div className="relative group">
                     <button className="flex items-center gap-1.5 px-3 py-1 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#333" : "#ccc", background: theme === "light" ? "#ffffff" : "#151515", border: theme === "light" ? "1px solid #d6d6d6" : "1px solid #2a2a2a" }}>
                       {user.username || "Profile"} <ChevronDown className="h-3 w-3" />
@@ -144,13 +146,17 @@ export function Header() {
               );
             }
             return (
-              <div className="flex items-center overflow-hidden" style={{ border: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828", background: theme === "light" ? "#ffffff" : "#0e0e0e" }}>
-                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623", borderRight: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828" }}>
-                  Sign Up
-                </Link>
-                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>
-                  Login
-                </Link>
+              <div className="flex items-center gap-2">
+                <button onClick={toggleLanguage} className="hidden md:flex h-7 w-7 items-center justify-center hover:text-[#f5a623] transition-colors" style={{ color: theme === "light" ? "#555" : "#666" }}><Globe className="h-3.5 w-3.5" /></button>
+                <button onClick={toggleTheme} className="hidden md:flex h-7 w-7 items-center justify-center hover:text-[#f5a623] transition-colors" style={{ color: theme === "light" ? "#555" : "#666" }}>{theme === "light" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}</button>
+                <div className="flex items-center overflow-hidden" style={{ border: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828", background: theme === "light" ? "#ffffff" : "#0e0e0e" }}>
+                  <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623", borderRight: theme === "light" ? "1px solid #d0d0d0" : "1px solid #282828" }}>
+                    Sign Up
+                  </Link>
+                  <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623]" style={{ color: theme === "light" ? "#444" : "#aaa" }}>
+                    Login
+                  </Link>
+                </div>
               </div>
             );
           })()}

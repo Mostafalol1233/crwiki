@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useTheme } from "@/components/ThemeProvider";
 import { Calendar, ArrowLeft, ChevronRight, ThumbsUp, ThumbsDown, MessageSquare, Send } from "lucide-react";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
@@ -104,7 +105,21 @@ export default function EventDetail() {
   const legacyId = params?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const { toast } = useToast();
+
+  const bg = theme === "light" ? "#f5f5f5" : "#0f0f0f";
+  const bgSub = theme === "light" ? "#efefef" : "#0a0a0a";
+  const bgCard = theme === "light" ? "#ffffff" : "#141414";
+  const bgInput = theme === "light" ? "#f9f9f9" : "#0d0d0d";
+  const border = theme === "light" ? "#e0e0e0" : "#1e1e1e";
+  const borderSub = theme === "light" ? "#d5d5d5" : "#1a1a1a";
+  const textMain = theme === "light" ? "#111111" : "#ffffff";
+  const textMuted = theme === "light" ? "#555555" : "#888888";
+  const textFaint = theme === "light" ? "#888888" : "#444444";
+  const hoverBg = theme === "light" ? "#f0f0f0" : "#1a1a1a";
+  const btnBorder = theme === "light" ? "#d0d0d0" : "#2a2a2a";
+  const commentAlt = theme === "light" ? "#f9f9f9" : "#131313";
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar" | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
@@ -198,17 +213,17 @@ export default function EventDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#111" }}>
-        <div className="text-sm font-bold uppercase tracking-widest" style={{ color: "#555" }}>Loading event…</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: bg }}>
+        <div className="text-sm font-bold uppercase tracking-widest" style={{ color: textMuted }}>Loading event…</div>
       </div>
     );
   }
 
   if (isError || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#111" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: bg }}>
         <div className="text-center">
-          <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: "#ccc" }}>Event Not Found</h2>
+          <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: textMain }}>Event Not Found</h2>
           <button onClick={() => setLocation("/")} className="flex items-center gap-2 mx-auto px-5 py-2 font-bold uppercase text-xs tracking-widest" style={{ background: "#f5a623", color: "#000" }}>
             <ArrowLeft className="h-4 w-4" /> Back to Home
           </button>
@@ -248,11 +263,11 @@ export default function EventDetail() {
       />
 
       {/* Page wrapper */}
-      <div className="min-h-screen" style={{ background: "#0f0f0f" }}>
+      <div className="min-h-screen" style={{ background: bg }}>
 
         {/* Sub-header breadcrumb bar */}
-        <div style={{ background: "#0a0a0a", borderBottom: "1px solid #1a1a1a" }}>
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#444" }}>
+        <div style={{ background: bgSub, borderBottom: `1px solid ${borderSub}` }}>
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: textFaint }}>
             <Breadcrumbs items={breadcrumbs} />
           </div>
         </div>
@@ -264,14 +279,14 @@ export default function EventDetail() {
             <button
               onClick={() => setLocation("/category/events")}
               className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623]"
-              style={{ color: "#555", background: "#151515", border: "1px solid #222" }}
+              style={{ color: textMuted, background: bgCard, border: `1px solid ${btnBorder}` }}
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Events
             </button>
             {hasArabicVersion && (
               <>
-                <button onClick={() => setContentLanguage("en")} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ color: resolvedContentLanguage === "en" ? "#f5a623" : "#555", background: "#151515", border: "1px solid #222" }}>English</button>
-                <button onClick={() => setContentLanguage("ar")} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ color: resolvedContentLanguage === "ar" ? "#f5a623" : "#555", background: "#151515", border: "1px solid #222" }}>العربية</button>
+                <button onClick={() => setContentLanguage("en")} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ color: resolvedContentLanguage === "en" ? "#f5a623" : textMuted, background: bgCard, border: `1px solid ${btnBorder}` }}>English</button>
+                <button onClick={() => setContentLanguage("ar")} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ color: resolvedContentLanguage === "ar" ? "#f5a623" : textMuted, background: bgCard, border: `1px solid ${btnBorder}` }}>العربية</button>
               </>
             )}
           </div>
@@ -283,7 +298,7 @@ export default function EventDetail() {
             <article className="flex-1 min-w-0" dir={useArabicContent ? "rtl" : undefined}>
 
               {/* Article header card */}
-              <div className="mb-6 overflow-hidden" style={{ background: "#141414", border: "1px solid #1e1e1e", borderTop: "3px solid #f5a623" }}>
+              <div className="mb-6 overflow-hidden" style={{ background: bgCard, border: `1px solid ${border}`, borderTop: "3px solid #f5a623" }}>
                 <div className="p-6 md:p-8">
                   {/* Event type badge */}
                   <div className="flex items-center gap-3 mb-4">
@@ -293,28 +308,28 @@ export default function EventDetail() {
                     >
                       {event.type === "upcoming" ? "Upcoming" : "CrossFire Announcement"}
                     </span>
-                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#555" }}>
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style={{ color: textMuted }}>
                       <Calendar className="h-3.5 w-3.5" /> {event.date}
                     </span>
                   </div>
 
-                  <h1 className="text-white font-black text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-tight mb-6">
+                  <h1 className="font-black text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-tight mb-6" style={{ color: textMain }}>
                     {title}
                   </h1>
 
                   {/* Author row */}
-                  <div className="flex items-center gap-3 pb-5" style={{ borderBottom: "1px solid #1e1e1e" }}>
+                  <div className="flex items-center gap-3 pb-5" style={{ borderBottom: `1px solid ${border}` }}>
                     <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm" style={{ background: "#3a7bd5", color: "#fff" }}>GM</div>
                     <div>
-                      <div className="text-[13px] font-black" style={{ color: "#ccc" }}>[GM] Bimora Team</div>
-                      <div className="text-[11px]" style={{ color: "#444" }}>{event.date}</div>
+                      <div className="text-[13px] font-black" style={{ color: textMain }}>[GM] Bimora Team</div>
+                      <div className="text-[11px]" style={{ color: textFaint }}>{event.date}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Event banner image */}
                 {event.image && (
-                  <div className="w-full" style={{ background: "#0a0a0a" }}>
+                  <div className="w-full" style={{ background: bgSub }}>
                     <img
                       src={event.image}
                       alt={title}
@@ -329,7 +344,7 @@ export default function EventDetail() {
               {/* Article body */}
               <div
                 className="mb-6 p-6 md:p-8"
-                style={{ background: "#141414", border: "1px solid #1e1e1e" }}
+                style={{ background: bgCard, border: `1px solid ${border}` }}
                 ref={contentRef}
                 dir={useArabicContent ? "rtl" : undefined}
               >
@@ -337,19 +352,19 @@ export default function EventDetail() {
               </div>
 
               {/* ── Comments section ── */}
-              <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
+              <div style={{ background: bgCard, border: `1px solid ${border}` }}>
 
                 {/* Header */}
-                <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid #1e1e1e" }}>
+                <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${border}` }}>
                   <MessageSquare className="h-4 w-4" style={{ color: "#f5a623" }} />
-                  <span className="font-black uppercase tracking-widest text-[13px]" style={{ color: "#ccc" }}>
+                  <span className="font-black uppercase tracking-widest text-[13px]" style={{ color: textMain }}>
                     Comments ({comments.length})
                   </span>
                 </div>
 
                 {/* Comment list */}
                 {comments.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-[12px] font-bold uppercase tracking-widest" style={{ color: "#333" }}>
+                  <div className="px-6 py-10 text-center text-[12px] font-bold uppercase tracking-widest" style={{ color: textFaint }}>
                     Be the first to comment!
                   </div>
                 ) : (
@@ -358,15 +373,15 @@ export default function EventDetail() {
                       <div
                         key={comment.id}
                         className="px-6 py-5 flex gap-4"
-                        style={{ borderBottom: "1px solid #181818", background: idx % 2 === 0 ? "#141414" : "#131313" }}
+                        style={{ borderBottom: `1px solid ${borderSub}`, background: idx % 2 === 0 ? bgCard : commentAlt }}
                       >
                         <CommentAvatar name={comment.author || "User"} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
-                            <span className="text-[13px] font-black" style={{ color: "#ccc" }}>{String(comment.author || "").trim() || "Anonymous"}</span>
-                            <span className="text-[11px]" style={{ color: "#3a3a3a" }}>{comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ""}</span>
+                            <span className="text-[13px] font-black" style={{ color: textMain }}>{String(comment.author || "").trim() || "Anonymous"}</span>
+                            <span className="text-[11px]" style={{ color: textFaint }}>{comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ""}</span>
                           </div>
-                          <p className="text-[13px] leading-relaxed" style={{ color: "#888" }}>{comment.content}</p>
+                          <p className="text-[13px] leading-relaxed" style={{ color: textMuted }}>{comment.content}</p>
                           <CommentReactions commentId={comment.id} likes={comment.likes} onLike={(id) => likeCommentMutation.mutate(id)} />
                         </div>
                       </div>
@@ -375,8 +390,8 @@ export default function EventDetail() {
                 )}
 
                 {/* Post comment form */}
-                <div className="px-6 py-5" style={{ borderTop: "1px solid #1e1e1e", background: "#111" }}>
-                  <div className="mb-3 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#444" }}>Leave a Comment</div>
+                <div className="px-6 py-5" style={{ borderTop: `1px solid ${border}`, background: bgSub }}>
+                  <div className="mb-3 text-[11px] font-bold uppercase tracking-widest" style={{ color: textFaint }}>Leave a Comment</div>
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
@@ -385,7 +400,7 @@ export default function EventDetail() {
                         value={newCommentAuthor}
                         onChange={(e) => setNewCommentAuthor(e.target.value)}
                         className="px-3 py-2 text-[13px] w-full outline-none"
-                        style={{ background: "#0d0d0d", border: "1px solid #222", color: "#ccc" }}
+                        style={{ background: bgInput, border: `1px solid ${btnBorder}`, color: textMain }}
                       />
                       <input
                         type="email"
@@ -393,7 +408,7 @@ export default function EventDetail() {
                         value={newCommentEmail}
                         onChange={(e) => setNewCommentEmail(e.target.value)}
                         className="px-3 py-2 text-[13px] w-full outline-none"
-                        style={{ background: "#0d0d0d", border: "1px solid #222", color: "#ccc" }}
+                        style={{ background: bgInput, border: `1px solid ${btnBorder}`, color: textMain }}
                       />
                     </div>
                     <div className="flex gap-2">
@@ -404,7 +419,7 @@ export default function EventDetail() {
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && newComment.trim() && newCommentAuthor.trim()) addCommentMutation.mutate({ author: newCommentAuthor, email: newCommentEmail, content: newComment }); }}
                         className="flex-1 px-3 py-2 text-[13px] outline-none"
-                        style={{ background: "#0d0d0d", border: "1px solid #222", color: "#ccc" }}
+                        style={{ background: bgInput, border: `1px solid ${btnBorder}`, color: textMain }}
                       />
                       <button
                         onClick={() => { if (newComment.trim() && newCommentAuthor.trim()) addCommentMutation.mutate({ author: newCommentAuthor, email: newCommentEmail, content: newComment }); }}
@@ -424,11 +439,11 @@ export default function EventDetail() {
             <aside className="lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
 
               {/* Discord widget */}
-              <div className="p-4 space-y-3" style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
+              <div className="p-4 space-y-3" style={{ background: bgCard, border: `1px solid ${border}` }}>
                 <div className="font-black text-[12px] uppercase tracking-[0.18em]" style={{ color: "#f5a623" }}>
                   Discord
                 </div>
-                <p className="text-[12px] leading-relaxed" style={{ color: "#777" }}>
+                <p className="text-[12px] leading-relaxed" style={{ color: textMuted }}>
                   Join our official Discord community from this events page.
                 </p>
                 <a
@@ -443,10 +458,10 @@ export default function EventDetail() {
               </div>
 
               {/* Auth / Welcome box */}
-              <div className="p-4" style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
+              <div className="p-4" style={{ background: bgCard, border: `1px solid ${border}` }}>
                 <div className="text-center mb-3">
-                  <div className="font-black text-[13px] mb-1" style={{ color: "#ccc" }}>Welcome!</div>
-                  <p className="text-[11px] leading-relaxed" style={{ color: "#555" }}>
+                  <div className="font-black text-[13px] mb-1" style={{ color: textMain }}>Welcome!</div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: textMuted }}>
                     It looks like you're new here. Sign in or register to get started.
                   </p>
                 </div>
@@ -457,15 +472,15 @@ export default function EventDetail() {
                     <Link href="/login" className="flex-1 text-center py-2 font-black text-[12px] uppercase tracking-widest transition-colors" style={{ background: "#f5a623", color: "#000" }}>
                       Sign In
                     </Link>
-                    <Link href="/register" className="flex-1 text-center py-2 font-black text-[12px] uppercase tracking-widest transition-colors hover:border-[#f5a623]" style={{ border: "1px solid #2a2a2a", color: "#aaa" }}>
+                    <Link href="/register" className="flex-1 text-center py-2 font-black text-[12px] uppercase tracking-widest transition-colors" style={{ border: `1px solid ${btnBorder}`, color: textMuted }}>
                       Register
                     </Link>
                   </div>
                 )}
               </div>
 
-              <div style={{ background: "#141414", border: "1px solid #1e1e1e" }}>
-                <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: "1px solid #1a1a1a" }}>
+              <div style={{ background: bgCard, border: `1px solid ${border}` }}>
+                <div className="px-4 py-3 font-black text-[11px] uppercase tracking-[0.2em]" style={{ color: "#f5a623", borderBottom: `1px solid ${borderSub}` }}>
                   Quick Links
                 </div>
                 <div className="py-1">
@@ -473,8 +488,8 @@ export default function EventDetail() {
                     <Link
                       key={link.path}
                       href={link.path}
-                      className="flex items-center justify-between px-4 py-2 text-[12px] transition-all hover:text-[#f5a623] hover:bg-[#1a1a1a]"
-                      style={{ color: "#666" }}
+                      className="flex items-center justify-between px-4 py-2 text-[12px] transition-all hover:text-[#f5a623]"
+                      style={{ color: textMuted, borderBottom: `1px solid ${borderSub}` }}
                     >
                       {link.label} <ChevronRight className="h-3 w-3" />
                     </Link>

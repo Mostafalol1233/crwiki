@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, Download } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
@@ -88,11 +88,11 @@ export function Header() {
 
       {/* ── TOP BAR ── */}
       <div style={{ background: topBg, borderBottom: `1px solid ${topBorder}` }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-10 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo-new.png" alt="Bimora Gaming" className="h-7 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
+            <img src="/logo-new.png" alt="Bimora Gaming" className="h-11 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
           </Link>
 
           {/* Right side */}
@@ -216,15 +216,14 @@ export function Header() {
             })}
           </nav>
 
-          {/* Center logo */}
-          <Link href="/" className="flex-shrink-0 flex items-center justify-center px-6">
-            <img
-              src="/crossfire-logo.png"
-              alt="CrossFire"
-              className="h-8 w-auto object-contain hover:opacity-90 transition-opacity"
-              onError={(e) => { (e.target as HTMLImageElement).src = "/logo-new.png"; }}
-              draggable={false}
-            />
+          {/* Center: Download button */}
+          <Link
+            href="/download"
+            className="flex-shrink-0 flex items-center gap-2 px-6 h-8 text-[12px] font-black uppercase tracking-widest rounded-sm transition-all hover:brightness-110 active:scale-95"
+            style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)", color: "#1a0a00", boxShadow: "0 0 14px rgba(245,166,35,0.3)" }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download
           </Link>
 
           {/* Right nav: COMMUNITY + SUPPORT */}

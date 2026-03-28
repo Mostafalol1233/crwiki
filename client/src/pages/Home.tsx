@@ -216,96 +216,63 @@ export default function Home() {
             ) : (
               <div className="space-y-3">
 
-                {/* ── Top row: Featured 7col + side cards 5col ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-
-                  {/* Featured card */}
-                  {featuredEvent && (
-                    <Link
-                      href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}
-                      className="lg:col-span-7 group block"
-                    >
-                      <div className="relative overflow-hidden" style={{ borderRadius: "2px", background: "#0d0d0d" }}>
-                        <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-                        <div
-                          className="absolute top-3 left-3 z-10 text-black text-[9px] font-black uppercase tracking-widest px-2.5 py-1"
-                          style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)" }}
-                        >
-                          {featuredEvent.type === "upcoming" ? "Upcoming" : "Featured"}
+                {/* ── Featured event (full-width horizontal card) ── */}
+                {featuredEvent && (
+                  <Link
+                    href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}
+                    className="group block"
+                  >
+                    <div className="relative overflow-hidden flex flex-col sm:flex-row" style={{ borderRadius: "4px", background: "#0d0d0d", border: "1px solid rgba(245,166,35,0.15)" }}>
+                      <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
+                      {/* Image */}
+                      <div className="sm:w-[45%] flex-shrink-0 overflow-hidden" style={{ background: "#070707" }}>
+                        <img
+                          src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
+                          alt={featuredEvent.title}
+                          className="w-full h-48 sm:h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          style={{ display: "block" }}
+                          onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
+                        />
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 p-5 sm:p-6 flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-black text-[9px] font-black uppercase tracking-widest px-2.5 py-1" style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)" }}>
+                            {featuredEvent.type === "upcoming" ? "Upcoming" : "Featured"}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#666" }}>{featuredEvent.date}</span>
                         </div>
-                        <div className="aspect-[16/9] w-full overflow-hidden" style={{ background: "#070707" }}>
-                          <img
-                            src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
-                            alt={featuredEvent.title}
-                            className="w-full h-full transition-transform duration-700 group-hover:scale-105"
-                            style={{ display: "block", objectFit: "cover" }}
-                            onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
-                          />
-                        </div>
-                        <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(245,166,35,0.15)", background: "rgba(0,0,0,0.85)" }}>
-                          <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: "#f5a623" }}>{featuredEvent.date}</p>
-                          <h3 className="text-white font-black text-lg uppercase tracking-tight leading-tight line-clamp-2">{featuredEvent.title}</h3>
-                          <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all group-hover:gap-2.5" style={{ color: "#f5a623" }}>
-                            View Event <ChevronRight className="h-3.5 w-3.5" />
-                          </div>
+                        <h3 className="text-white font-black text-xl md:text-2xl uppercase tracking-tight leading-tight mb-4 line-clamp-3">{featuredEvent.title}</h3>
+                        <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-all group-hover:gap-3" style={{ color: "#f5a623" }}>
+                          View Event <ChevronRight className="h-3.5 w-3.5" />
                         </div>
                       </div>
-                    </Link>
-                  )}
+                    </div>
+                  </Link>
+                )}
 
-                  {/* Side cards */}
-                  <div className="lg:col-span-5 flex flex-col gap-3">
-                    {secondaryEvents.map((event: any) => (
+                {/* ── Remaining events in equal 3-column grid ── */}
+                {restEvents.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {restEvents.slice(0, 6).map((event: any) => (
                       <Link
                         key={event.id}
                         href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
                         className="group block"
                       >
-                        <div className="relative overflow-hidden" style={{ borderRadius: "2px", background: "#0d0d0d" }}>
+                        <div className="relative overflow-hidden h-full" style={{ borderRadius: "3px", background: "#0d0d0d", border: "1px solid rgba(245,166,35,0.1)" }}>
                           <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
                           <div className="aspect-[16/9] w-full overflow-hidden" style={{ background: "#070707" }}>
                             <img
                               src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                               alt={event.title}
-                              className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-                              style={{ display: "block", objectFit: "cover" }}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              style={{ display: "block" }}
                               onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                             />
                           </div>
-                          <div className="px-3 py-2" style={{ borderTop: "1px solid rgba(245,166,35,0.15)", background: "rgba(0,0,0,0.85)" }}>
-                            <span className="text-[9px] font-black uppercase tracking-widest block mb-0.5" style={{ color: "#f5a623" }}>
-                              {event.type === "upcoming" ? "Upcoming" : "Event"}
-                            </span>
-                            <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">{event.title}</h3>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── Bottom uniform card row ── */}
-                {bottomRowEvents.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {bottomRowEvents.map((event: any) => (
-                      <Link
-                        key={event.id}
-                        href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
-                        className="group block"
-                      >
-                        <div className="relative overflow-hidden" style={{ borderRadius: "2px", background: "#0d0d0d" }}>
-                          <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-                          <div className="aspect-[16/10] w-full overflow-hidden" style={{ background: "#070707" }}>
-                            <img
-                              src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
-                              alt={event.title}
-                              className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-                              style={{ display: "block", objectFit: "cover" }}
-                              onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
-                            />
-                          </div>
-                          <div className="px-3 py-2.5" style={{ background: "rgba(0,0,0,0.85)" }}>
-                            <span className="text-[9px] font-black uppercase tracking-widest block mb-0.5" style={{ color: "#f5a623" }}>
+                          <div className="px-3 py-2.5" style={{ borderTop: "1px solid rgba(245,166,35,0.1)", background: "rgba(0,0,0,0.9)" }}>
+                            <span className="text-[9px] font-black uppercase tracking-widest block mb-1" style={{ color: "#f5a623" }}>
                               {event.type === "upcoming" ? "Upcoming" : "Event"}
                             </span>
                             <h3 className="text-white font-black text-sm uppercase tracking-tight line-clamp-2 leading-snug">{event.title}</h3>

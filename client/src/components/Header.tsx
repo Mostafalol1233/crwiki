@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, Download } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
@@ -176,9 +176,9 @@ export function Header() {
       <div style={{ background: navBg, borderBottom: `2px solid ${navAccent}`, boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)" }}>
         <div className="hidden md:flex items-stretch max-w-7xl mx-auto px-4 md:px-6 h-12">
 
-          {/* Left nav items */}
-          <nav className="flex items-stretch">
-            {navItems.map((item) => {
+          {/* Left nav: NEWS + GAME */}
+          <nav className="flex items-stretch flex-1">
+            {navItems.slice(0, 2).map((item) => {
               if (!item.dropdown) return null;
               const active = isActiveDrop(item.dropdown);
               return (
@@ -217,7 +217,7 @@ export function Header() {
           </nav>
 
           {/* Center logo */}
-          <Link href="/" className="flex-1 flex items-center justify-center px-4">
+          <Link href="/" className="flex-shrink-0 flex items-center justify-center px-6">
             <img
               src="/crossfire-logo.png"
               alt="CrossFire"
@@ -227,17 +227,45 @@ export function Header() {
             />
           </Link>
 
-          {/* Download CTA */}
-          <div className="flex items-center">
-            <Link
-              href="/download"
-              className="flex items-center gap-2 px-5 h-8 text-[11px] font-black uppercase tracking-widest rounded-sm transition-opacity hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, #f5a623 0%, #d18b00 100%)`, color: "#000000" }}
-            >
-              <Download className="h-3.5 w-3.5" />
-              Download
-            </Link>
-          </div>
+          {/* Right nav: COMMUNITY + SUPPORT */}
+          <nav className="flex items-stretch flex-1 justify-end">
+            {navItems.slice(2, 4).map((item) => {
+              if (!item.dropdown) return null;
+              const active = isActiveDrop(item.dropdown);
+              return (
+                <div key={item.label} className="relative group h-full flex items-center">
+                  <button
+                    className="h-full flex items-center gap-1 px-5 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
+                    style={{ color: active ? navAccent : textColor }}
+                  >
+                    {item.label}
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </button>
+                  <div
+                    className="absolute right-0 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-xl min-w-[180px]"
+                    style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}
+                  >
+                    {item.dropdown.map((sub) => (
+                      <Link
+                        key={sub.path}
+                        href={sub.path}
+                        className="flex items-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all"
+                        style={{
+                          color: location === sub.path ? navAccent : dropText,
+                          borderBottom: `1px solid ${dropBorder}`,
+                          background: location === sub.path ? dropHover : "transparent",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = dropHover; (e.currentTarget as HTMLElement).style.color = navAccent; (e.currentTarget as HTMLElement).style.paddingLeft = "20px"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = location === sub.path ? dropHover : "transparent"; (e.currentTarget as HTMLElement).style.color = location === sub.path ? navAccent : dropText; (e.currentTarget as HTMLElement).style.paddingLeft = "16px"; }}
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
         </div>
       </div>
 

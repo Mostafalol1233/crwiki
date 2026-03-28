@@ -666,6 +666,54 @@
   }
 }
 
+/* ========================
+   CrossFire Official Style
+   ======================== */
+
+/* Hero Section */
+.cf-hero {
+  background: #0a0a0a;
+}
+
+/* CF-style golden Download button */
+.cf-download-btn {
+  background: linear-gradient(180deg, #f9c84a 0%, #e08a00 50%, #c96f00 100%);
+  border: none;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px #7a4000,
+    0 4px 20px rgba(245, 166, 35, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0% calc(100% - 6px), 0% 6px);
+  position: relative;
+  overflow: hidden;
+}
+.cf-download-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.25);
+  transform: skewX(-20deg);
+  transition: left 0.4s ease;
+}
+.cf-download-btn:hover::before {
+  left: 120%;
+}
+.cf-download-btn:hover {
+  box-shadow:
+    0 0 0 2px #7a4000,
+    0 6px 30px rgba(245, 166, 35, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* CF Footer */
+.cf-footer {
+  font-family: inherit;
+}
+
 /* FAQ Rich HTML Content */
 .faq-html-content p { margin-bottom: 0.5rem; }
 .faq-html-content ul, .faq-html-content ol { padding-left: 1.25rem; margin-bottom: 0.5rem; }

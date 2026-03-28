@@ -225,6 +225,7 @@ export function Header() {
       label: t("support"),
       icon: CFIconHelp,
       dropdown: [
+        { path: "/faq", label: t("faq") || "FAQ", icon: CFIconHelp },
         { path: "/support", label: t("createTicket") || "Create Ticket", icon: CFIconHelp },
         { path: "/my-tickets", label: t("supportTickets"), icon: CFIconHelp },
         { path: "/about", label: t("about"), icon: CFIconUsers },

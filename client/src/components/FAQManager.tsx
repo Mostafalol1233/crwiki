@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, HelpCircle, FolderPlus } from "lucide-react";
@@ -18,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const STATIC_FAQ_DATA = [
   {
@@ -280,9 +280,11 @@ export default function FAQManager() {
               {formMode === "add-article" ? "Add Question" : "Edit Question"}
               {selectedCategory && <span className="text-muted-foreground font-normal"> — {selectedCategory.name}</span>}
             </CardTitle>
-            <CardDescription>Provide the question and answer in both English and Arabic (Egyptian dialect).</CardDescription>
+            <CardDescription>
+              Provide the question and answer in both English and Arabic. You can insert images and YouTube videos in the editor.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Question (English)</label>
@@ -302,27 +304,33 @@ export default function FAQManager() {
                 />
               </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Answer (English)</label>
-                <Textarea
-                  value={artForm.body}
-                  onChange={(e) => setArtForm((f) => ({ ...f, body: e.target.value }))}
-                  placeholder="Detailed answer in English..."
-                  rows={6}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Answer (Arabic — Egyptian)</label>
-                <Textarea
-                  value={artForm.bodyAr}
-                  onChange={(e) => setArtForm((f) => ({ ...f, bodyAr: e.target.value }))}
-                  placeholder="الإجابة التفصيلية بالعربي المصري..."
-                  rows={6}
-                  dir="rtl"
-                />
-              </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Answer (English)</label>
+              <p className="text-xs text-muted-foreground">Use the toolbar to add formatting, images, or YouTube videos.</p>
+              <RichTextEditor
+                value={artForm.body}
+                onChange={(val) => setArtForm((f) => ({ ...f, body: val }))}
+                placeholder="Detailed answer in English..."
+                direction="ltr"
+                height={250}
+                resizingBar={true}
+              />
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Answer (Arabic — Egyptian)</label>
+              <p className="text-xs text-muted-foreground" dir="rtl">استخدم شريط الأدوات لإضافة تنسيق أو صور أو فيديوهات يوتيوب.</p>
+              <RichTextEditor
+                value={artForm.bodyAr}
+                onChange={(val) => setArtForm((f) => ({ ...f, bodyAr: val }))}
+                placeholder="الإجابة التفصيلية بالعربي المصري..."
+                direction="rtl"
+                height={250}
+                resizingBar={true}
+              />
+            </div>
+
             <div className="flex gap-2">
               <Button
                 onClick={formMode === "add-article" ? handleAddArticle : handleEditArticle}

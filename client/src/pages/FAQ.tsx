@@ -416,9 +416,16 @@ function FAQAccordionItem({
           className="px-5 pb-5 pt-3 bg-card border-t border-border/30"
           dir={isAr ? "rtl" : "ltr"}
         >
-          <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-            {answer}
-          </p>
+          {answer && (answer.startsWith("<") || answer.includes("<p>") || answer.includes("<ul>") || answer.includes("<ol>") || answer.includes("<br") || answer.includes("<img") || answer.includes("<iframe") || answer.includes("<strong>")) ? (
+            <div
+              className="text-sm text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
+              dangerouslySetInnerHTML={{ __html: answer }}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+              {answer}
+            </p>
+          )}
         </div>
       )}
     </div>

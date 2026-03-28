@@ -45,6 +45,13 @@ export function Header() {
       ],
     },
     {
+      label: "SHOP",
+      dropdown: [
+        { path: "/sellers", label: "Sellers" },
+        { path: "/sellers", label: "Browse Items" },
+      ],
+    },
+    {
       label: "COMMUNITY",
       dropdown: [
         { path: "/posts", label: "Forum" },
@@ -92,7 +99,7 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo-new.png" alt="Bimora Gaming" className="h-11 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
+            <img src="/logo-new.png" alt="Bimora Gaming" className="h-14 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
           </Link>
 
           {/* Right side */}
@@ -173,18 +180,18 @@ export function Header() {
       </div>
 
       {/* ── MAIN NAV BAR ── */}
-      <div style={{ background: navBg, borderBottom: `2px solid ${navAccent}`, boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <div className="hidden md:flex items-stretch max-w-7xl mx-auto px-4 md:px-6 h-12">
+      <div style={{ background: navBg, borderBottom: `2px solid ${navAccent}`, boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)", overflow: "visible" }}>
+        <div className="hidden md:flex items-center max-w-7xl mx-auto px-4 md:px-6 h-14" style={{ overflow: "visible" }}>
 
           {/* Left nav: NEWS + GAME */}
-          <nav className="flex items-stretch flex-1">
+          <nav className="flex items-center flex-1">
             {navItems.slice(0, 2).map((item) => {
               if (!item.dropdown) return null;
               const active = isActiveDrop(item.dropdown);
               return (
-                <div key={item.label} className="relative group h-full flex items-center">
+                <div key={item.label} className="relative group flex items-center self-stretch">
                   <button
-                    className="h-full flex items-center gap-1 px-5 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
+                    className="self-stretch flex items-center gap-1 px-5 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
                     style={{ color: active ? navAccent : textColor }}
                   >
                     {item.label}
@@ -216,25 +223,47 @@ export function Header() {
             })}
           </nav>
 
-          {/* Center: Download button */}
-          <Link
-            href="/download"
-            className="flex-shrink-0 flex items-center gap-2 px-6 h-8 text-[12px] font-black uppercase tracking-widest rounded-sm transition-all hover:brightness-110 active:scale-95"
-            style={{ background: "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)", color: "#1a0a00", boxShadow: "0 0 14px rgba(245,166,35,0.3)" }}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Download
-          </Link>
+          {/* Center: Ornate Download button */}
+          <div className="flex-shrink-0 flex flex-col items-center" style={{ position: "relative" }}>
+            <Link href="/download">
+              <button
+                className="group relative overflow-hidden font-black uppercase tracking-[0.22em] text-[13px] transition-all duration-200 hover:brightness-110 active:scale-95"
+                style={{
+                  minWidth: "180px",
+                  padding: "9px 32px",
+                  background: "linear-gradient(180deg, #f9c84a 0%, #e89b10 45%, #c67800 100%)",
+                  color: "#1a0a00",
+                  border: "none",
+                  boxShadow: "0 0 20px rgba(245,166,35,0.4), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.25)",
+                  position: "relative",
+                  zIndex: 2,
+                }}
+              >
+                <span style={{ textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}>DOWNLOAD</span>
+                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)" }} />
+              </button>
+            </Link>
+            {/* Bottom platform/bracket */}
+            <div className="relative flex items-stretch" style={{ marginTop: "-1px", width: "240px", height: "20px", zIndex: 1 }}>
+              <div style={{ flex: "0 0 50px", background: "linear-gradient(180deg, #3a3020 0%, #1e1812 100%)", clipPath: "polygon(0 0, 100% 0, 75% 100%, 0 100%)", borderLeft: "1px solid #5a4a20", borderBottom: "1px solid #5a4a20" }} />
+              <div style={{ flex: 1, background: "linear-gradient(180deg, #2a2218 0%, #1a1410 100%)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "2px solid #8a6a20" }}>
+                <div style={{ display: "flex", gap: "5px", opacity: 0.5 }}>
+                  {[0,1,2,3,4].map(i => <div key={i} style={{ width: "3px", height: "3px", borderRadius: "50%", background: "#8a6a20" }} />)}
+                </div>
+              </div>
+              <div style={{ flex: "0 0 50px", background: "linear-gradient(180deg, #3a3020 0%, #1e1812 100%)", clipPath: "polygon(0 0, 100% 0, 100% 100%, 25% 100%)", borderRight: "1px solid #5a4a20", borderBottom: "1px solid #5a4a20" }} />
+            </div>
+          </div>
 
-          {/* Right nav: COMMUNITY + SUPPORT */}
-          <nav className="flex items-stretch flex-1 justify-end">
-            {navItems.slice(2, 4).map((item) => {
+          {/* Right nav: SHOP + COMMUNITY + SUPPORT */}
+          <nav className="flex items-center flex-1 justify-end">
+            {navItems.slice(2, 5).map((item) => {
               if (!item.dropdown) return null;
               const active = isActiveDrop(item.dropdown);
               return (
-                <div key={item.label} className="relative group h-full flex items-center">
+                <div key={item.label} className="relative group flex items-center self-stretch">
                   <button
-                    className="h-full flex items-center gap-1 px-5 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
+                    className="self-stretch flex items-center gap-1 px-5 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
                     style={{ color: active ? navAccent : textColor }}
                   >
                     {item.label}

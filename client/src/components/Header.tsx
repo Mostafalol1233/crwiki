@@ -44,13 +44,6 @@ export function Header() {
         { path: "/download", label: "Download" },
       ],
     },
-    {
-      label: "SHOP",
-      dropdown: [
-        { path: "/pricing", label: "Buy ZP" },
-        { path: "/sellers", label: "Sellers" },
-      ],
-    },
   ];
 
   const rightMenuItems: MenuItem[] = [

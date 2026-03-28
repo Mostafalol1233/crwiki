@@ -1,3 +1,6 @@
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 
@@ -13,6 +16,20 @@ export default function About() {
       />
       <div className="min-h-screen py-12 md:py-20 bg-background">
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 md:py-20">
+
+        <div className="mb-6">
+          <Link href="/">
+            <Button
+              variant="ghost"
+              data-testid="button-back-about"
+              className="border border-[#b38322] bg-gradient-to-b from-[#f6cd67] to-[#d8a942] text-[#1f1400] hover:brightness-95"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t("backToHome")}
+            </Button>
+          </Link>
+        </div>
+
         <h1 className="text-4xl md:text-5xl font-bold mb-8">
           {t("aboutBimora")}
         </h1>

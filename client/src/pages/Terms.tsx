@@ -15,7 +15,11 @@ export default function Terms() {
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <div className="mb-6">
           <Link href="/">
-            <Button variant="ghost" data-testid="button-back">
+            <Button
+              variant="ghost"
+              data-testid="button-back"
+              className="border border-[#b38322] bg-gradient-to-b from-[#f6cd67] to-[#d8a942] text-[#1f1400] hover:brightness-95"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Button>

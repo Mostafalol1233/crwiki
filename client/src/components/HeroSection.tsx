@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, Download } from "lucide-react";
+import { Download, ChevronRight } from "lucide-react";
 
 interface HeroPost {
   id: string;
@@ -20,89 +20,135 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ post, isPlaceholder, bgImageUrl }: HeroSectionProps) {
+  const bgImg = bgImageUrl || "/cf-heroes-bg.png";
+
   return (
-    <section className="cf-hero relative w-full overflow-hidden" style={{ minHeight: "520px" }}>
-      {/* Background — split scene like official CF site */}
+    <section
+      className="cf-hero relative w-full overflow-hidden"
+      style={{ minHeight: "600px", height: "clamp(520px, 62vh, 780px)" }}
+    >
+      {/* Background layers */}
       <div className="absolute inset-0">
         {/* Dark base */}
-        <div className="absolute inset-0 bg-[#0a0a0a]" />
-        {/* Left scene – blue/cold tones */}
+        <div className="absolute inset-0 bg-[#080808]" />
+
+        {/* Left blue scene */}
         <div
-          className="absolute inset-y-0 left-0 w-1/2"
+          className="absolute inset-y-0 left-0"
           style={{
-            background: "linear-gradient(135deg, #0d1f3c 0%, #1a3a5c 40%, #0a0a0a 100%)",
+            width: "50%",
+            background:
+              "linear-gradient(135deg, #0b1c38 0%, #162e50 35%, #0a0a0a 100%)",
           }}
         />
-        {/* Right scene – warm/orange tones */}
+
+        {/* Right warm/orange scene */}
         <div
-          className="absolute inset-y-0 right-0 w-1/2"
+          className="absolute inset-y-0 right-0"
           style={{
-            background: "linear-gradient(225deg, #3d1a00 0%, #6b2d00 40%, #0a0a0a 100%)",
+            width: "50%",
+            background:
+              "linear-gradient(225deg, #3a1500 0%, #5c2500 35%, #0a0a0a 100%)",
           }}
         />
-        {/* Center dark gradient to frame the characters */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]" />
-        {/* The mercenaries hero image */}
+
+        {/* Diagonal clip — left dark corner */}
+        <div
+          className="absolute inset-y-0 left-0 w-28 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to right, #080808 0%, transparent 100%)",
+            clipPath: "polygon(0 0, 65% 0, 100% 100%, 0 100%)",
+            opacity: 0.7,
+          }}
+        />
+
+        {/* Diagonal clip — right dark corner */}
+        <div
+          className="absolute inset-y-0 right-0 w-28 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to left, #080808 0%, transparent 100%)",
+            clipPath: "polygon(35% 0, 100% 0, 100% 100%, 0 100%)",
+            opacity: 0.7,
+          }}
+        />
+
+        {/* Hero image — the soldiers */}
         <img
-          src="/cf-heroes-bg.png"
+          src={bgImg}
           alt="CrossFire Mercenaries"
           className="absolute inset-0 w-full h-full object-cover object-top"
-          style={{ mixBlendMode: "normal", opacity: 0.92 }}
+          style={{ opacity: 0.95, mixBlendMode: "normal" }}
           draggable={false}
         />
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
+
+        {/* Bottom fade to page background */}
+        <div
+          className="absolute bottom-0 left-0 right-0"
+          style={{
+            height: "45%",
+            background:
+              "linear-gradient(to top, #0a0a0a 0%, rgba(10,10,10,0.7) 50%, transparent 100%)",
+          }}
+        />
+
+        {/* Top golden line accent */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{
+            background:
+              "linear-gradient(to right, transparent 0%, #f5a623 30%, #f9c84a 50%, #f5a623 70%, transparent 100%)",
+          }}
+        />
       </div>
 
-      {/* Top edge accent */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-[#f5a623] to-transparent" />
-
-      {/* Diagonal corner decorations like official site */}
+      {/* Content overlay — bottom aligned */}
       <div
-        className="absolute top-0 left-0 w-32 h-full opacity-30"
-        style={{
-          background: "linear-gradient(to right, #0a0a0a 0%, transparent 100%)",
-          clipPath: "polygon(0 0, 60% 0, 100% 100%, 0 100%)",
-        }}
-      />
-      <div
-        className="absolute top-0 right-0 w-32 h-full opacity-30"
-        style={{
-          background: "linear-gradient(to left, #0a0a0a 0%, transparent 100%)",
-          clipPath: "polygon(40% 0, 100% 0, 100% 100%, 0 100%)",
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative flex flex-col items-center justify-end h-full" style={{ minHeight: "520px", paddingBottom: "48px" }}>
-
-        {/* Latest news title — only when not placeholder */}
+        className="relative flex flex-col items-center justify-end h-full pb-12 md:pb-16 px-4"
+        style={{ minHeight: "600px" }}
+      >
+        {/* Latest news badge + title — only if there's a real post */}
         {!isPlaceholder && post.title && (
-          <div className="text-center mb-4 px-4">
-            <span className="inline-block bg-[#f5a623] text-black text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 mb-2">
+          <div className="text-center mb-6 max-w-2xl">
+            <span
+              className="inline-block text-black text-[10px] font-black uppercase tracking-[0.25em] px-3 py-1 mb-3"
+              style={{
+                background:
+                  "linear-gradient(180deg, #f9c84a 0%, #e08a00 100%)",
+                clipPath:
+                  "polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px)",
+              }}
+            >
               {post.category}
             </span>
-            <h2 className="text-white text-xl md:text-2xl font-black uppercase tracking-tight max-w-lg mx-auto leading-tight drop-shadow-lg">
+            <h2 className="text-white text-xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-2xl">
               {post.title}
             </h2>
           </div>
         )}
 
-        {/* Download Button — golden, centered, official CF style */}
-        <div className="flex flex-col items-center gap-3">
+        {/* CTA buttons */}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {/* Golden Download button */}
           <Link href="/download">
-            <button className="cf-download-btn group relative flex items-center gap-3 px-10 py-4 font-black uppercase tracking-[0.2em] text-base text-black transition-all duration-200 hover:scale-105 active:scale-95" style={{ minWidth: "220px" }}>
-              <Download className="h-5 w-5" />
-              DOWNLOAD
+            <button
+              className="cf-download-btn group relative flex items-center gap-3 px-10 py-4 font-black uppercase tracking-[0.22em] text-[15px] text-black transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{ minWidth: "230px" }}
+            >
+              <Download className="h-5 w-5 flex-shrink-0" />
+              DOWNLOAD NOW
             </button>
           </Link>
 
+          {/* Optional "Read More" link */}
           {!isPlaceholder && post.id && (
             <Link
               href={`/posts/${(post as any).post_slug || post.id}`}
-              className="text-white/60 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors flex items-center gap-1"
+              className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold transition-all hover:gap-2.5"
+              style={{ color: "rgba(255,255,255,0.5)" }}
             >
-              Read More <ArrowRight className="h-3 w-3" />
+              Read More <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           )}
         </div>

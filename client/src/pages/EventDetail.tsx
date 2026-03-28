@@ -439,22 +439,20 @@ export default function EventDetail() {
             <aside className="lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
 
               {/* Discord widget */}
-              <div className="p-4 space-y-3" style={{ background: bgCard, border: `1px solid ${border}` }}>
-                <div className="font-black text-[12px] uppercase tracking-[0.18em]" style={{ color: "#f5a623" }}>
-                  Discord
+              <div className="overflow-hidden" style={{ background: bgCard, border: `1px solid ${border}` }}>
+                <div className="px-4 pt-3 pb-2 font-black text-[12px] uppercase tracking-[0.18em]" style={{ color: "#f5a623", borderBottom: `1px solid ${border}` }}>
+                  Discord Community
                 </div>
-                <p className="text-[12px] leading-relaxed" style={{ color: textMuted }}>
-                  Join our official Discord community from this events page.
-                </p>
-                <a
-                  href="https://discord.com/invite/CxUJx54s?utm_source=Discord%20Widget&utm_medium=Connect"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center py-2 font-black text-[12px] uppercase tracking-widest transition-opacity hover:opacity-90"
-                  style={{ background: "#5865F2", color: "#fff" }}
-                >
-                  Open Discord
-                </a>
+                <iframe
+                  src="https://discord.com/widget?id=360821102580072449&theme=dark"
+                  width="100%"
+                  height="360"
+                  allowTransparency={true}
+                  frameBorder="0"
+                  sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+                  style={{ display: "block" }}
+                  title="CrossFire Discord"
+                />
               </div>
 
               {/* Auth / Welcome box */}

@@ -127,12 +127,12 @@ export default function Category() {
         canonicalPath={`/category/${category || ""}`}
       />
       <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-10 py-8 md:py-14">
         <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-12" : ""} gap-8 md:gap-12`}>
           <main className={`${isAdmin ? "lg:col-span-8" : ""} space-y-8 md:space-y-12`}>
             <div className="space-y-6">
               <h1 
-                className="text-3xl md:text-4xl font-bold"
+                className="text-3xl md:text-5xl font-bold"
                 data-testid="heading-category"
               >
                 {categoryTitle}
@@ -162,7 +162,7 @@ export default function Category() {
                     <>
                       {featured && (
                         <Link href={featured.event_name_slug ? `/events/${featured.event_name_slug}` : `/events/${featured.id}`} className="group block">
-                          <div className="relative overflow-hidden rounded-2xl h-72 md:h-96 cursor-pointer">
+                          <div className="relative overflow-hidden rounded-2xl h-96 md:h-[520px] cursor-pointer">
                             <img
                               src={featured.image || featured.imageUrl || FALLBACK}
                               alt={featured.title}

@@ -233,12 +233,12 @@ export default function Home() {
                         >
                           {featuredEvent.type === "upcoming" ? "Upcoming" : "Featured"}
                         </div>
-                        <div className="aspect-[16/9] w-full" style={{ background: "#070707" }}>
+                        <div className="aspect-[16/9] w-full overflow-hidden" style={{ background: "#070707" }}>
                           <img
                             src={featuredEvent.image || featuredEvent.imageUrl || FALLBACK_EVENT_IMG}
                             alt={featuredEvent.title}
                             className="w-full h-full transition-transform duration-700 group-hover:scale-105"
-                            style={{ display: "block", objectFit: "contain" }}
+                            style={{ display: "block", objectFit: "cover" }}
                             onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                           />
                         </div>
@@ -263,12 +263,12 @@ export default function Home() {
                       >
                         <div className="relative overflow-hidden" style={{ borderRadius: "2px", background: "#0d0d0d" }}>
                           <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-                          <div className="aspect-[16/9] w-full" style={{ background: "#070707" }}>
+                          <div className="aspect-[16/9] w-full overflow-hidden" style={{ background: "#070707" }}>
                             <img
                               src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                               alt={event.title}
                               className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-                              style={{ display: "block", objectFit: "contain" }}
+                              style={{ display: "block", objectFit: "cover" }}
                               onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                             />
                           </div>
@@ -295,12 +295,12 @@ export default function Home() {
                       >
                         <div className="relative overflow-hidden" style={{ borderRadius: "2px", background: "#0d0d0d" }}>
                           <div className="absolute top-0 left-0 right-0 h-[2px] z-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-                          <div className="aspect-[16/10] w-full" style={{ background: "#070707" }}>
+                          <div className="aspect-[16/10] w-full overflow-hidden" style={{ background: "#070707" }}>
                             <img
                               src={event.image || event.imageUrl || FALLBACK_EVENT_IMG}
                               alt={event.title}
                               className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-                              style={{ display: "block", objectFit: "contain" }}
+                              style={{ display: "block", objectFit: "cover" }}
                               onError={(e) => { const img = e.currentTarget; if (img.src !== FALLBACK_EVENT_IMG) img.src = FALLBACK_EVENT_IMG; }}
                             />
                           </div>

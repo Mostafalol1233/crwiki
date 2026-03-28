@@ -41,19 +41,14 @@ export function Header() {
         { path: "/maps", label: "Maps" },
         { path: "/weapons", label: "Weapons" },
         { path: "/mercenaries", label: "Mercenaries" },
+        { path: "/ranks#exp", label: "EXP Ranking" },
+        { path: "/ranks#competitive", label: "Competitive Ranking" },
         { path: "/download", label: "Download" },
       ],
     },
   ];
 
   const rightMenuItems: MenuItem[] = [
-    {
-      label: "RANKING",
-      dropdown: [
-        { path: "/ranks#exp", label: "EXP Ranking" },
-        { path: "/ranks#competitive", label: "Competitive Ranking" },
-      ],
-    },
     {
       label: "COMMUNITY",
       dropdown: [

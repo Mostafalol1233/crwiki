@@ -25,41 +25,11 @@ export function Header() {
 
   const leftMenuItems: MenuItem[] = [
     {
-      label: "NEWS",
+      label: "ESPORTS",
       dropdown: [
-        { path: "/news", label: "News" },
-        { path: "/posts", label: "Updates" },
-        { path: "/category/events", label: "Events" },
-        { path: "/videos", label: "Video Feeds" },
-      ],
-    },
-    {
-      label: "GAME",
-      dropdown: [
-        { path: "/about", label: "Overview" },
-        { path: "/modes", label: "Game Modes" },
-        { path: "/maps", label: "Maps" },
-        { path: "/weapons", label: "Weapons" },
-        { path: "/ranks", label: "Ranking" },
-        { path: "/mercenaries", label: "Mercenaries" },
-        { path: "/download", label: "Download" },
-      ],
-    },
-    {
-      label: "SHOP",
-      dropdown: [
-        { path: "/pricing", label: "Buy ZP" },
-        { path: "/sellers", label: "Sellers" },
-      ],
-    },
-  ];
-
-  const rightMenuItems: MenuItem[] = [
-    {
-      label: "RANKING",
-      dropdown: [
-        { path: "/ranks", label: "Player Ranking" },
-        { path: "/mercenaries", label: "Mercenaries" },
+        { path: "/faq", label: "ESports Hub" },
+        { path: "/support", label: "Support" },
+        { path: "/my-tickets", label: "Tickets" },
       ],
     },
     {
@@ -67,15 +37,43 @@ export function Header() {
       dropdown: [
         { path: "/posts", label: "Forum" },
         { path: "/reviews", label: "Reviews" },
+        { path: "/contact", label: "Contact" },
       ],
     },
     {
-      label: "ESPORTS",
+      label: "RANKING",
       dropdown: [
-        { path: "/faq", label: "FAQ" },
-        { path: "/support", label: "Create Ticket" },
-        { path: "/my-tickets", label: "My Tickets" },
-        { path: "/contact", label: "Contact Us" },
+        { path: "/ranks", label: "Player Ranking" },
+        { path: "/mercenaries", label: "Mercenaries" },
+      ],
+    },
+  ];
+
+  const rightMenuItems: MenuItem[] = [
+    {
+      label: "SHOP",
+      dropdown: [
+        { path: "/pricing", label: "Buy ZP" },
+        { path: "/sellers", label: "Sellers" },
+      ],
+    },
+    {
+      label: "GAME",
+      dropdown: [
+        { path: "/about", label: "Game Overview" },
+        { path: "/modes", label: "Modes" },
+        { path: "/maps", label: "Maps" },
+        { path: "/weapons", label: "Weapons" },
+        { path: "/download", label: "Download" },
+      ],
+    },
+    {
+      label: "NEWS",
+      dropdown: [
+        { path: "/news", label: "News" },
+        { path: "/posts", label: "Updates" },
+        { path: "/category/events", label: "Events" },
+        { path: "/videos", label: "Feeds" },
       ],
     },
   ];
@@ -158,11 +156,11 @@ export function Header() {
             }
             return (
               <div className="flex items-center overflow-hidden" style={{ border: "1px solid #282828", background: "#0e0e0e" }}>
-                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: "#aaa", borderRight: "1px solid #282828" }}>
-                  Login
-                </Link>
-                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623" }}>
+                <Link href="/register" className="px-4 py-1.5 font-bold transition-all hover:bg-[#f5a623]/10" style={{ color: "#f5a623", borderRight: "1px solid #282828" }}>
                   Sign Up
+                </Link>
+                <Link href="/login" className="px-4 py-1.5 transition-colors hover:text-[#f5a623] hover:bg-[#1a1a1a]" style={{ color: "#aaa" }}>
+                  Login
                 </Link>
               </div>
             );
@@ -211,6 +209,15 @@ export function Header() {
             {rightMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
 
           </nav>
+        </div>
+        <div className="hidden md:flex justify-center pb-2 -mt-1">
+          <Link
+            href="/download"
+            className="px-20 py-2 font-black text-xl tracking-[0.25em] uppercase"
+            style={{ background: "linear-gradient(180deg,#f3ba2f 0%, #d18b00 100%)", color: "#101010", boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}
+          >
+            Download
+          </Link>
         </div>
 
         {/* Mobile */}

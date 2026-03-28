@@ -5,13 +5,14 @@ import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState } from "react";
 const siteLogoImage = "/logo-new.png";
+const centerLogoImage = "/crossfire-logo.png";
 
 interface DropdownItem { path: string; label: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
@@ -54,6 +55,13 @@ export function Header() {
   ];
 
   const rightMenuItems: MenuItem[] = [
+    {
+      label: "RANKING",
+      dropdown: [
+        { path: "/ranks", label: "Player Ranking" },
+        { path: "/mercenaries", label: "Mercenaries" },
+      ],
+    },
     {
       label: "COMMUNITY",
       dropdown: [
@@ -170,14 +178,15 @@ export function Header() {
           backgroundRepeat: "no-repeat",
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
-          backgroundColor: "#0e0e0e",
-          borderBottom: "2px solid #c8820a",
+          backgroundColor: "#0f0f0f",
+          borderTop: "1px solid #2b2b2b",
+          borderBottom: "2px solid #7a5310",
           boxShadow: "0 4px 30px rgba(0,0,0,0.95)",
         }}
       >
 
         {/* Desktop */}
-        <div className="hidden md:flex items-stretch h-[62px] max-w-7xl mx-auto px-4 md:px-8 relative" style={{ zIndex: 2 }}>
+        <div className="hidden md:flex items-stretch h-[70px] max-w-7xl mx-auto px-4 md:px-8 relative" style={{ zIndex: 2 }}>
           {/* LEFT NAV */}
           <nav className="flex items-stretch flex-1">
             {leftMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
@@ -186,12 +195,12 @@ export function Header() {
           {/* CENTER LOGO — CF logo bar image */}
           <Link href="/" aria-label="Home" className="flex-shrink-0 flex items-center px-4 group">
             <img
-              src="/nav-logo-bar.png"
+              src={centerLogoImage}
               alt="CrossFire"
-              className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-2xl"
               loading="eager"
               width="300"
-              height="62"
+              height="50"
               onError={(e) => { (e.target as HTMLImageElement).src = siteLogoImage; }}
               draggable={false}
             />
@@ -201,27 +210,6 @@ export function Header() {
           <nav className="flex items-stretch flex-1 justify-end">
             {rightMenuItems.map((item) => <NavItem key={item.label} item={item} />)}
 
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex items-center ml-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "#444" }} />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  className="pl-8 w-28 h-7 text-xs focus:w-44 transition-all rounded-none border-0"
-                  style={{ background: "#0c0c0c", borderBottom: "1px solid #2a2a2a", color: "#ccc", outline: "none", boxShadow: "none" }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </form>
-
-            <button onClick={toggleLanguage} className="ml-1 h-full px-2 flex items-center transition-colors hover:text-[#f5a623]" style={{ color: "#555" }} title={language === "en" ? "العربية" : "English"}>
-              <Globe className="h-4 w-4" />
-            </button>
-            <button onClick={toggleTheme} className="h-full px-2 flex items-center transition-colors hover:text-[#f5a623]" style={{ color: "#555" }}>
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
           </nav>
         </div>
 

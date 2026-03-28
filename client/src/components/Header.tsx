@@ -111,7 +111,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
+    <header className="sticky top-0 z-50 w-full" dir="ltr">
       {/* ── Top utility bar ── */}
       <div style={{ background: theme === "light" ? "#f7f7f7" : "#060606", borderBottom: theme === "light" ? "1px solid #d9d9d9" : "1px solid #181818" }}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-9 flex items-center justify-between gap-3 text-[12px]">

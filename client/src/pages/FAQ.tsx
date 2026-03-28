@@ -1,19 +1,50 @@
-import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Search, HelpCircle, Megaphone, Gamepad2, Wrench, Users, Shield, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  ChevronDown, ChevronUp, Search, HelpCircle, Megaphone,
+  Gamepad2, Wrench, Users, Shield, AlertTriangle, MessageSquare,
+  Zap, BookOpen, ArrowRight, X
+} from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
-const CATEGORY_ICONS: Record<string, any> = {
-  Announcements: Megaphone,
-  "Game Mechanics": Gamepad2,
-  "Technical Support FAQ": Wrench,
-  "Clan Mechanics": Users,
-  "CrossFire GMs and MODs": Shield,
-  "User Abuse/Hacking": AlertTriangle,
+const CATEGORY_CONFIG: Record<string, { icon: any; color: string; gradient: string; bg: string }> = {
+  Announcements: {
+    icon: Megaphone,
+    color: "text-amber-400",
+    gradient: "from-amber-500/20 to-orange-500/10",
+    bg: "bg-amber-500/10 border-amber-500/30",
+  },
+  "Game Mechanics": {
+    icon: Gamepad2,
+    color: "text-blue-400",
+    gradient: "from-blue-500/20 to-cyan-500/10",
+    bg: "bg-blue-500/10 border-blue-500/30",
+  },
+  "Technical Support FAQ": {
+    icon: Wrench,
+    color: "text-purple-400",
+    gradient: "from-purple-500/20 to-violet-500/10",
+    bg: "bg-purple-500/10 border-purple-500/30",
+  },
+  "Clan Mechanics": {
+    icon: Users,
+    color: "text-green-400",
+    gradient: "from-green-500/20 to-emerald-500/10",
+    bg: "bg-green-500/10 border-green-500/30",
+  },
+  "CrossFire GMs and MODs": {
+    icon: Shield,
+    color: "text-red-400",
+    gradient: "from-red-500/20 to-rose-500/10",
+    bg: "bg-red-500/10 border-red-500/30",
+  },
+  "User Abuse/Hacking": {
+    icon: AlertTriangle,
+    color: "text-orange-400",
+    gradient: "from-orange-500/20 to-red-500/10",
+    bg: "bg-orange-500/10 border-orange-500/30",
+  },
 };
 
 const STATIC_FAQ_DATA = [
@@ -174,7 +205,7 @@ const STATIC_FAQ_DATA = [
         title: "What are the minimum system requirements for CrossFire?",
         titleAr: "إيه هي الحد الأدنى لمتطلبات تشغيل CrossFire؟",
         body: "Minimum System Requirements for CrossFire:\n- OS: Windows XP / Vista / 7 / 8 / 10\n- CPU: Intel Pentium 4 1.8GHz or higher\n- RAM: 512 MB or more\n- GPU: NVIDIA GeForce FX 5200 or ATI Radeon 9600 or higher\n- HDD: At least 4 GB free space\n- Internet: Broadband connection required",
-        bodyAr: "الحد الأدنى لمتطلبات تشغيل CrossFire:\n- نظام التشغيل: ويندوز XP / Vista / 7 / 8 / 10\n- المعالج: Intel Pentium 4 بـ 1.8GHz أو أعلى\n- الرام: 512 ميجا أو أكثر\n- كارت الشاشة: NVIDIA GeForce FX 5200 أو ATI Radeon 9600 أو أعلى\n- مساحة: 4 جيجا فاضية على الأقل\n- النت: اتصال برودباند",
+        bodyAr: "الحد الأدنى لمتطلبات تشغيل CrossFire:\n- نظام التشغيل: ويندوز XP / Vista / 7 / 8 / 10\n- المعالج: Intel Pentium 4 بـ 1.8GHz أو أعلى\n- الرام: 512 ميجا أو أكتر\n- كارت الشاشة: NVIDIA GeForce FX 5200 أو ATI Radeon 9600 أو أعلى\n- مساحة: 4 جيجا فاضية على الأقل\n- النت: اتصال برودباند",
       },
       {
         id: "21",
@@ -341,43 +372,52 @@ const STATIC_FAQ_DATA = [
   },
 ];
 
-function AccordionItem({
-  question,
-  questionAr,
-  answer,
-  answerAr,
-  language,
+function FAQAccordionItem({
+  article,
+  isAr,
   isOpen,
   onToggle,
+  catColor,
 }: {
-  question: string;
-  questionAr: string;
-  answer: string;
-  answerAr: string;
-  language: string;
+  article: { id: string; title: string; titleAr: string; body: string; bodyAr: string };
+  isAr: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  catColor: string;
 }) {
-  const displayQuestion = language === "ar" ? questionAr || question : question;
-  const displayAnswer = language === "ar" ? answerAr || answer : answer;
+  const question = isAr ? (article.titleAr || article.title) : article.title;
+  const answer = isAr ? (article.bodyAr || article.body) : article.body;
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden mb-3">
+    <div
+      className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+        isOpen
+          ? "border-primary/40 shadow-md shadow-primary/5"
+          : "border-border/50 hover:border-border"
+      }`}
+    >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+        className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${
+          isOpen ? "bg-primary/5" : "bg-card hover:bg-muted/30"
+        }`}
+        dir={isAr ? "rtl" : "ltr"}
       >
-        <span className="font-medium text-sm md:text-base pr-4">{displayQuestion}</span>
-        {isOpen ? (
-          <ChevronUp className="h-4 w-4 flex-shrink-0 text-primary" />
-        ) : (
-          <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-        )}
+        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOpen ? "bg-primary" : "bg-muted-foreground/40"}`} />
+        <span className="flex-1 font-medium text-sm leading-snug">{question}</span>
+        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+          isOpen ? "bg-primary text-primary-foreground rotate-180" : "bg-muted text-muted-foreground"
+        }`}>
+          <ChevronDown className="h-3.5 w-3.5" />
+        </div>
       </button>
       {isOpen && (
-        <div className="px-4 pb-4 pt-1 border-t border-border bg-muted/20">
+        <div
+          className="px-5 pb-5 pt-3 bg-card border-t border-border/30"
+          dir={isAr ? "rtl" : "ltr"}
+        >
           <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-            {displayAnswer}
+            {answer}
           </p>
         </div>
       )}
@@ -392,6 +432,7 @@ export default function FAQ() {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [faqData, setFaqData] = useState(STATIC_FAQ_DATA);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: serverFaq } = useQuery({
     queryKey: ["/api/faq-categories"],
@@ -412,27 +453,23 @@ export default function FAQ() {
     }
   }, [serverFaq]);
 
-  const allCategories = [
-    { id: "all", name: "All Topics", nameAr: "كل المواضيع" },
-    ...faqData.map((cat) => ({ id: cat.id, name: cat.name, nameAr: cat.nameAr })),
-  ];
-
-  const filteredData = faqData.filter((cat) => {
-    if (activeCategory !== "all" && cat.id !== activeCategory) return false;
-    return true;
-  });
-
-  const filterArticles = (articles: typeof STATIC_FAQ_DATA[0]["articles"]) => {
-    if (!searchQuery.trim()) return articles;
-    const q = searchQuery.toLowerCase();
-    return articles.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) ||
-        a.titleAr?.toLowerCase().includes(q) ||
-        a.body.toLowerCase().includes(q) ||
-        a.bodyAr?.toLowerCase().includes(q)
-    );
-  };
+  const filteredData = faqData
+    .filter((cat) => activeCategory === "all" || cat.id === activeCategory)
+    .map((cat) => {
+      if (!searchQuery.trim()) return cat;
+      const q = searchQuery.toLowerCase();
+      return {
+        ...cat,
+        articles: cat.articles.filter(
+          (a) =>
+            a.title.toLowerCase().includes(q) ||
+            (a.titleAr || "").toLowerCase().includes(q) ||
+            a.body.toLowerCase().includes(q) ||
+            (a.bodyAr || "").toLowerCase().includes(q)
+        ),
+      };
+    })
+    .filter((cat) => cat.articles.length > 0);
 
   const toggleItem = (id: string) => {
     setOpenItems((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -443,7 +480,7 @@ export default function FAQ() {
   return (
     <>
       <PageSEO
-        title={isAr ? "أسئلة شائعة — CrossFire Wiki" : "FAQ — CrossFire Wiki"}
+        title={isAr ? "الأسئلة الشائعة — CrossFire Wiki" : "FAQ — CrossFire Wiki"}
         description={
           isAr
             ? "إجابات على أكتر الأسئلة شيوعًا عن CrossFire - اللعبة، الحسابات، الدعم الفني، والأكتر."
@@ -451,122 +488,209 @@ export default function FAQ() {
         }
         canonicalPath="/faq"
       />
+
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
-          <div className="mb-10 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <HelpCircle className="h-10 w-10 text-primary" />
-              <h1 className="text-4xl font-bold">
-                {isAr ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
-              </h1>
+        {/* Hero */}
+        <div className="relative overflow-hidden border-b border-border/50">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(var(--primary-rgb,220,38,38),0.15),transparent)]" />
+          <div className="relative container mx-auto px-4 py-16 max-w-5xl text-center">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6 text-primary text-sm font-medium">
+              <BookOpen className="h-3.5 w-3.5" />
+              {isAr ? "مركز المساعدة" : "Help Center"}
             </div>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              {isAr ? (
+                <>الأسئلة <span className="text-primary">الشائعة</span></>
+              ) : (
+                <>Frequently Asked <span className="text-primary">Questions</span></>
+              )}
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
               {isAr
-                ? "لاقي إجابات على أكتر الأسئلة شيوعًا عن CrossFire. لو مش لاقي إجاباتك، ابعتلنا تذكرة ساببورت."
-                : "Find answers to the most common questions about CrossFire. If you can't find your answer, submit a support ticket."}
+                ? "لاقي إجابات على أكتر الأسئلة شيوعًا عن CrossFire بسهولة وسرعة."
+                : "Find quick answers to the most common CrossFire questions."}
             </p>
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <Badge variant="secondary">
-                {totalArticles} {isAr ? "سؤال" : "articles"}
-              </Badge>
-              <Badge variant="outline">
-                {faqData.length} {isAr ? "تصنيف" : "categories"}
-              </Badge>
+
+            {/* Stats */}
+            <div className="flex items-center justify-center gap-6 mb-8">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{totalArticles}</div>
+                <div className="text-xs text-muted-foreground">{isAr ? "سؤال" : "Articles"}</div>
+              </div>
+              <div className="w-px h-8 bg-border" />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{faqData.length}</div>
+                <div className="text-xs text-muted-foreground">{isAr ? "تصنيف" : "Categories"}</div>
+              </div>
+              <div className="w-px h-8 bg-border" />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-400">24/7</div>
+                <div className="text-xs text-muted-foreground">{isAr ? "متاح" : "Available"}</div>
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative max-w-lg mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                ref={searchRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={isAr ? "ابحث في الأسئلة..." : "Search questions..."}
+                dir={isAr ? "rtl" : "ltr"}
+                className="w-full pl-11 pr-10 py-3.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 shadow-lg"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
+        </div>
 
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isAr ? "ابحث في الأسئلة..." : "Search questions..."}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2 mb-8">
-            {allCategories.map((cat) => {
-              const Icon = cat.id === "all" ? HelpCircle : CATEGORY_ICONS[cat.name] || HelpCircle;
+        <div className="container mx-auto px-4 py-10 max-w-5xl">
+          {/* Category Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-10">
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all ${
+                activeCategory === "all"
+                  ? "bg-primary/10 border-primary/40 text-primary shadow-sm"
+                  : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+              }`}
+            >
+              <HelpCircle className="h-5 w-5" />
+              <span className="text-xs font-medium leading-tight">{isAr ? "الكل" : "All"}</span>
+              <span className="text-[10px] opacity-60">{totalArticles}</span>
+            </button>
+            {faqData.map((cat) => {
+              const cfg = CATEGORY_CONFIG[cat.name] || { icon: HelpCircle, color: "text-primary", gradient: "", bg: "" };
+              const Icon = cfg.icon;
+              const isActive = activeCategory === cat.id;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                    activeCategory === cat.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground"
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all ${
+                    isActive
+                      ? `${cfg.bg} shadow-sm`
+                      : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  {isAr ? cat.nameAr : cat.name}
+                  <Icon className={`h-5 w-5 ${isActive ? cfg.color : ""}`} />
+                  <span className="text-xs font-medium leading-tight line-clamp-2">
+                    {isAr ? cat.nameAr : cat.name}
+                  </span>
+                  <span className="text-[10px] opacity-60">{cat.articles.length}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="space-y-8">
-            {filteredData.map((category) => {
-              const articles = filterArticles(category.articles);
-              if (articles.length === 0) return null;
-              const Icon = CATEGORY_ICONS[category.name] || HelpCircle;
-              return (
-                <div key={category.id}>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Icon className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold">
-                      {isAr ? category.nameAr : category.name}
-                    </h2>
-                    <Badge variant="secondary" className="ml-auto">
-                      {articles.length}
-                    </Badge>
-                  </div>
-                  <div>
-                    {articles.map((article) => (
-                      <AccordionItem
-                        key={article.id}
-                        question={article.title}
-                        questionAr={article.titleAr || article.title}
-                        answer={article.body}
-                        answerAr={article.bodyAr || article.body}
-                        language={language}
-                        isOpen={!!openItems[article.id]}
-                        onToggle={() => toggleItem(article.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            {filteredData.every((cat) => filterArticles(cat.articles).length === 0) && (
-              <div className="text-center py-16 text-muted-foreground">
-                <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-40" />
-                <p className="text-lg">
-                  {isAr
-                    ? "مش لاقي نتايج. جرب كلمات تانية."
-                    : "No results found. Try different keywords."}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-12 text-center p-6 bg-muted/30 rounded-xl border border-border">
-            <HelpCircle className="h-8 w-8 mx-auto mb-3 text-primary" />
-            <h3 className="font-semibold text-lg mb-2">
-              {isAr ? "مش لاقي إجابتك؟" : "Still can't find your answer?"}
-            </h3>
-            <p className="text-muted-foreground text-sm mb-4">
+          {/* Results */}
+          {searchQuery && (
+            <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
+              <Zap className="h-4 w-4 text-primary" />
               {isAr
-                ? "فريق الدعم بتاعنا موجود يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
-                : "Our support team is here to help. Submit a ticket and we'll get back to you as soon as possible."}
-            </p>
-            <a
-              href="/support"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
-            >
-              {isAr ? "ابعت تذكرة ساببورت" : "Submit a Support Ticket"}
-            </a>
+                ? `${filteredData.reduce((s, c) => s + c.articles.length, 0)} نتيجة لـ "${searchQuery}"`
+                : `${filteredData.reduce((s, c) => s + c.articles.length, 0)} results for "${searchQuery}"`}
+            </div>
+          )}
+
+          {filteredData.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <HelpCircle className="h-14 w-14 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium mb-2">
+                {isAr ? "مش لاقي نتايج" : "No results found"}
+              </p>
+              <p className="text-sm">
+                {isAr ? "جرب كلمات تانية" : "Try different keywords"}
+              </p>
+              <button
+                onClick={() => { setSearchQuery(""); setActiveCategory("all"); }}
+                className="mt-4 text-primary text-sm hover:underline"
+              >
+                {isAr ? "عرض كل الأسئلة" : "Show all questions"}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {filteredData.map((category) => {
+                const cfg = CATEGORY_CONFIG[category.name] || { icon: HelpCircle, color: "text-primary", gradient: "from-primary/10 to-transparent", bg: "" };
+                const Icon = cfg.icon;
+                return (
+                  <div key={category.id}>
+                    {/* Category Header */}
+                    <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r ${cfg.gradient}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${cfg.bg || "bg-primary/10"}`}>
+                        <Icon className={`h-5 w-5 ${cfg.color}`} />
+                      </div>
+                      <div>
+                        <h2 className="font-semibold text-base leading-tight">
+                          {isAr ? category.nameAr : category.name}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {category.articles.length} {isAr ? "سؤال" : "questions"}
+                        </p>
+                      </div>
+                      {activeCategory === "all" && (
+                        <button
+                          onClick={() => setActiveCategory(category.id)}
+                          className={`ml-auto flex items-center gap-1 text-xs ${cfg.color} hover:underline opacity-70 hover:opacity-100`}
+                        >
+                          {isAr ? "عرض الكل" : "View all"}
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Articles */}
+                    <div className="space-y-2">
+                      {category.articles.map((article) => (
+                        <FAQAccordionItem
+                          key={article.id}
+                          article={article}
+                          isAr={isAr}
+                          isOpen={!!openItems[article.id]}
+                          onToggle={() => toggleItem(article.id)}
+                          catColor={cfg.color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="mt-14 relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="font-bold text-xl mb-2">
+                {isAr ? "لسه مش لاقي إجابتك؟" : "Still can't find your answer?"}
+              </h3>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6">
+                {isAr
+                  ? "فريق الدعم بتاعنا موجود 24/7 عشان يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
+                  : "Our support team is available 24/7. Send us a ticket and we'll get back to you as soon as possible."}
+              </p>
+              <a
+                href="/support"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/20"
+              >
+                {isAr ? "ابعت تذكرة ساببورت" : "Submit a Support Ticket"}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -183,15 +183,18 @@ export function Header() {
       <div style={{ background: navBg, borderBottom: `2px solid ${navAccent}`, boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)", overflow: "visible" }}>
         <div className="hidden md:flex items-center max-w-7xl mx-auto px-4 md:px-6 h-14" style={{ overflow: "visible" }}>
 
-          {/* Left nav: NEWS + GAME */}
-          <nav className="flex items-center flex-1">
+          {/* Outer left spacer — pushes nav toward center */}
+          <div className="flex-1" />
+
+          {/* Left nav: NEWS + GAME — sits right next to Download */}
+          <nav className="flex items-center self-stretch">
             {navItems.slice(0, 2).map((item) => {
               if (!item.dropdown) return null;
               const active = isActiveDrop(item.dropdown);
               return (
                 <div key={item.label} className="relative group flex items-center self-stretch">
                   <button
-                    className="self-stretch flex items-center gap-1 px-3 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
+                    className="self-stretch flex items-center gap-1 px-4 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
                     style={{ color: active ? navAccent : textColor }}
                   >
                     {item.label}
@@ -223,18 +226,18 @@ export function Header() {
             })}
           </nav>
 
-          {/* Center: Ornate Download button */}
+          {/* Center: Download button */}
           <div className="flex-shrink-0 flex flex-col items-center" style={{ position: "relative" }}>
             <Link href="/download">
               <button
                 className="group relative overflow-hidden font-black uppercase tracking-[0.22em] text-[13px] transition-all duration-200 hover:brightness-110 active:scale-95"
                 style={{
                   minWidth: "180px",
-                  padding: "11px 40px",
+                  padding: "11px 36px",
                   background: "linear-gradient(180deg, #f9c84a 0%, #e89b10 45%, #c67800 100%)",
                   color: "#1a0a00",
                   border: "none",
-                  clipPath: "polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%)",
+                  clipPath: "polygon(10px 0%, calc(100% - 10px) 0%, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0% calc(100% - 10px), 0% 10px)",
                   boxShadow: "0 0 24px rgba(245,166,35,0.45), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.25)",
                   position: "relative",
                   zIndex: 2,
@@ -246,8 +249,8 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Right nav: SHOP + COMMUNITY + SUPPORT */}
-          <nav className="flex items-center flex-1 justify-end">
+          {/* Right nav: SHOP + COMMUNITY + SUPPORT — sits right next to Download */}
+          <nav className="flex items-center self-stretch">
             {navItems.slice(2, 5).map((item) => {
               if (!item.dropdown) return null;
               const active = isActiveDrop(item.dropdown);
@@ -285,6 +288,9 @@ export function Header() {
               );
             })}
           </nav>
+
+          {/* Outer right spacer — pushes nav toward center */}
+          <div className="flex-1" />
         </div>
       </div>
 

@@ -5447,7 +5447,7 @@ app.use((req, res, next) => {
         "img-src 'self' data: https: blob:",
         "font-src 'self' https://fonts.gstatic.com data:",
         "connect-src 'self' https: wss: blob:",
-        "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com",
+        "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://discord.com https://discordapp.com",
         "media-src 'self' https: blob:",
         "worker-src 'self' blob:",
         "manifest-src 'self'"

@@ -267,12 +267,12 @@ export default function EventDetail() {
 
         {/* Sub-header breadcrumb bar */}
         <div style={{ background: bgSub, borderBottom: `1px solid ${borderSub}` }}>
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: textFaint }}>
+          <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: textFaint }}>
             <Breadcrumbs items={breadcrumbs} />
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-[1400px] mx-auto px-6 py-8">
 
           {/* Back + language controls */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -440,19 +440,31 @@ export default function EventDetail() {
 
               {/* Discord widget */}
               <div className="overflow-hidden" style={{ background: bgCard, border: `1px solid ${border}` }}>
-                <div className="px-4 pt-3 pb-2 font-black text-[12px] uppercase tracking-[0.18em]" style={{ color: "#f5a623", borderBottom: `1px solid ${border}` }}>
-                  Discord Community
+                <div className="px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `1px solid ${border}` }}>
+                  <span className="font-black text-[12px] uppercase tracking-[0.18em]" style={{ color: "#f5a623" }}>Discord Community</span>
+                  <span className="text-[10px] font-bold" style={{ color: "#5865F2" }}>● 2,594 Online</span>
                 </div>
                 <iframe
                   src="https://discord.com/widget?id=360821102580072449&theme=dark"
                   width="100%"
-                  height="360"
+                  height="380"
                   allowTransparency={true}
                   frameBorder="0"
                   sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
                   style={{ display: "block" }}
                   title="CrossFire Discord"
                 />
+                <div className="p-3" style={{ borderTop: `1px solid ${border}` }}>
+                  <a
+                    href="https://discord.com/invite/crossfire"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center py-2.5 font-black text-[12px] uppercase tracking-widest transition-opacity hover:opacity-90"
+                    style={{ background: "#5865F2", color: "#fff", clipPath: "polygon(6px 0%, calc(100% - 6px) 0%, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0% calc(100% - 6px), 0% 6px)" }}
+                  >
+                    Join CrossFire Discord
+                  </a>
+                </div>
               </div>
 
               {/* Auth / Welcome box */}

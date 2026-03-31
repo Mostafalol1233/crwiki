@@ -3844,12 +3844,19 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             fd.append('signature', signature);
             fd.append('api_key', CLOUDINARY_API_KEY);
             const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-            // Retry logic
+            // Retry logic (with 10-second timeout per attempt)
             let lastErr = null;
-            const attempts = 3;
+            const attempts = 2;
             for (let i = 0; i < attempts; i++) {
                 try {
-                    const upstream = await fetch(endpoint, { method: 'POST', body: fd });
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    let upstream;
+                    try {
+                        upstream = await fetch(endpoint, { method: 'POST', body: fd, signal: controller.signal });
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
                     if (!upstream.ok) {
                         const text = await upstream.text().catch(() => '');
                         throw new Error(`Cloudinary ${upstream.status}: ${text}`);
@@ -3859,7 +3866,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 } catch (e) {
                     lastErr = e;
                     if (i < attempts - 1) {
-                        await new Promise(r => setTimeout(r, 2000));
+                        await new Promise(r => setTimeout(r, 1000));
                     }
                 }
             }
@@ -4018,7 +4025,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(400).json({ ok: false, error: 'Only Cloudinary resources allowed' });
                 }
                 const method = (req.method || 'GET').toUpperCase();
-                const upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET' }).catch(() => null);
+                let upstream = null; { const _ctrl = new AbortController(); const _t = setTimeout(() => _ctrl.abort(), 8000); try { upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET', signal: _ctrl.signal }); } catch { upstream = null; } finally { clearTimeout(_t); } }
                 if (upstream && upstream.ok) {
                     const ct = upstream.headers.get('content-type');
                     if (ct) res.setHeader('Content-Type', ct);
@@ -4080,7 +4087,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(400).json({ ok: false, error: 'Only Cloudinary resources allowed' });
                 }
                 const method = (req.method || 'GET').toUpperCase();
-                const upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET' }).catch(() => null);
+                let upstream = null; { const _ctrl = new AbortController(); const _t = setTimeout(() => _ctrl.abort(), 8000); try { upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET', signal: _ctrl.signal }); } catch { upstream = null; } finally { clearTimeout(_t); } }
                 if (upstream && upstream.ok) {
                     const ct = upstream.headers.get('content-type');
                     if (ct) res.setHeader('Content-Type', ct);

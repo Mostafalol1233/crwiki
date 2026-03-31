@@ -5444,7 +5444,7 @@ export default function Admin() {
                               const logoUrl = imgList[0] || '';
                               return logoUrl ? (
                                 <div className="relative group w-48 h-32 bg-muted rounded-lg overflow-hidden border-2 border-primary/30 shadow">
-                                  <img src={logoUrl} className="w-full h-full object-cover" alt="Logo" />
+                                  <img src={logoUrl} className="w-full h-full object-cover" alt="Logo" onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2248%22 height%3D%2248%22 viewBox%3D%220 0 24 24%22%3E%3Crect width%3D%2224%22 height%3D%2224%22 fill%3D%22%23333%22%2F%3E%3Ctext x%3D%2212%22 y%3D%2216%22 text-anchor%3D%22middle%22 fill%3D%22%23888%22 font-size%3D%228%22%3ENo img%3C%2Ftext%3E%3C%2Fsvg%3E'; }} />
                                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                     <Button
                                       size="sm"
@@ -5530,7 +5530,7 @@ export default function Admin() {
                                 const realIdx = galleryIdx + 1;
                                 return (
                                   <div key={realIdx} className="relative group aspect-video bg-muted rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-all">
-                                    <img src={img} className="w-full h-full object-cover" alt={`Gallery ${galleryIdx + 1}`} />
+                                    <img src={img} className="w-full h-full object-cover" alt={`Gallery ${galleryIdx + 1}`} onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2248%22 height%3D%2248%22 viewBox%3D%220 0 24 24%22%3E%3Crect width%3D%2224%22 height%3D%2224%22 fill%3D%22%23333%22%2F%3E%3Ctext x%3D%2212%22 y%3D%2216%22 text-anchor%3D%22middle%22 fill%3D%22%23888%22 font-size%3D%228%22%3ENo img%3C%2Ftext%3E%3C%2Fsvg%3E'; }} />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2">
                                       <label className="w-full cursor-pointer">
                                         <span className="flex items-center justify-center gap-1 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded px-2 py-1.5 w-full transition-colors">

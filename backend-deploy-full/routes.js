@@ -3933,7 +3933,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', bytes: json.bytes, created_at: json.created_at, thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (error) {
-                    // Fallback to local server, while preserving Cloudinary-style domain URL
+                    // Fallback to local server
                     const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
@@ -3941,15 +3941,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     if (folder) localPathParts.push(folder);
                     const relativeFile = `${publicId}.${ext}`;
                     localPathParts.push(relativeFile);
+                    // Save with cloud name prefix so /media/cloudinary/<cloud>/... proxy can find it
                     const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...localPathParts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...localPathParts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${localPathParts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${localPathParts.join('/')}`;
+                    const withCloudParts = [CLOUDINARY_CLOUD_NAME, ...localPathParts];
+                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...withCloudParts.slice(0, -1)));
+                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...withCloudParts), req.file.buffer);
+                    // Use a relative URL so it works in any environment (dev, prod, Replit proxy)
+                    const relativeUrl = `/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${localPathParts.join('/')}`;
+                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}${relativeUrl}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
+                    logUpload({ type: resource, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, url: relativeUrl, domain_url: domainUrl, duration, fallback: true });
                     recordUpload(true, duration);
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: folder ? `${folder}/${publicId}` : publicId, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    return res.json({ ok: true, url: relativeUrl, secure_url: relativeUrl, domain_url: domainUrl, public_id: folder ? `${folder}/${publicId}` : publicId, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname, fallback: true });
                 }
             } catch (error) {
                 logUpload({ type: 'cloudinary', error: error?.message || String(error) });
@@ -4019,33 +4022,31 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 if (!rest || !/^dkpdidm89\//.test(rest)) {
                     return res.status(400).json({ ok: false, error: 'Invalid Cloudinary path' });
                 }
-                const url = `https://res.cloudinary.com/${rest}`;
-                const u = new URL(url);
-                if (!/res\.cloudinary\.com$/i.test(u.hostname)) {
-                    return res.status(400).json({ ok: false, error: 'Only Cloudinary resources allowed' });
-                }
                 const method = (req.method || 'GET').toUpperCase();
-                let upstream = null; { const _ctrl = new AbortController(); const _t = setTimeout(() => _ctrl.abort(), 8000); try { upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET', signal: _ctrl.signal }); } catch { upstream = null; } finally { clearTimeout(_t); } }
+                const ext = path.extname(rest).toLowerCase().replace(/^\./, '');
+                const typeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', mp4: 'video/mp4', pdf: 'application/pdf' };
+                // Check local storage FIRST — serve instantly without hitting Cloudinary
+                const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                const localPath = path.join(LOCAL_CLOUD_DIR, ...rest.split('/'));
+                if (fs.existsSync(localPath)) {
+                    const ct = typeMap[ext] || 'application/octet-stream';
+                    res.setHeader('Content-Type', ct);
+                    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+                    if (method === 'HEAD') return res.sendStatus(200);
+                    return fs.createReadStream(localPath).pipe(res);
+                }
+                // Not found locally — try fetching from Cloudinary with timeout
+                const url = `https://res.cloudinary.com/${rest}`;
+                let upstream = null;
+                { const _ctrl = new AbortController(); const _t = setTimeout(() => _ctrl.abort(), 8000); try { upstream = await fetch(url, { method: method === 'HEAD' ? 'HEAD' : 'GET', signal: _ctrl.signal }); } catch { upstream = null; } finally { clearTimeout(_t); } }
                 if (upstream && upstream.ok) {
-                    const ct = upstream.headers.get('content-type');
-                    if (ct) res.setHeader('Content-Type', ct);
+                    const ct = upstream.headers.get('content-type') || typeMap[ext] || 'application/octet-stream';
+                    res.setHeader('Content-Type', ct);
                     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
                     if (method === 'HEAD') return res.sendStatus(200);
                     return upstream.body.pipe(res);
                 }
-                // Local fallback
-                const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                const localPath = path.join(LOCAL_CLOUD_DIR, ...rest.split('/'));
-                if (!fs.existsSync(localPath)) {
-                    return res.status(502).json({ ok: false, error: `Upstream failed and no local fallback` });
-                }
-                const ext = path.extname(localPath).toLowerCase().replace(/^\./, '');
-                const typeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', mp4: 'video/mp4', pdf: 'application/pdf' };
-                const ct = typeMap[ext] || 'application/octet-stream';
-                res.setHeader('Content-Type', ct);
-                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-                if (method === 'HEAD') return res.sendStatus(200);
-                fs.createReadStream(localPath).pipe(res);
+                return res.status(404).json({ ok: false, error: 'Image not found locally or on Cloudinary' });
             } catch (error) {
                 res.status(500).json({ ok: false, error: error?.message || 'Proxy failed' });
             }

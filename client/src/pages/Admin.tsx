@@ -1464,6 +1464,20 @@ export default function Admin() {
     },
   });
 
+  const migrateSellerImagesMutation = useMutation({
+    mutationFn: () => apiRequest("/api/admin/migrate-seller-images-to-cloudinary", "POST"),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sellers"] });
+      toast({
+        title: "Migration complete",
+        description: `Migrated: ${data.migrated}, Skipped (already Cloudinary): ${data.skipped}, Failed: ${data.failed}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Migration failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   const createMercenaryMutation = useMutation({
     mutationFn: (data: any) => {
       // Ensure voiceLines is always an array
@@ -5337,6 +5351,17 @@ export default function Admin() {
                 <TabsContent value="sellers" className="space-y-6" data-testid="content-sellers">
                   <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-semibold">Sellers Management</h2>
+                    <div className="flex items-center gap-2">
+                    {canManageSellers && (
+                      <Button
+                        variant="outline"
+                        onClick={() => migrateSellerImagesMutation.mutate()}
+                        disabled={migrateSellerImagesMutation.isPending}
+                        title="Move all seller images that are not on Cloudinary to Cloudinary storage"
+                      >
+                        {migrateSellerImagesMutation.isPending ? "Migrating..." : "Migrate Images to Cloudinary"}
+                      </Button>
+                    )}
                     <Dialog open={isCreatingSeller} onOpenChange={(open) => {
                       setIsCreatingSeller(open);
                       if (!open) {
@@ -5799,6 +5824,7 @@ export default function Admin() {
                         </div>
                       </DialogContent>
                     </Dialog>
+                    </div>
                   </div>
 
                   <Card>

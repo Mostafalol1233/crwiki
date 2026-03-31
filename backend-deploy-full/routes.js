@@ -3525,6 +3525,53 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
 
 
 
+        app.post("/api/admin/migrate-seller-images-to-cloudinary", requireAuth, requireSellerManager, async (req, res) => {
+            try {
+                const sellers = await storage.getAllSellers();
+                const results = { migrated: 0, failed: 0, skipped: 0, sellers: [] };
+                for (const seller of sellers) {
+                    const images = Array.isArray(seller.images) ? seller.images : [];
+                    let changed = false;
+                    const newImages = [];
+                    for (const imgUrl of images) {
+                        if (!imgUrl) { newImages.push(imgUrl); continue; }
+                        const isCloudinary = imgUrl.includes('res.cloudinary.com') || imgUrl.includes('cloudinary.com');
+                        if (isCloudinary) {
+                            results.skipped++;
+                            newImages.push(imgUrl);
+                            continue;
+                        }
+                        try {
+                            let buffer;
+                            if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+                                const response = await axios.get(imgUrl, { responseType: 'arraybuffer', timeout: 15000 });
+                                buffer = Buffer.from(response.data);
+                            } else {
+                                const filePath = path.resolve('backend-deploy-full', imgUrl.replace(/^\//, ''));
+                                if (!fs.existsSync(filePath)) { newImages.push(imgUrl); results.failed++; continue; }
+                                buffer = await fs.promises.readFile(filePath);
+                            }
+                            const result = await uploadStream(buffer, { folder: 'sellers' });
+                            newImages.push(result.secure_url);
+                            results.migrated++;
+                            changed = true;
+                        } catch (err) {
+                            console.error(`Failed to migrate image ${imgUrl} for seller ${seller.id}: ${err.message}`);
+                            newImages.push(imgUrl);
+                            results.failed++;
+                        }
+                    }
+                    if (changed) {
+                        await storage.updateSeller(seller.id, { images: newImages });
+                        results.sellers.push({ id: seller.id, name: seller.name });
+                    }
+                }
+                res.json({ success: true, ...results });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
         app.delete("/api/admin/bulk-delete", requireAuth, requireSettingsManager, async (req, res) => {
             try {
                 const { items } = req.body; // Array of { id, type }

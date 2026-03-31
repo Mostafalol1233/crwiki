@@ -1,0 +1,48 @@
+[ERROR] 500 - Unexpected field MulterError: Unexpected field
+    at wrappedFileFilter (/home/container/node_modules/multer/index.js:40:19)
+    at Multipart.<anonymous> (/home/container/node_modules/multer/lib/make-middleware.js:109:7)
+    at Multipart.emit (node:events:508:28)
+    at HeaderParser.cb (/home/container/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/home/container/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/home/container/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/home/container/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/home/container/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/home/container/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:570:12) {
+  code: 'LIMIT_UNEXPECTED_FILE',
+  field: 'image',
+  storageErrors: []
+}
+[DEBUG] POST /api/upload-image -> 500 (5ms)
+10:38:42 AM [express] POST /api/upload-image 500 in 5ms
+[DEBUG] GET /api/seller-pages/xbavly -> 500 (1ms)
+10:39:38 AM [express] GET /api/seller-pages/xbavly 500 in 1ms
+10:39:38 AM [express] GET /api/public/settings/announcements 200 in 123ms
+10:39:38 AM [express] GET /api/public/settings/seo 200 in 147ms
+10:39:38 AM [express] GET /api/public/settings/site 200 in 110ms
+10:39:38 AM [express] GET /api/sellers/slug/xbavly 200 in 112ms
+10:39:38 AM [express] GET /api/public/settings/seo 200 in 112ms
+10:39:38 AM [express] GET /api/public/settings/seo 200 in 111ms
+10:39:39 AM [express] POST /api/analytics/sellers/xbavly/event 200 in 127ms
+10:39:39 AM [express] GET /api/public/settings/seo 200 in 111ms
+[DEBUG] GET /api/seller-pages/xbavly -> 500 (1ms)
+10:39:39 AM [express] GET /api/seller-pages/xbavly 500 in 1ms
+[ERROR] 500 - Unexpected field MulterError: Unexpected field
+    at wrappedFileFilter (/home/container/node_modules/multer/index.js:40:19)
+    at Multipart.<anonymous> (/home/container/node_modules/multer/lib/make-middleware.js:109:7)
+    at Multipart.emit (node:events:508:28)
+    at HeaderParser.cb (/home/container/node_modules/busboy/lib/types/multipart.js:358:14)
+    at HeaderParser.push (/home/container/node_modules/busboy/lib/types/multipart.js:162:20)
+    at SBMH.ssCb [as _cb] (/home/container/node_modules/busboy/lib/types/multipart.js:394:37)
+    at feed (/home/container/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/home/container/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/home/container/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:570:12) {
+  code: 'LIMIT_UNEXPECTED_FILE',
+  field: 'image',
+  storageErrors: []
+}
+[DEBUG] POST /api/upload-image -> 500 (1ms)
+10:40:03 AM [express] POST /api/upload-image 500 in 1ms
+(node:54) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 error listeners added to [FormData]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:54) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 error listeners added to [FormData]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit

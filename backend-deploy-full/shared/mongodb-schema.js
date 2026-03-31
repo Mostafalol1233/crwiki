@@ -163,6 +163,7 @@ const NewsletterSubscriberSchema = new Schema({
 });
 const SellerSchema = new Schema({
     name: { type: String, required: true },
+    seller_name_slug: { type: String, default: '' },
     description: { type: String, default: '' },
     images: { type: [String], default: [] },
     imageUrls: { type: [String], default: [] },
@@ -172,6 +173,12 @@ const SellerSchema = new Schema({
     whatsapp: { type: String, default: '' },
     discord: { type: String, default: '' },
     website: { type: String, default: '' },
+    facebook: { type: String, default: '' },
+    twitter: { type: String, default: '' },
+    instagram: { type: String, default: '' },
+    youtube: { type: String, default: '' },
+    tiktok: { type: String, default: '' },
+    telegram: { type: String, default: '' },
     featured: { type: Boolean, default: false },
     promotionText: { type: String, default: '' },
     averageRating: { type: Number, default: 0 },
@@ -487,6 +494,7 @@ export const insertNewsletterSubscriberSchema = z.object({
 });
 export const insertSellerSchema = z.object({
     name: z.string(),
+    seller_name_slug: z.string().optional(),
     description: z.string().optional(),
     images: z.array(z.string()).optional(),
     imageUrls: z.array(z.string()).optional(),
@@ -496,6 +504,12 @@ export const insertSellerSchema = z.object({
     whatsapp: z.string().optional(),
     discord: z.string().optional(),
     website: z.string().optional(),
+    facebook: z.string().optional(),
+    twitter: z.string().optional(),
+    instagram: z.string().optional(),
+    youtube: z.string().optional(),
+    tiktok: z.string().optional(),
+    telegram: z.string().optional(),
     featured: z.boolean().optional(),
     promotionText: z.string().optional(),
     rank: z.number().optional(),

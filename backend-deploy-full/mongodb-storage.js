@@ -372,11 +372,17 @@ export class MongoDBStorage {
     }
 
     async createSeller(seller) {
+        if (seller.name && !seller.seller_name_slug) {
+            seller.seller_name_slug = this.slugify(seller.name);
+        }
         const newSeller = await SellerModel.create(seller);
         return { ...newSeller.toObject(), id: String(newSeller._id) };
     }
 
     async updateSeller(id, seller) {
+        if (seller.name) {
+            seller.seller_name_slug = this.slugify(seller.name);
+        }
         const updated = await SellerModel.findByIdAndUpdate(id, seller, { new: true }).lean();
         if (!updated) return undefined;
         return { ...updated, id: String(updated._id) };

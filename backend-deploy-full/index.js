@@ -6138,8 +6138,8 @@ function pickResourceType(mime) {
 function buildDomainUrl(kind, publicId, format, req) {
     const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-    const filename = `${String(publicId).replace(/^.*\//, '')}.${format}`;
-    if (kind === 'image') return `${base}/image/${filename}`;
+    // Preserve full folder path (e.g. sellers/abc123 → /image/sellers/abc123.jpg)
+    if (kind === 'image') return `${base}/image/${publicId}.${format}`;
     return `${base}/media/${cloudName}/${kind}/upload/${publicId}.${format}`;
 }
 async function cloudinarySignedUpload(buffer, filename, mimetype, opts) {

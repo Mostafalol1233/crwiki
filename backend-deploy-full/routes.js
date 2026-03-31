@@ -3560,7 +3560,8 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                                     const parts = u.pathname.split('/').filter(Boolean);
                                     const last = parts[parts.length - 1] || '';
                                     const isImg = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
-                                    const proxyUrl = isImg && /\.[A-Za-z0-9]+$/.test(last) ? `${BASE_URL}/image/${last}` : imgUrl;
+                                    const fullPath = parts.slice(3).join('/');
+                                    const proxyUrl = isImg && /\.[A-Za-z0-9]+$/.test(last) ? `${BASE_URL}/image/${fullPath}` : imgUrl;
                                     results.skipped++;
                                     results.details.push({ url: imgUrl, action: 'skipped_real_cloudinary' });
                                     newImages.push(proxyUrl);
@@ -3878,11 +3879,15 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
                 if (!/res\.cloudinary\.com$/i.test(u.hostname)) return String(secureUrl);
                 const parts = u.pathname.split('/').filter(Boolean);
+                // parts: [cloudname, 'image'|'video', 'upload', ...folder..., 'filename.ext']
                 const isImage = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
                 const last = parts[parts.length - 1] || '';
-                return isImage && /\.[A-Za-z0-9]+$/.test(last)
-                    ? `${base}/image/${last}`
-                    : `${base}/media/${u.pathname.replace(/^\//, '')}`;
+                if (isImage && /\.[A-Za-z0-9]+$/.test(last)) {
+                    // Preserve full folder path after cloudname/image/upload/
+                    const fullPath = parts.slice(3).join('/');
+                    return `${base}/image/${fullPath}`;
+                }
+                return `${base}/media/${u.pathname.replace(/^\//, '')}`;
             } catch {
                 return String(secureUrl);
             }
@@ -4155,10 +4160,11 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
         });
 
-        // Pretty path for images: /image/<public_id>.<ext>
-        app.all('/image/:filename', async (req, res) => {
+        // Pretty path for images: /image/<folder>/<public_id>.<ext> or /image/<public_id>.<ext>
+        app.all('/image/*', async (req, res) => {
             try {
-                const name = String(req.params.filename || '').replace(/[^A-Za-z0-9._-]+/g, '');
+                // req.params[0] captures everything after /image/ including folder slashes
+                const name = String(req.params[0] || '').replace(/[^A-Za-z0-9._\/-]+/g, '').replace(/^\/+|\/+$/g, '');
                 if (!name) return res.status(400).json({ ok: false, error: 'Invalid image name' });
                 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${name}`;

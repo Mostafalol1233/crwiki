@@ -498,15 +498,28 @@ export default function Admin() {
     if (!files.length) return;
     setIsUploadingSellerImage(true);
     try {
-      const uploadedUrls: string[] = [];
-      for (const file of files) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/images/upload", { method: "POST", body: fd, credentials: "include" });
-        const json = await res.json();
-        if (!res.ok || !json?.ok) throw new Error(json?.error || "Upload failed");
-        uploadedUrls.push(json?.url || json?.secure_url || "");
-      }
+      const tokRes = await fetch('/api/security/csrf-token', { credentials: 'include' });
+      const tokJson = await tokRes.json();
+      const token = tokJson?.csrfToken || "";
+
+      const fd = new FormData();
+      files.forEach((file) => fd.append("images", file));
+
+      const res = await fetch("/api/upload-image", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken") || ""}`,
+          "x-csrf-token": token,
+        },
+        body: fd,
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Upload failed");
+      const uploadedUrls: string[] = Array.isArray(json?.results)
+        ? json.results.map((r: any) => r?.url).filter(Boolean)
+        : [json?.url].filter(Boolean);
+      if (!uploadedUrls.length) throw new Error("No image URL returned");
 
       const currentList = sellerForm.images
         ? sellerForm.images.split(",").map((s) => s.trim()).filter(Boolean)

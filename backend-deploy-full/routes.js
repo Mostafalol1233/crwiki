@@ -3528,35 +3528,85 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         app.post("/api/admin/migrate-seller-images-to-cloudinary", requireAuth, requireSellerManager, async (req, res) => {
             try {
                 const sellers = await storage.getAllSellers();
-                const results = { migrated: 0, failed: 0, skipped: 0, sellers: [] };
+                const results = { migrated: 0, failed: 0, skipped: 0, sellers: [], details: [] };
+                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+                const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                const BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+                const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
                 for (const seller of sellers) {
                     const images = Array.isArray(seller.images) ? seller.images : [];
                     let changed = false;
                     const newImages = [];
                     for (const imgUrl of images) {
                         if (!imgUrl) { newImages.push(imgUrl); continue; }
-                        const isCloudinary = imgUrl.includes('res.cloudinary.com') || imgUrl.includes('cloudinary.com');
-                        if (isCloudinary) {
-                            results.skipped++;
-                            newImages.push(imgUrl);
-                            continue;
-                        }
                         try {
-                            let buffer;
-                            if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+                            let buffer = null;
+                            let localFilePath = null;
+                            const isLocalMediaUrl = imgUrl.includes('/media/cloudinary/');
+                            const isCloudinaryUrl = imgUrl.includes('res.cloudinary.com');
+                            if (isLocalMediaUrl) {
+                                // e.g. /media/cloudinary/dkpdidm89/image/upload/sellers/file.jpg
+                                const afterMediaCloudinary = imgUrl.split('/media/cloudinary/')[1] || '';
+                                localFilePath = path.join(LOCAL_CLOUD_DIR, ...afterMediaCloudinary.split('/'));
+                            } else if (isCloudinaryUrl) {
+                                // Could be fake (saved locally) or real — check local first
+                                const cloudPath = imgUrl.replace(/^https?:\/\/res\.cloudinary\.com\//, '');
+                                const potentialLocalPath = path.join(LOCAL_CLOUD_DIR, ...cloudPath.split('/'));
+                                if (fs.existsSync(potentialLocalPath)) {
+                                    localFilePath = potentialLocalPath;
+                                } else {
+                                    // Already on real Cloudinary — keep as proxy URL
+                                    const u = new URL(imgUrl);
+                                    const parts = u.pathname.split('/').filter(Boolean);
+                                    const last = parts[parts.length - 1] || '';
+                                    const isImg = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
+                                    const proxyUrl = isImg && /\.[A-Za-z0-9]+$/.test(last) ? `${BASE_URL}/image/${last}` : imgUrl;
+                                    results.skipped++;
+                                    results.details.push({ url: imgUrl, action: 'skipped_real_cloudinary' });
+                                    newImages.push(proxyUrl);
+                                    if (proxyUrl !== imgUrl) changed = true;
+                                    continue;
+                                }
+                            }
+                            if (localFilePath) {
+                                if (!fs.existsSync(localFilePath)) {
+                                    console.error(`Local file not found: ${localFilePath} for ${imgUrl}`);
+                                    results.details.push({ url: imgUrl, action: 'failed', reason: 'local_file_not_found' });
+                                    newImages.push(imgUrl);
+                                    results.failed++;
+                                    continue;
+                                }
+                                buffer = await fs.promises.readFile(localFilePath);
+                            } else if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
                                 const response = await axios.get(imgUrl, { responseType: 'arraybuffer', timeout: 15000 });
                                 buffer = Buffer.from(response.data);
                             } else {
                                 const filePath = path.resolve('backend-deploy-full', imgUrl.replace(/^\//, ''));
-                                if (!fs.existsSync(filePath)) { newImages.push(imgUrl); results.failed++; continue; }
+                                if (!fs.existsSync(filePath)) {
+                                    results.details.push({ url: imgUrl, action: 'failed', reason: 'file_not_found' });
+                                    newImages.push(imgUrl);
+                                    results.failed++;
+                                    continue;
+                                }
                                 buffer = await fs.promises.readFile(filePath);
                             }
-                            const result = await uploadStream(buffer, { folder: 'sellers' });
-                            newImages.push(result.secure_url);
+                            const filename = localFilePath ? path.basename(localFilePath) : path.basename(imgUrl.split('?')[0]);
+                            const ext = path.extname(filename).slice(1).toLowerCase() || 'jpg';
+                            const mimeType = mimeMap[ext] || 'image/jpeg';
+                            const result = await uploadStream(buffer, { folder: 'sellers', resource_type: 'image' });
+                            const secureUrl = result.secure_url;
+                            const u = new URL(secureUrl);
+                            const parts = u.pathname.split('/').filter(Boolean);
+                            const last = parts[parts.length - 1] || '';
+                            const isImg = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
+                            const proxyUrl = isImg && /\.[A-Za-z0-9]+$/.test(last) ? `${BASE_URL}/image/${last}` : secureUrl;
+                            results.details.push({ url: imgUrl, action: 'migrated', newUrl: proxyUrl });
+                            newImages.push(proxyUrl);
                             results.migrated++;
                             changed = true;
                         } catch (err) {
                             console.error(`Failed to migrate image ${imgUrl} for seller ${seller.id}: ${err.message}`);
+                            results.details.push({ url: imgUrl, action: 'failed', reason: err.message });
                             newImages.push(imgUrl);
                             results.failed++;
                         }
@@ -3793,18 +3843,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: 'video', thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = 'mp4';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const parts = ['video', 'upload', folder, `${publicId}.${ext}`];
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: 'video', filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: `${folder}/${publicId}`, format: ext, resource_type: 'video', bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    logUpload({ type: 'video', filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: err?.message || String(err), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Video upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'video', error: error?.message || String(error) });
@@ -3816,25 +3858,14 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         async function buildDomainUrl(secureUrl, req) {
             try {
                 const u = new URL(String(secureUrl));
-                const base = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+                const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
                 if (!/res\.cloudinary\.com$/i.test(u.hostname)) return String(secureUrl);
                 const parts = u.pathname.split('/').filter(Boolean);
                 const isImage = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
                 const last = parts[parts.length - 1] || '';
-                const domainUrl = isImage && /\.[A-Za-z0-9]+$/.test(last)
+                return isImage && /\.[A-Za-z0-9]+$/.test(last)
                     ? `${base}/image/${last}`
                     : `${base}/media/${u.pathname.replace(/^\//, '')}`;
-                const ctrl = new AbortController();
-                const id = setTimeout(() => ctrl.abort(), 1200);
-                try {
-                    const head = await fetch(domainUrl, { method: 'HEAD', signal: ctrl.signal });
-                    clearTimeout(id);
-                    if (head.ok) return domainUrl;
-                    return String(secureUrl);
-                } catch {
-                    clearTimeout(id);
-                    return String(secureUrl);
-                }
             } catch {
                 return String(secureUrl);
             }
@@ -3980,26 +4011,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', bytes: json.bytes, created_at: json.created_at, thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (error) {
-                    // Fallback to local server
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
-                    const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
-                    const localPathParts = [resource, 'upload'];
-                    if (folder) localPathParts.push(folder);
-                    const relativeFile = `${publicId}.${ext}`;
-                    localPathParts.push(relativeFile);
-                    // Save with cloud name prefix so /media/cloudinary/<cloud>/... proxy can find it
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const withCloudParts = [CLOUDINARY_CLOUD_NAME, ...localPathParts];
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...withCloudParts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...withCloudParts), req.file.buffer);
-                    // Use a relative URL so it works in any environment (dev, prod, Replit proxy)
-                    const relativeUrl = `/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${localPathParts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}${relativeUrl}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, url: relativeUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    return res.json({ ok: true, url: relativeUrl, secure_url: relativeUrl, domain_url: domainUrl, public_id: folder ? `${folder}/${publicId}` : publicId, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname, fallback: true });
+                    logUpload({ type: 'cloudinary', filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: error?.message || String(error), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'cloudinary', error: error?.message || String(error) });
@@ -4238,19 +4253,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
-                    const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const parts = [resource, 'upload', folder, `${publicId}.${ext}`].filter(Boolean);
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, entity: 'event', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: `${folder}/${publicId}`, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    logUpload({ type: kind, entity: 'event', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: err?.message || String(err), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'event_media', error: error?.message || String(error) });
@@ -4338,22 +4344,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     }
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'image', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = mimeToExt(req.file.mimetype) || 'bin';
-                    const resource = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, entity: 'news', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    if (String(req.query.updateImage || '').toLowerCase() === 'true') {
-                        await storage.updateNews(req.params.id, { image: domainUrl });
-                    }
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: `${folder}/${publicId}`, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    logUpload({ type: 'image', entity: 'news', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: err?.message || String(err), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'cloudinary_news', error: error?.message || String(error) });
@@ -4387,19 +4381,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = mimeToExt(req.file.mimetype) || 'bin';
-                    const resource = req.file.mimetype === 'application/pdf' ? 'raw' : (req.file.mimetype.startsWith('image/') ? 'image' : 'video');
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, entity: 'post', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: `${folder}/${publicId}`, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    logUpload({ type: 'auto', entity: 'post', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: err?.message || String(err), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'cloudinary_post', error: error?.message || String(error) });
@@ -4442,19 +4427,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
-                    const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
-                    const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
-                    const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
-                    ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
-                    await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
-                    const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
-                    const domainUrl = `${(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/media/cloudinary/${CLOUDINARY_CLOUD_NAME}/${parts.join('/')}`;
                     const duration = Date.now() - started;
-                    logUpload({ type: resource, entity: 'post', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, secure_url: secureUrl, domain_url: domainUrl, duration, fallback: true });
-                    recordUpload(true, duration);
-                    return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: `${folder}/${publicId}`, format: ext, resource_type: resource, bytes: req.file.size, created_at: new Date().toISOString(), original_filename: req.file.originalname });
+                    logUpload({ type: kind, entity: 'post', id: req.params.id, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, error: err?.message || String(err), duration });
+                    recordUpload(false, duration);
+                    return res.status(502).json({ ok: false, error: 'Upload to Cloudinary failed. Please try again.', code: 'cloudinary_error' });
                 }
             } catch (error) {
                 logUpload({ type: 'post_attachment', error: error?.message || String(error) });

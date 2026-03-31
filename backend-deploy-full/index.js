@@ -3585,49 +3585,20 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
             const apiKey = String(process.env.CLOUDINARY_API_KEY || "").trim();
             const apiSecret = String(process.env.CLOUDINARY_API_SECRET || "").trim();
             
-            if (cloudName && apiKey && apiSecret) {
-                try {
-                    console.log(`[upload] Attempting Cloudinary upload for ${req.file.originalname}`);
-                    const formData = new FormData();
-                    formData.append("file", req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
-                    formData.append("upload_preset", process.env.CLOUDINARY_UPLOAD_PRESET || "ml_default");
-                    
-                    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                        method: "POST",
-                        body: formData
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(`[upload] Cloudinary success: ${data.secure_url}`);
-                        // Use proxy URL
-                        const publicId = data.public_id;
-                        const format = data.format;
-                        const resourceType = data.resource_type || "image";
-                        const domainUrl = buildDomainUrl(resourceType, publicId, format, req);
-                        return res.json({ url: domainUrl, provider: "cloudinary" });
-                    } else {
-                        const errorData = await response.json();
-                        console.warn(`[upload] Cloudinary failed, falling back to catbox:`, errorData);
-                    }
-                } catch (cloudinaryErr) {
-                    console.error(`[upload] Cloudinary error, falling back to catbox:`, cloudinaryErr.message);
-                }
+            if (!cloudName || !apiKey || !apiSecret) {
+                return res.status(500).json({ error: "Cloudinary is not configured." });
             }
-
-            // Fallback to catbox.moe
-            const formData = new FormData();
-            formData.append("reqtype", "fileupload");
-            formData.append("fileToUpload", req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
-            const response = await fetch("https://catbox.moe/user/api.php", {
-                method: "POST",
-                body: formData
-            });
-            if (!response.ok) {
-                throw new Error("Failed to upload to catbox.moe");
+            try {
+                console.log(`[upload] Uploading to Cloudinary: ${req.file.originalname}`);
+                const json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder: 'uploads' });
+                const resourceType = json.resource_type || "image";
+                const domainUrl = buildDomainUrl(resourceType, json.public_id, json.format, req);
+                console.log(`[upload] Cloudinary success: ${json.secure_url}`);
+                return res.json({ url: domainUrl, secure_url: json.secure_url, domain_url: domainUrl, public_id: json.public_id, provider: "cloudinary" });
+            } catch (cloudinaryErr) {
+                console.error(`[upload] Cloudinary upload failed:`, cloudinaryErr.message);
+                return res.status(502).json({ error: "Image upload to Cloudinary failed. Please try again." });
             }
-            const imageUrl = await response.text();
-            res.json({ url: imageUrl.trim(), provider: "catbox" });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
@@ -3732,23 +3703,8 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
                 const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
                 return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
             } catch (cloudErr) {
-                console.warn("[images/upload] Cloudinary failed, falling back to catbox.moe:", cloudErr?.message);
-                try {
-                    const catboxForm = new FormData();
-                    catboxForm.append("reqtype", "fileupload");
-                    catboxForm.append("fileToUpload", req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 30000);
-                    const catResp = await fetch("https://catbox.moe/user/api.php", { method: "POST", body: catboxForm, signal: controller.signal });
-                    clearTimeout(timeout);
-                    if (!catResp.ok) throw new Error(`catbox failed: ${catResp.status}`);
-                    const catUrl = (await catResp.text()).trim();
-                    if (!catUrl || !catUrl.startsWith("http")) throw new Error("catbox returned invalid URL");
-                    return res.json({ ok: true, secure_url: catUrl, domain_url: catUrl, domainUrl: catUrl, public_id: predictablePublicId, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString(), provider: "catbox" });
-                } catch (catErr) {
-                    console.error("[images/upload] catbox fallback also failed:", catErr?.message);
-                    return res.status(500).json({ ok: false, error: `Upload failed: ${cloudErr?.message}`, code: "server_error" });
-                }
+                console.error("[images/upload] Cloudinary upload failed:", cloudErr?.message);
+                return res.status(502).json({ ok: false, error: "Upload to Cloudinary failed. Please try again.", code: "cloudinary_error" });
             }
         } catch (error) {
             res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
@@ -6180,8 +6136,11 @@ function pickResourceType(mime) {
     return "auto";
 }
 function buildDomainUrl(kind, publicId, format, req) {
-    var base = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-    return `${base}/uploads/${publicId}.${format}`;
+    const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+    const filename = `${String(publicId).replace(/^.*\//, '')}.${format}`;
+    if (kind === 'image') return `${base}/image/${filename}`;
+    return `${base}/media/${cloudName}/${kind}/upload/${publicId}.${format}`;
 }
 async function cloudinarySignedUpload(buffer, filename, mimetype, opts) {
     const cloudName = String(process.env.CLOUDINARY_CLOUD_NAME || "").trim();

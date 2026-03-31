@@ -501,25 +501,68 @@ export default function Admin() {
       const tokRes = await fetch('/api/security/csrf-token', { credentials: 'include' });
       const tokJson = await tokRes.json();
       const token = tokJson?.csrfToken || "";
+      const adminToken = localStorage.getItem("adminToken") || "";
+      const uploadedUrls: string[] = [];
 
-      const fd = new FormData();
-      files.forEach((file) => fd.append("images", file));
+      for (const file of files) {
+        let uploadedUrl = "";
 
-      const res = await fetch("/api/upload-image", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("adminToken") || ""}`,
-          "x-csrf-token": token,
-        },
-        body: fd,
-        credentials: "include",
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Upload failed");
-      const uploadedUrls: string[] = Array.isArray(json?.results)
-        ? json.results.map((r: any) => r?.url).filter(Boolean)
-        : [json?.url].filter(Boolean);
-      if (!uploadedUrls.length) throw new Error("No image URL returned");
+        // Try /api/upload-image (covers different backend versions)
+        try {
+          const fdApi = new FormData();
+          fdApi.append("images", file);
+          const res = await fetch("/api/upload-image", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+              "x-csrf-token": token,
+            },
+            body: fdApi,
+            credentials: "include",
+          });
+          const json = await res.json().catch(() => ({}));
+          if (res.ok) {
+            uploadedUrl = (Array.isArray(json?.results) ? json.results?.[0]?.url : (json?.url || json?.results?.[0]?.url || "")) || "";
+          }
+        } catch { }
+
+        // Fallback for backend variant expecting single("image")
+        if (!uploadedUrl) {
+          try {
+            const fdSingle = new FormData();
+            fdSingle.append("image", file);
+            const res = await fetch("/api/upload-image", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "x-csrf-token": token,
+              },
+              body: fdSingle,
+              credentials: "include",
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok) uploadedUrl = json?.url || "";
+          } catch { }
+        }
+
+        // Final fallback: Cloudinary-style endpoint
+        if (!uploadedUrl) {
+          const fdCloud = new FormData();
+          fdCloud.append("file", file);
+          const res = await fetch("/images/upload", {
+            method: "POST",
+            headers: token ? { "x-csrf-token": token } : undefined,
+            body: fdCloud,
+            credentials: "include",
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(json?.error || `Upload failed (${res.status})`);
+          uploadedUrl = json?.url || json?.secure_url || json?.domain_url || json?.domainUrl || "";
+        }
+
+        if (!uploadedUrl) throw new Error("No image URL returned");
+        uploadedUrls.push(uploadedUrl);
+      }
 
       const currentList = sellerForm.images
         ? sellerForm.images.split(",").map((s) => s.trim()).filter(Boolean)

@@ -497,14 +497,28 @@ export default function Admin() {
     if (!file) return;
     setUploadingSellerImage(true);
     try {
+      let token = csrfToken || localStorage.getItem('csrfToken') || '';
+      if (!token) {
+        const tokRes = await fetch('/api/security/csrf-token');
+        const tokJson = await tokRes.json();
+        token = tokJson?.csrfToken || '';
+        if (token) localStorage.setItem('csrfToken', token);
+      }
       const fd = new FormData();
       fd.append('file', file);
       fd.append('folder', 'sellers');
-      const res = await fetch('/images/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Upload failed');
+      const res = await fetch('/images/upload', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': token },
+        body: fd,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Upload failed (${res.status})`);
+      }
       const data = await res.json();
-      const url: string = data.url || data.src || data.path || '';
-      if (!url) throw new Error('No URL returned');
+      const url: string = data.secure_url || data.domain_url || data.url || data.src || data.path || '';
+      if (!url) throw new Error('No URL returned from server');
       const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
       if (slotIndex === -1) {
         currentList.push(url);
@@ -512,7 +526,7 @@ export default function Admin() {
         currentList[slotIndex] = url;
       }
       setSellerForm(prev => ({ ...prev, images: currentList.join(',') }));
-      toast({ title: 'Image uploaded!' });
+      toast({ title: 'Image uploaded successfully!' });
     } catch (e: any) {
       toast({ title: 'Upload error', description: e.message, variant: 'destructive' });
     } finally {
@@ -5858,7 +5872,7 @@ export default function Admin() {
                                       setSellerForm({
                                         name: seller.name,
                                         description: seller.description || "",
-                                        images: seller.images?.join(', ') || "",
+                                        images: (seller.images || seller.imageUrls || []).join(', '),
                                         prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
                                         priceItems: seller.prices?.map((p: any) => ({
                                           item: p.item || "",

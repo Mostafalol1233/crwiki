@@ -164,6 +164,7 @@ const NewsletterSubscriberSchema = new Schema({
 const SellerSchema = new Schema({
     name: { type: String, required: true },
     description: { type: String, default: '' },
+    images: { type: [String], default: [] },
     imageUrls: { type: [String], default: [] },
     prices: { type: [{ item: String, price: Number }], default: [] },
     email: { type: String, default: '' },
@@ -487,6 +488,7 @@ export const insertNewsletterSubscriberSchema = z.object({
 export const insertSellerSchema = z.object({
     name: z.string(),
     description: z.string().optional(),
+    images: z.array(z.string()).optional(),
     imageUrls: z.array(z.string()).optional(),
     prices: z.array(z.object({ item: z.string(), price: z.number() })).optional(),
     email: z.string().optional(),

@@ -20,3 +20,5 @@
 {"ts":"2026-03-31T10:06:53.957Z","type":"cloudinary","filename":"412425582_366639752548228_2135093024497772498_n (1).jpg","size":5826,"mimetype":"image/jpeg","error":"The user aborted a request.","duration":11150}
 {"ts":"2026-03-31T10:29:29.593Z","type":"cloudinary","filename":"brmkrj.png","size":180577,"mimetype":"image/png","error":"The user aborted a request.","duration":11216}
 {"ts":"2026-03-31T10:29:46.122Z","type":"cloudinary","filename":"31.03.2026_08.48.02_REC.png","size":140496,"mimetype":"image/png","error":"The user aborted a request.","duration":11217}
+{"ts":"2026-03-31T10:45:14.010Z","type":"cloudinary","filename":"crossfire-logo.png","size":2293045,"mimetype":"image/png","error":"The user aborted a request.","duration":11848}
+{"ts":"2026-03-31T10:46:55.184Z","type":"image","filename":"crossfire-logo.png","size":2293045,"mimetype":"image/png","secure_url":"https://res.cloudinary.com/dkpdidm89/image/upload/v1774954014/62ae6e58274bceb489ca55d9.png","domain_url":"https://crossfire.wiki/image/v1774954014/62ae6e58274bceb489ca55d9.png","duration":1408}

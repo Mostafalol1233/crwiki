@@ -436,6 +436,9 @@ export default function Admin() {
 
   const [editingSellerImageIndex, setEditingSellerImageIndex] = useState<number | null>(null);
   const [uploadingSellerImage, setUploadingSellerImage] = useState(false);
+  const [sellerLogoUrlInput, setSellerLogoUrlInput] = useState('');
+  const [sellerGalleryUrlInput, setSellerGalleryUrlInput] = useState('');
+  const [uploadingSellerUrl, setUploadingSellerUrl] = useState(false);
   const sellerLogoInputRef = useRef<HTMLInputElement>(null);
   const sellerGalleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -531,6 +534,45 @@ export default function Admin() {
       toast({ title: 'Upload error', description: e.message, variant: 'destructive' });
     } finally {
       setUploadingSellerImage(false);
+    }
+  };
+
+  const uploadSellerImageFromUrl = async (imageUrl: string, slotIndex: number, clearInput: () => void) => {
+    if (!imageUrl.trim()) return;
+    setUploadingSellerUrl(true);
+    try {
+      let token = csrfToken || localStorage.getItem('csrfToken') || '';
+      if (!token) {
+        const tokRes = await fetch('/api/security/csrf-token');
+        const tokJson = await tokRes.json();
+        token = tokJson?.csrfToken || '';
+        if (token) localStorage.setItem('csrfToken', token);
+      }
+      const res = await fetch('/api/images/upload-from-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
+        body: JSON.stringify({ url: imageUrl.trim(), folder: 'sellers' }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Upload failed (${res.status})`);
+      }
+      const data = await res.json();
+      const url: string = data.secure_url || data.domain_url || data.domainUrl || '';
+      if (!url) throw new Error('No URL returned from server');
+      const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
+      if (slotIndex === -1) {
+        currentList.push(url);
+      } else {
+        currentList[slotIndex] = url;
+      }
+      setSellerForm(prev => ({ ...prev, images: currentList.join(',') }));
+      clearInput();
+      toast({ title: 'Image added from URL!' });
+    } catch (e: any) {
+      toast({ title: 'URL upload error', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingSellerUrl(false);
     }
   };
 
@@ -5529,6 +5571,27 @@ export default function Admin() {
                                 </button>
                               );
                             })()}
+                            {/* Logo URL input */}
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                placeholder="Or paste image URL here..."
+                                value={sellerLogoUrlInput}
+                                onChange={e => setSellerLogoUrlInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); uploadSellerImageFromUrl(sellerLogoUrlInput, 0, () => setSellerLogoUrlInput('')); } }}
+                                className="flex-1 text-xs h-8"
+                                disabled={uploadingSellerUrl}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-xs gap-1"
+                                disabled={!sellerLogoUrlInput.trim() || uploadingSellerUrl}
+                                onClick={() => uploadSellerImageFromUrl(sellerLogoUrlInput, 0, () => setSellerLogoUrlInput(''))}
+                              >
+                                {uploadingSellerUrl ? '...' : 'Add'}
+                              </Button>
+                            </div>
                           </div>
 
                           {/* GALLERY IMAGES */}
@@ -5603,9 +5666,30 @@ export default function Admin() {
                               })}
                               {sellerForm.images.split(',').filter(s => s.trim()).length <= 1 && (
                                 <div className="text-xs text-muted-foreground col-span-full py-2">
-                                  No gallery images yet. Click "Add Image" above to add photos.
+                                  No gallery images yet. Upload a file or paste a URL below.
                                 </div>
                               )}
+                            </div>
+                            {/* Gallery URL input */}
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                placeholder="Paste image URL to add to gallery..."
+                                value={sellerGalleryUrlInput}
+                                onChange={e => setSellerGalleryUrlInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); uploadSellerImageFromUrl(sellerGalleryUrlInput, -1, () => setSellerGalleryUrlInput('')); } }}
+                                className="flex-1 text-xs h-8"
+                                disabled={uploadingSellerUrl}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 text-xs gap-1"
+                                disabled={!sellerGalleryUrlInput.trim() || uploadingSellerUrl}
+                                onClick={() => uploadSellerImageFromUrl(sellerGalleryUrlInput, -1, () => setSellerGalleryUrlInput(''))}
+                              >
+                                {uploadingSellerUrl ? '...' : 'Add'}
+                              </Button>
                             </div>
                           </div>
 

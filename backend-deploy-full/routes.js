@@ -3895,10 +3895,9 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         }
         // Signed Cloudinary upload with retries and domain URL mapping
         async function cloudinarySignedUpload(buffer, filename, mimetype, opts = {}) {
-            const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+            const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
             const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
             const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
-            const resourceType = 'auto';
             const DRY_RUN = String(process.env.CLOUDINARY_DRY_RUN || '').toLowerCase() === 'true';
             if (DRY_RUN) {
                 const format = mimeToExt(mimetype) || 'webp';
@@ -3916,62 +3915,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             if (!CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
                 throw new Error('Cloudinary API credentials missing');
             }
-            const ts = Math.floor(Date.now() / 1000);
-            const params = {
-                timestamp: ts,
-                folder: String(opts.folder || '').trim(),
-                public_id: String(opts.public_id || '').trim(),
-                overwrite: 'true',
-                invalidate: 'true',
-            };
-            // Build string to sign (exclude empty values)
-            const nonEmpty = Object.entries(params).filter(([, v]) => v && String(v).length > 0);
-            const toSign = nonEmpty
-                .sort(([a], [b]) => (a > b ? 1 : a < b ? -1 : 0))
-                .map(([k, v]) => `${k}=${v}`)
-                .join('&');
-            const signature = crypto.createHash('sha1').update(`${toSign}${CLOUDINARY_API_SECRET}`).digest('hex');
-            const fd = new FormData();
-            fd.append('file', buffer, { filename, contentType: mimetype });
-            fd.append('timestamp', String(ts));
-            if (params.folder) fd.append('folder', params.folder);
-            if (params.public_id) fd.append('public_id', params.public_id);
-            fd.append('overwrite', 'true');
-            fd.append('invalidate', 'true');
+            const folder = String(opts.folder || '').trim();
+            const public_id = String(opts.public_id || '').trim();
+            const uploadOpts = { overwrite: true, invalidate: true };
+            if (folder) uploadOpts.folder = folder;
+            if (public_id) uploadOpts.public_id = public_id;
             try {
-                const originalName = sanitizeFilename(filename);
-                if (originalName) fd.append('context', `original_filename=${originalName}`);
-            } catch { }
-            fd.append('signature', signature);
-            fd.append('api_key', CLOUDINARY_API_KEY);
-            const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-            // Retry logic (with 10-second timeout per attempt)
-            let lastErr = null;
-            const attempts = 2;
-            for (let i = 0; i < attempts; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
-                    let upstream;
-                    try {
-                        upstream = await fetch(endpoint, { method: 'POST', body: fd, signal: controller.signal });
-                    } finally {
-                        clearTimeout(timeoutId);
-                    }
-                    if (!upstream.ok) {
-                        const text = await upstream.text().catch(() => '');
-                        throw new Error(`Cloudinary ${upstream.status}: ${text}`);
-                    }
-                    const json = await upstream.json();
-                    return json;
-                } catch (e) {
-                    lastErr = e;
-                    if (i < attempts - 1) {
-                        await new Promise(r => setTimeout(r, 1000));
-                    }
-                }
+                const result = await uploadStream(buffer, uploadOpts);
+                return result;
+            } catch (err) {
+                console.error('[cloudinarySignedUpload] SDK upload failed:', err?.message || err);
+                throw new Error(`Cloudinary upload failed: ${err?.message || String(err)}`);
             }
-            throw lastErr || new Error('Cloudinary upload failed');
         }
         // Method guard for uploads (allow POST and OPTIONS only)
         app.all('/images/upload', (req, res, next) => {

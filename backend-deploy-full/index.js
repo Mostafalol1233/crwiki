@@ -8,6 +8,8 @@ import crypto from 'crypto';
 import multer from 'multer';
 import { rateLimit } from 'express-rate-limit';
 import { createServer } from 'http';
+import NodeFormData from 'form-data';
+import { uploadStream as cloudinaryUploadStream } from './services/cloudinary.js';
 
 const __filename0 = fileURLToPath(import.meta.url);
 const __dirname0 = _dirname(__filename0);
@@ -3701,22 +3703,89 @@ app2.delete("/api/events/:id", requireAuth, requireOwnershipOrAdmin("events"), a
             if (DRY) {
                 return res.json({ ok: true, secure_url: `https://res.cloudinary.com/${cloudName}/${kind}/upload/v123/${predictablePublicId}.${format}`, domain_url, domainUrl: domain_url, public_id: predictablePublicId, format, resource_type: kind, bytes: req.file.size, created_at: new Date().toISOString() });
             }
+            let json = null;
+            let uploadError = null;
             try {
-                const json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder, public_id: publicIdBase });
-                const resourceType = json.resource_type || kind;
-                const publicId = json.public_id || predictablePublicId;
-                const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
-                return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
-            } catch (cloudErr) {
-                console.error("[images/upload] Cloudinary upload failed:", cloudErr?.message);
-                return res.status(502).json({ ok: false, error: "Upload to Cloudinary failed. Please try again.", code: "cloudinary_error" });
+                json = await cloudinarySignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder, public_id: publicIdBase });
+            } catch (signedErr) {
+                console.error("[images/upload] Signed upload failed, trying unsigned:", signedErr?.message, signedErr?.details || "");
+                uploadError = signedErr;
+                try {
+                    json = await cloudinaryUnsignedUpload(req.file.buffer, req.file.originalname, req.file.mimetype, { folder });
+                    uploadError = null;
+                } catch (unsignedErr) {
+                    console.error("[images/upload] Unsigned upload also failed:", unsignedErr?.message, unsignedErr?.details || "");
+                    uploadError = unsignedErr;
+                }
             }
+            if (!json || uploadError) {
+                const details = uploadError?.details ? ` Details: ${uploadError.details.slice(0, 200)}` : "";
+                return res.status(502).json({ ok: false, error: `Upload to Cloudinary failed. Please try again.${details}`, code: "cloudinary_error" });
+            }
+            const resourceType = json.resource_type || kind;
+            const publicId = json.public_id || predictablePublicId;
+            const liveDomainUrl = buildDomainUrl(resourceType, publicId, json.format || format, req);
+            return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: publicId, format: json.format || format, resource_type: resourceType, bytes: json.bytes || req.file.size, created_at: json.created_at || new Date().toISOString() });
         } catch (error) {
             res.status(500).json({ ok: false, error: error?.message || "Upload failed", code: "server_error" });
         }
     });
 
     // Proxy pretty image path to Cloudinary
+    app2.post("/api/images/upload-from-url", uploadLimiter, async (req, res) => {
+        try {
+            const tokenHeader = String(req.headers["x-csrf-token"] || req.headers["X-CSRF-Token"] || "").trim();
+            const envToken = String(process.env.CSRF_TOKEN || process.env.CSRF_SECRET || "").trim();
+            if (envToken && tokenHeader !== envToken) {
+                return res.status(403).json({ ok: false, error: "CSRF validation failed" });
+            }
+            const imageUrl = String(req.body?.url || "").trim();
+            if (!imageUrl) return res.status(400).json({ ok: false, error: "Missing 'url' in request body" });
+            let parsedUrl;
+            try { parsedUrl = new URL(imageUrl); } catch { return res.status(400).json({ ok: false, error: "Invalid URL format" }); }
+            if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+                return res.status(400).json({ ok: false, error: "Only http/https URLs are allowed" });
+            }
+            const ctrl = new AbortController();
+            const fetchTimeout = setTimeout(() => ctrl.abort(), 20000);
+            let imgResp;
+            try {
+                imgResp = await fetch(imageUrl, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 CrossfireWiki/1.0" } });
+            } finally {
+                clearTimeout(fetchTimeout);
+            }
+            if (!imgResp.ok) {
+                return res.status(502).json({ ok: false, error: `Could not fetch image from URL (${imgResp.status}). The image may be unavailable or protected.` });
+            }
+            const contentType = imgResp.headers.get("content-type") || "";
+            const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+            if (!allowedTypes.some(t => contentType.includes(t.split("/")[1]))) {
+                return res.status(415).json({ ok: false, error: `URL does not point to a supported image (got ${contentType})` });
+            }
+            const buffer = Buffer.from(await imgResp.arrayBuffer());
+            const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : contentType.includes("gif") ? "gif" : "jpg";
+            const filename = `url_import_${Date.now()}.${ext}`;
+            const mimetype = contentType.split(";")[0].trim();
+            const folder = String(req.body?.folder || "uploads").trim();
+            let json = null;
+            try {
+                json = await cloudinarySignedUpload(buffer, filename, mimetype, { folder });
+            } catch (signedErr) {
+                console.error("[upload-from-url] Signed upload failed, trying unsigned:", signedErr?.message);
+                try {
+                    json = await cloudinaryUnsignedUpload(buffer, filename, mimetype, { folder });
+                } catch (unsignedErr) {
+                    console.error("[upload-from-url] Unsigned also failed:", unsignedErr?.message, unsignedErr?.details || "");
+                    return res.status(502).json({ ok: false, error: "Could not upload image to Cloudinary. Please check your Cloudinary credentials." });
+                }
+            }
+            const resourceType = json.resource_type || "image";
+            const liveDomainUrl = buildDomainUrl(resourceType, json.public_id, json.format, req);
+            return res.json({ ok: true, secure_url: json.secure_url, domain_url: liveDomainUrl, domainUrl: liveDomainUrl, public_id: json.public_id, format: json.format, resource_type: resourceType });
+        } catch (error) {
+            res.status(500).json({ ok: false, error: error?.message || "Failed to upload from URL" });
+        }
+    });
     app2.get("/image/:filename", async (req, res) => {
         try {
             const name = String(req.params.filename || "").replace(/[^A-Za-z0-9._-]+/g, "");
@@ -6154,34 +6223,31 @@ async function cloudinarySignedUpload(buffer, filename, mimetype, opts) {
     if (!cloudName || !apiKey || !apiSecret) throw new Error("cloudinary_not_configured");
     const resourceType = String(opts?.resource_type || pickResourceType(mimetype));
     const folder = String(opts?.folder || "uploads");
-    const public_id = String(opts?.public_id || sanitizeFilename(filename).replace(/\.[a-z0-9]+$/i, ""));
-    const timestamp = Math.floor(Date.now() / 1000);
-    const paramsToSign = `folder=${folder}&public_id=${public_id}&timestamp=${timestamp}`;
-    const signature = crypto.createHash("sha1").update(paramsToSign + apiSecret).digest("hex");
-    const form = new FormData();
-    form.append("file", buffer, { filename, contentType: mimetype });
-    form.append("folder", folder);
-    form.append("public_id", public_id);
-    form.append("timestamp", String(timestamp));
-    form.append("api_key", apiKey);
-    form.append("signature", signature);
-    const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-    const cloudController = new AbortController();
-    const cloudTimeout = setTimeout(() => cloudController.abort(), 45000);
-    let resp;
+    const public_id = opts?.public_id ? String(opts.public_id) : undefined;
+    const uploadOpts = { folder, resource_type: resourceType };
+    if (public_id) uploadOpts.public_id = public_id;
     try {
-        resp = await fetch(url, { method: "POST", body: form, headers: form.getHeaders(), signal: cloudController.signal });
-    } finally {
-        clearTimeout(cloudTimeout);
+        const result = await cloudinaryUploadStream(buffer, uploadOpts);
+        return result;
+    } catch (err) {
+        console.error(`[cloudinary] SDK upload failed:`, err?.message || err);
+        const e = new Error(`cloudinary_upload_failed`);
+        e.details = err?.message || String(err);
+        throw e;
     }
-    if (!resp.ok) {
-        const text = await resp.text();
-        const err = new Error(`cloudinary_upload_failed:${resp.status}`);
-        err.details = text;
-        throw err;
+}
+async function cloudinaryUnsignedUpload(buffer, filename, mimetype, opts) {
+    const folder = String(opts?.folder || "uploads");
+    const resourceType = String(opts?.resource_type || pickResourceType(mimetype));
+    try {
+        const result = await cloudinaryUploadStream(buffer, { folder, resource_type: resourceType });
+        return result;
+    } catch (err) {
+        console.error(`[cloudinary] SDK unsigned upload failed:`, err?.message || err);
+        const e = new Error(`cloudinary_unsigned_upload_failed`);
+        e.details = err?.message || String(err);
+        throw e;
     }
-    const json = await resp.json();
-    return json;
 }
 async function maybeScan(buffer) {
     const enable = String(process.env.ENABLE_VIRUS_SCAN || "false").toLowerCase() === "true";

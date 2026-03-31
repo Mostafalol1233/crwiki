@@ -499,11 +499,12 @@ export function AdvancedContentManager() {
                       xhr.send(fd);
                     });
                     const data = await res.json();
-                    if (!res.ok || !data?.domain_url) throw new Error(data?.error || 'Upload failed');
-                    setLastUploadedUrl(String(data.domain_url));
+                    const uploadedUrl = data?.secure_url || data?.domain_url || '';
+                    if (!res.ok || !uploadedUrl) throw new Error(data?.error || 'Upload failed');
+                    setLastUploadedUrl(String(uploadedUrl));
                     setLastUploadedMethod("server");
-                    toast({ title: 'Uploaded (server)', description: String(data.domain_url) });
-                    navigator.clipboard.writeText(String(data.domain_url));
+                    toast({ title: 'Uploaded to Cloudinary', description: String(uploadedUrl) });
+                    navigator.clipboard.writeText(String(uploadedUrl));
                   } else {
                     const fd2 = new FormData();
                     fd2.append('image', fileToUpload);

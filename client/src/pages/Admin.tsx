@@ -517,7 +517,7 @@ export default function Admin() {
         throw new Error(err?.error || `Upload failed (${res.status})`);
       }
       const data = await res.json();
-      const url: string = data.domain_url || data.domainUrl || data.secure_url || data.url || data.src || data.path || '';
+      const url: string = data.secure_url || data.domain_url || data.domainUrl || data.url || data.src || data.path || '';
       if (!url) throw new Error('No URL returned from server');
       const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
       if (slotIndex === -1) {

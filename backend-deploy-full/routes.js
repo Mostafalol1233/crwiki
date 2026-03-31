@@ -5,6 +5,7 @@ import express from 'express';
 import crypto from 'crypto';
 import multer from "multer";
 import { rateLimit } from "express-rate-limit";
+const _ipNorm = (ip) => { try { const s = String(ip || 'unknown'); return s.startsWith('::ffff:') ? s.slice(7) : s; } catch { return 'unknown'; } };
 import { storage, initializeStorage } from "./storage.js";
 import { insertPostSchema, insertEventSchema, insertNewsSchema, insertTicketSchema, insertTicketReplySchema, insertAdminSchema, insertNewsletterSubscriberSchema, insertSellerSchema, insertSellerReviewSchema, insertTutorialSchema, updateTutorialSchema, siteSettingsSchema, insertWeaponSchema, insertModeSchema, insertMapSchema, insertRankSchema, insertMercenarySchema } from "./shared/mongodb-schema.js";
 import { generateToken, verifyAdminPassword, requireAuth, requireSuperAdmin, requireScraperAuth, requireSettingsManager, requireAdminOrTicketManager, requireEventManager, requireEventScraper, requireNewsManager, requireSellerManager, requireTutorialManager, requireWeaponManager, requirePostManager, comparePassword, hashPassword } from "./utils/auth.js";
@@ -3758,10 +3759,10 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
 
                         results.push({
                             ok: true,
-                            url: domainUrl,
+                            url: secureUrl,
                             domain_url: domainUrl,
                             secure_url: secureUrl,
-                            fullUrl: domainUrl,
+                            fullUrl: secureUrl,
                             filename: cloudinaryResult.public_id,
                             size: file.size,
                             mimetype: file.mimetype
@@ -3774,7 +3775,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                 }
 
                 const firstOk = results.find(r => r.ok);
-                res.json({ ok: true, results, url: firstOk?.url || '', domain_url: firstOk?.domain_url || '', secure_url: firstOk?.secure_url || '' });
+                res.json({ ok: true, results, url: firstOk?.secure_url || '', domain_url: firstOk?.domain_url || '', secure_url: firstOk?.secure_url || '' });
             }
             catch (error) {
                 logUpload({ type: 'image', error: error?.message || String(error) });
@@ -4686,18 +4687,18 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
         const reviewLimiter = rateLimit({
             windowMs: 60 * 60 * 1000, // 1 hour
             max: 1,
-            // Generate a key per IP + seller id. Use a safe accessor and cast to any to avoid TS mismatches.
-            // Use req.ip to correctly handle IPv6 and forwarded headers.
             keyGenerator: (req) => {
-                const ip = req.ip || 'unknown';
+                const rawIp = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+                const ip = _ipNorm(rawIp);
                 const sellerId = req.params?.id || '';
                 return `${ip}:${sellerId}`;
             },
-            handler: (_req, res /*, next */) => {
+            handler: (_req, res) => {
                 res.status(429).json({ error: 'Too many reviews from this IP for this seller. Try again later.' });
             },
             standardHeaders: true,
             legacyHeaders: false,
+            validate: { keyGeneratorIpFallback: false },
         });
         app.post("/api/sellers/:id/reviews", reviewLimiter, async (req, res) => {
             try {

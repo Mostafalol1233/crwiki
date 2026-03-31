@@ -1,12 +1,17 @@
-import "dotenv/config";
+import { config as _dotenvConfig } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname as _dirname, join as _join } from 'path';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import multer from 'multer';
 import { rateLimit } from 'express-rate-limit';
-import { fileURLToPath } from 'url';
 import { createServer } from 'http';
+
+const __filename0 = fileURLToPath(import.meta.url);
+const __dirname0 = _dirname(__filename0);
+_dotenvConfig({ path: _join(__dirname0, '.env'), override: false });
 import { initializeStorage } from './storage.js';
 import { registerRoutes as registerRoutesImported } from './routes.js';
 import { MirrorService } from './services/mirror.js';

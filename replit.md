@@ -51,6 +51,14 @@ Preferred communication style: Simple, everyday language.
 - CORS configuration for production deployment
 - Serverless function compatibility (Vercel)
 
+**Image/Media Storage:**
+- All image uploads go directly to Cloudinary (no local filesystem storage)
+- Upload endpoints: `/images/upload` and `/api/upload-image` — both return `secure_url` (direct Cloudinary URL) as the primary URL
+- Seller images are stored as direct Cloudinary `secure_url` values in the database
+- Required Cloudinary env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- Admin can migrate existing seller images to Cloudinary via the "Migrate to Cloudinary" button in the admin sellers panel
+- Dotenv loads from `backend-deploy-full/.env` using explicit path (not relying on working directory)
+
 **Data Models:**
 - Users (authentication with email/phone verification)
 - Posts (blog articles with post_slug, tags, categories, reading time)

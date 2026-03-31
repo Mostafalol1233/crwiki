@@ -3694,7 +3694,7 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
             }
         });
         // Image upload route with rate limiting
-        app.post("/api/upload-image", uploadLimiter, upload.array('images', 10), async (req, res) => {
+        app.post("/api/upload-image", uploadLimiter, upload.fields([{name: 'images', maxCount: 10}, {name: 'image', maxCount: 1}]), async (req, res) => {
             try {
                 const token = String(req.headers['x-csrf-token'] || '');
                 const authHeader = req.headers.authorization;
@@ -3712,15 +3712,20 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                     return res.status(403).json({ ok: false, error: 'Authentication or CSRF validation failed', code: 'auth_failed' });
                 }
 
-                if (!req.files || req.files.length === 0) {
+                const files = Array.isArray(req.files)
+                    ? req.files
+                    : [...(req.files?.images || []), ...(req.files?.image || [])];
+
+                if (!files || files.length === 0) {
                     return res.status(400).json({ ok: false, error: "No image files provided", code: 'no_file' });
                 }
 
                 const results = [];
                 const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
                 const MAX_SIZE = 15 * 1024 * 1024; // 15MB
+                const BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
 
-                for (const file of req.files) {
+                for (const file of files) {
                     if (!allowed.includes(file.mimetype)) {
                         results.push({ ok: false, filename: file.originalname, error: "Unsupported image type" });
                         continue;
@@ -3741,22 +3746,34 @@ Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
                         const baseName = sanitizeFilename(file.originalname) || `img-${crypto.randomUUID()}`;
                         const cloudinaryResult = await cloudinarySignedUpload(file.buffer, baseName, file.mimetype, { folder: 'uploads' });
 
+                        const secureUrl = cloudinaryResult.secure_url;
+                        const u = new URL(secureUrl);
+                        const parts = u.pathname.split('/').filter(Boolean);
+                        const last = parts[parts.length - 1] || '';
+                        const isImg = parts.length >= 3 && parts[1] === 'image' && parts[2] === 'upload';
+                        const domainUrl = isImg && /\.[A-Za-z0-9]+$/.test(last)
+                            ? `${BASE_URL}/image/${last}`
+                            : secureUrl;
+
                         results.push({
                             ok: true,
-                            url: cloudinaryResult.secure_url,
-                            fullUrl: cloudinaryResult.secure_url,
+                            url: domainUrl,
+                            domain_url: domainUrl,
+                            secure_url: secureUrl,
+                            fullUrl: domainUrl,
                             filename: cloudinaryResult.public_id,
                             size: file.size,
                             mimetype: file.mimetype
                         });
 
-                        logUpload({ type: 'image', filename: cloudinaryResult.public_id, size: file.size, mimetype: file.mimetype, url: cloudinaryResult.secure_url });
+                        logUpload({ type: 'image', filename: cloudinaryResult.public_id, size: file.size, mimetype: file.mimetype, secure_url: secureUrl, domain_url: domainUrl });
                     } catch (err) {
                         results.push({ ok: false, filename: file.originalname, error: err.message });
                     }
                 }
 
-                res.json({ ok: true, results });
+                const firstOk = results.find(r => r.ok);
+                res.json({ ok: true, results, url: firstOk?.url || '', domain_url: firstOk?.domain_url || '', secure_url: firstOk?.secure_url || '' });
             }
             catch (error) {
                 logUpload({ type: 'image', error: error?.message || String(error) });

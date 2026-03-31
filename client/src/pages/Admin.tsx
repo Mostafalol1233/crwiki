@@ -517,7 +517,7 @@ export default function Admin() {
         throw new Error(err?.error || `Upload failed (${res.status})`);
       }
       const data = await res.json();
-      const url: string = data.secure_url || data.domain_url || data.url || data.src || data.path || '';
+      const url: string = data.domain_url || data.domainUrl || data.secure_url || data.url || data.src || data.path || '';
       if (!url) throw new Error('No URL returned from server');
       const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
       if (slotIndex === -1) {
@@ -4872,7 +4872,7 @@ export default function Admin() {
                                               body: formData,
                                             });
                                             const data = await res.json();
-                                            const url = data.results?.[0]?.url || data.url || '';
+                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
                                             if (url) {
                                               setWeaponForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
@@ -5072,7 +5072,7 @@ export default function Admin() {
                                               body: formData,
                                             });
                                             const data = await res.json();
-                                            const url = data.results?.[0]?.url || data.url || '';
+                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
                                             if (url) {
                                               setModeForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
@@ -5225,7 +5225,7 @@ export default function Admin() {
                                               body: formData,
                                             });
                                             const data = await res.json();
-                                            const url = data.results?.[0]?.url || data.url || '';
+                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
                                             if (url) {
                                               setRankForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
@@ -6747,7 +6747,7 @@ export default function Admin() {
                                   });
                                   if (!res.ok) throw new Error('Upload failed');
                                   const json = await res.json().catch(() => null);
-                                  const url = json?.url || '';
+                                  const url = json?.domain_url || json?.results?.[0]?.domain_url || json?.url || '';
                                   if (url) {
                                     if (editingMerc) {
                                       setMercForm({ ...mercForm, image: url });
@@ -7378,7 +7378,8 @@ export default function Admin() {
                                       body: fd
                                     });
                                     const data = await res.json();
-                                    if (data.url) setBgSettings({ ...bgSettings, backgroundImageUrl: data.url });
+                                    const bgUrl = data.domain_url || data.results?.[0]?.domain_url || data.url || '';
+                                    if (bgUrl) setBgSettings({ ...bgSettings, backgroundImageUrl: bgUrl });
                                   } catch (err) {
                                     toast({ title: "Upload failed", variant: "destructive" });
                                   }

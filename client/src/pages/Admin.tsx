@@ -435,6 +435,9 @@ export default function Admin() {
   const [imageEditorConfig, setImageEditorConfig] = useState<ImageEditorConfig | undefined>(undefined);
 
   const [editingSellerImageIndex, setEditingSellerImageIndex] = useState<number | null>(null);
+  const [uploadingSellerImage, setUploadingSellerImage] = useState(false);
+  const sellerLogoInputRef = useRef<HTMLInputElement>(null);
+  const sellerGalleryInputRef = useRef<HTMLInputElement>(null);
 
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   
@@ -487,8 +490,34 @@ export default function Admin() {
       setImageEditorOpen(false);
       return;
     }
-
     setImageEditorOpen(false);
+  };
+
+  const uploadSellerImageFile = async (file: File, slotIndex: number) => {
+    if (!file) return;
+    setUploadingSellerImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', 'sellers');
+      const res = await fetch('/images/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      const url: string = data.url || data.src || data.path || '';
+      if (!url) throw new Error('No URL returned');
+      const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
+      if (slotIndex === -1) {
+        currentList.push(url);
+      } else {
+        currentList[slotIndex] = url;
+      }
+      setSellerForm(prev => ({ ...prev, images: currentList.join(',') }));
+      toast({ title: 'Image uploaded!' });
+    } catch (e: any) {
+      toast({ title: 'Upload error', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingSellerImage(false);
+    }
   };
 
   const [migrationCounts, setMigrationCounts] = useState<{ events: number; posts: number; news: number } | null>(null);
@@ -5366,62 +5395,192 @@ export default function Admin() {
                               data-testid="input-seller-rank"
                             />
                           </div>
-                          <div className="space-y-4">
-                            <Label>Images</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              {sellerForm.images.split(',').map((img, idx) => img.trim() && (
-                                <div key={idx} className="relative group aspect-video bg-muted rounded overflow-hidden shadow-sm hover:shadow-md transition-all">
-                                  <img src={img.trim()} className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => {
-                                      setImageEditorConfig({
-                                        maxSizeMB: 1,
-                                        maxWidthOrHeight: 1920,
-                                        initialImage: img.trim()
-                                      });
-                                      setEditingSellerImageIndex(idx);
-                                      setImageEditorOpen(true);
-                                    }}>
-                                      <Edit2 className="h-4 w-4" />
+                          {/* Hidden file inputs */}
+                          <input
+                            ref={sellerLogoInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) uploadSellerImageFile(file, 0);
+                              e.target.value = '';
+                            }}
+                          />
+                          <input
+                            ref={sellerGalleryInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) uploadSellerImageFile(file, -1);
+                              e.target.value = '';
+                            }}
+                          />
+
+                          {/* LOGO / MAIN IMAGE */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label>Logo / Main Image</Label>
+                              <span className="text-xs text-muted-foreground">(shown as the seller's primary photo)</span>
+                            </div>
+                            {(() => {
+                              const imgList = sellerForm.images.split(',').map(s => s.trim()).filter(Boolean);
+                              const logoUrl = imgList[0] || '';
+                              return logoUrl ? (
+                                <div className="relative group w-48 h-32 bg-muted rounded-lg overflow-hidden border-2 border-primary/30 shadow">
+                                  <img src={logoUrl} className="w-full h-full object-cover" alt="Logo" />
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="gap-1.5 w-32"
+                                      onClick={() => sellerLogoInputRef.current?.click()}
+                                      disabled={uploadingSellerImage}
+                                    >
+                                      <Upload className="h-3.5 w-3.5" />
+                                      Replace
                                     </Button>
-                                    <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => {
-                                      const newList = sellerForm.images.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== idx);
-                                      setSellerForm({ ...sellerForm, images: newList.join(',') });
-                                    }}>
-                                      <Trash2 className="h-4 w-4" />
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="gap-1.5 w-32 text-white hover:bg-white/20"
+                                      onClick={() => {
+                                        setEditingImageSrc(logoUrl);
+                                        setImageEditorConfig({ maxSizeMB: 1, maxWidthOrHeight: 1920, initialImage: logoUrl });
+                                        setEditingSellerImageIndex(0);
+                                        setImageEditorOpen(true);
+                                      }}
+                                    >
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                      Edit & Crop
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="gap-1.5 w-32"
+                                      onClick={() => {
+                                        const newList = imgList.filter((_, i) => i !== 0);
+                                        setSellerForm({ ...sellerForm, images: newList.join(',') });
+                                      }}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Remove
                                     </Button>
                                   </div>
+                                  <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">LOGO</div>
                                 </div>
-                              ))}
-                              <button
-                                type="button"
-                                className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg aspect-video hover:bg-muted/50 transition-colors cursor-pointer"
-                                onClick={() => {
-                                  setImageEditorConfig({
-                                    maxSizeMB: 1,
-                                    maxWidthOrHeight: 1920,
-                                    initialImage: ""
-                                  });
-                                  setEditingSellerImageIndex(-1);
-                                  setImageEditorOpen(true);
-                                }}
-                              >
-                                <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                                <span className="text-sm text-muted-foreground">Add Image</span>
-                              </button>
-                            </div>
-                            <Textarea
-                              className="hidden"
-                              id="seller-images"
-                              placeholder="Add image URLs separated by commas"
-                              value={sellerForm.images}
-                              onChange={(e) =>
-                                setSellerForm({ ...sellerForm, images: e.target.value })
-                              }
-                              rows={3}
-                              data-testid="input-seller-images"
-                            />
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="flex flex-col items-center justify-center w-48 h-32 border-2 border-dashed border-primary/40 rounded-lg hover:bg-muted/60 hover:border-primary transition-all cursor-pointer"
+                                  onClick={() => sellerLogoInputRef.current?.click()}
+                                  disabled={uploadingSellerImage}
+                                >
+                                  {uploadingSellerImage ? (
+                                    <span className="text-xs text-muted-foreground">Uploading...</span>
+                                  ) : (
+                                    <>
+                                      <Upload className="h-7 w-7 text-primary mb-2" />
+                                      <span className="text-sm font-medium text-primary">Upload Logo</span>
+                                      <span className="text-xs text-muted-foreground mt-0.5">Click to choose file</span>
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            })()}
                           </div>
+
+                          {/* GALLERY IMAGES */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Label>Gallery Images</Label>
+                                <span className="text-xs text-muted-foreground">(additional photos shown in the seller's page)</span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => sellerGalleryInputRef.current?.click()}
+                                disabled={uploadingSellerImage}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                Add Image
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              {sellerForm.images.split(',').map(s => s.trim()).filter(Boolean).slice(1).map((img, galleryIdx) => {
+                                const realIdx = galleryIdx + 1;
+                                return (
+                                  <div key={realIdx} className="relative group aspect-video bg-muted rounded-lg overflow-hidden border border-border shadow-sm hover:shadow-md transition-all">
+                                    <img src={img} className="w-full h-full object-cover" alt={`Gallery ${galleryIdx + 1}`} />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2">
+                                      <label className="w-full cursor-pointer">
+                                        <span className="flex items-center justify-center gap-1 text-xs font-medium bg-white/20 hover:bg-white/30 text-white rounded px-2 py-1.5 w-full transition-colors">
+                                          <Upload className="h-3 w-3" /> Replace
+                                        </span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="hidden"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) uploadSellerImageFile(file, realIdx);
+                                            e.target.value = '';
+                                          }}
+                                        />
+                                      </label>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-full text-xs text-white hover:bg-white/20 gap-1"
+                                        onClick={() => {
+                                          setEditingImageSrc(img);
+                                          setImageEditorConfig({ maxSizeMB: 1, maxWidthOrHeight: 1920, initialImage: img });
+                                          setEditingSellerImageIndex(realIdx);
+                                          setImageEditorOpen(true);
+                                        }}
+                                      >
+                                        <Edit2 className="h-3 w-3" /> Edit
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-7 w-full text-xs gap-1"
+                                        onClick={() => {
+                                          const newList = sellerForm.images.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== realIdx);
+                                          setSellerForm({ ...sellerForm, images: newList.join(',') });
+                                        }}
+                                      >
+                                        <Trash2 className="h-3 w-3" /> Delete
+                                      </Button>
+                                    </div>
+                                    <div className="absolute top-1 left-1 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">{galleryIdx + 1}</div>
+                                  </div>
+                                );
+                              })}
+                              {sellerForm.images.split(',').filter(s => s.trim()).length <= 1 && (
+                                <div className="text-xs text-muted-foreground col-span-full py-2">
+                                  No gallery images yet. Click "Add Image" above to add photos.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <Textarea
+                            className="hidden"
+                            id="seller-images"
+                            placeholder="Add image URLs separated by commas"
+                            value={sellerForm.images}
+                            onChange={(e) =>
+                              setSellerForm({ ...sellerForm, images: e.target.value })
+                            }
+                            rows={3}
+                            data-testid="input-seller-images"
+                          />
                           <div className="space-y-2">
                             <Label>Price List</Label>
                             <div className="space-y-2">

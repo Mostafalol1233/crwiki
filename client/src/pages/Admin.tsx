@@ -435,6 +435,9 @@ export default function Admin() {
   const [imageEditorConfig, setImageEditorConfig] = useState<ImageEditorConfig | undefined>(undefined);
 
   const [editingSellerImageIndex, setEditingSellerImageIndex] = useState<number | null>(null);
+  const sellerImageInputRef = useRef<HTMLInputElement | null>(null);
+  const [sellerImageTargetIndex, setSellerImageTargetIndex] = useState<number>(-1);
+  const [isUploadingSellerImage, setIsUploadingSellerImage] = useState(false);
 
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   
@@ -489,6 +492,44 @@ export default function Admin() {
     }
 
     setImageEditorOpen(false);
+  };
+
+  const uploadSellerImages = async (files: File[], targetIndex: number) => {
+    if (!files.length) return;
+    setIsUploadingSellerImage(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/images/upload", { method: "POST", body: fd, credentials: "include" });
+        const json = await res.json();
+        if (!res.ok || !json?.ok) throw new Error(json?.error || "Upload failed");
+        uploadedUrls.push(json?.url || json?.secure_url || "");
+      }
+
+      const currentList = sellerForm.images
+        ? sellerForm.images.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
+
+      if (targetIndex >= 0) {
+        currentList[targetIndex] = uploadedUrls[0];
+      } else {
+        currentList.push(...uploadedUrls);
+      }
+
+      setSellerForm((prev) => ({ ...prev, images: currentList.filter(Boolean).join(",") }));
+      toast({
+        title: targetIndex >= 0 ? "Seller image replaced" : "Seller image(s) uploaded",
+        description: `${uploadedUrls.length} file(s) added`,
+      });
+    } catch (err: any) {
+      toast({ title: "Failed to upload seller image", description: err?.message || "Upload error", variant: "destructive" });
+    } finally {
+      setIsUploadingSellerImage(false);
+      setSellerImageTargetIndex(-1);
+      if (sellerImageInputRef.current) sellerImageInputRef.current.value = "";
+    }
   };
 
   const [migrationCounts, setMigrationCounts] = useState<{ events: number; posts: number; news: number } | null>(null);
@@ -5368,11 +5409,28 @@ export default function Admin() {
                           </div>
                           <div className="space-y-4">
                             <Label>Images</Label>
+                            <input
+                              ref={sellerImageInputRef}
+                              type="file"
+                              accept="image/*"
+                              multiple={sellerImageTargetIndex < 0}
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = e.target.files ? Array.from(e.target.files) : [];
+                                uploadSellerImages(files, sellerImageTargetIndex);
+                              }}
+                            />
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               {sellerForm.images.split(',').map((img, idx) => img.trim() && (
                                 <div key={idx} className="relative group aspect-video bg-muted rounded overflow-hidden shadow-sm hover:shadow-md transition-all">
                                   <img src={img.trim()} className="w-full h-full object-cover" />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => {
+                                      setSellerImageTargetIndex(idx);
+                                      sellerImageInputRef.current?.click();
+                                    }}>
+                                      <Upload className="h-4 w-4" />
+                                    </Button>
                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => {
                                       setImageEditorConfig({
                                         maxSizeMB: 1,
@@ -5397,17 +5455,17 @@ export default function Admin() {
                                 type="button"
                                 className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg aspect-video hover:bg-muted/50 transition-colors cursor-pointer"
                                 onClick={() => {
-                                  setImageEditorConfig({
-                                    maxSizeMB: 1,
-                                    maxWidthOrHeight: 1920,
-                                    initialImage: ""
-                                  });
                                   setEditingSellerImageIndex(-1);
-                                  setImageEditorOpen(true);
+                                  setSellerImageTargetIndex(-1);
+                                  sellerImageInputRef.current?.click();
                                 }}
                               >
-                                <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                                <span className="text-sm text-muted-foreground">Add Image</span>
+                                {isUploadingSellerImage ? (
+                                  <Loader2 className="h-8 w-8 text-muted-foreground mb-2 animate-spin" />
+                                ) : (
+                                  <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                                )}
+                                <span className="text-sm text-muted-foreground">{isUploadingSellerImage ? "Uploading..." : "Upload New Image"}</span>
                               </button>
                             </div>
                             <Textarea

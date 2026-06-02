@@ -1,0 +1,39 @@
+# CrossFire Wiki - Robots.txt
+User-agent: *
+Allow: /
+Allow: /logo-new.png
+Allow: /crossfire-logo.png
+Allow: /feature-crossfire.jpg
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /my-tickets
+Disallow: /api/
+
+# Allow important pages
+Allow: /weapons
+Allow: /modes
+Allow: /ranks
+Allow: /tutorials
+Allow: /news
+Allow: /events
+Allow: /posts
+Allow: /article/*
+Allow: /news/*
+Allow: /events/*
+Allow: /tutorials/*
+Allow: /category/*
+
+# Crawl delay for politeness
+Crawl-delay: 0.5
+
+# Sitemap location
+Sitemap: https://crossfire.wiki/sitemap.xml
+
+# Explicit image crawler allowance for branding and previews
+User-agent: Googlebot-Image
+Allow: /logo-new.png
+Allow: /crossfire-logo.png
+Allow: /feature-crossfire.jpg

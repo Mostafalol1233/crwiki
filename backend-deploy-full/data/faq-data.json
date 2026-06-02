@@ -1,0 +1,324 @@
+[
+  {
+    "id": "announcements",
+    "name": "Announcements",
+    "nameAr": "الإعلانات",
+    "articles": [
+      {
+        "id": "37863130285339",
+        "title": "CrossFire: IGN and Clan name change - new policy!",
+        "titleAr": "",
+        "body": "Attention Mercenaries , With the newest patch we will update our IGN and Clan name change policy, so that you don't need to contact the support team to regain previously used IGNs or clan names. - If you want to change your IGN or clan name to one you had used in the last 90 days, you will be able to use it again immediately. You will still need to purchase an In-game Change Item in order to do that. - If you want to change your IGN or clan name to one somebody else had used recently, you will need to wait 90 days until it is available again. This also means that the support team will not accept requests for IGNs that are currently not in use, since all IGNs that were not use within 90 days are available for everybody. In case a player is inactive with an IGN you would like to use, you still need to contact the support team to free the IGN. The support team will investigate if the player is inactive long enough and his level, to ensure that we can make the requested IGN available. * We",
+        "bodyAr": ""
+      }
+    ]
+  },
+  {
+    "id": "game-mechanics",
+    "name": "Game Mechanics",
+    "nameAr": "ميكانيكا اللعبة",
+    "articles": [
+      {
+        "id": "39074944416539",
+        "title": "Redeem Code FAQs",
+        "titleAr": "",
+        "body": "How do I get a code? We give out codes through various events and promotions, or during our live streams. Be the first to know about our events and promotions by following us on Twitter &amp; Facebook and our channels on Twitch and Gaming.YouTube . Can I give my code to a friend? Yes, but please note that most codes can only be redeemed a certain number of times until they expire. I redeemed an item that I no longer want, can I give this item away? All redeemed items are bound to your account and cannot be traded or given away. Do codes expire? Yes, most of our codes have an expiration date unless announced otherwise. Where can I find the free gift? You can find the redeemed gift in your in-game inventory. It says I need to create a character first... This is because your inventory has not been created yet. Download the game your code is for and create a character first. Once you've made a character, try your code again. I can't enter my code! Make sure that you are logged in on the we",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955978793371",
+        "title": "How can I buy items in CrossFire?",
+        "titleAr": "",
+        "body": "New weapons or items can be purchased from the in game Item Shop, Black Market, or MP Shop [FP Mall has been closed]. After logging into the game, please click on the Item Shop button located at the top of the screen. You will find a variety of ZP and GP items available!",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955960344475",
+        "title": "How do I add other players to my CrossFire friend list?",
+        "titleAr": "",
+        "body": "When you are in the same room or channel as your friend, right-click their name. Then, left-click the \"Add Friend\" button. Once they confirm your request, their in-game name will be added to your CF friend list.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955888548635",
+        "title": "How do I create a character in CrossFire?",
+        "titleAr": "",
+        "body": "Upon your first time launching CrossFire and logging in, you will be asked to select a character from the three options - SWAT, OMOH and SAS. After you do so, you will be able to customize your character with items that are available in the in game Item shop.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955882485915",
+        "title": "How do I trade items/GP/ZP with another player?",
+        "titleAr": "",
+        "body": "Trading items, GP, and Z8Games Points is not allowed and strictly prohibited.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955846096155",
+        "title": "How do I watch a replay after saving it?",
+        "titleAr": "",
+        "body": "In order to watch a replay, you have to be in a channel lobby. Click on the Storage button on top of the screen, click on the Replay button on the right side, then select the replay you would like to watch.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955749137307",
+        "title": "What are the available currencies in CrossFire?",
+        "titleAr": "",
+        "body": "CrossFire has four main currencies (ZP/GP/FP/MP/EP). Z8Games Points (ZP) can be purchased from our Deposit page, but only after achieving Sergeant Class 1. Game Points (GP) are acquired by playing CrossFire, and are given out in proportion to how well you do in game. Friends Points (FP) [discontinued] are acquired through inviting friends and having them nominate you or by buying specific items from the item shop. Mileage Points are acquired from logins and completing daily missions. All MP over 10,000 by the end of the month will be removed once a new month starts. Event Points (EP) are given out as rewards from specific events, and allow you to purchase items on the CrossFire Shop on our website here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38955672686363",
+        "title": "What are the basic game controls?",
+        "titleAr": "",
+        "body": "Movement: W = Forward A = Strafe Left S = Backward D = Strafe Right Shift = Walk Ctrl = Crouch Space = Jump Changing Weapons: 1 = Primary Weapon 2 = Secondary Weapon 3 = Melee Weapon 4 = Thrown Weapon. Weapon Fire: Left Mouse Click = Use Weapon Right Mouse Click = Special Function of Weapon (Zoom/Hard Melee Attack)",
+        "bodyAr": ""
+      },
+      {
+        "id": "38954645986843",
+        "title": "What is CrossFire?",
+        "titleAr": "",
+        "body": "CrossFire is a fast-paced free-to-play first person shooter, pitting two competing forces, the Global Risk and the Black List, against each other. Players assume the role of either a Black List or a Global Risk operative and compete in various modes including the classic Free-for-All, Team Death Match and the exclusive stealth-action Ghost Mode. CrossFire also includes a persistent military ranking system, in-game buddy lists, an integrated clan system, and highly customizable characters.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38954479528347",
+        "title": "What is Wave Mode and how does it work?",
+        "titleAr": "",
+        "body": "Wave Mode is a team based mode, where both teams must destroy the opposition's defense. It is best described as a shooting-tactic mode, since team work is absolutely required. There are guides on the Forum that showcase more about Wave Mode: https://forum.z8games.com/discussion/283287/guide-to-wave-mode-mechanics-enhancement-classes-achievements-ribbons-and-more",
+        "bodyAr": ""
+      },
+      {
+        "id": "38954317152795",
+        "title": "Why do I not win anything from the Black Market?",
+        "titleAr": "",
+        "body": "The Black Market system is a luck-based system where players purchase a crate knowing that they will receive three random items when they open any crate. This system is purely based on luck and there is no guarantee for any user to win a specific weapon from a crate. All players have the same chance of winning from these crates, and Z8Games Staff members do not and cannot increase, decrease, or manipulate the winning rate of any crate under any circumstances.",
+        "bodyAr": ""
+      }
+    ]
+  },
+  {
+    "id": "technical-support-faq",
+    "name": "Technical Support FAQ",
+    "nameAr": "أسئلة الدعم الفني",
+    "articles": [
+      {
+        "id": "38954103503515",
+        "title": "How do I download and install CrossFire?",
+        "titleAr": "",
+        "body": "You can download CrossFire by clicking on the download button on this page After you download the installer, run the installer and the installation wizard will guide you through the process. Here is a detailed guide of the installation process: Step 1: Go to the Download page. Press the Download button to begin downloading the client. Step 2: If a download pop-up appears, depending on your Internet Browser click on Run to run the program from your temporary system cache or click Save if you would like to keep the install file for later use. The client will then begin to download. Step 3a: Once the download is complete, the program will begin to install. If you clicked Save on step 2 then you will need to double click on the Cross Fire installer icon located in the directory that you saved it in. Step 3b: If you are using Vista, a security message may popup asking you to not run the program if you do not know where it is from. Click Allow to continue the installation. Depending on your ",
+        "bodyAr": ""
+      },
+      {
+        "id": "38953937304347",
+        "title": "How do I perform a Dxdiag and how do I get the file?",
+        "titleAr": "",
+        "body": "DirectX Diagnostic Tool helps you troubleshoot issues with the DirectX suite of multimedia technologies that come with Windows. If you're having trouble getting game animation to run properly, you should run DirectX Diagnostic Tool to try to find the source of the problem. This tool is used to collect info about devices to help troubleshoot problems with DirectX sound and video. A support person might ask for this info, or you might post it in a forum when you ask for help. In Windows, search for dxdiag, then select it from the results. In the tool, select Save All Information for an easily shared format. Open the text document and send us the text within your request or save txt document. Please try zipping up the file using a .zip or .rar program, and upload that file with your reply. (Maximum file size for upload is 10 MB, maximum time allotted for upload is 5 minutes. If the upload times out, please try a faster connection.)",
+        "bodyAr": ""
+      },
+      {
+        "id": "38953855766683",
+        "title": "I am having a low Frames-Per-Second (FPS). How can I improve it?",
+        "titleAr": "",
+        "body": "There are various issues that might affect your FPS in-game. In order to improve your FPS, you can try the following steps: Update your graphics card’s drivers to the latest version Optimize your game settings (Resolution, Anti-aliasing, etc.,) Optimize your computer (update windows, clean registry, etc.). You can use a Windows optimization software for this Test your internet connection Close down all running programs when running CrossFire You can also try to upgrade some of your hardware, such as memory and graphics card.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38953772134171",
+        "title": "I am receiving a message that says “This service is not available in your region”!",
+        "titleAr": "",
+        "body": "Not all users from all around the world are able to play on CrossFire West. Due to different licenses to the game, only users from the countries highlighted in Green are able to play on CrossFire West. Due to licensing issues, users from the red part of the map below will not be allowed to play on CrossFire West servers. This list has been updated after the merge between ES, EU, and NA portals. All pre-existing accounts remain unaffected by this change. If you are receiving this message and you do not reside in the regions marked in red, you might be receiving this error due to using a VPN or software that changes your IP address. Quick FAQ for some early questions. Q: If I am from a region highlighted in Red, can I still play on CrossFire West? A: Yes as long as your CrossFire character was made on or before November 7, 2018 you should be able to play. Q: If my account was made before November 7th but I never logged in to the game with it, will I still be able to play? A: No, while yo",
+        "bodyAr": ""
+      },
+      {
+        "id": "38953700949531",
+        "title": "I cannot hear gunfire or people walking, but I can hear the radio and game messages. What can I do?",
+        "titleAr": "",
+        "body": "The issue described could be connected to your sound settings, missing audio plugins or missing audio files. Please check your CrossFire sound setting and make sure everything is enabled. To check, please open the CrossFire game client and join a server. In the right corner of the game client, you will find the button for options. Please open it and choose the tab \"Sound\". You can troubleshoot the sound issue by pressing the \"Default\" button in the Sound tab window and then the \"Save\" button. Please restart your PC and start CrossFire again. If you are still experiencing issues with everything enabled, please check if your audio drivers are up-to-date and make sure that you've installed the latest version of Windows Media Player. If you are still experiencing issues, our recommendation would be to uninstall CrossFire and install it again.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38952332670491",
+        "title": "I have some technical issues and don’t know what to do. Help me!",
+        "titleAr": "",
+        "body": "Technical issues can have various reasons. We recommend that you follow our step-by-step troubleshooting process to find a solution: 1. Check if your PC meets the minimum requirements outlined here . 2. Restart your PC and try again. Occasionally, anomalies may occur the longer a system has been up and running. 3. Start CrossFire as administrator. 4. Check your DirectX version and the date on key system drivers such as your network card and graphics card to ensure that everything is up to date. 5. Scan your computer for any viruses and spyware's and remove them. 6. Make sure to close down any applications which may be running prior to launching CrossFire as these may interfere with the running of the game. 7. Routers, firewalls, anti-virus software can occasionally interfere with your connection to CrossFire. You should provide or make \"exceptions\" (put CrossFire in the list of safe programs) so that the game can pass through any security settings you may have enabled. You can check ho",
+        "bodyAr": ""
+      },
+      {
+        "id": "38939958938651",
+        "title": "My mouse movements are shaky/wobbly. How can I fix that?",
+        "titleAr": "",
+        "body": "This issue can be related to your mouse settings, and you might get better results by setting your USB to a lower polling rate. 250hz is for most the best compromise, and that is the polling rate recommended for most mice, as it offers very slight jittering and still delivers good responsiveness at a higher malfunction speed. Make note that most newer gaming-grade mice have very high malfunction speed, even at low polling rates, so you may not even have to worry about that. Some newer mice also have polling rate changing options in their driver, so that makes it easy to modify and play around with. In July 2019, support for Mice with over 125HZ polling rate was added. This option can be enabled in the Options Menu Enabling this feature will support Mice with up to 1000HZ polling rates",
+        "bodyAr": ""
+      },
+      {
+        "id": "38938509858587",
+        "title": "What are the minimum system requirements for CrossFire?",
+        "titleAr": "",
+        "body": "The minimum and recommended system requirements for CrossFire can be found here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38938431456795",
+        "title": "What are the operating systems supported by CrossFire?",
+        "titleAr": "",
+        "body": "At this time, CrossFire will only run on Windows-based operating systems more recent than Windows XP. While it is possible to run CrossFire on Mac OS using BootCamp and other similar software, we are not able to provide support for third party applications.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38938360876187",
+        "title": "What is a port? How can I open ports on my router to play?",
+        "titleAr": "",
+        "body": "Ports 10009 and 13008 need to be opened on your router to play CrossFire online effectively. For more information on how to open these ports on your router, please visit http://portforward.com .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38938268520987",
+        "title": "What is lag/ping and what contributes to it?",
+        "titleAr": "",
+        "body": "Ping is the network latency between a player's computer and the game server. Having a low ping is always desirable because lower latency provides smoother gameplay by allowing faster updates of game data. Players not located within a reasonable distance of the server regions may experience some lag depending on their connection. There are many other reasons why you could be experiencing lag (your internet service provider, router settings, internet speed, etc.), but your location and distance from the central servers will have the largest effect.",
+        "bodyAr": ""
+      }
+    ]
+  },
+  {
+    "id": "clan-mechanics",
+    "name": "Clan Mechanics",
+    "nameAr": "ميكانيكا الكلان",
+    "articles": [
+      {
+        "id": "38938211291675",
+        "title": "How do I add players to my clan?",
+        "titleAr": "",
+        "body": "Simply ask the players to search for your clan using your clan name or the clan master’s name and apply for it. You then can approve them from the clan management tab. For more information about the Clan system, please visit our Clan Guide page here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38938151009179",
+        "title": "How do I create/join a clan in CrossFire?",
+        "titleAr": "",
+        "body": "In order to create a clan, your account should be at or above the rank of Staff Sergeant and you should have 5,000 GP as a registration fee. If you want to join an existing clan, you can apply to any clan if you satisfy the qualifications for it. For more information about the Clan system, please visit our Clan Guide page here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38937745312027",
+        "title": "How do I delete my clan?",
+        "titleAr": "",
+        "body": "In order to delete your clan, the clan has to have no active members. If you are the only member left in the clan, you can delete it by clicking on the “Clan Disband” button in the clan management section. For more information about the Clan system, please visit our Clan Guide page here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38937521957403",
+        "title": "How do I leave my clan?",
+        "titleAr": "",
+        "body": "You can leave your clan at any time by clicking the Leave Clan button at the bottom left of the clan window. If you are the clan master, you will have to transfer leadership to another member before you can leave your clan. For more information about the Clan system, please visit our Clan Guide page here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38936247992475",
+        "title": "What is a clan?",
+        "titleAr": "",
+        "body": "A clan is a group of players who have decided to play together as a team. When you are a member of a clan, you will receive multiple benefits, as well as the ability to participate in Clan Wars. For more information about the Clan system, please visit our Clan Guide page here .",
+        "bodyAr": ""
+      },
+      {
+        "id": "38936084737563",
+        "title": "What is the clan page? Can I manage my clan from the website?",
+        "titleAr": "",
+        "body": "The new clan system only allows you to manage your clan from within the game. The clan website pages are being updated but they will be available for viewing clan information only.",
+        "bodyAr": ""
+      }
+    ]
+  },
+  {
+    "id": "crossfire-gms-and-mods",
+    "name": "CrossFire GMs and MODs",
+    "nameAr": "مشرفو CrossFire (GMs) والـ MODs",
+    "articles": [
+      {
+        "id": "38989638882459",
+        "title": "How can I become a GM?",
+        "titleAr": "",
+        "body": "Game Masters are full-time employees of the company and they work from the company office. We don’t accept GM applications through the game, forum, or support center. When we are in need of new GMs, the company announces a new job posting through the appropriate channels.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38989597115547",
+        "title": "How do I contact a GM?",
+        "titleAr": "",
+        "body": "To contact a GM, you will need to submit a support ticket through our support system here . Note that you must log into our website to be able to submit a ticket/request. Please also note that for game related issues, it is best to send a support ticket where your issue can be dealt with in confidence, and that GM's cannot answer your issues via forum PM.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38989492299419",
+        "title": "How do I know if someone is a GM?",
+        "titleAr": "",
+        "body": "Games Masters are equipped with a Game Master [GM] tag in-game. A full list of current GMs and Forum Moderators (MODS) can be found here We take GM or MOD impersonation very seriously and ask that players take screenshots of the incident and submit it to our ticket support system.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38989461949595",
+        "title": "What is a GM?",
+        "titleAr": "",
+        "body": "GM stands for Game Master. The Game Masters take care of the servers and the CrossFire community. They also organize events and answer any questions/concerns that players may have.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38989254490907",
+        "title": "What is a MOD? And what are their responsibilities?",
+        "titleAr": "",
+        "body": "MODs are active community moderators who work with GMs to manage the community and the forums. MODs are responsible for managing the forums, responding to questions from users, maintaining and organizing community interactions and helping the GM's where able.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38984437577755",
+        "title": "Who are the current CrossFire GMs?",
+        "titleAr": "",
+        "body": "The current GMs working on CrossFire can be found on our Discord ( here ).",
+        "bodyAr": ""
+      }
+    ]
+  },
+  {
+    "id": "user-abuse-hacking",
+    "name": "User Abuse/Hacking",
+    "nameAr": "إساءة الاستخدام والهاك",
+    "articles": [
+      {
+        "id": "38957683167515",
+        "title": "How do I report a hacker?",
+        "titleAr": "",
+        "body": "In order to take full action against hackers, we must analyze the evidence in the form of replays. Match replays can be saved in CrossFire by clicking the \"Save\" button on the results screen after the match is over or whenever you leave a match. Once the file is saved, it will appear in your \"C:\\Users\\username\\Documents\\Cross Fire\\Replay\" folder (default). You can then fill out a hack submission form and upload the replay file to us through our support site. Please log into www.z8games.com and go to https://help.z8games.com/hc/en-us to submit a hack report. On the left side of the screen, you will see a \"Hacking Report\" button. Please click it to submit a new hacking report. Note that only reports with replays will be considered and that your report will go into the queue to be reviewed by us. We cannot guarantee the outcome of your report immediately, and we do not tell you the results of your report. Please make sure that the name of the person you accuse of hacking is correct as we ",
+        "bodyAr": ""
+      },
+      {
+        "id": "38957706886299",
+        "title": "I am getting harassed by a player in CrossFire. What should I do?",
+        "titleAr": "",
+        "body": "Please submit a new support ticket with the name of the person harassing you and the nature of the harassment. You must include a screenshot as proof of the incident in order for staff members to take action against the perpetrator. In-game abuse will not be tolerated at Z8Games and offenders will be dealt with swiftly and sternly.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38956732661531",
+        "title": "I found a player with an offensive/inappropriate character name. What should I do?",
+        "titleAr": "",
+        "body": "Please open a new customer service ticket and be sure to include in the ticket the offensive/inappropriate name, as well as a screenshot of the incident if applicable. Offensive/inappropriate names will not be tolerated at Z8Games and offenders will be dealt with swiftly and sternly.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38956195394843",
+        "title": "My account has been permanently blocked because I used hacks. Can I get it back?",
+        "titleAr": "",
+        "body": "No. Any usage of hacks will result in a permanent ban for all associated accounts.",
+        "bodyAr": ""
+      },
+      {
+        "id": "38956035761051",
+        "title": "My account is blocked and I don’t know why. What should I do?",
+        "titleAr": "",
+        "body": "There are several reasons why an account can get blocked from the game/website/forum. Please submit a support ticket/request and a staff member will be able to assist you and explain the situation of your account.",
+        "bodyAr": ""
+      }
+    ]
+  }
+]

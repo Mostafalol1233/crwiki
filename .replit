@@ -1,0 +1,53 @@
+modules = ["nodejs-20", "web"]
+[agent]
+expertMode = true
+stack = "GAMESTACK_JS"
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+VITE_API_URL = ""
+VITE_SUPABASE_URL = "https://qywburkldwdkegztsgjj.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bRLZ8FvBPvjjFlRt3hpJ2Q_HN5MJEm3"
+SUPABASE_URL = "https://qywburkldwdkegztsgjj.supabase.co"
+ADMIN_PASSWORD = "crossfire_wiki_admin_2024"
+JWT_SECRET = ""
+SUPABASE_SERVICE_KEY = ""
+VITE_SUPABASE_SERVICE_KEY = ""
+VITE_ADMIN_PASSWORD = ""
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "./dist/index.cjs"]
+build = ["npm", "run", "build"]

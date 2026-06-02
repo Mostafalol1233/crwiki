@@ -1,0 +1,59 @@
+.orb-container {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 640px;
+  min-height: clamp(380px, 50vw, 560px);
+  margin: 0 auto;
+  overflow: visible;
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.35));
+}
+
+.orb-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orb-container canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.orb-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: transparent;
+}
+
+.auth-box {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dark .auth-box {
+  background: transparent !important;
+}
+
+@media (max-width: 768px) {
+  .orb-container {
+    min-height: 420px;
+  }
+  .orb-content {
+    width: 92%;
+    padding: 8px;
+  }
+}

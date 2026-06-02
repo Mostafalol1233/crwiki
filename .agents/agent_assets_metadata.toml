@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "SEX12I0kGyBnR0F8EoDU1"
+uri = "file://backend-latest.zip"
+type = "unspecified"
+title = "Backend Latest - New Endpoints Added"

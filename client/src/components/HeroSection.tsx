@@ -170,7 +170,7 @@ export function HeroSection({ post, isPlaceholder, bgImageUrl }: HeroSectionProp
                 <span className="text-xl md:text-2xl font-black leading-none" style={{ color: "#f5a623" }}>
                   {stat.value}
                 </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.2em] mt-1 text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <span className="stat-label text-[9px] font-bold uppercase tracking-[0.2em] mt-1 text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
                   {stat.label}
                 </span>
               </div>

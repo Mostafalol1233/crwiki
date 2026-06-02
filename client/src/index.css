@@ -750,3 +750,181 @@
 .faq-html-content blockquote { border-left: 3px solid hsl(var(--primary)); padding-left: 0.75rem; color: hsl(var(--muted-foreground)); font-style: italic; }
 .faq-html-content table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
 .faq-html-content td, .faq-html-content th { border: 1px solid hsl(var(--border)); padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+
+/* Light theme typography contrast overrides */
+[data-theme="light"] body {
+  opacity: 1;
+  font-weight: 400;
+}
+
+[data-theme="light"] :where(p, li, dd, dt, td, th, blockquote, figcaption) {
+  opacity: 1;
+}
+
+[data-theme="light"] :where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6
+):where(.font-cinzel, [class*="cinzel" i], [style*="Cinzel"]) {
+  font-weight: 400;
+}
+
+[data-theme="light"] :where(
+  .text-muted-foreground\/10,
+  .text-muted-foreground\/20,
+  .text-muted-foreground\/30,
+  .text-muted-foreground\/40,
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/60,
+  .text-secondary-foreground\/10,
+  .text-secondary-foreground\/20,
+  .text-secondary-foreground\/30,
+  .text-secondary-foreground\/40,
+  .text-secondary-foreground\/50,
+  .text-secondary-foreground\/60,
+  [class*="text-muted-foreground/"],
+  [class*="text-secondary-foreground/"]
+) {
+  color: hsl(var(--muted-foreground) / 0.6);
+}
+
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-0,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-10,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-20,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-25,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-30,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-40,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-50,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+).opacity-60,
+[data-theme="light"] :where(
+  .text-muted-foreground,
+  .text-secondary-foreground
+)[style*="opacity: 0."],
+[data-theme="light"] :where(.muted, .secondary, .text-muted, .text-secondary) {
+  opacity: 0.6;
+}
+
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+) {
+  opacity: max(0.5, var(--light-text-opacity, 1));
+}
+
+[data-theme="light"] :where(.stat-label, .stats-label, [class*="stat-label" i]) {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-0,
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-10,
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-20,
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-25,
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-30,
+[data-theme="light"] :where(
+  .stat-label,
+  .stats-label,
+  .section-subtitle,
+  .subtitle,
+  .breadcrumbs,
+  .breadcrumb,
+  [aria-label="breadcrumb" i],
+  [class*="breadcrumb" i],
+  [class*="subtitle" i],
+  [class*="stat-label" i]
+).opacity-40 {
+  opacity: 0.5;
+}
+
+[data-theme="light"] a {
+  opacity: 1 !important;
+}

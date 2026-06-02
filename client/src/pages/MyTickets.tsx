@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { getTicketsByEmail, getTicketReplies } from "@/lib/supabaseApi";
 import { Ticket, MessageSquare, Clock, Mail } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
@@ -44,13 +44,13 @@ export default function MyTickets() {
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets/my", searchedEmail],
-    queryFn: () => apiRequest(`/api/tickets/my/${searchedEmail}`, "GET"),
+    queryFn: () => getTicketsByEmail(searchedEmail),
     enabled: !!searchedEmail,
   });
 
   const { data: replies = [] } = useQuery<TicketReplyType[]>({
     queryKey: ["/api/tickets", selectedTicket?.id, "replies"],
-    queryFn: () => apiRequest(`/api/tickets/${selectedTicket?.id}/replies`, "GET"),
+    queryFn: () => getTicketReplies(selectedTicket!.id),
     enabled: !!selectedTicket,
   });
 

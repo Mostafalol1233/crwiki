@@ -63,9 +63,13 @@ export default function Weapons() {
       if (selectedCategory !== "all") params.set("category", selectedCategory);
       params.set("sort", sort);
       params.set("order", order);
-      const res = await fetch(`/api/weapons/search?${params.toString()}`);
-      if (!res.ok) throw new Error(await res.text());
-      const data: { items: Weapon[]; total: number; page: number; pageSize: number } = await res.json();
+      const { getWeapons } = await import("@/lib/supabaseApi");
+      const data = await getWeapons({
+        q: searchQuery || undefined,
+        letter: letter || undefined,
+        category: selectedCategory !== "all" ? selectedCategory : undefined,
+        sort, order, page: effectivePage, pageSize,
+      });
       const normalizedItems = (data.items || []).map(normalizeWeapon);
       setTotal(data.total || 0);
       if (opts?.reset) {

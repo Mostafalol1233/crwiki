@@ -79,9 +79,8 @@ export default function FAQManager() {
     queryKey: ["/api/faq-categories"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/faq-categories");
-        if (!res.ok) return STATIC_FAQ_DATA as FaqCategory[];
-        const data = await res.json();
+        const { getFaqCategories } = await import("@/lib/supabaseApi");
+        const data = await getFaqCategories();
         return Array.isArray(data) && data.length > 0 ? data : (STATIC_FAQ_DATA as FaqCategory[]);
       } catch {
         return STATIC_FAQ_DATA as FaqCategory[];

@@ -16,19 +16,14 @@ export default function Login() {
   const onSubmit = async (values: any) => {
     setStatus("Signing in...");
     try {
-      const res = await fetch("/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Login failed");
-      localStorage.setItem("userToken", data.token);
-      localStorage.setItem("userId", data.user?.id || "");
-      localStorage.setItem("username", data.user?.username || "");
-      setLocation("/chat");
+      const { signIn } = await import("@/lib/supabaseApi");
+      const data = await signIn(values.identifier, values.password);
+      if (!data.user) throw new Error("Login failed");
+      localStorage.setItem("userId", data.user.id || "");
+      localStorage.setItem("username", data.user.user_metadata?.username || values.identifier);
+      setLocation("/");
     } catch (e: any) {
-      setStatus(e.message);
+      setStatus(e.message || "Login failed. Check your email and password.");
     }
   };
 

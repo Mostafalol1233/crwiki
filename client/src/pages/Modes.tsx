@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import { Search, Image as ImageIcon, Loader2, Filter, ExternalLink } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { getModes } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -153,10 +153,7 @@ export default function Modes() {
 
   const { data: modes = [], isLoading } = useQuery<Mode[]>({
     queryKey: ["/api/modes"],
-    queryFn: async () => {
-      const data = await apiRequest("/api/modes", "GET");
-      return data || [];
-    },
+    queryFn: getModes,
     staleTime: 1000 * 60 * 5,
   });
 

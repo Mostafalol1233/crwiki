@@ -83,12 +83,11 @@ export function SEOHead({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/public/settings/seo');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled) setSiteSeo(data);
+        const { getSiteSettings } = await import("@/lib/supabaseApi");
+        const data = await getSiteSettings();
+        if (!cancelled && data) setSiteSeo(data);
       } catch {
-        // gracefully ignore when backend is unavailable
+        // gracefully ignore when Supabase is unavailable
       }
     })();
     return () => { cancelled = true; };

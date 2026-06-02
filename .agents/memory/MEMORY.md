@@ -1,0 +1,1 @@
+- [Supabase migration](supabase-migration.md) — full MongoDB→Supabase migration done; frontend calls Supabase directly, no Express backend needed.

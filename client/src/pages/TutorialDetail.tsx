@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { ThumbsUp, ArrowLeft, Frown, Smile } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import type { Tutorial } from "@shared/mongodb-schema";
 import { format } from "date-fns";
 
@@ -30,34 +30,26 @@ export default function TutorialDetailPage() {
     queryKey: ["tutorial", slug || legacyId || ""],
     enabled: !!(slug || legacyId),
     queryFn: async () => {
+      const { getTutorials } = await import("@/lib/supabaseApi");
+      const tutorials = await getTutorials();
       if (slug) {
-        const res = await fetch(`/api/tutorials/slug/${slug}`);
-        if (!res.ok) {
-          const resp = await fetch(`/api/tutorials`).then(r => r.json());
-          const all = Array.isArray(resp) ? resp : (resp?.items || []);
-          const found = all.find((t: any) => t.tutorial_slug === slug || t.id === slug);
-          if (found) return found;
-          throw new Error("Tutorial not found");
-        }
-        return res.json();
+        const found = tutorials.find((t: any) => t.tutorial_slug === slug || t.id === slug);
+        if (!found) throw new Error("Tutorial not found");
+        return found;
       }
       if (!legacyId) throw new Error("No tutorial identifier provided");
-      const res = await fetch(`/api/tutorials/${legacyId}`);
-      if (!res.ok) {
-        const resp = await fetch(`/api/tutorials`).then(r => r.json());
-        const all = Array.isArray(resp) ? resp : (resp?.items || []);
-        const found = all.find((t: any) => t.id === legacyId);
-        if (found) return found;
-        throw new Error("Tutorial not found");
-      }
-      return res.json();
+      const found = tutorials.find((t: any) => t.id === legacyId);
+      if (!found) throw new Error("Tutorial not found");
+      return found;
     },
   });
 
   const likeMutation = useMutation({
     mutationFn: async () => {
       const id = (tutorial as any)?.id || legacyId;
-      return await apiRequest(`/api/tutorials/${id}/like`, "POST", {});
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from('tutorials').update({ likes: supabase.rpc('increment', { row_id: id, amount: 1 }) } as any).eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       const id = (tutorial as any)?.id || legacyId || "";

@@ -103,14 +103,12 @@ export default function AnnouncementModal({ location }: { location: string }) {
       setData(null);
       try {
         try {
-          const sres = await fetch(`/api/public/settings/announcements`);
-          if (sres.ok) {
-            const sj = await sres.json();
-            setEnabled(Boolean(sj?.enabled ?? true));
-            setDisplayMs(Number(sj?.displayMs ?? 0) || 0);
-            if (!Boolean(sj?.enabled ?? true)) {
-              return;
-            }
+          const { getSiteSettings } = await import("@/lib/supabaseApi");
+          const sj = await getSiteSettings();
+          setEnabled(Boolean((sj as any)?.announcements_enabled ?? true));
+          setDisplayMs(Number((sj as any)?.announcements_display_ms ?? 0) || 0);
+          if (!Boolean((sj as any)?.announcements_enabled ?? true)) {
+            return;
           }
         } catch {}
         let hasActiveSellerAnnouncement = false;

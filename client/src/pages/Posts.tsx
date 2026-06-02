@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { getPosts } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 
 interface PostItem {
@@ -31,7 +31,7 @@ export default function Posts() {
 
   const { data: postsData, isLoading } = useQuery<{ items: any[], total: number }>({
     queryKey: ["/api/posts", page],
-    queryFn: () => apiRequest(`/api/posts?limit=${limit}&offset=${(page - 1) * limit}`, "GET"),
+    queryFn: () => getPosts({ limit, offset: (page - 1) * limit }),
   });
 
   const posts = allLoadedPosts;

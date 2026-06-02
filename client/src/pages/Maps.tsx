@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Search, Map as MapIcon, Loader2, Filter } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { getMaps } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -27,13 +27,7 @@ export default function Maps() {
 
   const { data: maps = [], isLoading } = useQuery<GameMap[]>({
     queryKey: ["/api/maps"],
-    queryFn: async () => {
-      const data = await apiRequest("/api/maps", "GET");
-      return (data || []).map((map: any) => ({
-        ...map,
-        image: map.image || map.imageUrl || "",
-      }));
-    },
+    queryFn: getMaps,
     staleTime: 1000 * 60 * 5,
   });
 

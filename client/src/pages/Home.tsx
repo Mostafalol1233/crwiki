@@ -7,7 +7,7 @@ import { type Article } from "@/components/ArticleCard";
 import { EventsRibbon } from "@/components/EventsRibbon";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 import { useLanguage } from "@/components/LanguageProvider";
-import { apiRequest } from "@/lib/queryClient";
+import { getPosts, getEvents, getWeapons, getSiteSettings } from "@/lib/supabaseApi";
 import { ArrowRight, Shield, ChevronRight } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
@@ -86,13 +86,13 @@ export default function Home() {
 
   const { data: postsData } = useQuery<{ items: Article[]; total: number }>({
     queryKey: ["/api/posts", { limit: 50 }],
-    queryFn: () => apiRequest("/api/posts?limit=50", "GET"),
+    queryFn: () => getPosts({ limit: 50 }),
   });
   const allPosts = postsData?.items || [];
 
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 10 }],
-    queryFn: () => apiRequest("/api/events?limit=10", "GET"),
+    queryFn: () => getEvents({ limit: 10 }),
   });
   const allEvents = eventsData?.items || [];
 
@@ -106,24 +106,18 @@ export default function Home() {
 
   const { data: recentWeaponsData } = useQuery<{ items: HomeWeapon[]; total: number }>({
     queryKey: ["/api/weapons/search", "home-recent"],
-    queryFn: () => apiRequest("/api/weapons/search?page=1&pageSize=4&sort=date&order=desc", "GET"),
+    queryFn: () => getWeapons({ page: 1, pageSize: 4 }),
   });
   const recentWeapons = recentWeaponsData?.items || [];
 
-  const { data: sitePublicSettings } = useQuery<{ featuredWeapons: string[] }>({
+  const { data: sitePublicSettings } = useQuery<any>({
     queryKey: ["/api/public/settings/site"],
-    queryFn: () => apiRequest("/api/public/settings/site", "GET"),
+    queryFn: getSiteSettings,
     staleTime: 30 * 1000,
   });
-  const featuredWeaponIds = sitePublicSettings?.featuredWeapons || [];
+  const featuredWeaponIds = (sitePublicSettings as any)?.featured_weapons || (sitePublicSettings as any)?.featuredWeapons || [];
 
-  const { data: featuredWeaponsData } = useQuery<HomeWeapon[]>({
-    queryKey: ["/api/weapons/batch/by-ids", featuredWeaponIds.join(",")],
-    queryFn: () => apiRequest(`/api/weapons/batch/by-ids?ids=${featuredWeaponIds.join(",")}`, "GET"),
-    enabled: featuredWeaponIds.length > 0,
-  });
-
-  const displayWeapons = featuredWeaponIds.length > 0 && featuredWeaponsData ? featuredWeaponsData : recentWeapons;
+  const displayWeapons = recentWeapons;
 
   const heroPost = allPosts.filter((p: any) => p.previewOnHome !== false).find((p) => p.featured) || {
     id: "1",
@@ -139,17 +133,6 @@ export default function Home() {
   };
 
   const [heroBgUrl, setHeroBgUrl] = useState("");
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await apiRequest("/api/public/settings/site", "GET");
-        const url = String(data?.backgroundImageUrl || "").trim();
-        if (!cancelled && url) setHeroBgUrl(url);
-      } catch { }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   const scrapedEvents = allEvents.filter((e: any) => e.rawHtmlContent);
   const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(0, 10);

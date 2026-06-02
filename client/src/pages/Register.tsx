@@ -45,18 +45,13 @@ export default function Register() {
       formData.append("file", file);
       formData.append("folder", "avatars");
 
-      const tokRes = await fetch("/api/security/csrf-token");
-      const tokJson = await tokRes.json();
-      const csrf = tokJson?.csrfToken || "";
-      const res = await fetch("/images/upload", {
-        method: "POST",
-        headers: { "X-CSRF-Token": csrf },
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      const url = data.domainUrl || data.domain_url || data.secure_url || "";
+      // Avatar upload via Supabase Storage
+      const { supabase } = await import("@/lib/supabase");
+      const fileName = `avatar_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const url = urlData?.publicUrl || "";
       if (url) {
         setAvatarUrl(url);
         setValue("avatar", url);
@@ -77,21 +72,19 @@ export default function Register() {
         setStatus("Invalid phone number");
         return;
       }
-      const payload = { ...values, phone: phoneSanitized };
-      const res = await fetch("/api/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const { signUp } = await import("@/lib/supabaseApi");
+      await signUp(values.email, values.password, {
+        username: values.username,
+        phone: phoneSanitized,
+        avatar: avatarUrl,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Registration failed");
       try {
         sessionStorage.setItem(
           "prefillLogin",
           JSON.stringify({ identifier: values.email, password: values.password })
         );
       } catch {}
-      toast({ title: "Account created", description: "You can now sign in." });
+      toast({ title: "Account created", description: "Check your email to confirm, then sign in." });
       setLocation("/login");
     } catch (e: any) {
       setStatus(e.message);

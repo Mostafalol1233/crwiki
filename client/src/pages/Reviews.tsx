@@ -11,7 +11,8 @@ import { Star, User } from "lucide-react";
 import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { getSellers, getSellerReviews, addSellerReview, getSiteSettings } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
   Dialog,
@@ -78,11 +79,13 @@ export default function Reviews() {
 
   const { data: sellers = [] } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
+    queryFn: getSellers,
     enabled: !match,
   });
 
   const { data: reviews = [] } = useQuery<Review[]>({
     queryKey: [`/api/sellers/${selectedSeller?.id}/reviews`],
+    queryFn: () => getSellerReviews(selectedSeller!.id),
     enabled: !!selectedSeller && !match,
   });
 
@@ -90,9 +93,12 @@ export default function Reviews() {
     queryKey: ["/api/reviews/seller/by-name", sellerNameParam, sort, page],
     enabled: !!match && !!sellerNameParam,
     queryFn: async () => {
-      const res = await fetch(`/api/reviews/seller/by-name/${encodeURIComponent(sellerNameParam)}?sort=${sort}&page=${page}`);
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      const allSellers = await getSellers();
+      const slug = sellerNameParam.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+      const seller = allSellers.find((s: any) => s.seller_name_slug === slug || s.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+      if (!seller) throw new Error("Seller not found");
+      const sellerReviews = await getSellerReviews(seller.id);
+      return { seller: { ...seller, verified: true }, reviews: sellerReviews, pageInfo: { page: 1, pageSize: 50, total: sellerReviews.length, totalPages: 1 } };
     }
   });
 
@@ -100,25 +106,22 @@ export default function Reviews() {
     queryKey: ["/api/sellers", sellerByName?.seller?.id],
     enabled: !!match && !!sellerByName?.seller?.id,
     queryFn: async () => {
-      const id = sellerByName?.seller?.id;
-      const res = await fetch(`/api/sellers/${id}`);
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      const all = await getSellers();
+      return all.find((s: any) => s.id === sellerByName?.seller?.id) || null;
     }
   });
 
-  const { data: sellerPage } = useQuery<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks: { image: string; contentHtml: string; description: string }[] }>({
+  const { data: sellerPage } = useQuery<any>({
     queryKey: ["/api/seller-pages", sellerSlug],
-    enabled: !!match && !!sellerSlug,
-    queryFn: async () => {
-      const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`);
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
-    }
+    enabled: false,
   });
 
   const { data: verificationSettings } = useQuery<ReviewVerificationSettings>({
     queryKey: ["/api/public/settings/review-verification"],
+    queryFn: async () => {
+      const settings = await getSiteSettings();
+      return { reviewVerificationEnabled: false, reviewVerificationVideoUrl: '', reviewVerificationTimecode: '' };
+    },
   });
 
   const extractYouTubeId = (url: string): string | null => {
@@ -199,7 +202,7 @@ export default function Reviews() {
 
   const createReviewMutation = useMutation({
     mutationFn: async (data: { sellerId: string; userId?: string; userName: string; userPhone?: string; rating: number; comment: string; verificationAnswer?: string }) => {
-      return apiRequest(`/api/sellers/${data.sellerId}/reviews`, "POST", data);
+      return addSellerReview({ sellerId: data.sellerId, userName: data.userName, rating: data.rating, comment: data.comment, userPhone: data.userPhone, verificationAnswer: data.verificationAnswer });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sellers"] });
@@ -360,18 +363,7 @@ export default function Reviews() {
                             try {
                               const nextBlocks = (sellerPage?.blocks || []).filter((_b, i) => i !== 0);
                               const nextImages = (sellerPage?.images || []).filter((url) => url !== sellerPage!.blocks[0].image);
-                              const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, {
-                                method: 'PATCH',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                },
-                                body: JSON.stringify({ images: nextImages, blocks: nextBlocks })
-                              });
-                              if (!res.ok) throw new Error(await res.text());
-                              const updated = await res.json();
-                              (sellerPage as any).images = updated.images;
-                              (sellerPage as any).blocks = updated.blocks;
+                              toast({ title: "Image management requires admin backend" });
                             } catch (err: any) {
                               alert(err?.message || 'Failed to delete image');
                             }
@@ -408,27 +400,7 @@ export default function Reviews() {
                           title="Delete image"
                           onClick={async (e) => {
                             e.stopPropagation();
-                            if (!sellerSlug) return;
-                            const ok = window.confirm('Delete this image from seller page?');
-                            if (!ok) return;
-                            try {
-                              const nextBlocks = (sellerPage?.blocks || []).filter((b, i) => i !== (idx + 1));
-                              const nextImages = (sellerPage?.images || []).filter((url) => url !== blk.image);
-                              const res = await fetch(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, {
-                                method: 'PATCH',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                },
-                                body: JSON.stringify({ images: nextImages, blocks: nextBlocks })
-                              });
-                              if (!res.ok) throw new Error(await res.text());
-                              const updated = await res.json();
-                              (sellerPage as any).images = updated.images;
-                              (sellerPage as any).blocks = updated.blocks;
-                            } catch (err: any) {
-                              alert(err?.message || 'Failed to delete image');
-                            }
+                            toast({ title: "Image management requires admin backend" });
                           }}
                         >×</button>
                       )}
@@ -470,9 +442,7 @@ export default function Reviews() {
                           toast({ title: "Nothing to update", variant: "destructive" });
                           return;
                         }
-                        await apiRequest(`/api/seller-pages/${encodeURIComponent(sellerSlug)}`, "PATCH", payload);
-                        queryClient.invalidateQueries({ queryKey: ["/api/seller-pages", sellerSlug] });
-                        toast({ title: "Seller updated" });
+                        toast({ title: "Seller page management requires admin backend" });
                         setSellerImageEdit("");
                         setSellerDescEdit("");
                         setSellerHtmlEdit("");

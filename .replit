@@ -38,6 +38,8 @@ externalPort = 80
 
 [userenv.shared]
 VITE_API_URL = ""
+VITE_SUPABASE_URL = "https://qywburkldwdkegztsgjj.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_bRLZ8FvBPvjjFlRt3hpJ2Q_HN5MJEm3"
 
 [deployment]
 deploymentTarget = "autoscale"

@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
-import { apiRequest } from "@/lib/queryClient";
+import { getPosts, getEvents, getNews } from "@/lib/supabaseApi";
 
 export default function Category() {
   const { t } = useLanguage();
@@ -19,26 +19,23 @@ export default function Category() {
 
   const { data: postsResp, isLoading } = useQuery<{ items: Article[]; total: number }>({
     queryKey: ["/api/posts", "category-cap"],
-    queryFn: () => apiRequest(`/api/posts?limit=${cap}&offset=0`, "GET"),
+    queryFn: () => getPosts({ limit: cap }),
   });
   const allPosts = postsResp?.items || [];
 
   const { data: allEvents = [] } = useQuery<any[]>({
     queryKey: ["/api/events", "category-cap"],
     queryFn: async () => {
-      const res = await fetch(`/api/events?limit=${cap}&offset=0`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data) ? data : (data?.items || []);
+      const { items } = await getEvents({ limit: cap });
+      return items;
     }
   });
 
   const { data: allNews = [] } = useQuery<any[]>({
     queryKey: ["/api/news", "category-cap"],
     queryFn: async () => {
-      const data = await apiRequest(`/api/news?limit=${cap}&offset=0`, "GET");
-      if (Array.isArray(data)) return data;
-      return Array.isArray(data?.items) ? data.items : [];
+      const { items } = await getNews({ limit: cap });
+      return items;
     }
   });
 

@@ -124,16 +124,17 @@ function Layout() {
     let cancelled = false;
     const updateBg = async () => {
       try {
-        const data = await fetch("/api/public/settings/site").then(r => r.json());
+        const { getSiteSettings } = await import("@/lib/supabaseApi");
+        const data = await getSiteSettings();
         if (cancelled) return;
-        const bgUrl = data?.backgroundImageUrl || "";
+        const bgUrl = (data as any)?.background_image_url || (data as any)?.backgroundImageUrl || "";
         if (bgUrl) {
           document.documentElement.style.setProperty('--site-bg-image', `url(${bgUrl})`);
         } else {
           document.documentElement.style.setProperty('--site-bg-image', 'none');
         }
       } catch (e) {
-        console.error("Failed to load site background", e);
+        // Gracefully ignore when Supabase is unavailable
       }
     };
     updateBg();

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { createTicket } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { HelpCircle, Mail, User } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
@@ -64,23 +64,14 @@ export default function Support() {
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: TicketFormData) => {
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("userName", data.userName);
-      formData.append("userEmail", data.userEmail);
-      formData.append("category", data.category);
-      if (data.priority) formData.append("priority", data.priority);
-      if (imageFile) formData.append("image", imageFile);
-      if (videoFile) formData.append("video", videoFile);
-      const base = (import.meta as any).env?.VITE_API_URL || "";
-      const url = base ? `${base}/api/tickets` : "/api/tickets";
-      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to submit ticket");
-      }
-      return await res.json();
+      return createTicket({
+        title: data.title,
+        description: data.description,
+        userName: data.userName,
+        userEmail: data.userEmail,
+        category: data.category,
+        priority: data.priority || 'normal',
+      });
     },
     onSuccess: () => {
       toast({

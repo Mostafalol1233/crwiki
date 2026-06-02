@@ -55,27 +55,21 @@ export default function NewsDetail() {
     queryKey: ["news", slug || legacyId],
     enabled: !!(slug || legacyId),
     queryFn: async () => {
+      const { getNewsBySlug, getNews } = await import("@/lib/supabaseApi");
       if (slug) {
-        const res = await fetch(`/api/news/slug/${slug}`);
-        if (!res.ok) {
-          const resp = await fetch("/api/news").then(r => r.json());
-          const allNews = Array.isArray(resp) ? resp : (resp?.items || []);
-          const found = allNews.find((n: any) => n.news_slug === slug || n.id === slug);
+        try { return await getNewsBySlug(slug); }
+        catch {
+          const { items } = await getNews({ limit: 200 });
+          const found = items.find((n: any) => n.news_slug === slug || n.id === slug);
           if (found) return found;
           throw new Error("News not found");
         }
-        return res.json();
       }
       if (!legacyId) throw new Error("No news ID or slug provided");
-      const res = await fetch(`/api/news/${legacyId}`);
-      if (!res.ok) {
-        const resp = await fetch("/api/news").then(r => r.json());
-        const allNews = Array.isArray(resp) ? resp : (resp?.items || []);
-        const found = allNews.find((n: any) => n.id === legacyId);
-        if (found) return found;
-        throw new Error("News not found");
-      }
-      return res.json();
+      const { items } = await getNews({ limit: 200 });
+      const found = items.find((n: any) => n.id === legacyId);
+      if (found) return found;
+      throw new Error("News not found");
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -89,10 +83,11 @@ export default function NewsDetail() {
     queryKey: ["/api/posts/" + (slug || legacyId)],
     enabled: !newsItem && !!(slug || legacyId),
     queryFn: async () => {
-      const identifier = slug || legacyId;
-      const res = await fetch(`/api/posts/${identifier}`);
-      if (!res.ok) return null;
-      return res.json();
+      const { getPostBySlug, getPostById } = await import("@/lib/supabaseApi");
+      try {
+        if (slug) return await getPostBySlug(slug);
+        return await getPostById(legacyId!);
+      } catch { return null; }
     },
   });
 

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { getSellers } from "@/lib/supabaseApi";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +133,7 @@ export default function Sellers() {
   const slug = slugMatch ? (slugParams?.slug as string) : "";
   const { data: sellers = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
+    queryFn: getSellers,
     enabled: !slugMatch,
   });
 
@@ -139,21 +141,17 @@ export default function Sellers() {
     queryKey: ["/api/sellers/slug", slug],
     enabled: !!slugMatch && !!slug,
     queryFn: async () => {
-      const res = await fetch(`/api/sellers/slug/${encodeURIComponent(slug)}`);
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      const all = await getSellers();
+      const found = all.find((s: any) => s.seller_name_slug === slug || s.id === slug);
+      if (!found) throw new Error('Seller not found');
+      return found;
     }
   });
 
   const pageSlug = useMemo(() => sellerBySlug?.seller_name_slug || slug, [sellerBySlug?.seller_name_slug, slug]);
   const { data: sellerPage } = useRQ<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks?: { image: string; contentHtml: string; description: string }[] }>({
     queryKey: ["/api/seller-pages", pageSlug],
-    enabled: !!slugMatch && !!pageSlug,
-    queryFn: async () => {
-      const res = await fetch(`/api/seller-pages/${encodeURIComponent(pageSlug!)}`);
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
-    }
+    enabled: false,
   });
 
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
@@ -166,13 +164,6 @@ export default function Sellers() {
     if (!slugMatch || !sellerBySlug) return;
     const pageSlug = sellerBySlug.seller_name_slug || slug;
     if (!pageSlug) return;
-    try {
-      fetch(`/api/analytics/sellers/${encodeURIComponent(pageSlug)}/event`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'view' }),
-      });
-    } catch { }
   }, [slugMatch, sellerBySlug, slug]);
 
   const isFiniteNumber = (n: any): n is number => typeof n === 'number' && Number.isFinite(n);
@@ -218,12 +209,6 @@ export default function Sellers() {
     setSelectedSeller(seller);
     setIsDialogOpen(true);
     try {
-      const slug = (seller.seller_name_slug || seller.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      fetch(`/api/analytics/sellers/${encodeURIComponent(slug)}/event`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'view' }),
-      });
     } catch { }
   };
 

@@ -73,43 +73,15 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
-    strictPort: false,
+    port: 5000,
+    strictPort: true,
+    allowedHosts: true,
     hmr: {
-      host: process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS || 'localhost',
-      port: 443,
+      clientPort: 443,
       protocol: 'wss'
     },
     fs: {
-      strict: true,
-      deny: ["**/.*"],
-    },
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/images': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/videos': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/audio': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/cdn': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      }
+      strict: false,
     },
   },
   define: {

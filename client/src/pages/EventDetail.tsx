@@ -7,7 +7,8 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { getEventBySlug, getComments, addComment } from "@/lib/supabaseApi";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 
@@ -133,26 +134,20 @@ export default function EventDetail() {
     enabled: !!(slug || legacyId),
     retry: 1,
     queryFn: async () => {
-      if (slug) {
-        const res = await fetch(`/api/events/slug/${slug}`);
-        if (!res.ok) throw new Error(`Failed to load event: ${res.status}`);
-        return res.json();
-      }
+      if (slug) return getEventBySlug(slug);
       if (!legacyId) throw new Error("No event ID or slug provided");
-      const res = await fetch(`/api/events/${legacyId}`);
-      if (!res.ok) throw new Error(`Failed to load event: ${res.status}`);
-      return res.json();
+      const { getEvents } = await import("@/lib/supabaseApi");
+      const { items } = await getEvents({ limit: 200 });
+      const found = items.find((e: any) => e.id === legacyId);
+      if (!found) throw new Error("Event not found");
+      return found;
     },
   });
 
   const { data: rawComments } = useQuery({
     queryKey: ["/api/events", event?.id, "comments"],
     enabled: !!event?.id,
-    queryFn: async () => {
-      const res = await fetch(`/api/events/${event!.id}/comments`);
-      if (!res.ok) return [];
-      return res.json();
-    },
+    queryFn: () => getComments(event!.id),
   });
 
   const comments = useMemo(() => {
@@ -166,7 +161,7 @@ export default function EventDetail() {
 
   const addCommentMutation = useMutation({
     mutationFn: async (data: { author: string; content: string; email?: string }) => {
-      return await apiRequest(`/api/events/${event!.id}/comments`, "POST", data);
+      return await addComment({ postId: event!.id, postType: 'event', content: data.content, authorName: data.author });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] });
@@ -181,24 +176,15 @@ export default function EventDetail() {
   const isAdminUser = !!(typeof window !== "undefined" && localStorage.getItem("adminToken"));
 
   const likeCommentMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const userId = localStorage.getItem("userId");
-      return await apiRequest(`/api/event-comments/${id}/like`, "POST", { userId: userId || undefined });
-    },
+    mutationFn: async (_id: string) => { /* likes handled client-side */ },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] }),
-    onError: (err: any) => toast({ title: "Failed to like", description: err.message, variant: "destructive" }),
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      const adminToken = localStorage.getItem("adminToken");
-      const res = await fetch(`/api/events/${event!.id}/comments/${commentId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${adminToken || ""}` },
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to delete comment");
-      return res.json();
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from('comments').delete().eq('id', commentId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] });

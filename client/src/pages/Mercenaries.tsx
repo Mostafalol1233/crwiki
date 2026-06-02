@@ -1,5 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { getMercenaries } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ export default function Mercenaries() {
 
   const { data: mercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
+    queryFn: getMercenaries,
   });
 
   const playRandomSound = (mercId: string, voiceLines?: string[]) => {

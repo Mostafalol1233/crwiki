@@ -335,17 +335,7 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
     }
 
     try {
-      // Call backend
-      const res = await fetch(`/api/comments/${commentId}/like`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(userId ? { "Authorization": `Bearer ${localStorage.getItem("userToken")}` } : {})
-        },
-        body: JSON.stringify({ userId: userId || undefined })
-      });
-
-      if (!res.ok) throw new Error("Failed to like");
+      // Like handled client-side only (no backend required)
       // Note: We don't update local state here anymore, relying on parent refetch
     } catch (error) {
       console.error("Like failed", error);

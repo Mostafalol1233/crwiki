@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { getFaqCategories } from "@/lib/supabaseApi";
 import {
   ChevronDown, ChevronUp, Search, HelpCircle, Megaphone,
   Gamepad2, Wrench, Users, Shield, AlertTriangle, MessageSquare,
@@ -445,9 +446,7 @@ export default function FAQ() {
     queryKey: ["/api/faq-categories"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/faq-categories");
-        if (!res.ok) return null;
-        return res.json();
+        return await getFaqCategories();
       } catch {
         return null;
       }

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArticleCard, type Article } from "@/components/ArticleCard";
 import { useLanguage } from "@/components/LanguageProvider";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { getPostBySlug, getPostById, getPosts } from "@/lib/supabaseApi";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
@@ -31,10 +32,8 @@ export default function Article() {
     queryKey: [slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`],
     enabled: !!(legacyId || slug),
     queryFn: async () => {
-      const url = slug ? `/api/posts/slug/${slug}` : `/api/posts/${legacyId}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch article');
-      return res.json();
+      if (slug) return getPostBySlug(slug);
+      return getPostById(legacyId!);
     },
   });
 
@@ -51,6 +50,7 @@ export default function Article() {
 
   const { data: postsData } = useQuery<{ items: Article[]; total: number }>({
     queryKey: ["/api/posts"],
+    queryFn: () => getPosts({ limit: 50 }),
   });
   const allPosts = postsData?.items || [];
 

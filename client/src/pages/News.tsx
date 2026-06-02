@@ -6,7 +6,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { Globe } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { getNews, getPosts } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { ImageIcon } from "lucide-react";
 
@@ -63,7 +63,7 @@ export default function News() {
 
   const { data: newsData, isLoading: newsLoading, error: newsError } = useQuery<{ items: NewsItem[], total: number }>({
     queryKey: ["/api/news", page],
-    queryFn: () => apiRequest(`/api/news?limit=${limit}&offset=${(page - 1) * limit}`, "GET"),
+    queryFn: () => getNews({ limit, offset: (page - 1) * limit }),
     staleTime: 5 * 60 * 1000,
   });
   const newsItems = allLoadedNews;
@@ -73,7 +73,7 @@ export default function News() {
 
   const { data: postsData, isLoading: postsLoading, error: postsError } = useQuery<{ items: any[], total: number }>({
     queryKey: ["/api/posts", "news-page"],
-    queryFn: () => apiRequest("/api/posts?limit=50&offset=0", "GET"),
+    queryFn: () => getPosts({ limit: 50, offset: 0 }),
     staleTime: 5 * 60 * 1000,
   });
   const posts = allLoadedPosts;

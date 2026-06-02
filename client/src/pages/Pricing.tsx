@@ -151,6 +151,10 @@ export default function PricingPage() {
   const [affiliateCommissionPct, setAffiliateCommissionPct] = useState(4);
   const { data: monetizationDefaults } = useQuery<any>({
     queryKey: ["/api/public/settings/site"],
+    queryFn: async () => {
+      const { getSiteSettings } = await import("@/lib/supabaseApi");
+      return getSiteSettings();
+    },
   });
 
   useEffect(() => {

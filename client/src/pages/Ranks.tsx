@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Search, Image as ImageIcon, Loader2, ArrowUp, ArrowDown } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { getRanks } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -44,10 +44,7 @@ export default function Ranks() {
 
   const { data: ranks = [], isLoading } = useQuery<Rank[]>({
     queryKey: ["/api/ranks"],
-    queryFn: async () => {
-      const data = await apiRequest("/api/ranks", "GET");
-      return data || [];
-    },
+    queryFn: getRanks,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 

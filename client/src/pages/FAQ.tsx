@@ -391,39 +391,51 @@ function FAQAccordionItem({
 
   return (
     <div
-      className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-        isOpen
-          ? "border-primary/40 shadow-md shadow-primary/5"
-          : "border-border/50 hover:border-border"
-      }`}
+      style={{
+        background: "var(--card)",
+        border: isOpen ? "1px solid rgba(245,166,35,0.3)" : "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "3px",
+        overflow: "hidden",
+        transition: "border-color 0.15s",
+      }}
     >
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-3 p-4 text-left transition-colors ${
-          isOpen ? "bg-primary/5" : "bg-card hover:bg-muted/30"
-        }`}
+        className="w-full flex items-center gap-3 p-4 text-left transition-colors"
+        style={{ background: isOpen ? "rgba(245,166,35,0.04)" : "transparent" }}
         dir={isAr ? "rtl" : "ltr"}
       >
-        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOpen ? "bg-primary" : "bg-muted-foreground/40"}`} />
-        <span className="flex-1 font-medium text-sm leading-snug">{question}</span>
-        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-          isOpen ? "bg-primary text-primary-foreground rotate-180" : "bg-muted text-muted-foreground"
-        }`}>
+        <div
+          className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors"
+          style={{ background: isOpen ? "#f5a623" : "rgba(255,255,255,0.15)" }}
+        />
+        <span className="flex-1 font-bold text-sm leading-snug" style={{ color: isOpen ? "var(--foreground)" : "#aaa" }}>{question}</span>
+        <div
+          className="flex-shrink-0 w-6 h-6 flex items-center justify-center transition-all"
+          style={{
+            background: isOpen ? "rgba(245,166,35,0.15)" : "rgba(255,255,255,0.05)",
+            borderRadius: "2px",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            color: isOpen ? "#f5a623" : "#555",
+          }}
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </div>
       </button>
       {isOpen && (
         <div
-          className="px-5 pb-5 pt-3 bg-card border-t border-border/30"
+          className="px-5 pb-5 pt-3"
+          style={{ borderTop: "1px solid rgba(245,166,35,0.1)" }}
           dir={isAr ? "rtl" : "ltr"}
         >
           {answer && (answer.startsWith("<") || answer.includes("<p>") || answer.includes("<ul>") || answer.includes("<ol>") || answer.includes("<br") || answer.includes("<img") || answer.includes("<iframe") || answer.includes("<strong>")) ? (
             <div
-              className="text-sm text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
+              className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
+              style={{ color: "#888" }}
               dangerouslySetInnerHTML={{ __html: answer }}
             />
           ) : (
-            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+            <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "#888" }}>
               {answer}
             </p>
           )}
@@ -495,62 +507,60 @@ export default function FAQ() {
         canonicalPath="/faq"
       />
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
         {/* Hero */}
-        <div className="relative overflow-hidden border-b border-border/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(var(--primary-rgb,220,38,38),0.15),transparent)]" />
-          <div className="relative container mx-auto px-4 py-16 max-w-5xl text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6 text-primary text-sm font-medium">
-              <BookOpen className="h-3.5 w-3.5" />
-              {isAr ? "مركز المساعدة" : "Help Center"}
+        <div className="relative overflow-hidden py-20 md:py-24 text-center" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,0.05) 0%, transparent 70%)" }} />
+          <div className="relative container mx-auto px-4 max-w-3xl">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+              <BookOpen className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>{isAr ? "مركز المساعدة" : "Help Center"}</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
               {isAr ? (
-                <>الأسئلة <span className="text-primary">الشائعة</span></>
+                <>الأسئلة <span style={{ color: "#f5a623" }}>الشائعة</span></>
               ) : (
-                <>Frequently Asked <span className="text-primary">Questions</span></>
+                <>FAQ &amp; <span style={{ color: "#f5a623" }}>Help</span></>
               )}
             </h1>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
-              {isAr
-                ? "لاقي إجابات على أكتر الأسئلة شيوعًا عن CrossFire بسهولة وسرعة."
-                : "Find quick answers to the most common CrossFire questions."}
+            <p className="text-sm max-w-xl mx-auto mb-8" style={{ color: "#666" }}>
+              {isAr ? "لاقي إجابات على أكتر الأسئلة شيوعًا عن CrossFire بسهولة وسرعة." : "Find quick answers to the most common CrossFire questions."}
             </p>
 
             {/* Stats */}
             <div className="flex items-center justify-center gap-6 mb-8">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{totalArticles}</div>
-                <div className="text-xs text-muted-foreground">{isAr ? "سؤال" : "Articles"}</div>
-              </div>
-              <div className="w-px h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{faqData.length}</div>
-                <div className="text-xs text-muted-foreground">{isAr ? "تصنيف" : "Categories"}</div>
-              </div>
-              <div className="w-px h-8 bg-border" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">24/7</div>
-                <div className="text-xs text-muted-foreground">{isAr ? "متاح" : "Available"}</div>
-              </div>
+              {[
+                { val: totalArticles, label: isAr ? "سؤال" : "Articles", color: "#f5a623" },
+                { val: faqData.length, label: isAr ? "تصنيف" : "Categories", color: "#818cf8" },
+                { val: "24/7", label: isAr ? "متاح" : "Available", color: "#4ade80" },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-6">
+                  {i > 0 && <div className="w-px h-8" style={{ background: "rgba(255,255,255,0.08)" }} />}
+                  <div className="text-center">
+                    <div className="text-2xl font-black" style={{ color: s.color }}>{s.val}</div>
+                    <div className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: "#555" }}>{s.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Search */}
             <div className="relative max-w-lg mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#555" }} />
               <input
                 ref={searchRef}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={isAr ? "ابحث في الأسئلة..." : "Search questions..."}
+                placeholder={isAr ? "ابحث في الأسئلة..." : "Search questions…"}
                 dir={isAr ? "rtl" : "ltr"}
-                className="w-full pl-11 pr-10 py-3.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 shadow-lg"
+                className="w-full pl-11 pr-10 py-3.5 text-sm focus:outline-none"
+                style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "3px", color: "var(--foreground)" }}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "#555" }}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -560,19 +570,20 @@ export default function FAQ() {
         </div>
 
         <div className="container mx-auto px-4 py-10 max-w-5xl">
-          {/* Category Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-10">
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-2 mb-8">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all ${
-                activeCategory === "all"
-                  ? "bg-primary/10 border-primary/40 text-primary shadow-sm"
-                  : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-              }`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all"
+              style={{
+                background: activeCategory === "all" ? "rgba(245,166,35,0.15)" : "var(--card)",
+                color: activeCategory === "all" ? "#f5a623" : "#555",
+                border: activeCategory === "all" ? "1px solid rgba(245,166,35,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: "2px",
+              }}
             >
-              <HelpCircle className="h-5 w-5" />
-              <span className="text-xs font-medium leading-tight">{isAr ? "الكل" : "All"}</span>
-              <span className="text-[10px] opacity-60">{totalArticles}</span>
+              <HelpCircle className="h-3.5 w-3.5" />
+              {isAr ? "الكل" : "All"} <span style={{ opacity: 0.6 }}>({totalArticles})</span>
             </button>
             {faqData.map((cat) => {
               const cfg = CATEGORY_CONFIG[cat.name] || { icon: HelpCircle, color: "text-primary", gradient: "", bg: "" };
@@ -582,17 +593,16 @@ export default function FAQ() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all ${
-                    isActive
-                      ? `${cfg.bg} shadow-sm`
-                      : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                  }`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider transition-all"
+                  style={{
+                    background: isActive ? "rgba(245,166,35,0.15)" : "var(--card)",
+                    color: isActive ? "#f5a623" : "#555",
+                    border: isActive ? "1px solid rgba(245,166,35,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: "2px",
+                  }}
                 >
-                  <Icon className={`h-5 w-5 ${isActive ? cfg.color : ""}`} />
-                  <span className="text-xs font-medium leading-tight line-clamp-2">
-                    {isAr ? cat.nameAr : cat.name}
-                  </span>
-                  <span className="text-[10px] opacity-60">{cat.articles.length}</span>
+                  <Icon className="h-3.5 w-3.5" />
+                  {isAr ? cat.nameAr : cat.name} <span style={{ opacity: 0.6 }}>({cat.articles.length})</span>
                 </button>
               );
             })}
@@ -632,22 +642,23 @@ export default function FAQ() {
                 return (
                   <div key={category.id}>
                     {/* Category Header */}
-                    <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r ${cfg.gradient}`}>
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${cfg.bg || "bg-primary/10"}`}>
-                        <Icon className={`h-5 w-5 ${cfg.color}`} />
+                    <div className="flex items-center gap-3 mb-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "2px" }}>
+                        <Icon className="h-4 w-4" style={{ color: "#f5a623" }} />
                       </div>
-                      <div>
-                        <h2 className="font-semibold text-base leading-tight">
+                      <div className="flex-1">
+                        <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
                           {isAr ? category.nameAr : category.name}
                         </h2>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: "#555" }}>
                           {category.articles.length} {isAr ? "سؤال" : "questions"}
                         </p>
                       </div>
                       {activeCategory === "all" && (
                         <button
                           onClick={() => setActiveCategory(category.id)}
-                          className={`ml-auto flex items-center gap-1 text-xs ${cfg.color} hover:underline opacity-70 hover:opacity-100`}
+                          className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider transition-opacity hover:opacity-100"
+                          style={{ color: "#f5a623", opacity: 0.7 }}
                         >
                           {isAr ? "عرض الكل" : "View all"}
                           <ArrowRight className="h-3 w-3" />
@@ -675,28 +686,26 @@ export default function FAQ() {
           )}
 
           {/* CTA */}
-          <div className="mt-14 relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-bold text-xl mb-2">
-                {isAr ? "لسه مش لاقي إجابتك؟" : "Still can't find your answer?"}
-              </h3>
-              <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6">
-                {isAr
-                  ? "فريق الدعم بتاعنا موجود 24/7 عشان يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
-                  : "Our support team is available 24/7. Send us a ticket and we'll get back to you as soon as possible."}
-              </p>
-              <a
-                href="/support"
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/20"
-              >
-                {isAr ? "ابعت تذكرة ساببورت" : "Submit a Support Ticket"}
-                <ArrowRight className="h-4 w-4" />
-              </a>
+          <div className="mt-12 p-8 text-center relative overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "4px" }}>
+            <div className="w-10 h-10 flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
+              <MessageSquare className="h-5 w-5" style={{ color: "#f5a623" }} />
             </div>
+            <h3 className="font-black text-xl uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
+              {isAr ? "لسه مش لاقي إجابتك؟" : "Still can't find your answer?"}
+            </h3>
+            <p className="text-sm max-w-sm mx-auto mb-6" style={{ color: "#666" }}>
+              {isAr
+                ? "فريق الدعم بتاعنا موجود 24/7 عشان يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
+                : "Our support team is available 24/7. Send us a ticket and we'll get back to you soon."}
+            </p>
+            <a
+              href="/support"
+              className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+              style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+            >
+              {isAr ? "ابعت تذكرة ساببورت" : "Submit a Support Ticket"}
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
         </div>
       </div>

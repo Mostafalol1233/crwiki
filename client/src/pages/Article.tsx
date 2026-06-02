@@ -165,31 +165,25 @@ export default function Article() {
           }}
         />
       )}
-      <div className="min-h-screen">
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!finalArticle.fullLayout && <Breadcrumbs items={breadcrumbs} />}
           
-          <div className="flex items-center gap-3 mb-8 mt-4 no-print">
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="rounded-none font-bold uppercase tracking-tight"
-            >
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
+          <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">
+            <Link href="/">
+              <a className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}>
+                <ArrowLeft className="h-3 w-3" />
                 {t("backToHome")}
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+              </a>
+            </Link>
+            <button
               onClick={() => setIsRTL(!isRTL)}
-              className="rounded-none font-bold uppercase tracking-tight"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80"
+              style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}
             >
-              <Languages className="mr-2 h-4 w-4" />
+              <Languages className="h-3 w-3" />
               {isRTL ? "LTR" : "Translate"}
-            </Button>
+            </button>
           </div>
 
           <div className={`${finalArticle.fullLayout ? "grid grid-cols-1 lg:grid-cols-12 gap-12" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>

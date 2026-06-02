@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -132,21 +131,20 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-transparent relative z-10">
+    <div className="min-h-screen flex items-center justify-center relative z-10 px-4" style={{ background: "var(--background)" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 20%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={220}>
-      <Card className="w-full max-w-md mx-4 auth-box">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Lock className="h-6 w-6 text-primary" />
+      <div className="w-full max-w-md relative" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+        <div className="p-6 text-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
+            <Lock className="h-6 w-6" style={{ color: "#f5a623" }} />
           </div>
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <p className="text-sm text-muted-foreground mt-2">
-            Choose your login method
-          </p>
-        </CardHeader>
-        <CardContent>
+          <h1 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Admin Login</h1>
+          <p className="text-xs mt-1" style={{ color: "#555" }}>Choose your login method</p>
+        </div>
+        <div className="p-6">
           <Tabs defaultValue="admin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2" data-testid="tabs-login-type">
+            <TabsList className="grid w-full grid-cols-2 mb-4" data-testid="tabs-login-type">
               <TabsTrigger value="admin" data-testid="tab-admin-login">
                 <User className="h-4 w-4 mr-2" />
                 Admin
@@ -245,8 +243,8 @@ export default function AdminLogin() {
               </Button>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       </Orb>
     </div>
   );

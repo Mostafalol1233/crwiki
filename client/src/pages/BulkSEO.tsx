@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
@@ -164,42 +163,57 @@ export default function BulkSEO() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link href="/admin">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Admin
-              </Link>
-            </Button>
-            <h1 className="text-3xl font-bold">Bulk SEO Editor</h1>
+    <div className="min-h-screen p-4 md:p-8" style={{ background: "var(--background)" }}>
+      <div className="max-w-7xl mx-auto space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Link href="/admin">
+              <a className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider hover:opacity-80" style={{ color: "#555" }}>
+                <ArrowLeft className="h-3 w-3" /> Admin
+              </a>
+            </Link>
+            <span style={{ color: "#333" }}>/</span>
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" style={{ color: "#f5a623" }} />
+              <h1 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Bulk SEO Editor</h1>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchItems} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <button
+              onClick={fetchItems}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80 disabled:opacity-50"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}
+            >
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
               Refresh
-            </Button>
-            <Button onClick={handleSave} disabled={saving || Object.keys(edits).length === 0}>
-              <Save className="h-4 w-4 mr-2" />
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || Object.keys(edits).length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110 disabled:opacity-50"
+              style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+            >
+              <Save className="h-3 w-3" />
               {saving ? "Saving..." : "Save Changes"}
-            </Button>
+            </button>
           </div>
         </div>
 
-        <div className="flex gap-4 items-center bg-card p-4 rounded-lg border">
+        <div className="flex gap-3 items-center p-3" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Filter by title..." 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)} 
-              className="pl-9"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
+            <Input
+              placeholder="Filter by title..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="pl-9 h-9 text-sm"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
             />
           </div>
-          <select 
-            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <select
+            className="h-9 px-3 text-xs font-bold outline-none"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)", borderRadius: "2px" }}
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -211,7 +225,7 @@ export default function BulkSEO() {
           </select>
         </div>
 
-        <div className="border rounded-lg bg-card overflow-hidden">
+        <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -306,12 +320,10 @@ export default function BulkSEO() {
         </div>
 
         {selectedItem && (
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card>
-              <CardHeader>
-                <CardTitle>Detailed Bulk SEO Editor</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="p-5 space-y-3" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+              <h3 className="font-black text-xs uppercase tracking-wider mb-3" style={{ color: "var(--foreground)" }}>Detailed SEO Editor</h3>
+              <div className="space-y-3">
                 <Input value={String(previewValue("title"))} onChange={(e) => handleEdit(selectedItem.id, "title", e.target.value)} placeholder="Public title" />
                 <Input value={String(previewValue("seoTitle"))} onChange={(e) => handleEdit(selectedItem.id, "seoTitle", e.target.value)} placeholder="SEO title" />
                 <Textarea value={String(previewValue("seoDescription"))} onChange={(e) => handleEdit(selectedItem.id, "seoDescription", e.target.value)} placeholder="SEO description" className="h-24" />
@@ -322,37 +334,30 @@ export default function BulkSEO() {
                 <Input value={String(previewValue("canonicalUrl"))} onChange={(e) => handleEdit(selectedItem.id, "canonicalUrl", e.target.value)} placeholder="Canonical URL" />
                 <Textarea value={String(previewValue("summary"))} onChange={(e) => handleEdit(selectedItem.id, "summary", e.target.value)} placeholder="Summary / short excerpt" className="h-24" />
                 <Textarea value={String(previewValue("content"))} onChange={(e) => handleEdit(selectedItem.id, "content", e.target.value)} placeholder={selectedItem.type === "event" ? "Event description / content" : "Main content"} className="min-h-[220px]" />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Live preview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-xl border overflow-hidden bg-muted/20">
-                  {String(previewValue("ogImage") || previewValue("image")) ? (
-                    <img src={String(previewValue("ogImage") || previewValue("image"))} alt="Preview" className="w-full aspect-[1200/630] object-cover" />
-                  ) : (
-                    <div className="aspect-[1200/630] flex items-center justify-center text-muted-foreground">No preview image</div>
-                  )}
+            <div className="p-5 space-y-4" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+              <h3 className="font-black text-xs uppercase tracking-wider mb-3" style={{ color: "var(--foreground)" }}>Live Preview</h3>
+              <div className="overflow-hidden" style={{ borderRadius: "3px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                {String(previewValue("ogImage") || previewValue("image")) ? (
+                  <img src={String(previewValue("ogImage") || previewValue("image"))} alt="Preview" className="w-full aspect-[1200/630] object-cover" />
+                ) : (
+                  <div className="aspect-[1200/630] flex items-center justify-center text-xs" style={{ background: "rgba(255,255,255,0.03)", color: "#555" }}>No preview image</div>
+                )}
+              </div>
+              <div className="space-y-2 p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
+                <span className="inline-block px-2 py-0.5 text-[9px] font-black uppercase tracking-widest" style={{ background: "rgba(245,166,35,0.15)", color: "#f5a623", borderRadius: "2px" }}>{selectedItem.type}</span>
+                <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>{String(previewValue("seoTitle") || previewValue("title") || selectedItem.title)}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: "#666" }}>{String(previewValue("seoDescription") || previewValue("summary") || "").slice(0, 220)}</p>
+                <div className="text-[10px] break-all" style={{ color: "#444" }}>
+                  Canonical: {String(previewValue("canonicalUrl") || `/preview/${selectedItem.type}/${selectedItem.slug || selectedItem.id}`)}
                 </div>
-                <div className="space-y-2 rounded-xl border p-4">
-                  <Badge variant="outline" className="capitalize">{selectedItem.type}</Badge>
-                  <h3 className="text-2xl font-bold">{String(previewValue("seoTitle") || previewValue("title") || selectedItem.title)}</h3>
-                  <p className="text-sm text-muted-foreground">{String(previewValue("seoDescription") || previewValue("summary") || "").slice(0, 220)}</p>
-                  <div className="text-xs text-muted-foreground break-all">
-                    Canonical: {String(previewValue("canonicalUrl") || `/preview/${selectedItem.type}/${selectedItem.slug || selectedItem.id}`)}
-                  </div>
-                  <div className="text-xs text-muted-foreground break-all">
-                    Large image: {String(previewValue("twitterImage") || previewValue("ogImage") || previewValue("image") || "—")}
-                  </div>
-                  <div className="rounded-lg bg-muted/30 p-3 text-sm whitespace-pre-wrap max-h-48 overflow-auto">
-                    {String(previewValue("content") || previewValue("summary") || "No body preview yet.")}
-                  </div>
+                <div className="p-3 text-xs whitespace-pre-wrap max-h-48 overflow-auto" style={{ background: "rgba(255,255,255,0.03)", borderRadius: "2px", color: "#666" }}>
+                  {String(previewValue("content") || previewValue("summary") || "No body preview yet.")}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
       </div>

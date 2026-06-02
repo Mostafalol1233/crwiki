@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -156,31 +155,35 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
 
   return (
     <div className="container mx-auto max-w-4xl py-6 px-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Media Uploader</CardTitle>
-          <CardDescription>Cloudinary uploader with direct URL output for editors and admin pages</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+      <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+        <div className="p-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Upload className="h-4 w-4" style={{ color: "#f5a623" }} />
+            <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Media Uploader</h2>
+          </div>
+          <p className="text-xs" style={{ color: "#555" }}>Cloudinary uploader with direct URL output for editors and admin pages</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative"
-                   onClick={() => document.getElementById('file-upload')?.click()}>
-                <input 
-                  id="file-upload" 
-                  type="file" 
-                  className="hidden" 
-                  onChange={pickFiles} 
+              <div
+                className="p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:brightness-105"
+                style={{ background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(245,166,35,0.2)", borderRadius: "3px" }}
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={pickFiles}
                   accept="image/*,video/*,audio/*,application/pdf"
                   multiple
                 />
-                <div className="bg-primary/10 p-4 rounded-full mb-4">
-                  <Upload className="h-8 w-8 text-primary" />
+                <div className="w-12 h-12 flex items-center justify-center mb-3" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "2px" }}>
+                  <Upload className="h-6 w-6" style={{ color: "#f5a623" }} />
                 </div>
-                <div>
-                  <p className="font-medium">Click to select files</p>
-                  <p className="text-xs text-muted-foreground mt-1">or drag and drop here</p>
-                </div>
+                <p className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Click to select files</p>
+                <p className="text-[10px] mt-1" style={{ color: "#555" }}>or drag and drop here</p>
               </div>
 
               <div className="space-y-2">
@@ -301,8 +304,8 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

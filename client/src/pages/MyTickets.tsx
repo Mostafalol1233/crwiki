@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getTicketsByEmail, getTicketReplies } from "@/lib/supabaseApi";
-import { Ticket, MessageSquare, Clock, Mail } from "lucide-react";
+import { Ticket, MessageSquare, Clock, Mail, ArrowLeft, Send } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
 interface TicketType {
@@ -31,6 +27,26 @@ interface TicketReplyType {
   content: string;
   isAdmin: boolean;
   createdAt: string;
+}
+
+const statusStyles: Record<string, { bg: string; color: string }> = {
+  open:        { bg: "rgba(96,165,250,0.1)",  color: "#60a5fa" },
+  "in-progress":{ bg: "rgba(251,191,36,0.1)", color: "#fbbf24" },
+  resolved:    { bg: "rgba(74,222,128,0.1)",  color: "#4ade80" },
+  closed:      { bg: "rgba(100,116,139,0.1)", color: "#64748b" },
+};
+const priorityStyles: Record<string, { bg: string; color: string }> = {
+  high:   { bg: "rgba(248,113,113,0.12)", color: "#f87171" },
+  normal: { bg: "rgba(96,165,250,0.1)",   color: "#60a5fa" },
+  low:    { bg: "rgba(100,116,139,0.1)",  color: "#64748b" },
+};
+
+function StatusBadge({ label, styles }: { label: string; styles: { bg: string; color: string } }) {
+  return (
+    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: styles.bg, color: styles.color }}>
+      {label}
+    </span>
+  );
 }
 
 export default function MyTickets() {
@@ -64,36 +80,22 @@ export default function MyTickets() {
       const base = (import.meta as any).env?.VITE_API_URL || "";
       const url = base ? `${base}/api/tickets/${data.ticketId}/replies` : `/api/tickets/${data.ticketId}/replies`;
       const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to add reply");
-      }
+      if (!res.ok) throw new Error(await res.text() || "Failed to add reply");
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", selectedTicket?.id, "replies"] });
       setReplyContent("");
-      toast({
-        title: "Reply Added",
-        description: "Your reply has been added to the ticket.",
-      });
+      toast({ title: "Reply sent" });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add reply",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to add reply", variant: "destructive" });
     },
   });
 
   const handleSearch = () => {
     if (!email.trim()) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address to view your tickets",
-        variant: "destructive",
-      });
+      toast({ title: "Email required", description: "Enter your email to view tickets", variant: "destructive" });
       return;
     }
     setSearchedEmail(email);
@@ -102,251 +104,224 @@ export default function MyTickets() {
 
   const handleAddReply = () => {
     if (!replyContent.trim() || !selectedTicket) return;
-    
-    addReplyMutation.mutate({
-      ticketId: selectedTicket.id,
-      content: replyContent,
-      authorName: selectedTicket.userName,
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "open": return "bg-blue-500";
-      case "in-progress": return "bg-yellow-500";
-      case "resolved": return "bg-green-500";
-      case "closed": return "bg-gray-500";
-      default: return "bg-gray-500";
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case "high": return "bg-red-500";
-      case "normal": return "bg-blue-500";
-      case "low": return "bg-gray-500";
-      default: return "bg-gray-500";
-    }
+    addReplyMutation.mutate({ ticketId: selectedTicket.id, content: replyContent, authorName: selectedTicket.userName });
   };
 
   return (
     <>
       <PageSEO
-        title={"My Support Tickets — CrossFire Wiki"}
-        description={"View your submitted support tickets and add replies."}
+        title="My Support Tickets — CrossFire Wiki"
+        description="View your submitted support tickets and add replies."
         canonicalPath="/my-tickets"
       />
-      <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Ticket className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">My Support Tickets</h1>
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
+
+        {/* Hero */}
+        <div className="relative overflow-hidden py-12 md:py-16" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
+          <div className="relative max-w-5xl mx-auto px-6">
+            <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+              <Ticket className="h-3 w-3" style={{ color: "#f5a623" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Support</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
+              My <span style={{ color: "#f5a623" }}>Tickets</span>
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "#555" }}>View and manage your support tickets</p>
           </div>
-          <p className="text-muted-foreground text-lg">
-            View and manage your support tickets
-          </p>
         </div>
 
-        {!searchedEmail ? (
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>Enter Your Email</CardTitle>
-              <CardDescription>
-                Enter the email address you used to submit your tickets
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-10"
-                    data-testid="input-search-email"
-                  />
-                </div>
-                <Button onClick={handleSearch} className="w-full" data-testid="button-search-tickets">
-                  View My Tickets
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Your Tickets ({tickets.length})</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchedEmail("");
-                    setEmail("");
-                    setSelectedTicket(null);
-                  }}
-                  data-testid="button-change-email"
-                >
-                  Change Email
-                </Button>
-              </div>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
 
-              {isLoading ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-center text-muted-foreground">Loading tickets...</p>
-                  </CardContent>
-                </Card>
-              ) : tickets.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-center text-muted-foreground">No tickets found for this email</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                tickets.map((ticket) => (
-                  <Card
-                    key={ticket.id}
-                    className={`cursor-pointer hover-elevate ${
-                      selectedTicket?.id === ticket.id ? "border-primary" : ""
-                    }`}
-                    onClick={() => setSelectedTicket(ticket)}
-                    data-testid={`ticket-card-${ticket.id}`}
+          {!searchedEmail ? (
+            <div className="max-w-md mx-auto">
+              <div className="p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                <h2 className="font-black text-sm uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Enter Your Email</h2>
+                <p className="text-xs mb-4" style={{ color: "#555" }}>Enter the email you used to submit tickets</p>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
+                    <input
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      className="w-full pl-9 pr-4 h-10 text-sm outline-none"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "2px", color: "var(--foreground)" }}
+                      data-testid="input-search-email"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSearch}
+                    className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+                    style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+                    data-testid="button-search-tickets"
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-base line-clamp-2" data-testid={`text-ticket-title-${ticket.id}`}>{ticket.title}</CardTitle>
-                        <Badge className={getStatusColor(ticket.status)} data-testid={`badge-status-${ticket.id}`}>
-                          {ticket.status}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Badge variant="outline" className={getPriorityColor(ticket.priority)} data-testid={`badge-priority-${ticket.id}`}>
-                          {ticket.priority}
-                        </Badge>
-                        <Badge variant="outline" data-testid={`badge-category-${ticket.id}`}>{ticket.category}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {ticket.createdAt}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+                    View My Tickets
+                  </button>
+                </div>
+              </div>
             </div>
+          ) : (
+            <div className="grid lg:grid-cols-3 gap-5">
+              {/* Ticket List */}
+              <div className="lg:col-span-1 space-y-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
+                    Tickets <span style={{ color: "#f5a623" }}>({tickets.length})</span>
+                  </h2>
+                  <button
+                    onClick={() => { setSearchedEmail(""); setEmail(""); setSelectedTicket(null); }}
+                    className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider transition-opacity hover:opacity-80"
+                    style={{ color: "#555" }}
+                    data-testid="button-change-email"
+                  >
+                    <ArrowLeft className="h-3 w-3" /> Change
+                  </button>
+                </div>
 
-            <div className="lg:col-span-2">
-              {selectedTicket ? (
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle className="text-2xl mb-2" data-testid={`text-ticket-detail-title-${selectedTicket.id}`}>{selectedTicket.title}</CardTitle>
-                        <div className="flex gap-2 flex-wrap">
-                          <Badge className={getStatusColor(selectedTicket.status)} data-testid={`badge-detail-status-${selectedTicket.id}`}>
-                            {selectedTicket.status}
-                          </Badge>
-                          <Badge variant="outline" className={getPriorityColor(selectedTicket.priority)} data-testid={`badge-detail-priority-${selectedTicket.id}`}>
-                            {selectedTicket.priority}
-                          </Badge>
-                          <Badge variant="outline" data-testid={`badge-detail-category-${selectedTicket.id}`}>{selectedTicket.category}</Badge>
+                {isLoading ? (
+                  <div className="py-8 text-center text-xs" style={{ color: "#555" }}>Loading...</div>
+                ) : tickets.length === 0 ? (
+                  <div className="py-8 text-center" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "3px" }}>
+                    <p className="text-xs" style={{ color: "#555" }}>No tickets found</p>
+                  </div>
+                ) : (
+                  tickets.map((ticket) => {
+                    const st = statusStyles[ticket.status.toLowerCase()] || statusStyles.closed;
+                    const active = selectedTicket?.id === ticket.id;
+                    return (
+                      <button
+                        key={ticket.id}
+                        className="w-full text-left p-4 block transition-all"
+                        style={{
+                          background: "var(--card)",
+                          border: active ? "1px solid rgba(245,166,35,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                          borderRadius: "3px",
+                        }}
+                        onClick={() => setSelectedTicket(ticket)}
+                        data-testid={`ticket-card-${ticket.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <span className="font-bold text-sm line-clamp-2" style={{ color: "var(--foreground)" }} data-testid={`text-ticket-title-${ticket.id}`}>{ticket.title}</span>
+                          <StatusBadge label={ticket.status} styles={st} data-testid={`badge-status-${ticket.id}`} />
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge label={ticket.priority} styles={priorityStyles[ticket.priority.toLowerCase()] || priorityStyles.normal} data-testid={`badge-priority-${ticket.id}`} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "#444" }} data-testid={`badge-category-${ticket.id}`}>{ticket.category}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-2 text-[10px]" style={{ color: "#444" }}>
+                          <Clock className="h-2.5 w-2.5" />
+                          {ticket.createdAt}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Ticket Detail */}
+              <div className="lg:col-span-2">
+                {selectedTicket ? (
+                  <div className="space-y-4">
+                    {/* Header */}
+                    <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <h3 className="font-black text-lg uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }} data-testid={`text-ticket-detail-title-${selectedTicket.id}`}>
+                        {selectedTicket.title}
+                      </h3>
+                      <div className="flex gap-2 flex-wrap mb-4">
+                        <StatusBadge label={selectedTicket.status} styles={statusStyles[selectedTicket.status.toLowerCase()] || statusStyles.closed} data-testid={`badge-detail-status-${selectedTicket.id}`} />
+                        <StatusBadge label={selectedTicket.priority} styles={priorityStyles[selectedTicket.priority.toLowerCase()] || priorityStyles.normal} data-testid={`badge-detail-priority-${selectedTicket.id}`} />
+                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.05)", color: "#666" }} data-testid={`badge-detail-category-${selectedTicket.id}`}>{selectedTicket.category}</span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap" style={{ color: "#888" }} data-testid={`text-ticket-description-${selectedTicket.id}`}>{selectedTicket.description}</p>
+                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>Created</span>
+                          <p className="text-xs font-bold mt-0.5" style={{ color: "var(--foreground)" }}>{selectedTicket.createdAt}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>Updated</span>
+                          <p className="text-xs font-bold mt-0.5" style={{ color: "var(--foreground)" }}>{selectedTicket.updatedAt}</p>
                         </div>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div>
-                      <h3 className="font-semibold mb-2">Description</h3>
-                      <p className="text-muted-foreground whitespace-pre-wrap" data-testid={`text-ticket-description-${selectedTicket.id}`}>{selectedTicket.description}</p>
-                    </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Created:</span>
-                        <p className="font-medium">{selectedTicket.createdAt}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Last Updated:</span>
-                        <p className="font-medium">{selectedTicket.updatedAt}</p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <MessageSquare className="h-5 w-5" />
+                    {/* Replies */}
+                    <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <h4 className="font-black text-xs uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: "var(--foreground)" }}>
+                        <MessageSquare className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
                         Replies ({replies.length})
-                      </h3>
+                      </h4>
 
-                      <div className="space-y-4">
+                      <div className="space-y-3 mb-5">
                         {replies.map((reply) => (
-                          <Card key={reply.id} data-testid={`reply-${reply.id}`}>
-                            <CardContent className="pt-4">
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-semibold text-sm" data-testid={`text-reply-author-${reply.id}`}>{reply.authorName}</span>
-                                    {reply.isAdmin && (
-                                      <Badge variant="default" className="text-xs" data-testid={`badge-admin-${reply.id}`}>Admin</Badge>
-                                    )}
-                                    <span className="text-xs text-muted-foreground" data-testid={`text-reply-date-${reply.id}`}>{reply.createdAt}</span>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid={`text-reply-content-${reply.id}`}>
-                                    {reply.content}
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <div key={reply.id} className="p-3 rounded" style={{ background: reply.isAdmin ? "rgba(245,166,35,0.05)" : "rgba(255,255,255,0.03)", borderLeft: `2px solid ${reply.isAdmin ? "#f5a623" : "rgba(255,255,255,0.08)"}` }} data-testid={`reply-${reply.id}`}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="font-bold text-xs" style={{ color: "var(--foreground)" }} data-testid={`text-reply-author-${reply.id}`}>{reply.authorName}</span>
+                              {reply.isAdmin && (
+                                <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5" style={{ background: "rgba(245,166,35,0.15)", color: "#f5a623", borderRadius: "2px" }} data-testid={`badge-admin-${reply.id}`}>Admin</span>
+                              )}
+                              <span className="text-[10px]" style={{ color: "#444" }} data-testid={`text-reply-date-${reply.id}`}>{reply.createdAt}</span>
+                            </div>
+                            <p className="text-xs whitespace-pre-wrap" style={{ color: "#888" }} data-testid={`text-reply-content-${reply.id}`}>{reply.content}</p>
+                          </div>
                         ))}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Add a Reply</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            placeholder="Type your reply..."
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
-            rows={4}
-            data-testid="textarea-ticket-reply"
-          />
-          <Input type="file" accept="image/*,video/*" onChange={(e) => setReplyAttachment(e.target.files?.[0] || null)} data-testid="input-ticket-reply-attachment" />
-          <Button
-            onClick={handleAddReply}
-            disabled={!replyContent.trim() || addReplyMutation.isPending}
-            data-testid="button-add-reply"
-          >
-            {addReplyMutation.isPending ? "Sending..." : "Send Reply"}
-          </Button>
-        </CardContent>
-      </Card>
+                        {replies.length === 0 && (
+                          <p className="text-xs text-center py-4" style={{ color: "#444" }}>No replies yet</p>
+                        )}
+                      </div>
+
+                      {/* Reply Form */}
+                      <div className="pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <p className="font-black text-[10px] uppercase tracking-wider mb-2" style={{ color: "#888" }}>Add Reply</p>
+                        <Textarea
+                          placeholder="Type your reply..."
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          rows={3}
+                          className="text-sm mb-2"
+                          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", resize: "none" }}
+                          data-testid="textarea-ticket-reply"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={(e) => setReplyAttachment(e.target.files?.[0] || null)}
+                            className="flex-1 h-8 text-xs"
+                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+                            data-testid="input-ticket-reply-attachment"
+                          />
+                          <button
+                            onClick={handleAddReply}
+                            disabled={!replyContent.trim() || addReplyMutation.isPending}
+                            className="inline-flex items-center gap-1.5 px-4 h-8 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110 disabled:opacity-50"
+                            style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+                            data-testid="button-add-reply"
+                          >
+                            <Send className="h-3 w-3" />
+                            {addReplyMutation.isPending ? "Sending..." : "Send"}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="pt-12 pb-12 text-center">
-                    <Ticket className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">Select a ticket to view details</p>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                ) : (
+                  <div className="h-40 flex items-center justify-center" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "4px" }}>
+                    <div className="text-center">
+                      <Ticket className="h-8 w-8 mx-auto mb-2 opacity-20" style={{ color: "#f5a623" }} />
+                      <p className="text-xs" style={{ color: "#444" }}>Select a ticket to view details</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 }

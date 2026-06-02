@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -373,14 +372,14 @@ export default function Chat() {
   const activeConversation = conversations.find(c => (c.id === activeConversationId || c._id === activeConversationId));
 
   return (
-    <div className="container mx-auto px-4 py-8 h-[calc(100vh-4rem)]">
+    <div className="container mx-auto px-4 py-6 h-[calc(100vh-4rem)]" style={{ background: "var(--background)" }}>
       <PageSEO title="Live Chat" description="Real-time communication" />
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
         {/* Sidebar */}
-        <Card className="md:col-span-1 h-full flex flex-col border-0 shadow-lg bg-card/50 backdrop-blur">
-          <CardHeader className="p-4 border-b flex flex-row justify-between items-center">
-            <CardTitle className="text-xl">Chats</CardTitle>
+        <div className="md:col-span-1 h-full flex flex-col overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+          <div className="p-4 flex flex-row justify-between items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <span className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Chats</span>
             <div className="flex gap-2">
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
@@ -429,9 +428,9 @@ export default function Chat() {
                 </DialogContent>
               </Dialog>
             </div>
-          </CardHeader>
+          </div>
           <ScrollArea className="flex-1">
-            <div className="p-2 space-y-2">
+            <div className="p-2 space-y-1">
               {conversations.map(c => {
                 const otherUser = c.participantsDetails?.find(p => p.username !== username) || { displayName: "Unknown", avatar: "", username: "Unknown" };
                 const isChannel = c.type === 'channel' || c.type === 'group';
@@ -440,18 +439,25 @@ export default function Chat() {
                 const cId = c.id || c._id || "";
 
                 return (
-                  <div 
-                    key={cId} 
+                  <div
+                    key={cId}
                     onClick={() => setActiveConversationId(cId)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-3 ${activeConversationId === cId ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                    className="p-3 cursor-pointer transition-all flex items-center gap-3"
+                    style={{
+                      background: activeConversationId === cId ? "rgba(245,166,35,0.08)" : "transparent",
+                      borderRadius: "3px",
+                      borderLeft: activeConversationId === cId ? "2px solid #f5a623" : "2px solid transparent",
+                    }}
                   >
                     <Avatar>
                       <AvatarImage src={avatar} />
-                      <AvatarFallback>{isChannel ? <Hash className="h-4 w-4" /> : displayName?.substring(0,2).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback style={{ background: "rgba(255,255,255,0.08)", color: "#888", fontSize: "11px" }}>
+                        {isChannel ? <Hash className="h-4 w-4" /> : displayName?.substring(0,2).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
-                      <div className="font-medium truncate">{displayName}</div>
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>{displayName}</div>
+                      <div className="text-[11px] truncate" style={{ color: "#555" }}>
                         {c.lastMessage ? c.lastMessage : (c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : 'No messages')}
                       </div>
                     </div>
@@ -460,33 +466,35 @@ export default function Chat() {
               })}
             </div>
           </ScrollArea>
-        </Card>
+        </div>
 
         {/* Chat Area */}
-        <Card className="md:col-span-3 h-full flex flex-col border-0 shadow-lg bg-card/50 backdrop-blur">
+        <div className="md:col-span-3 h-full flex flex-col overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
           {activeConversationId ? (
             <>
-              <CardHeader className="p-4 border-b flex flex-row justify-between items-center">
+              <div className="p-4 flex flex-row justify-between items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={activeConversation?.type === 'channel' ? activeConversation.avatar : activeConversation?.participantsDetails?.find(p => p.username !== username)?.avatar} />
-                    <AvatarFallback>{activeConversation?.type === 'channel' ? <Hash /> : <Users />}</AvatarFallback>
+                    <AvatarFallback style={{ background: "rgba(255,255,255,0.08)", color: "#888" }}>
+                      {activeConversation?.type === 'channel' ? <Hash className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-lg">
+                    <div className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
                       {activeConversation?.type === 'channel' ? activeConversation.name : (activeConversation?.participantsDetails?.find(p => p.username !== username)?.displayName || activeConversation?.participants.find(p => p !== username))}
-                    </CardTitle>
+                    </div>
                     {activeConversation?.type === 'channel' && (
-                      <p className="text-xs text-muted-foreground">{activeConversation.participants.length} members</p>
+                      <p className="text-[10px]" style={{ color: "#555" }}>{activeConversation.participants.length} members</p>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="icon" variant="ghost"><Phone className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost"><Video className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost"><MoreVertical className="h-4 w-4" /></Button>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8"><Video className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                 </div>
-              </CardHeader>
+              </div>
 
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
@@ -617,7 +625,7 @@ export default function Chat() {
               <p>Select a conversation to start chatting</p>
             </div>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );

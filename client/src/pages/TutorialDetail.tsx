@@ -131,20 +131,18 @@ export default function TutorialDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/videos")}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tutorials
-          </Button>
-        </div>
+        <button
+          onClick={() => setLocation("/videos")}
+          className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider mb-6 hover:opacity-80 transition-opacity"
+          style={{ color: "#555" }}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to Videos
+        </button>
 
-        <Card className="overflow-hidden">
+        <div className="overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
           <div className="aspect-video w-full bg-black">
             <iframe
               width="100%"
@@ -157,35 +155,33 @@ export default function TutorialDetailPage() {
             />
           </div>
 
-          <CardContent className="p-6 md:p-8 space-y-6">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className="text-3xl md:text-4xl font-bold" data-testid="text-title">
-                  {tutorial.title}
-                </h1>
-                <Button
-                  onClick={handleLikeClick}
-                  variant="outline"
-                  className="gap-2"
-                  data-testid="button-like"
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  {tutorial.likes || 0} Likes
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {tutorial.createdAt && format(new Date(tutorial.createdAt), "MMMM d, yyyy")}
-              </div>
-
-              {tutorial.description && (
-                <div className="text-lg" data-testid="text-description">
-                  {tutorial.description}
-                </div>
-              )}
+          <div className="p-6 md:p-8 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }} data-testid="text-title">
+                {tutorial.title}
+              </h1>
+              <button
+                onClick={handleLikeClick}
+                className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110"
+                style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", color: "#f5a623", borderRadius: "2px" }}
+                data-testid="button-like"
+              >
+                <ThumbsUp className="h-3 w-3" />
+                {tutorial.likes || 0} Likes
+              </button>
             </div>
-          </CardContent>
-        </Card>
+
+            {tutorial.createdAt && (
+              <p className="text-xs" style={{ color: "#555" }}>{format(new Date(tutorial.createdAt), "MMMM d, yyyy")}</p>
+            )}
+
+            {tutorial.description && (
+              <p className="text-sm leading-relaxed" style={{ color: "#888" }} data-testid="text-description">
+                {tutorial.description}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <Dialog open={showLikeDialog} onOpenChange={setShowLikeDialog}>

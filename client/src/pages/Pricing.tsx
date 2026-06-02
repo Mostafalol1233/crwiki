@@ -207,148 +207,134 @@ export default function PricingPage() {
         }}
       />
 
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20" dir={isArabic ? "rtl" : "ltr"}>
-        <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-4xl text-center">
-            <Badge variant="outline" className="mb-4">
-              {isArabic ? "خطة الربح" : "Monetization blueprint"}
-            </Badge>
-            <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-              {isArabic ? "ابنِ مصادر دخل حول مجتمع CrossFire Wiki" : "Build revenue streams around the CrossFire Wiki community"}
-            </h1>
-            <p className="mx-auto mt-5 max-w-3xl text-lg text-muted-foreground">
-              {isArabic
-                ? "بدلاً من الاعتماد فقط على الإعلانات المزعجة، يمكن للموقع تحقيق دخل من التجارة الموثوقة، والأدوات المميزة، والرعايات، والخدمات المفيدة للاعبين."
-                : "Instead of relying only on distracting ads, the site can earn from trusted commerce, premium tools, sponsored visibility, and player services that actually help the CrossFire audience."}
-            </p>
+      <div className="min-h-screen" style={{ background: "var(--background)" }} dir={isArabic ? "rtl" : "ltr"}>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg">
-                <Link href="/sellers">
-                  {isArabic ? "استعرض البائعين" : "Explore sellers"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/support">{isArabic ? "اطلب ميزة" : "Request a feature"}</Link>
-              </Button>
-              <Button asChild variant="secondary" size="lg">
-                <Link href="/contact">{isArabic ? "كن شريكاً" : "Become a partner"}</Link>
-              </Button>
+        {/* ── Hero ── */}
+        <div className="relative overflow-hidden py-20 md:py-28 text-center" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,166,35,0.06) 0%, transparent 70%)" }} />
+          <div className="relative max-w-4xl mx-auto px-6">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+              <Crown className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>{isArabic ? "خطة الربح" : "Monetization Blueprint"}</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
+              {isArabic ? "ابنِ مصادر دخل" : "Build Revenue"}
+              <br />
+              <span style={{ color: "#f5a623" }}>{isArabic ? "حول مجتمع CrossFire" : "Around CrossFire"}</span>
+            </h1>
+            <p className="text-sm md:text-base max-w-2xl mx-auto mb-8" style={{ color: "#666" }}>
+              {isArabic
+                ? "بدلاً من الاعتماد فقط على الإعلانات، يمكن للموقع تحقيق دخل من التجارة الموثوقة والأدوات المميزة والخدمات."
+                : "Instead of relying on ads, earn from trusted commerce, premium tools, sponsored visibility, and player services."}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link href="/sellers" className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
+                {isArabic ? "استعرض البائعين" : "Explore Sellers"} <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:border-[#f5a623] hover:text-[#f5a623]" style={{ background: "transparent", color: "#666", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px" }}>
+                {isArabic ? "كن شريكاً" : "Become a Partner"}
+              </Link>
             </div>
           </div>
+        </div>
 
-          <div className="mt-14 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20 space-y-14">
+
+          {/* ── Offer Cards ── */}
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {offers.map((offer) => {
               const Icon = offer.icon;
               return (
-                <Card key={offer.title} className="border-border/70 bg-card/80 backdrop-blur-sm">
-                  <CardHeader className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <Badge variant="secondary">{offer.badge}</Badge>
+                <div key={offer.title} className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="w-10 h-10 flex items-center justify-center" style={{ background: "rgba(245,166,35,0.12)", borderRadius: "3px" }}>
+                      <Icon className="h-5 w-5" style={{ color: "#f5a623" }} />
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">{offer.title}</CardTitle>
-                      <CardDescription className="mt-2 text-sm leading-6">
-                        {offer.description}
-                      </CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                      <p className="text-sm font-semibold text-primary">How it makes money</p>
-                      {isArabic && <p className="text-sm font-semibold text-primary">كيف يحقق دخلاً</p>}
-                      <p className="mt-1 text-sm text-muted-foreground">{offer.monetization}</p>
-                    </div>
-                    <div>
-                      <p className="mb-2 text-sm font-semibold">{isArabic ? "ماذا تدير من لوحة التحكم" : "What to manage in dashboard"}</p>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
-                        {offer.operations.map((item) => (
-                          <li key={item} className="flex items-start gap-2">
-                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: "2px" }}>{offer.badge}</span>
+                  </div>
+                  <h3 className="font-black text-sm uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{offer.title}</h3>
+                  <p className="text-[11px] leading-relaxed mb-4" style={{ color: "#666" }}>{offer.description}</p>
+                  <div className="p-3 mb-4" style={{ background: "rgba(245,166,35,0.05)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "3px" }}>
+                    <p className="text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: "#f5a623" }}>How it makes money</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: "#777" }}>{offer.monetization}</p>
+                  </div>
+                  <ul className="space-y-2">
+                    {offer.operations.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[11px]" style={{ color: "#666" }}>
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: "#4ade80" }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               );
             })}
           </div>
 
-          <div className="mt-16 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <Card className="border-border/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Target className="h-5 w-5 text-primary" />
-                  {isArabic ? "ترتيب التنفيذ المقترح" : "Recommended rollout order"}
-                </CardTitle>
-                <CardDescription>
-                  {isArabic ? "ابدأ بالموجود حالياً ثم أضف الخدمات والأدوات الأعلى قيمة." : "Start with features that use the current stack, then add higher-value services and tools."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-3">
-                {roadmap.map((step) => (
-                  <div key={step.phase} className="rounded-xl border bg-muted/30 p-4">
-                    <Badge variant="outline">{step.phase}</Badge>
-                    <h3 className="mt-3 font-semibold">{step.title}</h3>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+          {/* ── Roadmap + Stack ── */}
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+              <div className="flex items-center gap-2 mb-5">
+                <Target className="h-4 w-4" style={{ color: "#f5a623" }} />
+                <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
+                  {isArabic ? "ترتيب التنفيذ المقترح" : "Recommended Rollout Order"}
+                </h2>
+              </div>
+              <p className="text-[11px] mb-5" style={{ color: "#666" }}>
+                {isArabic ? "ابدأ بالموجود حالياً ثم أضف الخدمات والأدوات الأعلى قيمة." : "Start with features that use the current stack, then add higher-value services and tools."}
+              </p>
+              <div className="grid gap-3 md:grid-cols-3">
+                {roadmap.map((step, i) => (
+                  <div key={step.phase} className="p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: "2px" }}>{step.phase}</span>
+                    <h3 className="mt-3 font-black text-xs uppercase tracking-tight mb-3" style={{ color: "var(--foreground)" }}>{step.title}</h3>
+                    <ul className="space-y-2">
                       {step.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2">
-                          <Gem className="mt-0.5 h-4 w-4 text-primary" />
-                          <span>{item}</span>
+                        <li key={item} className="flex items-start gap-2 text-[11px]" style={{ color: "#666" }}>
+                          <Gem className="mt-0.5 h-3 w-3 flex-shrink-0" style={{ color: "#f5a623" }} />
+                          {item}
                         </li>
                       ))}
                     </ul>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-border/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Link2 className="h-5 w-5 text-primary" />
-                  Already supported by the site
-                </CardTitle>
-                <CardDescription>
-                  {isArabic ? "لديك بالفعل أساس قوي يمكن تحويله إلى باقات وخدمات أوضح." : "You already have strong building blocks that can be monetized with cleaner packaging."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">{isArabic ? "صفحات البائعين + المراجعات" : "Seller pages + reviews"}</p>
-                  <p className="mt-1">{isArabic ? "استخدمها كأساس للبائعين الموثوقين والباقات المميزة." : "Use them as the foundation for verified vendors and featured placements."}</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">{isArabic ? "الأخبار + الإيفينتات" : "Events + news content engine"}</p>
-                  <p className="mt-1">{isArabic ? "مناسبة للرعايات، وصفحات الشركاء، وروابط الأفلييت." : "Perfect for sponsored events, partner posts, and affiliate placements."}</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">{isArabic ? "الإدارة + الصفحات المخصصة" : "Admin + custom pages"}</p>
-                  <p className="mt-1">{isArabic ? "مفيدة لصفحات الهبوط، والعروض المميزة، والأدوات المستقبلية." : "Useful for landing pages, premium offers, and future calculators or gated tools."}</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="font-medium text-foreground">{isArabic ? "التحليلات" : "Analytics"}</p>
-                  <p className="mt-1">{isArabic ? "تابع الزيارات والنقرات والتفاعل لتقديم قيمة واضحة للشركاء." : "Track seller views, clicks, and engagement so partners can see measurable value."}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+              <div className="flex items-center gap-2 mb-5">
+                <Link2 className="h-4 w-4" style={{ color: "#f5a623" }} />
+                <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
+                  Already Supported
+                </h2>
+              </div>
+              <p className="text-[11px] mb-4" style={{ color: "#666" }}>
+                {isArabic ? "لديك بالفعل أساس قوي يمكن تحويله إلى باقات وخدمات أوضح." : "You already have strong building blocks ready to monetize."}
+              </p>
+              <div className="space-y-2">
+                {[
+                  { title: isArabic ? "صفحات البائعين + المراجعات" : "Seller pages + reviews", desc: isArabic ? "أساس للبائعين الموثوقين والباقات المميزة." : "Foundation for verified vendors and featured placements." },
+                  { title: isArabic ? "الأخبار + الإيفينتات" : "Events + news engine", desc: isArabic ? "مناسبة للرعايات وصفحات الشركاء." : "Perfect for sponsored events and partner posts." },
+                  { title: isArabic ? "الإدارة + الصفحات المخصصة" : "Admin + custom pages", desc: isArabic ? "لصفحات الهبوط والعروض المميزة." : "Useful for landing pages and premium offers." },
+                  { title: isArabic ? "التحليلات" : "Analytics", desc: isArabic ? "تابع الزيارات والنقرات." : "Track seller views, clicks, and engagement." },
+                ].map((item) => (
+                  <div key={item.title} className="p-3" style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
+                    <p className="font-black text-[11px] uppercase tracking-tight mb-0.5" style={{ color: "var(--foreground)" }}>{item.title}</p>
+                    <p className="text-[11px]" style={{ color: "#555" }}>{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <Card className="mt-8 border-border/70">
-            <CardHeader>
-              <CardTitle className="text-2xl">Revenue estimator (quick planning tool)</CardTitle>
-              <CardDescription>
-                Change the assumptions to estimate monthly and yearly revenue potential from core
-                monetization streams.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          {/* ── Revenue Estimator ── */}
+          <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4" style={{ color: "#f5a623" }} />
+              <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Revenue Estimator</h2>
+            </div>
+            <p className="text-[11px] mb-6" style={{ color: "#666" }}>Change the assumptions to estimate monthly and yearly revenue potential from core monetization streams.</p>
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="verified-sellers">Verified sellers count</Label>
@@ -461,42 +447,38 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
-                <h3 className="text-lg font-semibold">Estimated revenue breakdown</h3>
-                <div className="space-y-2 text-sm">
-                  <p className="flex items-center justify-between">
-                    <span>Verified sellers</span>
-                    <strong>${estimatedRevenue.sellersRevenue.toFixed(2)}</strong>
-                  </p>
-                  <p className="flex items-center justify-between">
-                    <span>Boosting/coaching commissions</span>
-                    <strong>${estimatedRevenue.servicesRevenue.toFixed(2)}</strong>
-                  </p>
-                  <p className="flex items-center justify-between">
-                    <span>Premium subscriptions</span>
-                    <strong>${estimatedRevenue.premiumRevenue.toFixed(2)}</strong>
-                  </p>
-                  <p className="flex items-center justify-between">
-                    <span>Affiliate commission</span>
-                    <strong>${estimatedRevenue.affiliateRevenue.toFixed(2)}</strong>
-                  </p>
+              {/* ── Breakdown sidebar ── */}
+              <div className="space-y-3 p-4" style={{ background: "rgba(245,166,35,0.04)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "3px" }}>
+                <h3 className="font-black text-sm uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Estimated Breakdown</h3>
+                <div className="space-y-2 text-[12px]">
+                  {[
+                    { label: "Verified sellers", value: estimatedRevenue.sellersRevenue },
+                    { label: "Boosting/coaching", value: estimatedRevenue.servicesRevenue },
+                    { label: "Premium subscriptions", value: estimatedRevenue.premiumRevenue },
+                    { label: "Affiliate commission", value: estimatedRevenue.affiliateRevenue },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-center justify-between py-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                      <span style={{ color: "#666" }}>{row.label}</span>
+                      <strong style={{ color: "var(--foreground)" }}>${row.value.toFixed(2)}</strong>
+                    </div>
+                  ))}
                 </div>
-                <div className="border-t pt-3">
-                  <p className="flex items-center justify-between text-base">
-                    <span className="font-medium">Total monthly</span>
-                    <strong className="text-primary">${estimatedRevenue.monthlyTotal.toFixed(2)}</strong>
-                  </p>
-                  <p className="mt-1 flex items-center justify-between text-base">
-                    <span className="font-medium">Total yearly</span>
-                    <strong>${estimatedRevenue.yearlyTotal.toFixed(2)}</strong>
-                  </p>
+                <div className="pt-3 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Monthly Total</span>
+                    <strong className="text-lg font-black" style={{ color: "#f5a623" }}>${estimatedRevenue.monthlyTotal.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Yearly Total</span>
+                    <strong style={{ color: "var(--foreground)" }}>${estimatedRevenue.yearlyTotal.toFixed(2)}</strong>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Tip: these default commission/price values can now be managed from Admin → Dashboard → Monetization Controls.
+                <p className="text-[10px] leading-relaxed pt-2" style={{ color: "#444" }}>
+                  Tip: default values can be managed from Admin → Dashboard → Monetization Controls.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </>

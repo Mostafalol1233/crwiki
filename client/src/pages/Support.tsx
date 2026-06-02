@@ -102,36 +102,52 @@ export default function Support() {
         description={"Need help? Submit a support ticket and our team will assist you."}
         canonicalPath="/support"
       />
-      <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="min-h-screen py-12 md:py-16" style={{ background: "var(--background)" }}>
+      <div className="max-w-3xl mx-auto px-4 md:px-8">
+
+        {/* Header */}
         <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <HelpCircle className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold">Support Center</h1>
+          <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+            <HelpCircle className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Support Center</span>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Need help? Submit a support ticket and our team will assist you.
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
+            Submit a Ticket
+          </h1>
+          <p className="text-sm" style={{ color: "#666" }}>
+            Need help? Fill out the form below and our team will get back to you.
           </p>
         </div>
 
+        {/* Info cards */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {[
+            { label: "Response Time", value: "24–48 hrs", color: "#f5a623" },
+            { label: "Email Updates", value: "Auto-notify", color: "#818cf8" },
+            { label: "Track Status", value: "My Tickets", color: "#4ade80" },
+          ].map((info) => (
+            <div key={info.label} className="p-3 text-center" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
+              <p className="text-sm font-black mb-0.5" style={{ color: info.color }}>{info.value}</p>
+              <p className="text-[10px] uppercase tracking-wider" style={{ color: "#555" }}>{info.label}</p>
+            </div>
+          ))}
+        </div>
+
         {isSubmitted && (
-          <Card className="mb-6 border-green-500 bg-green-50 dark:bg-green-950">
-            <CardContent className="pt-6">
-              <p className="text-green-700 dark:text-green-300 font-semibold">
-                ✓ Your ticket has been submitted! Check your email for updates.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="mb-6 flex items-center gap-3 p-4" style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: "3px" }}>
+            <span style={{ color: "#4ade80", fontSize: "18px" }}>✓</span>
+            <p className="text-sm font-bold" style={{ color: "#4ade80" }}>
+              Ticket submitted successfully! Check your email for updates.
+            </p>
+          </div>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Submit a Support Ticket</CardTitle>
-            <CardDescription>
-              Fill out the form below and we'll get back to you as soon as possible.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+          <div className="p-5 md:p-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Support Ticket Form</h2>
+            <p className="text-[11px] mt-1" style={{ color: "#555" }}>All fields are required unless marked optional.</p>
+          </div>
+          <div className="p-5 md:p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -280,45 +296,18 @@ export default function Support() {
                   </div>
                 </div>
 
-                <Button
+                <button
                   type="submit"
-                  size="lg"
-                  className="w-full"
+                  className="w-full py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                  style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                   disabled={createTicketMutation.isPending}
                   data-testid="button-submit-ticket"
                 >
-                  {createTicketMutation.isPending ? "Submitting..." : "Submit Ticket"}
-                </Button>
+                  {createTicketMutation.isPending ? "Submitting…" : "Submit Ticket"}
+                </button>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <h3 className="font-semibold mb-2">Response Time</h3>
-              <p className="text-sm text-muted-foreground">
-                We typically respond within 24-48 hours
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <h3 className="font-semibold mb-2">Email Updates</h3>
-              <p className="text-sm text-muted-foreground">
-                You'll receive updates via email
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <h3 className="font-semibold mb-2">Track Status</h3>
-              <p className="text-sm text-muted-foreground">
-                View your tickets in My Tickets page
-              </p>
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

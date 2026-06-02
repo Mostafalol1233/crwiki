@@ -3,7 +3,6 @@ import imageCompression from 'browser-image-compression';
 import { supabaseShim } from "@/lib/supabaseShim";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -313,27 +312,23 @@ export default function AdminAnnouncements() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-10">
-      <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Announcements Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+    <div className="min-h-screen py-10" style={{ background: "var(--background)" }}>
+      <div className="max-w-5xl mx-auto px-4 md:px-8 grid gap-6">
+        <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+          <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Announcements Settings</h3>
+          <div className="grid gap-4">
             <div className="flex items-center gap-2">
               <Checkbox checked={announcementsEnabled} onCheckedChange={(v)=>setAnnouncementsEnabled(Boolean(v))} id="ann-enabled" />
-              <label htmlFor="ann-enabled">Enable announcements sitewide</label>
+              <label htmlFor="ann-enabled" className="text-sm" style={{ color: "#888" }}>Enable announcements sitewide</label>
             </div>
             <div>
               <Button onClick={saveAnnouncementsEnabled} disabled={annSettingsLoading}>Save</Button>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Global Announcement</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+          </div>
+        </div>
+        <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+          <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Global Announcement</h3>
+          <div className="grid gap-4">
             <label className="text-sm font-medium">Image URL</label>
             <Input value={gImageUrl} onChange={(e)=>setGImageUrl(e.target.value)} placeholder="https://..." />
 
@@ -453,14 +448,12 @@ export default function AdminAnnouncements() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Seller Announcement</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+        <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+          <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Seller Announcement</h3>
+          <div className="grid gap-4">
             <label className="text-sm font-medium">Seller Name</label>
             <Input value={sellerName} onChange={(e)=>setSellerName(e.target.value)} placeholder="Gamal Rafat" />
             <div className="text-xs text-muted-foreground">Slug: {sellerSlug || "(enter name)"}</div>
@@ -598,10 +591,9 @@ export default function AdminAnnouncements() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
-      
     </div>
   );
 }

@@ -123,20 +123,25 @@ export default function Category() {
         description={`Browse ${categoryTitle} articles and updates.`}
         canonicalPath={`/category/${category || ""}`}
       />
-      <div className="min-h-screen">
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
+
+        {/* Hero */}
+        <div className="relative overflow-hidden py-10 md:py-14" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.08)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 30% at 50% 0%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
+          <div className="relative max-w-7xl mx-auto px-4 md:px-10">
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }} data-testid="heading-category">
+              <span style={{ color: "#f5a623" }}>{categoryTitle}</span>
+            </h1>
+          </div>
+        </div>
+
       <div className="w-full max-w-[1600px] mx-auto px-4 md:px-10 py-8 md:py-14">
         <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-12" : ""} gap-8 md:gap-12`}>
           <main className={`${isAdmin ? "lg:col-span-8" : ""} space-y-8 md:space-y-12`}>
             <div className="space-y-6">
-              <h1 
-                className="text-3xl md:text-5xl font-bold"
-                data-testid="heading-category"
-              >
-                {categoryTitle}
-              </h1>
-              
               <p 
-                className="text-muted-foreground"
+                className="text-sm"
+                style={{ color: "#666" }}
                 data-testid="text-category-description"
               >
                 {t("browsing")} {categoryTitle.toLowerCase()} {t("articles")}

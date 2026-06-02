@@ -315,28 +315,41 @@ export default function Reviews() {
         description={match ? `Reviews for ${sellerByName?.seller?.name || "Seller"}.` : "Read and submit reviews for CrossFire sellers. Verification supported."}
         canonicalPath={match ? `/reviews/seller/${sellerNameParam}` : "/reviews"}
       />
-      <div className="min-h-screen bg-background py-12 md:py-20">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
+
+        {/* Hero Banner — only on list view */}
         {!match && (
-          <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Seller Reviews</h1>
-            <p className="text-lg text-muted-foreground">
-              Browse game card sellers and read reviews from other players
-            </p>
+          <div className="relative overflow-hidden py-16 md:py-20 text-center" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,0.05) 0%, transparent 70%)" }} />
+            <div className="relative max-w-3xl mx-auto px-6">
+              <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+                <Star className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+                <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Community Reviews</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none mb-3" style={{ color: "var(--foreground)" }}>
+                Seller <span style={{ color: "#f5a623" }}>Reviews</span>
+              </h1>
+              <p className="text-sm" style={{ color: "#666" }}>Browse verified CrossFire card sellers and read reviews from real players.</p>
+            </div>
           </div>
         )}
 
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
+
         {match && sellerByName && (
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-2">
-              {sellerByName.seller.name}
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
+                {sellerByName.seller.name}
+              </h1>
               {sellerByName.seller.verified && (
-                <Badge variant="default" className="text-xs">Verified</Badge>
+                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-1" style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)", borderRadius: "2px" }}>✓ Verified</span>
               )}
-            </h1>
-            <div className="flex items-center gap-2 mt-2">
+            </div>
+            <div className="flex items-center gap-2 mt-1">
               {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
-              <span className="text-sm">{(sellerByName.seller.averageRating || 0).toFixed(1)} ({sellerByName.seller.totalReviews || 0})</span>
+              <span className="text-sm font-bold" style={{ color: "#f5a623" }}>{(sellerByName.seller.averageRating || 0).toFixed(1)}</span>
+              <span className="text-sm" style={{ color: "#555" }}>({sellerByName.seller.totalReviews || 0} reviews)</span>
             </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
@@ -694,11 +707,9 @@ export default function Reviews() {
         )}
 
         {!match && sellers.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No sellers available yet.</p>
-            </CardContent>
-          </Card>
+          <div className="py-16 text-center" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+            <p className="text-sm font-bold uppercase tracking-wider" style={{ color: "#555" }}>No sellers available yet.</p>
+          </div>
         )}
       </div>
 

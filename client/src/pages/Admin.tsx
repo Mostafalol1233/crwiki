@@ -2053,62 +2053,62 @@ export default function Admin() {
             </div>
 
             <div className="flex-1">
-              <TabsContent value="dashboard" className="space-y-6" data-testid="content-dashboard">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold" data-testid="stat-total-posts">{stats?.totalPosts || 0}</div>
-                    </CardContent>
-                  </Card>
+              <TabsContent value="dashboard" className="space-y-5" data-testid="content-dashboard">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 flex items-center justify-between" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.25em] mb-1" style={{ color: "#555" }}>Total Posts</div>
+                      <div className="text-2xl font-black" style={{ color: "var(--foreground)" }} data-testid="stat-total-posts">{stats?.totalPosts || 0}</div>
+                    </div>
+                    <div className="w-9 h-9 flex items-center justify-center" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
+                      <FileText className="h-4 w-4" style={{ color: "#f5a623" }} />
+                    </div>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Comments</CardTitle>
-                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold" data-testid="stat-total-comments">{stats?.totalComments || 0}</div>
-                    </CardContent>
-                  </Card>
+                  <div className="p-4 flex items-center justify-between" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.25em] mb-1" style={{ color: "#555" }}>Total Comments</div>
+                      <div className="text-2xl font-black" style={{ color: "var(--foreground)" }} data-testid="stat-total-comments">{stats?.totalComments || 0}</div>
+                    </div>
+                    <div className="w-9 h-9 flex items-center justify-center" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
+                      <MessageSquare className="h-4 w-4" style={{ color: "#f5a623" }} />
+                    </div>
+                  </div>
 
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold" data-testid="stat-total-views">{stats?.totalViews || 0}</div>
-                    </CardContent>
-                  </Card>
+                  <div className="p-4 flex items-center justify-between" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.25em] mb-1" style={{ color: "#555" }}>Total Views</div>
+                      <div className="text-2xl font-black" style={{ color: "var(--foreground)" }} data-testid="stat-total-views">{stats?.totalViews || 0}</div>
+                    </div>
+                    <div className="w-9 h-9 flex items-center justify-center" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
+                      <Eye className="h-4 w-4" style={{ color: "#f5a623" }} />
+                    </div>
+                  </div>
 
                   {canSiteSettings && (
-                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setLocation("/admin/seo-bulk")}>
-                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Search className="h-5 w-5" />
-                          Bulk SEO Editor
-                        </CardTitle>
-                        <CardDescription>Edit SEO tags for all content</CardDescription>
-                      </CardHeader>
-                    </Card>
+                    <div
+                      className="p-4 cursor-pointer transition-all hover:brightness-110"
+                      style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px" }}
+                      onClick={() => setLocation("/admin/seo-bulk")}
+                    >
+                      <div className="flex items-center gap-2 font-black text-sm uppercase tracking-tight mb-1" style={{ color: "var(--foreground)" }}>
+                        <Search className="h-4 w-4" style={{ color: "#f5a623" }} />
+                        Bulk SEO Editor
+                      </div>
+                      <p className="text-xs" style={{ color: "#555" }}>Edit SEO tags for all content</p>
+                    </div>
                   )}
                 </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-primary" />
-                      Revenue Roadmap
-                    </CardTitle>
-                    <CardDescription>
-                      Suggested ways to turn the current wiki into a cleaner revenue engine without relying only on intrusive ads.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="h-4 w-4" style={{ color: "#f5a623" }} />
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Revenue Roadmap</h3>
+                  </div>
+                  <p className="text-xs mb-5" style={{ color: "#555" }}>
+                    Suggested ways to turn the current wiki into a cleaner revenue engine without relying only on intrusive ads.
+                  </p>
+                  <div className="space-y-5">
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       {[
                         {
@@ -2301,19 +2301,18 @@ export default function Admin() {
                         </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <span>🔫</span> Featured Weapons (Homepage)
-                    </CardTitle>
-                    <CardDescription>
-                      Choose up to 4 weapons to feature on the homepage. Leave empty to automatically show the 4 most recently added weapons.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span style={{ fontSize: "14px" }}>🔫</span>
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Featured Weapons (Homepage)</h3>
+                  </div>
+                  <p className="text-xs mb-4" style={{ color: "#555" }}>
+                    Choose up to 4 weapons to feature on the homepage. Leave empty to automatically show the 4 most recently added weapons.
+                  </p>
+                  <div className="space-y-4">
                     {siteSettingsForm.featuredWeapons.length > 0 && (
                       <div>
                         <p className="text-sm font-medium mb-2">Currently featured ({siteSettingsForm.featuredWeapons.length}/4):</p>
@@ -2413,17 +2412,15 @@ export default function Admin() {
                         {updateSiteSettingsMutation.isPending ? "Saving..." : "Save featured weapons"}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Quick page preview menu</CardTitle>
-                    <CardDescription>
-                      Jump to common public pages quickly from admin so you can preview the site without hunting through the navigation.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-3 md:flex-row md:items-center">
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <h3 className="font-black text-sm uppercase tracking-tight mb-1" style={{ color: "var(--foreground)" }}>Quick Page Preview</h3>
+                  <p className="text-xs mb-4" style={{ color: "#555" }}>
+                    Jump to common public pages quickly from admin so you can preview the site without hunting through the navigation.
+                  </p>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <select
                       value={pagePreviewTarget}
                       onChange={(e) => setPagePreviewTarget(e.target.value)}
@@ -2459,70 +2456,35 @@ export default function Admin() {
                         Open in new tab
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <LayoutDashboard className="h-5 w-5 text-primary" />
-                      Full Admin Menu
-                    </CardTitle>
-                    <CardDescription>
-                      Quick buttons to open every available section from one place.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {quickAccessTabs.map((tab) => (
-                        <Button
-                          key={tab.key}
-                          variant={activeTab === tab.key ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setActiveTab(tab.key)}
-                          data-testid={`quick-menu-${tab.key}`}
-                        >
-                          {tab.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <LayoutDashboard className="h-5 w-5 text-primary" />
-                      Full Admin Menu
-                    </CardTitle>
-                    <CardDescription>
-                      Quick buttons to open every available section from one place.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {quickAccessTabs.map((tab) => (
-                        <Button
-                          key={tab.key}
-                          variant={activeTab === tab.key ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setActiveTab(tab.key)}
-                          data-testid={`quick-menu-${tab.key}`}
-                        >
-                          {tab.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <LayoutDashboard className="h-4 w-4" style={{ color: "#f5a623" }} />
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Full Admin Menu</h3>
+                  </div>
+                  <p className="text-xs mb-4" style={{ color: "#555" }}>Quick buttons to open every available section from one place.</p>
+                  <div className="flex flex-wrap gap-2">
+                    {quickAccessTabs.map((tab) => (
+                      <Button
+                        key={tab.key}
+                        variant={activeTab === tab.key ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveTab(tab.key)}
+                        data-testid={`quick-menu-${tab.key}`}
+                      >
+                        {tab.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </TabsContent>
               <TabsContent value="media" className="space-y-6" data-testid="content-media">
                 <MediaUpload onUploadSuccess={loadServerMedia} />
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Media Library</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Media Library</h3>
+                  <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <Input placeholder="Search by public_id" value={mediaQuery} onChange={(e) => setMediaQuery(e.target.value)} className="w-48" />
                       <select value={mediaTypeFilter} onChange={(e) => setMediaTypeFilter(e.target.value)} className="h-9 px-3 rounded-md border border-input bg-background">
@@ -2628,8 +2590,8 @@ export default function Admin() {
                         })}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
               {isSuperAdmin && (
                 <TabsContent value="announcements" className="space-y-6" data-testid="content-announcements">
@@ -2650,12 +2612,12 @@ export default function Admin() {
                       </Button>
                     </div>
                   </div>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Registered Users</CardTitle>
-                      <CardDescription>{usersLoading ? "Loading..." : `${users.length} users`}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <div className="p-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Registered Users</h3>
+                      <p className="text-[10px] mt-0.5" style={{ color: "#555" }}>{usersLoading ? "Loading..." : `${users.length} users`}</p>
+                    </div>
+                    <div>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -2697,8 +2659,8 @@ export default function Admin() {
                           ))}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
@@ -3086,8 +3048,8 @@ export default function Admin() {
 
                   <div className="space-y-4">
                     {posts?.map((post: any) => (
-                      <Card key={post.id} data-testid={`post-card-${post.id}`}>
-                        <CardContent className="pt-6">
+                      <div key={post.id} data-testid={`post-card-${post.id}`} style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                        <div className="p-6">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -3213,8 +3175,8 @@ export default function Admin() {
                               )}
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                   {renderPagination(postsPage, totalPosts, setPostsPage)}
@@ -3701,8 +3663,8 @@ export default function Admin() {
                           </div>
                         )}
                         {events?.map((event: any) => (
-                          <Card key={event.id} data-testid={`event-card-${event.id}`}>
-                            <CardContent className="pt-6">
+                          <div key={event.id} data-testid={`event-card-${event.id}`} style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                            <div className="p-6">
                               <div className="flex items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -3795,8 +3757,8 @@ export default function Admin() {
                                   )}
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+                          </div>
                         ))}
                       </div>
                       {renderPagination(eventsPage, totalEvents, setEventsPage)}
@@ -4265,8 +4227,8 @@ export default function Admin() {
                           </div>
                         )}
                         {newsItems?.map((news: any) => (
-                          <Card key={news.id} data-testid={`news-card-${news.id}`}>
-                            <CardContent className="pt-6">
+                          <div key={news.id} data-testid={`news-card-${news.id}`} style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                            <div className="p-6">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -4379,8 +4341,8 @@ export default function Admin() {
                                   )}
                                 </div>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+                          </div>
                         ))}
                       </div>
                       {renderPagination(newsPage, totalNews, setNewsPage)}
@@ -4391,14 +4353,12 @@ export default function Admin() {
 
               {canVerification && (
                 <TabsContent value="verification" className="space-y-6" data-testid="content-verification">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Seller Review Verification</CardTitle>
-                      <CardDescription>
-                        Configure the verification popup players must complete before leaving a seller review.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Seller Review Verification</h3>
+                    <p className="text-xs mb-5" style={{ color: "#555" }}>
+                      Configure the verification popup players must complete before leaving a seller review.
+                    </p>
+                    <div className="space-y-6">
                       <div className="flex flex-col gap-4 rounded-lg border border-border/50 p-4 md:flex-row md:items-center md:justify-between">
                         <div className="space-y-1">
                           <p className="text-base font-semibold">Require verification</p>
@@ -4538,19 +4498,17 @@ export default function Admin() {
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
               {canSiteSettings && (
                 <TabsContent value="appearance" className="space-y-6" data-testid="content-appearance">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Appearance</CardTitle>
-                      <CardDescription>Homepage background and visual defaults</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Appearance</h3>
+                    <p className="text-xs mb-4" style={{ color: "#555" }}>Homepage background and visual defaults</p>
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="appearance-bg">Homepage Background Image URL</Label>
                         <div className="flex gap-2">
@@ -4644,19 +4602,17 @@ export default function Admin() {
                           } catch { }
                         }}>Load Current</Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
               {canSiteSettings && (
                 <TabsContent value="site-settings" className="space-y-6" data-testid="content-site-settings">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>SEO & Site Settings</CardTitle>
-                      <CardDescription>Database-backed SEO settings used by robots, sitemap, and client meta tags</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>SEO & Site Settings</h3>
+                    <p className="text-xs mb-4" style={{ color: "#555" }}>Database-backed SEO settings used by robots, sitemap, and client meta tags</p>
+                    <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="site-base">Public Base URL</Label>
@@ -4799,8 +4755,8 @@ export default function Admin() {
                           try { const res = await fetch(seoSettings.bg, { method: 'HEAD' }); toast({ title: 'Background', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Background', description: 'Failed to reach image', variant: 'destructive' }); }
                         }}>Check Background URL</Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
@@ -4846,23 +4802,17 @@ export default function Admin() {
                     </p>
 
                     {/* Data Seeding Section */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Data Seeding</CardTitle>
-                        <CardDescription>
-                          Import and process CrossFire game data from existing files.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <DataSeeder />
-                      </CardContent>
-                    </Card>
+                    <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Data Seeding</h3>
+                      <p className="text-xs mb-4" style={{ color: "#555" }}>Import and process CrossFire game data from existing files.</p>
+                      <DataSeeder />
+                    </div>
 
                     {/* Weapons Management */}
-                    <Card>
-                      <CardHeader>
+                    <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <div className="p-5 pb-0">
                         <div className="flex items-center justify-between">
-                          <CardTitle>Weapons</CardTitle>
+                          <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Weapons</h3>
                           <Dialog open={isCreatingWeapon} onOpenChange={(open) => {
                             setIsCreatingWeapon(open);
                             if (!open) {
@@ -4967,8 +4917,8 @@ export default function Admin() {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      </CardHeader>
-                      <CardContent>
+                      </div>
+                      <div className="p-5 pt-3">
                         <div className="space-y-3">
                           <Input
                             placeholder="Search weapons by name or category..."
@@ -5055,14 +5005,14 @@ export default function Admin() {
                             );
                           })()}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
                     {/* Modes Management */}
-                    <Card>
-                      <CardHeader>
+                    <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <div className="p-5 pb-0">
                         <div className="flex items-center justify-between">
-                          <CardTitle>Game Modes</CardTitle>
+                          <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Game Modes</h3>
                           <Dialog open={isCreatingMode} onOpenChange={(open) => {
                             setIsCreatingMode(open);
                             if (!open) {
@@ -5167,8 +5117,8 @@ export default function Admin() {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      </CardHeader>
-                      <CardContent>
+                      </div>
+                      <div className="p-5 pt-3">
                         <div className="space-y-3">
                           {modes?.map((mode: any) => (
                             <div key={mode.id} className="flex items-center justify-between p-3 border rounded-md">
@@ -5208,14 +5158,14 @@ export default function Admin() {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
                     {/* Ranks Management */}
-                    <Card>
-                      <CardHeader>
+                    <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <div className="p-5 pb-0">
                         <div className="flex items-center justify-between">
-                          <CardTitle>Ranks</CardTitle>
+                          <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Ranks</h3>
                           <Dialog open={isCreatingRank} onOpenChange={(open) => {
                             setIsCreatingRank(open);
                             if (!open) {
@@ -5327,8 +5277,8 @@ export default function Admin() {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      </CardHeader>
-                      <CardContent>
+                      </div>
+                      <div className="p-5 pt-3">
                         <div className="space-y-3">
                           {ranks?.map((rank: any) => (
                             <div key={rank.id} className="flex items-start justify-between p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition">
@@ -5383,8 +5333,8 @@ export default function Admin() {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
               )}
@@ -5911,8 +5861,8 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <Card>
-                    <CardContent className="pt-6">
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <div className="p-6 pt-5">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -6070,8 +6020,8 @@ export default function Admin() {
                           )}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
@@ -6097,11 +6047,11 @@ export default function Admin() {
                   </p>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Events Translations Status</CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <div className="p-5 pb-3">
+                        <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Events Translations Status</h3>
+                      </div>
+                      <div className="px-5 pb-5">
                         <div className="space-y-2">
                           {events?.map((event: any) => (
                             <div key={event.id} className="flex items-center justify-between p-3 border rounded-md" data-testid={`translation-event-${event.id}`}>
@@ -6153,14 +6103,14 @@ export default function Admin() {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>News Translations Status</CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <div className="p-5 pb-3">
+                        <h3 className="font-black text-xs uppercase tracking-wider" style={{ color: "var(--foreground)" }}>News Translations Status</h3>
+                      </div>
+                      <div className="px-5 pb-5">
                         <div className="space-y-2">
                           {newsItems?.map((news: any) => (
                             <div key={news.id} className="flex items-center justify-between p-3 border rounded-md" data-testid={`translation-news-${news.id}`}>
@@ -6215,8 +6165,8 @@ export default function Admin() {
                             </div>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
               )}
@@ -6350,17 +6300,16 @@ export default function Admin() {
                     </Dialog>
                   </div>
 
-                  <Card>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Username</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Created At</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Username</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Created At</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                         <TableBody>
                           {admins?.map((admin: any) => (
                             <TableRow key={admin.id} data-testid={`admin-row-${admin.id}`}>
@@ -6422,9 +6371,8 @@ export default function Admin() {
                             </TableRow>
                           ))}
                         </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                    </Table>
+                  </div>
                 </TabsContent>
               )}
 
@@ -6432,16 +6380,15 @@ export default function Admin() {
                 <TabsContent value="subscribers" className="space-y-6" data-testid="content-subscribers">
                   <h2 className="text-2xl font-semibold">Newsletter Subscribers</h2>
 
-                  <Card>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Subscribed At</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Subscribed At</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                         <TableBody>
                           {subscribers?.map((subscriber: any) => (
                             <TableRow key={subscriber.id} data-testid={`subscriber-row-${subscriber.id}`}>
@@ -6476,9 +6423,8 @@ export default function Admin() {
                             </TableRow>
                           )}
                         </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                    </Table>
+                  </div>
                 </TabsContent>
               )}
 
@@ -6703,18 +6649,17 @@ export default function Admin() {
                     </Dialog>
                   </div>
 
-                  <Card>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Image</TableHead>
-                            <TableHead>Sounds</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Image</TableHead>
+                          <TableHead>Sounds</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                         <TableBody>
                           {mercenaries?.map((merc: any) => (
                             <TableRow key={merc.id} data-testid={`merc-row-${merc.id}`}>
@@ -6778,9 +6723,8 @@ export default function Admin() {
                             </TableRow>
                           )}
                         </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                    </Table>
+                  </div>
 
                   <Dialog open={isEditingMerc} onOpenChange={(open) => {
                     if (!open) {
@@ -6961,12 +6905,10 @@ export default function Admin() {
 
               {isSuperAdmin && (
                 <TabsContent value="reset-codes" className="space-y-6" data-testid="content-reset-codes">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Password Reset Codes</CardTitle>
-                      <CardDescription>Generate unique reset codes and copy to send manually.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Password Reset Codes</h3>
+                    <p className="text-xs mb-4" style={{ color: "#555" }}>Generate unique reset codes and copy to send manually.</p>
+                    <div>
                       <div className="flex flex-col md:flex-row gap-2 items-start md:items-end">
                         <div className="flex-1">
                           <Label>Email</Label>
@@ -6983,8 +6925,8 @@ export default function Admin() {
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground mt-2">Use your email client to send the code to the user.</p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
@@ -6992,14 +6934,13 @@ export default function Admin() {
                 <>
                 <TabsContent value="tickets" className="space-y-6" data-testid="content-tickets">
                   <h2 className="text-2xl font-semibold">Support Tickets</h2>
-                  <Card>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead>Category</TableHead>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Category</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Priority</TableHead>
                             <TableHead>Attachment</TableHead>
@@ -7109,19 +7050,17 @@ export default function Admin() {
                             </TableRow>
                           )}
                         </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                    </Table>
+                  </div>
                   <h2 className="text-2xl font-semibold">Contact Messages</h2>
-                  <Card>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                  <div style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -7161,9 +7100,8 @@ export default function Admin() {
                             </TableRow>
                           )}
                         </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                    </Table>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="faq" className="space-y-6" data-testid="content-faq">
@@ -7173,11 +7111,9 @@ export default function Admin() {
               )}
               {isSuperAdmin && (
                 <TabsContent value="analytics" className="space-y-6" data-testid="content-analytics">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Analytics Range</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Analytics Range</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label htmlFor="fromDate">From</Label>
                         <Input id="fromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -7186,15 +7122,13 @@ export default function Admin() {
                         <Label htmlFor="toDate">To</Label>
                         <Input id="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Tutorials</CardTitle>
-                      <CardDescription>Views, unique visitors, average duration</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Tutorials</h3>
+                    <p className="text-xs mb-4" style={{ color: "#555" }}>Views, unique visitors, average duration</p>
+                    <div>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -7220,15 +7154,13 @@ export default function Admin() {
                           )}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Sellers</CardTitle>
-                      <CardDescription>Views, clicks, CTR, unique visitors</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Sellers</h3>
+                    <p className="text-xs mb-4" style={{ color: "#555" }}>Views, clicks, CTR, unique visitors</p>
+                    <div>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -7256,8 +7188,8 @@ export default function Admin() {
                           )}
                         </TableBody>
                       </Table>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </TabsContent>
               )}
 
@@ -7271,12 +7203,10 @@ export default function Admin() {
                   <div>
                     <h2 className="text-2xl font-semibold mb-6">Chat Settings & Management</h2>
 
-                    <Card className="mb-6">
-                      <CardHeader>
-                        <CardTitle>Chat Registration Control</CardTitle>
-                        <CardDescription>Control whether users can register for the chat</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
+                    <div className="mb-6 p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Chat Registration Control</h3>
+                      <p className="text-xs mb-4" style={{ color: "#555" }}>Control whether users can register for the chat</p>
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                           <div className="space-y-1">
                             <p className="font-medium">Registration Status</p>
@@ -7306,15 +7236,13 @@ export default function Admin() {
                             data-testid="switch-chat-registration"
                           />
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Registered Chat Users</CardTitle>
-                        <CardDescription>Manage chat user registrations and verification status</CardDescription>
-                      </CardHeader>
-                      <CardContent>
+                    <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                      <h3 className="font-black text-xs uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Registered Chat Users</h3>
+                      <p className="text-xs mb-4" style={{ color: "#555" }}>Manage chat user registrations and verification status</p>
+                      <div>
                         {usersLoading ? (
                           <div className="flex items-center justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -7418,23 +7346,19 @@ export default function Admin() {
                           <RotateCw className="h-4 w-4 mr-2" />
                           Refresh User List
                         </Button>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
                 </>
               )}
               <TabsContent value="site-settings" className="space-y-6">
-                <Card className="wiki-content-card">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-black uppercase italic tracking-tight">
-                      Global Site Customization
-                    </CardTitle>
-                    <CardDescription>
-                      Customize the look and feel of the entire wiki without restrictions.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
+                <div className="wiki-content-card p-6 space-y-8" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div>
+                    <h2 className="text-xl font-black uppercase italic tracking-tight" style={{ color: "var(--foreground)" }}>Global Site Customization</h2>
+                    <p className="text-xs mt-1" style={{ color: "#555" }}>Customize the look and feel of the entire wiki without restrictions.</p>
+                  </div>
+                  <div className="space-y-8">
                     <div className="space-y-4">
                       <Label className="text-lg font-bold uppercase italic">Full Site Background</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -7497,8 +7421,8 @@ export default function Admin() {
                         Apply Global Theme
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
             </div>
           </div>
@@ -7525,8 +7449,8 @@ export default function Admin() {
             ) : (
               <div className="space-y-3">
                 {sellerReviews.map((review: any) => (
-                  <Card key={review.id}>
-                    <CardContent className="flex items-start justify-between gap-4">
+                  <div key={review.id} style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                    <div className="p-5 flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
@@ -7606,8 +7530,8 @@ export default function Admin() {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

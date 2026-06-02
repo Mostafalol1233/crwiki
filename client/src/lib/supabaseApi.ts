@@ -335,11 +335,27 @@ export async function getSiteSettings() {
       seoTitle: 'CrossFire Wiki',
       seoDescription: 'Comprehensive CrossFire gaming wiki',
       seoKeywords: [],
-      featuredWeapons: [],
+      featuredWeapons: [] as string[],
+      featuredEventId: '',
+      secondaryEventIds: [] as string[],
+      heroImage: '',
       robots: 'index, follow',
     };
   }
   return data;
+}
+
+export async function updateSiteSettings(patch: Record<string, any>) {
+  const { data: existing } = await supabase.from('site_settings').select('id').limit(1).single();
+  if (existing?.id) {
+    const { data, error } = await supabase.from('site_settings').update(patch).eq('id', existing.id).select().single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase.from('site_settings').insert(patch).select().single();
+    if (error) throw error;
+    return data;
+  }
 }
 
 // ─── Auth (Supabase Auth) ─────────────────────────────────────────────────────

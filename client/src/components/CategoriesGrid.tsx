@@ -49,7 +49,7 @@ export function CategoriesGrid() {
                 e.currentTarget.style.borderColor = GOLD_BORDER;
               }}
             >
-              <Icon size={28} style={{ color: GOLD, marginBottom: "14px", display: "inline-block" }} strokeWidth={1} />
+              <Icon size={20} strokeWidth={1.5} style={{ color: "inherit", marginBottom: "14px", display: "inline-block" }} />
               <h3
                 style={{
                   fontFamily: "'Cinzel', serif",

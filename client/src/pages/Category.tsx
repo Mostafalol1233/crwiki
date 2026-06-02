@@ -126,7 +126,7 @@ export default function Category() {
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
         {/* Hero */}
-        <div className="relative overflow-hidden py-10 md:py-14" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.08)" }}>
+        <div className="relative overflow-hidden py-10 md:py-14" style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.08)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 30% at 50% 0%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
           <div className="relative max-w-7xl mx-auto px-4 md:px-10">
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }} data-testid="heading-category">

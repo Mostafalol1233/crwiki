@@ -1,0 +1,50 @@
+ماشي 👇
+
+Prompt 1 — Icons
+Replace all generic AI-style icons across the entire project. Do not use emoji. Do not use icon libraries that produce cheap flat colored squares with rounded corners.
+Use Lucide React for all icons — import each icon individually:
+jsimport { BookOpen, Radio, Zap, Crosshair, Calendar, Settings } from 'lucide-react'
+Rules for all icons:
+
+Size: 20px always
+Color: inherit from parent — never hardcoded orange or yellow
+No background squares, no colored containers around icons
+Stroke width: 1.5 — thin and elegant
+Replace every existing icon instance across all components and pages
+
+
+Prompt 2 — Admin panel connection
+Go into the admin panel. Verify every new component added in the redesign is properly connected:
+For each item check and fix if broken:
+
+Hero image → must be uploadable from admin, saved and displayed in HomepageHero
+Featured event → admin must be able to select which event appears as the large featured card
+Secondary events (2 small cards) → selectable from admin
+Latest weapons (4 cards) → admin selects which 4 weapons appear on homepage
+Categories → admin can edit name and description of each category card
+
+If any of these connections are missing, add them. If they exist but are broken, fix them.
+
+Prompt 3 — Content management: full
+Add or improve the following in the admin content editor:
+Bilingual content:
+Every content item (events, weapons, articles) must have two fields for title and description:
+
+title_en + title_ar
+description_en + description_ar
+
+Display language is determined by the user's selected language on the frontend. Default is English.
+Rich text / article body:
+The article body editor must render clean HTML on the frontend — strip all raw tag strings from display. Use a proper sanitized HTML renderer, not raw innerHTML injection.
+Weapon images on homepage:
+Each weapon card on the homepage pulls its image from the weapon's record in the database. Make sure the weapon image field in the admin is:
+
+Uploadable (file upload input)
+Saved correctly to Supabase storage
+Displayed in LatestWeapons on the homepage using the correct public URL
+
+Event images:
+Same as weapons — event image must be uploadable in admin, stored in Supabase, and displayed in FeaturedSection using object-fit: cover at full card width.
+Hardcoded dark backgrounds:
+Search the entire codebase for any hardcoded color values (#0a0a0a, #111, #161410, #0f0f0f, #1a1a1a, black) that are not wrapped in a theme variable. Replace every instance with the appropriate CSS variable so light mode works correctly everywhere.
+

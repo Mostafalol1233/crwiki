@@ -404,7 +404,7 @@ export default function EventDetail() {
           <div
             style={{
               marginBottom: "40px",
-              background: theme === "light" ? "hsl(var(--card))" : "#0f0f0f",
+              background: "hsl(var(--card))",
               border: `1px solid ${GOLD_BORDER}`,
               padding: "40px 32px",
               textAlign: "center",

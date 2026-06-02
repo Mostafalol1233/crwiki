@@ -335,7 +335,7 @@ export default function Modes() {
                       }}
                     >
                       {/* Thumbnail */}
-                      <div className="w-12 h-8 flex-shrink-0 overflow-hidden rounded" style={{ background: "#0a0a0a" }}>
+                      <div className="w-12 h-8 flex-shrink-0 overflow-hidden rounded" style={{ background: "hsl(var(--muted))" }}>
                         <img
                           src={mode.imageResolved}
                           alt={mode.name}
@@ -364,7 +364,7 @@ export default function Modes() {
                   {/* ── Hero image ── */}
                   <div
                     className="relative overflow-hidden"
-                    style={{ height: "280px", background: "#080808", borderRadius: "4px" }}
+                    style={{ height: "280px", background: "hsl(var(--background))", borderRadius: "4px" }}
                   >
                     <img
                       src={selectedMode.imageResolved}

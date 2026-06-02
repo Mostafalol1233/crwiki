@@ -108,7 +108,7 @@ export function HomepageHero({ heroImage }: HomepageHeroProps) {
               alignItems: "center",
             }}
           >
-            <Search size={18} />
+            <Search size={20} strokeWidth={1.5} />
           </button>
         </form>
       </div>

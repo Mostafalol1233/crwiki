@@ -214,7 +214,7 @@ export default function Mercenaries() {
           {layoutStyle === "strip" ? (
             <div
               className="flex overflow-x-auto w-full"
-              style={{ height: "480px", background: "#050505", border: "1px solid rgba(245,166,35,0.12)", borderRadius: "4px" }}
+              style={{ height: "480px", background: "hsl(var(--background))", border: "1px solid rgba(245,166,35,0.12)", borderRadius: "4px" }}
             >
               {mercenaries.map((merc) => {
                 const voiceLines = merc.voiceLines || [];
@@ -292,7 +292,7 @@ export default function Mercenaries() {
                     style={{ borderRadius: "4px", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}
                     onClick={() => setSelectedMerc(merc)}
                   >
-                    <div className="aspect-[3/4] overflow-hidden" style={{ background: "#0a0a0a" }}>
+                    <div className="aspect-[3/4] overflow-hidden" style={{ background: "hsl(var(--muted))" }}>
                       <img
                         src={resolveMercImage(merc)}
                         alt={merc.name}
@@ -360,7 +360,7 @@ export default function Mercenaries() {
         >
           <div
             className="relative max-w-md w-full overflow-hidden"
-            style={{ background: "#0d0d0d", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "4px", boxShadow: "0 24px 80px rgba(0,0,0,0.8)" }}
+            style={{ background: "hsl(var(--card))", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "4px", boxShadow: "0 24px 80px rgba(0,0,0,0.8)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />

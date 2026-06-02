@@ -44,6 +44,8 @@ SUPABASE_URL = "https://qywburkldwdkegztsgjj.supabase.co"
 ADMIN_PASSWORD = "crossfire_wiki_admin_2024"
 JWT_SECRET = "cfwiki_jwt_secret_2024_secure_key"
 SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5d2J1cmtsZHdka2VnenRzZ2pqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDQxODQzMiwiZXhwIjoyMDk1OTk0NDMyfQ.4ooOlxA8ykt4MUlAPPz79e6dvrjfS7tD-asNhrpXGBI"
+VITE_SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5d2J1cmtsZHdka2VnenRzZ2pqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDQxODQzMiwiZXhwIjoyMDk1OTk0NDMyfQ.4ooOlxA8ykt4MUlAPPz79e6dvrjfS7tD-asNhrpXGBI"
+VITE_ADMIN_PASSWORD = "CrossFireWiki@2024"
 
 [deployment]
 deploymentTarget = "autoscale"

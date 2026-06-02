@@ -1,97 +1,87 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-
-const rawBase = import.meta.env.VITE_API_URL as string | undefined;
-let baseUrl = rawBase && rawBase.includes("://") ? rawBase : '';
-if (!baseUrl) {
-  // Use relative paths so the host (Vercel) proxies over HTTPS
-  baseUrl = '';
-}
-
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-}
+import { supabaseShim } from "./supabaseShim";
 
 function getAuthHeaders(): Record<string, string> {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
-  const csrf = localStorage.getItem("csrfToken") || '';
   const headers: Record<string, string> = {};
-
-  if (adminToken) {
-    headers["Authorization"] = `Bearer ${adminToken}`;
-  } else if (userToken) {
-    headers["Authorization"] = `Bearer ${userToken}`;
-  }
-  if (csrf) {
-    headers["X-CSRF-Token"] = csrf;
-  }
-
+  if (adminToken) headers["Authorization"] = `Bearer ${adminToken}`;
+  else if (userToken) headers["Authorization"] = `Bearer ${userToken}`;
   return headers;
 }
 
+/** Route /api/* through Supabase shim; everything else is a plain fetch */
 export async function apiRequest(
   url: string,
   method: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<any> {
-  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  // All /api/ calls go through the Supabase shim (no backend needed)
+  const apiPath = url.startsWith('/api/') ? url : url.startsWith('http') ? null : null;
 
-  const headers = {
+  if (url.startsWith('/api/') || (url.startsWith('/') && !url.startsWith('//'))) {
+    try {
+      return await supabaseShim(url, method, data);
+    } catch (err: any) {
+      throw new Error(err?.message || String(err));
+    }
+  }
+
+  // External URLs — plain fetch
+  const headers: Record<string, string> = {
     ...getAuthHeaders(),
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
 
-  const res = await fetch(fullUrl, {
+  const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    throw new Error(`Failed to parse JSON response: ${text.slice(0, 100)}...`);
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
   }
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return text; }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
+
+export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFunction<T> {
+  return async ({ queryKey }) => {
+    const key = queryKey[0] as string;
+
+    // Route /api/ keys through shim
+    if (key && key.startsWith('/api/')) {
+      try {
+        return (await supabaseShim(key, 'GET')) as T;
+      } catch (err: any) {
+        if (options.on401 === "returnNull") return null as unknown as T;
+        throw err;
+      }
+    }
+
+    // Plain fetch for other keys
     const headers = getAuthHeaders();
+    const res = await fetch(key, { credentials: "include", headers });
 
-    const fullUrl = baseUrl ? `${baseUrl}${queryKey.join("/")}` : queryKey.join("/");
-
-    const res = await fetch(fullUrl, {
-      credentials: "include",
-      headers,
-    });
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (options.on401 === "returnNull" && res.status === 401) return null as unknown as T;
+    if (!res.ok) {
+      const text = (await res.text()) || res.statusText;
+      throw new Error(`${res.status}: ${text}`);
     }
-
-    await throwIfResNotOk(res);
     const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      throw new Error(`Failed to parse JSON response from ${fullUrl}: ${text.slice(0, 100)}...`);
-    }
+    try { return JSON.parse(text) as T; } catch { return text as unknown as T; }
   };
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "returnNull" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 30_000,

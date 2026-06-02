@@ -114,26 +114,26 @@ export default function AnnouncementModal({ location }: { location: string }) {
         let hasActiveSellerAnnouncement = false;
 
         if (sellerSlugFromPath) {
-          const sellerRes = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlugFromPath)}`);
-          if (sellerRes.ok) {
-            const json = await sellerRes.json();
+          try {
+            const { supabaseShim } = await import('@/lib/supabaseShim');
+            const json = await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlugFromPath)}`, 'GET');
             if (!aborted && json && json.active) {
               hasActiveSellerAnnouncement = true;
               setData(json);
               setScope(`seller:${sellerSlugFromPath}`);
             }
-          }
+          } catch {}
         }
 
         if (!hasActiveSellerAnnouncement) {
-          const resGlobal = await fetch(`/api/announcements/global`);
-          if (resGlobal.ok) {
-            const json = await resGlobal.json();
+          try {
+            const { supabaseShim } = await import('@/lib/supabaseShim');
+            const json = await supabaseShim('/api/announcements/global', 'GET');
             if (!aborted && json && json.active && location === "/") {
               setData(json);
               setScope("global");
             }
-          }
+          } catch {}
         }
       } catch {
         // ignore

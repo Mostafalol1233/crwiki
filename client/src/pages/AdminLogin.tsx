@@ -59,17 +59,8 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password: adminPassword }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Invalid credentials");
-      }
-
-      const { token, admin } = await response.json();
+      const { adminLogin } = await import("@/lib/supabaseAdmin");
+      const { token, admin } = await adminLogin({ username, password: adminPassword });
       localStorage.setItem("adminToken", token);
       // server returns roles array; store single role for legacy client usage
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "admin");
@@ -115,17 +106,8 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Invalid password");
-      }
-
-      const { token, admin } = await response.json();
+      const { adminLogin } = await import("@/lib/supabaseAdmin");
+      const { token, admin } = await adminLogin({ password });
       localStorage.setItem("adminToken", token);
       // server returns roles array; store single role for legacy client usage
       const role = Array.isArray(admin.roles) && admin.roles.length ? admin.roles[0] : (admin.role || "super_admin");

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import imageCompression from 'browser-image-compression';
+import { supabaseShim } from "@/lib/supabaseShim";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,31 +103,25 @@ export default function AdminAnnouncements() {
       try {
         setLoadingGlobal(true);
         try {
-          const sres = await fetch(`/api/public/settings/announcements`);
-          if (sres.ok) {
-            const sj = await sres.json();
-            setAnnouncementsEnabled(Boolean(sj?.enabled ?? true));
+          const sj = await supabaseShim('/api/public/settings/announcements', 'GET');
+          setAnnouncementsEnabled(Boolean(sj?.enabled ?? true));
+        } catch {}
+        try {
+          const json: Announcement & { dismissible?: boolean } = await supabaseShim('/api/announcements/global', 'GET');
+          if (json) {
+            setGContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
+            setGContentHtmlAr(json.contentHtmlAr || "");
+            setGImageUrl(json.imageUrl || "");
+            setGLinkUrl(json.linkUrl || "");
+            setGActive(Boolean(json.active ?? true));
+            setGDismissible(Boolean(json.dismissible ?? true));
+            setGDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
           }
         } catch {}
-        const res = await fetch(`/api/announcements/global`);
-        if (res.ok) {
-          const json: Announcement & { dismissible?: boolean } = await res.json();
-          setGContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
-          setGContentHtmlAr(json.contentHtmlAr || "");
-          setGImageUrl(json.imageUrl || "");
-          setGLinkUrl(json.linkUrl || "");
-          setGActive(Boolean(json.active ?? true));
-          setGDismissible(Boolean(json.dismissible ?? true));
-          setGDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
-        }
-      } catch {}
-      finally { setLoadingGlobal(false); }
+      } finally { setLoadingGlobal(false); }
       try {
-        const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
-        if (res2.ok) {
-          const list = await res2.json();
-          setGlobalList(Array.isArray(list) ? list : []);
-        }
+        const list = await supabaseShim('/api/admin/announcements/global', 'GET');
+        setGlobalList(Array.isArray(list) ? list : []);
       } catch {}
     })();
   }, []);
@@ -149,31 +144,20 @@ export default function AdminAnnouncements() {
     try {
       setLoadingGlobal(true);
       const primary = pickPrimaryContent(gContentHtmlEn, gContentHtmlAr);
-      const res = await fetch(`/api/announcements/global`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({
-          contentHtml: primary,
-          contentHtmlEn: gContentHtmlEn,
-          contentHtmlAr: gContentHtmlAr,
-          imageUrl: gImageUrl,
-          linkUrl: gLinkUrl,
-          active: gActive,
-          dismissible: gDismissible,
-          direction: gDirection,
-        }),
+      await supabaseShim('/api/announcements/global', 'POST', {
+        contentHtml: primary,
+        contentHtmlEn: gContentHtmlEn,
+        contentHtmlAr: gContentHtmlAr,
+        imageUrl: gImageUrl,
+        linkUrl: gLinkUrl,
+        active: gActive,
+        dismissible: gDismissible,
+        direction: gDirection,
       });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (handleUnauthorized(res.status)) return;
-        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
-        throw new Error(msg);
-      }
       toast({ title: "Created", description: "New global announcement added" });
       try {
-        const res2 = await fetch(`/api/admin/announcements/global`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
-        if (res2.ok) setGlobalList(await res2.json());
-        else if (handleUnauthorized(res2.status)) return;
+        const list = await supabaseShim('/api/admin/announcements/global', 'GET');
+        setGlobalList(Array.isArray(list) ? list : []);
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -184,16 +168,7 @@ export default function AdminAnnouncements() {
 
   const deleteGlobal = async (id: string) => {
     try {
-      const res = await fetch(`/api/announcements/global/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
-      });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (handleUnauthorized(res.status)) return;
-        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
-        throw new Error(msg);
-      }
+      await supabaseShim(`/api/announcements/global/${encodeURIComponent(id)}`, 'DELETE');
       setGlobalList((prev) => prev.filter((g) => g.id !== id));
       toast({ title: 'Deleted', description: 'Global announcement removed' });
     } catch (e: any) {
@@ -206,37 +181,30 @@ export default function AdminAnnouncements() {
     if (!targetSlug) return;
     try {
       setLoadingSeller(true);
-      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(targetSlug)}`);
-      if (res.ok) {
-        const json: Announcement = await res.json();
-        setSContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
-        setSContentHtmlAr(json.contentHtmlAr || "");
-        setSImageUrl(json.imageUrl || "");
-        setSLinkUrl(json.linkUrl || "");
-        setSActive(Boolean(json.active ?? true));
-        setSDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
-      } else {
-        // clear if none
-        setSContentHtmlEn("");
-        setSContentHtmlAr("");
-        setSImageUrl("");
-        setSLinkUrl("");
-        setSActive(true);
-        setSDirection('auto');
+      try {
+        const json: Announcement = await supabaseShim(`/api/announcements/seller/${encodeURIComponent(targetSlug)}`, 'GET');
+        if (json) {
+          setSContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
+          setSContentHtmlAr(json.contentHtmlAr || "");
+          setSImageUrl(json.imageUrl || "");
+          setSLinkUrl(json.linkUrl || "");
+          setSActive(Boolean(json.active ?? true));
+          setSDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
+        } else {
+          setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
+        }
+      } catch {
+        setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       }
       // Load seller announcement list
       try {
-        const res2 = await fetch(`/api/admin/announcements/seller`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
-        if (res2.ok) setSellerAnnouncements(await res2.json());
+        const list = await supabaseShim('/api/admin/announcements/seller', 'GET');
+        if (Array.isArray(list)) setSellerAnnouncements(list);
       } catch {}
       // Load reviews for this seller slug
       try {
-        const res3 = await fetch(`/api/reviews/seller/by-slug/${encodeURIComponent(targetSlug)}`);
-        if (res3.ok) {
-          const data = await res3.json();
-          setActiveSellerForReviews({ id: data?.seller?.id, name: data?.seller?.name });
-          setSellerReviews(Array.isArray(data?.reviews) ? data.reviews : []);
-        }
+        const reviews = await supabaseShim(`/api/reviews/seller/by-slug/${encodeURIComponent(targetSlug)}`, 'GET');
+        setSellerReviews(Array.isArray(reviews) ? reviews : []);
       } catch {}
     } catch {}
     finally { setLoadingSeller(false); }
@@ -250,30 +218,19 @@ export default function AdminAnnouncements() {
     try {
       setLoadingSeller(true);
       const primary = pickPrimaryContent(sContentHtmlEn, sContentHtmlAr);
-      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}` ,{
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("adminToken") || ""}`, "x-csrf-token": localStorage.getItem('csrfToken') || "" },
-        body: JSON.stringify({
-          contentHtml: primary,
-          contentHtmlEn: sContentHtmlEn,
-          contentHtmlAr: sContentHtmlAr,
-          imageUrl: sImageUrl,
-          linkUrl: sLinkUrl,
-          active: sActive,
-          direction: sDirection,
-        }),
+      await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, 'POST', {
+        contentHtml: primary,
+        contentHtmlEn: sContentHtmlEn,
+        contentHtmlAr: sContentHtmlAr,
+        imageUrl: sImageUrl,
+        linkUrl: sLinkUrl,
+        active: sActive,
+        direction: sDirection,
       });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (handleUnauthorized(res.status)) return;
-        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
-        throw new Error(msg);
-      }
       toast({ title: "Saved", description: "Seller announcement updated" });
       try {
-        const res2 = await fetch(`/api/admin/announcements/seller`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` } });
-        if (res2.ok) setSellerAnnouncements(await res2.json());
-        else if (handleUnauthorized(res2.status)) return;
+        const list = await supabaseShim('/api/admin/announcements/seller', 'GET');
+        if (Array.isArray(list)) setSellerAnnouncements(list);
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -285,23 +242,9 @@ export default function AdminAnnouncements() {
   const deleteSellerAnnouncement = async () => {
     if (!sellerSlug) return;
     try {
-      const res = await fetch(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' }
-      });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (handleUnauthorized(res.status)) return;
-        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
-        throw new Error(msg);
-      }
+      await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, 'DELETE');
       setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
-      setSContentHtmlEn("");
-      setSContentHtmlAr("");
-      setSImageUrl("");
-      setSLinkUrl("");
-      setSActive(true);
-      setSDirection('auto');
+      setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       toast({ title: 'Deleted', description: 'Seller announcement removed' });
     } catch (e: any) {
       toast({ title: 'Delete failed', description: e?.message || '', variant: 'destructive' });
@@ -311,16 +254,7 @@ export default function AdminAnnouncements() {
   const deleteSellerReview = async (reviewId: string) => {
     try {
       if (!activeSellerForReviews) return;
-      const res = await fetch(`/api/sellers/${activeSellerForReviews.id}/reviews/${encodeURIComponent(reviewId)}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }
-      });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (handleUnauthorized(res.status)) return;
-        try { const j = JSON.parse(msg); if (j?.error) msg = String(j.error); } catch {}
-        throw new Error(msg);
-      }
+      await supabaseShim(`/api/sellers/${activeSellerForReviews.id}/reviews/${encodeURIComponent(reviewId)}`, 'DELETE');
       setSellerReviews((prev) => prev.filter((r) => r.id !== reviewId));
       toast({ title: 'Review deleted' });
     } catch (e: any) {
@@ -331,29 +265,7 @@ export default function AdminAnnouncements() {
   const saveAnnouncementsEnabled = async () => {
     try {
       setAnnSettingsLoading(true);
-      const res = await fetch(`/api/settings/site`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`, 'x-csrf-token': localStorage.getItem('csrfToken') || '' },
-        body: JSON.stringify({ announcementsEnabled }),
-      });
-      if (!res.ok) {
-        let msg = await res.text();
-        if (res.status === 401) {
-          toast({ title: 'Session expired', description: 'Please login again', variant: 'destructive' });
-          localStorage.removeItem('adminToken');
-          setLocation('/admin/login');
-          return;
-        }
-        if (res.status === 403) {
-          toast({ title: 'Access denied', description: 'Insufficient permissions', variant: 'destructive' });
-          return;
-        }
-        try {
-          const parsed = JSON.parse(msg);
-          if (parsed && parsed.error) msg = String(parsed.error);
-        } catch {}
-        throw new Error(msg);
-      }
+      await supabaseShim('/api/settings/site', 'PUT', { announcementsEnabled });
       toast({ title: 'Saved', description: 'Announcements setting updated' });
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message || '', variant: 'destructive' });

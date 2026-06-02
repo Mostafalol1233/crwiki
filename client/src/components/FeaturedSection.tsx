@@ -17,7 +17,6 @@ interface FeaturedCard {
 interface FeaturedSectionProps {
   featured: FeaturedCard | null;
   secondary: FeaturedCard[];
-  isDark: boolean;
   sectionLabel?: string;
   sectionTitle?: string;
   allLink?: string;
@@ -31,6 +30,13 @@ function getHref(card: FeaturedCard) {
   return `/events/${card.id}`;
 }
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+}
+
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
 const FALLBACK_IMG = "https://files.catbox.moe/wof38b.jpeg";
@@ -38,15 +44,10 @@ const FALLBACK_IMG = "https://files.catbox.moe/wof38b.jpeg";
 export function FeaturedSection({
   featured,
   secondary,
-  isDark,
   sectionLabel = "Latest",
   sectionTitle = "Events & News",
   allLink = "/category/events",
 }: FeaturedSectionProps) {
-  const cardBg = isDark ? "#0d0d0d" : "#f5f0e8";
-  const textColor = isDark ? "#e8e0d0" : "#1a1a1a";
-  const subColor = isDark ? "rgba(232,224,208,0.55)" : "rgba(26,26,26,0.55)";
-
   if (!featured) return null;
 
   return (
@@ -82,7 +83,7 @@ export function FeaturedSection({
               fontWeight: 300,
               fontSize: "clamp(1.3rem, 3vw, 1.9rem)",
               letterSpacing: "0.15em",
-              color: textColor,
+              color: "hsl(var(--foreground))",
               margin: 0,
             }}
           >
@@ -117,9 +118,8 @@ export function FeaturedSection({
         {/* Large featured card */}
         <Link href={getHref(featured)}>
           <div
-            className="group"
             style={{
-              background: cardBg,
+              background: "hsl(var(--card))",
               border: `1px solid ${GOLD_BORDER}`,
               cursor: "pointer",
               transition: "border-color 0.2s",
@@ -127,23 +127,16 @@ export function FeaturedSection({
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,124,63,0.55)")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = GOLD_BORDER)}
           >
-            <div
-              style={{
-                height: "160px",
-                overflow: "hidden",
-                background: "#050505",
-              }}
-            >
+            {/* Image — 220px, cover, no letterboxing */}
+            <div style={{ height: "220px", overflow: "hidden", background: "hsl(var(--muted))" }}>
               <img
                 src={featured.image || featured.imageUrl || FALLBACK_IMG}
                 alt={featured.title}
-                style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG; }}
               />
             </div>
-            <div style={{ padding: "16px" }}>
+            <div style={{ padding: "18px" }}>
               {featured.tag && (
                 <span
                   style={{
@@ -167,7 +160,7 @@ export function FeaturedSection({
                   fontWeight: 300,
                   fontSize: "1.05rem",
                   letterSpacing: "0.08em",
-                  color: textColor,
+                  color: "hsl(var(--foreground))",
                   margin: "0 0 8px",
                   lineHeight: 1.3,
                 }}
@@ -178,17 +171,17 @@ export function FeaturedSection({
                 <p
                   style={{
                     fontFamily: "'EB Garamond', serif",
-                    fontSize: "0.9rem",
-                    color: subColor,
+                    fontSize: "0.95rem",
+                    color: "hsl(var(--muted-foreground))",
                     margin: "0 0 12px",
-                    lineHeight: 1.5,
+                    lineHeight: 1.55,
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical" as any,
                     overflow: "hidden",
                   }}
                 >
-                  {featured.description}
+                  {stripHtml(featured.description)}
                 </p>
               )}
               <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.85rem", color: GOLD }}>
@@ -204,7 +197,7 @@ export function FeaturedSection({
             <Link key={card.id} href={getHref(card)}>
               <div
                 style={{
-                  background: cardBg,
+                  background: "hsl(var(--card))",
                   border: `1px solid ${GOLD_BORDER}`,
                   flex: 1,
                   cursor: "pointer",
@@ -213,11 +206,11 @@ export function FeaturedSection({
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,124,63,0.55)")}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = GOLD_BORDER)}
               >
-                <div style={{ height: "90px", overflow: "hidden", background: "#050505" }}>
+                <div style={{ height: "100px", overflow: "hidden", background: "hsl(var(--muted))" }}>
                   <img
                     src={card.image || card.imageUrl || FALLBACK_IMG}
                     alt={card.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG; }}
                   />
                 </div>
@@ -242,7 +235,7 @@ export function FeaturedSection({
                       fontWeight: 300,
                       fontSize: "0.8rem",
                       letterSpacing: "0.07em",
-                      color: textColor,
+                      color: "hsl(var(--foreground))",
                       margin: "0 0 6px",
                       lineHeight: 1.3,
                       display: "-webkit-box",

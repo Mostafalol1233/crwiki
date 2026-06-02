@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
+stack = "GAMESTACK_JS"
 
 [nix]
 channel = "stable-25_05"
@@ -37,3 +38,8 @@ externalPort = 80
 
 [userenv.shared]
 VITE_API_URL = ""
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "./dist/index.cjs"]
+build = ["npm", "run", "build"]

@@ -4,10 +4,9 @@ import { Search } from "lucide-react";
 
 interface HomepageHeroProps {
   heroImage?: string;
-  isDark: boolean;
 }
 
-export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
+export function HomepageHero({ heroImage }: HomepageHeroProps) {
   const [query, setQuery] = useState("");
   const [, setLocation] = useLocation();
 
@@ -17,11 +16,7 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
   };
 
   return (
-    <div
-      className="relative w-full flex items-center justify-center"
-      style={{ minHeight: "100vh" }}
-    >
-      {/* Background image */}
+    <div className="relative w-full flex items-center justify-center" style={{ minHeight: "100vh" }}>
       {heroImage && (
         <img
           src={heroImage}
@@ -31,26 +26,21 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
         />
       )}
 
-      {/* Overlay */}
+      {/* Overlay uses a CSS variable trick so it works in both themes */}
       <div
-        className="absolute inset-0"
-        style={{
-          background: isDark
-            ? "linear-gradient(to bottom, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.75) 60%, rgba(10,10,10,0.97) 100%)"
-            : "linear-gradient(to bottom, rgba(240,235,224,0.45) 0%, rgba(240,235,224,0.7) 60%, rgba(240,235,224,0.97) 100%)",
-        }}
+        className="absolute inset-0 hero-overlay"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.72) 60%, rgba(0,0,0,0.97) 100%)" }}
       />
 
-      {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
         <p
-          className="mb-4"
           style={{
             fontFamily: "'EB Garamond', serif",
             fontStyle: "italic",
             fontSize: "0.95rem",
             letterSpacing: "0.18em",
             color: "#9a7c3f",
+            marginBottom: "16px",
           }}
         >
           The definitive CrossFire resource
@@ -63,7 +53,7 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
             letterSpacing: "0.15em",
             fontSize: "clamp(2.2rem, 6vw, 4.5rem)",
             lineHeight: 1.1,
-            color: isDark ? "#e8e0d0" : "#1a1a1a",
+            color: "#e8e0d0",
             marginBottom: "1.25rem",
           }}
         >
@@ -75,7 +65,7 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
             fontFamily: "'EB Garamond', serif",
             fontStyle: "italic",
             fontSize: "clamp(1rem, 2.5vw, 1.3rem)",
-            color: isDark ? "rgba(232,224,208,0.65)" : "rgba(26,26,26,0.6)",
+            color: "rgba(232,224,208,0.65)",
             marginBottom: "2.5rem",
             letterSpacing: "0.04em",
           }}
@@ -83,7 +73,6 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
           Weapons, mercenaries, ranks, maps and everything in between.
         </p>
 
-        {/* Search bar */}
         <form onSubmit={handleSearch} className="relative max-w-lg mx-auto">
           <input
             type="text"
@@ -93,9 +82,9 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
             style={{
               width: "100%",
               padding: "14px 52px 14px 20px",
-              background: isDark ? "rgba(10,10,10,0.7)" : "rgba(240,235,224,0.75)",
-              border: "1px solid rgba(154,124,63,0.35)",
-              color: isDark ? "#e8e0d0" : "#1a1a1a",
+              background: "rgba(10,10,10,0.7)",
+              border: "1px solid rgba(154,124,63,0.4)",
+              color: "#e8e0d0",
               fontFamily: "'EB Garamond', serif",
               fontSize: "1rem",
               letterSpacing: "0.03em",
@@ -124,13 +113,10 @@ export function HomepageHero({ heroImage, isDark }: HomepageHeroProps) {
         </form>
       </div>
 
-      {/* Bottom fade into page */}
+      {/* Fade into page background */}
       <div
-        className="absolute bottom-0 left-0 right-0"
-        style={{
-          height: "80px",
-          background: `linear-gradient(to bottom, transparent, ${isDark ? "#0a0a0a" : "#F0EBE0"})`,
-        }}
+        className="absolute bottom-0 left-0 right-0 hero-bottom-fade"
+        style={{ height: "80px", background: "linear-gradient(to bottom, transparent, hsl(var(--background)))" }}
       />
     </div>
   );

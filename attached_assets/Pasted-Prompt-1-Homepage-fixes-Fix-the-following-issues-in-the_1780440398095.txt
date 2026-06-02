@@ -1,0 +1,46 @@
+Prompt 1 — Homepage fixes
+
+Fix the following issues in the homepage components:
+
+Theme consistency: The dark/light mode toggle must affect every single element. No hardcoded dark backgrounds anywhere — all colors must use CSS variables tied to data-theme. When light mode is active, everything turns light — no black sections remaining.
+
+Events section — image display: Increase event card image height to 220px. Use object-fit: cover and object-position: center. The image must fill the card width completely with no letterboxing or whitespace.
+
+Events section — description text: The description field may contain raw HTML tags. Always strip all HTML before displaying — use a utility function:
+
+js
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+Apply this to every description field before rendering.
+
+Footer: Redesign to match the Elden Ring aesthetic:
+
+Background matches the dark/light theme — no hardcoded black
+Section titles in Cinzel font-size: 10px letter-spacing: 0.18em with a thin gold underline 1px solid rgba(154,124,63,0.3)
+Links in EB Garamond font-size: 13px opacity: 0.6, hover opacity: 1 and color: #9a7c3f
+Remove the orange bullet dots — replace with thin gold left border on section titles
+Newsletter section: thin gold border input, transparent background, Cinzel button with gold border
+Bottom bar: copyright text in Garamond opacity: 0.3, same thin gold separator line above it
+Prompt 2 — Event page layout
+
+Redesign the event page layout:
+
+Remove the sidebar entirely. Make the article full width with max-width: 680px centered.
+
+Layout order:
+
+Breadcrumb — Cinzel 9px spaced, opacity 0.4
+Event meta row — badge + date on same line
+Title — Cinzel font-weight: 300 letter-spacing: 0.08em font-size: 28px
+Author row — avatar circle + name + date, thin gold separator below
+Featured image — full width height: 280px object-fit: cover
+Article content — EB Garamond font-size: 16px line-height: 1.9, headings in Cinzel thin
+Thin gold divider
+Discord community block — full width, dark background 
+#0f0f0f, centered content, member count, join button in Cinzel
+Comments section below Discord
+Strip all HTML from content fields before rendering using the stripHtml function above.
+

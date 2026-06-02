@@ -9,6 +9,7 @@ import { HomepageHero } from "@/components/HomepageHero";
 import { FeaturedSection } from "@/components/FeaturedSection";
 import { LatestWeapons } from "@/components/LatestWeapons";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
+
 const HERO_BG = "/cf-heroes-bg.png";
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
 
@@ -16,18 +17,15 @@ function Divider() {
   return <div style={{ width: "100%", height: "1px", background: GOLD_BORDER }} />;
 }
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+}
+
 export default function Home() {
   const { t } = useLanguage();
-
-  const isDark = (() => {
-    if (typeof document !== "undefined") {
-      return document.documentElement.getAttribute("data-theme") !== "light";
-    }
-    return true;
-  })();
-
-  const bg = isDark ? "#0a0a0a" : "#F0EBE0";
-  const textColor = isDark ? "#e8e0d0" : "#1a1a1a";
 
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 10 }],
@@ -63,11 +61,7 @@ export default function Home() {
   const secondaryEvents = restEvents.slice(0, 2);
 
   const featuredForSection = featuredEvent
-    ? {
-        ...featuredEvent,
-        tag: featuredEvent.type === "upcoming" ? "Upcoming" : "Featured",
-        description: featuredEvent.description || featuredEvent.content || "",
-      }
+    ? { ...featuredEvent, tag: featuredEvent.type === "upcoming" ? "Upcoming" : "Featured", description: featuredEvent.description || featuredEvent.content || "" }
     : null;
 
   const secondaryForSection = secondaryEvents.map((e: any) => ({
@@ -82,10 +76,10 @@ export default function Home() {
         description="CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources."
       />
 
-      <div style={{ background: bg, minHeight: "100vh" }}>
+      <div style={{ background: "hsl(var(--background))", minHeight: "100vh" }}>
 
         {/* HERO */}
-        <HomepageHero heroImage={HERO_BG} isDark={isDark} />
+        <HomepageHero heroImage={HERO_BG} />
 
         {/* EVENTS RIBBON */}
         <div
@@ -93,7 +87,7 @@ export default function Home() {
           style={{
             borderTop: `1px solid ${GOLD_BORDER}`,
             borderBottom: `1px solid ${GOLD_BORDER}`,
-            background: isDark ? "rgba(10,10,10,0.97)" : "rgba(240,235,224,0.97)",
+            background: "hsl(var(--background) / 0.97)",
             backdropFilter: "blur(8px)",
           }}
         >
@@ -102,20 +96,20 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10">
 
-          {/* Forum/Scraped Announcements */}
+          {/* Scraped/Forum Announcements */}
           {scrapedEvents.map((event: any) => (
             <div
               key={event.id}
               className="mt-10 relative overflow-hidden"
-              style={{ background: isDark ? "#0d0d0d" : "#f0ebe0", border: `1px solid ${GOLD_BORDER}` }}
+              style={{ background: "hsl(var(--card))", border: `1px solid ${GOLD_BORDER}` }}
             >
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(to right, #9a7c3f, transparent)` }} />
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(to right, #9a7c3f, transparent)" }} />
               <div style={{ padding: "10px 20px", borderBottom: `1px solid ${GOLD_BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontFamily: "'Cinzel', serif", fontSize: "0.65rem", letterSpacing: "0.2em", color: "#9a7c3f" }}>Forum Announcement</span>
-                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.8rem", color: isDark ? "#555" : "#888" }}>{event.date}</span>
+                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.8rem", color: "hsl(var(--muted-foreground))", opacity: 0.5 }}>{event.date}</span>
               </div>
               <div style={{ padding: "24px 32px" }}>
-                <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, letterSpacing: "0.12em", fontSize: "1.5rem", color: textColor, marginBottom: "16px" }}>
+                <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, letterSpacing: "0.12em", fontSize: "1.5rem", color: "hsl(var(--foreground))", marginBottom: "16px" }}>
                   {event.title}
                 </h2>
                 <RawHtmlPreview html={event.rawHtmlContent} className="min-h-[150px]" />
@@ -123,11 +117,10 @@ export default function Home() {
             </div>
           ))}
 
-          {/* FEATURED EVENTS SECTION */}
+          {/* FEATURED EVENTS */}
           <FeaturedSection
             featured={featuredForSection}
             secondary={secondaryForSection}
-            isDark={isDark}
             sectionLabel="Latest"
             sectionTitle="Events & News"
             allLink="/category/events"
@@ -135,11 +128,11 @@ export default function Home() {
 
           <Divider />
 
-          {/* LATEST NEWS - editorial list style */}
+          {/* LATEST NEWS */}
           {latestNews.length > 0 && (
             <section style={{ padding: "48px 0" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "28px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}` }}>
-                <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em", color: textColor, margin: 0 }}>
+                <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em", color: "hsl(var(--foreground))", margin: 0 }}>
                   LATEST NEWS
                 </h2>
                 <a href="/news" style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.9rem", color: "#9a7c3f", textDecoration: "none" }}>
@@ -150,12 +143,12 @@ export default function Home() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }} className="news-grid">
                 {latestNews.slice(0, 6).map((item: any) => {
                   const href = item.news_slug ? `/news/${item.news_slug}` : `/news/${item.id}`;
-                  const excerpt = String(item.summary || item.content || "").replace(/<[^>]+>/g, " ").trim().slice(0, 90);
+                  const excerpt = stripHtml(String(item.summary || item.content || "")).trim().slice(0, 90);
                   return (
                     <a key={item.id} href={href} style={{ textDecoration: "none" }}>
                       <div
                         style={{
-                          background: isDark ? "#0d0d0d" : "#f5f0e8",
+                          background: "hsl(var(--card))",
                           border: `1px solid ${GOLD_BORDER}`,
                           height: "100%",
                           transition: "border-color 0.2s",
@@ -165,7 +158,7 @@ export default function Home() {
                       >
                         {item.image && (
                           <div style={{ height: "120px", overflow: "hidden" }}>
-                            <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                            <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }} loading="lazy" />
                           </div>
                         )}
                         <div style={{ padding: "14px" }}>
@@ -174,11 +167,11 @@ export default function Home() {
                               {item.category}
                             </span>
                           )}
-                          <h3 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "0.85rem", letterSpacing: "0.08em", color: textColor, margin: "0 0 6px", lineHeight: 1.35 }}>
+                          <h3 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "0.85rem", letterSpacing: "0.08em", color: "hsl(var(--foreground))", margin: "0 0 6px", lineHeight: 1.35 }}>
                             {item.title}
                           </h3>
                           {excerpt && (
-                            <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.88rem", color: isDark ? "rgba(232,224,208,0.5)" : "rgba(26,26,26,0.5)", margin: 0, lineHeight: 1.5 }}>
+                            <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.9rem", color: "hsl(var(--muted-foreground))", margin: 0, lineHeight: 1.5, opacity: 0.7 }}>
                               {excerpt}
                             </p>
                           )}
@@ -195,12 +188,12 @@ export default function Home() {
           <Divider />
 
           {/* LATEST WEAPONS */}
-          <LatestWeapons weapons={recentWeapons} isDark={isDark} />
+          <LatestWeapons weapons={recentWeapons} />
 
           <Divider />
 
           {/* CATEGORIES */}
-          <CategoriesGrid isDark={isDark} />
+          <CategoriesGrid />
 
         </div>
       </div>

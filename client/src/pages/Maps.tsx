@@ -206,7 +206,7 @@ export default function Maps() {
                     }}
                   >
                     {/* Image */}
-                    <div className="relative overflow-hidden aspect-video" style={{ background: "#0a0a0a" }}>
+                    <div className="relative overflow-hidden aspect-video" style={{ background: "hsl(var(--muted))" }}>
                       {map.image || map.imageUrl ? (
                         <img
                           src={map.image || map.imageUrl}
@@ -284,7 +284,7 @@ export default function Maps() {
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderLeftColor = accent; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderLeftColor = "transparent"; }}
                   >
-                    <div className="w-20 h-12 flex-shrink-0 overflow-hidden rounded" style={{ background: "#0a0a0a" }}>
+                    <div className="w-20 h-12 flex-shrink-0 overflow-hidden rounded" style={{ background: "hsl(var(--muted))" }}>
                       {map.image || map.imageUrl ? (
                         <img
                           src={map.image || map.imageUrl}

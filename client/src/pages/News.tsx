@@ -258,7 +258,7 @@ export default function News() {
                             style={{ minHeight: "260px" }}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center" style={{ background: "#0d0d0d", minHeight: "260px" }}>
+                          <div className="w-full h-full flex items-center justify-center" style={{ background: "hsl(var(--card))", minHeight: "260px" }}>
                             <ImageIcon className="h-12 w-12" style={{ color: "#222" }} />
                           </div>
                         )}
@@ -328,7 +328,7 @@ export default function News() {
                         }}
                       >
                         {/* Image */}
-                        <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "#0d0d0d" }}>
+                        <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "hsl(var(--card))" }}>
                           {item.image ? (
                             <img
                               src={item.image}

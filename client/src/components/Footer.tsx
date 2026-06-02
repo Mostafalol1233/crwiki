@@ -1,17 +1,10 @@
 import { Link } from "wouter";
-import { SiX, SiYoutube, SiDiscord, SiFacebook, SiInstagram, SiTwitch } from "react-icons/si";
-import { ChevronUp, ArrowRight } from "lucide-react";
+import { ExternalLink, ChevronUp, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
 
-const newsLinks = [
-  { label: "Latest News", path: "/news" },
-  { label: "Updates", path: "/posts" },
-  { label: "Events", path: "/category/events" },
-  { label: "Videos", path: "/videos" },
-];
 const gameLinks = [
   { label: "Game Overview", path: "/about" },
   { label: "Game Modes", path: "/modes" },
@@ -38,12 +31,12 @@ const supportLinks = [
   { label: "My Tickets", path: "/my-tickets" },
 ];
 const socials = [
-  { href: "https://www.facebook.com/crossfireonline", icon: <SiFacebook className="h-3.5 w-3.5" />, title: "Facebook" },
-  { href: "https://x.com/CrossFireOnline", icon: <SiX className="h-3.5 w-3.5" />, title: "X / Twitter" },
-  { href: "https://www.youtube.com/c/CrossFireWest", icon: <SiYoutube className="h-3.5 w-3.5" />, title: "YouTube" },
-  { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-3.5 w-3.5" />, title: "Discord" },
-  { href: "https://www.instagram.com/crossfirewest/", icon: <SiInstagram className="h-3.5 w-3.5" />, title: "Instagram" },
-  { href: "https://www.twitch.tv/cfonline/", icon: <SiTwitch className="h-3.5 w-3.5" />, title: "Twitch" },
+  { href: "https://www.facebook.com/crossfireonline", label: "FB", title: "Facebook" },
+  { href: "https://x.com/CrossFireOnline", label: "X", title: "X / Twitter" },
+  { href: "https://www.youtube.com/c/CrossFireWest", label: "YT", title: "YouTube" },
+  { href: "https://discord.gg/7AbuDrNNJM", label: "DC", title: "Discord" },
+  { href: "https://www.instagram.com/crossfirewest/", label: "IG", title: "Instagram" },
+  { href: "https://www.twitch.tv/cfonline/", label: "TV", title: "Twitch" },
 ];
 
 function SectionTitle({ label }: { label: string }) {
@@ -139,7 +132,7 @@ export function Footer() {
                 margin: "0 0 4px",
               }}
             >
-              CrossFire News & Events
+              CrossFire News &amp; Events
             </h3>
             <p
               style={{
@@ -194,13 +187,13 @@ export function Footer() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(154,124,63,0.08)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
-              Subscribe <ArrowRight className="h-3 w-3" />
+              Subscribe <ArrowRight size={12} strokeWidth={1.5} />
             </button>
           </form>
 
           {subStatus === "ok" && (
             <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.88rem", color: GOLD }}>
-              ✓ Subscribed
+              Subscribed
             </span>
           )}
         </div>
@@ -229,7 +222,7 @@ export function Footer() {
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.5"; }}
         >
-          <ChevronUp className="h-3.5 w-3.5" /> BACK TO TOP
+          <ChevronUp size={14} strokeWidth={1.5} /> BACK TO TOP
         </button>
       </div>
 
@@ -238,7 +231,12 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-10">
           <div>
             <SectionTitle label="NEWS" />
-            <ul className="space-y-2.5"><FooterLink label="Latest News" path="/news" /><FooterLink label="Updates" path="/posts" /><FooterLink label="Events" path="/category/events" /><FooterLink label="Videos" path="/videos" /></ul>
+            <ul className="space-y-2.5">
+              <FooterLink label="Latest News" path="/news" />
+              <FooterLink label="Updates" path="/posts" />
+              <FooterLink label="Events" path="/category/events" />
+              <FooterLink label="Videos" path="/videos" />
+            </ul>
           </div>
           <div>
             <SectionTitle label="GAME" />
@@ -261,7 +259,7 @@ export function Footer() {
           <div>
             <SectionTitle label="FOLLOW US" />
             <div className="flex flex-wrap gap-2 mb-5">
-              {socials.map(({ href, icon, title }) => (
+              {socials.map(({ href, label, title }) => (
                 <a
                   key={title}
                   href={href}
@@ -276,12 +274,16 @@ export function Footer() {
                     justifyContent: "center",
                     border: GOLD_BORDER,
                     color: "hsl(var(--muted-foreground))",
+                    fontFamily: "'Cinzel', serif",
+                    fontSize: "8px",
+                    letterSpacing: "0.05em",
                     transition: "color 0.2s, border-color 0.2s",
+                    textDecoration: "none",
                   }}
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.color = GOLD; el.style.borderColor = GOLD; }}
                   onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.color = "hsl(var(--muted-foreground))"; el.style.borderColor = "rgba(154,124,63,0.3)"; }}
                 >
-                  {icon}
+                  {label}
                 </a>
               ))}
             </div>
@@ -316,7 +318,7 @@ export function Footer() {
               opacity: 0.3,
             }}
           >
-            © {new Date().getFullYear()} Bimora Gaming · CrossFire Wiki. Not affiliated with Smilegate or Z8Games.
+            &copy; {new Date().getFullYear()} Bimora Gaming &middot; CrossFire Wiki. Not affiliated with Smilegate or Z8Games.
           </span>
           <div style={{ display: "flex", gap: "20px" }}>
             {[

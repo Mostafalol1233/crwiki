@@ -123,7 +123,7 @@ export default function Posts() {
                     <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
 
                     <div className="flex flex-col md:flex-row">
-                      <div className="md:w-[55%] relative overflow-hidden" style={{ background: "#0a0a0a", minHeight: "260px" }}>
+                      <div className="md:w-[55%] relative overflow-hidden" style={{ background: "hsl(var(--muted))", minHeight: "260px" }}>
                         <img
                           src={featuredPost.image || FALLBACK}
                           alt={featuredPost.title}
@@ -183,7 +183,7 @@ export default function Posts() {
                         style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}
                       >
                         {/* Image */}
-                        <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "#0a0a0a" }}>
+                        <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "hsl(var(--muted))" }}>
                           <img
                             src={post.image || FALLBACK}
                             alt={post.title}

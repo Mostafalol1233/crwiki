@@ -82,7 +82,7 @@ export default function About() {
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
         {/* ── Hero ── */}
-        <div className="relative overflow-hidden py-20 md:py-28" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+        <div className="relative overflow-hidden py-20 md:py-28" style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,0.06) 0%, transparent 70%)" }} />
           <div className="max-w-4xl mx-auto px-6 md:px-10 text-center relative">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -120,7 +120,7 @@ export default function About() {
         </div>
 
         {/* ── Stats bar ── */}
-        <div style={{ background: "#0a0a0a", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+        <div style={{ background: "hsl(var(--card))", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
           <div className="max-w-5xl mx-auto px-6 md:px-10 py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             {STATS.map((s) => (
               <div key={s.label} className="text-center">

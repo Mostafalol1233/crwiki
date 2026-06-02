@@ -153,7 +153,7 @@ export default function Contact() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
-                        style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)" }}
+                        style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)" }}
                       />
                     </div>
                     <div>
@@ -164,7 +164,7 @@ export default function Contact() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)" }}
+                        style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)" }}
                       />
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export default function Contact() {
                       onChange={(e) => setMessage(e.target.value)}
                       rows={6}
                       required
-                      style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)", resize: "vertical" }}
+                      style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.08)", color: "var(--foreground)", resize: "vertical" }}
                     />
                   </div>
 
@@ -212,7 +212,7 @@ export default function Contact() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 px-3 py-2.5 transition-all hover:-translate-y-0.5"
-                      style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}
+                      style={{ background: "hsl(var(--card))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}
                     >
                       <span style={{ color }}>{icon}</span>
                       <span className="text-[12px] font-bold" style={{ color: "#888" }}>{label}</span>

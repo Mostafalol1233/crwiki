@@ -321,7 +321,7 @@ export default function Weapons() {
                             aspectRatio: "4/3",
                             background: weapon.backgroundUrl
                               ? `url('${weapon.backgroundUrl}') center/cover`
-                              : "linear-gradient(135deg, #0a0a0a 0%, #161616 100%)",
+                              : "linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%)",
                           }}
                         >
                           {weapon.image ? (
@@ -372,7 +372,7 @@ export default function Weapons() {
                     {/* ── Detail Modal ── */}
                     <DialogContent
                       className="max-w-lg"
-                      style={{ background: "#0d0d0d", border: "1px solid rgba(245,166,35,0.2)", padding: 0 }}
+                      style={{ background: "hsl(var(--card))", border: "1px solid rgba(245,166,35,0.2)", padding: 0 }}
                     >
                       <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(to right, ${catStyle.color}, transparent)` }} />
                       <DialogHeader className="px-6 pt-6 pb-0">
@@ -390,7 +390,7 @@ export default function Weapons() {
                           style={{
                             background: weapon.backgroundUrl
                               ? `url('${weapon.backgroundUrl}') center/cover`
-                              : "linear-gradient(135deg, #080808 0%, #131313 100%)",
+                              : "linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%)",
                           }}
                         >
                           {weapon.image ? (

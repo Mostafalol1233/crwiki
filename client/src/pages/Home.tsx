@@ -4,13 +4,13 @@ import PageSEO from "@/components/PageSEO";
 import { EventsRibbon } from "@/components/EventsRibbon";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getPosts, getEvents, getWeapons, getNews } from "@/lib/supabaseApi";
+import { getPosts, getEvents, getWeapons, getNews, getSiteSettings } from "@/lib/supabaseApi";
 import { HomepageHero } from "@/components/HomepageHero";
 import { FeaturedSection } from "@/components/FeaturedSection";
 import { LatestWeapons } from "@/components/LatestWeapons";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 
-const HERO_BG = "/cf-heroes-bg.png";
+const DEFAULT_HERO_BG = "/cf-heroes-bg.png";
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
 
 function Divider() {
@@ -26,6 +26,18 @@ function stripHtml(html: string): string {
 
 export default function Home() {
   const { t } = useLanguage();
+
+  const { data: siteSettingsData } = useQuery({
+    queryKey: ["site-settings-home"],
+    queryFn: () => getSiteSettings(),
+    staleTime: 2 * 60 * 1000,
+  });
+  const siteSettings = siteSettingsData as any;
+
+  const heroImage = siteSettings?.heroImage || DEFAULT_HERO_BG;
+  const adminFeaturedEventId: string = siteSettings?.featuredEventId || "";
+  const adminSecondaryEventIds: string[] = Array.isArray(siteSettings?.secondaryEventIds) ? siteSettings.secondaryEventIds : [];
+  const adminFeaturedWeaponIds: string[] = Array.isArray(siteSettings?.featuredWeapons) ? siteSettings.featuredWeapons : [];
 
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 10 }],
@@ -43,9 +55,9 @@ export default function Home() {
 
   const { data: recentWeaponsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/weapons/search", "home-recent"],
-    queryFn: () => getWeapons({ page: 1, pageSize: 4 }),
+    queryFn: () => getWeapons({ page: 1, pageSize: 20 }),
   });
-  const recentWeapons = recentWeaponsData?.items || [];
+  const allWeapons = recentWeaponsData?.items || [];
 
   const { data: latestNewsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/news", { limit: 6, home: true }],
@@ -57,8 +69,36 @@ export default function Home() {
   const scrapedEvents = allEvents.filter((e: any) => e.rawHtmlContent);
   const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(0, 10);
 
-  const [featuredEvent, ...restEvents] = displayEvents;
-  const secondaryEvents = restEvents.slice(0, 2);
+  // Resolve featured event: admin pick or fallback to first
+  const featuredEvent = useMemo(() => {
+    if (adminFeaturedEventId) {
+      const found = displayEvents.find((e: any) => String(e.id || e._id) === adminFeaturedEventId);
+      if (found) return found;
+    }
+    return displayEvents[0] || null;
+  }, [displayEvents, adminFeaturedEventId]);
+
+  // Resolve secondary events: admin picks or fallback to next 2
+  const secondaryEvents = useMemo(() => {
+    if (adminSecondaryEventIds.length > 0) {
+      const picked = adminSecondaryEventIds
+        .map((id) => displayEvents.find((e: any) => String(e.id || e._id) === id))
+        .filter(Boolean);
+      if (picked.length > 0) return picked.slice(0, 2);
+    }
+    return displayEvents.filter((e: any) => e !== featuredEvent).slice(0, 2);
+  }, [displayEvents, featuredEvent, adminSecondaryEventIds]);
+
+  // Resolve featured weapons: admin picks or fallback to latest
+  const displayWeapons = useMemo(() => {
+    if (adminFeaturedWeaponIds.length > 0) {
+      const picked = adminFeaturedWeaponIds
+        .map((id) => allWeapons.find((w: any) => String(w.id || w._id) === id))
+        .filter(Boolean);
+      if (picked.length > 0) return picked.slice(0, 4);
+    }
+    return allWeapons.slice(0, 4);
+  }, [allWeapons, adminFeaturedWeaponIds]);
 
   const featuredForSection = featuredEvent
     ? { ...featuredEvent, tag: featuredEvent.type === "upcoming" ? "Upcoming" : "Featured", description: featuredEvent.description || featuredEvent.content || "" }
@@ -79,7 +119,7 @@ export default function Home() {
       <div style={{ background: "hsl(var(--background))", minHeight: "100vh" }}>
 
         {/* HERO */}
-        <HomepageHero heroImage={HERO_BG} />
+        <HomepageHero heroImage={heroImage} />
 
         {/* EVENTS RIBBON */}
         <div
@@ -188,7 +228,7 @@ export default function Home() {
           <Divider />
 
           {/* LATEST WEAPONS */}
-          <LatestWeapons weapons={recentWeapons} />
+          <LatestWeapons weapons={displayWeapons} />
 
           <Divider />
 

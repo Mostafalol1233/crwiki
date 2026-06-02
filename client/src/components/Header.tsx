@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, Bell, User } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, User } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
@@ -89,17 +89,7 @@ export function Header() {
   if (userStr) { try { user = JSON.parse(userStr); } catch { } }
   const isLoggedIn = !!(token && user);
 
-  const topBg = isDark ? "#080808" : "#ffffff";
-  const topBorder = isDark ? "#1c1c1c" : "#e5e5e5";
-  const navBg = isDark ? "#111111" : "#f8f8f8";
-  const navBorder = isDark ? "#222222" : "#e0e0e0";
   const navAccent = "#f5a623";
-  const textColor = isDark ? "#cccccc" : "#333333";
-  const mutedColor = isDark ? "#666666" : "#999999";
-  const dropBg = isDark ? "#141414" : "#ffffff";
-  const dropBorder = isDark ? "#252525" : "#e8e8e8";
-  const dropText = isDark ? "#aaaaaa" : "#444444";
-  const dropHover = isDark ? "#1e1e1e" : "#f5f5f5";
 
   const NavDropdown = ({ item, align = "left" }: { item: MenuItem; align?: "left" | "right" }) => {
     if (!item.dropdown) return null;
@@ -109,18 +99,18 @@ export function Header() {
         <button
           className="self-stretch flex items-center gap-1 px-4 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623]"
           style={{
-            color: active ? navAccent : textColor,
+            color: active ? navAccent : "hsl(var(--foreground))",
             borderBottom: `2px solid ${active ? navAccent : "transparent"}`,
           }}
         >
           {item.label}
-          <ChevronDown className="h-3 w-3 opacity-60 transition-transform group-hover:rotate-180 duration-200" />
+          <ChevronDown size={12} strokeWidth={1.5} style={{ opacity: 0.6 }} className="transition-transform group-hover:rotate-180 duration-200" />
         </button>
         <div
           className="absolute top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-2xl min-w-[190px]"
           style={{
-            background: dropBg,
-            border: `1px solid ${dropBorder}`,
+            background: "hsl(var(--card))",
+            border: `1px solid hsl(var(--border))`,
             borderTop: `2px solid ${navAccent}`,
             [align === "right" ? "right" : "left"]: 0,
             marginTop: "2px",
@@ -128,23 +118,13 @@ export function Header() {
         >
           {item.dropdown.map((sub, i) => (
             <Link
-              key={`${sub.path}-${i}`}
+              key={`dd-${sub.path}-${i}`}
               href={sub.path}
-              className="flex items-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-150"
+              className="flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition-colors hover:text-[#f5a623]"
               style={{
-                color: location === sub.path ? navAccent : dropText,
-                background: location === sub.path ? dropHover : "transparent",
-                borderBottom: i < item.dropdown!.length - 1 ? `1px solid ${dropBorder}` : "none",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = dropHover;
-                (e.currentTarget as HTMLElement).style.color = navAccent;
-                (e.currentTarget as HTMLElement).style.paddingLeft = "20px";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = location === sub.path ? dropHover : "transparent";
-                (e.currentTarget as HTMLElement).style.color = location === sub.path ? navAccent : dropText;
-                (e.currentTarget as HTMLElement).style.paddingLeft = "16px";
+                color: location === sub.path ? navAccent : "hsl(var(--muted-foreground))",
+                background: location === sub.path ? "rgba(245,166,35,0.06)" : "transparent",
+                borderBottom: i < item.dropdown!.length - 1 ? `1px solid hsl(var(--border))` : "none",
               }}
             >
               {sub.label}
@@ -162,7 +142,7 @@ export function Header() {
       style={{ boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.4)" : "none" }}
     >
       {/* ── TOP BAR ── */}
-      <div style={{ background: topBg, borderBottom: `1px solid ${topBorder}` }}>
+      <div style={{ background: "hsl(var(--background))", borderBottom: `1px solid hsl(var(--border))` }}>
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
 
           {/* Logo */}
@@ -181,14 +161,14 @@ export function Header() {
             {/* Desktop search */}
             <form onSubmit={handleSearch} className="hidden md:flex items-center mr-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: mutedColor }} />
+                <Search size={14} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "hsl(var(--muted-foreground))" }} />
                 <input
                   type="search"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-7 pl-8 pr-3 text-[12px] outline-none rounded-sm w-36 focus:w-48 transition-all duration-200"
-                  style={{ background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}`, color: textColor }}
+                  style={{ background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))`, color: "hsl(var(--foreground))" }}
                 />
               </div>
             </form>
@@ -198,9 +178,9 @@ export function Header() {
               onClick={toggleLanguage}
               title={language === "en" ? "Switch to Arabic" : "Switch to English"}
               className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: mutedColor }}
+              style={{ color: "hsl(var(--muted-foreground))" }}
             >
-              <Globe className="h-4 w-4" />
+              <Globe size={16} strokeWidth={1.5} />
             </button>
 
             {/* Theme toggle */}
@@ -208,40 +188,40 @@ export function Header() {
               onClick={toggleTheme}
               title={isDark ? "Light mode" : "Dark mode"}
               className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: mutedColor }}
+              style={{ color: "hsl(var(--muted-foreground))" }}
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
             </button>
 
             {/* Auth */}
             {isLoggedIn ? (
               <>
-                <Link href="/chat" className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]" style={{ color: mutedColor }}>
-                  <MessageSquare className="h-4 w-4" />
+                <Link href="/chat" className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  <MessageSquare size={16} strokeWidth={1.5} />
                 </Link>
                 <div className="relative group hidden md:block">
                   <button
                     className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold rounded transition-all hover:border-[#f5a623] hover:text-[#f5a623]"
-                    style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}
+                    style={{ color: "hsl(var(--foreground))", background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))` }}
                   >
-                    <User className="h-3 w-3" />
+                    <User size={12} strokeWidth={1.5} />
                     {user?.username || "Profile"}
-                    <ChevronDown className="h-3 w-3" />
+                    <ChevronDown size={12} strokeWidth={1.5} />
                   </button>
                   <div
                     className="absolute right-0 top-full mt-1 w-48 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
-                    style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}
+                    style={{ background: "hsl(var(--card))", border: `1px solid hsl(var(--border))`, borderTop: `2px solid ${navAccent}` }}
                   >
-                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>
+                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))", borderBottom: `1px solid hsl(var(--border))` }}>
                       {t("navProfile")}
                     </Link>
-                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>
+                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))", borderBottom: `1px solid hsl(var(--border))` }}>
                       {t("navMyTickets")}
                     </Link>
                     <button
                       onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
                       className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-red-400"
-                      style={{ color: dropText }}
+                      style={{ color: "hsl(var(--muted-foreground))" }}
                     >
                       {t("navLogout")}
                     </button>
@@ -253,7 +233,7 @@ export function Header() {
                 <Link
                   href="/login"
                   className="h-8 px-4 flex items-center text-[12px] font-semibold rounded transition-all hover:text-[#f5a623] hover:border-[#f5a623]"
-                  style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}
+                  style={{ color: "hsl(var(--foreground))", background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))` }}
                 >
                   {t("login")}
                 </Link>
@@ -270,10 +250,10 @@ export function Header() {
             {/* Mobile hamburger */}
             <button
               className="md:hidden h-8 w-8 flex items-center justify-center ml-1 rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: textColor }}
+              style={{ color: "hsl(var(--foreground))" }}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
             </button>
           </div>
         </div>
@@ -282,7 +262,7 @@ export function Header() {
       {/* ── MAIN NAV BAR ── */}
       <div
         style={{
-          background: navBg,
+          background: "hsl(var(--card))",
           borderBottom: `2px solid ${navAccent}`,
           boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)",
           overflow: "visible",
@@ -335,18 +315,18 @@ export function Header() {
 
       {/* ── MOBILE MENU ── */}
       {mobileMenuOpen && (
-        <div style={{ background: isDark ? "#0d0d0d" : "#ffffff", borderBottom: `1px solid ${navBorder}` }}>
+        <div style={{ background: "hsl(var(--background))", borderBottom: `1px solid hsl(var(--border))` }}>
           {/* Mobile search */}
           <div className="px-4 pt-3 pb-2">
             <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedColor }} />
+              <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "hsl(var(--muted-foreground))" }} />
               <input
                 type="search"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-9 pl-9 pr-3 text-[13px] outline-none"
-                style={{ background: isDark ? "#1a1a1a" : "#f5f5f5", border: `1px solid ${navBorder}`, color: textColor }}
+                style={{ background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))`, color: "hsl(var(--foreground))" }}
               />
             </form>
           </div>
@@ -359,11 +339,11 @@ export function Header() {
                   <>
                     <button
                       className="w-full flex items-center justify-between px-3 py-2.5 text-[12px] font-black uppercase tracking-widest rounded transition-colors hover:text-[#f5a623]"
-                      style={{ color: textColor }}
+                      style={{ color: "hsl(var(--foreground))" }}
                       onClick={() => toggleMobileSub(item.label)}
                     >
                       {item.label}
-                      <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
+                      <ChevronDown size={14} strokeWidth={1.5} className={`transition-transform duration-200 ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
                     </button>
                     {mobileExpandedMenu === item.label && (
                       <div className="mb-1 ml-3" style={{ borderLeft: `2px solid ${navAccent}`, paddingLeft: "12px" }}>
@@ -372,7 +352,7 @@ export function Header() {
                             key={`ms-${sub.path}-${i}`}
                             href={sub.path}
                             className="block px-2 py-2 text-[11px] uppercase tracking-wide font-semibold transition-colors hover:text-[#f5a623]"
-                            style={{ color: location === sub.path ? navAccent : mutedColor }}
+                            style={{ color: location === sub.path ? navAccent : "hsl(var(--muted-foreground))" }}
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             {sub.label}
@@ -385,7 +365,7 @@ export function Header() {
                   <Link
                     href={item.path || "#"}
                     className="block px-3 py-2.5 text-[12px] font-black uppercase tracking-widest rounded transition-colors hover:text-[#f5a623]"
-                    style={{ color: location === item.path ? navAccent : textColor }}
+                    style={{ color: location === item.path ? navAccent : "hsl(var(--foreground))" }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.label}
@@ -396,18 +376,18 @@ export function Header() {
           </nav>
 
           {/* Mobile bottom row */}
-          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${navBorder}` }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid hsl(var(--border))` }}>
             <div className="flex items-center gap-2">
-              <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}>
-                <Globe className="h-4 w-4" />
+              <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: "hsl(var(--muted-foreground))" }}>
+                <Globe size={16} strokeWidth={1.5} />
               </button>
-              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}>
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: "hsl(var(--muted-foreground))" }}>
+                {isDark ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
               </button>
             </div>
             {!isLoggedIn ? (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: textColor, border: `1px solid ${navBorder}` }} onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: "hsl(var(--foreground))", border: `1px solid hsl(var(--border))` }} onClick={() => setMobileMenuOpen(false)}>
                   {t("login")}
                 </Link>
                 <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>

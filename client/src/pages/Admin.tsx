@@ -879,6 +879,9 @@ export default function Admin() {
     monetizationAffiliateEnabled: true,
     monetizationAffiliateCommissionPct: 4,
     featuredWeapons: [] as string[],
+    heroImage: "",
+    featuredEventId: "",
+    secondaryEventIds: [] as string[],
   });
 
   const isVerificationReady = !siteSettingsForm.reviewVerificationEnabled || (
@@ -1101,6 +1104,9 @@ export default function Admin() {
         monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
         monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
         featuredWeapons: Array.isArray((siteSettings as any).featuredWeapons) ? (siteSettings as any).featuredWeapons : [],
+        heroImage: (siteSettings as any).heroImage || "",
+        featuredEventId: (siteSettings as any).featuredEventId || "",
+        secondaryEventIds: Array.isArray((siteSettings as any).secondaryEventIds) ? (siteSettings as any).secondaryEventIds : [],
       });
     }
   }, [siteSettings]);
@@ -1455,6 +1461,9 @@ export default function Admin() {
         monetizationAffiliateEnabled: data.monetizationAffiliateEnabled !== false,
         monetizationAffiliateCommissionPct: data.monetizationAffiliateCommissionPct ?? 4,
         featuredWeapons: Array.isArray(data.featuredWeapons) ? data.featuredWeapons : prev.featuredWeapons,
+        heroImage: data.heroImage ?? prev.heroImage,
+        featuredEventId: data.featuredEventId ?? prev.featuredEventId,
+        secondaryEventIds: Array.isArray(data.secondaryEventIds) ? data.secondaryEventIds : prev.secondaryEventIds,
       }));
       toast({ title: "Site settings updated" });
     },
@@ -2412,6 +2421,98 @@ export default function Admin() {
                         {updateSiteSettingsMutation.isPending ? "Saving..." : "Save featured weapons"}
                       </Button>
                     </div>
+                  </div>
+                </div>
+
+                {/* ── Hero Image ── */}
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span style={{ fontSize: "14px" }}>🖼️</span>
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Hero Image (Homepage)</h3>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: "#555" }}>
+                    URL of the background image shown in the full-screen homepage hero. Leave empty to use the default.
+                  </p>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      placeholder="https://example.com/hero.jpg"
+                      value={siteSettingsForm.heroImage}
+                      onChange={(e) => setSiteSettingsForm(prev => ({ ...prev, heroImage: e.target.value }))}
+                      className="flex-1"
+                    />
+                    {siteSettingsForm.heroImage && (
+                      <img src={siteSettingsForm.heroImage} alt="Hero preview" className="w-16 h-10 object-cover rounded border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    )}
+                  </div>
+                  <div className="flex justify-end mt-3">
+                    <Button size="sm" onClick={() => updateSiteSettingsMutation.mutate(siteSettingsForm)} disabled={updateSiteSettingsMutation.isPending}>
+                      {updateSiteSettingsMutation.isPending ? "Saving..." : "Save hero image"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ── Featured Event (Main Card) ── */}
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span style={{ fontSize: "14px" }}>📌</span>
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Featured Event (Large Card)</h3>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: "#555" }}>
+                    Select the event that appears as the large featured card on the homepage. Leave unset to use the most recent event.
+                  </p>
+                  <select
+                    value={siteSettingsForm.featuredEventId}
+                    onChange={(e) => setSiteSettingsForm(prev => ({ ...prev, featuredEventId: e.target.value }))}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm mb-3"
+                  >
+                    <option value="">— Use most recent event —</option>
+                    {((eventsData as any)?.items || []).map((ev: any) => (
+                      <option key={String(ev.id || ev._id)} value={String(ev.id || ev._id)}>
+                        {ev.title || ev.event_name || "Untitled"}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => updateSiteSettingsMutation.mutate(siteSettingsForm)} disabled={updateSiteSettingsMutation.isPending}>
+                      {updateSiteSettingsMutation.isPending ? "Saving..." : "Save featured event"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ── Secondary Events (2 small cards) ── */}
+                <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span style={{ fontSize: "14px" }}>📋</span>
+                    <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Secondary Events (2 Small Cards)</h3>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: "#555" }}>
+                    Select up to 2 events shown as the smaller sidebar cards next to the featured event. Leave empty to auto-select next most recent.
+                  </p>
+                  <div className="flex flex-col gap-2 mb-3">
+                    {[0, 1].map((idx) => (
+                      <select
+                        key={idx}
+                        value={siteSettingsForm.secondaryEventIds[idx] || ""}
+                        onChange={(e) => {
+                          const next = [...siteSettingsForm.secondaryEventIds];
+                          next[idx] = e.target.value;
+                          setSiteSettingsForm(prev => ({ ...prev, secondaryEventIds: next.filter(Boolean) }));
+                        }}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">{idx === 0 ? "— Second event —" : "— Third event —"}</option>
+                        {((eventsData as any)?.items || []).map((ev: any) => (
+                          <option key={String(ev.id || ev._id)} value={String(ev.id || ev._id)}>
+                            {ev.title || ev.event_name || "Untitled"}
+                          </option>
+                        ))}
+                      </select>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <Button size="sm" onClick={() => updateSiteSettingsMutation.mutate(siteSettingsForm)} disabled={updateSiteSettingsMutation.isPending}>
+                      {updateSiteSettingsMutation.isPending ? "Saving..." : "Save secondary events"}
+                    </Button>
                   </div>
                 </div>
 

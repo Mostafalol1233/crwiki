@@ -58,7 +58,7 @@ export default function VideosCategoryPage() {
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
         {/* Hero */}
-        <div className="relative overflow-hidden py-12 md:py-16 text-center" style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+        <div className="relative overflow-hidden py-12 md:py-16 text-center" style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
           <div className="relative max-w-3xl mx-auto px-6">
             <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>

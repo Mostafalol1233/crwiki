@@ -1,0 +1,44 @@
+
+CrossFire Wiki — Homepage Redesign
+React project.
+Design System:
+The site has two modes — dark and light — with a toggle button in the navbar. Dark mode is the default.
+Dark mode: background #0a0a0a, text #e8e0d0
+Light mode: background #F0EBE0, text #1a1a1a
+Single gold accent color: #9a7c3f — use on ONE element per section only, never everywhere.
+Fonts: Cinzel for headings only, EB Garamond for body text — import both from Google Fonts.
+Headings: font-weight: 300, letter-spacing: 0.15em — never bold, never heavy.
+Borders: 1px solid gold at low opacity only. No thick borders anywhere.
+Section spacing: minimum 48px padding between sections.
+Never use: gradients, glows, drop shadows, generic gaming fonts, or anything that looks like an AI template.
+Images do the talking — use object-fit: cover on all images, never show full uncropped images.
+Visual reference: cinematic dark editorial. Ultra-thin spaced typography. Full-bleed imagery. Nothing screams. Everything is intentional.
+
+Components:
+1. HomepageHero.jsx
+Full-viewport-height background image area.
+Centered: site title in thin spaced Cinzel + one italic Garamond subtitle.
+Large search bar below: placeholder "Search weapons, maps, mercenaries..."
+No stats bar.
+Accepts heroImage prop.
+2. FeaturedSection.jsx
+Two-column layout: left (2/3) = one large featured card — image area height: 160px with object-fit: cover + tag + title + short description + "View Event →" link. Right (1/3) = two smaller stacked cards each with image height: 90px object-fit: cover + tag + title + link.
+All cards: thin gold border 1px solid rgba(154,124,63,0.25), no shadow, no heavy padding.
+Accepts featured object and secondary array of 2.
+3. LatestWeapons.jsx
+Section title in Cinzel + "Full Arsenal →" gold link right-aligned same row.
+Exactly 4 weapon cards in a row.
+Each card: dark image area + weapon name in Cinzel 10px + two thin 2px stat bars (Damage, Recoil) with gold fill.
+Accepts weapons array of 4.
+4. CategoriesGrid.jsx
+3 equal cards only: Weapons, Maps, Mercenaries — no Modes.
+Each card: icon + name in Cinzel + short italic label in Garamond.
+Hover: subtle background shift rgba(154,124,63,0.06).
+No background images.
+5. HomepageLayout.jsx
+Assembles all 4 components in order with a 1px gold divider between each section.
+Manages dark/light state, passes as prop to all components.
+Root wrapper uses data-theme="dark" or data-theme="light" — build all CSS variables off it.
+
+Each component is self-contained with its own styles matching your existing project setup.
+Mobile: single column below 768px.

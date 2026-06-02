@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, Download } from "lucide-react";
+import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, Bell, User } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useLanguage } from "./LanguageProvider";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-interface DropdownItem { path: string; label: string }
+interface DropdownItem { path: string; label: string; icon?: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
 
 export function Header() {
@@ -14,12 +14,22 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [scrolled, setScrolled] = useState(false);
 
   const isDark = theme === "dark";
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) { setLocation(`/search?q=${encodeURIComponent(searchQuery)}`); setMobileMenuOpen(false); }
+    if (searchQuery.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setMobileMenuOpen(false);
+    }
   };
 
   const navItems: MenuItem[] = [
@@ -48,14 +58,15 @@ export function Header() {
       label: t("navShop"),
       dropdown: [
         { path: "/sellers", label: t("navSellers") },
-        { path: "/sellers", label: t("navBrowseItems") },
+        { path: "/pricing", label: "Buy ZP" },
+        { path: "/reviews", label: t("navReviews") },
       ],
     },
     {
       label: t("navCommunity"),
       dropdown: [
         { path: "/posts", label: t("navForum") },
-        { path: "/reviews", label: t("navReviews") },
+        { path: "/tutorials", label: "Tutorials" },
         { path: "/contact", label: t("navContact") },
       ],
     },
@@ -69,7 +80,7 @@ export function Header() {
     },
   ];
 
-  const isActiveDrop = (items: DropdownItem[]) => items.some((i) => location === i.path);
+  const isActiveDrop = (items: DropdownItem[]) => items.some((i) => location === i.path || location.startsWith(i.path + "/"));
   const toggleMobileSub = (label: string) => setMobileExpandedMenu(mobileExpandedMenu === label ? null : label);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -90,16 +101,79 @@ export function Header() {
   const dropText = isDark ? "#aaaaaa" : "#444444";
   const dropHover = isDark ? "#1e1e1e" : "#f5f5f5";
 
-  return (
-    <header className="sticky top-0 z-50 w-full" dir="ltr">
+  const NavDropdown = ({ item, align = "left" }: { item: MenuItem; align?: "left" | "right" }) => {
+    if (!item.dropdown) return null;
+    const active = isActiveDrop(item.dropdown);
+    return (
+      <div className="relative group flex items-center self-stretch">
+        <button
+          className="self-stretch flex items-center gap-1 px-4 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623]"
+          style={{
+            color: active ? navAccent : textColor,
+            borderBottom: `2px solid ${active ? navAccent : "transparent"}`,
+          }}
+        >
+          {item.label}
+          <ChevronDown className="h-3 w-3 opacity-60 transition-transform group-hover:rotate-180 duration-200" />
+        </button>
+        <div
+          className="absolute top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-2xl min-w-[190px]"
+          style={{
+            background: dropBg,
+            border: `1px solid ${dropBorder}`,
+            borderTop: `2px solid ${navAccent}`,
+            [align === "right" ? "right" : "left"]: 0,
+            marginTop: "2px",
+          }}
+        >
+          {item.dropdown.map((sub, i) => (
+            <Link
+              key={`${sub.path}-${i}`}
+              href={sub.path}
+              className="flex items-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-150"
+              style={{
+                color: location === sub.path ? navAccent : dropText,
+                background: location === sub.path ? dropHover : "transparent",
+                borderBottom: i < item.dropdown!.length - 1 ? `1px solid ${dropBorder}` : "none",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = dropHover;
+                (e.currentTarget as HTMLElement).style.color = navAccent;
+                (e.currentTarget as HTMLElement).style.paddingLeft = "20px";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = location === sub.path ? dropHover : "transparent";
+                (e.currentTarget as HTMLElement).style.color = location === sub.path ? navAccent : dropText;
+                (e.currentTarget as HTMLElement).style.paddingLeft = "16px";
+              }}
+            >
+              {sub.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
+  return (
+    <header
+      className="sticky top-0 z-50 w-full transition-shadow duration-300"
+      dir="ltr"
+      style={{ boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.4)" : "none" }}
+    >
       {/* ── TOP BAR ── */}
       <div style={{ background: topBg, borderBottom: `1px solid ${topBorder}` }}>
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src="/logo-new.png" alt="Bimora Gaming" className="h-14 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} draggable={false} />
+            <img
+              src="/logo-new.png"
+              alt="Bimora Gaming"
+              className="h-14 w-auto object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              draggable={false}
+            />
           </Link>
 
           {/* Right side */}
@@ -146,22 +220,48 @@ export function Header() {
                   <MessageSquare className="h-4 w-4" />
                 </Link>
                 <div className="relative group hidden md:block">
-                  <button className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold rounded transition-colors hover:text-[#f5a623]" style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}>
-                    {user?.username || "Profile"} <ChevronDown className="h-3 w-3" />
+                  <button
+                    className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold rounded transition-all hover:border-[#f5a623] hover:text-[#f5a623]"
+                    style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}
+                  >
+                    <User className="h-3 w-3" />
+                    {user?.username || "Profile"}
+                    <ChevronDown className="h-3 w-3" />
                   </button>
-                  <div className="absolute right-0 top-full mt-1 w-44 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50" style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}>
-                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>{t("navProfile")}</Link>
-                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>{t("navMyTickets")}</Link>
-                    <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }} className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText }}>{t("navLogout")}</button>
+                  <div
+                    className="absolute right-0 top-full mt-1 w-48 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
+                    style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}
+                  >
+                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>
+                      {t("navProfile")}
+                    </Link>
+                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: dropText, borderBottom: `1px solid ${dropBorder}` }}>
+                      {t("navMyTickets")}
+                    </Link>
+                    <button
+                      onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
+                      className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-red-400"
+                      style={{ color: dropText }}
+                    >
+                      {t("navLogout")}
+                    </button>
                   </div>
                 </div>
               </>
             ) : (
               <div className="hidden md:flex items-center gap-1 ml-1">
-                <Link href="/login" className="h-8 px-4 flex items-center text-[12px] font-semibold rounded transition-colors hover:text-[#f5a623]" style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}>
+                <Link
+                  href="/login"
+                  className="h-8 px-4 flex items-center text-[12px] font-semibold rounded transition-all hover:text-[#f5a623] hover:border-[#f5a623]"
+                  style={{ color: textColor, background: isDark ? "#1a1a1a" : "#f0f0f0", border: `1px solid ${navBorder}` }}
+                >
                   {t("login")}
                 </Link>
-                <Link href="/register" className="h-8 px-4 flex items-center text-[12px] font-bold rounded transition-opacity hover:opacity-90" style={{ background: navAccent, color: "#000000" }}>
+                <Link
+                  href="/register"
+                  className="h-8 px-4 flex items-center text-[12px] font-bold rounded transition-opacity hover:opacity-90 hover:shadow-[0_0_12px_rgba(245,166,35,0.4)]"
+                  style={{ background: navAccent, color: "#000000" }}
+                >
                   {t("signUp")}
                 </Link>
               </div>
@@ -180,50 +280,23 @@ export function Header() {
       </div>
 
       {/* ── MAIN NAV BAR ── */}
-      <div style={{ background: navBg, borderBottom: `2px solid ${navAccent}`, boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)", overflow: "visible" }}>
+      <div
+        style={{
+          background: navBg,
+          borderBottom: `2px solid ${navAccent}`,
+          boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)",
+          overflow: "visible",
+        }}
+      >
         <div className="hidden md:flex items-center max-w-7xl mx-auto px-4 md:px-6 h-14" style={{ overflow: "visible" }}>
 
-          {/* Outer left spacer — pushes nav toward center */}
           <div className="flex-1" />
 
-          {/* Left nav: NEWS + GAME — sits right next to Download */}
+          {/* Left nav: NEWS + GAME */}
           <nav className="flex items-center self-stretch">
-            {navItems.slice(0, 2).map((item) => {
-              if (!item.dropdown) return null;
-              const active = isActiveDrop(item.dropdown);
-              return (
-                <div key={item.label} className="relative group flex items-center self-stretch">
-                  <button
-                    className="self-stretch flex items-center gap-1 px-4 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
-                    style={{ color: active ? navAccent : textColor }}
-                  >
-                    {item.label}
-                    <ChevronDown className="h-3 w-3 opacity-60" />
-                  </button>
-                  <div
-                    className="absolute left-0 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-xl min-w-[180px]"
-                    style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}
-                  >
-                    {item.dropdown.map((sub) => (
-                      <Link
-                        key={sub.path}
-                        href={sub.path}
-                        className="flex items-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all"
-                        style={{
-                          color: location === sub.path ? navAccent : dropText,
-                          borderBottom: `1px solid ${dropBorder}`,
-                          background: location === sub.path ? dropHover : "transparent",
-                        }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = dropHover; (e.currentTarget as HTMLElement).style.color = navAccent; (e.currentTarget as HTMLElement).style.paddingLeft = "20px"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = location === sub.path ? dropHover : "transparent"; (e.currentTarget as HTMLElement).style.color = location === sub.path ? navAccent : dropText; (e.currentTarget as HTMLElement).style.paddingLeft = "16px"; }}
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {navItems.slice(0, 2).map((item) => (
+              <NavDropdown key={item.label} item={item} align="left" />
+            ))}
           </nav>
 
           {/* Center: Download button */}
@@ -249,47 +322,13 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Right nav: SHOP + COMMUNITY + SUPPORT — sits right next to Download */}
+          {/* Right nav: SHOP + COMMUNITY + SUPPORT */}
           <nav className="flex items-center self-stretch">
-            {navItems.slice(2, 5).map((item) => {
-              if (!item.dropdown) return null;
-              const active = isActiveDrop(item.dropdown);
-              return (
-                <div key={item.label} className="relative group flex items-center self-stretch">
-                  <button
-                    className="self-stretch flex items-center gap-1 px-3 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623] border-b-2 border-transparent group-hover:border-[#f5a623]"
-                    style={{ color: active ? navAccent : textColor }}
-                  >
-                    {item.label}
-                    <ChevronDown className="h-3 w-3 opacity-60" />
-                  </button>
-                  <div
-                    className="absolute right-0 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-xl min-w-[180px]"
-                    style={{ background: dropBg, border: `1px solid ${dropBorder}`, borderTop: `2px solid ${navAccent}` }}
-                  >
-                    {item.dropdown.map((sub) => (
-                      <Link
-                        key={sub.path}
-                        href={sub.path}
-                        className="flex items-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all"
-                        style={{
-                          color: location === sub.path ? navAccent : dropText,
-                          borderBottom: `1px solid ${dropBorder}`,
-                          background: location === sub.path ? dropHover : "transparent",
-                        }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = dropHover; (e.currentTarget as HTMLElement).style.color = navAccent; (e.currentTarget as HTMLElement).style.paddingLeft = "20px"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = location === sub.path ? dropHover : "transparent"; (e.currentTarget as HTMLElement).style.color = location === sub.path ? navAccent : dropText; (e.currentTarget as HTMLElement).style.paddingLeft = "16px"; }}
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {navItems.slice(2, 5).map((item) => (
+              <NavDropdown key={item.label} item={item} align="right" />
+            ))}
           </nav>
 
-          {/* Outer right spacer — pushes nav toward center */}
           <div className="flex-1" />
         </div>
       </div>
@@ -324,13 +363,13 @@ export function Header() {
                       onClick={() => toggleMobileSub(item.label)}
                     >
                       {item.label}
-                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
                     </button>
                     {mobileExpandedMenu === item.label && (
                       <div className="mb-1 ml-3" style={{ borderLeft: `2px solid ${navAccent}`, paddingLeft: "12px" }}>
-                        {item.dropdown.map((sub) => (
+                        {item.dropdown.map((sub, i) => (
                           <Link
-                            key={`ms-${sub.path}`}
+                            key={`ms-${sub.path}-${i}`}
                             href={sub.path}
                             className="block px-2 py-2 text-[11px] uppercase tracking-wide font-semibold transition-colors hover:text-[#f5a623]"
                             style={{ color: location === sub.path ? navAccent : mutedColor }}
@@ -359,16 +398,26 @@ export function Header() {
           {/* Mobile bottom row */}
           <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${navBorder}` }}>
             <div className="flex items-center gap-2">
-              <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}><Globe className="h-4 w-4" /></button>
-              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}>{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+              <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}>
+                <Globe className="h-4 w-4" />
+              </button>
+              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: mutedColor }}>
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
             </div>
             {!isLoggedIn ? (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: textColor, border: `1px solid ${navBorder}` }} onClick={() => setMobileMenuOpen(false)}>{t("login")}</Link>
-                <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>{t("signUp")}</Link>
+                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: textColor, border: `1px solid ${navBorder}` }} onClick={() => setMobileMenuOpen(false)}>
+                  {t("login")}
+                </Link>
+                <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>
+                  {t("signUp")}
+                </Link>
               </div>
             ) : (
-              <Link href="/profile" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: navAccent, border: `1px solid ${navAccent}` }} onClick={() => setMobileMenuOpen(false)}>{user?.username}</Link>
+              <Link href="/profile" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: navAccent, border: `1px solid ${navAccent}` }} onClick={() => setMobileMenuOpen(false)}>
+                {user?.username}
+              </Link>
             )}
           </div>
         </div>

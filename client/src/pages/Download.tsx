@@ -1,6 +1,4 @@
-import { Download, Cpu, Zap, HardDrive, Monitor, CircleDot, CheckCircle2, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, Cpu, Zap, HardDrive, Monitor, CircleDot, CheckCircle2, Info, ArrowRight, ChevronRight } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -13,253 +11,223 @@ export default function DownloadPage() {
     {
       category: "Processor (CPU)",
       icon: Cpu,
+      color: "#f5a623",
       items: [
-        {
-          label: t("minimum"),
-          specs: [
-            "AMD Athlon™ 64 X2 Dual Core Processor 4600+ 2.4GHz",
-            "Intel® Core™2 Duo Processor T6400 2.0GHz",
-          ],
-        },
-        {
-          label: t("recommended"),
-          specs: [
-            "AMD Ryzen™ 3 1200 Processor @ 3.1GHz (4 Cores), ~3.4GHz",
-            "Intel® Core™ i5-3470 Processor @ 3.20GHz (4 Cores), ~3.2GHz",
-          ],
-        },
+        { label: "Minimum", specs: ["AMD Athlon™ 64 X2 Dual Core 4600+ 2.4GHz", "Intel® Core™2 Duo T6400 2.0GHz"] },
+        { label: "Recommended", specs: ["AMD Ryzen™ 3 1200 @ 3.1GHz (4 Cores)", "Intel® Core™ i5-3470 @ 3.20GHz (4 Cores)"] },
       ],
     },
     {
       category: "Memory (RAM)",
       icon: Zap,
+      color: "#818cf8",
       items: [
-        { label: t("minimum"), specs: ["4 GB"] },
-        { label: t("recommended"), specs: ["8 GB"] },
+        { label: "Minimum", specs: ["4 GB RAM"] },
+        { label: "Recommended", specs: ["8 GB RAM"] },
       ],
     },
     {
       category: "Video Card",
       icon: Monitor,
+      color: "#4ade80",
       items: [
-        {
-          label: t("minimum"),
-          specs: [
-            "NVIDIA® GeForce® 9500 GT",
-            "AMD Radeon™ HD 6450",
-            "Intel® HD Graphics 3000",
-          ],
-        },
-        {
-          label: t("recommended"),
-          specs: [
-            "NVIDIA® GeForce® GT 630",
-            "AMD Radeon™ HD 6570",
-            "Intel® HD Graphics 6000",
-          ],
-        },
+        { label: "Minimum", specs: ["NVIDIA® GeForce® 9500 GT", "AMD Radeon™ HD 6450", "Intel® HD Graphics 3000"] },
+        { label: "Recommended", specs: ["NVIDIA® GeForce® GT 630", "AMD Radeon™ HD 6570", "Intel® HD Graphics 6000"] },
       ],
     },
     {
       category: "Storage (HDD)",
       icon: HardDrive,
+      color: "#fbbf24",
       items: [
-        { label: t("minimum"), specs: ["15 GB of free space"] },
+        { label: "Required", specs: ["15 GB free disk space"] },
       ],
     },
     {
       category: "Operating System",
       icon: CircleDot,
+      color: "#38bdf8",
       items: [
-        { label: t("minimum"), specs: ["Windows 7/8/10 64-bit"] },
+        { label: "Minimum", specs: ["Windows 7 / 8 / 10 (64-bit)"] },
       ],
     },
     {
-      category: "DirectX©",
+      category: "DirectX® + Internet",
       icon: Zap,
+      color: "#f43f5e",
       items: [
-        { label: t("minimum"), specs: ["DirectX© 9.0c"] },
-        { label: t("recommended"), specs: ["DirectX© 9.0c or higher"] },
+        { label: "DirectX", specs: ["DirectX® 9.0c or higher"] },
+        { label: "Internet", specs: ["Cable / DSL or better"] },
       ],
     },
-    {
-      category: "Internet Connection",
-      icon: CircleDot,
-      items: [
-        { label: t("minimum"), specs: ["Cable/DSL"] },
-        { label: t("recommended"), specs: ["Cable / DSL or better"] },
-      ],
-    },
+  ];
+
+  const steps = [
+    { n: "01", title: "Download Installer", desc: "Click the button below to get the official CrossFire West installer from Z8Games." },
+    { n: "02", title: "Run Setup", desc: "Launch the installer and follow the on-screen instructions to install the game client." },
+    { n: "03", title: "Create Account", desc: "Register a free account on z8games.com or log in with an existing account." },
+    { n: "04", title: "Play Now", desc: "Launch CrossFire, pick a mode, and join millions of players around the world." },
   ];
 
   return (
     <>
       <PageSEO
-        title={"Download — CrossFire West Wiki"}
-        description={"Download CrossFire West (crossfirewest) — the North American server by Z8Games. Learn about in-game events, missions, and system requirements."}
+        title="Download CrossFire West — System Requirements | CrossFire Wiki"
+        description="Download CrossFire West (crossfirewest) — the North American server by Z8Games. System requirements, installation guide, and latest patch notes."
         canonicalPath="/download"
         schemaType="WebPage"
-        schemaData={{
-          name: "CrossFire West Download",
-          description: "Download CrossFire West and learn about events and missions.",
-          url: "/download",
-        }}
+        schemaData={{ name: "CrossFire West Download", description: "Download CrossFire West", url: "/download" }}
       />
-      <div className="relative min-h-screen bg-gradient-to-b from-background via-background to-background/80 overflow-hidden">
-      {/* Hero Background */}
-      <div className="absolute inset-0 top-0 h-96 w-full overflow-hidden -z-5">
+
+      <div className="min-h-screen" style={{ background: "var(--background)" }}>
+
+        {/* ── Hero ── */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url(https://z8games.akamaized.net/cfna/templates/assets/images/feature-comp.jpg)",
-            opacity: 0.05,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/20 to-background" />
-      </div>
-
-      {/* Background glow effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-32 -left-24 w-72 h-72 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-strong" />
-        <div className="absolute -bottom-32 -right-24 w-80 h-80 bg-[radial-gradient(circle_at_center,rgba(252,211,77,0.9),transparent_60%)] opacity-40 blur-3xl mix-blend-screen fire-glow-soft" />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Download className="h-8 w-8 text-destructive" />
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              CrossFire West
+          className="relative overflow-hidden py-24 md:py-32 text-center"
+          style={{ background: "linear-gradient(to bottom, #0d0d0d 0%, var(--background) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}
+        >
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,0.05) 0%, transparent 70%)" }} />
+          <div className="relative max-w-4xl mx-auto px-6 md:px-10">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
+              <Download className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Z8Games · Official Client</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
+              Download<br /><span style={{ color: "#f5a623" }}>CrossFire</span>
             </h1>
+            <p className="text-sm md:text-base max-w-xl mx-auto mb-8" style={{ color: "#777" }}>
+              The official CrossFire West client by Z8Games — North American server, free to play, millions of players.
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-7 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+                style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+              >
+                <Download className="h-4 w-4" /> {t("downloadNow") || "Download Now"}
+              </a>
+              <a
+                href={patchNotesUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-7 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all hover:border-[#f5a623] hover:text-[#f5a623]"
+                style={{ background: "transparent", color: "#666", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px" }}
+              >
+                Patch Notes <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-3">
-            {t("officialInstallerDesc")}
-          </p>
-          <Button
-            asChild
-            size="sm"
-            className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-14 md:py-20 space-y-16">
+
+          {/* ── Notice ── */}
+          <div
+            className="flex gap-4 items-start p-5"
+            style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px" }}
           >
-            <a href={downloadUrl} target="_blank" rel="noreferrer">
-              {t("downloadNow")}
-            </a>
-          </Button>
-        </div>
-
-        {/* Important notice */}
-        <div className="mb-10 p-5 rounded-lg border border-primary/40 bg-primary/5 flex gap-4 items-start max-w-3xl mx-auto">
-          <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-bold text-foreground mb-1">
-              هذا الموقع عن CrossFire West (crossfirewest) — مش إصدار جديد
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              بنشرح للاعبين الأيفنتات والمهمات والمحتوى الموجود داخل اللعبة. مش بنقدم أي نسخة جديدة أو تعديلات — فقط معلومات وشرح عن اللعبة الأصلية الخاصة بـ Z8Games.
-            </p>
+            <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "#f5a623" }} />
+            <div>
+              <p className="font-black text-sm uppercase tracking-tight mb-1" style={{ color: "#f5a623" }}>Important Note</p>
+              <p className="text-[12px] leading-relaxed" style={{ color: "#777" }}>
+                This wiki covers CrossFire West (crossfirewest) — the official Z8Games server. We provide game guides, event info, and community resources. We are not affiliated with Smilegate or Z8Games and do not distribute game files or modifications.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("officialInstaller")}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {t("officialInstallerDesc")}
-            </CardContent>
-          </Card>
-          <Card className="border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("checkUpdatesFirst")}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {t("checkUpdatesDesc")}
-            </CardContent>
-          </Card>
-          <Card className="border-border/60">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("useEnoughStorage")}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {t("useEnoughStorageDesc")}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* System Requirements */}
-        <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center text-foreground">
-            {t("systemRequirements")}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {specs.map((spec, idx) => {
-              const Icon = spec.icon;
-              return (
-                <Card
-                  key={idx}
-                  className="bg-gradient-to-br from-card to-card/70 border-border/60 hover:border-primary/70 transition-all duration-300 hover-elevate overflow-hidden"
+          {/* ── Steps ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-[1px] flex-1" style={{ background: "linear-gradient(to right, rgba(245,166,35,0.3), transparent)" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Getting Started</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-6" style={{ color: "var(--foreground)" }}>
+              How to Install
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {steps.map((step) => (
+                <div
+                  key={step.n}
+                  className="p-5"
+                  style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Icon className="h-6 w-6 text-destructive" />
-                      <CardTitle className="text-lg">{spec.category}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {spec.items.map((item, itemIdx) => (
-                      <div key={itemIdx}>
-                        <p className="font-semibold text-sm text-primary mb-2 flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4" />
-                          {item.label}
-                        </p>
-                        <ul className="space-y-1 ml-2">
-                          {item.specs.map((s, specIdx) => (
-                            <li
-                              key={specIdx}
-                              className="text-sm text-muted-foreground leading-relaxed"
-                            >
-                              • {s}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+                  <div className="text-3xl font-black leading-none mb-3" style={{ color: "rgba(245,166,35,0.2)" }}>{step.n}</div>
+                  <h3 className="font-black text-sm uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{step.title}</h3>
+                  <p className="text-[11px] leading-relaxed" style={{ color: "#666" }}>{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        {/* CTA Section */}
-        <div className="bg-gradient-to-r from-destructive/20 via-primary/10 to-destructive/20 rounded-lg border border-destructive/30 p-8 md:p-12 text-center">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-            {t("readyToJoin")}
-          </h3>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            {t("readyToJoinDesc")}
-          </p>
-          <Button
-            asChild
-            size="sm"
-            className="bg-destructive hover:bg-destructive/90 text-white font-semibold tracking-wide uppercase px-3 py-1.5 text-xs shadow-lg"
-          >
-            <a href={downloadUrl} target="_blank" rel="noreferrer">
-              <Download className="mr-2 h-3 w-3" />
-              {t("downloadCrossFire")}
+          {/* ── System Requirements ── */}
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-[1px] flex-1" style={{ background: "linear-gradient(to right, rgba(245,166,35,0.3), transparent)" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>PC Requirements</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-6" style={{ color: "var(--foreground)" }}>
+              {t("systemRequirements") || "System Requirements"}
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {specs.map((spec, idx) => {
+                const Icon = spec.icon;
+                return (
+                  <div
+                    key={idx}
+                    className="p-5"
+                    style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
+                  >
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-8 h-8 flex items-center justify-center rounded" style={{ background: `${spec.color}15` }}>
+                        <Icon className="h-4 w-4" style={{ color: spec.color }} />
+                      </div>
+                      <h3 className="font-black text-[11px] uppercase tracking-wider" style={{ color: "var(--foreground)" }}>{spec.category}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {spec.items.map((item, i) => (
+                        <div key={i}>
+                          <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: spec.color }}>{item.label}</p>
+                          <ul className="space-y-1">
+                            {item.specs.map((s, si) => (
+                              <li key={si} className="flex items-start gap-2 text-[11px]" style={{ color: "#666" }}>
+                                <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: spec.color, opacity: 0.6 }} />
+                                {s}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* ── CTA ── */}
+          <section className="text-center py-12" style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "4px" }}>
+            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, transparent, #f5a623, transparent)" }} />
+            <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-3" style={{ color: "var(--foreground)" }}>
+              {t("readyToJoin") || "Ready to Join the Fight?"}
+            </h3>
+            <p className="text-sm max-w-md mx-auto mb-6" style={{ color: "#666" }}>
+              {t("readyToJoinDesc") || "Download CrossFire and join millions of players in intense FPS combat today."}
+            </p>
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-8 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+              style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+            >
+              <Download className="h-4 w-4" /> {t("downloadCrossFire") || "Download CrossFire"}
             </a>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="ml-3">
-            <a href={patchNotesUrl} target="_blank" rel="noreferrer">
-              {t("latestAnnouncements")}
-            </a>
-          </Button>
+          </section>
         </div>
       </div>
-    </div>
     </>
   );
 }

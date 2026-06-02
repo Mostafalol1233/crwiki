@@ -7,8 +7,8 @@ import { type Article } from "@/components/ArticleCard";
 import { EventsRibbon } from "@/components/EventsRibbon";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getPosts, getEvents, getWeapons, getSiteSettings } from "@/lib/supabaseApi";
-import { ArrowRight, Shield, ChevronRight } from "lucide-react";
+import { getPosts, getEvents, getWeapons, getSiteSettings, getNews } from "@/lib/supabaseApi";
+import { ArrowRight, Shield, ChevronRight, Clock, User, Flame } from "lucide-react";
 import tutorialImage from "@assets/generated_images/Tutorial_article_cover_image_2152de25.png";
 import weaponCategoryImage from "@assets/feature-weap.jpg";
 import mercCategoryImage from "@assets/merc-sisterhood.jpg";
@@ -116,6 +116,13 @@ export default function Home() {
     staleTime: 30 * 1000,
   });
   const featuredWeaponIds = (sitePublicSettings as any)?.featured_weapons || (sitePublicSettings as any)?.featuredWeapons || [];
+
+  const { data: latestNewsData } = useQuery<{ items: any[]; total: number }>({
+    queryKey: ["/api/news", { limit: 6, home: true }],
+    queryFn: () => getNews({ limit: 6, offset: 0 }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const latestNews = latestNewsData?.items || [];
 
   const displayWeapons = recentWeapons;
 
@@ -268,6 +275,72 @@ export default function Home() {
               </div>
             )}
           </section>
+
+          {/* ── LATEST NEWS ── */}
+          {latestNews.length > 0 && (
+            <section className="mt-14 md:mt-20">
+              <CFSectionHeader label="Breaking" title="Latest News" linkHref="/news" linkLabel="All News" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {latestNews.slice(0, 6).map((item: any, idx: number) => {
+                  const href = item.news_slug ? `/news/${item.news_slug}` : `/news/${item.id}`;
+                  const title = item.title || "News";
+                  const excerpt = String(item.summary || item.content || "").replace(/<[^>]+>/g, " ").trim().slice(0, 100);
+                  const cat = item.category || "News";
+                  const isFirst = idx === 0;
+                  const catBg = cat.toLowerCase().includes("event") ? "rgba(245,166,35,0.12)" : cat.toLowerCase().includes("tutorial") ? "rgba(99,102,241,0.12)" : "rgba(156,163,175,0.1)";
+                  const catColor = cat.toLowerCase().includes("event") ? "#f5a623" : cat.toLowerCase().includes("tutorial") ? "#818cf8" : "#9ca3af";
+                  return (
+                    <Link key={item.id} href={href} className="group block">
+                      <div
+                        className="h-full overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
+                        style={{
+                          background: "var(--card)",
+                          border: isFirst ? "1px solid rgba(245,166,35,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                          borderRadius: "3px",
+                          boxShadow: isFirst ? "0 4px 20px rgba(245,166,35,0.08)" : "0 2px 10px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        {/* Top accent */}
+                        <div className="h-[2px]" style={{ background: isFirst ? "linear-gradient(to right, #f5a623, transparent)" : "transparent" }} />
+                        {item.image && (
+                          <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "#0d0d0d" }}>
+                            <img
+                              src={item.image}
+                              alt={title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }} />
+                            {isFirst && (
+                              <div className="absolute top-2.5 left-2.5">
+                                <span className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-2 py-1" style={{ background: "#f5a623", color: "#000" }}>
+                                  <Flame className="h-2.5 w-2.5" /> Latest
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5" style={{ background: catBg, color: catColor, borderRadius: "2px" }}>{cat}</span>
+                            {item.dateRange && <span className="text-[9px]" style={{ color: "#444" }}>{item.dateRange}</span>}
+                          </div>
+                          <h3 className="font-black text-sm uppercase tracking-tight leading-snug line-clamp-2 mb-1.5" style={{ color: "var(--foreground)" }}>{title}</h3>
+                          {excerpt && <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: "#555" }}>{excerpt}</p>}
+                          {item.author && (
+                            <div className="flex items-center gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                              <User className="h-3 w-3 flex-shrink-0" style={{ color: "#444" }} />
+                              <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: "#555" }}>{item.author}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* ── WEAPONS ── */}
           <section className="mt-14 md:mt-20">

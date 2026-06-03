@@ -5995,12 +5995,12 @@ export default function Admin() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {seller.images?.length || 0} images
+                                  {Array.isArray(seller.images) ? seller.images.length : 0} images
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {seller.prices?.length || 0} items
+                                  {Array.isArray(seller.prices) ? seller.prices.length : 0} items
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -6025,12 +6025,12 @@ export default function Admin() {
                                       setSellerForm({
                                         name: seller.name,
                                         description: seller.description || "",
-                                        images: (seller.images || seller.imageUrls || []).join(', '),
-                                        prices: seller.prices?.map((p: any) => `${p.item}:${p.price}`).join('\n') || "",
-                                        priceItems: seller.prices?.map((p: any) => ({
+                                        images: (Array.isArray(seller.images) ? seller.images : Array.isArray(seller.imageUrls) ? seller.imageUrls : []).join(', '),
+                                        prices: Array.isArray(seller.prices) ? seller.prices.map((p: any) => `${p.item}:${p.price}`).join('\n') : "",
+                                        priceItems: Array.isArray(seller.prices) ? seller.prices.map((p: any) => ({
                                           item: p.item || "",
                                           price: String(p.price || "")
-                                        })) || [],
+                                        })) : [],
                                         email: seller.email || "",
                                         phone: seller.phone || "",
                                         whatsapp: seller.whatsapp || "",

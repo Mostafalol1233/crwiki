@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { ChevronUp, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { SiDiscord, SiFacebook, SiInstagram, SiTwitch, SiWhatsapp, SiX, SiYoutube } from "react-icons/si";
 
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
@@ -32,13 +33,13 @@ const supportLinks = [
   { label: "My Tickets", path: "/my-tickets" },
 ];
 const socials = [
-  { href: "https://www.facebook.com/crossfireonline", label: "FB", title: "Facebook" },
-  { href: "https://x.com/CrossFireOnline", label: "X", title: "X / Twitter" },
-  { href: "https://www.youtube.com/c/CrossFireWest", label: "YT", title: "YouTube" },
-  { href: WHATSAPP_CHANNEL_URL, label: "WA", title: "WhatsApp Channel" },
-  { href: "https://discord.gg/7AbuDrNNJM", label: "DC", title: "Discord" },
-  { href: "https://www.instagram.com/crossfirewest/", label: "IG", title: "Instagram" },
-  { href: "https://www.twitch.tv/cfonline/", label: "TV", title: "Twitch" },
+  { href: WHATSAPP_CHANNEL_URL, icon: SiWhatsapp, title: "WhatsApp Channel", color: "#25d366" },
+  { href: "https://www.facebook.com/crossfireonline", icon: SiFacebook, title: "Facebook", color: "#1877f2" },
+  { href: "https://x.com/CrossFireOnline", icon: SiX, title: "X / Twitter", color: "hsl(var(--foreground))" },
+  { href: "https://www.youtube.com/c/CrossFireWest", icon: SiYoutube, title: "YouTube", color: "#ff0033" },
+  { href: "https://discord.gg/7AbuDrNNJM", icon: SiDiscord, title: "Discord", color: "#5865f2" },
+  { href: "https://www.instagram.com/crossfirewest/", icon: SiInstagram, title: "Instagram", color: "#e4405f" },
+  { href: "https://www.twitch.tv/cfonline/", icon: SiTwitch, title: "Twitch", color: "#9146ff" },
 ];
 
 function SectionTitle({ label }: { label: string }) {
@@ -46,8 +47,8 @@ function SectionTitle({ label }: { label: string }) {
     <h4
       style={{
         fontFamily: "'Cinzel', serif",
-        fontWeight: 400,
-        fontSize: "10px",
+        fontWeight: 800,
+        fontSize: "12px",
         letterSpacing: "0.18em",
         color: GOLD,
         marginBottom: "14px",
@@ -70,9 +71,10 @@ function FooterLink({ label, path }: { label: string; path: string }) {
         <span
           style={{
             fontFamily: "'EB Garamond', serif",
-            fontSize: "13px",
-            color: hovered ? GOLD : "hsl(var(--muted-foreground))",
-            opacity: hovered ? 1 : 0.6,
+            fontSize: "15px",
+            fontWeight: 700,
+            color: hovered ? GOLD : "hsl(var(--foreground))",
+            opacity: hovered ? 1 : 0.82,
             cursor: "pointer",
             transition: "color 0.2s, opacity 0.2s",
             display: "inline-block",
@@ -259,33 +261,34 @@ export function Footer() {
 
           {/* Socials */}
           <div>
-            <SectionTitle label="FOLLOW US" />
-            <div className="flex flex-wrap gap-2 mb-5">
-              {socials.map(({ href, label, title }) => (
+            <SectionTitle label="FOLLOW CROSSFIRE" />
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {socials.map(({ href, icon: Icon, title, color }) => (
                 <a
                   key={title}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={title}
+                  aria-label={title}
                   style={{
-                    width: "32px",
-                    height: "32px",
+                    width: "40px",
+                    height: "40px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     border: GOLD_BORDER,
-                    color: "hsl(var(--muted-foreground))",
-                    fontFamily: "'Cinzel', serif",
-                    fontSize: "8px",
-                    letterSpacing: "0.05em",
-                    transition: "color 0.2s, border-color 0.2s",
+                    color,
+                    background: "rgba(154,124,63,0.05)",
+                    fontSize: "18px",
+                    transition: "color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s",
                     textDecoration: "none",
+                    borderRadius: "4px",
                   }}
-                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.color = GOLD; el.style.borderColor = GOLD; }}
-                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.color = "hsl(var(--muted-foreground))"; el.style.borderColor = "rgba(154,124,63,0.3)"; }}
+                  onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = GOLD; el.style.background = "rgba(154,124,63,0.12)"; el.style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(154,124,63,0.3)"; el.style.background = "rgba(154,124,63,0.05)"; el.style.transform = "translateY(0)"; }}
                 >
-                  {label}
+                  <Icon aria-hidden="true" />
                 </a>
               ))}
             </div>
@@ -307,8 +310,8 @@ export function Footer() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.12)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.06)"; }}
               >
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "8px", letterSpacing: "0.2em", color: "hsl(var(--muted-foreground))", opacity: 0.5, marginBottom: "2px" }}>JOIN COMMUNITY</p>
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.12em", color: "#25d366" }}>WhatsApp Channel</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>JOIN COMMUNITY</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: "#128c4a" }}>WhatsApp Channel</p>
               </div>
             </a>
             <Link href="/download">
@@ -323,8 +326,8 @@ export function Footer() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(154,124,63,0.06)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "8px", letterSpacing: "0.2em", color: "hsl(var(--muted-foreground))", opacity: 0.5, marginBottom: "2px" }}>PLAY NOW</p>
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.12em", color: GOLD }}>Download CrossFire</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>PLAY NOW</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: GOLD }}>Download CrossFire</p>
               </div>
             </Link>
           </div>
@@ -337,9 +340,10 @@ export function Footer() {
           <span
             style={{
               fontFamily: "'EB Garamond', serif",
-              fontSize: "12px",
-              color: "hsl(var(--muted-foreground))",
-              opacity: 0.3,
+              fontSize: "14px",
+              fontWeight: 700,
+              color: "hsl(var(--foreground))",
+              opacity: 0.7,
             }}
           >
             &copy; {new Date().getFullYear()} Bimora Gaming &middot; CrossFire Wiki. Not affiliated with Smilegate or Z8Games.
@@ -354,14 +358,15 @@ export function Footer() {
                 <span
                   style={{
                     fontFamily: "'EB Garamond', serif",
-                    fontSize: "12px",
-                    color: "hsl(var(--muted-foreground))",
-                    opacity: 0.4,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "hsl(var(--foreground))",
+                    opacity: 0.75,
                     cursor: "pointer",
                     transition: "opacity 0.2s, color 0.2s",
                   }}
                   onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = "1"; el.style.color = GOLD; }}
-                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = "0.4"; el.style.color = "hsl(var(--muted-foreground))"; }}
+                  onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.opacity = "0.75"; el.style.color = "hsl(var(--foreground))"; }}
                 >
                   {label}
                 </span>

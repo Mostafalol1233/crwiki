@@ -13,8 +13,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { createTicket } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
-import { HelpCircle, Mail, User } from "lucide-react";
+import { ExternalLink, HelpCircle, Mail, User } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
+import { SiWhatsapp } from "react-icons/si";
+
+const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 
 const ticketSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -114,10 +117,31 @@ export default function Support() {
           <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
             Submit a Ticket
           </h1>
-          <p className="text-sm" style={{ color: "#666" }}>
+          <p className="text-base font-semibold" style={{ color: "hsl(var(--foreground))", opacity: 0.72 }}>
             Need help? Fill out the form below and our team will get back to you.
           </p>
         </div>
+
+        <a
+          href={WHATSAPP_CHANNEL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 transition-all hover:-translate-y-0.5 hover:brightness-110"
+          style={{ background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.3)", borderRadius: "4px", textDecoration: "none" }}
+        >
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-11 h-11 flex items-center justify-center rounded" style={{ background: "rgba(37,211,102,0.16)" }}>
+              <SiWhatsapp className="h-6 w-6" style={{ color: "#25d366" }} />
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: "#25d366" }}>WhatsApp Channel</p>
+              <p className="text-base font-extrabold" style={{ color: "var(--foreground)" }}>Join our WhatsApp channel for updates and quick community support.</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest" style={{ color: "#25d366" }}>
+            Open Channel <ExternalLink className="h-3.5 w-3.5" />
+          </span>
+        </a>
 
         {/* Info cards */}
         <div className="grid grid-cols-3 gap-3 mb-8">

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink, Search, Filter, CheckCircle, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { SiDiscord, SiWhatsapp, SiTelegram, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok } from "react-icons/si";
+import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok } from "react-icons/si";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
@@ -32,7 +32,6 @@ interface Seller {
   instagram?: string;
   youtube?: string;
   tiktok?: string;
-  telegram?: string;
   featured: boolean;
   promotionText: string;
   averageRating: number;
@@ -43,6 +42,22 @@ interface Seller {
   canonicalUrl?: string;
   ogImage?: string;
   schemaType?: string;
+}
+
+
+function normalizeSellerList(value: unknown): Seller[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((seller: any) => ({
+    ...seller,
+    id: String(seller?.id || ''),
+    name: String(seller?.name || ''),
+    description: String(seller?.description || ''),
+    images: Array.isArray(seller?.images) ? seller.images : [],
+    prices: Array.isArray(seller?.prices) ? seller.prices : [],
+    featured: Boolean(seller?.featured),
+    averageRating: typeof seller?.averageRating === 'number' ? seller.averageRating : Number(seller?.averageRating) || 0,
+    totalReviews: typeof seller?.totalReviews === 'number' ? seller.totalReviews : Number(seller?.totalReviews) || 0,
+  }));
 }
 
 class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
@@ -131,23 +146,26 @@ function GalleryLightbox({ images, initialIndex, onClose }: { images: string[]; 
 export default function Sellers() {
   const [slugMatch, slugParams] = useRoute("/seller/:slug");
   const slug = slugMatch ? (slugParams?.slug as string) : "";
-  const { data: sellers = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
+  const { data: sellersData = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
     queryFn: getSellers,
     enabled: !slugMatch,
   });
 
-  const { data: sellerBySlug, isLoading: slugLoading, isError: slugIsError, error: slugError } = useQuery<Seller>({
+  const sellers = useMemo(() => normalizeSellerList(sellersData), [sellersData]);
+
+  const { data: sellerBySlugData, isLoading: slugLoading, isError: slugIsError, error: slugError } = useQuery<Seller>({
     queryKey: ["/api/sellers/slug", slug],
     enabled: !!slugMatch && !!slug,
     queryFn: async () => {
-      const all = await getSellers();
+      const all = normalizeSellerList(await getSellers());
       const found = all.find((s: any) => s.seller_name_slug === slug || s.id === slug);
       if (!found) throw new Error('Seller not found');
       return found;
     }
   });
 
+  const sellerBySlug = useMemo(() => normalizeSellerList(sellerBySlugData ? [sellerBySlugData] : [])[0], [sellerBySlugData]);
   const pageSlug = useMemo(() => sellerBySlug?.seller_name_slug || slug, [sellerBySlug?.seller_name_slug, slug]);
   const { data: sellerPage } = useRQ<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks?: { image: string; contentHtml: string; description: string }[] }>({
     queryKey: ["/api/seller-pages", pageSlug],
@@ -170,13 +188,13 @@ export default function Sellers() {
   const formatRating = (n: any) => isFiniteNumber(n) ? n.toFixed(1) : '0.0';
 
   const filteredSellers = useMemo(() => {
-    let result = [...sellers];
+    let result = normalizeSellerList(sellers);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(s =>
         s.name.toLowerCase().includes(q) ||
         s.description.toLowerCase().includes(q) ||
-        s.prices.some(p => p.item.toLowerCase().includes(q))
+        s.prices.some(p => String(p.item || "").toLowerCase().includes(q))
       );
     }
     result.sort((a, b) => {
@@ -310,7 +328,6 @@ export default function Sellers() {
         <div className="flex gap-2 text-muted-foreground">
           {seller.whatsapp && <SiWhatsapp className="h-3.5 w-3.5 hover:text-green-500 transition-colors" />}
           {seller.discord && <SiDiscord className="h-3.5 w-3.5 hover:text-indigo-500 transition-colors" />}
-          {seller.telegram && <SiTelegram className="h-3.5 w-3.5 hover:text-blue-500 transition-colors" />}
           {seller.facebook && <SiFacebook className="h-3.5 w-3.5 hover:text-blue-600 transition-colors" />}
         </div>
         <div className="flex items-center text-xs text-primary font-medium group-hover:gap-2 transition-all">
@@ -422,7 +439,7 @@ export default function Sellers() {
                   </div>
                 )}
 
-                {s.prices?.length > 0 && (
+                {Array.isArray(s.prices) && s.prices.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">💰 Price List</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -456,7 +473,6 @@ export default function Sellers() {
                     {s.email && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`mailto:${s.email}`, '_blank')}><Mail className="h-4 w-4" /> Email</Button>}
                     {s.whatsapp && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-green-600 hover:text-green-700 hover:border-green-300" onClick={() => window.open(normalizeUrl(s.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
                     {s.discord && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-indigo-600 hover:text-indigo-700 hover:border-indigo-300" onClick={() => window.open(normalizeUrl(s.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
-                    {s.telegram && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-blue-500 hover:text-blue-600 hover:border-blue-300" onClick={() => window.open(normalizeUrl(s.telegram), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
                   </CardContent>
                 </Card>
 

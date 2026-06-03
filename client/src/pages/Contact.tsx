@@ -4,8 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { Mail, MessageSquare, Send, CheckCircle, ArrowRight } from "lucide-react";
-import { SiDiscord, SiFacebook, SiX } from "react-icons/si";
+import { SiDiscord, SiFacebook, SiWhatsapp, SiX } from "react-icons/si";
 import { Link } from "wouter";
+
+const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 
 const CHANNELS = [
   {
@@ -25,14 +27,16 @@ const CHANNELS = [
   },
   {
     icon: Send,
-    title: "Social Media",
-    value: "@CrossFireOnline",
-    desc: "Quick questions via DM",
-    color: "#38bdf8",
+    title: "WhatsApp Channel",
+    value: "Join WhatsApp updates",
+    desc: "News, alerts, and community support",
+    color: "#25d366",
+    href: WHATSAPP_CHANNEL_URL,
   },
 ];
 
 const SOCIALS = [
+  { href: WHATSAPP_CHANNEL_URL, icon: <SiWhatsapp className="h-5 w-5" />, label: "WhatsApp Channel", color: "#25d366" },
   { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-5 w-5" />, label: "Discord", color: "#5865f2" },
   { href: "https://www.facebook.com/crossfireonline", icon: <SiFacebook className="h-5 w-5" />, label: "Facebook", color: "#1877f2" },
   { href: "https://x.com/CrossFireOnline", icon: <SiX className="h-5 w-5" />, label: "Twitter / X", color: "#e0e0e0" },
@@ -89,13 +93,13 @@ export default function Contact() {
           <div className="mb-10 text-center">
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="h-[1px] w-10" style={{ background: "linear-gradient(to left, #f5a623, transparent)" }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Get In Touch</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Get In Touch</span>
               <div className="h-[1px] w-10" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
             </div>
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-3" style={{ color: "var(--foreground)" }}>
               {t("contactUs") || "Contact Us"}
             </h1>
-            <p className="text-sm max-w-md mx-auto" style={{ color: "#666" }}>
+            <p className="text-base max-w-md mx-auto font-semibold" style={{ color: "hsl(var(--foreground))", opacity: 0.72 }}>
               Have a question, suggestion, or want to contribute? We'd love to hear from you.
             </p>
           </div>
@@ -113,12 +117,16 @@ export default function Contact() {
                     <Icon className="h-5 w-5" style={{ color: ch.color }} />
                   </div>
                   <h3 className="font-black text-sm uppercase tracking-tight mb-1" style={{ color: "var(--foreground)" }}>{ch.title}</h3>
-                  <p className="text-[11px] font-bold mb-1" style={{ color: ch.color }}>{ch.value}</p>
-                  <p className="text-[11px]" style={{ color: "#555" }}>{ch.desc}</p>
+                  <p className="text-[13px] font-extrabold mb-1" style={{ color: ch.color }}>{ch.value}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: "hsl(var(--foreground))", opacity: 0.68 }}>{ch.desc}</p>
                 </div>
               );
               return ch.href ? (
-                <Link key={ch.title} href={ch.href}>{inner}</Link>
+                ch.href.startsWith("http") ? (
+                  <a key={ch.title} href={ch.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
+                ) : (
+                  <Link key={ch.title} href={ch.href}>{inner}</Link>
+                )
               ) : (
                 <div key={ch.title}>{inner}</div>
               );
@@ -147,7 +155,7 @@ export default function Contact() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("name") || "Name"}</label>
+                      <label className="text-[11px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("name") || "Name"}</label>
                       <Input
                         placeholder="Your name"
                         value={name}
@@ -157,7 +165,7 @@ export default function Contact() {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("email") || "Email"}</label>
+                      <label className="text-[11px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("email") || "Email"}</label>
                       <Input
                         type="email"
                         placeholder="your@email.com"
@@ -170,7 +178,7 @@ export default function Contact() {
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("message") || "Message"}</label>
+                    <label className="text-[11px] font-black uppercase tracking-widest block mb-1.5" style={{ color: "#888" }}>{t("message") || "Message"}</label>
                     <Textarea
                       placeholder="Tell us what's on your mind..."
                       value={message}
@@ -182,7 +190,7 @@ export default function Contact() {
                   </div>
 
                   {status === "err" && (
-                    <p className="text-[11px] font-bold" style={{ color: "#f87171" }}>Failed to send. Please try again or email us directly.</p>
+                    <p className="text-[13px] font-extrabold" style={{ color: "#f87171" }}>Failed to send. Please try again or email us directly.</p>
                   )}
 
                   <button
@@ -203,7 +211,7 @@ export default function Contact() {
                 className="p-5"
                 style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
               >
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: "#f5a623" }}>Follow Us</h3>
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: "#f5a623" }}>Follow Us</h3>
                 <div className="space-y-2">
                   {SOCIALS.map(({ href, icon, label, color }) => (
                     <a
@@ -225,11 +233,11 @@ export default function Contact() {
                 className="p-5"
                 style={{ background: "rgba(245,166,35,0.05)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "4px" }}
               >
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: "#f5a623" }}>Need Support?</h3>
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: "#f5a623" }}>Need Support?</h3>
                 <p className="text-[12px] mb-3" style={{ color: "#666" }}>For account issues, bugs, or ZP seller disputes, submit an official ticket.</p>
                 <Link href="/support">
                   <button
-                    className="w-full flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110"
+                    className="w-full flex items-center justify-center gap-2 py-2 text-[11px] font-black uppercase tracking-wider transition-all hover:brightness-110"
                     style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                   >
                     Submit Ticket <ArrowRight className="h-3 w-3" />

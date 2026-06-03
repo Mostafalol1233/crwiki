@@ -11,6 +11,7 @@ import DataSeeder from "@/components/DataSeeder";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import Home from "@/pages/Home";
+import Maintenance from "@/pages/Maintenance";
 import Article from "@/pages/Article";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
@@ -51,6 +52,11 @@ import { SEOHead } from "@/components/SEOHead";
 import AnnouncementModal from "@/components/AnnouncementModal";
 import TargetCursor from "@/components/TargetCursor";
 
+
+// ══════════════════════════════════════════════
+// 🔧 MAINTENANCE MODE — غير true لـ false لفتح الموقع
+const MAINTENANCE_MODE = true;
+// ══════════════════════════════════════════════
 
 // Lazy load admin pages
 const Admin = lazy(() => import("@/pages/admin/index"));
@@ -213,6 +219,15 @@ function Layout() {
     return (
       <ErrorBoundary>
         <Router />
+      </ErrorBoundary>
+    );
+  }
+
+  // 🔧 Maintenance mode — admin يقدر يدخل على /admin عادي
+  if (MAINTENANCE_MODE) {
+    return (
+      <ErrorBoundary>
+        <Maintenance />
       </ErrorBoundary>
     );
   }

@@ -413,16 +413,8 @@ export default function Home() {
             </p>
 
             {/* Search */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               <HeroSearch />
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, maxWidth: 700, margin: "0 auto" }}>
-              <StatCard icon={Target} value="49+" label="Weapons" />
-              <StatCard icon={Shield} value="20+" label="Game Modes" />
-              <StatCard icon={Users} value="10+" label="Mercenaries" />
-              <StatCard icon={Globe} value="100+" label="Ranks" />
             </div>
           </div>
         </div>

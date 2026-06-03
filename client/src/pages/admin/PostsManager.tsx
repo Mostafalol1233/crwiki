@@ -69,8 +69,9 @@ export default function PostsManager() {
     if (!client || !editing.title) { toast.error('Title is required'); return; }
     setSaving(true);
     try {
+      const { title_ar, content_ar, og_image, canonical_url, focus_keyword, ...rest } = editing as any;
       const payload = {
-        ...editing,
+        ...rest,
         post_slug: editing.post_slug || slugify(editing.title || ''),
         updated_at: new Date().toISOString(),
       };

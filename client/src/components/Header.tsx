@@ -1,35 +1,32 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, Menu, X, Search, ChevronDown, MessageSquare, User } from "lucide-react";
-import { useTheme } from "./ThemeProvider";
+import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
 
-interface DropdownItem { path: string; label: string; icon?: string }
+interface DropdownItem { path: string; label: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
 
+const ACCENT = "#d4a017";
+const BG_HEADER = "#0a0a0a";
+const BORDER = "rgba(255,255,255,0.08)";
+
 export function Header() {
-  const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
   const [location, setLocation] = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const [searchQ, setSearchQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
 
-  const isDark = theme === "dark";
-
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    const h = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setMobileMenuOpen(false);
-    }
+    if (searchQ.trim()) { setLocation(`/search?q=${encodeURIComponent(searchQ)}`); setMobileOpen(false); }
   };
 
   const navItems: MenuItem[] = [
@@ -38,7 +35,7 @@ export function Header() {
       dropdown: [
         { path: "/news", label: t("news") },
         { path: "/posts", label: t("navUpdates") },
-        { path: "/category/events", label: t("navEvents") },
+        { path: "/events", label: t("navEvents") },
         { path: "/videos", label: t("navVideos") },
       ],
     },
@@ -79,322 +76,257 @@ export function Header() {
     },
   ];
 
-  const isActiveDrop = (items: DropdownItem[]) => items.some((i) => location === i.path || location.startsWith(i.path + "/"));
-  const toggleMobileSub = (label: string) => setMobileExpandedMenu(mobileExpandedMenu === label ? null : label);
-
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   let user: any = null;
   if (userStr) { try { user = JSON.parse(userStr); } catch { } }
   const isLoggedIn = !!(token && user);
 
-  const navAccent = "#f5a623";
+  const isActive = (items: DropdownItem[]) => items.some(i => location === i.path || location.startsWith(i.path + "/"));
 
-  const NavDropdown = ({ item, align = "left" }: { item: MenuItem; align?: "left" | "right" }) => {
+  function NavDrop({ item }: { item: MenuItem }) {
     if (!item.dropdown) return null;
-    const active = isActiveDrop(item.dropdown);
+    const active = isActive(item.dropdown);
     return (
-      <div className="relative group flex items-center self-stretch">
-        <button
-          className="self-stretch flex items-center gap-1 px-4 text-[12px] font-bold uppercase tracking-widest transition-colors hover:text-[#f5a623]"
-          style={{
-            color: active ? navAccent : "hsl(var(--foreground))",
-            borderBottom: `2px solid ${active ? navAccent : "transparent"}`,
-          }}
+      <div className="relative group h-full flex items-center">
+        <button style={{
+          display: "flex", alignItems: "center", gap: 4, height: "100%", padding: "0 14px",
+          background: "none", border: "none", cursor: "pointer",
+          fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
+          color: active ? ACCENT : "rgba(255,255,255,0.7)",
+          borderBottom: `2px solid ${active ? ACCENT : "transparent"}`,
+          transition: "color 0.15s, border-color 0.15s",
+        }}
+          onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+          onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; }}
         >
           {item.label}
-          <ChevronDown size={12} strokeWidth={1.5} style={{ opacity: 0.6 }} className="transition-transform group-hover:rotate-180 duration-200" />
+          <ChevronDown size={11} strokeWidth={2} style={{ opacity: 0.5, transition: "transform 0.2s" }} className="group-hover:rotate-180" />
         </button>
-        <div
-          className="absolute top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 shadow-2xl min-w-[190px]"
-          style={{
-            background: "hsl(var(--card))",
-            border: `1px solid hsl(var(--border))`,
-            borderTop: `2px solid ${navAccent}`,
-            [align === "right" ? "right" : "left"]: 0,
-            marginTop: "2px",
-          }}
-        >
-          {item.dropdown.map((sub, i) => (
-            <Link
-              key={`dd-${sub.path}-${i}`}
-              href={sub.path}
-              className="flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition-colors hover:text-[#f5a623]"
-              style={{
-                color: location === sub.path ? navAccent : "hsl(var(--muted-foreground))",
-                background: location === sub.path ? "rgba(245,166,35,0.06)" : "transparent",
-                borderBottom: i < item.dropdown!.length - 1 ? `1px solid hsl(var(--border))` : "none",
-              }}
-            >
-              {sub.label}
-            </Link>
-          ))}
+
+        <div className="absolute top-full left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 pt-1"
+          style={{ minWidth: 180 }}>
+          <div style={{
+            background: "#111", border: `1px solid ${BORDER}`,
+            borderRadius: 8, overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+          }}>
+            {item.dropdown.map((sub, i) => (
+              <Link key={sub.path} href={sub.path}
+                style={{
+                  display: "block", padding: "9px 14px",
+                  fontSize: 13, fontWeight: 450,
+                  fontFamily: "Inter, system-ui, sans-serif",
+                  color: location === sub.path ? ACCENT : "rgba(255,255,255,0.65)",
+                  background: location === sub.path ? "rgba(212,160,23,0.08)" : "transparent",
+                  borderBottom: i < item.dropdown!.length - 1 ? `1px solid rgba(255,255,255,0.06)` : "none",
+                  textDecoration: "none", transition: "color 0.12s, background 0.12s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = location === sub.path ? ACCENT : "rgba(255,255,255,0.65)"; (e.currentTarget as HTMLElement).style.background = location === sub.path ? "rgba(212,160,23,0.08)" : "transparent"; }}
+              >
+                {sub.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     );
-  };
+  }
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full transition-shadow duration-300"
-      dir="ltr"
-      style={{ boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.4)" : "none" }}
-    >
-      {/* ── TOP BAR ── */}
-      <div style={{ background: "hsl(var(--background))", borderBottom: `1px solid hsl(var(--border))` }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
+    <header style={{
+      position: "sticky", top: 0, zIndex: 50,
+      background: scrolled ? "rgba(10,10,10,0.95)" : BG_HEADER,
+      borderBottom: `1px solid ${scrolled ? "rgba(255,255,255,0.1)" : BORDER}`,
+      backdropFilter: scrolled ? "blur(16px)" : "none",
+      transition: "background 0.2s, border-color 0.2s, backdrop-filter 0.2s",
+    }} dir="ltr">
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 8 }}>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <img
-              src="/logo-new.png"
-              alt="Bimora Gaming"
-              className="h-14 w-auto object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              draggable={false}
-            />
-          </Link>
+        {/* Logo */}
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0, marginRight: 8 }}>
+          <img src="/logo-new.png" alt="CrossFire Wiki" style={{ height: 36, width: "auto", objectFit: "contain" }}
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        </Link>
 
-          {/* Right side */}
-          <div className="flex items-center gap-1">
-            {/* Desktop search */}
-            <form onSubmit={handleSearch} className="hidden md:flex items-center mr-2">
-              <div className="relative">
-                <Search size={14} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "hsl(var(--muted-foreground))" }} />
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-7 pl-8 pr-3 text-[12px] outline-none rounded-sm w-36 focus:w-48 transition-all duration-200"
-                  style={{ background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))`, color: "hsl(var(--foreground))" }}
-                />
-              </div>
-            </form>
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center h-full flex-1" style={{ height: 56 }}>
+          {navItems.map(item => <NavDrop key={item.label} item={item} />)}
+        </nav>
 
-            {/* Language toggle */}
-            <button
-              onClick={toggleLanguage}
-              title={language === "en" ? "Switch to Arabic" : "Switch to English"}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: "hsl(var(--muted-foreground))" }}
-            >
-              <Globe size={16} strokeWidth={1.5} />
-            </button>
-
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isDark ? "Light mode" : "Dark mode"}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: "hsl(var(--muted-foreground))" }}
-            >
-              {isDark ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
-            </button>
-
-            {/* Auth */}
-            {isLoggedIn ? (
-              <>
-                <Link href="/chat" className="hidden md:flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  <MessageSquare size={16} strokeWidth={1.5} />
-                </Link>
-                <div className="relative group hidden md:block">
-                  <button
-                    className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold rounded transition-all hover:border-[#f5a623] hover:text-[#f5a623]"
-                    style={{ color: "hsl(var(--foreground))", background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))` }}
-                  >
-                    <User size={12} strokeWidth={1.5} />
-                    {user?.username || "Profile"}
-                    <ChevronDown size={12} strokeWidth={1.5} />
-                  </button>
-                  <div
-                    className="absolute right-0 top-full mt-1 w-48 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
-                    style={{ background: "hsl(var(--card))", border: `1px solid hsl(var(--border))`, borderTop: `2px solid ${navAccent}` }}
-                  >
-                    <Link href="/profile" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))", borderBottom: `1px solid hsl(var(--border))` }}>
-                      {t("navProfile")}
-                    </Link>
-                    <Link href="/my-tickets" className="block px-4 py-2.5 text-[12px] transition-colors hover:text-[#f5a623]" style={{ color: "hsl(var(--muted-foreground))", borderBottom: `1px solid hsl(var(--border))` }}>
-                      {t("navMyTickets")}
-                    </Link>
-                    <button
-                      onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
-                      className="w-full text-left px-4 py-2.5 text-[12px] transition-colors hover:text-red-400"
-                      style={{ color: "hsl(var(--muted-foreground))" }}
-                    >
-                      {t("navLogout")}
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="hidden md:flex items-center gap-1 ml-1">
-                <Link
-                  href="/login"
-                  className="h-8 px-4 flex items-center text-[12px] font-semibold rounded transition-all hover:text-[#f5a623] hover:border-[#f5a623]"
-                  style={{ color: "hsl(var(--foreground))", background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))` }}
-                >
-                  {t("login")}
-                </Link>
-                <Link
-                  href="/register"
-                  className="h-8 px-4 flex items-center text-[12px] font-bold rounded transition-opacity hover:opacity-90 hover:shadow-[0_0_12px_rgba(245,166,35,0.4)]"
-                  style={{ background: navAccent, color: "#000000" }}
-                >
-                  {t("signUp")}
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile hamburger */}
-            <button
-              className="md:hidden h-8 w-8 flex items-center justify-center ml-1 rounded transition-colors hover:text-[#f5a623]"
-              style={{ color: "hsl(var(--foreground))" }}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MAIN NAV BAR ── */}
-      <div
-        style={{
-          background: "hsl(var(--card))",
-          borderBottom: `2px solid ${navAccent}`,
-          boxShadow: isDark ? "0 2px 20px rgba(0,0,0,0.5)" : "0 2px 12px rgba(0,0,0,0.08)",
-          overflow: "visible",
-        }}
-      >
-        <div className="hidden md:flex items-center max-w-7xl mx-auto px-4 md:px-6 h-14" style={{ overflow: "visible" }}>
-
-          <div className="flex-1" />
-
-          {/* Left nav: NEWS + GAME */}
-          <nav className="flex items-center self-stretch">
-            {navItems.slice(0, 2).map((item) => (
-              <NavDropdown key={item.label} item={item} align="left" />
-            ))}
-          </nav>
-
-          {/* Center: Download button */}
-          <div className="flex-shrink-0 flex flex-col items-center mx-5" style={{ position: "relative" }}>
-            <Link href="/download">
-              <button
-                className="group relative overflow-hidden font-black uppercase tracking-[0.22em] text-[13px] transition-all duration-200 hover:brightness-110 active:scale-95"
-                style={{
-                  minWidth: "180px",
-                  padding: "11px 36px",
-                  background: "linear-gradient(180deg, #f9c84a 0%, #e89b10 45%, #c67800 100%)",
-                  color: "#1a0a00",
-                  border: "none",
-                  clipPath: "polygon(10px 0%, calc(100% - 10px) 0%, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0% calc(100% - 10px), 0% 10px)",
-                  boxShadow: "0 0 24px rgba(245,166,35,0.45), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -2px 0 rgba(0,0,0,0.25)",
-                  position: "relative",
-                  zIndex: 2,
-                }}
-              >
-                <span style={{ textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}>DOWNLOAD</span>
-                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)" }} />
-              </button>
-            </Link>
-          </div>
-
-          {/* Right nav: SHOP + COMMUNITY + SUPPORT */}
-          <nav className="flex items-center self-stretch">
-            {navItems.slice(2, 5).map((item) => (
-              <NavDropdown key={item.label} item={item} align="right" />
-            ))}
-          </nav>
-
-          <div className="flex-1" />
-        </div>
-      </div>
-
-      {/* ── MOBILE MENU ── */}
-      {mobileMenuOpen && (
-        <div style={{ background: "hsl(var(--background))", borderBottom: `1px solid hsl(var(--border))` }}>
-          {/* Mobile search */}
-          <div className="px-4 pt-3 pb-2">
-            <form onSubmit={handleSearch} className="relative">
-              <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "hsl(var(--muted-foreground))" }} />
+        {/* Right controls */}
+        <div className="hidden md:flex items-center gap-1 ml-auto">
+          {/* Search */}
+          <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ position: "relative" }}>
+              <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.25)", pointerEvents: "none" }} />
               <input
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 text-[13px] outline-none"
-                style={{ background: "hsl(var(--muted))", border: `1px solid hsl(var(--border))`, color: "hsl(var(--foreground))" }}
+                type="search" placeholder="Search..." value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                style={{
+                  height: 32, paddingLeft: 32, paddingRight: 12,
+                  background: "rgba(255,255,255,0.05)",
+                  border: `1px solid ${BORDER}`, borderRadius: 6,
+                  color: "#fff", fontSize: 13, fontFamily: "Inter, system-ui, sans-serif",
+                  outline: "none", width: 140, transition: "width 0.2s, border-color 0.2s",
+                }}
+                onFocus={e => { (e.target as HTMLElement).style.width = "180px"; (e.target as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+                onBlur={e => { (e.target as HTMLElement).style.width = "140px"; (e.target as HTMLElement).style.borderColor = BORDER; }}
               />
+            </div>
+          </form>
+
+          {/* Language */}
+          <button onClick={toggleLanguage} title={language === "en" ? "العربية" : "English"} style={{
+            width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "none", border: `1px solid ${BORDER}`, borderRadius: 6,
+            color: "rgba(255,255,255,0.5)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
+            <Globe size={14} strokeWidth={1.5} />
+          </button>
+
+          {/* Auth */}
+          {isLoggedIn ? (
+            <div className="relative group">
+              <button style={{
+                display: "flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px",
+                background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6,
+                color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: "Inter, system-ui, sans-serif",
+                fontWeight: 500, cursor: "pointer",
+              }}>
+                <User size={13} strokeWidth={1.5} />
+                {user?.username || "Profile"}
+                <ChevronDown size={11} strokeWidth={2} style={{ opacity: 0.4 }} />
+              </button>
+              <div className="absolute right-0 top-full mt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 pt-1" style={{ minWidth: 170 }}>
+                <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: 8, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                  {[
+                    { href: "/profile", icon: User, label: t("navProfile") },
+                    { href: "/my-tickets", icon: Ticket, label: t("navMyTickets") },
+                    { href: "/chat", icon: MessageSquare, label: "Chat" },
+                  ].map(({ href, icon: Icon, label }, i, arr) => (
+                    <Link key={href} href={href} style={{
+                      display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
+                      fontSize: 13, color: "rgba(255,255,255,0.65)", textDecoration: "none",
+                      fontFamily: "Inter, system-ui, sans-serif",
+                      borderBottom: i < arr.length - 1 ? `1px solid rgba(255,255,255,0.06)` : "none",
+                      transition: "color 0.12s",
+                    }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#fff"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)"}>
+                      <Icon size={13} strokeWidth={1.5} /> {label}
+                    </Link>
+                  ))}
+                  <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
+                      fontSize: 13, color: "rgba(239,68,68,0.7)", background: "none", border: "none",
+                      fontFamily: "Inter, system-ui, sans-serif", cursor: "pointer", transition: "color 0.12s",
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#ef4444"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(239,68,68,0.7)"}>
+                    <LogOut size={13} strokeWidth={1.5} /> {t("navLogout")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Link href="/login" style={{
+                height: 32, padding: "0 14px", display: "flex", alignItems: "center",
+                fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
+                color: "rgba(255,255,255,0.7)", textDecoration: "none",
+                background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6,
+                transition: "color 0.15s, border-color 0.15s",
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
+                {t("login")}
+              </Link>
+              <Link href="/register" style={{
+                height: 32, padding: "0 14px", display: "flex", alignItems: "center",
+                fontSize: 13, fontWeight: 600, fontFamily: "Inter, system-ui, sans-serif",
+                color: "#000", textDecoration: "none",
+                background: ACCENT, borderRadius: 6,
+                transition: "opacity 0.15s",
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.88"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
+                {t("signUp")}
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile hamburger */}
+        <button className="md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} style={{
+          width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, color: "rgba(255,255,255,0.7)", cursor: "pointer",
+        }}>
+          {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div style={{ background: "#0d0d0d", borderTop: `1px solid ${BORDER}` }}>
+          {/* Mobile search */}
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BORDER}` }}>
+            <form onSubmit={handleSearch} style={{ position: "relative" }}>
+              <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", pointerEvents: "none" }} />
+              <input type="search" placeholder="Search..." value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                style={{ width: "100%", padding: "9px 12px 9px 32px", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, color: "#fff", fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", outline: "none", boxSizing: "border-box" }} />
             </form>
           </div>
 
-          {/* Mobile nav items */}
-          <nav className="px-2 pb-3">
-            {navItems.map((item) => (
-              <div key={`m-${item.label}`}>
-                {item.dropdown ? (
-                  <>
-                    <button
-                      className="w-full flex items-center justify-between px-3 py-2.5 text-[12px] font-black uppercase tracking-widest rounded transition-colors hover:text-[#f5a623]"
-                      style={{ color: "hsl(var(--foreground))" }}
-                      onClick={() => toggleMobileSub(item.label)}
-                    >
-                      {item.label}
-                      <ChevronDown size={14} strokeWidth={1.5} className={`transition-transform duration-200 ${mobileExpandedMenu === item.label ? "rotate-180" : ""}`} />
-                    </button>
-                    {mobileExpandedMenu === item.label && (
-                      <div className="mb-1 ml-3" style={{ borderLeft: `2px solid ${navAccent}`, paddingLeft: "12px" }}>
-                        {item.dropdown.map((sub, i) => (
-                          <Link
-                            key={`ms-${sub.path}-${i}`}
-                            href={sub.path}
-                            className="block px-2 py-2 text-[11px] uppercase tracking-wide font-semibold transition-colors hover:text-[#f5a623]"
-                            style={{ color: location === sub.path ? navAccent : "hsl(var(--muted-foreground))" }}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            {sub.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <Link
-                    href={item.path || "#"}
-                    className="block px-3 py-2.5 text-[12px] font-black uppercase tracking-widest rounded transition-colors hover:text-[#f5a623]"
-                    style={{ color: location === item.path ? navAccent : "hsl(var(--foreground))" }}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
+          {/* Nav */}
+          <nav style={{ padding: "8px 12px" }}>
+            {navItems.map(item => (
+              <div key={item.label}>
+                <button onClick={() => setMobileExpanded(mobileExpanded === item.label ? null : item.label)} style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 8px", background: "none", border: "none", cursor: "pointer",
+                  fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.8)", fontFamily: "Inter, system-ui, sans-serif",
+                }}>
+                  {item.label}
+                  <ChevronDown size={13} style={{ opacity: 0.4, transform: mobileExpanded === item.label ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                </button>
+                {mobileExpanded === item.label && item.dropdown && (
+                  <div style={{ marginLeft: 12, marginBottom: 4, borderLeft: `1px solid ${BORDER}`, paddingLeft: 12 }}>
+                    {item.dropdown.map(sub => (
+                      <Link key={sub.path} href={sub.path} onClick={() => setMobileOpen(false)} style={{
+                        display: "block", padding: "8px 4px",
+                        fontSize: 13, color: location === sub.path ? ACCENT : "rgba(255,255,255,0.5)",
+                        textDecoration: "none", fontFamily: "Inter, system-ui, sans-serif",
+                      }}>
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}
           </nav>
 
-          {/* Mobile bottom row */}
-          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid hsl(var(--border))` }}>
-            <div className="flex items-center gap-2">
-              <button onClick={toggleLanguage} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: "hsl(var(--muted-foreground))" }}>
-                <Globe size={16} strokeWidth={1.5} />
-              </button>
-              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded hover:text-[#f5a623] transition-colors" style={{ color: "hsl(var(--muted-foreground))" }}>
-                {isDark ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
-              </button>
-            </div>
+          {/* Mobile bottom */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderTop: `1px solid ${BORDER}` }}>
+            <button onClick={toggleLanguage} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 12px", color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: "Inter, system-ui, sans-serif", cursor: "pointer" }}>
+              <Globe size={13} /> {language === "en" ? "عربي" : "English"}
+            </button>
             {!isLoggedIn ? (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: "hsl(var(--foreground))", border: `1px solid hsl(var(--border))` }} onClick={() => setMobileMenuOpen(false)}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("login")}
                 </Link>
-                <Link href="/register" className="px-4 py-1.5 text-[12px] font-bold rounded" style={{ background: navAccent, color: "#000" }} onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/register" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("signUp")}
                 </Link>
               </div>
             ) : (
-              <Link href="/profile" className="px-4 py-1.5 text-[12px] font-semibold rounded transition-colors" style={{ color: navAccent, border: `1px solid ${navAccent}` }} onClick={() => setMobileMenuOpen(false)}>
+              <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: ACCENT, textDecoration: "none", border: `1px solid rgba(212,160,23,0.4)`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                 {user?.username}
               </Link>
             )}

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink, Search, Filter, CheckCircle, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { SiDiscord, SiWhatsapp, SiTelegram, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok } from "react-icons/si";
+import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok } from "react-icons/si";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
@@ -310,7 +310,6 @@ export default function Sellers() {
         <div className="flex gap-2 text-muted-foreground">
           {seller.whatsapp && <SiWhatsapp className="h-3.5 w-3.5 hover:text-green-500 transition-colors" />}
           {seller.discord && <SiDiscord className="h-3.5 w-3.5 hover:text-indigo-500 transition-colors" />}
-          {seller.telegram && <SiTelegram className="h-3.5 w-3.5 hover:text-blue-500 transition-colors" />}
           {seller.facebook && <SiFacebook className="h-3.5 w-3.5 hover:text-blue-600 transition-colors" />}
         </div>
         <div className="flex items-center text-xs text-primary font-medium group-hover:gap-2 transition-all">
@@ -456,7 +455,6 @@ export default function Sellers() {
                     {s.email && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`mailto:${s.email}`, '_blank')}><Mail className="h-4 w-4" /> Email</Button>}
                     {s.whatsapp && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-green-600 hover:text-green-700 hover:border-green-300" onClick={() => window.open(normalizeUrl(s.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
                     {s.discord && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-indigo-600 hover:text-indigo-700 hover:border-indigo-300" onClick={() => window.open(normalizeUrl(s.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
-                    {s.telegram && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-blue-500 hover:text-blue-600 hover:border-blue-300" onClick={() => window.open(normalizeUrl(s.telegram), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
                   </CardContent>
                 </Card>
 

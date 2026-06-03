@@ -346,7 +346,7 @@ export function Footer() {
               opacity: 0.7,
             }}
           >
-            &copy; {new Date().getFullYear()} Bimora Gaming &middot; CrossFire Wiki. Not affiliated with Smilegate or Z8Games.
+            &copy; {new Date().getFullYear()} Bimora Gaming &middot; CrossFire Wiki &mdash; The Community Hub for CrossFire Players.
           </span>
           <div style={{ display: "flex", gap: "20px" }}>
             {[

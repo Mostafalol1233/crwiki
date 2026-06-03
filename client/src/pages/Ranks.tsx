@@ -21,54 +21,60 @@ interface Rank {
   expRequired?: number;
 }
 
+const Z8 = "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_";
 const STATIC_RANKS: Rank[] = [
-  { id: "s1", name: "Major 1", tier: 1, imageUrl: "https://files.catbox.moe/p0s9sk.jpeg", expRequired: 2057701, bonus: "30,000 GP", description: "Major rank tier 1" },
-  { id: "s2", name: "Major 2", tier: 2, imageUrl: "https://files.catbox.moe/8nlk6e.jpeg", expRequired: 2107237, bonus: "", description: "Major rank tier 2" },
-  { id: "s3", name: "Major 3", tier: 3, imageUrl: "https://files.catbox.moe/1ke9re.jpeg", expRequired: 2339509, bonus: "Mutant Box 30 days", description: "Major rank tier 3" },
-  { id: "s4", name: "Major 4", tier: 4, imageUrl: "https://files.catbox.moe/q9q8a4.jpeg", expRequired: 2484517, bonus: "", description: "Major rank tier 4" },
-  { id: "s5", name: "Major 5", tier: 5, imageUrl: "https://files.catbox.moe/dy1ycr.jpeg", expRequired: 2632261, bonus: "", description: "Major rank tier 5" },
-  { id: "s6", name: "Major 6", tier: 6, imageUrl: "https://files.catbox.moe/u7d8n8.jpeg", expRequired: 2782741, bonus: "CFWE Sniper Ticket 30 days", description: "Major rank tier 6" },
-  { id: "s7", name: "Major 7", tier: 7, imageUrl: "https://files.catbox.moe/0at6e0.jpeg", expRequired: 2935957, bonus: "Octane Camo Grenade 30 days", description: "Major rank tier 7" },
-  { id: "s8", name: "Major 8", tier: 8, imageUrl: "https://files.catbox.moe/21np4h.jpeg", expRequired: 3091909, bonus: "CFWE MG Ticket 30 days", description: "Major rank tier 8" },
-  { id: "s9", name: "Lieutenant Colonel 1", tier: 9, imageUrl: "https://files.catbox.moe/wj32gi.jpeg", expRequired: 3277045, bonus: "", description: "Lieutenant Colonel rank tier 1" },
-  { id: "s10", name: "Lieutenant Colonel 2", tier: 10, imageUrl: "https://files.catbox.moe/3upe2i.jpeg", expRequired: 3465373, bonus: "Bulletproof Package 30 days", description: "Lieutenant Colonel rank tier 2" },
-  { id: "s11", name: "Lieutenant Colonel 3", tier: 11, imageUrl: "https://files.catbox.moe/pxlhng.jpeg", expRequired: 3673537, bonus: "CFWE SMG Ticket 30 days", description: "Lieutenant Colonel rank tier 3" },
-  { id: "s12", name: "Lieutenant Colonel 4", tier: 12, imageUrl: "https://files.catbox.moe/vvf1ob.jpeg", expRequired: 3885178, bonus: "M4A1 Custom-Octane Camo 30 days", description: "Lieutenant Colonel rank tier 4" },
-  { id: "s13", name: "Lieutenant Colonel 5", tier: 13, imageUrl: "https://files.catbox.moe/j48qds.jpeg", expRequired: 4100296, bonus: "", description: "Lieutenant Colonel rank tier 5" },
-  { id: "s14", name: "Lieutenant Colonel 6", tier: 14, imageUrl: "https://files.catbox.moe/of7bjg.jpeg", expRequired: 4318891, bonus: "CFWE Rifle Ticket 30 days", description: "Lieutenant Colonel rank tier 6" },
-  { id: "s15", name: "Lieutenant Colonel 7", tier: 15, imageUrl: "https://files.catbox.moe/fc3xd3.jpeg", expRequired: 4540963, bonus: "", description: "Lieutenant Colonel rank tier 7" },
-  { id: "s16", name: "Lieutenant Colonel 8", tier: 16, imageUrl: "https://files.catbox.moe/gry5a6.jpeg", expRequired: 4766512, bonus: "10 Horus Crates", description: "Lieutenant Colonel rank tier 8" },
-  { id: "s17", name: "Colonel 1", tier: 17, imageUrl: "https://files.catbox.moe/36u4e0.jpeg", expRequired: 5028199, bonus: "", description: "Colonel rank tier 1" },
-  { id: "s18", name: "Colonel 2", tier: 18, imageUrl: "https://files.catbox.moe/irep2l.jpeg", expRequired: 5319184, bonus: "", description: "Colonel rank tier 2" },
-  { id: "s19", name: "Colonel 3", tier: 19, imageUrl: "https://files.catbox.moe/n21tw4.jpeg", expRequired: 5614501, bonus: "M4A1-S-Yellow Fractal 60 days", description: "Colonel rank tier 3" },
-  { id: "s20", name: "Colonel 4", tier: 20, imageUrl: "https://files.catbox.moe/qp8njf.jpeg", expRequired: 5914150, bonus: "", description: "Colonel rank tier 4" },
-  { id: "s21", name: "Colonel 5", tier: 21, imageUrl: "https://files.catbox.moe/1qv6ts.jpeg", expRequired: 6218131, bonus: "BC Axe-Octane Camo 30 days", description: "Colonel rank tier 5" },
-  { id: "s22", name: "Brigadier General 1", tier: 22, imageUrl: "https://files.catbox.moe/s7cki2.jpeg", expRequired: 7578037, bonus: "", description: "First brigadier rank" },
-  { id: "s23", name: "Brigadier General 2", tier: 23, imageUrl: "https://files.catbox.moe/ysfqm5.jpeg", expRequired: 8026912, bonus: "AK-47-K-Yellow Fractal 60 days", description: "Second brigadier rank" },
-  { id: "s24", name: "Brigadier General 3", tier: 24, imageUrl: "https://files.catbox.moe/b28ove.jpeg", expRequired: 8481772, bonus: "", description: "Third brigadier rank" },
-  { id: "s25", name: "Brigadier General 4", tier: 25, imageUrl: "https://files.catbox.moe/5kqiv0.jpeg", expRequired: 8964562, bonus: "", description: "Fourth brigadier rank" },
-  { id: "s26", name: "Brigadier General 5", tier: 26, imageUrl: "https://files.catbox.moe/dxp982.jpeg", expRequired: 9475852, bonus: "", description: "Fifth brigadier rank" },
-  { id: "s27", name: "Brigadier General 6", tier: 27, imageUrl: "https://files.catbox.moe/znkwhf.jpeg", expRequired: 10016212, bonus: "30 x 7th Anniversary Crates", description: "Sixth brigadier rank" },
-  { id: "s28", name: "Major General 1", tier: 28, imageUrl: "https://files.catbox.moe/0z7arw.jpeg", expRequired: 10586212, bonus: "", description: "First major general rank" },
-  { id: "s29", name: "Major General 2", tier: 29, imageUrl: "https://files.catbox.moe/r5bv00.jpeg", expRequired: 11186422, bonus: "G-Yellow Crystal perm", description: "Second major general rank" },
-  { id: "s30", name: "Major General 3", tier: 30, imageUrl: "https://files.catbox.moe/u1u353.jpeg", expRequired: 11817412, bonus: "", description: "Third major general rank" },
-  { id: "s31", name: "Major General 4", tier: 31, imageUrl: "https://files.catbox.moe/zvmosb.jpeg", expRequired: 12479752, bonus: "", description: "Fourth major general rank" },
-  { id: "s32", name: "Major General 5", tier: 32, imageUrl: "https://files.catbox.moe/r732ah.jpeg", expRequired: 13174012, bonus: "10 Color Blaze Crates", description: "Fifth major general rank" },
-  { id: "s33", name: "Major General 6", tier: 33, imageUrl: "https://files.catbox.moe/8n9syh.jpeg", expRequired: 13900762, bonus: "Slaughter Ticket Box", description: "Sixth major general rank" },
-  { id: "s34", name: "Lieutenant General 1", tier: 34, imageUrl: "https://files.catbox.moe/a5m2o4.jpeg", expRequired: 14660572, bonus: "", description: "First lieutenant general rank" },
-  { id: "s35", name: "Lieutenant General 2", tier: 35, imageUrl: "https://files.catbox.moe/9cz5b0.jpeg", expRequired: 15454012, bonus: "", description: "Second lieutenant general rank" },
-  { id: "s36", name: "Lieutenant General 3", tier: 36, imageUrl: "https://files.catbox.moe/pn404m.jpeg", expRequired: 16281652, bonus: "M4A1-S-Yellow Fractal perm", description: "Third lieutenant general rank" },
-  { id: "s37", name: "Lieutenant General 4", tier: 37, imageUrl: "https://files.catbox.moe/k4xaa3.jpeg", expRequired: 17144062, bonus: "", description: "Fourth lieutenant general rank" },
-  { id: "s38", name: "Lieutenant General 5", tier: 38, imageUrl: "https://files.catbox.moe/pq4ung.jpeg", expRequired: 18041812, bonus: "", description: "Fifth lieutenant general rank" },
-  { id: "s39", name: "Lieutenant General 6", tier: 39, imageUrl: "https://files.catbox.moe/34w8kx.jpeg", expRequired: 18975472, bonus: "RPK-Infernal Dragon 30 days", description: "Sixth lieutenant general rank" },
-  { id: "s40", name: "General 1", tier: 40, imageUrl: "https://files.catbox.moe/sy65bu.jpeg", expRequired: 19945612, bonus: "", description: "First general rank" },
-  { id: "s41", name: "General 2", tier: 41, imageUrl: "https://files.catbox.moe/ehamvu.jpeg", expRequired: 20952802, bonus: "AK-47-K-Yellow Fractal perm", description: "Second general rank" },
-  { id: "s42", name: "General 3", tier: 42, imageUrl: "https://files.catbox.moe/136e14.jpeg", expRequired: 21997612, bonus: "", description: "Third general rank" },
-  { id: "s43", name: "General 4", tier: 43, imageUrl: "https://files.catbox.moe/3xzm6i.jpeg", expRequired: 23080612, bonus: "AWM-Infernal Dragon 30 days", description: "Fourth general rank" },
-  { id: "s44", name: "General 5", tier: 44, imageUrl: "https://files.catbox.moe/q4itad.jpeg", expRequired: 24202372, bonus: "", description: "Fifth general rank" },
-  { id: "s45", name: "General 6", tier: 45, imageUrl: "https://files.catbox.moe/ibwcla.jpeg", expRequired: 25363462, bonus: "AK-47 Fury 30 days", description: "Sixth general rank" },
-  { id: "s46", name: "Marshall", tier: 46, imageUrl: "https://files.catbox.moe/ibwcla.jpeg", expRequired: 26564452, bonus: "", description: "Marshall rank" },
-  { id: "s47", name: "Grand Marshall", tier: 47, imageUrl: "https://files.catbox.moe/eu1zph.jpeg", expRequired: 100000000, bonus: "30 Free Crate Tickets", description: "Highest rank achievable" },
+  { id: "s1",  name: "Trainee 2",             tier: 2,   imageUrl: `${Z8}2.jpg`,   bonus: "Smile Grenade 7 days" },
+  { id: "s2",  name: "Private",               tier: 3,   imageUrl: `${Z8}3.jpg`,   bonus: "Boost Box 3 days" },
+  { id: "s3",  name: "Private First Class",   tier: 4,   imageUrl: `${Z8}4.jpg`,   bonus: "Starter Weapon Box 3 days" },
+  { id: "s4",  name: "Corporal",              tier: 5,   imageUrl: `${Z8}5.jpg`,   bonus: "Pottery Boost Box 7 days" },
+  { id: "s5",  name: "Sergeant 1",            tier: 6,   imageUrl: `${Z8}6.jpg`,   bonus: "Camo Box 7 days" },
+  { id: "s6",  name: "Sergeant 4",            tier: 9,   imageUrl: `${Z8}9.jpg`,   bonus: "30,000 GP" },
+  { id: "s7",  name: "Staff Sergeant 1",      tier: 10,  imageUrl: `${Z8}10.jpg`,  bonus: "Red Dragon Box 7 days" },
+  { id: "s8",  name: "Staff Sergeant 4",      tier: 13,  imageUrl: `${Z8}13.jpg`,  bonus: "VIP Weapon Box 3 days" },
+  { id: "s9",  name: "Staff Sergeant 6",      tier: 15,  imageUrl: `${Z8}15.jpg`,  bonus: "Red SMOKE 30 days" },
+  { id: "s10", name: "Sergeant First Class 2",tier: 17,  imageUrl: `${Z8}17.jpg`,  bonus: "30,000 GP" },
+  { id: "s11", name: "Sergeant First Class 4",tier: 19,  imageUrl: `${Z8}19.jpg`,  bonus: "AK-47-K-Yellow Fractal 14 days" },
+  { id: "s12", name: "Sergeant First Class 6",tier: 21,  imageUrl: `${Z8}21.jpg`,  bonus: "B.C-Axe-Ares 7 days" },
+  { id: "s13", name: "Master Sergeant 2",     tier: 23,  imageUrl: `${Z8}23.jpg`,  bonus: "M4A1-S-Yellow Fractal 14 days" },
+  { id: "s14", name: "Master Sergeant 4",     tier: 25,  imageUrl: `${Z8}25.jpg`,  bonus: "Barrett M82A1-Royal Dragon 7 days" },
+  { id: "s15", name: "Master Sergeant 6",     tier: 27,  imageUrl: `${Z8}27.jpg`,  bonus: "Sidearm Box 7 days" },
+  { id: "s16", name: "Second Lieutenant 2",   tier: 29,  imageUrl: `${Z8}29.jpg`,  bonus: "M4A1-S-Yellow Fractal 30 days" },
+  { id: "s17", name: "Second Lieutenant 4",   tier: 31,  imageUrl: `${Z8}31.jpg`,  bonus: "Throw Weapon Box 30 days" },
+  { id: "s18", name: "Second Lieutenant 6",   tier: 33,  imageUrl: `${Z8}33.jpg`,  bonus: "KAC Chainsaw-Ancient Dragon 30 days" },
+  { id: "s19", name: "Second Lieutenant 8",   tier: 35,  imageUrl: `${Z8}35.jpg`,  bonus: "Kukri-Royal Dragon 30 days" },
+  { id: "s20", name: "First Lieutenant 2",    tier: 37,  imageUrl: `${Z8}37.jpg`,  bonus: "AK-47-K-Yellow Fractal 30 days" },
+  { id: "s21", name: "First Lieutenant 4",    tier: 39,  imageUrl: `${Z8}39.jpg`,  bonus: "Bulletproof Package 30 days" },
+  { id: "s22", name: "First Lieutenant 6",    tier: 41,  imageUrl: `${Z8}41.jpg`,  bonus: "Rifle Box 30 days" },
+  { id: "s23", name: "First Lieutenant 7",    tier: 42,  imageUrl: `${Z8}42.jpg`,  bonus: "Blue Muzzle Flame 30 days" },
+  { id: "s24", name: "Captain 2",             tier: 45,  imageUrl: `${Z8}45.jpg`,  bonus: "30,000 GP" },
+  { id: "s25", name: "Captain 4",             tier: 47,  imageUrl: `${Z8}47.jpg`,  bonus: "CFWE Pistol Ticket 30 days" },
+  { id: "s26", name: "Captain 6",             tier: 49,  imageUrl: `${Z8}49.jpg`,  bonus: "Yellow Smoke 30 days" },
+  { id: "s27", name: "Captain 8",             tier: 51,  imageUrl: `${Z8}51.jpg`,  bonus: "Green Muzzle Flame 30 days" },
+  { id: "s28", name: "Major 1",               tier: 52,  imageUrl: `${Z8}52.jpg`,  bonus: "30,000 GP" },
+  { id: "s29", name: "Major 3",               tier: 54,  imageUrl: `${Z8}54.jpg`,  bonus: "Mutant Box 30 days" },
+  { id: "s30", name: "Major 6",               tier: 57,  imageUrl: `${Z8}57.jpg`,  bonus: "CFWE Sniper Ticket 30 days" },
+  { id: "s31", name: "Major 7",               tier: 58,  imageUrl: `${Z8}58.jpg`,  bonus: "Octane Camo Grenade 30 days" },
+  { id: "s32", name: "Major 8",               tier: 59,  imageUrl: `${Z8}59.jpg`,  bonus: "CFWE MG Ticket 30 days" },
+  { id: "s33", name: "Lieutenant Colonel 2",  tier: 61,  imageUrl: `${Z8}61.jpg`,  bonus: "Bulletproof Package 30 days" },
+  { id: "s34", name: "Lieutenant Colonel 3",  tier: 62,  imageUrl: `${Z8}62.jpg`,  bonus: "CFWE SMG Ticket 30 days" },
+  { id: "s35", name: "Lieutenant Colonel 4",  tier: 63,  imageUrl: `${Z8}63.jpg`,  bonus: "M4A1 Custom-Octane Camo 30 days" },
+  { id: "s36", name: "Lieutenant Colonel 6",  tier: 65,  imageUrl: `${Z8}65.jpg`,  bonus: "CFWE Rifle Ticket 30 days" },
+  { id: "s37", name: "Lieutenant Colonel 8",  tier: 67,  imageUrl: `${Z8}67.jpg`,  bonus: "10 Horus Crates" },
+  { id: "s38", name: "Colonel 3",             tier: 70,  imageUrl: `${Z8}70.jpg`,  bonus: "M4A1-S-Yellow Fractal 60 days" },
+  { id: "s39", name: "Colonel 5",             tier: 72,  imageUrl: `${Z8}72.jpg`,  bonus: "BC Axe-Octane Camo 30 days" },
+  { id: "s40", name: "Colonel 7",             tier: 74,  imageUrl: `${Z8}74.jpg`,  bonus: "Character Box 30 days" },
+  { id: "s41", name: "Colonel 8",             tier: 75,  imageUrl: `${Z8}75.jpg`,  bonus: "10 Octane Crates" },
+  { id: "s42", name: "Brigadier General 4",   tier: 79,  imageUrl: `${Z8}79.jpg`,  bonus: "AK-47-K-Yellow Fractal 60 days" },
+  { id: "s43", name: "Brigadier General 6",   tier: 81,  imageUrl: `${Z8}81.jpg`,  bonus: "30 x 7th Anniversary Crates" },
+  { id: "s44", name: "Major General 2",       tier: 83,  imageUrl: `${Z8}83.jpg`,  bonus: "G-Yellow Crystal perm" },
+  { id: "s45", name: "Major General 5",       tier: 86,  imageUrl: `${Z8}86.jpg`,  bonus: "10 Color Blaze Crates" },
+  { id: "s46", name: "Major General 6",       tier: 87,  imageUrl: `${Z8}87.jpg`,  bonus: "Slaughter Ticket Box" },
+  { id: "s47", name: "Lieutenant General 3",  tier: 90,  imageUrl: `${Z8}90.jpg`,  bonus: "M4A1-S-Yellow Fractal perm" },
+  { id: "s48", name: "Lieutenant General 6",  tier: 93,  imageUrl: `${Z8}93.jpg`,  bonus: "RPK-Infernal Dragon 30 days" },
+  { id: "s49", name: "General 2",             tier: 95,  imageUrl: `${Z8}95.jpg`,  bonus: "AK-47-K-Yellow Fractal perm" },
+  { id: "s50", name: "General 4",             tier: 97,  imageUrl: `${Z8}97.jpg`,  bonus: "AWM-Infernal Dragon 30 days" },
+  { id: "s51", name: "General 6",             tier: 99,  imageUrl: `${Z8}99.jpg`,  bonus: "AK-47 Fury 30 days" },
+  { id: "s52", name: "Grand Marshall",        tier: 104, imageUrl: `${Z8}104.jpg`, bonus: "30 Free Crate Tickets" },
 ];
 
 const extractExpRequired = (rank: Rank) => {
@@ -83,7 +89,13 @@ const extractBonus = (rank: Rank) => {
   return match ? match[1].trim() : "";
 };
 
-const getRankImage = (rank: Rank) => rank.emblem || rank.image || rank.imageUrl || "";
+const getRankImage = (rank: Rank): string => {
+  const url = rank.emblem || rank.image || rank.imageUrl || "";
+  if (url && (url.startsWith("http") || url.startsWith("/"))) return url;
+  // Fallback: build z8games CDN URL from tier number
+  if (rank.tier && rank.tier > 0) return `${Z8}${rank.tier}.jpg`;
+  return "";
+};
 
 const TIER_COLORS: Record<number, { bg: string; border: string; label: string; glow: string }> = {
   1: { bg: "#0a1520", border: "#3a7bd5", label: "Recruit", glow: "rgba(58,123,213,0.3)" },
@@ -264,6 +276,14 @@ export default function Ranks() {
                           alt={rank.name}
                           className="w-16 h-16 object-contain transition-transform duration-300 group-hover:scale-110"
                           loading="lazy"
+                          onError={(e) => {
+                            const el = e.currentTarget;
+                            if (rank.tier && !el.src.includes("z8games")) {
+                              el.src = `${Z8}${rank.tier}.jpg`;
+                            } else {
+                              el.style.display = "none";
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-16 h-16 flex items-center justify-center rounded" style={{ background: "rgba(255,255,255,0.04)" }}>
@@ -333,7 +353,20 @@ export default function Ranks() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             {getRankImage(rank) ? (
-                              <img src={getRankImage(rank)} alt={rank.name} className="w-10 h-10 object-contain flex-shrink-0 transition-transform group-hover:scale-110" loading="lazy" />
+                              <img
+                                src={getRankImage(rank)}
+                                alt={rank.name}
+                                className="w-10 h-10 object-contain flex-shrink-0 transition-transform group-hover:scale-110"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const el = e.currentTarget;
+                                  if (rank.tier && !el.src.includes("z8games")) {
+                                    el.src = `${Z8}${rank.tier}.jpg`;
+                                  } else {
+                                    el.style.display = "none";
+                                  }
+                                }}
+                              />
                             ) : (
                               <div className="w-10 h-10 flex items-center justify-center rounded flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)" }}>
                                 <Star className="h-4 w-4" style={{ color: "#333" }} />

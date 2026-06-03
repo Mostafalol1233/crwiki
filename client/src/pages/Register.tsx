@@ -9,15 +9,15 @@ import PageSEO from "@/components/PageSEO";
 import { User, Camera, Loader2, Mail, Phone, Lock, UserPlus } from "lucide-react";
 
 const schema = z.object({
-  username: z.string().min(2, "Username is required"),
-  email: z.string().email("Invalid email"),
+  username: z.string().min(2, "Username must be at least 2 characters"),
+  email: z.string().email("Enter a valid email address (e.g. you@gmail.com)"),
   phone: z
     .string()
-    .min(8, "Invalid phone")
-    .max(15, "Invalid phone")
-    .refine((v) => /^\+?\d{8,15}$/.test(v), "Invalid phone number"),
-  password: z.string().min(8, "Min 8 characters").refine((v) => /[^A-Za-z0-9]/.test(v), {
-    message: "Include at least one special character",
+    .optional()
+    .transform((v) => (v ? v.replace(/[\s\-().]/g, "") : ""))
+    .refine((v) => !v || /^\+?\d{7,15}$/.test(v), "Enter a valid phone number (digits only)"),
+  password: z.string().min(8, "Password must be at least 8 characters").refine((v) => /[^A-Za-z0-9]/.test(v), {
+    message: "Add at least one special character (e.g. ! @ # $)",
   }),
   avatar: z.string().optional(),
 });
@@ -57,15 +57,10 @@ export default function Register() {
   const onSubmit = async (values: any) => {
     setStatus("Creating account...");
     try {
-      const phoneSanitized = String(values.phone || "").replace(/^\+/, "");
-      if (!/^\d{8,15}$/.test(phoneSanitized)) {
-        setStatus("Invalid phone number");
-        return;
-      }
       const { signUp } = await import("@/lib/supabaseApi");
       await signUp(values.email, values.password, {
         username: values.username,
-        phone: phoneSanitized,
+        phone: values.phone || "",
         avatar: avatarUrl,
       });
       try {
@@ -74,13 +69,22 @@ export default function Register() {
       toast({ title: "Account created", description: "Check your email to confirm, then sign in." });
       setLocation("/login");
     } catch (e: any) {
-      setStatus(e.message);
+      const msg = String(e.message || "");
+      if (msg.toLowerCase().includes("email")) {
+        setStatus("This email address couldn't be registered. Try a different email (e.g. Gmail, Outlook).");
+      } else if (msg.toLowerCase().includes("already")) {
+        setStatus("An account with this email already exists. Try signing in instead.");
+      } else if (msg.toLowerCase().includes("password")) {
+        setStatus("Password doesn't meet requirements. Please choose a stronger password.");
+      } else {
+        setStatus(msg || "Something went wrong. Please try again.");
+      }
     }
   };
 
   const fields = [
     { id: "email", label: "Email", type: "email", placeholder: "you@example.com", icon: Mail, key: "email" },
-    { id: "phone", label: "Phone", type: "tel", placeholder: "123456789", icon: Phone, key: "phone" },
+    { id: "phone", label: "Phone (Optional)", type: "tel", placeholder: "+1234567890", icon: Phone, key: "phone" },
     { id: "username", label: "Username", type: "text", placeholder: "yourname", icon: User, key: "username" },
     { id: "password", label: "Password", type: "password", placeholder: "••••••••", icon: Lock, key: "password" },
   ];

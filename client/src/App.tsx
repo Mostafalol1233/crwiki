@@ -54,8 +54,8 @@ import TargetCursor from "@/components/TargetCursor";
 
 
 // ══════════════════════════════════════════════
-// 🔧 MAINTENANCE MODE — غير true لـ false لفتح الموقع
-const MAINTENANCE_MODE = true;
+// 🔧 MAINTENANCE MODE — set VITE_MAINTENANCE_MODE=false to open the site without editing code
+const MAINTENANCE_MODE = import.meta.env.VITE_MAINTENANCE_MODE !== "false";
 // ══════════════════════════════════════════════
 
 // Lazy load admin pages

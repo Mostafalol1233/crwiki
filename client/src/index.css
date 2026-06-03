@@ -750,3 +750,26 @@
 .faq-html-content blockquote { border-left: 3px solid hsl(var(--primary)); padding-left: 0.75rem; color: hsl(var(--muted-foreground)); font-style: italic; }
 .faq-html-content table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
 .faq-html-content td, .faq-html-content th { border: 1px solid hsl(var(--border)); padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+
+/* ─── TipTap Admin Editor ─────────────────────────────────────────── */
+.tiptap-admin .ProseMirror { min-height: 280px; outline: none; }
+.tiptap-admin .ProseMirror p { margin: 0 0 0.75em; }
+.tiptap-admin .ProseMirror h1 { font-size: 1.7em; font-weight: 600; margin: 0 0 0.5em; color: #fafafa; }
+.tiptap-admin .ProseMirror h2 { font-size: 1.4em; font-weight: 600; margin: 0 0 0.5em; color: #fafafa; }
+.tiptap-admin .ProseMirror h3 { font-size: 1.15em; font-weight: 600; margin: 0 0 0.5em; color: #fafafa; }
+.tiptap-admin .ProseMirror ul, .tiptap-admin .ProseMirror ol { padding-left: 1.5em; margin: 0 0 0.75em; }
+.tiptap-admin .ProseMirror li { margin-bottom: 0.25em; }
+.tiptap-admin .ProseMirror blockquote { border-left: 3px solid #d4a017; padding-left: 1em; margin: 0.75em 0; color: #a1a1aa; font-style: italic; }
+.tiptap-admin .ProseMirror code { background: #27272a; color: #d4a017; padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.875em; font-family: 'Fira Code', monospace; }
+.tiptap-admin .ProseMirror pre { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: 12px 16px; margin: 0.75em 0; overflow-x: auto; }
+.tiptap-admin .ProseMirror pre code { background: none; padding: 0; color: #e5e7eb; font-size: 0.85em; }
+.tiptap-admin .ProseMirror img { max-width: 100%; border-radius: 6px; border: 1px solid #27272a; margin: 0.5em 0; display: block; }
+.tiptap-admin .ProseMirror a { color: #d4a017; text-decoration: underline; }
+.tiptap-admin .ProseMirror mark { background: rgba(212,160,23,0.2); color: inherit; border-radius: 2px; padding: 0 2px; }
+.tiptap-admin .ProseMirror hr { border: none; border-top: 1px solid #3f3f46; margin: 1.25em 0; }
+.tiptap-admin .ProseMirror table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
+.tiptap-admin .ProseMirror table td, .tiptap-admin .ProseMirror table th { border: 1px solid #3f3f46; padding: 6px 10px; min-width: 80px; position: relative; }
+.tiptap-admin .ProseMirror table th { background: #27272a; font-weight: 500; }
+.tiptap-admin .ProseMirror table .selectedCell { background: rgba(212,160,23,0.08); }
+.tiptap-admin .ProseMirror iframe { width: 100%; aspect-ratio: 16/9; border: 1px solid #3f3f46; border-radius: 6px; margin: 0.75em 0; }
+.tiptap-admin .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #52525b; pointer-events: none; height: 0; float: left; }

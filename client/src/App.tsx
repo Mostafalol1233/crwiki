@@ -52,8 +52,8 @@ import AnnouncementModal from "@/components/AnnouncementModal";
 import TargetCursor from "@/components/TargetCursor";
 
 
-// Lazy load admin pages to prevent crash from quill-blot-formatter
-const Admin = lazy(() => import("@/pages/Admin"));
+// Lazy load admin pages
+const Admin = lazy(() => import("@/pages/admin/index"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminAnnouncements = lazy(() => import("@/pages/AdminAnnouncements"));
 const MediaUpload = lazy(() => import("@/pages/MediaUpload"));

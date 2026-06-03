@@ -60,7 +60,6 @@ const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   engineer: { bg: "rgba(20,184,166,0.15)", color: "#2dd4bf" },
   samurai: { bg: "rgba(236,72,153,0.15)", color: "#f472b6" },
   specialist: { bg: "rgba(245,166,35,0.15)", color: "#f5a623" },
-  "special forces": { bg: "rgba(245,166,35,0.15)", color: "#f5a623" },
 };
 
 function getRoleStyle(role: string) {

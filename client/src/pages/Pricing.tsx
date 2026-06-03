@@ -1,484 +1,263 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Crown,
-  Gem,
-  Link2,
-  ShieldCheck,
-  ShoppingBag,
-  Swords,
-  Target,
-  Trophy,
-  Wrench,
-} from "lucide-react";
+import { ExternalLink, ShoppingCart, Zap, Shield, Star, Gift, ChevronRight, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { useEffect, useMemo, useState } from "react";
 
-const offers = [
+const ZP_PACKAGES = [
+  { zp: "400 ZP",    price: "$5",   bonus: "",           popular: false, color: "#60a5fa" },
+  { zp: "800 ZP",    price: "$10",  bonus: "+100 ZP",    popular: false, color: "#60a5fa" },
+  { zp: "2,000 ZP",  price: "$20",  bonus: "+300 ZP",    popular: false, color: "#34d399" },
+  { zp: "5,500 ZP",  price: "$50",  bonus: "+700 ZP",    popular: true,  color: "#f5a623" },
+  { zp: "11,500 ZP", price: "$100", bonus: "+1,500 ZP",  popular: false, color: "#a78bfa" },
+  { zp: "20,000 ZP", price: "$200", bonus: "+3,000 ZP",  popular: false, color: "#f472b6" },
+];
+
+const TOP_UP_METHODS = [
   {
-    icon: ShieldCheck,
-    title: "Verified Sellers Marketplace",
-    badge: "Live-ready",
-    description:
-      "Turn the existing sellers section into a trusted commercial channel. Give approved merchants better placement, verified badges, richer store pages, and review-backed credibility.",
-    monetization:
-      "Charge monthly listing fees, premium placement upgrades, or featured campaign slots for top-up sellers and approved service providers.",
-    operations: [
-      "Approve and rank trusted sellers from the admin panel",
-      "Offer featured placement and homepage exposure",
-      "Track clicks, reviews, and conversion intent from seller analytics",
-    ],
+    name: "Official Z8Games Store",
+    url: "https://www.z8games.com/",
+    desc: "The official way — buy directly from Smilegate / Z8Games.",
+    badge: "Official",
+    badgeColor: "#4ade80",
+    icon: "🏪",
   },
   {
-    icon: Swords,
-    title: "Boosting & Coaching Requests",
-    badge: "High demand",
-    description:
-      "Add structured request forms for rank boosting, coaching sessions, scrim prep, or aim-training help. Match players with trusted providers instead of random Discord DMs.",
-    monetization:
-      "Take a platform commission on each accepted request or sell priority placement to elite coaches and boosters.",
-    operations: [
-      "Collect request details, preferred rank, and deadlines",
-      "Create an admin queue for approval and assignment",
-      "Release payment only after completion confirmation",
-    ],
+    name: "Verified Sellers on CrossFire Wiki",
+    url: "/sellers",
+    desc: "Buy ZP from trusted community sellers reviewed by other players.",
+    badge: "Community",
+    badgeColor: "#f5a623",
+    icon: "⚡",
+    internal: true,
   },
   {
-    icon: Crown,
-    title: "Premium Wiki Membership",
-    badge: "Recurring revenue",
-    description:
-      "Offer a premium layer with advanced guides, early event breakdowns, optimized loadout calculators, and members-only tutorial packs.",
-    monetization:
-      "Sell low-cost monthly subscriptions with perks like no interruptions, early access content, exclusive strategy breakdowns, and premium tools.",
-    operations: [
-      "Lock selected guides or tools behind membership",
-      "Bundle premium event alerts and weapon comparison tools",
-      "Create premium-only landing pages and newsletters",
-    ],
+    name: "PaymentWall",
+    url: "https://www.paymentwall.com/",
+    desc: "Multiple payment methods: cards, wallets, and local options.",
+    badge: "Multi-method",
+    badgeColor: "#60a5fa",
+    icon: "💳",
   },
   {
-    icon: ShoppingBag,
-    title: "Affiliate Gear & Top-up Recommendations",
-    badge: "Low friction",
-    description:
-      "Place relevant affiliate offers on weapon, tutorial, and equipment pages: mice, keyboards, headsets, capture cards, or regional top-up vouchers.",
-    monetization:
-      "Earn commission from affiliate links without charging the player extra.",
-    operations: [
-      "Add curated gear widgets under tactical content",
-      "Tag content by audience: sniper, rifler, streamer, beginner",
-      "Measure click-through rate per page or seller campaign",
-    ],
-  },
-  {
-    icon: Trophy,
-    title: "Sponsored Clans, Tournaments & Events",
-    badge: "Brand growth",
-    description:
-      "Use the event/news system to host premium placements for clans, tournaments, and community partners that want traffic and visibility.",
-    monetization:
-      "Sell sponsored homepage modules, event spotlights, and branded content packages.",
-    operations: [
-      "Offer sponsored event cards and custom landing pages",
-      "Bundle analytics screenshots for sponsors",
-      "Feature partners in event detail pages and newsletters",
-    ],
-  },
-  {
-    icon: Wrench,
-    title: "Developer Tools & Data Products",
-    badge: "Programming angle",
-    description:
-      "Build practical tools for serious players and creators: damage calculators, map callout trainers, API widgets, scrim planners, or ranked stat dashboards.",
-    monetization:
-      "Charge for premium access, white-label embeds, API usage, or downloadable pro toolkits for clans and creators.",
-    operations: [
-      "Package tools as premium utilities or B2B widgets",
-      "Expose stats or calculators through authenticated APIs",
-      "Use the custom pages system to launch tool landing pages fast",
-    ],
+    name: "G2G Marketplace",
+    url: "https://www.g2g.com/categories/crossfire-zp",
+    desc: "Third-party marketplace for ZP and account services.",
+    badge: "Marketplace",
+    badgeColor: "#a78bfa",
+    icon: "🛒",
   },
 ];
 
-const roadmap = [
-  {
-    phase: "Phase 1",
-    title: "Monetize what already exists",
-    items: [
-      "Promote verified sellers more clearly",
-      "Add featured seller packages",
-      "Place affiliate widgets on buyer-intent pages",
-    ],
-  },
-  {
-    phase: "Phase 2",
-    title: "Launch service demand capture",
-    items: [
-      "Create boosting/coaching request intake forms",
-      "Add admin workflows for assignment and completion",
-      "Start taking service commissions",
-    ],
-  },
-  {
-    phase: "Phase 3",
-    title: "Ship premium tools",
-    items: [
-      "Premium strategy guides and calculators",
-      "Members-only event alerts and tutorials",
-      "API/data access for clans and creators",
-    ],
-  },
+const ZP_USES = [
+  { item: "Permanent Weapons",    cost: "From 6,900 ZP",  icon: "🔫", desc: "Unlock powerful weapons permanently — no rentals." },
+  { item: "Character Skins",      cost: "From 2,900 ZP",  icon: "👤", desc: "Customize your appearance with exclusive skins." },
+  { item: "VVIP Weapons",         cost: "From 29,000 ZP", icon: "⭐", desc: "The most powerful permanent weapons with special effects." },
+  { item: "Crate Keys",           cost: "From 99 ZP/key", icon: "📦", desc: "Unlock mystery crates for rare weapons and skins." },
+  { item: "GP Boosts",            cost: "From 500 ZP",    icon: "🚀", desc: "Earn GP faster to unlock free in-game rewards." },
+  { item: "Special Ammo",         cost: "From 200 ZP",    icon: "💥", desc: "Explosive, incendiary and special ammo types." },
+  { item: "Black Market Items",   cost: "Varies",          icon: "🎰", desc: "Spin for limited-time exclusive items." },
+  { item: "Mercenary Rentals",    cost: "From 1,000 ZP",  icon: "🧬", desc: "Rent premium mercenaries for 7 or 30 days." },
 ];
+
+const PROMO_CODES = [
+  { code: "CFWIKI2026", desc: "Check official CrossFire social media for active promo codes", platform: "Z8Games" },
+  { code: "DISCORD2026", desc: "Join the CrossFire Discord for exclusive code drops", platform: "Discord" },
+  { code: "CFNEWS",    desc: "Subscribe to the newsletter for seasonal bonus codes", platform: "Newsletter" },
+];
+
+function CopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={copy}
+      title="Copy code"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all hover:brightness-110"
+      style={{ background: copied ? "rgba(74,222,128,0.15)" : "rgba(245,166,35,0.12)", color: copied ? "#4ade80" : "#f5a623", border: `1px solid ${copied ? "rgba(74,222,128,0.3)" : "rgba(245,166,35,0.25)"}` }}
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      {code}
+    </button>
+  );
+}
 
 export default function PricingPage() {
   const isArabic = typeof window !== "undefined" && (document.documentElement.lang === "ar" || localStorage.getItem("lang") === "ar");
-  const [verifiedSellers, setVerifiedSellers] = useState(20);
-  const [sellerMonthlyFee, setSellerMonthlyFee] = useState(30);
-  const [monthlyServiceOrders, setMonthlyServiceOrders] = useState(100);
-  const [avgServiceOrderValue, setAvgServiceOrderValue] = useState(12);
-  const [serviceCommissionPct, setServiceCommissionPct] = useState(12);
-  const [premiumMembers, setPremiumMembers] = useState(300);
-  const [premiumMonthlyPrice, setPremiumMonthlyPrice] = useState(2);
-  const [affiliateMonthlySales, setAffiliateMonthlySales] = useState(2000);
-  const [affiliateCommissionPct, setAffiliateCommissionPct] = useState(4);
-  const { data: monetizationDefaults } = useQuery<any>({
-    queryKey: ["/api/public/settings/site"],
-    queryFn: async () => {
-      const { getSiteSettings } = await import("@/lib/supabaseApi");
-      return getSiteSettings();
-    },
-  });
-
-  useEffect(() => {
-    if (!monetizationDefaults) return;
-    setSellerMonthlyFee(monetizationDefaults.monetizationVerifiedSellerFee ?? 30);
-    setServiceCommissionPct(monetizationDefaults.monetizationBoostingCommissionPct ?? 12);
-    setPremiumMonthlyPrice(monetizationDefaults.monetizationPremiumMonthlyPrice ?? 2);
-    setAffiliateCommissionPct(monetizationDefaults.monetizationAffiliateCommissionPct ?? 4);
-  }, [monetizationDefaults]);
-
-  const estimatedRevenue = useMemo(() => {
-    const sellersRevenue = verifiedSellers * sellerMonthlyFee;
-    const servicesRevenue =
-      monthlyServiceOrders * avgServiceOrderValue * (serviceCommissionPct / 100);
-    const premiumRevenue = premiumMembers * premiumMonthlyPrice;
-    const affiliateRevenue = affiliateMonthlySales * (affiliateCommissionPct / 100);
-    const monthlyTotal = sellersRevenue + servicesRevenue + premiumRevenue + affiliateRevenue;
-
-    return {
-      sellersRevenue,
-      servicesRevenue,
-      premiumRevenue,
-      affiliateRevenue,
-      monthlyTotal,
-      yearlyTotal: monthlyTotal * 12,
-    };
-  }, [
-    verifiedSellers,
-    sellerMonthlyFee,
-    monthlyServiceOrders,
-    avgServiceOrderValue,
-    serviceCommissionPct,
-    premiumMembers,
-    premiumMonthlyPrice,
-    affiliateMonthlySales,
-    affiliateCommissionPct,
-  ]);
 
   return (
     <>
       <PageSEO
-        title={isArabic ? "التسعير وبرامج الربح — CrossFire Wiki" : "Pricing & Revenue Programs — CrossFire Wiki"}
-        description={isArabic ? "استكشف برامج الربح في CrossFire Wiki مثل البائعين الموثوقين، والعضويات المميزة، والأفلييت، والخدمات." : "Explore CrossFire Wiki monetization programs including verified sellers, premium access, affiliate gear offers, coaching services, and sponsor packages."}
+        title="CrossFire ZP Prices & Top-Up Guide — CrossFire Wiki"
+        description="Complete guide to CrossFire ZP packages, top-up methods, what ZP buys you, and trusted community sellers."
         canonicalPath="/pricing"
-        schemaType="WebPage"
-        schemaData={{
-          name: isArabic ? "برامج الربح في CrossFire Wiki" : "CrossFire Wiki Pricing & Revenue Programs",
-          description: isArabic ? "نظرة عامة على برامج الربح والباقات والخدمات." : "Revenue program overview for CrossFire Wiki including verified sellers, premium memberships, affiliate recommendations, and service offerings.",
-          url: "/pricing",
-        }}
       />
 
       <div className="min-h-screen" style={{ background: "var(--background)" }} dir={isArabic ? "rtl" : "ltr"}>
 
         {/* ── Hero ── */}
-        <div className="relative overflow-hidden py-20 md:py-28 text-center" style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,166,35,0.06) 0%, transparent 70%)" }} />
-          <div className="relative max-w-4xl mx-auto px-6">
-            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
-              <Crown className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>{isArabic ? "خطة الربح" : "Monetization Blueprint"}</span>
+        <div className="relative overflow-hidden py-16 md:py-24 text-center" style={{ background: "linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 70%)" }} />
+          <div className="relative max-w-3xl mx-auto px-6">
+            <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "3px" }}>
+              <Zap className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>ZP & Pricing Guide</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
-              {isArabic ? "ابنِ مصادر دخل" : "Build Revenue"}
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
+              CrossFire
               <br />
-              <span style={{ color: "#f5a623" }}>{isArabic ? "حول مجتمع CrossFire" : "Around CrossFire"}</span>
+              <span style={{ color: "#f5a623" }}>ZP Packages</span>
             </h1>
-            <p className="text-sm md:text-base max-w-2xl mx-auto mb-8" style={{ color: "#666" }}>
-              {isArabic
-                ? "بدلاً من الاعتماد فقط على الإعلانات، يمكن للموقع تحقيق دخل من التجارة الموثوقة والأدوات المميزة والخدمات."
-                : "Instead of relying on ads, earn from trusted commerce, premium tools, sponsored visibility, and player services."}
+            <p className="text-sm md:text-base max-w-xl mx-auto" style={{ color: "#666" }}>
+              Everything you need to know about Zen Points — prices, what to buy, how to top up, and where to find the best deals.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href="/sellers" className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
-                {isArabic ? "استعرض البائعين" : "Explore Sellers"} <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:border-[#f5a623] hover:text-[#f5a623]" style={{ background: "transparent", color: "#666", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px" }}>
-                {isArabic ? "كن شريكاً" : "Become a Partner"}
-              </Link>
-            </div>
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20 space-y-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-16 space-y-16">
 
-          {/* ── Offer Cards ── */}
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {offers.map((offer) => {
-              const Icon = offer.icon;
-              return (
-                <div key={offer.title} className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="w-10 h-10 flex items-center justify-center" style={{ background: "rgba(245,166,35,0.12)", borderRadius: "3px" }}>
-                      <Icon className="h-5 w-5" style={{ color: "#f5a623" }} />
+          {/* ── ZP Packages ── */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <ShoppingCart className="h-5 w-5" style={{ color: "#f5a623" }} />
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>ZP Package Prices</h2>
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 ml-1" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: "2px" }}>USD (approx.)</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {ZP_PACKAGES.map((pkg) => (
+                <div
+                  key={pkg.zp}
+                  className="relative p-5 flex flex-col gap-2"
+                  style={{ background: "var(--card)", border: `1px solid ${pkg.popular ? "rgba(245,166,35,0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: "4px" }}
+                >
+                  {pkg.popular && (
+                    <span className="absolute -top-2.5 left-4 text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>Most Popular</span>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-black" style={{ color: pkg.color }}>{pkg.zp}</span>
+                    <span className="text-2xl font-black" style={{ color: "var(--foreground)" }}>{pkg.price}</span>
+                  </div>
+                  {pkg.bonus && (
+                    <div className="flex items-center gap-1.5">
+                      <Gift className="h-3 w-3" style={{ color: "#4ade80" }} />
+                      <span className="text-[11px] font-bold" style={{ color: "#4ade80" }}>+{pkg.bonus} bonus</span>
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-1" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: "2px" }}>{offer.badge}</span>
-                  </div>
-                  <h3 className="font-black text-sm uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{offer.title}</h3>
-                  <p className="text-[11px] leading-relaxed mb-4" style={{ color: "#666" }}>{offer.description}</p>
-                  <div className="p-3 mb-4" style={{ background: "rgba(245,166,35,0.05)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "3px" }}>
-                    <p className="text-[9px] font-black uppercase tracking-wider mb-1" style={{ color: "#f5a623" }}>How it makes money</p>
-                    <p className="text-[11px] leading-relaxed" style={{ color: "#777" }}>{offer.monetization}</p>
-                  </div>
-                  <ul className="space-y-2">
-                    {offer.operations.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[11px]" style={{ color: "#666" }}>
-                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: "#4ade80" }} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  )}
+                  <a
+                    href="https://www.z8games.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+                    style={{ background: pkg.popular ? "#f5a623" : "rgba(255,255,255,0.05)", color: pkg.popular ? "#000" : "#888", borderRadius: "2px" }}
+                  >
+                    Buy on Z8Games <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px]" style={{ color: "#555" }}>
+              * Prices are approximate and may vary by region. Always verify on the official Z8Games store.
+            </p>
+          </section>
 
-          {/* ── Roadmap + Stack ── */}
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-              <div className="flex items-center gap-2 mb-5">
-                <Target className="h-4 w-4" style={{ color: "#f5a623" }} />
-                <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
-                  {isArabic ? "ترتيب التنفيذ المقترح" : "Recommended Rollout Order"}
-                </h2>
-              </div>
-              <p className="text-[11px] mb-5" style={{ color: "#666" }}>
-                {isArabic ? "ابدأ بالموجود حالياً ثم أضف الخدمات والأدوات الأعلى قيمة." : "Start with features that use the current stack, then add higher-value services and tools."}
+          {/* ── Where to Top Up ── */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="h-5 w-5" style={{ color: "#f5a623" }} />
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Where to Top Up</h2>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {TOP_UP_METHODS.map((m) => (
+                <div key={m.name} className="p-5 flex gap-4" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="text-2xl flex-shrink-0">{m.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>{m.name}</h3>
+                      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 flex-shrink-0" style={{ background: `${m.badgeColor}18`, color: m.badgeColor, borderRadius: "2px" }}>{m.badge}</span>
+                    </div>
+                    <p className="text-[12px] mb-3" style={{ color: "#666" }}>{m.desc}</p>
+                    {m.internal ? (
+                      <Link href={m.url} className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider hover:underline" style={{ color: "#f5a623" }}>
+                        Visit Sellers <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    ) : (
+                      <a href={m.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider hover:underline" style={{ color: "#f5a623" }}>
+                        Visit Site <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── What ZP Buys You ── */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <Star className="h-5 w-5" style={{ color: "#f5a623" }} />
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>What Can ZP Buy?</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ZP_USES.map((item) => (
+                <div key={item.item} className="p-4" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+                  <div className="text-2xl mb-2">{item.icon}</div>
+                  <h3 className="font-black text-[12px] uppercase tracking-tight mb-1" style={{ color: "var(--foreground)" }}>{item.item}</h3>
+                  <p className="text-[10px] font-black mb-2" style={{ color: "#f5a623" }}>{item.cost}</p>
+                  <p className="text-[11px]" style={{ color: "#666" }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Promo Codes ── */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <Gift className="h-5 w-5" style={{ color: "#f5a623" }} />
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Promo Codes & Free ZP</h2>
+            </div>
+            <div className="p-5 mb-4" style={{ background: "rgba(245,166,35,0.05)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px" }}>
+              <p className="text-[12px] mb-4" style={{ color: "#888" }}>
+                CrossFire occasionally releases promo codes through official channels. Check these sources regularly for free ZP and bonus items:
               </p>
-              <div className="grid gap-3 md:grid-cols-3">
-                {roadmap.map((step, i) => (
-                  <div key={step.phase} className="p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
-                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: "2px" }}>{step.phase}</span>
-                    <h3 className="mt-3 font-black text-xs uppercase tracking-tight mb-3" style={{ color: "var(--foreground)" }}>{step.title}</h3>
-                    <ul className="space-y-2">
-                      {step.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-[11px]" style={{ color: "#666" }}>
-                          <Gem className="mt-0.5 h-3 w-3 flex-shrink-0" style={{ color: "#f5a623" }} />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+              <div className="flex flex-col gap-3">
+                {PROMO_CODES.map((p) => (
+                  <div key={p.code} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3" style={{ background: "rgba(255,255,255,0.03)", borderRadius: "3px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <CopyButton code={p.code} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px]" style={{ color: "#888" }}>{p.desc}</p>
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)", color: "#555", borderRadius: "2px" }}>{p.platform}</span>
                   </div>
                 ))}
               </div>
             </div>
+            <p className="text-[11px]" style={{ color: "#555" }}>
+              Promo codes expire quickly. Follow <a href="https://discord.gg/7AbuDrNNJM" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "#5865f2" }}>our Discord</a> and <a href="/news" className="hover:underline" style={{ color: "#f5a623" }}>news page</a> for the latest drops.
+            </p>
+          </section>
 
-            <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-              <div className="flex items-center gap-2 mb-5">
-                <Link2 className="h-4 w-4" style={{ color: "#f5a623" }} />
-                <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
-                  Already Supported
-                </h2>
-              </div>
-              <p className="text-[11px] mb-4" style={{ color: "#666" }}>
-                {isArabic ? "لديك بالفعل أساس قوي يمكن تحويله إلى باقات وخدمات أوضح." : "You already have strong building blocks ready to monetize."}
-              </p>
-              <div className="space-y-2">
-                {[
-                  { title: isArabic ? "صفحات البائعين + المراجعات" : "Seller pages + reviews", desc: isArabic ? "أساس للبائعين الموثوقين والباقات المميزة." : "Foundation for verified vendors and featured placements." },
-                  { title: isArabic ? "الأخبار + الإيفينتات" : "Events + news engine", desc: isArabic ? "مناسبة للرعايات وصفحات الشركاء." : "Perfect for sponsored events and partner posts." },
-                  { title: isArabic ? "الإدارة + الصفحات المخصصة" : "Admin + custom pages", desc: isArabic ? "لصفحات الهبوط والعروض المميزة." : "Useful for landing pages and premium offers." },
-                  { title: isArabic ? "التحليلات" : "Analytics", desc: isArabic ? "تابع الزيارات والنقرات." : "Track seller views, clicks, and engagement." },
-                ].map((item) => (
-                  <div key={item.title} className="p-3" style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px" }}>
-                    <p className="font-black text-[11px] uppercase tracking-tight mb-0.5" style={{ color: "var(--foreground)" }}>{item.title}</p>
-                    <p className="text-[11px]" style={{ color: "#555" }}>{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* ── Safety tips ── */}
+          <section className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: "4px" }}>
+            <h2 className="font-black text-sm uppercase tracking-wider mb-4" style={{ color: "#f87171" }}>⚠️ Stay Safe When Buying ZP</h2>
+            <ul className="space-y-2.5">
+              {[
+                "Only buy from the official Z8Games store or verified community sellers with reviews.",
+                "Never share your account password with anyone claiming to sell ZP.",
+                "Z8Games staff and GMs will NEVER ask for your ZP or account access.",
+                "If a deal sounds too good to be true, it probably is — stick to trusted sources.",
+                "Check our verified sellers page for community-reviewed providers.",
+              ].map((tip) => (
+                <li key={tip} className="flex items-start gap-2 text-[12px]" style={{ color: "#888" }}>
+                  <span style={{ color: "#f87171", flexShrink: 0 }}>•</span>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </section>
 
-          {/* ── Revenue Estimator ── */}
-          <div className="p-5 md:p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4" style={{ color: "#f5a623" }} />
-              <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Revenue Estimator</h2>
-            </div>
-            <p className="text-[11px] mb-6" style={{ color: "#666" }}>Change the assumptions to estimate monthly and yearly revenue potential from core monetization streams.</p>
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="verified-sellers">Verified sellers count</Label>
-                  <Input
-                    id="verified-sellers"
-                    type="number"
-                    min={0}
-                    value={verifiedSellers}
-                    onChange={(e) => setVerifiedSellers(Math.max(0, Number(e.target.value) || 0))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="seller-monthly-fee">Seller monthly fee ($)</Label>
-                  <Input
-                    id="seller-monthly-fee"
-                    type="number"
-                    min={0}
-                    value={sellerMonthlyFee}
-                    onChange={(e) => setSellerMonthlyFee(Math.max(0, Number(e.target.value) || 0))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="service-orders">Monthly boosting/coaching orders</Label>
-                  <Input
-                    id="service-orders"
-                    type="number"
-                    min={0}
-                    value={monthlyServiceOrders}
-                    onChange={(e) =>
-                      setMonthlyServiceOrders(Math.max(0, Number(e.target.value) || 0))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="service-order-value">Average service order value ($)</Label>
-                  <Input
-                    id="service-order-value"
-                    type="number"
-                    min={0}
-                    value={avgServiceOrderValue}
-                    onChange={(e) =>
-                      setAvgServiceOrderValue(Math.max(0, Number(e.target.value) || 0))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="service-commission">Service commission (%)</Label>
-                  <Input
-                    id="service-commission"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={serviceCommissionPct}
-                    onChange={(e) =>
-                      setServiceCommissionPct(Math.min(100, Math.max(0, Number(e.target.value) || 0)))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="premium-members">Premium members</Label>
-                  <Input
-                    id="premium-members"
-                    type="number"
-                    min={0}
-                    value={premiumMembers}
-                    onChange={(e) => setPremiumMembers(Math.max(0, Number(e.target.value) || 0))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="premium-price">Premium price per month ($)</Label>
-                  <Input
-                    id="premium-price"
-                    type="number"
-                    min={0}
-                    value={premiumMonthlyPrice}
-                    onChange={(e) =>
-                      setPremiumMonthlyPrice(Math.max(0, Number(e.target.value) || 0))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="affiliate-sales">Affiliate tracked sales ($/month)</Label>
-                  <Input
-                    id="affiliate-sales"
-                    type="number"
-                    min={0}
-                    value={affiliateMonthlySales}
-                    onChange={(e) =>
-                      setAffiliateMonthlySales(Math.max(0, Number(e.target.value) || 0))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="affiliate-commission">Affiliate commission (%)</Label>
-                  <Input
-                    id="affiliate-commission"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={affiliateCommissionPct}
-                    onChange={(e) =>
-                      setAffiliateCommissionPct(
-                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* ── Breakdown sidebar ── */}
-              <div className="space-y-3 p-4" style={{ background: "rgba(245,166,35,0.04)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "3px" }}>
-                <h3 className="font-black text-sm uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Estimated Breakdown</h3>
-                <div className="space-y-2 text-[12px]">
-                  {[
-                    { label: "Verified sellers", value: estimatedRevenue.sellersRevenue },
-                    { label: "Boosting/coaching", value: estimatedRevenue.servicesRevenue },
-                    { label: "Premium subscriptions", value: estimatedRevenue.premiumRevenue },
-                    { label: "Affiliate commission", value: estimatedRevenue.affiliateRevenue },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center justify-between py-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      <span style={{ color: "#666" }}>{row.label}</span>
-                      <strong style={{ color: "var(--foreground)" }}>${row.value.toFixed(2)}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-3 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Monthly Total</span>
-                    <strong className="text-lg font-black" style={{ color: "#f5a623" }}>${estimatedRevenue.monthlyTotal.toFixed(2)}</strong>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Yearly Total</span>
-                    <strong style={{ color: "var(--foreground)" }}>${estimatedRevenue.yearlyTotal.toFixed(2)}</strong>
-                  </div>
-                </div>
-                <p className="text-[10px] leading-relaxed pt-2" style={{ color: "#444" }}>
-                  Tip: default values can be managed from Admin → Dashboard → Monetization Controls.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </>

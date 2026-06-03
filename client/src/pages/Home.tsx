@@ -9,6 +9,8 @@ import { HomepageHero } from "@/components/HomepageHero";
 import { FeaturedSection } from "@/components/FeaturedSection";
 import { LatestWeapons } from "@/components/LatestWeapons";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
+import { DiscordWidget } from "@/components/DiscordWidget";
+import { HighlightsSection } from "@/components/HighlightsSection";
 
 const DEFAULT_HERO_BG = "/cf-heroes-bg.png";
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
@@ -232,8 +234,105 @@ export default function Home() {
 
           <Divider />
 
+          {/* HIGHLIGHTS */}
+          <HighlightsSection />
+
+          <Divider />
+
           {/* CATEGORIES */}
           <CategoriesGrid />
+
+          <Divider />
+
+          {/* DISCORD COMMUNITY */}
+          <section style={{ padding: "48px 0" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                marginBottom: "24px",
+                paddingBottom: "12px",
+                borderBottom: `1px solid ${GOLD_BORDER}`,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Cinzel', serif",
+                  fontWeight: 300,
+                  fontSize: "clamp(1.3rem, 3vw, 1.9rem)",
+                  letterSpacing: "0.15em",
+                  color: "hsl(var(--foreground))",
+                  margin: 0,
+                }}
+              >
+                COMMUNITY
+              </h2>
+            </div>
+            <div className="flex flex-col md:flex-row items-start gap-8">
+              <DiscordWidget />
+              <div className="flex-1">
+                <p
+                  style={{
+                    fontFamily: "'Cinzel', serif",
+                    fontWeight: 300,
+                    fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
+                    letterSpacing: "0.1em",
+                    color: "hsl(var(--foreground))",
+                    marginBottom: "14px",
+                  }}
+                >
+                  Join the CrossFire Wiki Discord
+                </p>
+                <p
+                  style={{
+                    fontFamily: "'EB Garamond', serif",
+                    fontStyle: "italic",
+                    fontSize: "1rem",
+                    color: "hsl(var(--muted-foreground))",
+                    opacity: 0.75,
+                    lineHeight: 1.7,
+                    marginBottom: "20px",
+                  }}
+                >
+                  Connect with hundreds of CrossFire players. Share loadouts, discuss strategies, get event alerts first,
+                  and stay ahead of the meta — all in one place.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { emoji: "🎯", label: "Strategy Talk" },
+                    { emoji: "🔫", label: "Weapon Builds" },
+                    { emoji: "🏆", label: "Tournament Info" },
+                    { emoji: "📣", label: "Event Alerts" },
+                    { emoji: "🤝", label: "Clan Recruiting" },
+                  ].map(({ emoji, label }) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-2 px-3 py-2"
+                      style={{
+                        background: "hsl(var(--card))",
+                        border: `1px solid ${GOLD_BORDER}`,
+                        borderRadius: "4px",
+                      }}
+                    >
+                      <span>{emoji}</span>
+                      <span
+                        style={{
+                          fontFamily: "'Cinzel', serif",
+                          fontSize: "0.7rem",
+                          letterSpacing: "0.12em",
+                          color: "hsl(var(--foreground))",
+                          opacity: 0.75,
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
 
         </div>
       </div>

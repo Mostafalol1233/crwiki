@@ -11,12 +11,34 @@ import { LatestWeapons } from "@/components/LatestWeapons";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { DiscordWidget } from "@/components/DiscordWidget";
 import { HighlightsSection } from "@/components/HighlightsSection";
+import { GMSection } from "@/components/GMSection";
 
 const DEFAULT_HERO_BG = "/cf-heroes-bg.png";
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
+const GOLD = "#9a7c3f";
 
 function Divider() {
-  return <div style={{ width: "100%", height: "1px", background: GOLD_BORDER }} />;
+  return (
+    <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${GOLD_BORDER} 40%, ${GOLD_BORDER} 60%, transparent)` }} />
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, opacity: 0.5 }} />
+      <div style={{ flex: 1, height: "1px", background: `linear-gradient(to left, transparent, ${GOLD_BORDER} 40%, ${GOLD_BORDER} 60%, transparent)` }} />
+    </div>
+  );
+}
+
+function SectionBg({ children, pattern = "crosshatch" }: { children: React.ReactNode; pattern?: string }) {
+  const patterns: Record<string, string> = {
+    crosshatch: `repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(154,124,63,0.04) 28px, rgba(154,124,63,0.04) 29px), repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(154,124,63,0.04) 28px, rgba(154,124,63,0.04) 29px)`,
+    diagonal: `repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(154,124,63,0.03) 40px, rgba(154,124,63,0.03) 41px)`,
+    dots: `radial-gradient(circle, rgba(154,124,63,0.08) 1px, transparent 1px)`,
+  };
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: patterns[pattern], backgroundSize: pattern === "dots" ? "24px 24px" : undefined, pointerEvents: "none" }} />
+      <div style={{ position: "relative" }}>{children}</div>
+    </div>
+  );
 }
 
 function stripHtml(html: string): string {
@@ -160,82 +182,110 @@ export default function Home() {
           ))}
 
           {/* FEATURED EVENTS */}
-          <FeaturedSection
-            featured={featuredForSection}
-            secondary={secondaryForSection}
-            sectionLabel="Latest"
-            sectionTitle="Events & News"
-            allLink="/category/events"
-          />
+          <SectionBg pattern="diagonal">
+            <FeaturedSection
+              featured={featuredForSection}
+              secondary={secondaryForSection}
+              sectionLabel="Latest"
+              sectionTitle="Events & News"
+              allLink="/category/events"
+            />
+          </SectionBg>
 
           <Divider />
 
           {/* LATEST NEWS */}
           {latestNews.length > 0 && (
-            <section style={{ padding: "48px 0" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "28px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}` }}>
-                <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em", color: "hsl(var(--foreground))", margin: 0 }}>
-                  LATEST NEWS
-                </h2>
-                <a href="/news" style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.9rem", color: "#9a7c3f", textDecoration: "none" }}>
-                  All news →
-                </a>
-              </div>
+            <SectionBg pattern="crosshatch">
+              <section style={{ padding: "48px 0" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "28px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}` }}>
+                  <div>
+                    <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.8rem", letterSpacing: "0.15em", color: GOLD, display: "block", marginBottom: 4 }}>
+                      stay informed
+                    </span>
+                    <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em", color: "hsl(var(--foreground))", margin: 0 }}>
+                      LATEST NEWS
+                    </h2>
+                  </div>
+                  <a href="/news" style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.9rem", color: GOLD, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                    All news →
+                  </a>
+                </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }} className="news-grid">
-                {latestNews.slice(0, 6).map((item: any) => {
-                  const href = item.news_slug ? `/news/${item.news_slug}` : `/news/${item.id}`;
-                  const excerpt = stripHtml(String(item.summary || item.content || "")).trim().slice(0, 90);
-                  return (
-                    <a key={item.id} href={href} style={{ textDecoration: "none" }}>
-                      <div
-                        style={{
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }} className="news-grid">
+                  {latestNews.slice(0, 6).map((item: any, idx: number) => {
+                    const href = item.news_slug ? `/news/${item.news_slug}` : `/news/${item.id}`;
+                    const excerpt = stripHtml(String(item.summary || item.content || "")).trim().slice(0, 100);
+                    const isFeatured = idx === 0;
+                    return (
+                      <a key={item.id} href={href} style={{ textDecoration: "none", gridColumn: isFeatured ? "span 1" : "span 1" }}>
+                        <div style={{
                           background: "hsl(var(--card))",
                           border: `1px solid ${GOLD_BORDER}`,
                           height: "100%",
-                          transition: "border-color 0.2s",
+                          transition: "border-color 0.2s, transform 0.15s, box-shadow 0.2s",
+                          overflow: "hidden",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(154,124,63,0.55)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = GOLD_BORDER)}
-                      >
-                        {item.image && (
-                          <div style={{ height: "120px", overflow: "hidden" }}>
-                            <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }} loading="lazy" />
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,124,63,0.6)";
+                            (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
+                            (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.3)";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = GOLD_BORDER;
+                            (e.currentTarget as HTMLElement).style.transform = "none";
+                            (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                          }}
+                        >
+                          {item.image && (
+                            <div style={{ height: "140px", overflow: "hidden", position: "relative" }}>
+                              <img src={item.image} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block", transition: "transform 0.4s" }} loading="lazy" />
+                              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%)" }} />
+                            </div>
+                          )}
+                          <div style={{ padding: "16px" }}>
+                            {item.category && (
+                              <span style={{ fontFamily: "'Cinzel', serif", fontSize: "0.58rem", letterSpacing: "0.2em", color: GOLD, display: "block", marginBottom: "6px", textTransform: "uppercase" }}>
+                                {item.category}
+                              </span>
+                            )}
+                            <h3 style={{ fontFamily: "'Cinzel', serif", fontWeight: 400, fontSize: "0.88rem", letterSpacing: "0.06em", color: "hsl(var(--foreground))", margin: "0 0 8px", lineHeight: 1.4 }}>
+                              {item.title}
+                            </h3>
+                            {excerpt && (
+                              <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.9rem", color: "hsl(var(--muted-foreground))", margin: 0, lineHeight: 1.6, opacity: 0.7 }}>
+                                {excerpt}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        <div style={{ padding: "14px" }}>
-                          {item.category && (
-                            <span style={{ fontFamily: "'Cinzel', serif", fontSize: "0.6rem", letterSpacing: "0.18em", color: "#9a7c3f", display: "block", marginBottom: "6px" }}>
-                              {item.category}
-                            </span>
-                          )}
-                          <h3 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "0.85rem", letterSpacing: "0.08em", color: "hsl(var(--foreground))", margin: "0 0 6px", lineHeight: 1.35 }}>
-                            {item.title}
-                          </h3>
-                          {excerpt && (
-                            <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.9rem", color: "hsl(var(--muted-foreground))", margin: 0, lineHeight: 1.5, opacity: 0.7 }}>
-                              {excerpt}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
-              <style>{`@media(max-width:768px){.news-grid{grid-template-columns:1fr!important;}}`}</style>
-            </section>
+                      </a>
+                    );
+                  })}
+                </div>
+                <style>{`@media(max-width:768px){.news-grid{grid-template-columns:1fr!important;}}`}</style>
+              </section>
+            </SectionBg>
           )}
 
           <Divider />
 
           {/* LATEST WEAPONS */}
-          <LatestWeapons weapons={displayWeapons} />
+          <SectionBg pattern="dots">
+            <LatestWeapons weapons={displayWeapons} />
+          </SectionBg>
 
           <Divider />
 
           {/* HIGHLIGHTS */}
           <HighlightsSection />
+
+          <Divider />
+
+          {/* GAME MASTERS */}
+          <SectionBg pattern="crosshatch">
+            <GMSection />
+          </SectionBg>
 
           <Divider />
 
@@ -245,93 +295,41 @@ export default function Home() {
           <Divider />
 
           {/* DISCORD COMMUNITY */}
-          <section style={{ padding: "48px 0" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                marginBottom: "24px",
-                paddingBottom: "12px",
-                borderBottom: `1px solid ${GOLD_BORDER}`,
-              }}
-            >
-              <h2
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  fontWeight: 300,
-                  fontSize: "clamp(1.3rem, 3vw, 1.9rem)",
-                  letterSpacing: "0.15em",
-                  color: "hsl(var(--foreground))",
-                  margin: 0,
-                }}
-              >
-                COMMUNITY
-              </h2>
-            </div>
-            <div className="flex flex-col md:flex-row items-start gap-8">
-              <DiscordWidget />
-              <div className="flex-1">
-                <p
-                  style={{
-                    fontFamily: "'Cinzel', serif",
-                    fontWeight: 300,
-                    fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)",
-                    letterSpacing: "0.1em",
-                    color: "hsl(var(--foreground))",
-                    marginBottom: "14px",
-                  }}
-                >
-                  Join the CrossFire Wiki Discord
-                </p>
-                <p
-                  style={{
-                    fontFamily: "'EB Garamond', serif",
-                    fontStyle: "italic",
-                    fontSize: "1rem",
-                    color: "hsl(var(--muted-foreground))",
-                    opacity: 0.75,
-                    lineHeight: 1.7,
-                    marginBottom: "20px",
-                  }}
-                >
-                  Connect with hundreds of CrossFire players. Share loadouts, discuss strategies, get event alerts first,
-                  and stay ahead of the meta — all in one place.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    "Strategy Talk",
-                    "Weapon Builds",
-                    "Tournament Info",
-                    "Event Alerts",
-                    "Clan Recruiting",
-                  ].map((label) => (
-                    <div
-                      key={label}
-                      className="px-3 py-2"
-                      style={{
-                        background: "hsl(var(--card))",
-                        border: `1px solid ${GOLD_BORDER}`,
-                        borderRadius: "4px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "'Cinzel', serif",
-                          fontSize: "0.7rem",
-                          letterSpacing: "0.12em",
-                          color: "hsl(var(--foreground))",
-                          opacity: 0.75,
-                        }}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                  ))}
+          <SectionBg pattern="diagonal">
+            <section style={{ padding: "48px 0" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "24px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}` }}>
+                <div>
+                  <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.8rem", letterSpacing: "0.15em", color: GOLD, display: "block", marginBottom: 4 }}>
+                    join us
+                  </span>
+                  <h2 style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em", color: "hsl(var(--foreground))", margin: 0 }}>
+                    COMMUNITY
+                  </h2>
                 </div>
               </div>
-            </div>
-          </section>
+              <div className="flex flex-col md:flex-row items-start gap-8">
+                <DiscordWidget />
+                <div className="flex-1">
+                  <p style={{ fontFamily: "'Cinzel', serif", fontWeight: 300, fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)", letterSpacing: "0.1em", color: "hsl(var(--foreground))", marginBottom: "14px" }}>
+                    Join the CrossFire Wiki Discord
+                  </p>
+                  <p style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "1rem", color: "hsl(var(--muted-foreground))", opacity: 0.75, lineHeight: 1.7, marginBottom: "20px" }}>
+                    Connect with hundreds of CrossFire players. Share loadouts, discuss strategies, get event alerts first,
+                    and stay ahead of the meta — all in one place.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {["Strategy Talk", "Weapon Builds", "Tournament Info", "Event Alerts", "Clan Recruiting"].map((label) => (
+                      <div key={label} className="px-3 py-2" style={{ background: "hsl(var(--card))", border: `1px solid ${GOLD_BORDER}`, borderRadius: "4px" }}>
+                        <span style={{ fontFamily: "'Cinzel', serif", fontSize: "0.7rem", letterSpacing: "0.12em", color: "hsl(var(--foreground))", opacity: 0.75 }}>
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </SectionBg>
 
         </div>
       </div>

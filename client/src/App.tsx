@@ -15,7 +15,7 @@ import Article from "@/pages/Article";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import Download from "@/pages/Download";
-import Pricing from "@/pages/Pricing";
+
 import News from "@/pages/News";
 import NewsDetail from "@/pages/NewsDetail";
 import EventDetail from "@/pages/EventDetail";
@@ -86,7 +86,7 @@ function Router() {
       <Route path="/article/id/:legacyId" component={Article} />
       <Route path="/support" component={Support} />
       <Route path="/faq" component={FAQ} />
-      <Route path="/pricing" component={Pricing} />
+
       <Route path="/my-tickets" component={MyTickets} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />

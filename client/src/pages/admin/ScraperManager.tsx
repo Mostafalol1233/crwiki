@@ -1,114 +1,270 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Play, Download } from 'lucide-react';
+import { Play, Download, Loader2, Globe, CheckSquare, Square } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-interface ScrapeResult {
-  title?: string;
-  description?: string;
-  images?: string[];
-  stats?: Record<string, any>;
-  raw?: string;
+const FORUM_URL = 'https://forum.z8games.com/categories/crossfire-announcements';
+const CORS_PROXY = 'https://api.allorigins.win/get?url=';
+
+interface ForumPost {
+  title: string;
+  titleAr: string;
+  url: string;
+  date: string;
+  image: string;
+  selected: boolean;
 }
 
-const SCRAPE_TYPES = ['News', 'Event', 'Weapon', 'Map', 'Mercenary'] as const;
+async function translateText(text: string): Promise<string> {
+  try {
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 400))}&langpair=en|ar`);
+    const d = await r.json();
+    const t = d?.responseData?.translatedText || '';
+    return t && t !== 'INVALID LANGUAGE PAIR' ? t : text;
+  } catch {
+    return text;
+  }
+}
+
+async function fetchProxy(url: string): Promise<string> {
+  const r = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
+  if (!r.ok) throw new Error(`Proxy error: ${r.status}`);
+  const j = await r.json();
+  return j.contents || '';
+}
+
+function parseAnnouncements(html: string): Omit<ForumPost, 'titleAr' | 'selected'>[] {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const results: Omit<ForumPost, 'titleAr' | 'selected'>[] = [];
+  const seen = new Set<string>();
+
+  const candidates = doc.querySelectorAll([
+    'a[href*="thread"]',
+    'a[href*="announcement"]',
+    '.thread-title a',
+    '.subject a',
+    'h3 > a',
+    'h2 > a',
+    '.topic-title a',
+    '[class*="title"] a',
+    '[class*="thread"] a',
+    '[class*="post"] a',
+    '.thr-head a',
+    '.forumtitle a',
+    'td.alt1 a',
+  ].join(', '));
+
+  candidates.forEach((el) => {
+    const title = el.textContent?.trim() || '';
+    const href = el.getAttribute('href') || '';
+    if (!title || title.length < 5 || seen.has(title)) return;
+    if (href.includes('#') && !href.includes('thread')) return;
+
+    const fullUrl = href.startsWith('http') ? href : href.startsWith('/') ? `https://forum.z8games.com${href}` : '';
+    if (!fullUrl) return;
+    seen.add(title);
+
+    const row = el.closest('tr, li, article, [class*="thread"], [class*="post"], [class*="topic"]');
+    const dateEl = row?.querySelector('time, [class*="date"], [class*="time"], abbr');
+    const date = dateEl?.getAttribute('datetime') || dateEl?.textContent?.trim() || new Date().toISOString().slice(0, 10);
+    const img = (row?.querySelector('img') as HTMLImageElement)?.src || '';
+
+    results.push({ title, url: fullUrl, date, image: img });
+  });
+
+  return results.slice(0, 25);
+}
+
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+}
+
+const S = {
+  wrap: { display: 'flex', flexDirection: 'column' as const, gap: 20, maxWidth: 1000 },
+  card: { background: '#18181b', border: '1px solid #27272a', borderRadius: 6 },
+  h1: { fontSize: 20, fontWeight: 600, color: '#fafafa', margin: 0 },
+  muted: { fontSize: 13, color: '#71717a', margin: 0 },
+  link: { color: '#d4a017', textDecoration: 'none' as const },
+  row: { display: 'flex', gap: 10, flexWrap: 'wrap' as const, alignItems: 'center' },
+  progress: { padding: '8px 14px', background: '#1c1917', border: '1px solid #292524', borderRadius: 4, fontSize: 12, color: '#a8a29e' },
+  listHeader: { padding: '12px 16px', borderBottom: '1px solid #27272a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  listItem: (selected: boolean): React.CSSProperties => ({
+    padding: '12px 16px', borderBottom: '1px solid #1a1a1e', cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'flex-start',
+    background: selected ? 'rgba(212,160,23,0.05)' : 'transparent', transition: 'background 0.15s',
+  }),
+};
+
+function Btn({ onClick, disabled, children, color = '#d4a017', fg = '#09090b' }: any) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px',
+      background: disabled ? '#27272a' : color, border: 'none', borderRadius: 4,
+      color: disabled ? '#52525b' : fg, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 13,
+    }}>
+      {children}
+    </button>
+  );
+}
 
 export default function ScraperManager() {
-  const [url, setUrl] = useState('');
-  const [type, setType] = useState<typeof SCRAPE_TYPES[number]>('News');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ScrapeResult | null>(null);
+  const [translating, setTranslating] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [progress, setProgress] = useState('');
 
   const scrape = async () => {
-    if (!url) { toast.error('Enter a URL'); return; }
-    setLoading(true);
-    setResult(null);
+    setLoading(true); setPosts([]); setProgress('Connecting to CrossFire forum...');
     try {
-      const res = await fetch('/api/admin/scraper', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
-        body: JSON.stringify({ url, type: type.toLowerCase() }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setResult(data);
-      toast.success('Scraped successfully');
+      const html = await fetchProxy(FORUM_URL);
+      if (!html) throw new Error('Empty response from proxy');
+      const parsed = parseAnnouncements(html);
+      if (parsed.length === 0) {
+        setProgress('No posts found — forum structure may have changed');
+        toast.warning('No posts parsed. Try the direct forum URL.');
+        return;
+      }
+      setPosts(parsed.map(p => ({ ...p, titleAr: '', selected: true })));
+      setProgress(`Found ${parsed.length} announcements`);
+      toast.success(`Found ${parsed.length} CrossFire announcements!`);
     } catch (e: any) {
-      toast.error(e.message || 'Scrape failed');
-    } finally {
-      setLoading(false);
-    }
+      toast.error(e.message || 'Scrape failed'); setProgress('');
+    } finally { setLoading(false); }
   };
 
-  const importToDb = async () => {
-    if (!result) return;
+  const translateAll = async () => {
+    setTranslating(true);
+    const updated = [...posts];
+    for (let i = 0; i < updated.length; i++) {
+      setProgress(`Translating ${i + 1}/${updated.length}: ${updated[i].title.slice(0, 45)}...`);
+      updated[i].titleAr = await translateText(updated[i].title);
+      setPosts([...updated]);
+    }
+    setProgress('All titles translated to Arabic ✓');
+    setTranslating(false);
+    toast.success('Translation complete!');
+  };
+
+  const importSelected = async () => {
+    const sel = posts.filter(p => p.selected);
+    if (!sel.length) { toast.error('Select at least one announcement'); return; }
     setImporting(true);
-    try {
-      const res = await fetch('/api/admin/scraper/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
-        body: JSON.stringify({ data: result, type: type.toLowerCase(), sourceUrl: url }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success('Imported to database');
-      setResult(null);
-      setUrl('');
-    } catch (e: any) {
-      toast.error(e.message || 'Import failed');
-    } finally {
-      setImporting(false);
+    let ok = 0, fail = 0;
+    for (const post of sel) {
+      setProgress(`Importing: ${post.title.slice(0, 50)}...`);
+      try {
+        const slug = `${slugify(post.title)}-${Date.now()}`;
+        const { error } = await supabase.from('events').insert({
+          title: post.title,
+          title_ar: post.titleAr || null,
+          event_name_slug: slug,
+          description: `CrossFire Forum Announcement. Source: ${post.url}`,
+          description_ar: post.titleAr ? `إعلان من منتدى كروس فاير. المصدر: ${post.url}` : null,
+          image: post.image || null,
+          type: 'announcement',
+          source_url: post.url,
+          date: post.date,
+          created_at: new Date().toISOString(),
+        });
+        if (error) { console.error(error); fail++; } else ok++;
+      } catch (e) { fail++; }
     }
+    setProgress(`Done — ${ok} imported, ${fail} failed`);
+    toast.success(`Imported ${ok} events${fail > 0 ? `, ${fail} failed` : ''}`);
+    setImporting(false);
+    if (ok > 0) setPosts(posts.map(p => ({ ...p, selected: false })));
   };
 
-  const inp: React.CSSProperties = { width: '100%', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', padding: '8px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box' };
-  const lbl: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 4, display: 'block' };
+  const toggleAll = (v: boolean) => setPosts(posts.map(p => ({ ...p, selected: v })));
+  const toggle = (i: number) => setPosts(posts.map((p, idx) => idx === i ? { ...p, selected: !p.selected } : p));
+  const selCount = posts.filter(p => p.selected).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 900 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 600, color: '#fafafa', margin: 0 }}>Content Scraper</h1>
-
-      <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div><label style={lbl}>Source URL</label><input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://forum.z8games.com/..." style={inp} /></div>
-        <div>
-          <label style={lbl}>Content Type</label>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {SCRAPE_TYPES.map((t) => (
-              <button key={t} type="button" onClick={() => setType(t)}
-                style={{ padding: '6px 14px', fontSize: 13, border: '1px solid', borderRadius: 4, borderColor: type === t ? '#d4a017' : '#3f3f46', background: type === t ? 'rgba(212,160,23,0.1)' : 'transparent', color: type === t ? '#d4a017' : '#a1a1aa', cursor: 'pointer' }}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button type="button" onClick={scrape} disabled={loading || !url}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: loading ? '#27272a' : '#d4a017', border: 'none', borderRadius: 4, color: loading ? '#52525b' : '#09090b', fontWeight: 600, cursor: loading ? 'wait' : 'pointer', fontSize: 14, width: 'fit-content' }}>
-          <Play size={14} fill="currentColor" />{loading ? 'Scraping...' : 'Scrape Preview'}
-        </button>
+    <div style={S.wrap}>
+      <div>
+        <h1 style={S.h1}>Forum Event Scraper</h1>
+        <p style={{ ...S.muted, marginTop: 6 }}>
+          Scrapes live announcements from{' '}
+          <a href={FORUM_URL} target="_blank" rel="noopener noreferrer" style={S.link}>forum.z8games.com</a>
+          , translates titles to Arabic, and saves to Supabase.
+        </p>
       </div>
 
-      {result && (
-        <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#fafafa' }}>Scraped Data Preview</span>
-            <button type="button" onClick={importToDb} disabled={importing}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#22c55e', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
-              <Download size={13} />{importing ? 'Importing...' : 'Import to DB'}
-            </button>
-          </div>
-          {result.title && <div><span style={{ fontSize: 12, color: '#52525b', display: 'block', marginBottom: 2 }}>Title</span><span style={{ color: '#fafafa', fontSize: 14 }}>{result.title}</span></div>}
-          {result.description && <div><span style={{ fontSize: 12, color: '#52525b', display: 'block', marginBottom: 4 }}>Description</span><p style={{ color: '#a1a1aa', fontSize: 13, lineHeight: 1.6, margin: 0 }}>{result.description}</p></div>}
-          {result.images && result.images.length > 0 && (
-            <div>
-              <span style={{ fontSize: 12, color: '#52525b', display: 'block', marginBottom: 8 }}>Images ({result.images.length})</span>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {result.images.slice(0, 8).map((img, i) => <img key={i} src={img} alt="" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid #27272a' }} />)}
-              </div>
+      <div style={S.row}>
+        <Btn onClick={scrape} disabled={loading}>
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
+          {loading ? 'Scraping...' : 'Scrape CrossFire Forum'}
+        </Btn>
+
+        {posts.length > 0 && (
+          <>
+            <Btn onClick={translateAll} disabled={translating} color="#3b82f6" fg="#fff">
+              {translating ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
+              {translating ? 'Translating...' : 'Translate All → Arabic'}
+            </Btn>
+            <Btn onClick={importSelected} disabled={importing} color="#22c55e">
+              {importing ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {importing ? 'Importing...' : `Import Selected (${selCount})`}
+            </Btn>
+          </>
+        )}
+      </div>
+
+      {progress && <div style={S.progress}>{progress}</div>}
+
+      {posts.length > 0 && (
+        <div style={S.card}>
+          <div style={S.listHeader}>
+            <span style={{ fontSize: 13, color: '#fafafa', fontWeight: 500 }}>
+              {posts.length} announcements found
+            </span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => toggleAll(true)} style={{ fontSize: 12, color: '#d4a017', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckSquare size={13} /> Select All
+              </button>
+              <button onClick={() => toggleAll(false)} style={{ fontSize: 12, color: '#71717a', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Square size={13} /> Deselect
+              </button>
             </div>
-          )}
-          <div>
-            <span style={{ fontSize: 12, color: '#52525b', display: 'block', marginBottom: 4 }}>Raw JSON</span>
-            <pre style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: 4, padding: 12, fontSize: 11, color: '#a1a1aa', overflow: 'auto', maxHeight: 200, margin: 0 }}>{JSON.stringify(result, null, 2)}</pre>
           </div>
+
+          {posts.map((post, i) => (
+            <div key={i} style={S.listItem(post.selected)} onClick={() => toggle(i)}>
+              <div style={{ paddingTop: 2, flexShrink: 0 }}>
+                {post.selected
+                  ? <CheckSquare size={16} style={{ color: '#d4a017' }} />
+                  : <Square size={16} style={{ color: '#52525b' }} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: '0 0 3px', fontSize: 13, color: '#fafafa', fontWeight: 500, lineHeight: 1.4 }}>
+                  {post.title}
+                </p>
+                {post.titleAr && (
+                  <p style={{ margin: '0 0 4px', fontSize: 13, color: '#d4a017', direction: 'rtl', fontWeight: 500 }}>
+                    {post.titleAr}
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: '#52525b' }}>{post.date}</span>
+                  <a href={post.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ fontSize: 11, color: '#3b82f6', textDecoration: 'none' }}>
+                    View on forum ↗
+                  </a>
+                </div>
+              </div>
+              {post.image && (
+                <img src={post.image} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 3, flexShrink: 0, border: '1px solid #27272a' }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {posts.length === 0 && !loading && (
+        <div style={{ ...S.card, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: '#52525b', fontSize: 14, margin: 0 }}>
+            Click <strong style={{ color: '#d4a017' }}>Scrape CrossFire Forum</strong> to fetch the latest announcements.
+          </p>
         </div>
       )}
     </div>

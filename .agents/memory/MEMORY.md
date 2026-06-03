@@ -1,1 +1,2 @@
 - [Supabase migration](supabase-migration.md) — full MongoDB→Supabase migration done; frontend calls Supabase directly, no Express backend needed.
+- [Admin weapons query shape](admin-weapons-shape.md) — /api/weapons shim returns {items,total,data} not array; Admin.tsx must normalize via weaponsRaw→weapons.

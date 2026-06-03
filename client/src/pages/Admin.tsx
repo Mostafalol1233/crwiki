@@ -99,6 +99,7 @@ import AdminAnnouncements from "@/pages/AdminAnnouncements";
 import MediaUpload from "@/pages/MediaUpload";
 import CustomPagesManager from "@/components/CustomPagesManager";
 import FAQManager from "@/components/FAQManager";
+import EmailBlastPanel from "@/components/EmailBlastPanel";
 
 const GalleryUploader = ({
   images,
@@ -910,22 +911,22 @@ export default function Admin() {
     queryKey: ["/api/posts", { limit, offset: (postsPage - 1) * limit }],
     queryFn: () => apiRequest(`/api/posts?limit=${limit}&offset=${(postsPage - 1) * limit}`, "GET"),
   });
-  const posts = postsData?.items || [];
-  const totalPosts = postsData?.total || 0;
+  const posts = Array.isArray(postsData?.items) ? postsData.items : Array.isArray(postsData) ? (postsData as any) : [];
+  const totalPosts = postsData?.total || (Array.isArray(postsData) ? (postsData as any).length : 0);
 
   const { data: eventsData, error: eventsError, isLoading: eventsLoading } = useQuery<{ items: any[], total: number }>({
     queryKey: ["/api/events", { limit, offset: (eventsPage - 1) * limit }],
     queryFn: () => apiRequest(`/api/events?limit=${limit}&offset=${(eventsPage - 1) * limit}`, "GET"),
   });
-  const events = eventsData?.items || [];
-  const totalEvents = eventsData?.total || 0;
+  const events = Array.isArray(eventsData?.items) ? eventsData.items : Array.isArray(eventsData) ? (eventsData as any) : [];
+  const totalEvents = eventsData?.total || (Array.isArray(eventsData) ? (eventsData as any).length : 0);
 
   const { data: newsData, error: newsError, isLoading: newsLoading } = useQuery<{ items: any[], total: number }>({
     queryKey: ["/api/news", { limit, offset: (newsPage - 1) * limit }],
     queryFn: () => apiRequest(`/api/news?limit=${limit}&offset=${(newsPage - 1) * limit}`, "GET"),
   });
-  const newsItems = newsData?.items || [];
-  const totalNews = newsData?.total || 0;
+  const newsItems = Array.isArray(newsData?.items) ? newsData.items : Array.isArray(newsData) ? (newsData as any) : [];
+  const totalNews = newsData?.total || (Array.isArray(newsData) ? (newsData as any).length : 0);
 
   const filteredPosts = useMemo(() => {
     const q = postSearch.trim().toLowerCase();
@@ -1042,11 +1043,12 @@ export default function Admin() {
     enabled: isSuperAdmin,
   });
 
-  const { data: weapons } = useQuery<any[]>({
+  const { data: weaponsRaw } = useQuery<any>({
     queryKey: ["/api/weapons"],
     queryFn: () => apiRequest("/api/weapons", "GET"),
     enabled: isSuperAdmin,
   });
+  const weapons = Array.isArray(weaponsRaw) ? weaponsRaw : Array.isArray(weaponsRaw?.items) ? weaponsRaw.items : Array.isArray(weaponsRaw?.data) ? weaponsRaw.data : [];
 
   const { data: modes } = useQuery<any[]>({
     queryKey: ["/api/modes"],
@@ -2007,6 +2009,12 @@ export default function Admin() {
                   <TabsTrigger value="subscribers" className="justify-start" data-testid="tab-subscribers">
                     <Mail className="h-4 w-4 mr-2" />
                     <span className="truncate">Subscribers</span>
+                  </TabsTrigger>
+                )}
+                {isSuperAdmin && (
+                  <TabsTrigger value="email-blast" className="justify-start" data-testid="tab-email-blast">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span className="truncate">Email Blast</span>
                   </TabsTrigger>
                 )}
                 {canScraper && (
@@ -7448,6 +7456,10 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="email-blast" className="space-y-6" data-testid="content-email-blast">
+                <EmailBlastPanel subscribers={subscribers || []} />
               </TabsContent>
             </div>
           </div>

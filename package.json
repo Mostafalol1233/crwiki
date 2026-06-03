@@ -103,6 +103,7 @@
     "react-quill": "^2.0.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
+    "resend": "^6.12.4",
     "sharp": "^0.33.3",
     "streamifier": "^0.1.1",
     "suneditor": "^2.47.8",

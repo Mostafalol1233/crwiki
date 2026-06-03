@@ -32,7 +32,6 @@ interface Seller {
   instagram?: string;
   youtube?: string;
   tiktok?: string;
-  telegram?: string;
   featured: boolean;
   promotionText: string;
   averageRating: number;
@@ -43,6 +42,22 @@ interface Seller {
   canonicalUrl?: string;
   ogImage?: string;
   schemaType?: string;
+}
+
+
+function normalizeSellerList(value: unknown): Seller[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((seller: any) => ({
+    ...seller,
+    id: String(seller?.id || ''),
+    name: String(seller?.name || ''),
+    description: String(seller?.description || ''),
+    images: Array.isArray(seller?.images) ? seller.images : [],
+    prices: Array.isArray(seller?.prices) ? seller.prices : [],
+    featured: Boolean(seller?.featured),
+    averageRating: typeof seller?.averageRating === 'number' ? seller.averageRating : Number(seller?.averageRating) || 0,
+    totalReviews: typeof seller?.totalReviews === 'number' ? seller.totalReviews : Number(seller?.totalReviews) || 0,
+  }));
 }
 
 class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
@@ -131,23 +146,26 @@ function GalleryLightbox({ images, initialIndex, onClose }: { images: string[]; 
 export default function Sellers() {
   const [slugMatch, slugParams] = useRoute("/seller/:slug");
   const slug = slugMatch ? (slugParams?.slug as string) : "";
-  const { data: sellers = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
+  const { data: sellersData = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
     queryFn: getSellers,
     enabled: !slugMatch,
   });
 
-  const { data: sellerBySlug, isLoading: slugLoading, isError: slugIsError, error: slugError } = useQuery<Seller>({
+  const sellers = useMemo(() => normalizeSellerList(sellersData), [sellersData]);
+
+  const { data: sellerBySlugData, isLoading: slugLoading, isError: slugIsError, error: slugError } = useQuery<Seller>({
     queryKey: ["/api/sellers/slug", slug],
     enabled: !!slugMatch && !!slug,
     queryFn: async () => {
-      const all = await getSellers();
+      const all = normalizeSellerList(await getSellers());
       const found = all.find((s: any) => s.seller_name_slug === slug || s.id === slug);
       if (!found) throw new Error('Seller not found');
       return found;
     }
   });
 
+  const sellerBySlug = useMemo(() => normalizeSellerList(sellerBySlugData ? [sellerBySlugData] : [])[0], [sellerBySlugData]);
   const pageSlug = useMemo(() => sellerBySlug?.seller_name_slug || slug, [sellerBySlug?.seller_name_slug, slug]);
   const { data: sellerPage } = useRQ<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks?: { image: string; contentHtml: string; description: string }[] }>({
     queryKey: ["/api/seller-pages", pageSlug],
@@ -170,13 +188,13 @@ export default function Sellers() {
   const formatRating = (n: any) => isFiniteNumber(n) ? n.toFixed(1) : '0.0';
 
   const filteredSellers = useMemo(() => {
-    let result = [...sellers];
+    let result = normalizeSellerList(sellers);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(s =>
         s.name.toLowerCase().includes(q) ||
         s.description.toLowerCase().includes(q) ||
-        s.prices.some(p => p.item.toLowerCase().includes(q))
+        s.prices.some(p => String(p.item || "").toLowerCase().includes(q))
       );
     }
     result.sort((a, b) => {
@@ -421,7 +439,7 @@ export default function Sellers() {
                   </div>
                 )}
 
-                {s.prices?.length > 0 && (
+                {Array.isArray(s.prices) && s.prices.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">💰 Price List</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

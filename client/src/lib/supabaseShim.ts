@@ -169,14 +169,53 @@ function denormalizeNews(d: any) {
   };
 }
 
+
+function normalizeStringArray(value: any): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item || '').trim()).filter(Boolean);
+    } catch { }
+    return trimmed.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function normalizePrices(value: any): { item: string; price: number }[] {
+  const source = typeof value === 'string'
+    ? (() => {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      try { return JSON.parse(trimmed); } catch { return trimmed.split('\n'); }
+    })()
+    : value;
+
+  if (!Array.isArray(source)) return [];
+  return source
+    .map((entry: any) => {
+      if (typeof entry === 'string') {
+        const [item = '', rawPrice = '0'] = entry.split(':');
+        return { item: item.trim(), price: Number.parseFloat(rawPrice.trim()) || 0 };
+      }
+      return {
+        item: String(entry?.item || '').trim(),
+        price: Number.parseFloat(String(entry?.price ?? 0)) || 0,
+      };
+    })
+    .filter((entry) => entry.item);
+}
+
 function normalizeSeller(s: any) {
   return {
     id: String(s.id || ''),
     name: s.name || '',
     seller_name_slug: s.seller_name_slug || '',
     description: s.description || '',
-    images: s.images || [],
-    prices: s.prices || [],
+    images: normalizeStringArray(s.images),
+    prices: normalizePrices(s.prices),
     email: s.email || '',
     phone: s.phone || '',
     whatsapp: s.whatsapp || '',

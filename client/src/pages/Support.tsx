@@ -117,7 +117,7 @@ export default function Support() {
           <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
             Submit a Ticket
           </h1>
-          <p className="text-sm" style={{ color: "#666" }}>
+          <p className="text-base font-semibold" style={{ color: "hsl(var(--foreground))", opacity: 0.72 }}>
             Need help? Fill out the form below and our team will get back to you.
           </p>
         </div>
@@ -134,11 +134,11 @@ export default function Support() {
               <SiWhatsapp className="h-6 w-6" style={{ color: "#25d366" }} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: "#25d366" }}>WhatsApp Channel</p>
-              <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>Join our WhatsApp channel for updates and quick community support.</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: "#25d366" }}>WhatsApp Channel</p>
+              <p className="text-base font-extrabold" style={{ color: "var(--foreground)" }}>Join our WhatsApp channel for updates and quick community support.</p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest" style={{ color: "#25d366" }}>
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest" style={{ color: "#25d366" }}>
             Open Channel <ExternalLink className="h-3.5 w-3.5" />
           </span>
         </a>

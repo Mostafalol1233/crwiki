@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
 import { useLocation } from "wouter";
-import { Send, Image as ImageIcon, Plus, Users, Hash, MoreVertical, Phone, Video, Settings, Upload, X } from "lucide-react";
+import { Send, Image as ImageIcon, Plus, Users, Hash, MoreVertical, Phone, Video, Settings, Upload, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { uploadImageToSupabase } from "@/lib/supabaseApi";
 
 interface User {
   id: string;
@@ -258,62 +259,39 @@ export default function Chat() {
     }
   };
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isProfile = false) => {
     if (!e.target.files?.length || !token) return;
     const file = e.target.files[0];
-    
-    const formData = new FormData();
-    formData.append("file", file);
-
+    setUploadingImage(true);
     try {
-      const tokRes = await fetch("/api/security/csrf-token");
-      const tokJson = await tokRes.json();
-      const csrf = tokJson?.csrfToken || "";
-      const res = await fetch("/images/upload", {
-        method: "POST",
-        headers: { "X-CSRF-Token": csrf, Authorization: `Bearer ${token}` },
-        body: formData
-      });
-      const data = await res.json();
-      
-      const url = data.domainUrl || data.domain_url || data.cloudinaryUrl || data.secure_url || data.url;
+      const url = await uploadImageToSupabase(file, "uploads", isProfile ? "avatars" : "chat");
       if (url) {
         if (isProfile) {
           setMyAvatar(url);
-          // Also update backend profile
-          setMyDisplayName(prev => {
-            // We need the latest displayName to update profile correctly
-            const updatedProfile = { displayName: prev, avatar: url };
-            fetch("/api/users/me", {
-              method: "PATCH",
-              headers: { 
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}` 
-              },
-              body: JSON.stringify(updatedProfile)
-            }).then(r => {
-              if (r.ok) toast({ title: "Profile updated" });
-            });
-            return prev;
-          });
+          await fetch("/api/users/me", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ displayName: myDisplayName, avatar: url })
+          }).then(r => { if (r.ok) toast({ title: "Avatar updated" }); });
         } else if (activeConversationId) {
-          // Send image message
-          await fetch("/api/chat/messages", {
+          const res = await fetch("/api/chat/messages", {
             method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}` 
-            },
-            body: JSON.stringify({
-              conversationId: activeConversationId,
-              content: url,
-              type: "image"
-            })
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ conversationId: activeConversationId, content: url, type: "image" })
           });
+          if (res.ok) {
+            const msg = await res.json();
+            setMessages(prev => [...prev, msg]);
+          }
         }
       }
     } catch (error) {
-      toast({ title: "Upload failed", variant: "destructive" });
+      toast({ title: "Upload failed", description: "Could not upload image. Please try again.", variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
     }
   };
 
@@ -597,9 +575,9 @@ export default function Chat() {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="file-upload" className="cursor-pointer p-2 hover:bg-muted rounded-full">
-                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                    <Input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false)} />
+                  <Label htmlFor="file-upload" className={`cursor-pointer p-2 hover:bg-muted rounded-full ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+                    {uploadingImage ? <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
+                    <Input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={uploadingImage} />
                   </Label>
                   <Input 
                     value={text} 

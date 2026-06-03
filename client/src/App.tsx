@@ -141,12 +141,6 @@ function Layout() {
     return () => { cancelled = true; };
   }, []);
 
-  const [showNeon, setShowNeon] = useState(false);
-  const [neonFade, setNeonFade] = useState(false);
-  const audioRef = (typeof window !== "undefined") ? (window as any).__introAudioRef || { current: null } : { current: null };
-  if ((window as any).__introAudioRef === undefined) {
-    (window as any).__introAudioRef = { current: null };
-  }
   const introOverride = (typeof window !== "undefined") ? (localStorage.getItem("intro_audio_url") || "") : "";
 
   const animateScrollTop = (duration: number) => {
@@ -176,25 +170,14 @@ function Layout() {
     try {
       const el = document.getElementById("intro-audio") as HTMLAudioElement | null;
       if (!el) return;
-      audioRef.current = el;
-      const onEnded = () => { setNeonFade(true); setTimeout(() => setShowNeon(false), 800); };
-      const onPlaying = () => { setNeonFade(false); setShowNeon(true); setTimeout(() => setShowNeon(false), 2000); };
-      el.addEventListener("ended", onEnded);
-      el.addEventListener("playing", onPlaying);
       const tryPlay = async () => {
         try {
           el.muted = true;
           await el.play();
-          // unmute shortly after to respect autoplay policies
           setTimeout(() => { try { el.muted = false; } catch { } }, 300);
-        } catch {
-          // show subtle prompt if autoplay blocked
-          setShowNeon(true);
-          setTimeout(() => setShowNeon(false), 2000);
-        }
+        } catch { }
       };
       tryPlay();
-      return () => { el.removeEventListener("ended", onEnded); el.removeEventListener("playing", onPlaying); };
     } catch { }
   }, []);
 
@@ -237,13 +220,6 @@ function Layout() {
       >
         <audio id="intro-audio" src={introOverride || "https://files.catbox.moe/imua96.mp3"} preload="auto" playsInline autoPlay muted />
         <audio id="route-audio" src="https://files.catbox.moe/7ljomr.mp3" preload="auto" playsInline />
-        {showNeon && (
-          <div className={`vox-neon-text ${neonFade ? "vox-fade-out" : ""}`} aria-live="polite" role="status">
-            <div className="vox-electric">
-              <h1 className="vox-text vox-pulse" aria-label="trust us with your news">trust us with your news</h1>
-            </div>
-          </div>
-        )}
         <Header />
         <main className="flex-1">
           <AnnouncementModal location={location} />

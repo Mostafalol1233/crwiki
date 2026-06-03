@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { uploadImageToSupabase } from "@/lib/supabaseApi";
 import DOMPurify from "isomorphic-dompurify";
 import imageCompression from 'browser-image-compression';
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -506,15 +507,12 @@ export function AdvancedContentManager() {
                     toast({ title: 'Uploaded to Cloudinary', description: String(uploadedUrl) });
                     navigator.clipboard.writeText(String(uploadedUrl));
                   } else {
-                    const fd2 = new FormData();
-                    fd2.append('image', fileToUpload);
-                    const res = await fetch('/api/upload-image', { method: 'POST', body: fd2, headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` } });
-                    const data = await res.json();
-                    if (!res.ok || !data?.url) throw new Error(data?.error || 'Upload failed');
-                    setLastUploadedUrl(String(data.url));
+                    const uploadedUrl = await uploadImageToSupabase(fileToUpload, 'uploads', 'content');
+                    if (!uploadedUrl) throw new Error('Upload failed — no URL returned');
+                    setLastUploadedUrl(String(uploadedUrl));
                     setLastUploadedMethod("catbox");
-                    toast({ title: 'Uploaded (catbox)', description: String(data.url) });
-                    navigator.clipboard.writeText(String(data.url));
+                    toast({ title: 'Uploaded', description: String(uploadedUrl) });
+                    navigator.clipboard.writeText(String(uploadedUrl));
                   }
                 } catch (e: any) {
                   toast({ title: 'Upload error', description: String(e.message || e), variant: 'destructive' });

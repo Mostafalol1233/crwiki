@@ -1,12 +1,12 @@
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAdminStore } from '@/store/adminStore';
 import { decodeAdminToken } from '@/lib/supabaseAdmin';
 import {
   LayoutDashboard, BarChart2, FileText, Calendar, Newspaper,
   BookOpen, Megaphone, Swords, RefreshCw, Store, Star,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
-  ChevronLeft, ChevronRight, Menu, Crosshair, Map, Shield, User2,
-  Zap,
+  ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
+  Zap, Film,
 } from 'lucide-react';
 
 interface NavItem {
@@ -62,6 +62,7 @@ const NAV: NavSection[] = [
     title: 'Media',
     items: [
       { label: 'Media', path: '/admin/media', icon: <Image size={16} /> },
+      { label: 'Highlights', path: '/admin/highlights', icon: <Film size={16} /> },
     ],
   },
   {
@@ -78,7 +79,7 @@ const NAV: NavSection[] = [
 ];
 
 export default function AdminSidebar() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { sidebarCollapsed, toggleSidebar } = useAdminStore();
   const token = decodeAdminToken();
   const role = token?.role || '';
@@ -89,6 +90,24 @@ export default function AdminSidebar() {
   };
 
   const width = sidebarCollapsed ? 60 : 220;
+
+  const navItemStyle = (active: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: sidebarCollapsed ? '8px 0' : '7px 14px',
+    justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+    color: active ? '#d4a017' : '#a1a1aa',
+    background: active ? 'rgba(212,160,23,0.07)' : 'transparent',
+    borderLeft: active ? '2px solid #d4a017' : '2px solid transparent',
+    textDecoration: 'none',
+    fontSize: 13,
+    fontWeight: active ? 500 : 400,
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+    transition: 'background 0.1s, color 0.1s',
+    userSelect: 'none',
+  });
 
   return (
     <aside style={{
@@ -130,40 +149,30 @@ export default function AdminSidebar() {
               {visibleItems.map((item) => {
                 const active = isActive(item.path);
                 return (
-                  <Link key={item.path} href={item.path}>
-                    <a
-                      title={sidebarCollapsed ? item.label : undefined}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: sidebarCollapsed ? '8px 0' : '7px 14px',
-                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                        color: active ? '#d4a017' : '#a1a1aa',
-                        background: active ? 'rgba(212,160,23,0.07)' : 'transparent',
-                        borderLeft: active ? '2px solid #d4a017' : '2px solid transparent',
-                        textDecoration: 'none',
-                        fontSize: 13,
-                        fontWeight: active ? 500 : 400,
-                        transition: 'background 0.1s, color 0.1s',
-                        whiteSpace: 'nowrap',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          (e.currentTarget as HTMLAnchorElement).style.background = '#18181b';
-                          (e.currentTarget as HTMLAnchorElement).style.color = '#fafafa';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
-                          (e.currentTarget as HTMLAnchorElement).style.color = '#a1a1aa';
-                        }
-                      }}
-                    >
-                      <span style={{ flexShrink: 0 }}>{item.icon}</span>
-                      {!sidebarCollapsed && item.label}
-                    </a>
-                  </Link>
+                  <div
+                    key={item.path}
+                    role="button"
+                    tabIndex={0}
+                    title={sidebarCollapsed ? item.label : undefined}
+                    style={navItemStyle(active)}
+                    onClick={() => navigate(item.path)}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(item.path)}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLDivElement).style.background = '#18181b';
+                        (e.currentTarget as HTMLDivElement).style.color = '#fafafa';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+                        (e.currentTarget as HTMLDivElement).style.color = '#a1a1aa';
+                      }
+                    }}
+                  >
+                    <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                    {!sidebarCollapsed && item.label}
+                  </div>
                 );
               })}
             </div>

@@ -1,2 +1,5 @@
 - [Supabase migration](supabase-migration.md) — full MongoDB→Supabase migration done; frontend calls Supabase directly, no Express backend needed.
 - [Admin weapons query shape](admin-weapons-shape.md) — /api/weapons shim returns {items,total,data} not array; Admin.tsx must normalize via weaponsRaw→weapons.
+- [TipTap v3 imports](tiptap-v3-imports.md) — Table is named-only export; Link has both; Underline must be installed before using in toolbar.
+- [AdminSidebar nav](admin-sidebar-nav.md) — use div+onClick+navigate() not Link wrapping a; avoids nested anchor DOM error and invalid hook call crash.
+- [site_highlights table](site-highlights-table.md) — Supabase table needed for HighlightsManager; columns: id, title, month, year, media_type, url, sort_order.

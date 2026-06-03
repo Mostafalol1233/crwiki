@@ -28,6 +28,7 @@ const BulkSEO = lazy(() => import('./BulkSEO'));
 const CustomPages = lazy(() => import('./CustomPages'));
 const FAQManager = lazy(() => import('./FAQManager'));
 const SiteSettings = lazy(() => import('./SiteSettings'));
+const HighlightsManager = lazy(() => import('./HighlightsManager'));
 
 function Loading() {
   return (
@@ -68,6 +69,7 @@ function SectionContent({ section }: { section: string }) {
     case 'custom-pages': return <CustomPages />;
     case 'faq': return <FAQManager />;
     case 'site-settings': return <SiteSettings />;
+    case 'highlights': return <HighlightsManager />;
     default: return <Dashboard />;
   }
 }

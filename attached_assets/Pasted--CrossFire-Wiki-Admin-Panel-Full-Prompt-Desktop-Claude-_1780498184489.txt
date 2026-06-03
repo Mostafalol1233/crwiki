@@ -1,0 +1,769 @@
+# CrossFire Wiki — Admin Panel Full Prompt
+## للـ Desktop Claude
+
+---
+
+## السياق العام
+
+أنا مطور موقع **crossfire.wiki** — موقع wiki شامل للعبة CrossFire.
+الـ stack:
+- **Frontend**: Next.js / React
+- **Backend**: Supabase (database + auth + storage + serverless functions)
+- **Storage**: Supabase Storage (مش Cloudinary حالياً)
+- **Image URLs**: `crossfire.wiki/images/[filename]` عبر custom domain على Supabase Storage bucket
+
+المطلوب: بناء **Admin Panel كامل من الصفر** — امسح أي كود قديم وابدأ من جديد بـ architecture حديثة.
+
+---
+
+## الـ Tech Stack للـ Admin
+
+```
+/app/admin/                  ← Next.js App Router
+/app/admin/layout.jsx        ← Admin layout (sidebar + topbar)
+/app/admin/page.jsx          ← Dashboard
+/app/admin/[tab]/page.jsx    ← كل تاب
+/components/admin/           ← Admin components
+/lib/supabase/               ← Supabase clients + helpers
+/lib/admin/                  ← Admin utilities
+```
+
+**Rich Text Editor**: TipTap (الأحدث والأقوى — مع extensions)
+**Auth**: Supabase Auth + RBAC من جدول `user_roles`
+**State**: Zustand للـ global state
+**Forms**: React Hook Form + Zod validation
+**Tables**: TanStack Table v8
+**Notifications**: Sonner (toast)
+
+---
+
+## الـ Design System للـ Admin
+
+### الألوان (Dark theme — admin دايماً dark)
+```css
+--admin-bg: #09090b;           /* zinc-950 */
+--admin-surface: #18181b;      /* zinc-900 */
+--admin-surface2: #27272a;     /* zinc-800 */
+--admin-border: #3f3f46;       /* zinc-700 */
+--admin-border-subtle: #27272a;
+--admin-text: #fafafa;
+--admin-text-muted: #a1a1aa;   /* zinc-400 */
+--admin-text-dim: #52525b;     /* zinc-600 */
+--admin-gold: #d4a017;         /* brand accent */
+--admin-gold-dim: rgba(212,160,23,0.1);
+--admin-success: #22c55e;
+--admin-warning: #f59e0b;
+--admin-danger: #ef4444;
+--admin-info: #3b82f6;
+```
+
+### Typography
+```css
+font-family: 'Inter', sans-serif;
+/* weights: 300 (body), 400 (default), 500 (labels), 600 (headings only) */
+/* مفيش 700 أو 800 في الـ admin */
+```
+
+### القواعد
+- الـ sidebar عرضه 220px — collapsible لـ 60px (icons only)
+- الـ topbar ارتفاعه 52px
+- الـ cards بـ border-radius 6px
+- الـ inputs بـ border-radius 4px
+- كل الـ borders رفيعة 1px
+- مفيش gradients أو glow effects
+
+---
+
+## الـ Layout الرئيسي
+
+### Sidebar
+```
+┌──────────────────────┐
+│  🔫 CF Wiki  [≡]    │  ← logo + collapse toggle
+├──────────────────────┤
+│  [avatar] Admin      │  ← user info
+│  Super Admin         │
+├──────────────────────┤
+│  Dashboard           │
+│  Analytics           │
+├─ Content ────────────┤
+│  Posts               │
+│  Events              │
+│  News                │
+│  Tutorials           │
+│  Announcements       │
+├─ Game ───────────────┤
+│  Mercenaries         │
+│  Scraper             │
+│  Wiki Rescraper      │
+├─ Commerce ───────────┤
+│  Sellers             │
+│  Seller Reviews      │
+├─ Media ──────────────┤
+│  Media / Upload      │
+├─ System ─────────────┤
+│  Users / Admins      │
+│  Tickets             │
+│  Bulk SEO            │
+│  Custom Pages        │
+│  FAQ Manager         │
+│  Site Settings       │
+└──────────────────────┘
+```
+
+Active state: gold left-border + gold text + dim gold background
+Hover state: surface2 background
+
+### Topbar
+- Breadcrumb يسار (Home > Posts > New Post)
+- Search global يمين
+- Notifications bell
+- User avatar + dropdown (profile، logout)
+
+---
+
+## التابات بالتفصيل
+
+---
+
+### 1. Dashboard
+
+**الـ Stats Cards (row):**
+| Metric | Icon | Color |
+|--------|------|-------|
+| Total Users | ti-users | info |
+| Active Sellers | ti-store | gold |
+| Open Tickets | ti-ticket | warning |
+| Published Posts | ti-article | success |
+
+**الـ Charts:**
+- Line chart: page views آخر 30 يوم (Recharts)
+- Bar chart: top 10 weapons by views
+- Donut: traffic sources
+
+**الـ Recent Activity:**
+- جدول آخر 10 actions في الـ system (user، action، time)
+
+**الـ Quick Actions:**
+- New Post، New Event، New News، Upload Media — كلها buttons تاخد على التاب المناسب
+
+---
+
+### 2. Analytics
+
+**Sub-tabs:**
+- Tutorials Analytics: مشاهدات، completion rate، أكتر tutorials شوفها الناس
+- Sellers Analytics: profile views، contact clicks، reviews count
+- General: bounce rate، avg session، top pages
+
+**Filters:** date range picker (last 7d / 30d / 90d / custom)
+**Charts:** Recharts — line، bar، area
+
+---
+
+### 3. Media / Upload
+
+**المكتبة:**
+- Grid view (default) + List view toggle
+- كل صورة: thumbnail + اسم + حجم + تاريخ + copy URL button
+- Multi-select للـ bulk delete
+
+**الرفع:**
+- Drag & drop zone كبيرة
+- قبول: jpg، png، webp، gif، mp4، mp3
+- **Image Editor قبل الرفع:**
+  - Crop (free + ratios محددة: 16:9، 1:1، 4:3)
+  - Resize (width/height مع lock aspect ratio)
+  - Quality slider (60% → 100%)
+  - Convert to WebP checkbox
+- **الرفع على Supabase Storage:**
+
+```javascript
+// lib/supabase/storage.js
+export async function uploadMedia(file, bucket = 'media') {
+  const filename = `${Date.now()}-${slugify(file.name)}`;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(filename, file, {
+      contentType: file.type,
+      upsert: false
+    });
+  
+  if (error) throw error;
+  
+  // الـ public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filename);
+  
+  // بيبقى: https://crossfire.wiki/images/filename.webp
+  return publicUrl;
+}
+```
+
+- **Paste Formatter**: لو الـ user paste URL صورة من برا، تتحمل وترفع على Supabase أوتوماتيك
+
+---
+
+### 4. Posts
+
+**الـ List:**
+- TanStack Table: title، status (draft/published/scheduled)، author، date، views، actions
+- Filters: status، date range، author
+- Bulk actions: publish، unpublish، delete
+
+**الـ Editor (New/Edit Post):**
+
+Layout: 2 columns
+- **يسار (flex: 1)**: Rich Text Editor
+- **يمين (300px)**: Post Settings panel
+
+**Rich Text Editor — TipTap:**
+```javascript
+// extensions المطلوبة:
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Table from '@tiptap/extension-table'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import Youtube from '@tiptap/extension-youtube'
+import Placeholder from '@tiptap/extension-placeholder'
+import CharacterCount from '@tiptap/extension-character-count'
+import TextAlign from '@tiptap/extension-text-align'
+import Highlight from '@tiptap/extension-highlight'
+
+// Toolbar items:
+// H1 H2 H3 | Bold Italic Underline Strike | Align | 
+// List BulletList | Quote Code CodeBlock | Link Image YouTube Table | Highlight
+```
+
+**Post Settings Panel:**
+```
+┌─────────────────────┐
+│ Status              │
+│ [Draft ▼]           │
+│                     │
+│ Publish Date        │
+│ [datetime input]    │
+│                     │
+│ Featured Image      │
+│ [Upload / Media]    │
+│                     │
+│ Category            │
+│ Tags                │
+│                     │
+│ ── SEO ──────────── │
+│ Meta Title          │
+│ [input] 0/60        │
+│ Meta Description    │
+│ [textarea] 0/160    │
+│ OG Image            │
+│ [Upload]            │
+│ Canonical URL       │
+│ [input]             │
+│ Focus Keyword       │
+│ [input]             │
+│ [SEO Score: 78/100] │
+│                     │
+│ ── Bilingual ─────  │
+│ [EN] [AR] tabs      │
+│ [Copy EN → AR] btn  │
+│                     │
+│ [Save Draft]        │
+│ [Publish]           │
+└─────────────────────┘
+```
+
+**Auto-Save:**
+```javascript
+// كل 30 ثانية
+useEffect(() => {
+  const interval = setInterval(() => {
+    const draft = { title, content, settings, savedAt: Date.now() };
+    localStorage.setItem(`post-draft-${postId}`, JSON.stringify(draft));
+    showToast('Draft saved', 'info');
+  }, 30000);
+  return () => clearInterval(interval);
+}, [title, content, settings]);
+```
+
+**SEO Score Calculator:**
+يحسب score بناءً على:
+- Title length (50-60 chars) → 20 pts
+- Description length (140-160 chars) → 20 pts
+- Focus keyword في العنوان → 15 pts
+- Focus keyword في الـ content (density 1-3%) → 15 pts
+- Featured image موجودة → 10 pts
+- OG image موجودة → 10 pts
+- Content length > 300 words → 10 pts
+
+عرضه كـ progress bar ملوّن (أحمر < 50، أصفر 50-75، أخضر > 75)
+
+---
+
+### 5. Events
+
+نفس Posts editor بس بحقول إضافية:
+- Start Date / End Date
+- Location (text)
+- Event Type: (Online / Offline / Tournament)
+- Registration URL
+- Max Participants
+- Status: Upcoming / Ongoing / Ended
+
+ثنائي اللغة: EN + AR لكل field نصي
+
+---
+
+### 6. News
+
+نفس Posts editor بس:
+- Source URL (لو منقول من مصدر)
+- Breaking News toggle
+- News Category: (Update / Patch / Tournament / Community)
+
+ثنائي اللغة: EN + AR
+
+---
+
+### 7. Tutorials
+
+نفس Posts editor + حقول إضافية:
+- Difficulty: Beginner / Intermediate / Advanced
+- Video URL (YouTube embed)
+- Related Weapons (multi-select من الـ weapons table)
+- Related Maps (multi-select)
+- Estimated Read Time (auto-calculated من word count)
+
+---
+
+### 8. Sellers
+
+**الـ List:** جدول بـ: اسم، لوجو، status، rating، تاريخ التسجيل، actions
+
+**الـ Edit Form:**
+```
+- Logo Upload (Supabase Storage)
+- Cover Image Upload
+- Display Name (EN + AR)
+- Description (Rich Text - EN + AR)
+- Gallery (multi-image upload — max 10)
+- Pricing Table (dynamic rows: item + price + currency)
+- Contact Info: WhatsApp, Telegram, Discord, Email
+- Social Links
+- Status: Active / Suspended / Pending
+- Verified Badge toggle
+- Monetization: Free / Premium (+ expiry date)
+```
+
+---
+
+### 9. Seller Reviews
+
+**سوبر أدمن بس** (RBAC check)
+
+جدول: reviewer، seller، rating، comment، date، status (visible/hidden)
+Actions: Approve / Hide / Delete
+Bulk: Hide selected، Delete selected
+
+---
+
+### 10. Mercenaries
+
+```
+- Name (EN + AR)
+- Role: (Attacker / Defender / Support / Special)
+- Rarity: (Common / Rare / Epic / Legendary / VVIP)
+- Portrait Image Upload
+- Full Body Image Upload
+- Background Story (Rich Text - EN + AR)
+- Voice Line Upload (MP3 — Supabase Storage)
+  - Preview player مباشرة في الـ form
+- Skills (dynamic list: skill name + description)
+- Stats: (Health, Speed, Special Ability)
+- Available In: (BL / GR / Both)
+- Release Date
+- Status: Active / Retired / Limited
+```
+
+---
+
+### 11. Scraper
+
+**الفكرة:** جلب محتوى من مصادر CrossFire الرسمية
+
+```
+- Source URL input
+- Scrape Type: (Weapon / Map / Mercenary / News / Event)
+- [Scrape Preview] button → يجيب البيانات ويعرضها للمراجعة
+- [Import to DB] button → بعد المراجعة
+
+الـ API route:
+POST /api/admin/scraper
+{ url, type }
+→ يرجع { title, description, images[], stats{} }
+```
+
+---
+
+### 12. Wiki Rescraper
+
+```
+- جدول بكل الـ entries اللي ليها source URL
+- كل row فيها: title، source، last scraped، status
+- [Rescrape] لكل row
+- [Rescrape All] bulk
+- Log panel بيعرض نتائج الـ rescrape
+```
+
+---
+
+### 13. Site Settings
+
+```
+┌─ Hero Settings ─────────────────┐
+│ Hero Background                 │
+│ [Upload Image / Video]          │
+│ Preview thumbnail               │
+│                                 │
+│ Hero Title (EN + AR)            │
+│ Hero Subtitle (EN + AR)         │
+│ Hero CTA Text + URL             │
+└─────────────────────────────────┘
+
+┌─ General Settings ──────────────┐
+│ Site Name                       │
+│ Site Description (EN + AR)      │
+│ Logo Upload                     │
+│ Favicon Upload                  │
+│ Contact Email                   │
+└─────────────────────────────────┘
+
+┌─ Feature Flags ─────────────────┐
+│ [toggle] Enable Forum           │
+│ [toggle] Enable Shop            │
+│ [toggle] Enable Reviews         │
+│ [toggle] Maintenance Mode       │
+└─────────────────────────────────┘
+
+┌─ SEO Defaults ──────────────────┐
+│ Default Meta Title Template     │
+│ Default Meta Description        │
+│ Default OG Image                │
+│ Google Analytics ID             │
+│ Google Search Console           │
+└─────────────────────────────────┘
+```
+
+**Supabase table:**
+```sql
+create table site_settings (
+  key text primary key,
+  value jsonb,
+  updated_at timestamptz default now()
+);
+```
+
+---
+
+### 14. Announcements
+
+```
+- Title (EN + AR)
+- Content (EN + AR)
+- Type: Info / Warning / Promo / Maintenance
+- Target: All Users / Sellers Only / Specific User (by ID)
+- Display: Banner / Modal / Toast
+- Start Date / End Date
+- Active toggle
+- Dismissible toggle
+```
+
+---
+
+### 15. Users / Admins
+
+**الـ List:** جدول بـ: avatar، email، role، status، joined، last active، actions
+
+**Roles (RBAC):**
+```javascript
+const ROLES = {
+  SUPER_ADMIN: ['*'],  // كل حاجة
+  ADMIN: ['posts', 'events', 'news', 'tutorials', 'mercenaries', 'media', 'tickets', 'faq', 'announcements'],
+  EDITOR: ['posts', 'events', 'news', 'tutorials', 'media'],
+  SELLER_MANAGER: ['sellers', 'seller_reviews'],
+  SUPPORT: ['tickets', 'users.view'],
+}
+```
+
+**Actions:**
+- Edit Role
+- Suspend / Activate
+- Reset Password → يبعت email أو يولّد reset code
+- Delete Account
+
+---
+
+### 16. Tickets
+
+**الـ List:** جدول بـ: user، subject، priority (Low/Medium/High/Urgent)، status (Open/In Progress/Resolved/Closed)، date
+
+**الـ Ticket View:**
+- Thread messages (زي chat)
+- Internal Notes (مش بتتبعت للـ user — admin only)
+- Change Status
+- Assign to Admin
+- Priority change
+
+---
+
+### 17. Bulk SEO
+
+```
+Content Type selector: Posts / News / Events / Tutorials
+
+جدول بكل الـ entries فيها:
+- Title
+- Meta Title (editable inline)
+- Meta Description (editable inline)  
+- SEO Score (colored badge)
+- Actions: Edit Full / Ignore
+
+Bulk Actions:
+- Auto-Generate Meta from Content (AI prompt للـ Claude API)
+- Export as CSV
+- Import from CSV
+
+الـ Auto-Generate:
+POST /api/admin/bulk-seo/generate
+{ ids: [], type: 'posts' }
+→ يولد meta title + description لكل entry
+```
+
+---
+
+### 18. Custom Pages
+
+```
+- Slug (e.g., /about, /advertise)
+- Title (EN + AR)
+- Content (Rich Text - EN + AR)
+- Template: Default / Landing / Minimal
+- Status: Published / Draft
+- SEO fields (نفس الـ Posts)
+- Show in Nav toggle
+```
+
+---
+
+### 19. FAQ Manager
+
+```
+- Question (EN + AR)
+- Answer (Rich Text - EN + AR)
+- Category (text)
+- Order (drag & drop لإعادة الترتيب)
+- Active toggle
+
+Drag & drop: @hello-pangea/dnd
+```
+
+---
+
+## الـ RBAC Implementation
+
+```javascript
+// middleware.js
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+
+export async function middleware(req) {
+  const supabase = createMiddlewareClient({ req, res })
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session && req.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/login', req.url))
+  }
+  
+  // Check role
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', session?.user?.id)
+    .single()
+    
+  if (!roleData || !['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'SELLER_MANAGER', 'SUPPORT'].includes(roleData.role)) {
+    return NextResponse.redirect(new URL('/unauthorized', req.url))
+  }
+}
+```
+
+---
+
+## الـ Supabase Tables المطلوبة
+
+```sql
+-- User Roles
+create table user_roles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  role text not null check (role in ('SUPER_ADMIN','ADMIN','EDITOR','SELLER_MANAGER','SUPPORT')),
+  created_at timestamptz default now()
+);
+
+-- Media Library
+create table media (
+  id uuid primary key default gen_random_uuid(),
+  filename text not null,
+  original_name text,
+  url text not null,
+  mime_type text,
+  size_bytes int,
+  bucket text default 'media',
+  uploaded_by uuid references auth.users,
+  created_at timestamptz default now()
+);
+
+-- Site Settings
+create table site_settings (
+  key text primary key,
+  value jsonb,
+  updated_at timestamptz default now()
+);
+
+-- Announcements
+create table announcements (
+  id uuid primary key default gen_random_uuid(),
+  title_en text,
+  title_ar text,
+  content_en text,
+  content_ar text,
+  type text default 'info',
+  target text default 'all',
+  target_user_id uuid,
+  display text default 'banner',
+  starts_at timestamptz,
+  ends_at timestamptz,
+  active boolean default true,
+  dismissible boolean default true,
+  created_at timestamptz default now()
+);
+
+-- Tickets
+create table tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users,
+  subject text not null,
+  priority text default 'medium',
+  status text default 'open',
+  assigned_to uuid references auth.users,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table ticket_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid references tickets,
+  sender_id uuid references auth.users,
+  message text not null,
+  is_internal boolean default false,
+  created_at timestamptz default now()
+);
+```
+
+---
+
+## الـ Auto-Save Implementation
+
+```javascript
+// hooks/useAutoSave.js
+export function useAutoSave(key, data, interval = 30000) {
+  const [lastSaved, setLastSaved] = useState(null)
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      localStorage.setItem(`autosave-${key}`, JSON.stringify({
+        data,
+        savedAt: new Date().toISOString()
+      }))
+      setLastSaved(new Date())
+      toast.info('Draft auto-saved', { duration: 2000 })
+    }, interval)
+    
+    return () => clearInterval(timer)
+  }, [data, key, interval])
+  
+  const restore = () => {
+    const saved = localStorage.getItem(`autosave-${key}`)
+    return saved ? JSON.parse(saved) : null
+  }
+  
+  const clear = () => localStorage.removeItem(`autosave-${key}`)
+  
+  return { lastSaved, restore, clear }
+}
+```
+
+---
+
+## الـ Bilingual Helper
+
+```javascript
+// components/admin/BilingualField.jsx
+// كومبوننت بيعرض EN tab و AR tab مع Copy EN→AR button
+
+export function BilingualField({ label, type = 'input', value, onChange }) {
+  const [lang, setLang] = useState('en')
+  
+  return (
+    <div>
+      <div className="field-header">
+        <label>{label}</label>
+        <div className="lang-tabs">
+          <button onClick={() => setLang('en')} active={lang === 'en'}>EN</button>
+          <button onClick={() => setLang('ar')} active={lang === 'ar'}>AR</button>
+          <button onClick={() => onChange('ar', value.en)} className="copy-btn">
+            Copy EN → AR
+          </button>
+        </div>
+      </div>
+      {type === 'input' && (
+        <input
+          value={value[lang]}
+          onChange={e => onChange(lang, e.target.value)}
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        />
+      )}
+      {type === 'textarea' && (
+        <textarea
+          value={value[lang]}
+          onChange={e => onChange(lang, e.target.value)}
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        />
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## الأولوية في التنفيذ
+
+1. `admin/layout.jsx` — Sidebar + Topbar + RBAC check
+2. `admin/page.jsx` — Dashboard
+3. `lib/supabase/` — clients + storage helpers
+4. `components/admin/MediaUpload` — الـ media library
+5. `admin/posts/` — Posts + TipTap Editor + SEO
+6. `admin/site-settings/` — Hero + General settings
+7. باقي التابات بنفس الـ pattern
+
+---
+
+## ملاحظات مهمة
+
+- **مفيش أي كود قديم** — ابدأ من صفر
+- **كل form** لازم يكون فيه validation بـ Zod
+- **كل action** لازم يكون فيه loading state + error handling + success toast
+- **الـ tables** كلها بـ TanStack Table مع pagination server-side
+- **الـ images** كلها بتتحمل على Supabase Storage وتترجع URL
+- **الـ hero image/video** بتتحفظ في `site_settings` table بـ key `hero_background`

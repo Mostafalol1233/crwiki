@@ -4,8 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { Mail, MessageSquare, Send, CheckCircle, ArrowRight } from "lucide-react";
-import { SiDiscord, SiFacebook, SiX } from "react-icons/si";
+import { SiDiscord, SiFacebook, SiWhatsapp, SiX } from "react-icons/si";
 import { Link } from "wouter";
+
+const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 
 const CHANNELS = [
   {
@@ -25,14 +27,16 @@ const CHANNELS = [
   },
   {
     icon: Send,
-    title: "Social Media",
-    value: "@CrossFireOnline",
-    desc: "Quick questions via DM",
-    color: "#38bdf8",
+    title: "WhatsApp Channel",
+    value: "Join WhatsApp updates",
+    desc: "News, alerts, and community support",
+    color: "#25d366",
+    href: WHATSAPP_CHANNEL_URL,
   },
 ];
 
 const SOCIALS = [
+  { href: WHATSAPP_CHANNEL_URL, icon: <SiWhatsapp className="h-5 w-5" />, label: "WhatsApp Channel", color: "#25d366" },
   { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-5 w-5" />, label: "Discord", color: "#5865f2" },
   { href: "https://www.facebook.com/crossfireonline", icon: <SiFacebook className="h-5 w-5" />, label: "Facebook", color: "#1877f2" },
   { href: "https://x.com/CrossFireOnline", icon: <SiX className="h-5 w-5" />, label: "Twitter / X", color: "#e0e0e0" },
@@ -118,7 +122,11 @@ export default function Contact() {
                 </div>
               );
               return ch.href ? (
-                <Link key={ch.title} href={ch.href}>{inner}</Link>
+                ch.href.startsWith("http") ? (
+                  <a key={ch.title} href={ch.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
+                ) : (
+                  <Link key={ch.title} href={ch.href}>{inner}</Link>
+                )
               ) : (
                 <div key={ch.title}>{inner}</div>
               );

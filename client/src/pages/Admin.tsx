@@ -277,7 +277,6 @@ export default function Admin() {
     instagram: "",
     youtube: "",
     tiktok: "",
-    telegram: "",
     featured: false,
     promotionText: "",
     rank: "",
@@ -1765,7 +1764,6 @@ export default function Admin() {
       instagram: "",
       youtube: "",
       tiktok: "",
-      telegram: "",
       featured: false,
       promotionText: "",
       rank: "",
@@ -5894,10 +5892,6 @@ export default function Admin() {
                                 <Label htmlFor="seller-tiktok">TikTok</Label>
                                 <Input id="seller-tiktok" placeholder="https://tiktok.com/@username" value={sellerForm.tiktok} onChange={(e) => setSellerForm({ ...sellerForm, tiktok: e.target.value })} />
                               </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="seller-telegram">Telegram</Label>
-                                <Input id="seller-telegram" placeholder="https://t.me/username" value={sellerForm.telegram} onChange={(e) => setSellerForm({ ...sellerForm, telegram: e.target.value })} />
-                              </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -5941,7 +5935,6 @@ export default function Admin() {
                                 instagram: sellerForm.instagram,
                                 youtube: sellerForm.youtube,
                                 tiktok: sellerForm.tiktok,
-                                telegram: sellerForm.telegram,
                                 featured: sellerForm.featured,
                                 rank: sellerForm.rank.trim() ? parseInt(sellerForm.rank.trim(), 10) : undefined,
                               };
@@ -5995,7 +5988,6 @@ export default function Admin() {
                                   {seller.instagram && <Badge variant="outline" className="text-xs">Instagram</Badge>}
                                   {seller.youtube && <Badge variant="outline" className="text-xs">YouTube</Badge>}
                                   {seller.tiktok && <Badge variant="outline" className="text-xs">TikTok</Badge>}
-                                  {seller.telegram && <Badge variant="outline" className="text-xs">Telegram</Badge>}
                                   {!seller.email && !seller.phone && !seller.whatsapp && !seller.discord && !seller.website && (
                                     <span className="text-xs text-muted-foreground">None</span>
                                   )}
@@ -6049,7 +6041,6 @@ export default function Admin() {
                                         instagram: seller.instagram || "",
                                         youtube: seller.youtube || "",
                                         tiktok: seller.tiktok || "",
-                                        telegram: seller.telegram || "",
                                         featured: seller.featured || false,
                                         promotionText: seller.promotionText || "",
                                         rank: typeof seller.rank === 'number' ? String(seller.rank) : "",

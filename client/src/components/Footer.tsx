@@ -1,9 +1,10 @@
 import { Link } from "wouter";
-import { ExternalLink, ChevronUp, ArrowRight } from "lucide-react";
+import { ChevronUp, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
+const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 
 const gameLinks = [
   { label: "Game Overview", path: "/about" },
@@ -34,6 +35,7 @@ const socials = [
   { href: "https://www.facebook.com/crossfireonline", label: "FB", title: "Facebook" },
   { href: "https://x.com/CrossFireOnline", label: "X", title: "X / Twitter" },
   { href: "https://www.youtube.com/c/CrossFireWest", label: "YT", title: "YouTube" },
+  { href: WHATSAPP_CHANNEL_URL, label: "WA", title: "WhatsApp Channel" },
   { href: "https://discord.gg/7AbuDrNNJM", label: "DC", title: "Discord" },
   { href: "https://www.instagram.com/crossfirewest/", label: "IG", title: "Instagram" },
   { href: "https://www.twitch.tv/cfonline/", label: "TV", title: "Twitch" },
@@ -287,6 +289,28 @@ export function Footer() {
                 </a>
               ))}
             </div>
+            <a
+              href={WHATSAPP_CHANNEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none" }}
+            >
+              <div
+                style={{
+                  padding: "10px 12px",
+                  border: GOLD_BORDER,
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                  background: "rgba(37,211,102,0.06)",
+                  marginBottom: "8px",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.12)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.06)"; }}
+              >
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "8px", letterSpacing: "0.2em", color: "hsl(var(--muted-foreground))", opacity: 0.5, marginBottom: "2px" }}>JOIN COMMUNITY</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "11px", letterSpacing: "0.12em", color: "#25d366" }}>WhatsApp Channel</p>
+              </div>
+            </a>
             <Link href="/download">
               <div
                 style={{

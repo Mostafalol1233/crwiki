@@ -58,7 +58,6 @@ export function Header() {
       label: t("navShop"),
       dropdown: [
         { path: "/sellers", label: t("navSellers") },
-        { path: "/pricing", label: "Buy ZP" },
         { path: "/reviews", label: t("navReviews") },
       ],
     },

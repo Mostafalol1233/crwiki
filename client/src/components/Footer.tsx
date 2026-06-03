@@ -24,7 +24,6 @@ const communityLinks = [
 ];
 const shopLinks = [
   { label: "Sellers", path: "/sellers" },
-  { label: "Buy ZP", path: "/pricing" },
   { label: "Seller Reviews", path: "/reviews" },
 ];
 const supportLinks = [

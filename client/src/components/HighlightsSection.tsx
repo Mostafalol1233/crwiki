@@ -24,7 +24,7 @@ const STATIC_HIGHLIGHTS: Highlight[] = [
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
 const ACCENT = "#3a7bd5";
 
-export function HighlightsSection() {
+export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {}) {
   const [highlights, setHighlights] = useState<Highlight[]>(STATIC_HIGHLIGHTS);
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -46,19 +46,21 @@ export function HighlightsSection() {
   const next = () => setActiveIdx((i) => (i + 1) % highlights.length);
 
   return (
-    <section style={{ padding: "48px 0" }}>
-      <div style={{
-        display: "flex", alignItems: "baseline", justifyContent: "space-between",
-        marginBottom: "20px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}`,
-      }}>
-        <h2 style={{
-          fontFamily: "'Cinzel', serif", fontWeight: 300,
-          fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
-          color: "hsl(var(--foreground))", margin: 0,
+    <section>
+      {!hideHeader && (
+        <div style={{
+          display: "flex", alignItems: "baseline", justifyContent: "space-between",
+          marginBottom: "20px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}`,
         }}>
-          HIGHLIGHTS
-        </h2>
-      </div>
+          <h2 style={{
+            fontFamily: "'Cinzel', serif", fontWeight: 300,
+            fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
+            color: "hsl(var(--foreground))", margin: 0,
+          }}>
+            HIGHLIGHTS
+          </h2>
+        </div>
+      )}
 
       <div className="relative overflow-hidden" style={{
         background: "#0d1117", border: `2px solid rgba(58,123,213,0.5)`, borderRadius: "6px",

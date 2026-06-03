@@ -15,24 +15,26 @@ const GMS: GM[] = [
   { name: "[GM]Ronin", avatar: "https://files.catbox.moe/eck3jc.jpeg", role: "Events GM", lastSeen: "May 10", color: "#3b82f6" },
 ];
 
-export function GMSection() {
+export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
   return (
-    <section style={{ padding: "48px 0" }}>
-      <div style={{
-        display: "flex", alignItems: "baseline", justifyContent: "space-between",
-        marginBottom: "24px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}`,
-      }}>
-        <h2 style={{
-          fontFamily: "'Cinzel', serif", fontWeight: 300,
-          fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
-          color: "hsl(var(--foreground))", margin: 0,
+    <section>
+      {!hideHeader && (
+        <div style={{
+          display: "flex", alignItems: "baseline", justifyContent: "space-between",
+          marginBottom: "24px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}`,
         }}>
-          GAME MASTERS
-        </h2>
-        <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.85rem", color: "#9a7c3f" }}>
-          Official CF Staff
-        </span>
-      </div>
+          <h2 style={{
+            fontFamily: "'Cinzel', serif", fontWeight: 300,
+            fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
+            color: "hsl(var(--foreground))", margin: 0,
+          }}>
+            GAME MASTERS
+          </h2>
+          <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.85rem", color: "#9a7c3f" }}>
+            Official CF Staff
+          </span>
+        </div>
+      )}
 
       <div style={{
         display: "grid",

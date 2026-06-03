@@ -23,6 +23,8 @@ import Mercenaries from "@/pages/Mercenaries";
 import GraveGames from "@/pages/GraveGames";
 import Category from "@/pages/Category";
 import CategoryNews from "@/pages/CategoryNews";
+import EventsList from "@/pages/EventsList";
+import Profile from "@/pages/Profile";
 import Reviews from "@/pages/Reviews";
 import Sellers from "@/pages/Sellers";
 import Support from "@/pages/Support";
@@ -63,7 +65,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/search" component={() => <Suspense fallback={<div>Loading...</div>}><SearchPage /></Suspense>} />
       <Route path="/category/news" component={CategoryNews} />
-      <Route path="/events" component={Category} />
+      <Route path="/events" component={EventsList} />
+      <Route path="/blog" component={Posts} />
+      <Route path="/profile" component={Profile} />
       <Route path="/category/:category" component={Category} />
       <Route path="/reviews" component={Reviews} />
       <Route path="/reviews/seller/:sellerName" component={Reviews} />

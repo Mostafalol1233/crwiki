@@ -300,22 +300,21 @@ export default function Home() {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {[
-                    { emoji: "🎯", label: "Strategy Talk" },
-                    { emoji: "🔫", label: "Weapon Builds" },
-                    { emoji: "🏆", label: "Tournament Info" },
-                    { emoji: "📣", label: "Event Alerts" },
-                    { emoji: "🤝", label: "Clan Recruiting" },
-                  ].map(({ emoji, label }) => (
+                    "Strategy Talk",
+                    "Weapon Builds",
+                    "Tournament Info",
+                    "Event Alerts",
+                    "Clan Recruiting",
+                  ].map((label) => (
                     <div
                       key={label}
-                      className="flex items-center gap-2 px-3 py-2"
+                      className="px-3 py-2"
                       style={{
                         background: "hsl(var(--card))",
                         border: `1px solid ${GOLD_BORDER}`,
                         borderRadius: "4px",
                       }}
                     >
-                      <span>{emoji}</span>
                       <span
                         style={{
                           fontFamily: "'Cinzel', serif",

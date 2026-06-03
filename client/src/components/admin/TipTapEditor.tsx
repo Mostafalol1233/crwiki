@@ -1,8 +1,8 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Table from '@tiptap/extension-table';
+import TiptapLink from '@tiptap/extension-link';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
@@ -95,7 +95,7 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       Image.configure({ inline: false, allowBase64: true }),
-      Link.configure({ openOnClick: false, autolink: true }),
+      TiptapLink.configure({ openOnClick: false, autolink: true }),
       Table.configure({ resizable: true }),
       TableRow,
       TableCell,
@@ -182,9 +182,6 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic">
           <Italic size={14} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline?.().run()} active={editor.isActive('underline')} title="Underline">
-          <Underline size={14} />
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
           <Strikethrough size={14} />

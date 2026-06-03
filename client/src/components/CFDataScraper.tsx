@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { uploadImageToSupabase } from "@/lib/supabaseApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -188,21 +189,8 @@ export default function CFDataScraper() {
   const uploadImageFile = async (file: File) => {
     setIsUploadingImage(true);
     try {
-      const fd = new FormData();
-      fd.append('image', file);
-
-      const resp = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: fd,
-        credentials: 'include',
-      });
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || 'Upload failed');
-      }
-
-      const imageUrl = (await resp.text()).trim();
+      const imageUrl = await uploadImageToSupabase(file, 'uploads', 'scraper');
+      if (!imageUrl) throw new Error('Upload failed — no URL returned');
       handleEditableChange('image', imageUrl);
       toast({ title: 'Image uploaded', description: 'Image uploaded successfully' });
     } catch (err: any) {

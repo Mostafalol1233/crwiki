@@ -397,6 +397,24 @@ export async function updateSiteSettings(patch: Record<string, any>) {
   }
 }
 
+// ─── Image Upload (Supabase Storage) ─────────────────────────────────────────
+export async function uploadImageToSupabase(
+  file: File,
+  bucket = 'uploads',
+  folder = 'images'
+): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data, error } = await supabase.storage.from(bucket).upload(fileName, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error) throw new Error(error.message);
+  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
 // ─── Auth (Supabase Auth) ─────────────────────────────────────────────────────
 export async function signUp(email: string, password: string, metadata?: { username?: string; phone?: string; avatar?: string }) {
   const { data, error } = await supabase.auth.signUp({

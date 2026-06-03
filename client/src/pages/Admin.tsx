@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { uploadImageToSupabase } from "@/lib/supabaseApi";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -4949,29 +4950,13 @@ export default function Admin() {
                                         const file = e.target.files?.[0];
                                         if (file) {
                                           try {
-                                            const tokRes = await fetch('/api/security/csrf-token');
-                                            const tokJson = await tokRes.json();
-                                            const csrfToken = tokJson?.csrfToken || '';
-                                            const formData = new FormData();
-                                            formData.append('images', file);
-                                            const res = await fetch('/api/upload-image', {
-                                              method: 'POST',
-                                              headers: {
-                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                                'x-csrf-token': csrfToken,
-                                              },
-                                              body: formData,
-                                            });
-                                            const data = await res.json();
-                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
+                                            const url = await uploadImageToSupabase(file, 'uploads', 'weapons');
                                             if (url) {
                                               setWeaponForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
-                                            } else {
-                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
                                             }
-                                          } catch {
-                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          } catch (err: any) {
+                                            toast({ title: "Failed to upload image", description: err?.message, variant: "destructive" });
                                           }
                                         }
                                       }}
@@ -5149,29 +5134,13 @@ export default function Admin() {
                                         const file = e.target.files?.[0];
                                         if (file) {
                                           try {
-                                            const tokRes = await fetch('/api/security/csrf-token');
-                                            const tokJson = await tokRes.json();
-                                            const csrfToken = tokJson?.csrfToken || '';
-                                            const formData = new FormData();
-                                            formData.append('images', file);
-                                            const res = await fetch('/api/upload-image', {
-                                              method: 'POST',
-                                              headers: {
-                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                                'x-csrf-token': csrfToken,
-                                              },
-                                              body: formData,
-                                            });
-                                            const data = await res.json();
-                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
+                                            const url = await uploadImageToSupabase(file, 'uploads', 'modes');
                                             if (url) {
                                               setModeForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
-                                            } else {
-                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
                                             }
-                                          } catch {
-                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          } catch (err: any) {
+                                            toast({ title: "Failed to upload image", description: err?.message, variant: "destructive" });
                                           }
                                         }
                                       }}
@@ -5302,29 +5271,13 @@ export default function Admin() {
                                         const file = e.target.files?.[0];
                                         if (file) {
                                           try {
-                                            const tokRes = await fetch('/api/security/csrf-token');
-                                            const tokJson = await tokRes.json();
-                                            const csrfToken = tokJson?.csrfToken || '';
-                                            const formData = new FormData();
-                                            formData.append('images', file);
-                                            const res = await fetch('/api/upload-image', {
-                                              method: 'POST',
-                                              headers: {
-                                                'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                                'x-csrf-token': csrfToken,
-                                              },
-                                              body: formData,
-                                            });
-                                            const data = await res.json();
-                                            const url = data.results?.[0]?.domain_url || data.results?.[0]?.url || data.domain_url || data.url || '';
+                                            const url = await uploadImageToSupabase(file, 'uploads', 'ranks');
                                             if (url) {
                                               setRankForm(prev => ({ ...prev, image: url }));
                                               toast({ title: "Image uploaded successfully!" });
-                                            } else {
-                                              toast({ title: "Upload failed", description: data.error || "No URL returned", variant: "destructive" });
                                             }
-                                          } catch {
-                                            toast({ title: "Failed to upload image", variant: "destructive" });
+                                          } catch (err: any) {
+                                            toast({ title: "Failed to upload image", description: err?.message, variant: "destructive" });
                                           }
                                         }
                                       }}
@@ -6855,19 +6808,7 @@ export default function Admin() {
                                   return;
                                 }
                                 try {
-                                  const formData = new FormData();
-                                  formData.append('image', mercImageFile);
-                                  const res = await fetch(`${apiBase}/api/upload-image`, {
-                                    method: 'POST',
-                                    headers: {
-                                      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                      'x-csrf-token': localStorage.getItem('csrfToken') || '',
-                                    },
-                                    body: formData,
-                                  });
-                                  if (!res.ok) throw new Error('Upload failed');
-                                  const json = await res.json().catch(() => null);
-                                  const url = json?.domain_url || json?.results?.[0]?.domain_url || json?.url || '';
+                                  const url = await uploadImageToSupabase(mercImageFile, 'uploads', 'mercenaries');
                                   if (url) {
                                     if (editingMerc) {
                                       setMercForm({ ...mercForm, image: url });
@@ -7469,18 +7410,10 @@ export default function Admin() {
                               input.onchange = async (e) => {
                                 const file = (e.target as HTMLInputElement).files?.[0];
                                 if (file) {
-                                  const fd = new FormData();
-                                  fd.append('image', file);
                                   try {
-                                    const res = await fetch('/api/upload-image', {
-                                      method: 'POST',
-                                      headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
-                                      body: fd
-                                    });
-                                    const data = await res.json();
-                                    const bgUrl = data.domain_url || data.results?.[0]?.domain_url || data.url || '';
+                                    const bgUrl = await uploadImageToSupabase(file, 'uploads', 'backgrounds');
                                     if (bgUrl) setBgSettings({ ...bgSettings, backgroundImageUrl: bgUrl });
-                                  } catch (err) {
+                                  } catch {
                                     toast({ title: "Upload failed", variant: "destructive" });
                                   }
                                 }

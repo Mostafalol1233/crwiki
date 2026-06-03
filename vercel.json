@@ -7,6 +7,10 @@
       "config": {
         "distDir": "dist/client"
       }
+    },
+    {
+      "src": "api/*.ts",
+      "use": "@vercel/node"
     }
   ],
 
@@ -23,10 +27,6 @@
   ],
 
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/api/$1"
-    },
     {
       "source": "/images/(.*)",
       "destination": "http://fi4.bot-hosting.net:20126/images/$1"
@@ -50,10 +50,6 @@
     {
       "source": "/cdn/(.*)",
       "destination": "http://fi4.bot-hosting.net:20126/cdn/$1"
-    },
-    {
-      "source": "/ws",
-      "destination": "http://fi4.bot-hosting.net:20126/ws"
     },
     {
       "source": "/(.*)",

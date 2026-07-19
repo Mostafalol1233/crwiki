@@ -261,7 +261,7 @@ function normalizeStringArray(value: any): string[] {
   return [];
 }
 
-function normalizePrices(value: any): { item: string; price: number }[] {
+function normalizePrices(value: any): { item: string; price: string | number }[] {
   const source = typeof value === 'string'
     ? (() => {
       const trimmed = value.trim();
@@ -274,13 +274,15 @@ function normalizePrices(value: any): { item: string; price: number }[] {
   return source
     .map((entry: any) => {
       if (typeof entry === 'string') {
-        const [item = '', rawPrice = '0'] = entry.split(':');
-        return { item: item.trim(), price: Number.parseFloat(rawPrice.trim()) || 0 };
+        const colonIdx = entry.lastIndexOf(':');
+        if (colonIdx === -1) return { item: entry.trim(), price: '' };
+        return { item: entry.slice(0, colonIdx).trim(), price: entry.slice(colonIdx + 1).trim() };
       }
-      return {
-        item: String(entry?.item || '').trim(),
-        price: Number.parseFloat(String(entry?.price ?? 0)) || 0,
-      };
+      // Handle both {item, price} and {amount, price} DB formats
+      const item = String(entry?.item || entry?.amount || '').trim();
+      const rawPrice = entry?.price ?? entry?.cost ?? '';
+      const price = typeof rawPrice === 'number' ? rawPrice : String(rawPrice).trim();
+      return { item, price };
     })
     .filter((entry) => entry.item);
 }
@@ -403,15 +405,19 @@ export async function uploadImageToSupabase(
   bucket = 'uploads',
   folder = 'images'
 ): Promise<string> {
+  // Use service-role client so uploads bypass storage RLS policies
+  const { supabaseService } = await import('@/lib/supabaseAdmin');
+  const client = supabaseService || supabase;
+
   const ext = file.name.split('.').pop() || 'jpg';
   const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage.from(bucket).upload(fileName, file, {
+  const { data, error } = await client.storage.from(bucket).upload(fileName, file, {
     cacheControl: '3600',
     upsert: false,
     contentType: file.type,
   });
   if (error) throw new Error(error.message);
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+  const { data: urlData } = client.storage.from(bucket).getPublicUrl(data.path);
   return urlData.publicUrl;
 }
 

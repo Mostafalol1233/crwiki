@@ -535,7 +535,11 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
         name: body.name, seller_name_slug: body.seller_name_slug || slugify(body.name || ''),
         description: body.description || '', images: body.images || [], prices: body.prices || [],
         email: body.email || '', phone: body.phone || '', whatsapp: body.whatsapp || '',
-        discord: body.discord || '', website: body.website || '', featured: body.featured || false,
+        discord: body.discord || '', website: body.website || '',
+        facebook: body.facebook || '', twitter: body.twitter || '',
+        instagram: body.instagram || '', youtube: body.youtube || '',
+        tiktok: body.tiktok || '', telegram: body.telegram || '',
+        featured: body.featured || false,
         promotion_text: body.promotionText || '', rank: body.rank || 9999,
       }]).select().single();
       if (error) throw new Error(error.message);
@@ -555,9 +559,15 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     const id = sellerIdMatch[1];
     if (M === 'PATCH') {
       const { data, error } = await client.from('sellers').update({
-        name: body.name, description: body.description, images: body.images, prices: body.prices,
+        name: body.name,
+        seller_name_slug: body.seller_name_slug || slugify(body.name || ''),
+        description: body.description, images: body.images, prices: body.prices,
         email: body.email, phone: body.phone, whatsapp: body.whatsapp, discord: body.discord,
-        website: body.website, featured: body.featured, promotion_text: body.promotionText, rank: body.rank,
+        website: body.website,
+        facebook: body.facebook ?? '', twitter: body.twitter ?? '',
+        instagram: body.instagram ?? '', youtube: body.youtube ?? '',
+        tiktok: body.tiktok ?? '', telegram: body.telegram ?? '',
+        featured: body.featured, promotion_text: body.promotionText, rank: body.rank,
       }).eq('id', id).select().single();
       if (error) throw new Error(error.message);
       return normalizeSeller(data);

@@ -317,7 +317,7 @@ export default function Sellers() {
             {seller.prices.slice(0, 3).map((price, idx) => (
               <div key={idx} className="flex justify-between items-center text-sm py-0.5">
                 <span className="text-muted-foreground truncate max-w-[65%] text-xs">{price.item}</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">{price.price} L.E</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">{price.price}</span>
               </div>
             ))}
           </div>
@@ -447,7 +447,7 @@ export default function Sellers() {
                         <div key={idx} className="flex justify-between items-center p-4 rounded-xl border bg-card hover:shadow-md transition-all hover:border-primary/30 group">
                           <span className="font-medium text-sm">{price.item}</span>
                           <Badge variant="secondary" className="text-base font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:scale-105 transition-transform">
-                            {price.price} L.E
+                            {price.price}
                           </Badge>
                         </div>
                       ))}
@@ -638,7 +638,7 @@ export default function Sellers() {
                     {sellerBySlug.prices.map((p, idx) => (
                       <div key={idx} className="flex justify-between items-center p-3 rounded-lg border bg-muted/50 hover:border-primary/30 transition-colors">
                         <span className="text-sm truncate mr-2">{p.item}</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.price} L.E</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.price}</span>
                       </div>
                     ))}
                   </div>
@@ -821,7 +821,7 @@ export default function Sellers() {
                           {selectedSeller.prices.map((p, idx) => (
                             <div key={idx} className="flex justify-between items-center p-3 rounded-lg border bg-muted/50 hover:border-primary/30 transition-colors">
                               <span className="text-sm truncate mr-2">{p.item}</span>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.price} L.E</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.price}</span>
                             </div>
                           ))}
                         </div>

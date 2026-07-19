@@ -50,15 +50,17 @@ async function fetchHighlights(): Promise<Highlight[]> {
   return data || [];
 }
 
+const adminClient = () => supabaseService || supabase;
+
 async function upsertHighlight(h: Partial<Highlight>): Promise<void> {
-  const { error } = await supabaseService
+  const { error } = await adminClient()
     .from('site_highlights')
     .upsert(h, { onConflict: 'id' });
   if (error) throw error;
 }
 
 async function deleteHighlight(id: string): Promise<void> {
-  const { error } = await supabaseService
+  const { error } = await adminClient()
     .from('site_highlights')
     .delete()
     .eq('id', id);
@@ -78,9 +80,9 @@ function NewHighlightForm({ onDone }: { onDone: () => void }) {
     try {
       const ext = file.name.split('.').pop();
       const path = `highlights/${Date.now()}.${ext}`;
-      const { error } = await supabaseService.storage.from('media').upload(path, file, { upsert: true });
+      const { error } = await adminClient().storage.from('media').upload(path, file, { upsert: true });
       if (error) throw error;
-      const { data } = supabaseService.storage.from('media').getPublicUrl(path);
+      const { data } = adminClient().storage.from('media').getPublicUrl(path);
       set('url', data.publicUrl);
       toast.success('File uploaded');
     } catch (err: any) {

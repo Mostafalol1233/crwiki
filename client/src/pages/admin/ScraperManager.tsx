@@ -160,7 +160,7 @@ export default function ScraperManager() {
           event_name_slug: slug,
           description: `CrossFire Forum Announcement. Source: ${post.url}`,
           description_ar: post.titleAr ? `إعلان من منتدى كروس فاير. المصدر: ${post.url}` : null,
-          image: post.image || null,
+          image_url: post.image || null,
           type: 'announcement',
           source_url: post.url,
           date: post.date,

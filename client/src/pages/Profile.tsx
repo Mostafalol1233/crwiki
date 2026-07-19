@@ -80,6 +80,7 @@ export default function Profile() {
   const [cfError, setCfError] = useState("");
   const [cfLinkMode, setCfLinkMode] = useState(false);
   const [cfSyncTime, setCfSyncTime] = useState<string | null>(null);
+  const [cfRegion, setCfRegion] = useState<"na" | "west">("na");
 
   useEffect(() => {
     getCurrentUser().then(async (u) => {
@@ -93,10 +94,12 @@ export default function Profile() {
         const savedNick = u.user_metadata?.cf_nickname || "";
         const savedStats = u.user_metadata?.cf_stats || null;
         const savedSync = u.user_metadata?.cf_last_sync || null;
+        const savedRegion = u.user_metadata?.cf_region || "na";
         setCfNickname(savedNick);
         setCfNicknameInput(savedNick);
         if (savedStats) setCfStats(savedStats);
         if (savedSync) setCfSyncTime(savedSync);
+        setCfRegion(savedRegion as "na" | "west");
 
         // Fetch real ticket and comment counts
         if (u.email) {
@@ -165,15 +168,11 @@ export default function Profile() {
     setCfLoading(true);
     setCfError("");
     try {
-      const res = await fetch(`/api/player/lookup?nickname=${encodeURIComponent(nick.trim())}`);
+      const res = await fetch(`/api/player/lookup?nickname=${encodeURIComponent(nick.trim())}&region=${cfRegion}`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        if (data.notFound) {
-          setCfError(`Player "${nick}" not found on CrossFire NA. Check the nickname and try again.`);
-        } else {
-          setCfError(data.error || "Could not fetch stats. Try again shortly.");
-        }
+        setCfError(data.error || "Could not fetch stats. Try again shortly.");
         return;
       }
 
@@ -187,6 +186,7 @@ export default function Profile() {
       await supabase.auth.updateUser({
         data: {
           cf_nickname: nick.trim(),
+          cf_region: cfRegion,
           cf_stats: data.profile,
           cf_last_sync: now,
         },
@@ -545,8 +545,26 @@ export default function Profile() {
                   <div>
                     <p className="text-[11px] mb-3" style={{ color: "#666" }}>
                       Enter your <strong style={{ color: GOLD }}>CrossFire in-game nickname</strong> exactly as it appears in the game.
-                      We'll automatically fetch your EXP, rank, K/D, kills, and more from CrossFire NA.
+                      We'll automatically fetch your EXP, rank, K/D, kills, and more.
                     </p>
+                    {/* Region selector */}
+                    <div className="flex gap-2 mb-2">
+                      {(["na", "west"] as const).map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => { setCfRegion(r); setCfError(""); }}
+                          className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 transition-all"
+                          style={{
+                            borderRadius: "2px",
+                            border: cfRegion === r ? `1px solid ${GOLD}` : "1px solid rgba(255,255,255,0.1)",
+                            background: cfRegion === r ? "rgba(245,166,35,0.12)" : "rgba(255,255,255,0.02)",
+                            color: cfRegion === r ? GOLD : "#555",
+                          }}
+                        >
+                          {r === "na" ? "CF NA" : "CF West"}
+                        </button>
+                      ))}
+                    </div>
                     <div className="flex gap-2">
                       <input
                         value={cfNicknameInput}
@@ -595,7 +613,7 @@ export default function Profile() {
                   )}
 
                   <p className="text-[9px]" style={{ color: "#383838" }}>
-                    Stats are fetched live from CrossFire NA (crossfire.z8games.com) and cached on your profile.
+                    Stats are fetched live from {cfRegion === "west" ? "CrossFire West" : "CrossFire NA"} and cached on your profile.
                     Case-sensitive — use your exact in-game nickname.
                   </p>
 

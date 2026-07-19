@@ -6642,40 +6642,69 @@ app.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req,
 // Real API discovered from naprofile2 React bundle: /rest/userprofile.json?usn=<nickname>
 app.get("/api/player/lookup", apiLimiter, async (req, res) => {
     const nickname = String(req.query.nickname || "").trim();
+    const region = String(req.query.region || "na").toLowerCase(); // "na" or "west"
     if (!nickname || nickname.length < 2 || nickname.length > 32) {
         return res.status(400).json({ error: "Invalid nickname" });
     }
-    try {
-        const { fetch } = await import("undici");
-        const CF_PROFILE_API = `https://crossfire.z8games.com/rest/userprofile.json?usn=${encodeURIComponent(nickname)}`;
-        const response = await fetch(CF_PROFILE_API, {
-            signal: AbortSignal.timeout(12000),
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Referer": "https://crossfire.z8games.com/myprofile.html",
-                "sec-fetch-site": "same-origin",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-dest": "empty",
-            },
-        });
 
+    // Region → base API URLs to try in order
+    // CF West (cfwest.z8games.com) was shut down by Bigpoint but the endpoint may still exist;
+    // we try it first for "west", then fall back to the NA endpoint as some accounts transferred.
+    const endpointsByRegion = {
+        west: [
+            "https://cfwest.z8games.com/rest/userprofile.json",
+            "https://crossfire.z8games.com/rest/userprofile.json",
+        ],
+        na: [
+            "https://crossfire.z8games.com/rest/userprofile.json",
+        ],
+    };
+    const endpoints = endpointsByRegion[region] || endpointsByRegion.na;
+    const regionLabel = region === "west" ? "CrossFire West" : "CrossFire NA";
+
+    const CF_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://crossfire.z8games.com/myprofile.html",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+    };
+
+    async function tryFetch(baseUrl) {
+        const { fetch } = await import("undici");
+        const url = `${baseUrl}?usn=${encodeURIComponent(nickname)}`;
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000), headers: CF_HEADERS });
         const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("json")) {
-            return res.status(502).json({ error: "CF API returned non-JSON response", notFound: false });
+        if (!contentType.includes("json")) return null; // not JSON — skip this endpoint
+        const data = await response.json();
+        if (data.p_o_ErrID === -702 || data.p_o_ErrDesc === "Character not found") return "not_found";
+        return data;
+    }
+
+    try {
+        let data = null;
+        for (const endpoint of endpoints) {
+            const result = await tryFetch(endpoint).catch(() => null);
+            if (result && result !== "not_found") { data = result; break; }
+            if (result === "not_found") break; // definitive not-found from this server
         }
 
-        const data = await response.json();
-
-        // Error code -702 = player not found
-        if (data.p_o_ErrID === -702 || data.p_o_ErrDesc === "Character not found") {
-            return res.status(404).json({ error: "Player not found", notFound: true });
+        if (!data) {
+            if (region === "west") {
+                return res.status(404).json({
+                    error: `Player "${nickname}" not found. CrossFire West was discontinued — if you played CF West, stats may no longer be available. Try switching to CrossFire NA.`,
+                    notFound: true,
+                });
+            }
+            return res.status(404).json({ error: `Player "${nickname}" not found on ${regionLabel}. Check spelling (case-sensitive) and try again.`, notFound: true });
         }
 
         // Normalize the response to a clean shape
         const profile = {
             nickname: data.UserNickname || data.usn || nickname,
+            region: regionLabel,
             exp: data.TotalExp ?? data.UserExp ?? data.exp ?? null,
             rank: data.RankName || data.rank_name || data.Rank || null,
             rankTier: data.RankNo || data.rank_no || data.RankTier || null,

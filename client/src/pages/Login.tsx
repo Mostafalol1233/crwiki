@@ -21,7 +21,7 @@ export default function Login() {
       if (!data.user) throw new Error("Login failed");
       localStorage.setItem("userId", data.user.id || "");
       localStorage.setItem("username", data.user.user_metadata?.username || values.identifier);
-      setLocation("/");
+      setLocation("/profile");
     } catch (e: any) {
       setStatus(e.message || "Login failed. Check your credentials.");
     } finally {

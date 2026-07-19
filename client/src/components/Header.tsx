@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface DropdownItem { path: string; label: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
@@ -17,11 +18,19 @@ export function Header() {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [searchQ, setSearchQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 4);
     window.addEventListener("scroll", h, { passive: true });
     return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  // Reactive auth state — tracks Supabase session changes (login / logout)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -76,11 +85,9 @@ export function Header() {
     },
   ];
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-  let user: any = null;
-  if (userStr) { try { user = JSON.parse(userStr); } catch { } }
-  const isLoggedIn = !!(token && user);
+  const isLoggedIn = !!session?.user;
+  const user = session?.user ?? null;
+  const username = user?.user_metadata?.username || user?.email?.split("@")[0] || "Profile";
 
   const isActive = (items: DropdownItem[]) => items.some(i => location === i.path || location.startsWith(i.path + "/"));
 
@@ -198,7 +205,7 @@ export function Header() {
                 fontWeight: 500, cursor: "pointer",
               }}>
                 <User size={13} strokeWidth={1.5} />
-                {user?.username || "Profile"}
+                {username}
                 <ChevronDown size={11} strokeWidth={2} style={{ opacity: 0.4 }} />
               </button>
               <div className="absolute right-0 top-full mt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 pt-1" style={{ minWidth: 170 }}>
@@ -220,7 +227,7 @@ export function Header() {
                       <Icon size={13} strokeWidth={1.5} /> {label}
                     </Link>
                   ))}
-                  <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); window.location.href = "/"; }}
+                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); window.location.href = "/"; }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
                       fontSize: 13, color: "rgba(239,68,68,0.7)", background: "none", border: "none",
@@ -327,7 +334,7 @@ export function Header() {
               </div>
             ) : (
               <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: ACCENT, textDecoration: "none", border: `1px solid rgba(212,160,23,0.4)`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
-                {user?.username}
+                {username}
               </Link>
             )}
           </div>

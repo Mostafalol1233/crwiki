@@ -9,10 +9,10 @@ interface GM {
 }
 
 const GMS: GM[] = [
-  { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Community Manager", lastSeen: "Jun 3", color: "#e53e3e" },
-  { name: "[GM]Juicebox", avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Game Master", lastSeen: "May 21", color: "#d4a017" },
-  { name: "[GM]Vinsi", avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Support GM", lastSeen: "Apr 27", color: "#38a169" },
-  { name: "[GM]Ronin", avatar: "https://files.catbox.moe/eck3jc.jpeg", role: "Events GM", lastSeen: "May 10", color: "#3b82f6" },
+  { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Support & System Operations", lastSeen: "Jun 3", color: "#e53e3e" },
+  { name: "[GM]Xenon", avatar: "", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
+  { name: "[GM]Juicebox", avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "May 21", color: "#38a169" },
+  { name: "[GM]Vinsi", avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Apr 27", color: "#3b82f6" },
 ];
 
 export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {

@@ -6637,6 +6637,80 @@ app.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req,
     }
 });
 
+// ── CF Player Lookup ──────────────────────────────────────────────────────────
+// Uses undici (HTTP/2 capable) to bypass Akamai CDN protection
+// Real API discovered from naprofile2 React bundle: /rest/userprofile.json?usn=<nickname>
+app.get("/api/player/lookup", apiLimiter, async (req, res) => {
+    const nickname = String(req.query.nickname || "").trim();
+    if (!nickname || nickname.length < 2 || nickname.length > 32) {
+        return res.status(400).json({ error: "Invalid nickname" });
+    }
+    try {
+        const { fetch } = await import("undici");
+        const CF_PROFILE_API = `https://crossfire.z8games.com/rest/userprofile.json?usn=${encodeURIComponent(nickname)}`;
+        const response = await fetch(CF_PROFILE_API, {
+            signal: AbortSignal.timeout(12000),
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://crossfire.z8games.com/myprofile.html",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-dest": "empty",
+            },
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("json")) {
+            return res.status(502).json({ error: "CF API returned non-JSON response", notFound: false });
+        }
+
+        const data = await response.json();
+
+        // Error code -702 = player not found
+        if (data.p_o_ErrID === -702 || data.p_o_ErrDesc === "Character not found") {
+            return res.status(404).json({ error: "Player not found", notFound: true });
+        }
+
+        // Normalize the response to a clean shape
+        const profile = {
+            nickname: data.UserNickname || data.usn || nickname,
+            exp: data.TotalExp ?? data.UserExp ?? data.exp ?? null,
+            rank: data.RankName || data.rank_name || data.Rank || null,
+            rankTier: data.RankNo || data.rank_no || data.RankTier || null,
+            rankImage: data.RankImg || data.rank_img || null,
+            kills: data.TotalKills ?? data.total_kills ?? data.Kills ?? null,
+            deaths: data.TotalDeaths ?? data.total_deaths ?? data.Deaths ?? null,
+            wins: data.TotalWins ?? data.total_wins ?? data.Wins ?? null,
+            losses: data.TotalLosses ?? data.total_losses ?? data.Losses ?? null,
+            kdRatio: null,
+            winRate: null,
+            playtime: data.PlayTime || data.play_time || null,
+            level: data.UserLevel || data.level || null,
+            clan: data.ClanName || data.clan_name || null,
+            raw: data,
+        };
+
+        // Calculate derived stats
+        if (profile.kills !== null && profile.deaths !== null && profile.deaths > 0) {
+            profile.kdRatio = (profile.kills / profile.deaths).toFixed(2);
+        }
+        if (profile.wins !== null && profile.losses !== null) {
+            const total = profile.wins + profile.losses;
+            if (total > 0) profile.winRate = ((profile.wins / total) * 100).toFixed(1);
+        }
+
+        return res.json({ success: true, profile });
+    } catch (err) {
+        if (err.name === "TimeoutError" || err.message?.includes("timeout")) {
+            return res.status(504).json({ error: "CF servers timed out, try again shortly" });
+        }
+        console.error("[CF Player Lookup] Error:", err.message);
+        return res.status(500).json({ error: "Failed to fetch player data" });
+    }
+});
+
 // Static serving for predictable insert URLs
 try {
     const insertDir = path.resolve("backend-deploy-full/uploads/insert");

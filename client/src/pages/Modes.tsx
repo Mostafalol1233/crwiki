@@ -113,7 +113,7 @@ function classifyModeCategory(haystack: string): ModeCategoryTab {
 }
 
 function resolveModeMeta(mode: Mode): Pick<NormalizedMode, "label" | "imageResolved" | "category" | "maps" | "sourceLinks"> {
-  const raw = String(mode.image || "").trim();
+  const raw = String(mode.image_url || mode.image || "").trim();
   const normalized = raw.replace(/\\/g, "/").replace(/\?.*$/, "").replace(/#.*$/, "");
   const filename = normalized.split("/").pop()?.toLowerCase() || "";
   const haystack = `${mode.name || ""} ${mode.type || ""} ${mode.description || ""}`.toLowerCase();

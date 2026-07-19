@@ -90,7 +90,7 @@ const extractBonus = (rank: Rank) => {
 };
 
 const getRankImage = (rank: Rank): string => {
-  const url = rank.emblem || rank.image || rank.imageUrl || "";
+  const url = rank.image_url || rank.emblem || rank.image || rank.imageUrl || "";
   if (url && (url.startsWith("http") || url.startsWith("/"))) return url;
   // Fallback: build z8games CDN URL from tier number
   if (rank.tier && rank.tier > 0) return `${Z8}${rank.tier}.jpg`;

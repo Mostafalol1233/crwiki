@@ -55,7 +55,7 @@ import TargetCursor from "@/components/TargetCursor";
 
 // ══════════════════════════════════════════════
 // 🔧 MAINTENANCE MODE — غير true لـ false لفتح الموقع
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 // ══════════════════════════════════════════════
 
 // Lazy load admin pages

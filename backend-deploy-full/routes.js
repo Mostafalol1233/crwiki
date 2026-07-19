@@ -541,6 +541,42 @@ export async function registerRoutes(app) {
     });
     // User auth for chat
     const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+    // Instant registration — no email confirmation required
+    app.post("/api/auth/register", authLimiter, async (req, res) => {
+        try {
+            const { email, password, username, phone, avatar } = req.body;
+            if (!email || !password || !username) {
+                return res.status(400).json({ error: "Email, password and username are required" });
+            }
+            const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+            const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
+            if (!SUPABASE_URL || !SERVICE_KEY) {
+                return res.status(500).json({ error: "Server misconfigured" });
+            }
+            const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": SERVICE_KEY,
+                    "Authorization": `Bearer ${SERVICE_KEY}`,
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    email_confirm: true,
+                    user_metadata: { username, phone: phone || "", avatar: avatar || "" },
+                }),
+            });
+            const createData = await createRes.json();
+            if (!createRes.ok) {
+                const msg = createData?.msg || createData?.message || createData?.error_description || "Registration failed";
+                return res.status(createRes.status === 422 ? 409 : 400).json({ error: msg });
+            }
+            res.status(200).json({ success: true, user: { id: createData.id, email: createData.email } });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
     app.post("/api/users/register", authLimiter, async (req, res) => {
         try {
             const { username, email, phone, password } = req.body;

@@ -4,6 +4,75 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
 
+// Register endpoint — creates user with email already confirmed (no confirmation step)
+function cfRegisterPlugin(): Plugin {
+  return {
+    name: "cf-register",
+    configureServer(server) {
+      server.middlewares.use("/api/auth/register", async (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "Method not allowed" }));
+        }
+        try {
+          const chunks: Buffer[] = [];
+          await new Promise<void>((resolve) => {
+            req.on("data", (c: Buffer) => chunks.push(c));
+            req.on("end", resolve);
+          });
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          const { email, password, username, phone, avatar } = body;
+
+          if (!email || !password || !username) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Email, password and username are required" }));
+          }
+
+          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
+
+          if (!SUPABASE_URL || !SERVICE_KEY) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Server misconfigured" }));
+          }
+
+          const { fetch: undiciFetch } = await import("undici");
+
+          // Create user via Supabase Admin API with email already confirmed
+          const createRes = await undiciFetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SERVICE_KEY,
+              "Authorization": `Bearer ${SERVICE_KEY}`,
+            },
+            body: JSON.stringify({
+              email,
+              password,
+              email_confirm: true,
+              user_metadata: { username, phone: phone || "", avatar: avatar || "" },
+            }),
+          } as any);
+
+          const createData = await createRes.json() as any;
+
+          if (!createRes.ok) {
+            const msg = createData?.msg || createData?.message || createData?.error_description || "Registration failed";
+            res.writeHead(createRes.status === 422 ? 409 : 400, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: msg }));
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, user: { id: createData.id, email: createData.email } }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Registration failed" }));
+        }
+      });
+    },
+  };
+}
+
 // CF player lookup dev middleware — bypasses Akamai using undici (HTTP/2)
 function cfPlayerLookupPlugin(): Plugin {
   return {
@@ -85,6 +154,7 @@ function cfPlayerLookupPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [
+    cfRegisterPlugin(),
     cfPlayerLookupPlugin(),
     react(),
     runtimeErrorOverlay(),

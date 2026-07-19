@@ -57,22 +57,31 @@ export default function Register() {
   const onSubmit = async (values: any) => {
     setStatus("Creating account...");
     try {
-      const { signUp } = await import("@/lib/supabaseApi");
-      await signUp(values.email, values.password, {
-        username: values.username,
-        phone: values.phone || "",
-        avatar: avatarUrl,
+      // Register via server-side endpoint — email is confirmed instantly, no verification step
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+          username: values.username,
+          phone: values.phone || "",
+          avatar: avatarUrl,
+        }),
       });
-      try {
-        sessionStorage.setItem("prefillLogin", JSON.stringify({ identifier: values.email, password: values.password }));
-      } catch {}
-      toast({ title: "Account created", description: "Check your email to confirm, then sign in." });
-      setLocation("/login");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Registration failed");
+
+      // Immediately sign in — no confirmation email needed
+      setStatus("Signing in...");
+      const { signIn } = await import("@/lib/supabaseApi");
+      await signIn(values.email, values.password);
+
+      toast({ title: "Welcome!", description: "Your account is ready." });
+      setLocation("/");
     } catch (e: any) {
       const msg = String(e.message || "");
-      if (msg.toLowerCase().includes("email")) {
-        setStatus("This email address couldn't be registered. Try a different email (e.g. Gmail, Outlook).");
-      } else if (msg.toLowerCase().includes("already")) {
+      if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already been registered") || msg.toLowerCase().includes("already exists")) {
         setStatus("An account with this email already exists. Try signing in instead.");
       } else if (msg.toLowerCase().includes("password")) {
         setStatus("Password doesn't meet requirements. Please choose a stronger password.");

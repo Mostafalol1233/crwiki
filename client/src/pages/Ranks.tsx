@@ -78,6 +78,9 @@ const STATIC_RANKS: Rank[] = [
 ];
 
 const extractExpRequired = (rank: Rank) => {
+  // Supabase returns snake_case column name
+  const fromDb = (rank as any).exp_required;
+  if (typeof fromDb === "number" && fromDb > 0) return fromDb;
   if (typeof rank.expRequired === "number" && rank.expRequired > 0) return rank.expRequired;
   const match = String(rank.requirements || "").match(/exp required:\s*([\d,]+)/i);
   return match ? Number(match[1].replace(/,/g, "")) : 0;

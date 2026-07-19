@@ -32,131 +32,132 @@ const CATBOX = 'https://files.catbox.moe';
 
 // ─── RANKS ───────────────────────────────────────────────────────────────────
 // Real CrossFire rank names mapped 1-to-1 with the Z8 CDN image tiers.
-// Bonus info is stored in requirements so the Ranks page can display it.
+// exp_required values are approximate real CrossFire progression requirements.
 const RANKS = [
   // ── Trainee ──
-  { tier:   1, name: 'Trainee 1',              group: 'Trainee',              bonus: '' },
-  { tier:   2, name: 'Trainee 2',              group: 'Trainee',              bonus: 'Smile Grenade 7 days' },
+  { tier:   1, name: 'Trainee 1',              group: 'Trainee',              bonus: '',                                  exp: 0 },
+  { tier:   2, name: 'Trainee 2',              group: 'Trainee',              bonus: 'Smile Grenade 7 days',              exp: 2000 },
   // ── Private ──
-  { tier:   3, name: 'Private',                group: 'Private',              bonus: 'Boost Box 3 days' },
-  { tier:   4, name: 'Private First Class',    group: 'Private',              bonus: 'Starter Weapon Box 3 days' },
+  { tier:   3, name: 'Private',                group: 'Private',              bonus: 'Boost Box 3 days',                  exp: 6000 },
+  { tier:   4, name: 'Private First Class',    group: 'Private',              bonus: 'Starter Weapon Box 3 days',         exp: 15000 },
   // ── Corporal ──
-  { tier:   5, name: 'Corporal',               group: 'Corporal',             bonus: 'Pottery Boost Box 7 days' },
+  { tier:   5, name: 'Corporal',               group: 'Corporal',             bonus: 'Pottery Boost Box 7 days',          exp: 30000 },
   // ── Sergeant ──
-  { tier:   6, name: 'Sergeant 1',             group: 'Sergeant',             bonus: 'Camo Box 7 days' },
-  { tier:   7, name: 'Sergeant 2',             group: 'Sergeant',             bonus: '' },
-  { tier:   8, name: 'Sergeant 3',             group: 'Sergeant',             bonus: '' },
-  { tier:   9, name: 'Sergeant 4',             group: 'Sergeant',             bonus: '30,000 GP' },
+  { tier:   6, name: 'Sergeant 1',             group: 'Sergeant',             bonus: 'Camo Box 7 days',                   exp: 55000 },
+  { tier:   7, name: 'Sergeant 2',             group: 'Sergeant',             bonus: '',                                  exp: 85000 },
+  { tier:   8, name: 'Sergeant 3',             group: 'Sergeant',             bonus: '',                                  exp: 120000 },
+  { tier:   9, name: 'Sergeant 4',             group: 'Sergeant',             bonus: '30,000 GP',                         exp: 165000 },
   // ── Staff Sergeant ──
-  { tier:  10, name: 'Staff Sergeant 1',       group: 'Staff Sergeant',       bonus: 'Red Dragon Box 7 days' },
-  { tier:  11, name: 'Staff Sergeant 2',       group: 'Staff Sergeant',       bonus: '' },
-  { tier:  12, name: 'Staff Sergeant 3',       group: 'Staff Sergeant',       bonus: '' },
-  { tier:  13, name: 'Staff Sergeant 4',       group: 'Staff Sergeant',       bonus: 'VIP Weapon Box 3 days' },
-  { tier:  14, name: 'Staff Sergeant 5',       group: 'Staff Sergeant',       bonus: '' },
-  { tier:  15, name: 'Staff Sergeant 6',       group: 'Staff Sergeant',       bonus: 'Red SMOKE 30 days' },
+  { tier:  10, name: 'Staff Sergeant 1',       group: 'Staff Sergeant',       bonus: 'Red Dragon Box 7 days',             exp: 220000 },
+  { tier:  11, name: 'Staff Sergeant 2',       group: 'Staff Sergeant',       bonus: '',                                  exp: 290000 },
+  { tier:  12, name: 'Staff Sergeant 3',       group: 'Staff Sergeant',       bonus: '',                                  exp: 370000 },
+  { tier:  13, name: 'Staff Sergeant 4',       group: 'Staff Sergeant',       bonus: 'VIP Weapon Box 3 days',             exp: 460000 },
+  { tier:  14, name: 'Staff Sergeant 5',       group: 'Staff Sergeant',       bonus: '',                                  exp: 560000 },
+  { tier:  15, name: 'Staff Sergeant 6',       group: 'Staff Sergeant',       bonus: 'Red SMOKE 30 days',                 exp: 675000 },
   // ── Sergeant First Class ──
-  { tier:  16, name: 'Sergeant First Class 1', group: 'Sergeant First Class', bonus: '' },
-  { tier:  17, name: 'Sergeant First Class 2', group: 'Sergeant First Class', bonus: '30,000 GP' },
-  { tier:  18, name: 'Sergeant First Class 3', group: 'Sergeant First Class', bonus: '' },
-  { tier:  19, name: 'Sergeant First Class 4', group: 'Sergeant First Class', bonus: 'AK-47-K-Yellow Fractal 14 days' },
-  { tier:  20, name: 'Sergeant First Class 5', group: 'Sergeant First Class', bonus: '' },
-  { tier:  21, name: 'Sergeant First Class 6', group: 'Sergeant First Class', bonus: 'B.C-Axe-Ares 7 days' },
+  { tier:  16, name: 'Sergeant First Class 1', group: 'Sergeant First Class', bonus: '',                                  exp: 800000 },
+  { tier:  17, name: 'Sergeant First Class 2', group: 'Sergeant First Class', bonus: '30,000 GP',                         exp: 950000 },
+  { tier:  18, name: 'Sergeant First Class 3', group: 'Sergeant First Class', bonus: '',                                  exp: 1100000 },
+  { tier:  19, name: 'Sergeant First Class 4', group: 'Sergeant First Class', bonus: 'AK-47-K-Yellow Fractal 14 days',    exp: 1300000 },
+  { tier:  20, name: 'Sergeant First Class 5', group: 'Sergeant First Class', bonus: '',                                  exp: 1500000 },
+  { tier:  21, name: 'Sergeant First Class 6', group: 'Sergeant First Class', bonus: 'B.C-Axe-Ares 7 days',              exp: 1750000 },
   // ── Master Sergeant ──
-  { tier:  22, name: 'Master Sergeant 1',      group: 'Master Sergeant',      bonus: '' },
-  { tier:  23, name: 'Master Sergeant 2',      group: 'Master Sergeant',      bonus: 'M4A1-S-Yellow Fractal 14 days' },
-  { tier:  24, name: 'Master Sergeant 3',      group: 'Master Sergeant',      bonus: '' },
-  { tier:  25, name: 'Master Sergeant 4',      group: 'Master Sergeant',      bonus: 'Barrett M82A1-Royal Dragon 7 days' },
-  { tier:  26, name: 'Master Sergeant 5',      group: 'Master Sergeant',      bonus: '' },
-  { tier:  27, name: 'Master Sergeant 6',      group: 'Master Sergeant',      bonus: 'Sidearm Box 7 days' },
+  { tier:  22, name: 'Master Sergeant 1',      group: 'Master Sergeant',      bonus: '',                                  exp: 2000000 },
+  { tier:  23, name: 'Master Sergeant 2',      group: 'Master Sergeant',      bonus: 'M4A1-S-Yellow Fractal 14 days',     exp: 2300000 },
+  { tier:  24, name: 'Master Sergeant 3',      group: 'Master Sergeant',      bonus: '',                                  exp: 2650000 },
+  { tier:  25, name: 'Master Sergeant 4',      group: 'Master Sergeant',      bonus: 'Barrett M82A1-Royal Dragon 7 days', exp: 3000000 },
+  { tier:  26, name: 'Master Sergeant 5',      group: 'Master Sergeant',      bonus: '',                                  exp: 3400000 },
+  { tier:  27, name: 'Master Sergeant 6',      group: 'Master Sergeant',      bonus: 'Sidearm Box 7 days',                exp: 3850000 },
   // ── Second Lieutenant ──
-  { tier:  28, name: 'Second Lieutenant 1',    group: 'Second Lieutenant',    bonus: '' },
-  { tier:  29, name: 'Second Lieutenant 2',    group: 'Second Lieutenant',    bonus: 'M4A1-S-Yellow Fractal 30 days' },
-  { tier:  30, name: 'Second Lieutenant 3',    group: 'Second Lieutenant',    bonus: '' },
-  { tier:  31, name: 'Second Lieutenant 4',    group: 'Second Lieutenant',    bonus: 'Throw Weapon Box 30 days' },
-  { tier:  32, name: 'Second Lieutenant 5',    group: 'Second Lieutenant',    bonus: '' },
-  { tier:  33, name: 'Second Lieutenant 6',    group: 'Second Lieutenant',    bonus: 'KAC Chainsaw-Ancient Dragon 30 days' },
-  { tier:  34, name: 'Second Lieutenant 7',    group: 'Second Lieutenant',    bonus: '' },
-  { tier:  35, name: 'Second Lieutenant 8',    group: 'Second Lieutenant',    bonus: 'Kukri-Royal Dragon 30 days' },
+  { tier:  28, name: 'Second Lieutenant 1',    group: 'Second Lieutenant',    bonus: '',                                  exp: 4350000 },
+  { tier:  29, name: 'Second Lieutenant 2',    group: 'Second Lieutenant',    bonus: 'M4A1-S-Yellow Fractal 30 days',     exp: 4900000 },
+  { tier:  30, name: 'Second Lieutenant 3',    group: 'Second Lieutenant',    bonus: '',                                  exp: 5500000 },
+  { tier:  31, name: 'Second Lieutenant 4',    group: 'Second Lieutenant',    bonus: 'Throw Weapon Box 30 days',          exp: 6200000 },
+  { tier:  32, name: 'Second Lieutenant 5',    group: 'Second Lieutenant',    bonus: '',                                  exp: 6950000 },
+  { tier:  33, name: 'Second Lieutenant 6',    group: 'Second Lieutenant',    bonus: 'KAC Chainsaw-Ancient Dragon 30 days', exp: 7800000 },
+  { tier:  34, name: 'Second Lieutenant 7',    group: 'Second Lieutenant',    bonus: '',                                  exp: 8750000 },
+  { tier:  35, name: 'Second Lieutenant 8',    group: 'Second Lieutenant',    bonus: 'Kukri-Royal Dragon 30 days',        exp: 9800000 },
   // ── First Lieutenant ──
-  { tier:  36, name: 'First Lieutenant 1',     group: 'First Lieutenant',     bonus: '' },
-  { tier:  37, name: 'First Lieutenant 2',     group: 'First Lieutenant',     bonus: 'AK-47-K-Yellow Fractal 30 days' },
-  { tier:  38, name: 'First Lieutenant 3',     group: 'First Lieutenant',     bonus: '' },
-  { tier:  39, name: 'First Lieutenant 4',     group: 'First Lieutenant',     bonus: 'Bulletproof Package 30 days' },
-  { tier:  40, name: 'First Lieutenant 5',     group: 'First Lieutenant',     bonus: '' },
-  { tier:  41, name: 'First Lieutenant 6',     group: 'First Lieutenant',     bonus: 'Rifle Box 30 days' },
-  { tier:  42, name: 'First Lieutenant 7',     group: 'First Lieutenant',     bonus: 'Blue Muzzle Flame 30 days' },
-  { tier:  43, name: 'First Lieutenant 8',     group: 'First Lieutenant',     bonus: '' },
+  { tier:  36, name: 'First Lieutenant 1',     group: 'First Lieutenant',     bonus: '',                                  exp: 11000000 },
+  { tier:  37, name: 'First Lieutenant 2',     group: 'First Lieutenant',     bonus: 'AK-47-K-Yellow Fractal 30 days',    exp: 12500000 },
+  { tier:  38, name: 'First Lieutenant 3',     group: 'First Lieutenant',     bonus: '',                                  exp: 14000000 },
+  { tier:  39, name: 'First Lieutenant 4',     group: 'First Lieutenant',     bonus: 'Bulletproof Package 30 days',       exp: 16000000 },
+  { tier:  40, name: 'First Lieutenant 5',     group: 'First Lieutenant',     bonus: '',                                  exp: 18000000 },
+  { tier:  41, name: 'First Lieutenant 6',     group: 'First Lieutenant',     bonus: 'Rifle Box 30 days',                 exp: 20500000 },
+  { tier:  42, name: 'First Lieutenant 7',     group: 'First Lieutenant',     bonus: 'Blue Muzzle Flame 30 days',         exp: 23000000 },
+  { tier:  43, name: 'First Lieutenant 8',     group: 'First Lieutenant',     bonus: '',                                  exp: 26000000 },
   // ── Captain ──
-  { tier:  44, name: 'Captain 1',              group: 'Captain',              bonus: '' },
-  { tier:  45, name: 'Captain 2',              group: 'Captain',              bonus: '30,000 GP' },
-  { tier:  46, name: 'Captain 3',              group: 'Captain',              bonus: '' },
-  { tier:  47, name: 'Captain 4',              group: 'Captain',              bonus: 'CFWE Pistol Ticket 30 days' },
-  { tier:  48, name: 'Captain 5',              group: 'Captain',              bonus: '' },
-  { tier:  49, name: 'Captain 6',              group: 'Captain',              bonus: 'Yellow Smoke 30 days' },
-  { tier:  50, name: 'Captain 7',              group: 'Captain',              bonus: '' },
-  { tier:  51, name: 'Captain 8',              group: 'Captain',              bonus: 'Green Muzzle Flame 30 days' },
+  { tier:  44, name: 'Captain 1',              group: 'Captain',              bonus: '',                                  exp: 29000000 },
+  { tier:  45, name: 'Captain 2',              group: 'Captain',              bonus: '30,000 GP',                         exp: 32500000 },
+  { tier:  46, name: 'Captain 3',              group: 'Captain',              bonus: '',                                  exp: 36500000 },
+  { tier:  47, name: 'Captain 4',              group: 'Captain',              bonus: 'CFWE Pistol Ticket 30 days',        exp: 41000000 },
+  { tier:  48, name: 'Captain 5',              group: 'Captain',              bonus: '',                                  exp: 46000000 },
+  { tier:  49, name: 'Captain 6',              group: 'Captain',              bonus: 'Yellow Smoke 30 days',              exp: 51500000 },
+  { tier:  50, name: 'Captain 7',              group: 'Captain',              bonus: '',                                  exp: 58000000 },
+  { tier:  51, name: 'Captain 8',              group: 'Captain',              bonus: 'Green Muzzle Flame 30 days',        exp: 65000000 },
   // ── Major ──
-  { tier:  52, name: 'Major 1',                group: 'Major',                bonus: '30,000 GP' },
-  { tier:  53, name: 'Major 2',                group: 'Major',                bonus: '' },
-  { tier:  54, name: 'Major 3',                group: 'Major',                bonus: 'Mutant Box 30 days' },
-  { tier:  55, name: 'Major 4',                group: 'Major',                bonus: '' },
-  { tier:  56, name: 'Major 5',                group: 'Major',                bonus: '' },
-  { tier:  57, name: 'Major 6',                group: 'Major',                bonus: 'CFWE Sniper Ticket 30 days' },
-  { tier:  58, name: 'Major 7',                group: 'Major',                bonus: 'Octane Camo Grenade 30 days' },
-  { tier:  59, name: 'Major 8',                group: 'Major',                bonus: 'CFWE MG Ticket 30 days' },
+  { tier:  52, name: 'Major 1',                group: 'Major',                bonus: '30,000 GP',                         exp: 73000000 },
+  { tier:  53, name: 'Major 2',                group: 'Major',                bonus: '',                                  exp: 82000000 },
+  { tier:  54, name: 'Major 3',                group: 'Major',                bonus: 'Mutant Box 30 days',                exp: 92000000 },
+  { tier:  55, name: 'Major 4',                group: 'Major',                bonus: '',                                  exp: 103000000 },
+  { tier:  56, name: 'Major 5',                group: 'Major',                bonus: '',                                  exp: 115000000 },
+  { tier:  57, name: 'Major 6',                group: 'Major',                bonus: 'CFWE Sniper Ticket 30 days',        exp: 128000000 },
+  { tier:  58, name: 'Major 7',                group: 'Major',                bonus: 'Octane Camo Grenade 30 days',       exp: 143000000 },
+  { tier:  59, name: 'Major 8',                group: 'Major',                bonus: 'CFWE MG Ticket 30 days',            exp: 159000000 },
   // ── Lieutenant Colonel ──
-  { tier:  60, name: 'Lieutenant Colonel 1',   group: 'Lieutenant Colonel',   bonus: '' },
-  { tier:  61, name: 'Lieutenant Colonel 2',   group: 'Lieutenant Colonel',   bonus: 'Bulletproof Package 30 days' },
-  { tier:  62, name: 'Lieutenant Colonel 3',   group: 'Lieutenant Colonel',   bonus: 'CFWE SMG Ticket 30 days' },
-  { tier:  63, name: 'Lieutenant Colonel 4',   group: 'Lieutenant Colonel',   bonus: 'M4A1 Custom-Octane Camo 30 days' },
-  { tier:  64, name: 'Lieutenant Colonel 5',   group: 'Lieutenant Colonel',   bonus: '' },
-  { tier:  65, name: 'Lieutenant Colonel 6',   group: 'Lieutenant Colonel',   bonus: 'CFWE Rifle Ticket 30 days' },
-  { tier:  66, name: 'Lieutenant Colonel 7',   group: 'Lieutenant Colonel',   bonus: '' },
-  { tier:  67, name: 'Lieutenant Colonel 8',   group: 'Lieutenant Colonel',   bonus: '10 Horus Crates' },
+  { tier:  60, name: 'Lieutenant Colonel 1',   group: 'Lieutenant Colonel',   bonus: '',                                  exp: 177000000 },
+  { tier:  61, name: 'Lieutenant Colonel 2',   group: 'Lieutenant Colonel',   bonus: 'Bulletproof Package 30 days',       exp: 197000000 },
+  { tier:  62, name: 'Lieutenant Colonel 3',   group: 'Lieutenant Colonel',   bonus: 'CFWE SMG Ticket 30 days',           exp: 219000000 },
+  { tier:  63, name: 'Lieutenant Colonel 4',   group: 'Lieutenant Colonel',   bonus: 'M4A1 Custom-Octane Camo 30 days',  exp: 243000000 },
+  { tier:  64, name: 'Lieutenant Colonel 5',   group: 'Lieutenant Colonel',   bonus: '',                                  exp: 269000000 },
+  { tier:  65, name: 'Lieutenant Colonel 6',   group: 'Lieutenant Colonel',   bonus: 'CFWE Rifle Ticket 30 days',         exp: 297000000 },
+  { tier:  66, name: 'Lieutenant Colonel 7',   group: 'Lieutenant Colonel',   bonus: '',                                  exp: 328000000 },
+  { tier:  67, name: 'Lieutenant Colonel 8',   group: 'Lieutenant Colonel',   bonus: '10 Horus Crates',                   exp: 361000000 },
   // ── Colonel ──
-  { tier:  68, name: 'Colonel 1',              group: 'Colonel',              bonus: '' },
-  { tier:  69, name: 'Colonel 2',              group: 'Colonel',              bonus: '' },
-  { tier:  70, name: 'Colonel 3',              group: 'Colonel',              bonus: 'M4A1-S-Yellow Fractal 60 days' },
-  { tier:  71, name: 'Colonel 4',              group: 'Colonel',              bonus: '' },
-  { tier:  72, name: 'Colonel 5',              group: 'Colonel',              bonus: 'BC Axe-Octane Camo 30 days' },
-  { tier:  73, name: 'Colonel 6',              group: 'Colonel',              bonus: '' },
-  { tier:  74, name: 'Colonel 7',              group: 'Colonel',              bonus: 'Character Box 30 days' },
-  { tier:  75, name: 'Colonel 8',              group: 'Colonel',              bonus: '10 Octane Crates' },
+  { tier:  68, name: 'Colonel 1',              group: 'Colonel',              bonus: '',                                  exp: 397000000 },
+  { tier:  69, name: 'Colonel 2',              group: 'Colonel',              bonus: '',                                  exp: 436000000 },
+  { tier:  70, name: 'Colonel 3',              group: 'Colonel',              bonus: 'M4A1-S-Yellow Fractal 60 days',     exp: 478000000 },
+  { tier:  71, name: 'Colonel 4',              group: 'Colonel',              bonus: '',                                  exp: 524000000 },
+  { tier:  72, name: 'Colonel 5',              group: 'Colonel',              bonus: 'BC Axe-Octane Camo 30 days',        exp: 573000000 },
+  { tier:  73, name: 'Colonel 6',              group: 'Colonel',              bonus: '',                                  exp: 626000000 },
+  { tier:  74, name: 'Colonel 7',              group: 'Colonel',              bonus: 'Character Box 30 days',             exp: 683000000 },
+  { tier:  75, name: 'Colonel 8',              group: 'Colonel',              bonus: '10 Octane Crates',                  exp: 744000000 },
   // ── Brigadier General ──
-  { tier:  76, name: 'Brigadier General 1',    group: 'Brigadier General',    bonus: '' },
-  { tier:  77, name: 'Brigadier General 2',    group: 'Brigadier General',    bonus: '' },
-  { tier:  78, name: 'Brigadier General 3',    group: 'Brigadier General',    bonus: '' },
-  { tier:  79, name: 'Brigadier General 4',    group: 'Brigadier General',    bonus: 'AK-47-K-Yellow Fractal 60 days' },
-  { tier:  80, name: 'Brigadier General 5',    group: 'Brigadier General',    bonus: '' },
-  { tier:  81, name: 'Brigadier General 6',    group: 'Brigadier General',    bonus: '30 x 7th Anniversary Crates' },
+  { tier:  76, name: 'Brigadier General 1',    group: 'Brigadier General',    bonus: '',                                  exp: 810000000 },
+  { tier:  77, name: 'Brigadier General 2',    group: 'Brigadier General',    bonus: '',                                  exp: 881000000 },
+  { tier:  78, name: 'Brigadier General 3',    group: 'Brigadier General',    bonus: '',                                  exp: 957000000 },
+  { tier:  79, name: 'Brigadier General 4',    group: 'Brigadier General',    bonus: 'AK-47-K-Yellow Fractal 60 days',   exp: 1040000000 },
+  { tier:  80, name: 'Brigadier General 5',    group: 'Brigadier General',    bonus: '',                                  exp: 1128000000 },
+  { tier:  81, name: 'Brigadier General 6',    group: 'Brigadier General',    bonus: '30 x 7th Anniversary Crates',      exp: 1222000000 },
   // ── Major General ──
-  { tier:  82, name: 'Major General 1',        group: 'Major General',        bonus: '' },
-  { tier:  83, name: 'Major General 2',        group: 'Major General',        bonus: 'G-Yellow Crystal perm' },
-  { tier:  84, name: 'Major General 3',        group: 'Major General',        bonus: '' },
-  { tier:  85, name: 'Major General 4',        group: 'Major General',        bonus: '' },
-  { tier:  86, name: 'Major General 5',        group: 'Major General',        bonus: '10 Color Blaze Crates' },
-  { tier:  87, name: 'Major General 6',        group: 'Major General',        bonus: 'Slaughter Ticket Box' },
+  { tier:  82, name: 'Major General 1',        group: 'Major General',        bonus: '',                                  exp: 1323000000 },
+  { tier:  83, name: 'Major General 2',        group: 'Major General',        bonus: 'G-Yellow Crystal perm',             exp: 1432000000 },
+  { tier:  84, name: 'Major General 3',        group: 'Major General',        bonus: '',                                  exp: 1549000000 },
+  { tier:  85, name: 'Major General 4',        group: 'Major General',        bonus: '',                                  exp: 1674000000 },
+  { tier:  86, name: 'Major General 5',        group: 'Major General',        bonus: '10 Color Blaze Crates',             exp: 1808000000 },
+  { tier:  87, name: 'Major General 6',        group: 'Major General',        bonus: 'Slaughter Ticket Box',              exp: 1951000000 },
   // ── Lieutenant General ──
-  { tier:  88, name: 'Lieutenant General 1',   group: 'Lieutenant General',   bonus: '' },
-  { tier:  89, name: 'Lieutenant General 2',   group: 'Lieutenant General',   bonus: '' },
-  { tier:  90, name: 'Lieutenant General 3',   group: 'Lieutenant General',   bonus: 'M4A1-S-Yellow Fractal perm' },
-  { tier:  91, name: 'Lieutenant General 4',   group: 'Lieutenant General',   bonus: '' },
-  { tier:  92, name: 'Lieutenant General 5',   group: 'Lieutenant General',   bonus: '' },
-  { tier:  93, name: 'Lieutenant General 6',   group: 'Lieutenant General',   bonus: 'RPK-Infernal Dragon 30 days' },
+  { tier:  88, name: 'Lieutenant General 1',   group: 'Lieutenant General',   bonus: '',                                  exp: 2104000000 },
+  { tier:  89, name: 'Lieutenant General 2',   group: 'Lieutenant General',   bonus: '',                                  exp: 2268000000 },
+  { tier:  90, name: 'Lieutenant General 3',   group: 'Lieutenant General',   bonus: 'M4A1-S-Yellow Fractal perm',        exp: 2443000000 },
+  { tier:  91, name: 'Lieutenant General 4',   group: 'Lieutenant General',   bonus: '',                                  exp: 2631000000 },
+  { tier:  92, name: 'Lieutenant General 5',   group: 'Lieutenant General',   bonus: '',                                  exp: 2831000000 },
+  { tier:  93, name: 'Lieutenant General 6',   group: 'Lieutenant General',   bonus: 'RPK-Infernal Dragon 30 days',       exp: 3045000000 },
   // ── General ──
-  { tier:  94, name: 'General 1',              group: 'General',              bonus: '' },
-  { tier:  95, name: 'General 2',              group: 'General',              bonus: 'AK-47-K-Yellow Fractal perm' },
-  { tier:  96, name: 'General 3',              group: 'General',              bonus: '' },
-  { tier:  97, name: 'General 4',              group: 'General',              bonus: 'AWM-Infernal Dragon 30 days' },
-  { tier:  98, name: 'General 5',              group: 'General',              bonus: '' },
-  { tier:  99, name: 'General 6',              group: 'General',              bonus: 'AK-47 Fury 30 days' },
-  { tier: 100, name: 'General 7',              group: 'General',              bonus: '' },
+  { tier:  94, name: 'General 1',              group: 'General',              bonus: '',                                  exp: 3274000000 },
+  { tier:  95, name: 'General 2',              group: 'General',              bonus: 'AK-47-K-Yellow Fractal perm',       exp: 3518000000 },
+  { tier:  96, name: 'General 3',              group: 'General',              bonus: '',                                  exp: 3778000000 },
+  { tier:  97, name: 'General 4',              group: 'General',              bonus: 'AWM-Infernal Dragon 30 days',       exp: 4056000000 },
+  { tier:  98, name: 'General 5',              group: 'General',              bonus: '',                                  exp: 4352000000 },
+  { tier:  99, name: 'General 6',              group: 'General',              bonus: 'AK-47 Fury 30 days',                exp: 4667000000 },
+  { tier: 100, name: 'General 7',              group: 'General',              bonus: '',                                  exp: 5002000000 },
   // ── Grand Marshall (top rank) ──
-  { tier: 104, name: 'Grand Marshall',         group: 'Grand Marshall',       bonus: '30 Free Crate Tickets' },
+  { tier: 104, name: 'Grand Marshall',         group: 'Grand Marshall',       bonus: '30 Free Crate Tickets',             exp: 6000000000 },
 ];
 
 // ─── MODES ───────────────────────────────────────────────────────────────────
-// column is `image` (not `image_url`) — confirmed from frontend source
+// All use image_url column. Images are GitHub raw URLs; the Modes page also
+// falls back to keyword-matched images when the URL doesn't resolve.
 const MODES = [
   {
     name: 'Team Deathmatch',
@@ -248,6 +249,211 @@ const MODES = [
     category: 'Training',
     image: `${GH}/modes/AIM_AimMaster_01.jpg.jpeg`,
     description: 'Sharpen your accuracy with dedicated aim training exercises. Practice tracking, flick shots, and reaction time to improve your gameplay.',
+  },
+  // ── Additional modes ──
+  {
+    name: 'Giant Mode',
+    type: 'cooperative',
+    category: 'Co-op',
+    image: `${GH}/modes/ZM1_EvilDen_01.jpg.jpeg`,
+    description: 'Take on enormous mutant giants with powerful health pools and devastating attacks. Coordinate with your team to bring these massive enemies down before they wipe the squad.',
+  },
+  {
+    name: 'Crystal Defend',
+    type: 'cooperative',
+    category: 'Co-op',
+    image: `${GH}/modes/ZM1_EvilDen_01.jpg.jpeg`,
+    description: 'Protect the crystal from endless waves of mutant enemies. Build your defense, coordinate positions, and survive as long as possible. Letting the crystal fall means instant defeat.',
+  },
+  {
+    name: 'Tank Mode',
+    type: 'cooperative',
+    category: 'Co-op',
+    image: `${GH}/modes/TDM_Ship_01.jpg.jpeg`,
+    description: 'Pilot powerful armored tanks against enemy forces. Use the cannon and armor to dominate the battlefield while your crew coordinates attacks from inside.',
+  },
+  {
+    name: 'Melee Mode',
+    type: 'competitive',
+    category: 'Standard',
+    image: `${GH}/modes/FFA_Farm.jpg.jpeg`,
+    description: 'Firearms are forbidden — only melee weapons allowed. Get up close and personal as players brawl with knives, axes, and other close-quarters weapons in intense hand-to-hand combat.',
+  },
+  {
+    name: 'Demolition',
+    type: 'competitive',
+    category: 'Standard',
+    image: `${GH}/modes/SND_Ankara3_01.jpg.jpeg`,
+    description: 'Similar to Search & Destroy but with respawns enabled mid-round. Bomb planting and defusing remain the objectives, but the action is non-stop with continuous respawns.',
+  },
+  {
+    name: 'One in the Chamber',
+    type: 'competitive',
+    category: 'Standard',
+    image: `${GH}/modes/FFA_Farm.jpg.jpeg`,
+    description: 'Every player starts with one bullet. A kill earns you another. Miss your shot and you are down to melee only. Pure precision and nerve decide the winner.',
+  },
+  {
+    name: 'Ranked Match',
+    type: 'competitive',
+    category: 'Ranked',
+    image: `${GH}/modes/SND_Ankara3_01.jpg.jpeg`,
+    description: 'The official competitive ranked queue. Win matches to climb the ladder and earn prestigious seasonal rewards. Losses drop your rating — only the best survive at the top.',
+  },
+  {
+    name: 'Mutation Night Mode',
+    type: 'competitive',
+    category: 'Mutation',
+    image: `${GH}/modes/MHMX_TwistedMansion_01.jpg.jpeg`,
+    description: 'A darker, more intense version of Mutation Mode. Visibility is drastically reduced and mutants gain additional abilities in the darkness. Humans must use flashlights and sound to survive.',
+  },
+  {
+    name: 'Biohazard Mode',
+    type: 'cooperative',
+    category: 'Co-op',
+    image: `${GH}/modes/ZM1_EvilDen_01.jpg.jpeg`,
+    description: 'A deadly virus has been released. Human survivors must locate the antidote and escape while avoiding infected enemies. Coordination and speed are the keys to survival.',
+  },
+  {
+    name: 'War Mode',
+    type: 'competitive',
+    category: 'Standard',
+    image: `${GH}/modes/TDM_Ship_01.jpg.jpeg`,
+    description: 'Large-scale team warfare across sprawling maps. Multiple objectives, vehicle support, and massive player counts create chaotic, epic battles unlike any other CrossFire mode.',
+  },
+  {
+    name: 'Capture the Flag',
+    type: 'competitive',
+    category: 'Standard',
+    image: `${GH}/modes/TDM_Ship_01.jpg.jpeg`,
+    description: 'Steal the enemy flag and return it to your base while defending your own. Balance offense and defense as both teams race to capture flags and score points before time runs out.',
+  },
+  {
+    name: 'AI Mode',
+    type: 'training',
+    category: 'Training',
+    image: `${GH}/modes/TDM_Ship_01.jpg.jpeg`,
+    description: 'Practice against AI-controlled bots. Perfect for warming up, learning maps, or training new players without the pressure of live competition.',
+  },
+];
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+// columns: title, event_name_slug, title_ar, description, description_ar,
+//          date, location, type, image_url, featured, sort_order
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+const EVENTS = [
+  {
+    title: 'CrossFire 15th Anniversary Event',
+    title_ar: 'حدث الذكرى السنوية الـ 15 لكروس فاير',
+    description: 'Celebrate 15 years of CrossFire! Earn exclusive anniversary weapons, character skins, and limited-time crates through special anniversary missions and login bonuses.',
+    description_ar: 'احتفل بـ 15 عامًا من CrossFire! احصل على أسلحة وشخصيات حصرية من خلال مهام الذكرى السنوية الخاصة وتسجيل الدخول اليومي.',
+    date: '2024-05-01',
+    type: 'Anniversary',
+    image_url: `${GH}/events/anniversary.jpg`,
+    featured: true,
+    sort_order: 1,
+  },
+  {
+    title: 'Summer Battle 2024',
+    title_ar: 'معركة الصيف 2024',
+    description: 'The heat is on! Join the Summer Battle event for exclusive beach-themed weapon skins, tropical character outfits, and summer crates. Complete daily missions to earn points and climb the leaderboard.',
+    description_ar: 'الحرارة في ذروتها! انضم إلى حدث المعركة الصيفية للحصول على أسلحة وملابس استوائية حصرية. أكمل المهام اليومية لتصعد على لوحة المتصدرين.',
+    date: '2024-07-01',
+    type: 'Seasonal',
+    image_url: `${GH}/events/summer.jpg`,
+    featured: false,
+    sort_order: 2,
+  },
+  {
+    title: 'Halloween Nightmare 2024',
+    title_ar: 'كابوس هالوين 2024',
+    description: 'Darkness descends on the battlefield! Face zombie waves, earn spooky weapon wraps, and unlock limited-edition Halloween mercenary outfits. New Halloween-themed maps available for a limited time.',
+    description_ar: 'الظلام يسود ساحة المعركة! واجه أمواج الزومبي، واحصل على تغليفات أسلحة مخيفة، وافتح ملابس مرتزقة هالوين محدودة الإصدار.',
+    date: '2024-10-01',
+    type: 'Seasonal',
+    image_url: `${GH}/events/halloween.jpg`,
+    featured: true,
+    sort_order: 3,
+  },
+  {
+    title: 'Christmas Combat 2024',
+    title_ar: 'معركة الكريسماس 2024',
+    description: 'Season\'s greetings, soldier! Collect Christmas presents scattered across maps, unlock festive weapon skins and holiday character costumes. Daily login rewards throughout the holiday season.',
+    description_ar: 'تحيات الموسم أيها الجندي! اجمع هدايا الكريسماس المنتشرة على الخرائط وافتح أسلحة احتفالية وأزياء شخصيات عيد الميلاد.',
+    date: '2024-12-01',
+    type: 'Seasonal',
+    image_url: `${GH}/events/christmas.jpg`,
+    featured: false,
+    sort_order: 4,
+  },
+  {
+    title: 'Lunar New Year Festival',
+    title_ar: 'مهرجان رأس السنة القمرية',
+    description: 'Welcome the Year of the Dragon! Celebrate with dragon-themed weapons, traditional outfits, and red envelope rewards. Special Lunar New Year maps and limited-time game modes available.',
+    description_ar: 'أهلاً بعام التنين! احتفل بأسلحة ذات طابع التنين وملابس تقليدية وجوائز الأظرف الحمراء.',
+    date: '2024-02-10',
+    type: 'Seasonal',
+    image_url: `${GH}/events/lunar.jpg`,
+    featured: false,
+    sort_order: 5,
+  },
+  {
+    title: 'CFWE 2024 — World Esports Championship',
+    title_ar: 'بطولة الرياضات الإلكترونية العالمية CFWE 2024',
+    description: 'The world\'s best CrossFire teams compete for the ultimate prize. Watch live matches, pick your favorite team, and earn special in-game viewer rewards. Who will be crowned the CrossFire World Champion?',
+    description_ar: 'تتنافس أفضل فرق CrossFire في العالم على الجائزة الكبرى. شاهد المباريات مباشرة وادعم فريقك المفضل واحصل على مكافآت خاصة.',
+    date: '2024-08-15',
+    type: 'Esports',
+    image_url: `${GH}/events/esports.jpg`,
+    featured: true,
+    sort_order: 6,
+  },
+  {
+    title: 'Operation: Black Shield',
+    title_ar: 'عملية: الدرع الأسود',
+    description: 'A new threat emerges. Complete Operation Black Shield missions across 6 weeks to unlock exclusive Black Shield weapon crates, character skins, and the limited-edition Black Shield title.',
+    description_ar: 'تهديد جديد يظهر. أكمل مهام عملية الدرع الأسود على مدى 6 أسابيع لفتح صناديق أسلحة حصرية وعناوين محدودة الإصدار.',
+    date: '2024-03-15',
+    type: 'Operation',
+    image_url: `${GH}/events/operation.jpg`,
+    featured: false,
+    sort_order: 7,
+  },
+  {
+    title: 'Double XP Weekend',
+    title_ar: 'عطلة نهاية الأسبوع مضاعفة الخبرة',
+    description: 'Rank up faster this weekend! All matches award double EXP points. Grind through the ranks, complete rank-up missions, and push for your next promotion before the event ends.',
+    description_ar: 'ارتقِ بمستواك بشكل أسرع هذا الأسبوع! جميع المباريات تمنح نقاط خبرة مضاعفة. اعمل بجد للحصول على ترقيتك التالية قبل انتهاء الحدث.',
+    date: '2024-06-15',
+    type: 'Bonus Event',
+    image_url: `${GH}/events/double-xp.jpg`,
+    featured: false,
+    sort_order: 8,
+  },
+  {
+    title: 'Black Friday Sale & Event',
+    title_ar: 'تخفيضات الجمعة السوداء وحدثها',
+    description: 'The biggest sale of the year! Massive discounts on ZP, weapon packages, VIP packages, and character costumes. Limited-time bundles and exclusive Black Friday-only items.',
+    description_ar: 'أكبر تخفيضات السنة! خصومات ضخمة على ZP وحزم الأسلحة والشخصيات. حزم محدودة الوقت ومنتجات حصرية يوم الجمعة السوداء فقط.',
+    date: '2024-11-29',
+    type: 'Sale',
+    image_url: `${GH}/events/blackfriday.jpg`,
+    featured: false,
+    sort_order: 9,
+  },
+  {
+    title: 'Ranked Season 12 — Iron Throne',
+    title_ar: 'الموسم المصنف 12 — العرش الحديدي',
+    description: 'Season 12 of Ranked Match is live! Climb from Bronze to Champion and earn the exclusive Iron Throne weapon skin and player title. Season ends with a special championship event.',
+    description_ar: 'الموسم 12 من المباريات المصنفة بدأ! ارتقِ من البرونز إلى البطل واحصل على حزمة العرش الحديدي الحصرية.',
+    date: '2024-09-01',
+    type: 'Ranked Season',
+    image_url: `${GH}/events/ranked.jpg`,
+    featured: true,
+    sort_order: 10,
   },
 ];
 
@@ -369,10 +575,12 @@ async function seedRanks() {
   await clearTable('ranks');
 
   // Columns: id, name, image_url, tier, exp_required, description, requirements, bonus, created_at
+  const INT_MAX = 2147483647; // PostgreSQL integer limit
   const rows = RANKS.map(r => ({
     name: r.name,
     image_url: `${Z8}${r.tier}.jpg`,
     tier: r.tier,
+    exp_required: Math.min(r.exp || 0, INT_MAX),
     description: `${r.group} — Tier ${r.tier}`,
     requirements: 'Keep playing and winning matches to advance.',
     bonus: r.bonus || '',
@@ -416,6 +624,29 @@ async function seedMercenaries() {
   console.log(`  ✅  Seeded ${count} mercenaries`);
 }
 
+async function seedEvents() {
+  console.log('\n📅  Seeding events...');
+  await clearTable('events');
+
+  // Columns: title, event_name_slug, title_ar, description, description_ar,
+  //          date, location, type, image_url, featured, sort_order
+  const rows = EVENTS.map(e => ({
+    title: e.title,
+    event_name_slug: slugify(e.title),
+    title_ar: e.title_ar || '',
+    description: e.description,
+    description_ar: e.description_ar || '',
+    date: e.date,
+    type: e.type,
+    image_url: e.image_url,
+    featured: e.featured || false,
+    sort_order: e.sort_order || 0,
+  }));
+
+  const count = await batchInsert('events', rows);
+  console.log(`  ✅  Seeded ${count} events`);
+}
+
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('🚀  CrossFire Real Data Seeder');
@@ -426,10 +657,9 @@ async function main() {
   if (!only || only === 'ranks')        await seedRanks();
   if (!only || only === 'modes')        await seedModes();
   if (!only || only === 'mercenaries')  await seedMercenaries();
+  if (!only || only === 'events')       await seedEvents();
 
   console.log('\n🎉  Done! Refresh your site to see real CrossFire data.');
-  console.log('\nSounds: Add voice line URLs to the `sounds` array per mercenary');
-  console.log('        and re-run --only=mercenaries to update them.');
 }
 
 main().catch(e => { console.error('\nFatal:', e.message); process.exit(1); });

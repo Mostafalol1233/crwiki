@@ -36,7 +36,7 @@ function stripHtml(html: string): string {
 
 function EventCard({ ev, featured }: { ev: Event; featured?: boolean }) {
   const slug = ev.event_name_slug || ev.id;
-  const img = ev.image || ev.imageUrl || FALLBACK;
+  const img = ev.image_url || ev.image || ev.imageUrl || FALLBACK;
 
   if (featured) {
     return (

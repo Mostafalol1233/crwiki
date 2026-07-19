@@ -6637,6 +6637,36 @@ app.post("/api/admin/migrate-slugs", requireAuth, requireSuperAdmin, async (req,
     }
 });
 
+// ── Supabase → Backend JWT Exchange ──────────────────────────────────────────
+// Called by Chat.tsx / Login.tsx to swap a Supabase access_token for a backend
+// JWT (signed with JWT_SECRET) that the chat WebSocket/API understands.
+app.post("/api/auth/supabase-exchange", apiLimiter, async (req, res) => {
+    const authHeader = req.headers.authorization || "";
+    const supabaseToken = authHeader.startsWith("Bearer ")
+        ? authHeader.substring(7)
+        : req.body?.supabaseToken;
+    if (!supabaseToken) return res.status(400).json({ error: "Missing token" });
+    try {
+        // Verify the Supabase token by calling Supabase's user endpoint
+        const sbUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+        const sbKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+        const r = await fetch(`${sbUrl}/auth/v1/user`, {
+            headers: { apikey: sbKey, Authorization: `Bearer ${supabaseToken}` },
+        });
+        if (!r.ok) return res.status(401).json({ error: "Invalid Supabase token" });
+        const sbUser = await r.json();
+        if (!sbUser?.id) return res.status(401).json({ error: "Invalid Supabase user" });
+        const username = sbUser.user_metadata?.username
+            || (sbUser.email || "").split("@")[0]
+            || sbUser.id.slice(0, 12);
+        const token = generateToken({ id: sbUser.id, username, role: "user" });
+        return res.json({ token, userId: sbUser.id, username });
+    } catch (err) {
+        console.error("[Supabase Exchange] Error:", err.message);
+        return res.status(500).json({ error: "Exchange failed" });
+    }
+});
+
 // ── CF Player Lookup ──────────────────────────────────────────────────────────
 // Uses undici (HTTP/2 capable) to bypass Akamai CDN protection
 // Real API discovered from naprofile2 React bundle: /rest/userprofile.json?usn=<nickname>

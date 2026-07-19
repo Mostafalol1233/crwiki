@@ -73,7 +73,58 @@ function cfRegisterPlugin(): Plugin {
   };
 }
 
+// Supabase → Backend JWT exchange — swaps a Supabase access_token for a backend
+// JWT signed with JWT_SECRET so that Chat WebSocket/API works after Supabase login.
+function cfAuthExchangePlugin(): Plugin {
+  return {
+    name: "cf-auth-exchange",
+    configureServer(server) {
+      server.middlewares.use("/api/auth/supabase-exchange", async (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "Method not allowed" }));
+        }
+        const authHeader = (req.headers["authorization"] as string) || "";
+        const supabaseToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+        if (!supabaseToken) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "Missing token" }));
+        }
+        try {
+          const sbUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+          const sbKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+          const r = await fetch(`${sbUrl}/auth/v1/user`, {
+            headers: { apikey: sbKey, Authorization: `Bearer ${supabaseToken}` },
+          });
+          if (!r.ok) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Invalid Supabase token" }));
+          }
+          const sbUser = await r.json() as any;
+          if (!sbUser?.id) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Invalid Supabase user" }));
+          }
+          const username = sbUser.user_metadata?.username
+            || (sbUser.email || "").split("@")[0]
+            || sbUser.id.slice(0, 12);
+          // Sign a JWT compatible with the backend's JWT_SECRET
+          const { default: jwt } = await import("jsonwebtoken");
+          const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+          const token = jwt.sign({ id: sbUser.id, username, role: "user" }, JWT_SECRET, { expiresIn: "7d" });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ token, userId: sbUser.id, username }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Exchange failed" }));
+        }
+      });
+    },
+  };
+}
+
 // CF player lookup dev middleware — bypasses Akamai using undici (HTTP/2)
+// Supports region=na (default) and region=west (tries cfwest.z8games.com first)
 function cfPlayerLookupPlugin(): Plugin {
   return {
     name: "cf-player-lookup",
@@ -82,6 +133,7 @@ function cfPlayerLookupPlugin(): Plugin {
         try {
           const url = new URL(req.url || "", "http://localhost");
           const nickname = (url.searchParams.get("nickname") || "").trim();
+          const region = (url.searchParams.get("region") || "na").toLowerCase();
 
           if (!nickname || nickname.length < 2 || nickname.length > 32) {
             res.writeHead(400, { "Content-Type": "application/json" });
@@ -89,31 +141,44 @@ function cfPlayerLookupPlugin(): Plugin {
           }
 
           const { fetch } = await import("undici");
-          const CF_API = `https://crossfire.z8games.com/rest/userprofile.json?usn=${encodeURIComponent(nickname)}`;
-          const response = await fetch(CF_API, {
-            signal: AbortSignal.timeout(12000),
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-              "Accept": "application/json, text/plain, */*",
-              "Accept-Language": "en-US,en;q=0.9",
-              "Referer": "https://crossfire.z8games.com/myprofile.html",
-              "sec-fetch-site": "same-origin",
-              "sec-fetch-mode": "cors",
-              "sec-fetch-dest": "empty",
-            },
-          } as any);
+          const CF_HEADERS = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://crossfire.z8games.com/myprofile.html",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+          };
 
-          const contentType = response.headers.get("content-type") || "";
-          if (!contentType.includes("json")) {
-            res.writeHead(502, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: "CF API unavailable, try again shortly" }));
+          // Region → endpoints to try in order
+          const endpoints = region === "west"
+            ? ["https://cfwest.z8games.com/rest/userprofile.json", "https://crossfire.z8games.com/rest/userprofile.json"]
+            : ["https://crossfire.z8games.com/rest/userprofile.json"];
+          const regionLabel = region === "west" ? "CrossFire West" : "CrossFire NA";
+
+          let data: any = null;
+          for (const base of endpoints) {
+            try {
+              const response = await fetch(`${base}?usn=${encodeURIComponent(nickname)}`, {
+                signal: AbortSignal.timeout(10000),
+                headers: CF_HEADERS,
+              } as any);
+              const ct = response.headers.get("content-type") || "";
+              if (!ct.includes("json")) continue; // not JSON — try next endpoint
+              const json = await response.json() as any;
+              if (json.p_o_ErrID === -702 || json.p_o_ErrDesc === "Character not found") break; // definitive not-found
+              data = json;
+              break;
+            } catch { /* timeout or network error — try next */ }
           }
 
-          const data = await response.json() as any;
-
-          if (data.p_o_ErrID === -702 || data.p_o_ErrDesc === "Character not found") {
+          if (!data) {
             res.writeHead(404, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: `Player "${nickname}" not found on CrossFire NA.`, notFound: true }));
+            const msg = region === "west"
+              ? `Player "${nickname}" not found. CrossFire West was discontinued — if you played CF West, stats may no longer be available. Try switching to CrossFire NA.`
+              : `Player "${nickname}" not found on ${regionLabel}. Check spelling — nicknames are case-sensitive.`;
+            return res.end(JSON.stringify({ error: msg, notFound: true }));
           }
 
           const kills = data.TotalKills ?? data.total_kills ?? data.Kills ?? null;
@@ -124,6 +189,7 @@ function cfPlayerLookupPlugin(): Plugin {
 
           const profile = {
             nickname: data.UserNickname || data.usn || nickname,
+            region: regionLabel,
             exp,
             rank: data.RankName || data.rank_name || data.Rank || null,
             rankTier: data.RankNo || data.rank_no || data.RankTier || null,
@@ -155,6 +221,7 @@ function cfPlayerLookupPlugin(): Plugin {
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
+    cfAuthExchangePlugin(),
     cfPlayerLookupPlugin(),
     react(),
     runtimeErrorOverlay(),

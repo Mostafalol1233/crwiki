@@ -85,13 +85,44 @@ export default function Chat() {
   // Profile state
   const [myDisplayName, setMyDisplayName] = useState("");
   const [myAvatar, setMyAvatar] = useState("");
+
+  // Chat auth state — may need to exchange Supabase session for a backend JWT
+  const [chatToken, setChatToken] = useState<string | null>(localStorage.getItem("userToken"));
+  const [chatUserId, setChatUserId] = useState<string | null>(localStorage.getItem("userId"));
+  const [chatUsername, setChatUsername] = useState<string | null>(localStorage.getItem("username"));
+  const [authReady, setAuthReady] = useState(!!localStorage.getItem("userToken"));
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  
-  const token = localStorage.getItem("userToken");
-  const userId = localStorage.getItem("userId");
-  const username = localStorage.getItem("username");
+
+  // On mount: if we have no userToken but have a Supabase session, exchange it for a backend JWT
+  useEffect(() => {
+    if (chatToken) { setAuthReady(true); return; }
+    import("@/lib/supabase").then(async ({ supabase }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { setLocation("/login"); return; }
+      try {
+        const res = await fetch("/api/auth/supabase-exchange", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) throw new Error("Exchange failed");
+        const ex = await res.json();
+        if (!ex.token) throw new Error("No token returned");
+        localStorage.setItem("userToken", ex.token);
+        if (ex.userId) { localStorage.setItem("userId", ex.userId); setChatUserId(ex.userId); }
+        if (ex.username) { localStorage.setItem("username", ex.username); setChatUsername(ex.username); }
+        setChatToken(ex.token);
+        setAuthReady(true);
+      } catch {
+        setLocation("/login");
+      }
+    });
+  }, []);
+
+  const token = chatToken;
+  const userId = chatUserId;
+  const username = chatUsername;
 
   // Helper to get user details
   const getUserDetails = (usernameArg: string, convId?: string) => {
@@ -112,8 +143,9 @@ export default function Chat() {
     return { id: usernameArg, username: usernameArg, displayName: usernameArg };
   };
 
-  // Connect to WS and Fetch Conversations
+  // Connect to WS and Fetch Conversations — wait until auth is resolved
   useEffect(() => {
+    if (!authReady) return; // still exchanging token, hold on
     if (!token || !userId) {
       setLocation("/login");
       return;

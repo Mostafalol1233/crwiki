@@ -19,8 +19,26 @@ export default function Login() {
       const { signIn } = await import("@/lib/supabaseApi");
       const data = await signIn(values.identifier, values.password);
       if (!data.user) throw new Error("Login failed");
-      localStorage.setItem("userId", data.user.id || "");
-      localStorage.setItem("username", data.user.user_metadata?.username || values.identifier);
+      const uid = data.user.id || "";
+      const uname = data.user.user_metadata?.username || values.identifier;
+      localStorage.setItem("userId", uid);
+      localStorage.setItem("username", uname);
+
+      // Exchange Supabase session for a backend chat JWT so Chat works immediately
+      try {
+        const { session } = data;
+        if (session?.access_token) {
+          const ex = await fetch("/api/auth/supabase-exchange", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (ex.ok) {
+            const exData = await ex.json();
+            if (exData.token) localStorage.setItem("userToken", exData.token);
+          }
+        }
+      } catch { /* non-fatal — chat will retry on mount */ }
+
       setLocation("/profile");
     } catch (e: any) {
       setStatus(e.message || "Login failed. Check your credentials.");

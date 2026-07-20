@@ -257,11 +257,6 @@ export default function Ranks() {
             </div>
           </div>
 
-          {/* ── Rank Calculator ── */}
-          {!isLoading && ranks.length > 0 && (
-            <RankCalculator ranks={ranks} />
-          )}
-
           {/* ── Content ── */}
           {isLoading ? (
             <div className="flex items-center justify-center py-24">
@@ -444,6 +439,13 @@ export default function Ranks() {
                   <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#555" }}>{t.label}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* ── Rank Calculator ── */}
+          {!isLoading && ranks.length > 0 && (
+            <div className="mt-12">
+              <RankCalculator ranks={ranks} />
             </div>
           )}
         </div>

@@ -492,7 +492,7 @@ export default function News() {
                   {/* Categories */}
                   <SideSection title="Categories">
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      {CATEGORIES.map((cat) => (
+                      {CATEGORIES.filter(cat => cat === "All" || (catCounts[cat] ?? 0) > 0).map((cat) => (
                         <button
                           key={cat}
                           onClick={() => setActiveCat(cat)}

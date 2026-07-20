@@ -74,7 +74,7 @@ const FACTIONS = [
     descAr: "شركة عسكرية خاصة تأسست عام 1999، تعمل لحماية الشركات والحكومات.",
     color: "#3b82f6",
     side: "Defenders",
-    image: "https://static.wikia.nocookie.net/crossfire/images/b/b3/Global_Risk_Logo.png/revision/latest",
+    image: "/global-risk-logo.png",
     bgColor: "rgba(59,130,246,0.06)",
   },
   {
@@ -84,7 +84,7 @@ const FACTIONS = [
     descAr: "منظمة إرهابية دولية تواجه جلوبال ريسك في عمليات سرية حول العالم.",
     color: "#ef4444",
     side: "Attackers",
-    image: "https://static.wikia.nocookie.net/crossfire/images/0/07/Black_List_Logo.png/revision/latest",
+    image: "/black-list-logo.png",
     bgColor: "rgba(239,68,68,0.06)",
   },
 ];

@@ -293,6 +293,18 @@ function normalizePrices(value: any): { item: string; price: string | number }[]
     .filter((entry) => entry.item);
 }
 
+// ─── Weapon Categories ────────────────────────────────────────────────────────
+export async function getWeaponCategories(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('weapons')
+    .select('category')
+    .not('category', 'is', null);
+  if (error) throw error;
+  const cats = new Set<string>();
+  (data || []).forEach((w: any) => { if (w.category) cats.add(String(w.category)); });
+  return Array.from(cats).sort();
+}
+
 // ─── Sellers ─────────────────────────────────────────────────────────────────
 export async function getSellers() {
   const { data, error } = await supabase.from('sellers').select('*').order('rank', { ascending: true });

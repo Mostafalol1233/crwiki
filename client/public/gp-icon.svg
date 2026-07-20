@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <radialGradient id="gpGrad" cx="40%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </radialGradient>
+    <radialGradient id="gpShine" cx="35%" cy="25%" r="50%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+    <filter id="gpGlow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Coin circle -->
+  <circle cx="24" cy="24" r="21" fill="url(#gpGrad)" filter="url(#gpGlow)"/>
+  <circle cx="24" cy="24" r="21" fill="url(#gpShine)"/>
+  <!-- Border rings -->
+  <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(252,211,77,0.9)" stroke-width="2"/>
+  <circle cx="24" cy="24" r="17.5" fill="none" stroke="rgba(252,211,77,0.4)" stroke-width="1"/>
+  <!-- GP Text -->
+  <text x="24" y="30" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="#78350f" letter-spacing="-0.5">GP</text>
+</svg>

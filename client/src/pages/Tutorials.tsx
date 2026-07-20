@@ -114,7 +114,7 @@ export default function TutorialsPage() {
               {tutorials.map((video: any) => (
                 <a
                   key={video.id}
-                  href={video.youtube_url || `https://www.youtube.com/watch?v=${video.youtube_id}`}
+                  href={video.youtubeUrl || (video.youtubeId ? `https://www.youtube.com/watch?v=${video.youtubeId}` : "#")}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ textDecoration: "none" }}
@@ -128,16 +128,15 @@ export default function TutorialsPage() {
                   >
                     {/* Thumbnail */}
                     <div style={{ position: "relative", paddingBottom: "56.25%", background: "linear-gradient(135deg, #0d0d0d 0%, #111 100%)" }}>
-                      {video.youtube_id ? (
+                      {video.youtubeId ? (
                         <img
-                          src={`https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`}
+                          src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
                           alt={video.title}
                           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                           onError={(e) => {
-                            // Fall back to mqdefault if hqdefault fails
                             const img = e.currentTarget;
                             if (img.src.includes("hqdefault")) {
-                              img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
+                              img.src = `https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`;
                             } else {
                               img.style.display = "none";
                             }

@@ -105,6 +105,13 @@ export default function Support() {
       <div className="min-h-screen py-12 md:py-16" style={{ background: "hsl(var(--background))" }}>
         <div className="max-w-3xl mx-auto px-4 md:px-8">
 
+          {/* Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
+            <a href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>Home</a>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
+            <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>Support</span>
+          </div>
+
           {/* Header */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>

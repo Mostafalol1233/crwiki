@@ -117,13 +117,23 @@ export default function Weapons() {
 
   useEffect(() => { fetchWeapons({ reset: true }); }, []);
 
+  const [allCategories, setAllCategories] = useState<string[]>([]);
+  useEffect(() => {
+    import("@/lib/supabaseApi").then(({ getWeaponCategories }) =>
+      getWeaponCategories().then(cats => setAllCategories(cats)).catch(() => {})
+    );
+  }, []);
+
   const categories = useMemo(() => {
+    if (allCategories.length > 0) return ["all", ...allCategories];
+    // fallback: derive from current page while categories load
     const cats = new Set<string>();
     results.forEach((w) => { if (w.category) cats.add(w.category); });
     return ["all", ...Array.from(cats).sort()];
-  }, [results]);
+  }, [allCategories, results]);
 
   const sortedWeapons = useMemo(() => {
+    const startsWithDigit = (s: string) => /^\d/.test(s);
     if (sort === "date") {
       return [...results].sort((a: any, b: any) => {
         const av = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -132,7 +142,10 @@ export default function Weapons() {
       });
     }
     return [...results].sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name);
+      const aNum = startsWithDigit(a.name);
+      const bNum = startsWithDigit(b.name);
+      if (aNum !== bNum) return aNum ? 1 : -1; // push number-names to end
+      const cmp = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
       return order === "desc" ? -cmp : cmp;
     });
   }, [results, sort, order]);

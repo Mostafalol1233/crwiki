@@ -123,6 +123,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
             transition: "transform 0.35s ease",
             transform: hovered ? "scale(1.06)" : "scale(1)",
           }}
+          onError={(e) => { e.currentTarget.style.opacity = "0"; }}
         />
 
         {/* Gradient overlay — bottom fade for text */}
@@ -502,6 +503,54 @@ export default function Home() {
           `}</style>
         </div>
 
+
+        {/* ── FACTIONS & CURRENCY ──────────────────────────────────────────── */}
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "40px 24px 0" }}>
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 4px" }}>The War</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>Factions & Currency</h2>
+          </div>
+
+          {/* Factions banner */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "20px 28px", marginBottom: 10 }} className="factions-grid">
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 13, fontWeight: 800, color: "#3b82f6", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Global Risk</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Counter-terrorism force</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 22, fontWeight: 900, color: GOLD, letterSpacing: "-0.04em", lineHeight: 1 }}>VS</span>
+              <div style={{ width: 1, height: 36, background: `linear-gradient(to bottom, transparent, ${BORDER}, transparent)` }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <img src="/black-list-logo.png" alt="Black List" style={{ height: 72, objectFit: "contain", filter: "drop-shadow(0 0 14px rgba(245,166,35,0.45))" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 13, fontWeight: 800, color: GOLD, margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Black List</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: 0 }}>Elite mercenary army</p>
+              </div>
+            </div>
+          </div>
+          <style>{`@media(max-width:480px){.factions-grid{grid-template-columns:1fr!important;gap:12px!important;}}`}</style>
+
+          {/* Currency row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="currency-grid">
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "12px 16px" }}>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 800, color: "#a78bfa", margin: "0 0 1px", letterSpacing: "0.02em" }}>ZP — Zen Points</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0, lineHeight: 1.4 }}>Premium currency · crates, mercs & exclusive weapons</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "12px 16px" }}>
+              <img src="/gp-icon.svg" alt="GP" style={{ width: 34, height: 34, flexShrink: 0 }} />
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 800, color: GOLD, margin: "0 0 1px", letterSpacing: "0.02em" }}>GP — Game Points</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0, lineHeight: 1.4 }}>Free currency · earned from matches &amp; rank rewards</p>
+              </div>
+            </div>
+          </div>
+          <style>{`@media(max-width:480px){.currency-grid{grid-template-columns:1fr!important;}}`}</style>
+        </div>
 
         {/* ── MAIN CONTENT (Two-column wiki layout) ─────────────────────────── */}
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 64px" }}>

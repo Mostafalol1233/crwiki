@@ -655,7 +655,11 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
               <div className="rounded-md p-3" style={{ background: "rgba(212,160,23,0.06)", border: "1px solid rgba(212,160,23,0.15)" }}>
                 <p className="text-[9px] font-black uppercase tracking-wide mb-1" style={{ color: "#555" }}>EXP Needed</p>
                 <p className="text-[15px] font-black tabular-nums" style={{ color: "#d4a017" }}>
-                  {expNeeded > 0 ? fmt(expNeeded) : destinationExp > 0 ? fmt(destinationExp) : "—"}
+                  {currentExp != null
+                    ? expNeeded > 0 ? fmt(expNeeded) : "0"
+                    : destinationExp > currentRankExp
+                      ? fmt(destinationExp - currentRankExp)
+                      : "—"}
                 </p>
               </div>
               <div className="rounded-md p-3" style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.06)" }}>

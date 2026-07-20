@@ -327,6 +327,13 @@ export default function Mercenaries() {
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14">
 
+          {/* Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+            <a href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>Home</a>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
+            <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>Mercenaries</span>
+          </div>
+
           {/* ── Header ── */}
           <div className="flex items-center justify-between mb-8">
             <div>

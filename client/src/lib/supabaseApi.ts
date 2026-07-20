@@ -315,6 +315,7 @@ export async function getSellers() {
     youtube: s.youtube || '',
     tiktok: s.tiktok || '',
     telegram: s.telegram || '',
+    logo_url: s.logo_url || '',
     featured: s.featured || false,
     promotionText: s.promotion_text || '',
     averageRating: s.average_rating || 0,
@@ -370,6 +371,30 @@ export async function getTutorials(category?: string) {
     category: t.category || 'tutorial',
     order: t.order_index || 0,
   }));
+}
+
+// ─── Portal Images ────────────────────────────────────────────────────────────
+const PORTAL_KEYS = [
+  'portal_img_weapons',
+  'portal_img_maps',
+  'portal_img_mercenaries',
+  'portal_img_modes',
+  'portal_img_ranks',
+  'portal_img_events',
+];
+
+export async function getPortalImages(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', PORTAL_KEYS);
+    const map: Record<string, string> = {};
+    (data || []).forEach((row: any) => { if (row.value) map[row.key] = row.value; });
+    return map;
+  } catch {
+    return {};
+  }
 }
 
 // ─── Site Settings ────────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@ interface Seller {
   name: string;
   seller_name_slug?: string;
   description: string;
+  logo_url?: string;
   images: string[];
   prices: { item: string; price: number }[];
   email: string;
@@ -52,6 +53,7 @@ function normalizeSellerList(value: unknown): Seller[] {
     id: String(seller?.id || ''),
     name: String(seller?.name || ''),
     description: String(seller?.description || ''),
+    logo_url: String(seller?.logo_url || ''),
     images: Array.isArray(seller?.images) ? seller.images : [],
     prices: Array.isArray(seller?.prices) ? seller.prices : [],
     featured: Boolean(seller?.featured),
@@ -258,16 +260,16 @@ export default function Sellers() {
       data-testid={`card-seller-${seller.id}`}
       onClick={() => openSellerDialog(seller)}
     >
-      {/* Image Header */}
-      {Array.isArray(seller.images) && seller.images.length > 0 && (
+      {/* Image Header — logo takes priority, gallery images as fallback */}
+      {(seller.logo_url || (Array.isArray(seller.images) && seller.images.length > 0)) && (
         <div className="relative w-full overflow-hidden bg-muted">
           <img
-            src={seller.images[0]}
+            src={seller.logo_url || seller.images[0]}
             alt={seller.name}
             className="w-full h-48 object-contain bg-transparent transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-          {seller.images.length > 1 && (
+          {!seller.logo_url && seller.images.length > 1 && (
             <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
               +{seller.images.length - 1} more
             </div>
@@ -378,10 +380,10 @@ export default function Sellers() {
               </Button>
 
               <div className="flex flex-col md:flex-row items-start gap-6">
-                {/* Seller Logo / First Image */}
-                {s.images?.length > 0 && (
+                {/* Seller Logo */}
+                {(s.logo_url || s.images?.length > 0) && (
                   <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-lg bg-muted shrink-0">
-                    <img src={s.images[0]} alt={s.name} className="w-full h-full object-contain bg-transparent" />
+                    <img src={s.logo_url || s.images[0]} alt={s.name} className="w-full h-full object-contain bg-transparent" />
                   </div>
                 )}
                 <div className="flex-1">

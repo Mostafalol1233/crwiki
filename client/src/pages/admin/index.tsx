@@ -29,6 +29,7 @@ const CustomPages = lazy(() => import('./CustomPages'));
 const FAQManager = lazy(() => import('./FAQManager'));
 const SiteSettings = lazy(() => import('./SiteSettings'));
 const HighlightsManager = lazy(() => import('./HighlightsManager'));
+const PortalsManager = lazy(() => import('./PortalsManager'));
 
 function Loading() {
   return (
@@ -70,6 +71,7 @@ function SectionContent({ section }: { section: string }) {
     case 'faq': return <FAQManager />;
     case 'site-settings': return <SiteSettings />;
     case 'highlights': return <HighlightsManager />;
+    case 'portals': return <PortalsManager />;
     default: return <Dashboard />;
   }
 }

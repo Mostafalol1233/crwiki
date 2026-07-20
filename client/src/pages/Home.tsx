@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageSEO from "@/components/PageSEO";
 import { EventsRibbon } from "@/components/EventsRibbon";
-import { getEvents, getNews, getSiteSettings } from "@/lib/supabaseApi";
+import { getEvents, getNews, getSiteSettings, getPortalImages } from "@/lib/supabaseApi";
 import { HighlightsSection } from "@/components/HighlightsSection";
 import { GMSection } from "@/components/GMSection";
 import {
@@ -31,6 +31,7 @@ function stripHtml(html: string) {
 const PORTALS = [
   {
     label: "Weapons",
+    settingsKey: "portal_img_weapons",
     desc: "Rifles, pistols, snipers & melee",
     href: "/weapons",
     img: "/portal/weapons.png",
@@ -40,6 +41,7 @@ const PORTALS = [
   },
   {
     label: "Maps",
+    settingsKey: "portal_img_maps",
     desc: "Battle arenas and layouts",
     href: "/maps",
     img: "/portal/maps.jpg",
@@ -49,6 +51,7 @@ const PORTALS = [
   },
   {
     label: "Mercenaries",
+    settingsKey: "portal_img_mercenaries",
     desc: "Elite playable operators",
     href: "/mercenaries",
     img: "/portal/mercenaries.png",
@@ -58,6 +61,7 @@ const PORTALS = [
   },
   {
     label: "Game Modes",
+    settingsKey: "portal_img_modes",
     desc: "Every mode with strategies",
     href: "/modes",
     img: "/portal/modes.png",
@@ -67,6 +71,7 @@ const PORTALS = [
   },
   {
     label: "Ranks",
+    settingsKey: "portal_img_ranks",
     desc: "Rank tiers, EXP & progression",
     href: "/ranks",
     img: "/portal/ranks.png",
@@ -76,6 +81,7 @@ const PORTALS = [
   },
   {
     label: "Events",
+    settingsKey: "portal_img_events",
     desc: "Tournaments & limited-time ops",
     href: "/events",
     img: "/portal/events.jpg",
@@ -382,6 +388,12 @@ export default function Home() {
   const siteSettings = siteSettingsData as any;
   const heroImage = siteSettings?.heroImage || "/cf-heroes-bg.png";
 
+  const { data: portalImages = {} } = useQuery<Record<string, string>>({
+    queryKey: ["portal-images"],
+    queryFn: getPortalImages,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 12 }],
     queryFn: () => getEvents({ limit: 12 }),
@@ -478,7 +490,10 @@ export default function Home() {
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: 10,
           }} className="portal-grid">
-            {PORTALS.map((p) => <PortalCard key={p.label} portal={p} />)}
+            {PORTALS.map((p) => {
+              const dynamicImg = (portalImages as Record<string, string>)[p.settingsKey];
+              return <PortalCard key={p.label} portal={dynamicImg ? { ...p, img: dynamicImg } : p} />;
+            })}
           </div>
 
           <style>{`

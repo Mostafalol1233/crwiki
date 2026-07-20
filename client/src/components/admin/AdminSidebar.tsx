@@ -6,7 +6,7 @@ import {
   BookOpen, Megaphone, Swords, RefreshCw, Store, Star,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
   ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
-  Zap, Film,
+  Zap, Film, LayoutGrid,
 } from 'lucide-react';
 
 interface NavItem {
@@ -63,6 +63,7 @@ const NAV: NavSection[] = [
     items: [
       { label: 'Media', path: '/admin/media', icon: <Image size={16} /> },
       { label: 'Highlights', path: '/admin/highlights', icon: <Film size={16} /> },
+      { label: 'Portal Images', path: '/admin/portals', icon: <LayoutGrid size={16} /> },
     ],
   },
   {

@@ -12,7 +12,7 @@ interface Seller {
   seller_name_slug: string;
   description: string;
   promotion_text: string;
-  images: string[];       // jsonb array of image URLs
+  images: string[];       // images[0] = logo, images[1+] = gallery
   prices: { item: string; price: number }[];  // jsonb
   email: string;
   phone: string;
@@ -73,7 +73,9 @@ export default function SellersManager() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Partial<Seller>>(EMPTY);
   const [pricesText, setPricesText] = useState('');
-  const [imagesText, setImagesText] = useState('');
+  // Logo = images[0], gallery = images[1+] — no schema change needed
+  const [logoUrl, setLogoUrl] = useState('');
+  const [galleryText, setGalleryText] = useState('');
   const client = supabaseService;
 
   const fetchSellers = useCallback(async () => {
@@ -91,20 +93,24 @@ export default function SellersManager() {
     const s = seller || EMPTY;
     setEditing(s);
     setPricesText(Array.isArray(s.prices) ? serializePrices(s.prices) : '');
-    setImagesText(Array.isArray(s.images) ? s.images.join('\n') : '');
+    const allImages = Array.isArray(s.images) ? s.images : [];
+    setLogoUrl(allImages[0] || '');
+    setGalleryText(allImages.slice(1).join('\n'));
     setView('form');
   };
 
-  const addImage = (url: string) => {
-    const current = imagesText.trim();
-    setImagesText(current ? `${current}\n${url}` : url);
+  const addGalleryImage = (url: string) => {
+    const current = galleryText.trim();
+    setGalleryText(current ? `${current}\n${url}` : url);
   };
 
   const save = async () => {
     if (!client || !editing.name) { toast.error('Name required'); return; }
     setSaving(true);
     try {
-      const images = imagesText.split('\n').map(u => u.trim()).filter(Boolean);
+      const galleryImages = galleryText.split('\n').map(u => u.trim()).filter(Boolean);
+      // images[0] = logo, images[1+] = gallery
+      const images = logoUrl ? [logoUrl, ...galleryImages] : galleryImages;
       const prices = parsePrices(pricesText);
       const slug = editing.seller_name_slug || slugify(editing.name || '');
       const payload = {
@@ -148,14 +154,16 @@ export default function SellersManager() {
   const lbl: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 4, display: 'block' };
 
   const columns = [
-    col.accessor('images', {
+    col.display({
+      id: 'logo',
       header: '',
       cell: (i) => {
-        const imgs = i.getValue();
-        const src = Array.isArray(imgs) ? imgs[0] : '';
+        const logo = (i.row.original as any).logo_url;
+        const fallback = Array.isArray((i.row.original as any).images) ? (i.row.original as any).images[0] : '';
+        const src = logo || fallback;
         return src
-          ? <img src={src} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', border: '1px solid #27272a' }} />
-          : <div style={{ width: 40, height: 40, background: '#27272a', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🖼️</div>;
+          ? <img src={src} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a' }} />
+          : <div style={{ width: 40, height: 40, background: '#27272a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏪</div>;
       }
     }),
     col.accessor('name', { header: 'Name', cell: (i) => <span style={{ color: '#fafafa', fontWeight: 500 }}>{i.getValue()}</span> }),
@@ -250,20 +258,34 @@ export default function SellersManager() {
           {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* Images */}
+            {/* Logo / Avatar — stored as images[0] */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🖼️ Images</div>
-              <ImageUpload label="Upload Image" value="" onChange={addImage} hint="Click to upload, then it's added below" />
-              {imagesText.split('\n').filter(Boolean).map((url, i) => (
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏷️ Logo / Avatar</div>
+              <p style={{ fontSize: 12, color: '#52525b', margin: 0 }}>Shown as the seller's profile picture on cards and listings. Square image recommended.</p>
+              <ImageUpload
+                label=""
+                value={logoUrl}
+                onChange={setLogoUrl}
+                bucket="media"
+                hint="Drop or click to upload logo (square best)"
+              />
+            </div>
+
+            {/* Gallery Images — stored as images[1+] */}
+            <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🖼️ Gallery Images</div>
+              <p style={{ fontSize: 12, color: '#52525b', margin: 0 }}>Product shots, screenshots, or promo images shown in the seller gallery.</p>
+              <ImageUpload label="" value="" onChange={addGalleryImage} hint="Click to upload, then it's added below" />
+              {galleryText.split('\n').filter(Boolean).map((url, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <img src={url} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, border: '1px solid #27272a' }} onError={(e) => { (e.target as any).style.display = 'none'; }} />
                   <span style={{ flex: 1, fontSize: 11, color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
-                  <button type="button" onClick={() => setImagesText(imagesText.split('\n').filter((_, idx) => idx !== i).join('\n'))} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><X size={12} /></button>
+                  <button type="button" onClick={() => setGalleryText(galleryText.split('\n').filter((_, idx) => idx !== i).join('\n'))} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><X size={12} /></button>
                 </div>
               ))}
               <div>
                 <label style={lbl}>Or paste image URLs (one per line)</label>
-                <textarea value={imagesText} onChange={(e) => setImagesText(e.target.value)} style={{ ...ta, minHeight: 80 }} placeholder="https://..." />
+                <textarea value={galleryText} onChange={(e) => setGalleryText(e.target.value)} style={{ ...ta, minHeight: 80 }} placeholder="https://..." />
               </div>
             </div>
 

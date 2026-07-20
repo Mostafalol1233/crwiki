@@ -29,13 +29,18 @@ export default function SearchPage() {
   const [query, setQuery] = useState(initialQuery);
   const debouncedQuery = useDebounceValue(query, 400);
   const [activeTab, setActiveTab] = useState("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (debouncedQuery) params.set("q", debouncedQuery);
     else params.delete("q");
     window.history.replaceState({}, "", window.location.pathname + (params.toString() ? "?" + params.toString() : ""));
+    setPage(1); // reset page on query change
   }, [debouncedQuery]);
+
+  useEffect(() => { setPage(1); }, [activeTab]); // reset page on tab change
 
   const enabled = !!debouncedQuery;
 
@@ -188,8 +193,9 @@ export default function SearchPage() {
                 <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </div>
             ) : getTabResults().length > 0 ? (
+              <div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {getTabResults().map((item, idx) => {
+                {getTabResults().slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((item, idx) => {
                   const title = item.title || item.name || "Untitled";
                   const desc = item.summary || item.description || item.content || "";
                   const cleanDesc = desc.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim().slice(0, 160);
@@ -231,6 +237,38 @@ export default function SearchPage() {
                     </Link>
                   );
                 })}
+              </div>
+              {/* Pagination controls */}
+              {getTabResults().length > PAGE_SIZE && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, padding: "10px 14px", background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 4 }}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    style={{
+                      padding: "6px 16px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em",
+                      background: page === 1 ? "rgba(255,255,255,0.03)" : "rgba(245,166,35,0.1)",
+                      color: page === 1 ? "rgba(255,255,255,0.2)" : "#f5a623",
+                      border: `1px solid ${page === 1 ? "rgba(255,255,255,0.06)" : "rgba(245,166,35,0.3)"}`,
+                      borderRadius: 3, cursor: page === 1 ? "default" : "pointer",
+                    }}
+                  >← Prev</button>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 700 }}>
+                    Page {page} / {Math.ceil(getTabResults().length / PAGE_SIZE)}
+                    <span style={{ color: "rgba(255,255,255,0.15)", marginLeft: 8 }}>({getTabResults().length} results)</span>
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(Math.ceil(getTabResults().length / PAGE_SIZE), p + 1))}
+                    disabled={page === Math.ceil(getTabResults().length / PAGE_SIZE)}
+                    style={{
+                      padding: "6px 16px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em",
+                      background: page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "rgba(255,255,255,0.03)" : "rgba(245,166,35,0.1)",
+                      color: page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "rgba(255,255,255,0.2)" : "#f5a623",
+                      border: `1px solid ${page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "rgba(255,255,255,0.06)" : "rgba(245,166,35,0.3)"}`,
+                      borderRadius: 3, cursor: page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "default" : "pointer",
+                    }}
+                  >Next →</button>
+                </div>
+              )}
               </div>
             ) : (
               <div style={{ padding: "60px 20px", textAlign: "center", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 4 }}>

@@ -26,6 +26,19 @@ const mercenaryImageByName: Record<string, string> = {
   dean: "https://files.catbox.moe/t78mvu.jpeg",
   thoth: "https://files.catbox.moe/g4zfzn.jpeg",
   sfg: "https://files.catbox.moe/3bba2g.jpeg",
+  // Additional VIP characters
+  xenon: "https://files.catbox.moe/6npa73.jpeg",
+  "gm xenon": "https://files.catbox.moe/6npa73.jpeg",
+  harrier: "https://files.catbox.moe/eck3jc.jpeg",
+  phoenix: "https://files.catbox.moe/hh7h5u.jpeg",
+  specter: "https://files.catbox.moe/ctwnqz.jpeg",
+  shadow: "https://files.catbox.moe/r26ox6.jpeg",
+  reaper: "https://files.catbox.moe/3bba2g.jpeg",
+  storm: "https://files.catbox.moe/g4zfzn.jpeg",
+  nova: "https://files.catbox.moe/4il6hi.jpeg",
+  ranger: "https://files.catbox.moe/3o58nb.jpeg",
+  blaze: "https://files.catbox.moe/6npa73.jpeg",
+  titan: "https://files.catbox.moe/hh7h5u.jpeg",
 };
 
 // Local voice lines from merc-mp3 folder (served via /merc-voices/)
@@ -50,6 +63,156 @@ function getMercVoiceLines(merc: Mercenary): string[] {
   const key = String(merc.name || "").toLowerCase().trim();
   return LOCAL_VOICE_LINES[key] || [];
 }
+
+// VIP character ability data (frontend-side, shown in modal)
+const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: string }> = {
+  wolf: {
+    ability: "Shadow Step",
+    abilityAr: "خطوة الظل",
+    descAr: "ضابط قوات خاصة بريطانية ومتخصص في العمليات السرية. قدرته الخارقة في التسلل بتخليه يتحرك بدون ما يعمل أي صوت — يظهر ويختفي زي الوهم. لو حسيت إن في حاجة بتتحرك في الضلمة.. على الأغلب هو.",
+  },
+  vipers: {
+    ability: "Cobra Rush",
+    abilityAr: "هجمة الكوبرا",
+    descAr: "فريق نسائي نخبة من الكوماندو الأمريكي. بيشتغلوا كفريق واحد وسرعتهم في التغلغل مش ليها مثيل — لو شفتيهم، الوقت بيبقى فات. هجمتهم مفاجئة وسريعة زي الكوبرا بالظبط.",
+  },
+  viper: {
+    ability: "Cobra Rush",
+    abilityAr: "هجمة الكوبرا",
+    descAr: "فريق نسائي نخبة من الكوماندو الأمريكي. بيشتغلوا كفريق واحد وسرعتهم في التغلغل مش ليها مثيل — خطوة واحدة غلط وخلصت.",
+  },
+  sisterhood: {
+    ability: "Iron Bond",
+    abilityAr: "رابطة الحديد",
+    descAr: "مجموعة محاربات متخصصات في الحرب الإلكترونية والتكتيك الميداني. قوتهم في التعاون — لما بيكونوا مع بعض، بيبقوا أقوى من أي فريق تاني. الرابط بينهم أقوى من الحديد نفسه.",
+  },
+  "black mamba": {
+    ability: "Lethal Precision",
+    abilityAr: "دقة قاتلة",
+    descAr: "قناص محترف مشهور بدقة تصويبه الخارقة. بيقدر يصيب أهداف على مسافات بعيدة جداً من غير ما يُحس بيه حد — طلقة واحدة، نتيجة واحدة. مفيش مكان تهرب فيه لما بيحدد هدفه.",
+  },
+  "arch honorary": {
+    ability: "Battle Hardened",
+    abilityAr: "مُصلَّب بالمعارك",
+    descAr: "محارب محترف عنده خبرة واسعة في ميادين الحرب من حول العالم. جسمه اتعوّد على الضرب — بيتحمل أكتر من أي جندي عادي. المعارك اللي اتعوم فيها خلّته الأصعب في الميدان.",
+  },
+  desperado: {
+    ability: "Wild Card",
+    abilityAr: "الورقة المجهولة",
+    descAr: "محارب شرير خبير في القتال الميداني — مش بيتبع قواعد ومش بيتوقع أحد حركته. هجماته مفاجئة ومحسوبش على أي حسابات. لو فكرت إنك عرفت خطته، معناه إنه غيّرها.",
+  },
+  ronin: {
+    ability: "Blade Mastery",
+    abilityAr: "إتقان السيف",
+    descAr: "سامورائي ياباني قديم انقطع صلته بسيده. متخصص في القتال بالسلاح الأبيض والسكين — سريع وميت في نفس الوقت. السيف في إيده مش بس سلاح، ده جزء منه.",
+  },
+  dean: {
+    ability: "Tactical Intel",
+    abilityAr: "الذكاء التكتيكي",
+    descAr: "عميل SIA نخبة مدرب على أعلى مستوى. متخصص في جمع المعلومات الاستخباراتية والتخطيط للعمليات السرية — دايماً خطوة قدام الخصم. مش بيتحرك غير لما بيبقى عنده الصورة كاملة.",
+  },
+  thoth: {
+    ability: "Ancient Wisdom",
+    abilityAr: "حكمة الأجداد",
+    descAr: "مقاتل مصري مستلهم من الإله ثوت. عنده معرفة واسعة بالأسلحة القديمة والحديثة — هجماته محسوبة وذكية زي الألغاز المعمارية. حكمة آلاف السنين في جسم مقاتل واحد.",
+  },
+  sfg: {
+    ability: "Coordinated Strike",
+    abilityAr: "الضربة المنسقة",
+    descAr: "مجموعة القوات الخاصة — فريق منسق بيشتغل كوحدة واحدة. قوتهم في التناسق الكامل وتنفيذ الخطط الهجومية بدقة جراحية. لما بيهاجموا، المكان بيخلص في ثواني.",
+  },
+  ghost: {
+    ability: "Phantom Step",
+    abilityAr: "خطوة الشبح",
+    descAr: "مشغّل سري خبير في التخفي الكامل. بيقدر يتحرك بين الأعداء بدون ما يُلفت أي انتباه — تشوفه لما يكون خلصك. شبح حقيقي، موجود بس مش واضح.",
+  },
+  gigi: {
+    ability: "Rapid Deploy",
+    abilityAr: "النشر الفوري",
+    descAr: "مقاتلة متخصصة في العمليات الميدانية وجمع المعلومات السريعة. خفيفة الحركة وذكية في التعامل مع المواقف الصعبة. بتوصل للهدف قبل ما أي حد يحس بيها.",
+  },
+  valoria: {
+    ability: "Command Presence",
+    abilityAr: "حضور القيادة",
+    descAr: "ضابطة نخبة من وحدات التدخل السريع. معروفة بقدرتها الاستثنائية على قيادة الفريق تحت أشد ظروف الضغط. لما بتتكلم، الكل بيسمع ومفيش حد بيتأخر.",
+  },
+  arabella: {
+    ability: "Shadow Infiltrate",
+    abilityAr: "التسلل الخفي",
+    descAr: "عميلة مزدوجة خبيرة في الاستخبارات والتجسس. بتستخدم ذكاءها الحاد قبل القوة في كل مهمة — الأخطر مش دايماً الأعلى صوتاً. ادخلت ألف مكان وطلعت من غير ما حد يحس.",
+  },
+  "subject alpha": {
+    ability: "Enhanced Reflexes",
+    abilityAr: "ردود أفعال محسّنة",
+    descAr: "جندي تجريبي خضع لتحسينات بيولوجية متقدمة. قدراته الجسدية فوق الطبيعية بتخليه تهديد من مستوى آخر — مش إنسان عادي. التجارب اللي اتعمل عليها خلّته أسرع وأقوى من أي جندي تاني.",
+  },
+  crusherz: {
+    ability: "Brute Force",
+    abilityAr: "القوة الغاشمة",
+    descAr: "جندي هجوم ثقيل متخصص في اقتحام المواقع المحصنة. قوته الجسدية الهائلة مش لها حدود — ما في باب بيصمد قدامه. لو شافك هيقرب، الأفضل تجري.",
+  },
+  // ─── New VIP Characters ───────────────────────────────────────────────────
+  xenon: {
+    ability: "Gamma Surge",
+    abilityAr: "موجة جاما",
+    descAr: "GM Xenon هو واحد من أقوى العملاء المعيّنين رسميًا من إدارة SIA. بيطلع في اللحظات الحاسمة ومش بيكسر الصمت غير لما الأمر يستحق — لما بيظهر، الميدان بيتغير. طاقته الخارقة مصدرها تدريب سري على أعلى مستوى.",
+  },
+  "gm xenon": {
+    ability: "Gamma Surge",
+    abilityAr: "موجة جاما",
+    descAr: "GM Xenon هو واحد من أقوى العملاء المعيّنين رسميًا من إدارة SIA. بيطلع في اللحظات الحاسمة ومش بيكسر الصمت غير لما الأمر يستحق — لما بيظهر، الميدان بيتغير. طاقته الخارقة مصدرها تدريب سري على أعلى مستوى.",
+  },
+  harrier: {
+    ability: "Aerial Assault",
+    abilityAr: "الهجوم الجوي",
+    descAr: "هاريير هو مقاتل جوي نخبة متدرب على العمليات السريعة من الأعلى للأسفل. بيضرب زي الصقر — فجأة، من فوق، وبدقة مش طبيعية. لما بيهاجم، الدنيا بتقف لثانية.",
+  },
+  phoenix: {
+    ability: "Rebirth Protocol",
+    abilityAr: "بروتوكول البعث",
+    descAr: "فينيكس كاراكتر أسطوري في الساحة — الزملا بيسموه 'العقاب الرسمي'. بيتجدد في كل معركة ويرجع أقوى من اللي راح. مش بتوقعه يوقف وإنت بتضربه، لأنه بيرجع أقوى.",
+  },
+  specter: {
+    ability: "Ghost Cloak",
+    abilityAr: "عباءة الشبح",
+    descAr: "سبيكتر عميل من الدرجة الأولى متخصص في الاختفاء الكامل خلال المهمات. مش بيتكلم كتير، بس لما بيتحرك بتحسه من الاهتزاز. أهدافه بيختفوا زيه بالظبط.",
+  },
+  shadow: {
+    ability: "Dark Shroud",
+    abilityAr: "ستار الظلام",
+    descAr: "شادو ماجناس — خبير الاستخبارات اللي اتعوّد على العمل في الظلام الكامل. مفيش معلومة بتفوته ومفيش مكان بيصعب عليه. الظلام بالنسباله مش تهديد، ده أدواته.",
+  },
+  reaper: {
+    ability: "Final Strike",
+    abilityAr: "الضربة الأخيرة",
+    descAr: "ريبر هو الوجه المرعب للإنهاء — متخصص في التصفية النهائية والعمليات اللي محدش بيرجع منها. ضربته الأخيرة مش بس قوية، دي حكم نهائي. الاسم بيقول كل حاجة.",
+  },
+  storm: {
+    ability: "Thunder Rush",
+    abilityAr: "هجمة الرعد",
+    descAr: "ستورم هو مقاتل الخطوط الأمامية اللي بيجي زي العاصفة — سريع، مدمّر، ومفيش حاجة بتوقفه. بيكسر الخطوط ويفتح الطريق للفريق. لما بيهجم، الكل بيهرب أو يتأثر.",
+  },
+  nova: {
+    ability: "Stellar Burst",
+    abilityAr: "انفجار نجمي",
+    descAr: "نوفا هو أحدث العملاء المنضمين لقوات النخبة — مش شهير بس خطير جداً. طاقته الانفجارية بتخلي المنطقة كلها حول الهدف في خطر. جديد على الساحة بس بيبقى الأقوى في الميدان.",
+  },
+  ranger: {
+    ability: "Long Range Mastery",
+    abilityAr: "إتقان المدى البعيد",
+    descAr: "رينجر هو سيد المسافة البعيدة — بيصوّب من حيث ما بتشوفوش وبيصيب بدقة مرعبة. بيحمي الفريق من بعيد ومش بيسمح لأي هدف يهرب من نطاق تصويبه. صاحبه في الميدان، عدوه يخبّا.",
+  },
+  blaze: {
+    ability: "Inferno Charge",
+    abilityAr: "شحنة الجحيم",
+    descAr: "بليز هو مقاتل النيران والتدمير — كل حاجة بيلمسها بتتحول لنار. متخصص في تطهير المواقع بالنيران والتغطية الكثيفة. دخل معركة واحدة معاه وهتعرف ليه اسمه بليز.",
+  },
+  titan: {
+    ability: "Unstoppable Force",
+    abilityAr: "القوة التي لا تُوقف",
+    descAr: "تيتان هو الأضخم والأثقل والأقوى في قوات النخبة — مش بيتوقف ومش بيحس بالخوف. بيمشي في وسط النار وبيحمي الفريق ويكسر الدفاعات. ما في حاجة بتوقفه لما بيقرر يتقدم.",
+  },
+};
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   assault: { bg: "rgba(239,68,68,0.15)", color: "#f87171" },
@@ -357,10 +520,26 @@ export default function Mercenaries() {
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0d0d0d 0%, transparent 60%)" }} />
             </div>
             <div className="px-6 pb-6">
-              <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2 mt-3">{selectedMerc.name}</h2>
-              {selectedMerc.description && (
-                <p className="text-sm leading-relaxed mb-4" style={{ color: "#888" }}>{selectedMerc.description}</p>
-              )}
+              <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-1 mt-3">{selectedMerc.name}</h2>
+
+              {/* VIP ability badge */}
+              {(() => {
+                const key = selectedMerc.name.toLowerCase().trim();
+                const vip = VIP_DATA[key];
+                return vip ? (
+                  <div className="mb-3">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3" style={{ background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.3)", borderRadius: 3 }}>
+                      <Zap className="h-3 w-3" style={{ color: "#f5a623" }} />
+                      <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#f5a623" }}>{vip.ability}</span>
+                      <span className="text-[10px] font-bold mx-1" style={{ color: "#555" }}>·</span>
+                      <span className="text-[11px] font-bold" style={{ color: "#f5a623", fontFamily: "'Noto Sans Arabic', sans-serif" }}>{vip.abilityAr}</span>
+                    </div>
+                    <p className="text-sm leading-relaxed" style={{ color: "#888", fontFamily: "'Noto Sans Arabic', sans-serif", direction: "rtl" }}>{vip.descAr}</p>
+                  </div>
+                ) : selectedMerc.description ? (
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: "#888" }}>{selectedMerc.description}</p>
+                ) : null;
+              })()}
 
               {/* Voice lines list */}
               {(() => {

@@ -388,6 +388,17 @@ function FAQAccordionItem({
 }) {
   const hasAr = !!(article.titleAr || article.bodyAr);
 
+  const decodeEntities = (str: string) =>
+    str
+      .replace(/&amp;/g, "&")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const renderBody = (text: string) => {
     if (!text) return null;
     const isHtml = text.startsWith("<") || /<(p|ul|ol|br|img|iframe|strong)[\s>]/.test(text);
@@ -400,9 +411,10 @@ function FAQAccordionItem({
         />
       );
     }
+    const clean = decodeEntities(text);
     return (
       <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "#888" }}>
-        {text}
+        {clean}
       </p>
     );
   };
@@ -534,7 +546,15 @@ export default function FAQ() {
 
   useEffect(() => {
     if (serverFaq && Array.isArray(serverFaq) && serverFaq.length > 0) {
-      setFaqData(serverFaq);
+      // Only use server data if it has Arabic content; otherwise keep rich static data
+      const hasArabic = serverFaq.some((cat: any) =>
+        cat.nameAr ||
+        (Array.isArray(cat.articles) && cat.articles.some((a: any) => a.titleAr || a.bodyAr))
+      );
+      if (hasArabic) {
+        setFaqData(serverFaq);
+      }
+      // If server data has no Arabic, keep STATIC_FAQ_DATA which has full عامية translations
     }
   }, [serverFaq]);
 

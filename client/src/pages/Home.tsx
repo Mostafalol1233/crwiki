@@ -33,9 +33,10 @@ const PORTALS = [
     label: "Weapons",
     desc: "Rifles, pistols, snipers & melee",
     href: "/weapons",
-    img: "https://static.wikia.nocookie.net/crossfirefps/images/4/41/RIFLE_AK-47-WCG2011.png",
-    imgFit: "contain" as const,
+    img: "/portal/weapons.png",
+    imgFit: "cover" as const,
     imgBg: "#0a0800",
+    imgPos: "center top",
   },
   {
     label: "Maps",
@@ -44,6 +45,7 @@ const PORTALS = [
     img: "/portal/maps.jpg",
     imgFit: "cover" as const,
     imgBg: "#0a0c10",
+    imgPos: "center center",
   },
   {
     label: "Mercenaries",
@@ -52,6 +54,7 @@ const PORTALS = [
     img: "/portal/mercenaries.png",
     imgFit: "cover" as const,
     imgBg: "#0a0a0a",
+    imgPos: "center top",
   },
   {
     label: "Game Modes",
@@ -60,6 +63,25 @@ const PORTALS = [
     img: "/portal/modes.png",
     imgFit: "cover" as const,
     imgBg: "#0a0808",
+    imgPos: "center center",
+  },
+  {
+    label: "Ranks",
+    desc: "Rank tiers, EXP & progression",
+    href: "/ranks",
+    img: "/portal/ranks.png",
+    imgFit: "cover" as const,
+    imgBg: "#0a0a0c",
+    imgPos: "center center",
+  },
+  {
+    label: "Events",
+    desc: "Tournaments & limited-time ops",
+    href: "/events",
+    img: "/portal/events.jpg",
+    imgFit: "cover" as const,
+    imgBg: "#0a080a",
+    imgPos: "center center",
   },
 ];
 
@@ -91,7 +113,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
             objectFit: portal.imgFit,
-            objectPosition: "center top",
+            objectPosition: portal.imgPos || "center top",
             transition: "transform 0.35s ease",
             transform: hovered ? "scale(1.06)" : "scale(1)",
           }}
@@ -453,15 +475,15 @@ export default function Home() {
 
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(6, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: 10,
           }} className="portal-grid">
             {PORTALS.map((p) => <PortalCard key={p.label} portal={p} />)}
           </div>
 
           <style>{`
-            @media(max-width:900px){.portal-grid{grid-template-columns:repeat(3,1fr)!important;}}
-            @media(max-width:560px){.portal-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            @media(max-width:900px){.portal-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            @media(max-width:480px){.portal-grid{grid-template-columns:1fr!important;}}
           `}</style>
         </div>
 

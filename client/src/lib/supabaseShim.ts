@@ -16,6 +16,16 @@ function slugify(text: string) {
     .replace(/^-|-$/g, '');
 }
 
+function extractYouTubeId(url: string): string {
+  if (!url) return '';
+  const m =
+    url.match(/[?&]v=([^&#]+)/) ||
+    url.match(/youtu\.be\/([^?&#]+)/) ||
+    url.match(/\/embed\/([^?&#]+)/) ||
+    url.match(/\/shorts\/([^?&#]+)/);
+  return m ? m[1] : url.length === 11 ? url : '';
+}
+
 function parseUrlParams(url: string): { path: string; params: URLSearchParams } {
   const [path, qs = ''] = url.split('?');
   return { path, params: new URLSearchParams(qs) };
@@ -668,6 +678,71 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     }
     if (M === 'DELETE') {
       await client.from('tickets').delete().eq('id', id);
+      return { success: true };
+    }
+  }
+
+  // ── Tutorials (Videos) ────────────────────────────────────────────────────
+  if (path === '/tutorials') {
+    const limit = parseInt(params.get('limit') || '100');
+    const offset = parseInt(params.get('offset') || '0');
+    const category = params.get('category') || '';
+    if (M === 'GET') {
+      let query = client.from('tutorials').select('*', { count: 'exact' }).order('order_index', { ascending: true }).order('created_at', { ascending: false });
+      if (category) query = (query as any).eq('category', category);
+      query = (query as any).range(offset, offset + limit - 1);
+      const { data, count, error } = await query;
+      if (error) throw new Error(error.message);
+      const items = (data || []).map((t: any) => ({
+        id: String(t.id),
+        title: t.title || '',
+        description: t.description || '',
+        youtubeUrl: t.youtube_url || '',
+        youtubeId: t.youtube_id || '',
+        category: t.category || 'tutorial',
+        order: t.order_index || 0,
+        tutorial_slug: t.tutorial_slug || String(t.id),
+        createdAt: t.created_at,
+      }));
+      return { items, total: count || 0 };
+    }
+    if (M === 'POST') {
+      const ytId = extractYouTubeId(body.youtubeUrl || body.youtube_url || '');
+      const { data, error } = await client.from('tutorials').insert([{
+        title: body.title || '',
+        description: body.description || '',
+        youtube_url: body.youtubeUrl || body.youtube_url || '',
+        youtube_id: body.youtubeId || body.youtube_id || ytId || '',
+        category: body.category || 'tutorial',
+        order_index: body.order || body.order_index || 0,
+      }]).select().single();
+      if (error) throw new Error(error.message);
+      return { id: String(data.id), title: data.title, youtubeId: data.youtube_id, category: data.category };
+    }
+  }
+
+  const tutorialMatch = path.match(/^\/tutorials\/(.+)$/);
+  if (tutorialMatch) {
+    const id = tutorialMatch[1];
+    if (M === 'GET') {
+      const { data, error } = await client.from('tutorials').select('*').eq('id', id).single();
+      if (error) throw new Error(error.message);
+      return { id: String(data.id), title: data.title, description: data.description, youtubeUrl: data.youtube_url, youtubeId: data.youtube_id, category: data.category, order: data.order_index, tutorial_slug: data.tutorial_slug || String(data.id), createdAt: data.created_at };
+    }
+    if (M === 'PATCH') {
+      const ytId = body.youtubeUrl ? extractYouTubeId(body.youtubeUrl) : body.youtube_id;
+      const { data, error } = await client.from('tutorials').update({
+        title: body.title, description: body.description,
+        youtube_url: body.youtubeUrl || body.youtube_url,
+        youtube_id: body.youtubeId || body.youtube_id || ytId,
+        category: body.category, order_index: body.order ?? body.order_index,
+        tutorial_slug: body.tutorial_slug,
+      }).eq('id', id).select().single();
+      if (error) throw new Error(error.message);
+      return { id: String(data.id), title: data.title, youtubeId: data.youtube_id };
+    }
+    if (M === 'DELETE') {
+      await client.from('tutorials').delete().eq('id', id);
       return { success: true };
     }
   }

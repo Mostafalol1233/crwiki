@@ -462,11 +462,14 @@ function cfPlayerLookupPlugin(): Plugin {
           const url = new URL(req.url || "", "http://localhost");
           const nickname = (url.searchParams.get("nickname") || "").trim();
           const region = (url.searchParams.get("region") || "na").toLowerCase();
+          const regionLabel = region === "west" ? "CrossFire West" : "CrossFire NA";
 
-          if (!nickname || nickname.length < 2 || nickname.length > 32) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: "Invalid nickname" }));
-          }
+          // Also accept a raw profile URL or numeric player ID
+          const rawProfileUrl = (url.searchParams.get("profileUrl") || "").trim();
+          const rawProfileId = (url.searchParams.get("profileId") || "").trim();
+          // Extract numeric ID from profile URL like https://crossfire.z8games.com/profile/26992814
+          const profileIdFromUrl = rawProfileUrl.match(/\/profile\/(\d+)/)?.[1] || "";
+          const profileId = (rawProfileId || profileIdFromUrl).trim();
 
           const { fetch } = await import("undici");
           const CF_HEADERS = {
@@ -479,58 +482,104 @@ function cfPlayerLookupPlugin(): Plugin {
             "sec-fetch-dest": "empty",
           };
 
-          // Region → endpoints to try in order
-          const endpoints = region === "west"
-            ? ["https://cfwest.z8games.com/rest/userprofile.json", "https://crossfire.z8games.com/rest/userprofile.json"]
-            : ["https://crossfire.z8games.com/rest/userprofile.json"];
-          const regionLabel = region === "west" ? "CrossFire West" : "CrossFire NA";
+          const restBases = region === "west"
+            ? ["https://cfwest.z8games.com/rest", "https://crossfire.z8games.com/rest"]
+            : ["https://crossfire.z8games.com/rest"];
 
           let data: any = null;
-          for (const base of endpoints) {
-            try {
-              const response = await fetch(`${base}?usn=${encodeURIComponent(nickname)}`, {
-                signal: AbortSignal.timeout(10000),
-                headers: CF_HEADERS,
-              } as any);
-              const ct = response.headers.get("content-type") || "";
-              if (!ct.includes("json")) continue; // not JSON — try next endpoint
-              const json = await response.json() as any;
-              if (json.p_o_ErrID === -702 || json.p_o_ErrDesc === "Character not found") break; // definitive not-found
-              data = json;
-              break;
-            } catch { /* timeout or network error — try next */ }
+
+          // ── Path A: numeric profile ID lookup ─────────────────────────────
+          if (profileId && /^\d+$/.test(profileId)) {
+            // Try multiple parameter names that z8games REST may accept
+            const idParams = ["char_no", "user_no", "UserNo", "CharNo", "usn_no", "uid", "user_id", "char_id"];
+            outer: for (const base of restBases) {
+              for (const param of idParams) {
+                try {
+                  const response = await fetch(`${base}/userprofile.json?${param}=${profileId}`, {
+                    signal: AbortSignal.timeout(7000),
+                    headers: CF_HEADERS,
+                  } as any);
+                  const ct = response.headers.get("content-type") || "";
+                  if (!ct.includes("json")) continue;
+                  const json = await response.json() as any;
+                  if (json.p_o_ErrID === -702) continue;
+                  // Validate it returned real player data (not an empty/error shell)
+                  if (json.UserNickname || json.TotalExp != null || json.TotalKills != null) {
+                    data = json;
+                    break outer;
+                  }
+                } catch { /* timeout or bad response — try next */ }
+              }
+            }
+
+            if (!data) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({
+                error: `Player profile #${profileId} could not be loaded. The profile ID lookup isn't supported on all CF server configurations. Try entering your in-game nickname directly instead.`,
+                notFound: true,
+                suggestNickname: true,
+              }));
+            }
           }
 
-          if (!data) {
-            res.writeHead(404, { "Content-Type": "application/json" });
-            const msg = region === "west"
-              ? `Player "${nickname}" not found. CrossFire West was discontinued — if you played CF West, stats may no longer be available. Try switching to CrossFire NA.`
-              : `Player "${nickname}" not found on ${regionLabel}. Check spelling — nicknames are case-sensitive.`;
-            return res.end(JSON.stringify({ error: msg, notFound: true }));
+          // ── Path B: nickname lookup ────────────────────────────────────────
+          else {
+            if (!nickname || nickname.length < 2 || nickname.length > 32) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({ error: "Invalid nickname — must be 2–32 characters." }));
+            }
+
+            for (const base of restBases) {
+              try {
+                const response = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(nickname)}`, {
+                  signal: AbortSignal.timeout(10000),
+                  headers: CF_HEADERS,
+                } as any);
+                const ct = response.headers.get("content-type") || "";
+                if (!ct.includes("json")) continue;
+                const json = await response.json() as any;
+                if (json.p_o_ErrID === -702 || json.p_o_ErrDesc === "Character not found") break;
+                data = json;
+                break;
+              } catch { /* timeout — try next */ }
+            }
+
+            if (!data) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              const msg = region === "west"
+                ? `Player "${nickname}" not found. CrossFire West was discontinued — stats may no longer be available. Try switching to CrossFire NA.`
+                : `Player "${nickname}" not found on ${regionLabel}. Nicknames are case-sensitive.`;
+              return res.end(JSON.stringify({ error: msg, notFound: true }));
+            }
           }
 
-          const kills = data.TotalKills ?? data.total_kills ?? data.Kills ?? null;
+          // ── Map raw API response to profile shape ──────────────────────────
+          const kills  = data.TotalKills  ?? data.total_kills  ?? data.Kills  ?? null;
           const deaths = data.TotalDeaths ?? data.total_deaths ?? data.Deaths ?? null;
-          const wins = data.TotalWins ?? data.total_wins ?? data.Wins ?? null;
+          const wins   = data.TotalWins   ?? data.total_wins   ?? data.Wins   ?? null;
           const losses = data.TotalLosses ?? data.total_losses ?? data.Losses ?? null;
-          const exp = data.TotalExp ?? data.UserExp ?? data.exp ?? null;
+          const exp    = data.TotalExp    ?? data.UserExp      ?? data.exp    ?? null;
+          const vipDays = data.VIPDays ?? data.VipDays ?? data.vip_days ?? data.VipRemainDays ?? null;
+          const vipLevel = data.VIPLevel ?? data.VipLevel ?? data.vip_level ?? null;
 
           const profile = {
-            nickname: data.UserNickname || data.usn || nickname,
-            region: regionLabel,
+            nickname:   data.UserNickname || data.usn || nickname,
+            region:     regionLabel,
             exp,
-            rank: data.RankName || data.rank_name || data.Rank || null,
-            rankTier: data.RankNo || data.rank_no || data.RankTier || null,
-            rankImage: data.RankImg || data.rank_img || null,
+            rank:       data.RankName  || data.rank_name  || data.Rank  || null,
+            rankTier:   data.RankNo    || data.rank_no    || data.RankTier || null,
+            rankImage:  data.RankImg   || data.rank_img   || null,
             kills,
             deaths,
             wins,
             losses,
-            kdRatio: kills !== null && deaths !== null && deaths > 0 ? (kills / deaths).toFixed(2) : null,
-            winRate: wins !== null && losses !== null && (wins + losses) > 0 ? ((wins / (wins + losses)) * 100).toFixed(1) : null,
+            kdRatio:  kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null,
+            winRate:  wins  !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null,
             playtime: data.PlayTime || data.play_time || null,
-            level: data.UserLevel || data.level || null,
-            clan: data.ClanName || data.clan_name || null,
+            level:    data.UserLevel || data.level || null,
+            clan:     data.ClanName  || data.clan_name || null,
+            vipDays,
+            vipLevel,
             raw: data,
           };
 
@@ -539,7 +588,7 @@ function cfPlayerLookupPlugin(): Plugin {
         } catch (err: any) {
           const isTimeout = err?.name === "TimeoutError" || err?.message?.includes("timeout");
           res.writeHead(isTimeout ? 504 : 500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: isTimeout ? "CF servers timed out, try again shortly." : "Failed to fetch player data." }));
+          res.end(JSON.stringify({ error: isTimeout ? "CF servers timed out — try again shortly." : "Failed to fetch player data." }));
         }
       });
     },

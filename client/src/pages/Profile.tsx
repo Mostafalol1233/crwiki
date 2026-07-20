@@ -46,6 +46,7 @@ function CFStatCard({ label, value, icon: Icon, color }: { label: string; value:
 
 function formatExp(exp: number | null): string {
   if (exp === null) return "—";
+  if (exp >= 1_000_000_000) return (exp / 1_000_000_000).toFixed(2) + "B";
   if (exp >= 1_000_000) return (exp / 1_000_000).toFixed(1) + "M";
   if (exp >= 1_000) return (exp / 1_000).toFixed(0) + "K";
   return String(exp);
@@ -56,6 +57,159 @@ function formatNum(n: number | null): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
   return String(n);
+}
+
+// ─── Rank EXP thresholds (tier → cumulative EXP required) ────────────────────
+// Tier numbers match the CF rank system (RankNo from API / STATIC_RANKS tier field)
+const RANK_EXP: Record<number, { name: string; exp: number }> = {
+  1:   { name: "Trainee 1",              exp: 0 },
+  2:   { name: "Trainee 2",              exp: 200 },
+  3:   { name: "Private",                exp: 2_000 },
+  4:   { name: "Private First Class",    exp: 5_000 },
+  5:   { name: "Corporal",               exp: 10_000 },
+  6:   { name: "Sergeant 1",             exp: 20_000 },
+  7:   { name: "Sergeant 2",             exp: 30_000 },
+  8:   { name: "Sergeant 3",             exp: 45_000 },
+  9:   { name: "Sergeant 4",             exp: 60_000 },
+  10:  { name: "Staff Sergeant 1",       exp: 80_000 },
+  11:  { name: "Staff Sergeant 2",       exp: 100_000 },
+  12:  { name: "Staff Sergeant 3",       exp: 130_000 },
+  13:  { name: "Staff Sergeant 4",       exp: 160_000 },
+  14:  { name: "Staff Sergeant 5",       exp: 200_000 },
+  15:  { name: "Staff Sergeant 6",       exp: 250_000 },
+  16:  { name: "Sergeant First Class 1", exp: 300_000 },
+  17:  { name: "Sergeant First Class 2", exp: 370_000 },
+  18:  { name: "Sergeant First Class 3", exp: 450_000 },
+  19:  { name: "Sergeant First Class 4", exp: 550_000 },
+  20:  { name: "Sergeant First Class 5", exp: 650_000 },
+  21:  { name: "Sergeant First Class 6", exp: 800_000 },
+  22:  { name: "Master Sergeant 1",      exp: 950_000 },
+  23:  { name: "Master Sergeant 2",      exp: 1_100_000 },
+  24:  { name: "Master Sergeant 3",      exp: 1_300_000 },
+  25:  { name: "Master Sergeant 4",      exp: 1_500_000 },
+  26:  { name: "Master Sergeant 5",      exp: 1_800_000 },
+  27:  { name: "Master Sergeant 6",      exp: 2_100_000 },
+  28:  { name: "Second Lieutenant 1",    exp: 2_500_000 },
+  29:  { name: "Second Lieutenant 2",    exp: 3_000_000 },
+  30:  { name: "Second Lieutenant 3",    exp: 3_500_000 },
+  31:  { name: "Second Lieutenant 4",    exp: 4_000_000 },
+  32:  { name: "Second Lieutenant 5",    exp: 4_800_000 },
+  33:  { name: "Second Lieutenant 6",    exp: 5_600_000 },
+  34:  { name: "Second Lieutenant 7",    exp: 6_500_000 },
+  35:  { name: "Second Lieutenant 8",    exp: 7_500_000 },
+  36:  { name: "First Lieutenant 1",     exp: 9_000_000 },
+  37:  { name: "First Lieutenant 2",     exp: 10_500_000 },
+  38:  { name: "First Lieutenant 3",     exp: 12_000_000 },
+  39:  { name: "First Lieutenant 4",     exp: 14_000_000 },
+  40:  { name: "First Lieutenant 5",     exp: 16_000_000 },
+  41:  { name: "First Lieutenant 6",     exp: 18_500_000 },
+  42:  { name: "First Lieutenant 7",     exp: 21_000_000 },
+  43:  { name: "Captain 1",              exp: 24_000_000 },
+  44:  { name: "Captain 2",              exp: 27_000_000 },
+  45:  { name: "Captain 3",              exp: 30_500_000 },
+  46:  { name: "Captain 4",              exp: 34_000_000 },
+  47:  { name: "Captain 5",              exp: 38_000_000 },
+  48:  { name: "Captain 6",              exp: 42_000_000 },
+  49:  { name: "Captain 7",              exp: 46_500_000 },
+  50:  { name: "Captain 8",              exp: 51_000_000 },
+  51:  { name: "Major 1",                exp: 56_000_000 },
+  52:  { name: "Major 2",                exp: 61_500_000 },
+  53:  { name: "Major 3",                exp: 67_000_000 },
+  54:  { name: "Major 4",                exp: 73_000_000 },
+  55:  { name: "Major 5",                exp: 79_500_000 },
+  56:  { name: "Major 6",                exp: 86_000_000 },
+  57:  { name: "Major 7",                exp: 93_000_000 },
+  58:  { name: "Major 8",                exp: 100_500_000 },
+  59:  { name: "Lieutenant Colonel 1",   exp: 108_000_000 },
+  60:  { name: "Lieutenant Colonel 2",   exp: 116_000_000 },
+  61:  { name: "Lieutenant Colonel 3",   exp: 124_500_000 },
+  62:  { name: "Lieutenant Colonel 4",   exp: 133_500_000 },
+  63:  { name: "Lieutenant Colonel 5",   exp: 143_000_000 },
+  64:  { name: "Lieutenant Colonel 6",   exp: 153_000_000 },
+  65:  { name: "Lieutenant Colonel 7",   exp: 163_500_000 },
+  66:  { name: "Lieutenant Colonel 8",   exp: 174_500_000 },
+  67:  { name: "Colonel 1",              exp: 186_000_000 },
+  68:  { name: "Colonel 2",              exp: 198_000_000 },
+  69:  { name: "Colonel 3",              exp: 211_000_000 },
+  70:  { name: "Colonel 4",              exp: 224_500_000 },
+  71:  { name: "Colonel 5",              exp: 238_500_000 },
+  72:  { name: "Colonel 6",              exp: 253_000_000 },
+  73:  { name: "Colonel 7",              exp: 268_000_000 },
+  74:  { name: "Colonel 8",              exp: 283_500_000 },
+  75:  { name: "Brigadier General 1",    exp: 300_000_000 },
+  76:  { name: "Brigadier General 2",    exp: 317_000_000 },
+  77:  { name: "Brigadier General 3",    exp: 334_500_000 },
+  78:  { name: "Brigadier General 4",    exp: 352_500_000 },
+  79:  { name: "Brigadier General 5",    exp: 371_000_000 },
+  80:  { name: "Brigadier General 6",    exp: 390_000_000 },
+  81:  { name: "Major General 1",        exp: 410_000_000 },
+  82:  { name: "Major General 2",        exp: 430_500_000 },
+  83:  { name: "Major General 3",        exp: 451_500_000 },
+  84:  { name: "Major General 4",        exp: 473_000_000 },
+  85:  { name: "Major General 5",        exp: 495_000_000 },
+  86:  { name: "Major General 6",        exp: 517_500_000 },
+  87:  { name: "Lieutenant General 1",   exp: 541_000_000 },
+  88:  { name: "Lieutenant General 2",   exp: 565_000_000 },
+  89:  { name: "Lieutenant General 3",   exp: 590_000_000 },
+  90:  { name: "Lieutenant General 4",   exp: 615_500_000 },
+  91:  { name: "Lieutenant General 5",   exp: 641_500_000 },
+  92:  { name: "Lieutenant General 6",   exp: 668_000_000 },
+  93:  { name: "General 1",              exp: 695_000_000 },
+  94:  { name: "General 2",              exp: 723_000_000 },
+  95:  { name: "General 3",              exp: 751_500_000 },
+  96:  { name: "General 4",              exp: 780_500_000 },
+  97:  { name: "General 5",              exp: 810_000_000 },
+  98:  { name: "General 6",              exp: 840_000_000 },
+  99:  { name: "General 7",              exp: 870_500_000 },
+  100: { name: "General 8",              exp: 901_500_000 },
+  101: { name: "Grand General 1",        exp: 933_000_000 },
+  102: { name: "Grand General 2",        exp: 965_000_000 },
+  103: { name: "Grand General 3",        exp: 997_500_000 },
+  104: { name: "Grand Marshall",         exp: 1_030_500_000 },
+};
+
+const Z8_RANK_IMG = (tier: number) =>
+  `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${tier}.jpg`;
+
+/** Given current EXP + rank tier, compute progress info toward the next rank */
+function getRankProgress(exp: number, currentTier: number | null) {
+  const tiers = Object.keys(RANK_EXP).map(Number).sort((a, b) => a - b);
+  // Find current tier by EXP if tier not provided, otherwise use the provided tier
+  let curTier = currentTier;
+  if (!curTier || !RANK_EXP[curTier]) {
+    // Find the highest tier whose exp threshold ≤ player exp
+    curTier = tiers[0];
+    for (const t of tiers) {
+      if (RANK_EXP[t].exp <= exp) curTier = t;
+      else break;
+    }
+  }
+  const curInfo  = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
+  const nextTier = tiers.find(t => t > curTier!) ?? null;
+  const nextInfo = nextTier ? RANK_EXP[nextTier] : null;
+
+  const expIntoCurrentRank = exp - curInfo.exp;
+  const expNeededForNext   = nextInfo ? nextInfo.exp - curInfo.exp : null;
+  const pct = nextInfo && expNeededForNext
+    ? Math.min(100, (expIntoCurrentRank / expNeededForNext) * 100)
+    : nextInfo ? 0 : 100;
+
+  return {
+    curTier, curInfo, nextTier, nextInfo,
+    expIntoCurrentRank,
+    expNeededForNext,
+    expToNext: nextInfo ? nextInfo.exp - exp : null,
+    pct,
+  };
+}
+
+/** Parse a raw input — profile URL or nickname — and return fetch params */
+function parseProfileInput(raw: string): { type: "url"; profileUrl: string } | { type: "nickname"; nickname: string } {
+  const s = raw.trim();
+  if (s.startsWith("http") || s.includes("z8games.com/profile/") || s.includes("cfwest.") || s.includes("/profile/")) {
+    return { type: "url", profileUrl: s };
+  }
+  return { type: "nickname", nickname: s };
 }
 
 export default function Profile() {
@@ -157,30 +311,40 @@ export default function Profile() {
     window.location.href = "/";
   };
 
-  // Fetch CF player stats from server (server proxies to z8games.com to bypass CDN)
-  const fetchCFStats = async (nick: string) => {
-    if (!nick.trim()) return;
+  // Fetch CF player stats — accepts profile URL or nickname
+  const fetchCFStats = async (raw: string) => {
+    if (!raw.trim()) return;
     setCfLoading(true);
     setCfError("");
     try {
-      const res = await fetch(`/api/player/lookup?nickname=${encodeURIComponent(nick.trim())}&region=${cfRegion}`);
+      const parsed = parseProfileInput(raw.trim());
+      let endpoint = "";
+      if (parsed.type === "url") {
+        endpoint = `/api/player/lookup?profileUrl=${encodeURIComponent(parsed.profileUrl)}&region=${cfRegion}`;
+      } else {
+        endpoint = `/api/player/lookup?nickname=${encodeURIComponent(parsed.nickname)}&region=${cfRegion}`;
+      }
+
+      const res = await fetch(endpoint);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
+        // If profile ID lookup failed with suggestNickname, keep the input so user can try nickname
         setCfError(data.error || "Could not fetch stats. Try again shortly.");
         return;
       }
 
       const now = new Date().toISOString();
+      const resolvedNick = data.profile.nickname || raw.trim();
       setCfStats(data.profile);
-      setCfNickname(nick.trim());
+      setCfNickname(resolvedNick);
+      setCfNicknameInput(resolvedNick);
       setCfSyncTime(now);
       setCfLinkMode(false);
 
-      // Save to Supabase user metadata
       await supabase.auth.updateUser({
         data: {
-          cf_nickname: nick.trim(),
+          cf_nickname: resolvedNick,
           cf_region: cfRegion,
           cf_stats: data.profile,
           cf_last_sync: now,
@@ -478,30 +642,103 @@ export default function Profile() {
                     )}
                   </div>
 
-                  {/* EXP bar */}
-                  {cfStats.exp !== null && (
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-1.5">
-                          <Zap className="h-3 w-3" style={{ color: GOLD }} />
-                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>Total EXP</span>
+                  {/* ── Rank progress widget ── */}
+                  {cfStats.exp !== null && (() => {
+                    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null);
+                    return (
+                      <div
+                        className="mb-4 p-4"
+                        style={{ background: "rgba(245,166,35,0.03)", border: "1px solid rgba(245,166,35,0.12)", borderRadius: "4px" }}
+                      >
+                        {/* Rank row */}
+                        <div className="flex items-center gap-4 mb-3">
+                          {/* Current rank */}
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                            <img
+                              src={cfStats.rankImage || Z8_RANK_IMG(rp.curTier)}
+                              alt={rp.curInfo.name}
+                              className="w-10 h-10 object-contain"
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <span className="text-[8px] font-black uppercase tracking-wide text-center" style={{ color: GOLD, maxWidth: 64 }}>
+                              {cfStats.rank || rp.curInfo.name}
+                            </span>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <div className="flex items-center gap-1">
+                                <Zap className="h-3 w-3" style={{ color: GOLD }} />
+                                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>EXP</span>
+                              </div>
+                              <span className="text-xs font-black" style={{ color: GOLD }}>
+                                {cfStats.exp.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="relative h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  background: `linear-gradient(to right, ${GOLD}, #f5c842)`,
+                                  width: `${rp.pct}%`,
+                                  transition: "width 0.8s ease",
+                                  boxShadow: `0 0 8px rgba(245,166,35,0.4)`,
+                                }}
+                              />
+                            </div>
+                            {rp.nextInfo && rp.expToNext !== null && (
+                              <div className="flex justify-between items-center mt-1.5">
+                                <span className="text-[8px]" style={{ color: "#444" }}>
+                                  {rp.expIntoCurrentRank.toLocaleString()} / {rp.expNeededForNext?.toLocaleString()} in rank
+                                </span>
+                                <span className="text-[8px] font-bold" style={{ color: "#666" }}>
+                                  {rp.expToNext.toLocaleString()} EXP to go
+                                </span>
+                              </div>
+                            )}
+                            {!rp.nextInfo && (
+                              <p className="text-[8px] mt-1" style={{ color: GOLD }}>Max rank reached — Grand Marshall!</p>
+                            )}
+                          </div>
+
+                          {/* Next rank */}
+                          {rp.nextTier && rp.nextInfo && (
+                            <div className="flex flex-col items-center gap-1 flex-shrink-0 opacity-50">
+                              <img
+                                src={Z8_RANK_IMG(rp.nextTier)}
+                                alt={rp.nextInfo.name}
+                                className="w-10 h-10 object-contain grayscale"
+                                onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              />
+                              <span className="text-[8px] font-black uppercase tracking-wide text-center" style={{ color: "#666", maxWidth: 64 }}>
+                                {rp.nextInfo.name}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-sm font-black" style={{ color: GOLD }}>
-                          {cfStats.exp.toLocaleString()}
-                        </span>
+
+                        {/* VIP row */}
+                        {(cfStats.vipDays != null || cfStats.vipLevel != null) && (
+                          <div
+                            className="flex items-center gap-3 pt-2.5"
+                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                          >
+                            <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
+                              VIP
+                              {cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
+                            </span>
+                            {cfStats.vipDays != null && (
+                              <span className="text-[10px]" style={{ color: "#666" }}>
+                                {cfStats.vipDays} days remaining
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            background: `linear-gradient(to right, ${GOLD}, #f5c842)`,
-                            width: `${Math.min(100, (cfStats.exp / 100_000_000) * 100)}%`,
-                            transition: "width 0.8s ease",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Stats grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -538,10 +775,22 @@ export default function Profile() {
                 /* Link form */
                 <div className="flex flex-col gap-4">
                   <div>
-                    <p className="text-[11px] mb-3" style={{ color: "#666" }}>
-                      Enter your <strong style={{ color: GOLD }}>CrossFire in-game nickname</strong> exactly as it appears in the game.
-                      We'll automatically fetch your EXP, rank, K/D, kills, and more.
-                    </p>
+                    {/* Explain what to paste */}
+                    <div
+                      className="flex items-start gap-2 px-3 py-2.5 mb-3 text-[11px]"
+                      style={{ background: "rgba(245,166,35,0.05)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "3px", color: "#888" }}
+                    >
+                      <Zap className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: GOLD }} />
+                      <span>
+                        Paste your <strong style={{ color: GOLD }}>CrossFire profile link</strong>{" "}
+                        <span style={{ color: "#555" }}>
+                          (e.g. crossfire.z8games.com/profile/26992814)
+                        </span>{" "}
+                        or enter your <strong style={{ color: GOLD }}>in-game nickname</strong>.
+                        We'll fetch your EXP, rank progress, VIP days, K/D and more.
+                      </span>
+                    </div>
+
                     {/* Region selector */}
                     <div className="flex gap-2 mb-2">
                       {(["na", "west"] as const).map((r) => (
@@ -560,13 +809,14 @@ export default function Profile() {
                         </button>
                       ))}
                     </div>
+
                     <div className="flex gap-2">
                       <input
                         value={cfNicknameInput}
                         onChange={(e) => { setCfNicknameInput(e.target.value); setCfError(""); }}
                         onKeyDown={(e) => { if (e.key === "Enter") fetchCFStats(cfNicknameInput); }}
-                        placeholder="Your exact in-game nickname..."
-                        maxLength={32}
+                        placeholder="Profile link or in-game nickname..."
+                        maxLength={200}
                         className="flex-1 px-3 py-2 text-sm font-bold bg-transparent outline-none"
                         style={{
                           color: "var(--foreground)",

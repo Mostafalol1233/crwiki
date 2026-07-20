@@ -691,11 +691,95 @@ function cfPlayerLookupPlugin(): Plugin {
   };
 }
 
+// ── Grok AI tips middleware ───────────────────────────────────────────────────
+function cfGrokTipsPlugin(): Plugin {
+  return {
+    name: "cf-grok-tips",
+    configureServer(server) {
+      async function readBody(req: any): Promise<any> {
+        const chunks: Buffer[] = [];
+        await new Promise<void>((resolve, reject) => {
+          req.on("data", (c: Buffer) => chunks.push(c));
+          req.on("end", resolve);
+          req.on("error", reject);
+        });
+        try { return JSON.parse(Buffer.concat(chunks).toString()); } catch { return {}; }
+      }
+
+      server.middlewares.use("/api/grok-tips", async (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "POST only" }));
+        }
+        try {
+          const GROK_API_KEY = process.env.GROK_API_KEY || "";
+          if (!GROK_API_KEY) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Grok API key not configured" }));
+          }
+
+          const body = await readBody(req);
+          const { currentRank, targetRank, expNeeded, bonusesOnPath, vipBoxCount } = body;
+
+          const { fetch: undFetch } = await import("undici");
+
+          const systemPrompt = `You are a CrossFire game expert advisor. Give concise, actionable tips to help players earn EXP faster and maximize their rank-up bonuses. Be specific to CrossFire NA gameplay. Keep responses under 200 words with bullet points.`;
+
+          const userPrompt = `A CrossFire player is currently ranked "${currentRank}" and wants to reach "${targetRank}".
+${expNeeded ? `They need ${expNeeded.toLocaleString()} EXP to reach their goal.` : ""}
+${vipBoxCount > 0 ? `Along this path they will earn ${vipBoxCount} VIP Weapon Box reward(s).` : ""}
+${bonusesOnPath?.length > 0 ? `Rank-up bonuses on this path: ${bonusesOnPath.slice(0, 5).join(", ")}` : ""}
+
+Give 4-5 practical tips to:
+1. Earn EXP faster in CrossFire
+2. Make the most of the bonus rewards they'll receive
+3. Any special strategies relevant to their current rank tier`;
+
+          const grokRes = await (undFetch as any)("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${GROK_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt },
+              ],
+              max_tokens: 400,
+              temperature: 0.7,
+            }),
+            signal: AbortSignal.timeout(20000),
+          });
+
+          if (!grokRes.ok) {
+            const errText = await grokRes.text();
+            res.writeHead(502, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: `Grok API error: ${errText}` }));
+          }
+
+          const grokData = await grokRes.json() as any;
+          const tips = grokData?.choices?.[0]?.message?.content || "";
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ tips }));
+        } catch (err: any) {
+          const isTimeout = err?.name === "TimeoutError" || err?.message?.includes("timeout");
+          res.writeHead(isTimeout ? 504 : 500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: isTimeout ? "Grok API timed out — try again." : (err.message || "Failed to get tips") }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
     cfPlayerLookupPlugin(),
     cfScrapePlugin(),
+    cfGrokTipsPlugin(),
     react(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&

@@ -7,6 +7,7 @@ import { getRanks } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import RankCalculator from "@/components/RankCalculator";
 
 interface Rank {
   id: string;
@@ -226,6 +227,11 @@ export default function Ranks() {
               </div>
             </div>
           </div>
+
+          {/* ── Rank Calculator ── */}
+          {!isLoading && ranks.length > 0 && (
+            <RankCalculator ranks={ranks} />
+          )}
 
           {/* ── Content ── */}
           {isLoading ? (

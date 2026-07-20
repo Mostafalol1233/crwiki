@@ -39,6 +39,13 @@ export default function TutorialsPage() {
       <div style={{ minHeight: "100vh", background: BG, paddingTop: 48, paddingBottom: 80 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
 
+          {/* Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+            <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
+            <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>Tutorials & Highlights</span>
+          </div>
+
           {/* Header */}
           <div style={{ marginBottom: 32 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: 3, marginBottom: 12 }}>
@@ -120,14 +127,28 @@ export default function TutorialsPage() {
                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
                   >
                     {/* Thumbnail */}
-                    <div style={{ position: "relative", paddingBottom: "56.25%", background: "#050505" }}>
+                    <div style={{ position: "relative", paddingBottom: "56.25%", background: "linear-gradient(135deg, #0d0d0d 0%, #111 100%)" }}>
                       {video.youtube_id ? (
                         <img
                           src={`https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`}
                           alt={video.title}
                           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(e) => {
+                            // Fall back to mqdefault if hqdefault fails
+                            const img = e.currentTarget;
+                            if (img.src.includes("hqdefault")) {
+                              img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
+                            } else {
+                              img.style.display = "none";
+                            }
+                          }}
                         />
-                      ) : null}
+                      ) : (
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                          <Youtube size={32} color="rgba(245,166,35,0.4)" />
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>Video</span>
+                        </div>
+                      )}
                       {/* Play overlay */}
                       <div style={{
                         position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",

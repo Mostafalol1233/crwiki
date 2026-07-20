@@ -5,9 +5,10 @@ const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY as string;
 const SUPER_ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string;
 
 // Service-role client — bypasses RLS for admin writes
+// Uses a distinct storageKey so it doesn't conflict with the main anon client
 export const supabaseService = SERVICE_KEY
   ? createClient(SUPABASE_URL, SERVICE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false },
+      auth: { autoRefreshToken: false, persistSession: false, storageKey: 'sb-admin-auth' },
     })
   : null;
 

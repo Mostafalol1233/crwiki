@@ -367,7 +367,7 @@ export default function Mercenaries() {
                 className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all"
                 style={{ background: stopFlash ? "#ef4444" : "var(--card)", color: stopFlash ? "#fff" : "#666", border: `1px solid ${stopFlash ? "#ef4444" : "rgba(255,255,255,0.08)"}` }}
               >
-                <StopCircle className="h-3.5 w-3.5" /> Stop
+                <StopCircle className="h-3.5 w-3.5" /> Mute All
               </button>
             </div>
           </div>

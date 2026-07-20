@@ -384,7 +384,7 @@ export default function News() {
                 )}
               </div>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                {CATEGORIES.map((cat) => (
+                {CATEGORIES.filter((cat) => cat === "All" || (catCounts[cat] ?? 0) > 0).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCat(cat)}

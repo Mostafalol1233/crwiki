@@ -70,8 +70,8 @@ export default function Weapons() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [letter, setLetter] = useState<string>("");
-  const [sort, setSort] = useState<"alpha" | "date">("date");
-  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [sort, setSort] = useState<"alpha" | "date">("alpha");
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(50);
   const [results, setResults] = useState<Weapon[]>([]);

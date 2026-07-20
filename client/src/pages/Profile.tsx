@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   User, Camera, Shield, Edit3, Check, X, Loader2,
   Ticket, MessageSquare, Clock, Award, LogOut,
-  Gamepad2, Swords, Trophy, Target, RefreshCw, AlertCircle, TrendingUp, Zap
+  Gamepad2, Swords, Trophy, Target, RefreshCw, AlertCircle, TrendingUp, Zap, ChevronDown
 } from "lucide-react";
 
 const GOLD = "#f5a623";
@@ -166,40 +166,60 @@ const RANK_EXP: Record<number, { name: string; exp: number }> = {
   102: { name: "Grand General 2",        exp: 965_000_000 },
   103: { name: "Grand General 3",        exp: 997_500_000 },
   104: { name: "Grand Marshall",         exp: 1_030_500_000 },
+  105: { name: "Grand Marshal",          exp: 1_030_500_000 },
 };
 
 const Z8_RANK_IMG = (tier: number) =>
   `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${tier}.jpg`;
 
-/** Given current EXP + rank tier, compute progress info toward the next rank */
-function getRankProgress(exp: number, currentTier: number | null) {
+/** Given current EXP + rank tier, compute progress toward a chosen target rank */
+function getRankProgress(exp: number, currentTier: number | null, chosenTargetTier?: number | null) {
   const tiers = Object.keys(RANK_EXP).map(Number).sort((a, b) => a - b);
-  // Find current tier by EXP if tier not provided, otherwise use the provided tier
+  const maxTier = tiers[tiers.length - 1];
+
+  // Resolve current tier
   let curTier = currentTier;
   if (!curTier || !RANK_EXP[curTier]) {
-    // Find the highest tier whose exp threshold ≤ player exp
     curTier = tiers[0];
     for (const t of tiers) {
       if (RANK_EXP[t].exp <= exp) curTier = t;
       else break;
     }
   }
-  const curInfo  = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
-  const nextTier = tiers.find(t => t > curTier!) ?? null;
-  const nextInfo = nextTier ? RANK_EXP[nextTier] : null;
 
-  const expIntoCurrentRank = exp - curInfo.exp;
-  const expNeededForNext   = nextInfo ? nextInfo.exp - curInfo.exp : null;
-  const pct = nextInfo && expNeededForNext
-    ? Math.min(100, (expIntoCurrentRank / expNeededForNext) * 100)
-    : nextInfo ? 0 : 100;
+  const curInfo    = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
+  const isMaxRank  = curTier >= maxTier;
+
+  // True immediate next rank (for default & dropdown "reset")
+  const trueNextTier = tiers.find(t => t > curTier!) ?? null;
+  const trueNextInfo = trueNextTier ? RANK_EXP[trueNextTier] : null;
+
+  // Chosen destination: user's pick or fall back to trueNext
+  const destTier = (!isMaxRank && chosenTargetTier && chosenTargetTier > curTier! && RANK_EXP[chosenTargetTier])
+    ? chosenTargetTier
+    : trueNextTier;
+  const destInfo = destTier ? RANK_EXP[destTier] : null;
+
+  const expIntoCurrentRank  = exp - curInfo.exp;
+  const expNeededToDest     = destInfo ? destInfo.exp - curInfo.exp : null;
+  const expToDest           = destInfo ? Math.max(0, destInfo.exp - exp) : null;
+  const pct = isMaxRank
+    ? 100
+    : destInfo && expNeededToDest && expNeededToDest > 0
+      ? Math.min(100, (expIntoCurrentRank / expNeededToDest) * 100)
+      : 0;
 
   return {
-    curTier, curInfo, nextTier, nextInfo,
+    curTier, curInfo,
+    trueNextTier, trueNextInfo,
+    destTier, destInfo,
+    isMaxRank,
     expIntoCurrentRank,
-    expNeededForNext,
-    expToNext: nextInfo ? nextInfo.exp - exp : null,
+    expNeededToDest,
+    expToDest,
     pct,
+    maxTier,
+    allTiers: tiers,
   };
 }
 
@@ -234,6 +254,8 @@ export default function Profile() {
   const [cfError, setCfError] = useState("");
   const [cfLinkMode, setCfLinkMode] = useState(false);
   const [cfSyncTime, setCfSyncTime] = useState<string | null>(null);
+  const [targetRankTier, setTargetRankTier] = useState<number | null>(null);
+  const [showRankPicker, setShowRankPicker] = useState(false);
 
   useEffect(() => {
     getCurrentUser().then(async (u) => {
@@ -641,7 +663,7 @@ export default function Profile() {
 
                   {/* ── Rank progress widget ── */}
                   {cfStats.exp !== null && (() => {
-                    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null);
+                    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier);
                     return (
                       <div
                         className="mb-4 p-4"
@@ -649,7 +671,8 @@ export default function Profile() {
                       >
                         {/* Rank row */}
                         <div className="flex items-center gap-4 mb-3">
-                          {/* Current rank */}
+
+                          {/* Current rank badge */}
                           <div className="flex flex-col items-center gap-1 flex-shrink-0">
                             <img
                               src={cfStats.rankImage || Z8_RANK_IMG(rp.curTier)}
@@ -662,7 +685,7 @@ export default function Profile() {
                             </span>
                           </div>
 
-                          {/* Progress bar */}
+                          {/* Progress bar + EXP info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-center mb-1.5">
                               <div className="flex items-center gap-1">
@@ -684,47 +707,115 @@ export default function Profile() {
                                 }}
                               />
                             </div>
-                            {rp.nextInfo && rp.expToNext !== null && (
+
+                            {rp.isMaxRank ? (
+                              /* ── Max rank — no destination to show ── */
+                              <p className="text-[9px] mt-1.5 font-bold" style={{ color: GOLD }}>
+                                🎖️ Maximum rank achieved — Grand Marshal!
+                              </p>
+                            ) : rp.destInfo && rp.expToDest !== null ? (
+                              /* ── Progress toward chosen destination ── */
                               <div className="flex justify-between items-center mt-1.5">
                                 <span className="text-[8px]" style={{ color: "#444" }}>
-                                  {rp.expIntoCurrentRank.toLocaleString()} / {rp.expNeededForNext?.toLocaleString()} in rank
+                                  {rp.expIntoCurrentRank.toLocaleString()} / {rp.expNeededToDest?.toLocaleString()} EXP
                                 </span>
                                 <span className="text-[8px] font-bold" style={{ color: "#666" }}>
-                                  {rp.expToNext.toLocaleString()} EXP to go
+                                  {rp.expToDest.toLocaleString()} to go
                                 </span>
                               </div>
-                            )}
-                            {!rp.nextInfo && (
-                              <p className="text-[8px] mt-1" style={{ color: GOLD }}>Max rank reached — Grand Marshall!</p>
-                            )}
+                            ) : null}
                           </div>
 
-                          {/* Next rank */}
-                          {rp.nextTier && rp.nextInfo && (
-                            <div className="flex flex-col items-center gap-1 flex-shrink-0 opacity-50">
-                              <img
-                                src={Z8_RANK_IMG(rp.nextTier)}
-                                alt={rp.nextInfo.name}
-                                className="w-10 h-10 object-contain grayscale"
-                                onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                              />
-                              <span className="text-[8px] font-black uppercase tracking-wide text-center" style={{ color: "#666", maxWidth: 64 }}>
-                                {rp.nextInfo.name}
+                          {/* Target rank badge — clickable to open destination picker */}
+                          {!rp.isMaxRank && rp.destTier && rp.destInfo && (
+                            <div
+                              className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer select-none"
+                              title="Click to choose a target rank"
+                              onClick={() => setShowRankPicker(v => !v)}
+                            >
+                              <div className="relative">
+                                <img
+                                  src={Z8_RANK_IMG(rp.destTier)}
+                                  alt={rp.destInfo.name}
+                                  className="w-10 h-10 object-contain"
+                                  style={{ opacity: 0.55, filter: "grayscale(0.4)" }}
+                                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                />
+                                {/* Chevron indicator */}
+                                <div
+                                  className="absolute -bottom-1 -right-1 w-4 h-4 flex items-center justify-center rounded-full"
+                                  style={{ background: "#111", border: `1px solid ${GOLD}` }}
+                                >
+                                  <ChevronDown className="w-2.5 h-2.5" style={{ color: GOLD }} />
+                                </div>
+                              </div>
+                              <span className="text-[8px] font-black uppercase tracking-wide text-center" style={{ color: "#555", maxWidth: 64 }}>
+                                {rp.destInfo.name}
                               </span>
+                              {targetRankTier && targetRankTier !== rp.trueNextTier && (
+                                <span className="text-[7px] uppercase tracking-widest" style={{ color: GOLD }}>goal</span>
+                              )}
                             </div>
                           )}
                         </div>
+
+                        {/* ── Destination picker dropdown ── */}
+                        {showRankPicker && !rp.isMaxRank && (
+                          <div
+                            className="mt-1 rounded overflow-hidden"
+                            style={{ border: "1px solid #2a2a2a", background: "#0d0d0d", maxHeight: 200, overflowY: "auto" }}
+                          >
+                            {/* Reset to default (next rank) */}
+                            <div
+                              className="flex items-center gap-2 px-3 py-2 cursor-pointer"
+                              style={{
+                                borderBottom: "1px solid #1a1a1a",
+                                background: !targetRankTier ? "rgba(245,166,35,0.06)" : "transparent",
+                                color: !targetRankTier ? GOLD : "#555",
+                              }}
+                              onClick={() => { setTargetRankTier(null); setShowRankPicker(false); }}
+                            >
+                              <span className="text-[10px] font-bold">Next rank (default)</span>
+                              {!targetRankTier && <span className="ml-auto text-[9px]">✓</span>}
+                            </div>
+
+                            {/* All ranks above current */}
+                            {rp.allTiers.filter(t => t > rp.curTier).map(t => {
+                              const info = RANK_EXP[t];
+                              const expNeeded = Math.max(0, info.exp - cfStats.exp);
+                              const isChosen = t === targetRankTier;
+                              return (
+                                <div
+                                  key={t}
+                                  className="flex items-center gap-2 px-3 py-1.5 cursor-pointer"
+                                  style={{
+                                    background: isChosen ? "rgba(245,166,35,0.08)" : "transparent",
+                                    borderBottom: "1px solid rgba(255,255,255,0.03)",
+                                  }}
+                                  onClick={() => { setTargetRankTier(t); setShowRankPicker(false); }}
+                                >
+                                  <img src={Z8_RANK_IMG(t)} className="w-5 h-5 object-contain flex-shrink-0" alt="" />
+                                  <span className="text-[10px]" style={{ color: isChosen ? GOLD : "#888" }}>
+                                    {info.name}
+                                  </span>
+                                  <span className="text-[9px] ml-auto font-mono" style={{ color: isChosen ? GOLD : "#3a3a3a" }}>
+                                    {expNeeded === 0 ? "✓" : `+${expNeeded.toLocaleString()}`}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         {/* VIP row */}
                         {(cfStats.vipDays != null || cfStats.vipLevel != null) && (
                           <div
                             className="flex items-center gap-3 pt-2.5"
-                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: showRankPicker ? 8 : 0 }}
                           >
                             <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
                             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
-                              VIP
-                              {cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
+                              VIP{cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
                             </span>
                             {cfStats.vipDays != null && (
                               <span className="text-[10px]" style={{ color: "#666" }}>

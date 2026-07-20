@@ -50,6 +50,8 @@ JWT_SECRET = ""
 SUPABASE_SERVICE_KEY = ""
 VITE_SUPABASE_SERVICE_KEY = ""
 VITE_ADMIN_PASSWORD = ""
+FIRECRAWL_API_KEY = ""
+grok = ""
 
 [deployment]
 deploymentTarget = "autoscale"

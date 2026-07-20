@@ -1,182 +1,285 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getEvents } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { DiscordWidget } from "@/components/DiscordWidget";
-import { Calendar, Clock, MapPin, ChevronRight, Loader2, Zap } from "lucide-react";
+import {
+  Calendar, Clock, MapPin, ChevronRight, Loader2, Zap, Filter,
+  Flame, Star, Archive, CheckCircle2, BookOpen, Globe,
+} from "lucide-react";
 
-interface Event {
-  id: string;
-  title: string;
-  event_name_slug: string;
-  description: string;
-  date: string;
-  location: string;
-  type: string;
-  image: string;
-  imageUrl: string;
-  featured: boolean;
-}
-
+// ─── Constants ────────────────────────────────────────────────────────────────
+const GOLD = "#f5a623";
+const BORDER = "rgba(255,255,255,0.07)";
+const CARD = "var(--card)";
+const CARD2 = "rgba(255,255,255,0.02)";
 const FALLBACK = "/cf-heroes-bg.png";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
   if (!d) return "";
-  try {
-    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return d;
-  }
+  try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
+  catch { return d; }
 }
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
 }
 
-function EventCard({ ev, featured }: { ev: Event; featured?: boolean }) {
+function classifyEvent(dateStr: string): "active" | "upcoming" | "past" {
+  if (!dateStr) return "past";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAhead = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (d < sevenDaysAgo) return "past";
+  if (d > thirtyDaysAhead) return "upcoming";
+  return "active";
+}
+
+function getStatusStyle(status: string) {
+  if (status === "active") return { bg: "rgba(52,211,153,0.12)", color: "#34d399", border: "rgba(52,211,153,0.25)", label: "Active" };
+  if (status === "upcoming") return { bg: "rgba(245,166,35,0.12)", color: GOLD, border: "rgba(245,166,35,0.25)", label: "Upcoming" };
+  return { bg: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", border: "rgba(255,255,255,0.08)", label: "Ended" };
+}
+
+// ─── Countdown Timer ──────────────────────────────────────────────────────────
+function Countdown({ dateStr }: { dateStr: string }) {
+  const [parts, setParts] = useState({ d: 0, h: 0, m: 0, s: 0 });
+
+  useEffect(() => {
+    function calc() {
+      const diff = new Date(dateStr).getTime() - Date.now();
+      if (diff <= 0) return setParts({ d: 0, h: 0, m: 0, s: 0 });
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setParts({ d, h, m, s });
+    }
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [dateStr]);
+
+  const cells = [
+    { v: parts.d, l: "Days" },
+    { v: parts.h, l: "Hrs" },
+    { v: parts.m, l: "Min" },
+    { v: parts.s, l: "Sec" },
+  ];
+
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      {cells.map(({ v, l }) => (
+        <div key={l} style={{ textAlign: "center" }}>
+          <div style={{
+            minWidth: 34, padding: "4px 6px",
+            background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.2)",
+            borderRadius: 4, fontSize: 14, fontWeight: 800, color: GOLD, lineHeight: 1,
+          }}>
+            {String(v).padStart(2, "0")}
+          </div>
+          <p style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", margin: "2px 0 0", textTransform: "uppercase", letterSpacing: "0.06em" }}>{l}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Featured Event Card ──────────────────────────────────────────────────────
+function FeaturedCard({ ev }: { ev: any }) {
   const slug = ev.event_name_slug || ev.id;
   const img = ev.image_url || ev.image || ev.imageUrl || FALLBACK;
-
-  if (featured) {
-    return (
-      <Link href={`/events/${slug}`} className="group block col-span-full md:col-span-2">
-        <div
-          className="relative overflow-hidden transition-all duration-300 group-hover:-translate-y-0.5"
-          style={{
-            background: "var(--card)",
-            border: "1px solid rgba(245,166,35,0.3)",
-            borderRadius: "6px",
-            boxShadow: "0 4px 30px rgba(245,166,35,0.08)",
-          }}
-        >
-          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, #f5a623, transparent)" }} />
-          <div className="flex flex-col lg:flex-row">
-            <div className="lg:w-[55%] relative overflow-hidden" style={{ minHeight: "280px", background: "#0d1117" }}>
-              <img
-                src={img}
-                alt={ev.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                style={{ minHeight: "280px" }}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
-              />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent 60%, var(--card))" }} />
-              <div
-                className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest"
-                style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
-              >
-                <Zap className="h-2.5 w-2.5" /> Featured Event
-              </div>
-            </div>
-            <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
-              {ev.type && (
-                <span
-                  className="inline-block mb-3 text-[8px] font-black uppercase tracking-widest px-2 py-1"
-                  style={{ background: "rgba(245,166,35,0.12)", color: "#f5a623", borderRadius: "2px", width: "fit-content" }}
-                >
-                  {ev.type}
-                </span>
-              )}
-              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight mb-3" style={{ color: "var(--foreground)" }}>
-                {ev.title}
-              </h2>
-              {ev.description && (
-                <p className="text-sm leading-relaxed line-clamp-2 mb-4" style={{ color: "#666" }}>{stripHtml(ev.description)}</p>
-              )}
-              <div className="flex flex-wrap gap-4 mb-4">
-                {ev.date && (
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: "#555" }}>
-                    <Calendar className="h-3 w-3" style={{ color: "#f5a623" }} />
-                    {formatDate(ev.date)}
-                  </span>
-                )}
-                {ev.location && (
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: "#555" }}>
-                    <MapPin className="h-3 w-3" style={{ color: "#f5a623" }} />
-                    {ev.location}
-                  </span>
-                )}
-              </div>
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-all group-hover:gap-2.5" style={{ color: "#f5a623" }}>
-                View Event <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </Link>
-    );
-  }
+  const status = classifyEvent(ev.date);
+  const statusStyle = getStatusStyle(status);
 
   return (
     <Link href={`/events/${slug}`} className="group block">
-      <div
-        className="h-full overflow-hidden transition-all duration-300 hover:-translate-y-1"
-        style={{
-          background: "var(--card)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "4px",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-        }}
-      >
-        <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "#0d1117" }}>
-          <img
-            src={img}
-            alt={ev.title}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
-          />
-          <div
-            className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: "linear-gradient(to right, #f5a623, transparent)" }}
-          />
-          {ev.type && (
-            <div
-              className="absolute top-3 left-3 text-[8px] font-black uppercase tracking-widest px-2 py-1"
-              style={{ background: "rgba(0,0,0,0.75)", color: "#f5a623", borderRadius: "2px", backdropFilter: "blur(4px)" }}
-            >
-              {ev.type}
-            </div>
-          )}
-        </div>
+      <div style={{
+        background: CARD, border: "1px solid rgba(245,166,35,0.22)",
+        borderRadius: 6, overflow: "hidden",
+        boxShadow: "0 4px 30px rgba(0,0,0,0.4)",
+        transition: "box-shadow 0.3s",
+        position: "relative",
+      }} className="featured-card">
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, ${GOLD}, transparent)` }} />
 
-        <div className="p-4">
-          <h3 className="font-black text-sm uppercase tracking-tight leading-snug mb-2 line-clamp-2 group-hover:text-[#f5a623] transition-colors" style={{ color: "var(--foreground)" }}>
-            {ev.title}
-          </h3>
-          {ev.description && (
-            <p className="text-[11px] leading-relaxed line-clamp-2 mb-3" style={{ color: "#555" }}>{stripHtml(ev.description)}</p>
-          )}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
+        <div className="featured-inner" style={{ display: "grid", gridTemplateColumns: "55% 1fr" }}>
+          {/* Image */}
+          <div style={{ position: "relative", overflow: "hidden", minHeight: 300 }}>
+            <img src={img} alt={ev.title}
+              className="group-hover:scale-105 transition-transform duration-700"
+              style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 300 }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 55%, var(--card) 100%)" }} />
+            <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", background: GOLD, color: "#000", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderRadius: 2 }}>
+                <Zap size={9} /> Featured
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderRadius: 2 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusStyle.color, display: "inline-block" }} />
+                {statusStyle.label}
+              </span>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div style={{ padding: "28px 28px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            {ev.type && (
+              <span style={{
+                display: "inline-block", marginBottom: 10, fontSize: 9, fontWeight: 800, textTransform: "uppercase",
+                letterSpacing: "0.12em", padding: "3px 8px", borderRadius: 2,
+                background: "rgba(245,166,35,0.1)", color: GOLD, width: "fit-content",
+              }}>
+                {ev.type}
+              </span>
+            )}
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: "var(--foreground)", margin: "0 0 10px", lineHeight: 1.25, letterSpacing: "-0.02em", textTransform: "uppercase" }}>
+              {ev.title}
+            </h2>
+            {ev.description && (
+              <p style={{ fontSize: 13, color: "#666", margin: "0 0 16px", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                {stripHtml(ev.description)}
+              </p>
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
               {ev.date && (
-                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wide" style={{ color: "#555" }}>
-                  <Calendar className="h-2.5 w-2.5" style={{ color: "#f5a623" }} />
+                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <Calendar size={12} color={GOLD} />
                   {formatDate(ev.date)}
                 </span>
               )}
               {ev.location && (
-                <span className="flex items-center gap-1.5 text-[9px] font-bold" style={{ color: "#444" }}>
-                  <MapPin className="h-2.5 w-2.5" /> {ev.location}
+                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#666" }}>
+                  <MapPin size={12} color={GOLD} />
+                  {ev.location}
                 </span>
               )}
             </div>
-            <ChevronRight
-              className="h-4 w-4 transition-transform group-hover:translate-x-1"
-              style={{ color: "rgba(245,166,35,0.4)" }}
-            />
+
+            {status === "upcoming" && ev.date && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Starts In</p>
+                <Countdown dateStr={ev.date} />
+              </div>
+            )}
+
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: GOLD }}>
+              View Event <ChevronRight size={13} className="group-hover:translate-x-1 transition-transform" />
+            </span>
           </div>
         </div>
+        <style>{`
+          .featured-card:hover{box-shadow:0 12px 50px rgba(0,0,0,0.6)!important;}
+          @media(max-width:680px){.featured-inner{grid-template-columns:1fr!important;}}
+        `}</style>
       </div>
     </Link>
   );
 }
 
-export default function EventsList() {
-  const [page, setPage] = useState(1);
-  const limit = 12;
+// ─── Regular Event Card ───────────────────────────────────────────────────────
+function EventCard({ ev }: { ev: any }) {
+  const slug = ev.event_name_slug || ev.id;
+  const img = ev.image_url || ev.image || ev.imageUrl || FALLBACK;
+  const status = classifyEvent(ev.date);
+  const statusStyle = getStatusStyle(status);
 
-  const { data, isLoading } = useQuery<{ items: Event[]; total: number }>({
+  return (
+    <Link href={`/events/${slug}`} className="group block h-full">
+      <div style={{
+        height: "100%", background: CARD, border: `1px solid ${BORDER}`,
+        borderRadius: 5, overflow: "hidden",
+        transition: "all 0.25s",
+      }} className="ev-card">
+        {/* Image */}
+        <div style={{ position: "relative", overflow: "hidden", paddingTop: "56.25%" }}>
+          <img src={img} alt={ev.title}
+            loading="lazy"
+            className="group-hover:scale-105 transition-transform duration-500"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
+          />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
+          {/* Status badge */}
+          <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 4 }}>
+            {ev.type && (
+              <span style={{ fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", padding: "2px 6px", background: "rgba(0,0,0,0.7)", color: GOLD, borderRadius: 2, backdropFilter: "blur(4px)" }}>
+                {ev.type}
+              </span>
+            )}
+            <span style={{ fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", padding: "2px 6px", background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, borderRadius: 2, backdropFilter: "blur(4px)", display: "flex", alignItems: "center", gap: 3 }}>
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: statusStyle.color, display: "inline-block" }} />
+              {statusStyle.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "12px 14px" }}>
+          <h3 className="group-hover:text-[#f5a623] transition-colors" style={{ fontWeight: 800, fontSize: 13, color: "var(--foreground)", margin: "0 0 6px", lineHeight: 1.35, textTransform: "uppercase", letterSpacing: "-0.01em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            {ev.title}
+          </h3>
+          {ev.description && (
+            <p style={{ fontSize: 11, color: "#555", margin: "0 0 10px", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              {stripHtml(ev.description)}
+            </p>
+          )}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {ev.date ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <Calendar size={10} color={GOLD} />
+                {formatDate(ev.date)}
+              </span>
+            ) : <span />}
+            <ChevronRight size={14} color="rgba(245,166,35,0.35)" className="group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
+        <style>{`.ev-card:hover{border-color:rgba(245,166,35,0.25)!important;box-shadow:0 4px 20px rgba(0,0,0,0.4);transform:translateY(-2px);}`}</style>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Tab Button ───────────────────────────────────────────────────────────────
+function Tab({ label, icon: Icon, count, active, onClick }: any) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "8px 14px", fontSize: 11, fontWeight: 800,
+      textTransform: "uppercase", letterSpacing: "0.1em",
+      background: active ? GOLD : "transparent",
+      color: active ? "#000" : "rgba(255,255,255,0.4)",
+      border: `1px solid ${active ? GOLD : BORDER}`,
+      borderRadius: 3, cursor: "pointer", transition: "all 0.15s",
+    }}>
+      <Icon size={12} />
+      {label}
+      {count > 0 && (
+        <span style={{
+          fontSize: 9, fontWeight: 800,
+          background: active ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.08)",
+          padding: "1px 5px", borderRadius: 999,
+          color: active ? "#000" : "rgba(255,255,255,0.3)",
+        }}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function EventsList() {
+  const [tab, setTab] = useState<"all" | "active" | "upcoming" | "past">("all");
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const { data, isLoading } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", page],
     queryFn: () => getEvents({ limit, offset: (page - 1) * limit }),
     staleTime: 1000 * 60 * 2,
@@ -186,8 +289,16 @@ export default function EventsList() {
   const total = data?.total || 0;
   const hasMore = page * limit < total;
 
-  const featured = events[0];
-  const rest = events.slice(1);
+  const classified = events.reduce((acc: any, ev: any) => {
+    acc[classifyEvent(ev.date)].push(ev);
+    return acc;
+  }, { active: [] as any[], upcoming: [] as any[], past: [] as any[] });
+
+  const filtered = tab === "all" ? events : classified[tab];
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
+
+  const counts = { active: classified.active.length, upcoming: classified.upcoming.length, past: classified.past.length };
 
   return (
     <>
@@ -197,117 +308,205 @@ export default function EventsList() {
         canonicalPath="/events"
       />
 
-      <div className="min-h-screen py-10 md:py-14" style={{ background: "var(--background)" }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div style={{ minHeight: "100vh", background: "var(--background)" }}>
 
-          {/* ── Header ── */}
-          <div className="mb-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-1" style={{ color: "#f5a623" }}>Crossfire</p>
-            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight leading-none mb-1" style={{ color: "var(--foreground)" }}>
-              Events
-            </h1>
-            <p className="text-sm" style={{ color: "#555" }}>
-              Tournaments, seasonal updates, and community activations
-            </p>
+        {/* ── PAGE HEADER ── */}
+        <div style={{
+          position: "relative", overflow: "hidden",
+          borderBottom: `1px solid ${BORDER}`,
+          background: "linear-gradient(to bottom, rgba(245,166,35,0.04) 0%, transparent 100%)",
+          padding: "36px 0 28px",
+        }}>
+          {/* Gold top bar */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, ${GOLD}, rgba(245,166,35,0.2) 60%, transparent)` }} />
+
+          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
+            {/* Breadcrumb */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+              <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
+              <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
+              <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>Events</span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 4px" }}>CrossFire</p>
+                <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.03em", color: "var(--foreground)", margin: 0, lineHeight: 1 }}>
+                  Events
+                </h1>
+                <p style={{ fontSize: 13, color: "#555", margin: "6px 0 0" }}>
+                  Tournaments, seasonal updates, and community activations
+                </p>
+              </div>
+
+              {/* Live counts */}
+              <div style={{ display: "flex", gap: 10 }}>
+                {counts.active > 0 && (
+                  <div style={{ padding: "8px 14px", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 4, textAlign: "center" }}>
+                    <p style={{ fontSize: 18, fontWeight: 900, color: "#34d399", margin: 0 }}>{counts.active}</p>
+                    <p style={{ fontSize: 9, color: "#34d399", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Active</p>
+                  </div>
+                )}
+                {counts.upcoming > 0 && (
+                  <div style={{ padding: "8px 14px", background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 4, textAlign: "center" }}>
+                    <p style={{ fontSize: 18, fontWeight: 900, color: GOLD, margin: 0 }}>{counts.upcoming}</p>
+                    <p style={{ fontSize: 9, color: GOLD, margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Upcoming</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{ display: "flex", gap: 6, marginTop: 20, flexWrap: "wrap" }}>
+              <Tab label="All Events" icon={BookOpen}       count={events.length}     active={tab === "all"}      onClick={() => setTab("all")} />
+              <Tab label="Active"     icon={Flame}          count={counts.active}     active={tab === "active"}   onClick={() => setTab("active")} />
+              <Tab label="Upcoming"   icon={Clock}          count={counts.upcoming}   active={tab === "upcoming"} onClick={() => setTab("upcoming")} />
+              <Tab label="Ended"      icon={Archive}        count={counts.past}       active={tab === "past"}     onClick={() => setTab("past")} />
+            </div>
           </div>
+        </div>
 
-          {/* ── Discord + Events layout ── */}
-          <div className="flex flex-col xl:flex-row gap-8 mb-10">
+        {/* ── CONTENT ── */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
+          <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }} className="events-layout">
 
-            {/* Main events column */}
-            <div className="flex-1 min-w-0">
+            {/* Main column */}
+            <div style={{ flex: 1, minWidth: 0 }}>
               {isLoading ? (
-                <div className="flex items-center justify-center py-32">
-                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#f5a623" }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
+                  <Loader2 size={32} color={GOLD} className="animate-spin" />
                 </div>
-              ) : events.length === 0 ? (
-                <div
-                  className="py-24 text-center"
-                  style={{ border: "1px dashed rgba(245,166,35,0.15)", borderRadius: "4px" }}
-                >
-                  <Clock className="h-10 w-10 mx-auto mb-3 opacity-20" style={{ color: "#f5a623" }} />
-                  <p className="text-sm font-black uppercase tracking-widest" style={{ color: "#444" }}>
-                    No events at the moment
+              ) : filtered.length === 0 ? (
+                <div style={{
+                  padding: "60px 24px", textAlign: "center",
+                  border: `1px dashed rgba(245,166,35,0.1)`, borderRadius: 6,
+                }}>
+                  <Clock size={36} color="rgba(255,255,255,0.1)" style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#444" }}>
+                    No {tab !== "all" ? tab : ""} events right now
                   </p>
-                  <p className="text-xs mt-1" style={{ color: "#333" }}>Check back soon for upcoming events</p>
+                  <p style={{ fontSize: 12, color: "#333", marginTop: 4 }}>Check back soon for updates</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {/* Featured */}
-                  {featured && <EventCard ev={featured} featured />}
+                <>
+                  {featured && (
+                    <div style={{ marginBottom: 28 }}>
+                      <FeaturedCard ev={featured} />
+                    </div>
+                  )}
 
-                  {/* Grid */}
                   {rest.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {rest.map((ev) => (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="ev-grid">
+                      {rest.map((ev: any) => (
                         <EventCard key={ev.id} ev={ev} />
                       ))}
                     </div>
                   )}
 
-                  {/* Load more */}
                   {hasMore && (
-                    <div className="flex justify-center pt-4">
+                    <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
                       <button
                         onClick={() => setPage((p) => p + 1)}
-                        className="px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-110"
-                        style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", color: "#f5a623", borderRadius: "2px" }}
+                        style={{
+                          padding: "10px 28px", fontSize: 11, fontWeight: 800,
+                          textTransform: "uppercase", letterSpacing: "0.12em",
+                          background: "rgba(245,166,35,0.08)", border: `1px solid rgba(245,166,35,0.25)`,
+                          color: GOLD, borderRadius: 3, cursor: "pointer", transition: "all 0.2s",
+                        }}
+                        className="load-more-btn"
                       >
                         Load More Events
                       </button>
                     </div>
                   )}
-                </div>
+                </>
               )}
             </div>
 
-            {/* Sidebar: Discord widget */}
-            <aside className="xl:w-[340px] flex-shrink-0 xl:self-start">
-              <div className="sticky top-20">
-                {/* Discord section header */}
-                <div
-                  className="mb-3 pb-2"
-                  style={{ borderBottom: "1px solid rgba(88,101,242,0.2)" }}
-                >
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{ color: "#5865f2" }}>
-                    Live Community
-                  </p>
-                  <p className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
-                    Discord
-                  </p>
+            {/* Sidebar */}
+            <aside style={{ width: 300, flexShrink: 0 }} className="events-sidebar">
+              <div style={{ position: "sticky", top: 76 }}>
+
+                {/* Discord */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "8px 0 8px", marginBottom: 12,
+                    borderBottom: `1px solid rgba(88,101,242,0.2)`,
+                  }}>
+                    <p style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#5865f2", margin: 0 }}>Live Community</p>
+                  </div>
+                  <p style={{ fontSize: 18, fontWeight: 900, textTransform: "uppercase", color: "var(--foreground)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>Discord</p>
+                  <DiscordWidget />
                 </div>
-                <DiscordWidget />
 
                 {/* Quick links */}
-                <div className="mt-6 space-y-2">
-                  <p className="text-[9px] font-black uppercase tracking-[0.25em] mb-3" style={{ color: "#444" }}>Quick Links</p>
-                  {[
-                    { label: "Download CrossFire", href: "/download" },
-                    { label: "Weapons Database", href: "/weapons" },
-                    { label: "Mercenaries", href: "/mercenaries" },
-                    { label: "Rank System", href: "/ranks" },
-                  ].map(({ label, href }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="flex items-center justify-between px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide transition-all hover:border-[rgba(245,166,35,0.3)]"
-                      style={{
-                        background: "var(--card)",
-                        border: "1px solid rgba(255,255,255,0.05)",
-                        borderRadius: "3px",
-                        color: "var(--foreground)",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {label}
-                      <ChevronRight className="h-3 w-3 opacity-40" />
-                    </Link>
-                  ))}
+                <div style={{
+                  background: "var(--card)", border: `1px solid ${BORDER}`,
+                  borderRadius: 5, overflow: "hidden", marginBottom: 16,
+                }}>
+                  <div style={{
+                    padding: "9px 14px", borderBottom: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.02)",
+                  }}>
+                    <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: GOLD, margin: 0 }}>Quick Links</p>
+                  </div>
+                  <div style={{ padding: "6px" }}>
+                    {[
+                      { label: "Download CrossFire", href: "/download" },
+                      { label: "Weapons Database",   href: "/weapons" },
+                      { label: "Mercenaries",        href: "/mercenaries" },
+                      { label: "Rank System",        href: "/ranks" },
+                      { label: "Game Modes",         href: "/modes" },
+                      { label: "Latest News",        href: "/news" },
+                    ].map(({ label, href }) => (
+                      <Link key={href} href={href}>
+                        <div style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "8px 10px", borderRadius: 3,
+                          cursor: "pointer", transition: "background 0.15s",
+                        }} className="quick-link-item">
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>{label}</span>
+                          <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Event types legend */}
+                <div style={{ background: "var(--card)", border: `1px solid ${BORDER}`, borderRadius: 5, overflow: "hidden" }}>
+                  <div style={{ padding: "9px 14px", borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)" }}>
+                    <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: GOLD, margin: 0 }}>Status Guide</p>
+                  </div>
+                  <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { color: "#34d399", label: "Active", desc: "Currently running" },
+                      { color: GOLD, label: "Upcoming", desc: "Starting within 30 days" },
+                      { color: "rgba(255,255,255,0.25)", label: "Ended", desc: "Event has concluded" },
+                    ].map(({ color, label, desc }) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                        <div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>{label}</span>
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginLeft: 6 }}>{desc}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </aside>
           </div>
 
+          <style>{`
+            @media(max-width:1024px){.events-sidebar{display:none!important;}}
+            @media(max-width:700px){.ev-grid{grid-template-columns:1fr!important;}}
+            @media(max-width:900px){.ev-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            .load-more-btn:hover{background:rgba(245,166,35,0.15)!important;}
+            .quick-link-item:hover{background:rgba(255,255,255,0.04)!important;}
+          `}</style>
         </div>
       </div>
     </>

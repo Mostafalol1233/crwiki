@@ -129,7 +129,8 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
         "Give 4-5 practical bullet-point tips to earn EXP faster, make the most of the bonus rewards, and any special strategies for their rank tier. Be concise and specific to CrossFire NA gameplay.",
       ].filter(Boolean).join("\n");
 
-      const response = await puterInstance.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
+      // Use default model (gpt-4o-mini) — specialized models require extra auth on Puter
+      const response = await puterInstance.ai.chat(prompt);
       const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
       if (!text) throw new Error("Empty response from AI");
       setTips(parseTipsToPoints(text));

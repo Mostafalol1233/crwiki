@@ -77,137 +77,160 @@ function formatNum(n: number | null): string {
   return String(n);
 }
 
-// ─── Rank EXP thresholds (tier → cumulative EXP required) ────────────────────
-// Tier numbers match the CF rank system (RankNo from API / STATIC_RANKS tier field)
+// ─── Rank EXP thresholds (cumulative EXP required — sourced from CF wiki) ─────
 const RANK_EXP: Record<number, { name: string; exp: number }> = {
   1:   { name: "Trainee 1",              exp: 0 },
-  2:   { name: "Trainee 2",              exp: 200 },
-  3:   { name: "Private",                exp: 2_000 },
-  4:   { name: "Private First Class",    exp: 5_000 },
-  5:   { name: "Corporal",               exp: 10_000 },
-  6:   { name: "Sergeant 1",             exp: 20_000 },
-  7:   { name: "Sergeant 2",             exp: 30_000 },
-  8:   { name: "Sergeant 3",             exp: 45_000 },
-  9:   { name: "Sergeant 4",             exp: 60_000 },
-  10:  { name: "Staff Sergeant 1",       exp: 80_000 },
-  11:  { name: "Staff Sergeant 2",       exp: 100_000 },
-  12:  { name: "Staff Sergeant 3",       exp: 130_000 },
-  13:  { name: "Staff Sergeant 4",       exp: 160_000 },
-  14:  { name: "Staff Sergeant 5",       exp: 200_000 },
-  15:  { name: "Staff Sergeant 6",       exp: 250_000 },
-  16:  { name: "Sergeant First Class 1", exp: 300_000 },
-  17:  { name: "Sergeant First Class 2", exp: 370_000 },
-  18:  { name: "Sergeant First Class 3", exp: 450_000 },
-  19:  { name: "Sergeant First Class 4", exp: 550_000 },
-  20:  { name: "Sergeant First Class 5", exp: 650_000 },
-  21:  { name: "Sergeant First Class 6", exp: 800_000 },
-  22:  { name: "Master Sergeant 1",      exp: 950_000 },
-  23:  { name: "Master Sergeant 2",      exp: 1_100_000 },
-  24:  { name: "Master Sergeant 3",      exp: 1_300_000 },
-  25:  { name: "Master Sergeant 4",      exp: 1_500_000 },
-  26:  { name: "Master Sergeant 5",      exp: 1_800_000 },
-  27:  { name: "Master Sergeant 6",      exp: 2_100_000 },
-  28:  { name: "Second Lieutenant 1",    exp: 2_500_000 },
-  29:  { name: "Second Lieutenant 2",    exp: 3_000_000 },
-  30:  { name: "Second Lieutenant 3",    exp: 3_500_000 },
-  31:  { name: "Second Lieutenant 4",    exp: 4_000_000 },
-  32:  { name: "Second Lieutenant 5",    exp: 4_800_000 },
-  33:  { name: "Second Lieutenant 6",    exp: 5_600_000 },
-  34:  { name: "Second Lieutenant 7",    exp: 6_500_000 },
-  35:  { name: "Second Lieutenant 8",    exp: 7_500_000 },
-  36:  { name: "First Lieutenant 1",     exp: 9_000_000 },
-  37:  { name: "First Lieutenant 2",     exp: 10_500_000 },
-  38:  { name: "First Lieutenant 3",     exp: 12_000_000 },
-  39:  { name: "First Lieutenant 4",     exp: 14_000_000 },
-  40:  { name: "First Lieutenant 5",     exp: 16_000_000 },
-  41:  { name: "First Lieutenant 6",     exp: 18_500_000 },
-  42:  { name: "First Lieutenant 7",     exp: 21_000_000 },
-  43:  { name: "Captain 1",              exp: 24_000_000 },
-  44:  { name: "Captain 2",              exp: 27_000_000 },
-  45:  { name: "Captain 3",              exp: 30_500_000 },
-  46:  { name: "Captain 4",              exp: 34_000_000 },
-  47:  { name: "Captain 5",              exp: 38_000_000 },
-  48:  { name: "Captain 6",              exp: 42_000_000 },
-  49:  { name: "Captain 7",              exp: 46_500_000 },
-  50:  { name: "Captain 8",              exp: 51_000_000 },
-  51:  { name: "Major 1",                exp: 56_000_000 },
-  52:  { name: "Major 2",                exp: 61_500_000 },
-  53:  { name: "Major 3",                exp: 67_000_000 },
-  54:  { name: "Major 4",                exp: 73_000_000 },
-  55:  { name: "Major 5",                exp: 79_500_000 },
-  56:  { name: "Major 6",                exp: 86_000_000 },
-  57:  { name: "Major 7",                exp: 93_000_000 },
-  58:  { name: "Major 8",                exp: 100_500_000 },
-  59:  { name: "Lieutenant Colonel 1",   exp: 108_000_000 },
-  60:  { name: "Lieutenant Colonel 2",   exp: 116_000_000 },
-  61:  { name: "Lieutenant Colonel 3",   exp: 124_500_000 },
-  62:  { name: "Lieutenant Colonel 4",   exp: 133_500_000 },
-  63:  { name: "Lieutenant Colonel 5",   exp: 143_000_000 },
-  64:  { name: "Lieutenant Colonel 6",   exp: 153_000_000 },
-  65:  { name: "Lieutenant Colonel 7",   exp: 163_500_000 },
-  66:  { name: "Lieutenant Colonel 8",   exp: 174_500_000 },
-  67:  { name: "Colonel 1",              exp: 186_000_000 },
-  68:  { name: "Colonel 2",              exp: 198_000_000 },
-  69:  { name: "Colonel 3",              exp: 211_000_000 },
-  70:  { name: "Colonel 4",              exp: 224_500_000 },
-  71:  { name: "Colonel 5",              exp: 238_500_000 },
-  72:  { name: "Colonel 6",              exp: 253_000_000 },
-  73:  { name: "Colonel 7",              exp: 268_000_000 },
-  74:  { name: "Colonel 8",              exp: 283_500_000 },
-  75:  { name: "Brigadier General 1",    exp: 300_000_000 },
-  76:  { name: "Brigadier General 2",    exp: 317_000_000 },
-  77:  { name: "Brigadier General 3",    exp: 334_500_000 },
-  78:  { name: "Brigadier General 4",    exp: 352_500_000 },
-  79:  { name: "Brigadier General 5",    exp: 371_000_000 },
-  80:  { name: "Brigadier General 6",    exp: 390_000_000 },
-  81:  { name: "Major General 1",        exp: 410_000_000 },
-  82:  { name: "Major General 2",        exp: 430_500_000 },
-  83:  { name: "Major General 3",        exp: 451_500_000 },
-  84:  { name: "Major General 4",        exp: 473_000_000 },
-  85:  { name: "Major General 5",        exp: 495_000_000 },
-  86:  { name: "Major General 6",        exp: 517_500_000 },
-  87:  { name: "Lieutenant General 1",   exp: 541_000_000 },
-  88:  { name: "Lieutenant General 2",   exp: 565_000_000 },
-  89:  { name: "Lieutenant General 3",   exp: 590_000_000 },
-  90:  { name: "Lieutenant General 4",   exp: 615_500_000 },
-  91:  { name: "Lieutenant General 5",   exp: 641_500_000 },
-  92:  { name: "Lieutenant General 6",   exp: 668_000_000 },
-  93:  { name: "General 1",              exp: 695_000_000 },
-  94:  { name: "General 2",              exp: 723_000_000 },
-  95:  { name: "General 3",              exp: 751_500_000 },
-  96:  { name: "General 4",              exp: 780_500_000 },
-  97:  { name: "General 5",              exp: 810_000_000 },
-  98:  { name: "General 6",              exp: 840_000_000 },
-  99:  { name: "General 7",              exp: 870_500_000 },
-  100: { name: "General 8",              exp: 901_500_000 },
-  101: { name: "Grand General 1",        exp: 933_000_000 },
-  102: { name: "Grand General 2",        exp: 965_000_000 },
-  103: { name: "Grand General 3",        exp: 997_500_000 },
-  104: { name: "Grand Marshall",         exp: 1_030_500_000 },
-  105: { name: "Grand Marshal",          exp: 1_030_500_000 },
+  2:   { name: "Trainee 2",              exp: 457 },
+  3:   { name: "Private",                exp: 913 },
+  4:   { name: "Private First Class",    exp: 1_825 },
+  5:   { name: "Corporal",               exp: 3_193 },
+  6:   { name: "Sergeant 1",             exp: 5_017 },
+  7:   { name: "Sergeant 2",             exp: 7_297 },
+  8:   { name: "Sergeant 3",             exp: 10_033 },
+  9:   { name: "Sergeant 4",             exp: 13_225 },
+  10:  { name: "Staff Sergeant 1",       exp: 17_785 },
+  11:  { name: "Staff Sergeant 2",       exp: 23_941 },
+  12:  { name: "Staff Sergeant 3",       exp: 33_061 },
+  13:  { name: "Staff Sergeant 4",       exp: 43_093 },
+  14:  { name: "Staff Sergeant 5",       exp: 54_037 },
+  15:  { name: "Staff Sergeant 6",       exp: 65_893 },
+  16:  { name: "Sergeant First Class 1", exp: 78_661 },
+  17:  { name: "Sergeant First Class 2", exp: 92_341 },
+  18:  { name: "Sergeant First Class 3", exp: 106_933 },
+  19:  { name: "Sergeant First Class 4", exp: 122_437 },
+  20:  { name: "Sergeant First Class 5", exp: 138_853 },
+  21:  { name: "Sergeant First Class 6", exp: 156_181 },
+  22:  { name: "Master Sergeant 1",      exp: 174_421 },
+  23:  { name: "Master Sergeant 2",      exp: 193_573 },
+  24:  { name: "Master Sergeant 3",      exp: 213_637 },
+  25:  { name: "Master Sergeant 4",      exp: 234_613 },
+  26:  { name: "Master Sergeant 5",      exp: 256_501 },
+  27:  { name: "Master Sergeant 6",      exp: 279_301 },
+  28:  { name: "Second Lieutenant 1",    exp: 326_725 },
+  29:  { name: "Second Lieutenant 2",    exp: 375_973 },
+  30:  { name: "Second Lieutenant 3",    exp: 427_045 },
+  31:  { name: "Second Lieutenant 4",    exp: 479_941 },
+  32:  { name: "Second Lieutenant 5",    exp: 534_661 },
+  33:  { name: "Second Lieutenant 6",    exp: 591_205 },
+  34:  { name: "Second Lieutenant 7",    exp: 649_573 },
+  35:  { name: "Second Lieutenant 8",    exp: 709_765 },
+  36:  { name: "First Lieutenant 1",     exp: 771_781 },
+  37:  { name: "First Lieutenant 2",     exp: 835_621 },
+  38:  { name: "First Lieutenant 3",     exp: 901_285 },
+  39:  { name: "First Lieutenant 4",     exp: 968_773 },
+  40:  { name: "First Lieutenant 5",     exp: 1_038_085 },
+  41:  { name: "First Lieutenant 6",     exp: 1_109_221 },
+  42:  { name: "First Lieutenant 7",     exp: 1_182_181 },
+  43:  { name: "First Lieutenant 8",     exp: 1_256_965 },
+  44:  { name: "Captain 1",              exp: 1_333_573 },
+  45:  { name: "Captain 2",              exp: 1_412_005 },
+  46:  { name: "Captain 3",              exp: 1_492_261 },
+  47:  { name: "Captain 4",              exp: 1_574_341 },
+  48:  { name: "Captain 5",              exp: 1_658_245 },
+  49:  { name: "Captain 6",              exp: 1_743_973 },
+  50:  { name: "Captain 7",              exp: 1_831_525 },
+  51:  { name: "Captain 8",              exp: 1_920_901 },
+  52:  { name: "Major 1",                exp: 2_057_701 },
+  53:  { name: "Major 2",                exp: 2_107_237 },
+  54:  { name: "Major 3",                exp: 2_339_509 },
+  55:  { name: "Major 4",                exp: 2_484_517 },
+  56:  { name: "Major 5",                exp: 2_632_261 },
+  57:  { name: "Major 6",                exp: 2_782_741 },
+  58:  { name: "Major 7",                exp: 2_935_957 },
+  59:  { name: "Major 8",                exp: 3_091_909 },
+  60:  { name: "Lieutenant Colonel 1",   exp: 3_277_045 },
+  61:  { name: "Lieutenant Colonel 2",   exp: 3_465_373 },
+  62:  { name: "Lieutenant Colonel 3",   exp: 3_673_537 },
+  63:  { name: "Lieutenant Colonel 4",   exp: 3_885_178 },
+  64:  { name: "Lieutenant Colonel 5",   exp: 4_100_296 },
+  65:  { name: "Lieutenant Colonel 6",   exp: 4_318_891 },
+  66:  { name: "Lieutenant Colonel 7",   exp: 4_540_963 },
+  67:  { name: "Lieutenant Colonel 8",   exp: 4_766_512 },
+  68:  { name: "Colonel 1",              exp: 5_028_199 },
+  69:  { name: "Colonel 2",              exp: 5_319_184 },
+  70:  { name: "Colonel 3",              exp: 5_614_501 },
+  71:  { name: "Colonel 4",              exp: 5_914_150 },
+  72:  { name: "Colonel 5",              exp: 6_218_131 },
+  73:  { name: "Colonel 6",              exp: 6_526_501 },
+  74:  { name: "Colonel 7",              exp: 6_839_203 },
+  75:  { name: "Colonel 8",              exp: 7_156_237 },
+  76:  { name: "Brigadier General 1",    exp: 7_578_037 },
+  77:  { name: "Brigadier General 2",    exp: 8_026_912 },
+  78:  { name: "Brigadier General 3",    exp: 8_481_772 },
+  79:  { name: "Brigadier General 4",    exp: 8_964_562 },
+  80:  { name: "Brigadier General 5",    exp: 9_475_852 },
+  81:  { name: "Brigadier General 6",    exp: 10_016_212 },
+  82:  { name: "Major General 1",        exp: 10_586_212 },
+  83:  { name: "Major General 2",        exp: 11_186_422 },
+  84:  { name: "Major General 3",        exp: 11_817_412 },
+  85:  { name: "Major General 4",        exp: 12_479_752 },
+  86:  { name: "Major General 5",        exp: 13_174_012 },
+  87:  { name: "Major General 6",        exp: 13_900_762 },
+  88:  { name: "Lieutenant General 1",   exp: 14_660_572 },
+  89:  { name: "Lieutenant General 2",   exp: 15_454_012 },
+  90:  { name: "Lieutenant General 3",   exp: 16_281_652 },
+  91:  { name: "Lieutenant General 4",   exp: 17_144_062 },
+  92:  { name: "Lieutenant General 5",   exp: 18_041_812 },
+  93:  { name: "Lieutenant General 6",   exp: 18_975_472 },
+  94:  { name: "General 1",              exp: 19_945_612 },
+  95:  { name: "General 2",              exp: 20_952_802 },
+  96:  { name: "General 3",              exp: 21_997_612 },
+  97:  { name: "General 4",              exp: 23_080_612 },
+  98:  { name: "General 5",              exp: 24_202_372 },
+  99:  { name: "General 6",              exp: 25_363_462 },
+  100: { name: "Marshall",               exp: 26_564_452 },
+  101: { name: "Grand Marshall",         exp: 100_000_000 },
 };
+
+/** Build a reverse map from rank name (lower-cased, trimmed) → tier number */
+const RANK_NAME_TO_TIER: Record<string, number> = {};
+for (const [tier, info] of Object.entries(RANK_EXP)) {
+  RANK_NAME_TO_TIER[info.name.toLowerCase().trim()] = Number(tier);
+}
 
 const Z8_RANK_IMG = (tier: number) =>
   `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${tier}.jpg`;
 
-/** Given current EXP + rank tier, compute progress toward a chosen target rank.
- *  Handles the case where our RANK_EXP thresholds don't match the real game
- *  (exp < curInfo.exp) by falling back to EXP-only derivation. */
-function getRankProgress(exp: number, currentTier: number | null, chosenTargetTier?: number | null) {
+/** Given current EXP + rank name/tier from API, compute progress toward a chosen target rank.
+ *  Priority for determining current tier:
+ *  1. Match the API rank name against RANK_NAME_TO_TIER (most reliable)
+ *  2. Fall back to EXP-based lookup (only if name doesn't match)
+ *  This avoids negative EXP when the profile EXP scale differs from rank thresholds. */
+function getRankProgress(
+  exp: number,
+  currentTier: number | null,
+  chosenTargetTier?: number | null,
+  rankName?: string | null,
+) {
   const tiers = Object.keys(RANK_EXP).map(Number).sort((a, b) => a - b);
   const maxTier = tiers[tiers.length - 1];
 
-  // Always derive tier purely from EXP so thresholds are internally consistent.
-  // If the API-provided tier IS consistent with EXP (exp >= that tier's threshold),
-  // prefer the API tier — otherwise fall back to EXP lookup.
-  let curTier: number = tiers[0];
-  for (const t of tiers) {
-    if (RANK_EXP[t].exp <= exp) curTier = t;
-    else break;
+  // 1. Try to match the API rank name (e.g. "Brigadier General") to a tier.
+  //    The API often returns only the base name without a number suffix,
+  //    so try an exact match first, then a prefix scan.
+  let curTier: number | null = null;
+  if (rankName) {
+    const key = rankName.toLowerCase().trim();
+    if (RANK_NAME_TO_TIER[key] !== undefined) {
+      curTier = RANK_NAME_TO_TIER[key];
+    } else {
+      // Partial prefix match — "Brigadier General" → first tier whose name starts with it
+      const match = tiers.find(t => RANK_EXP[t].name.toLowerCase().startsWith(key));
+      if (match !== undefined) curTier = match;
+    }
   }
-  // Only trust API tier when it doesn't produce a negative within-rank EXP
-  if (currentTier && RANK_EXP[currentTier] && RANK_EXP[currentTier].exp <= exp) {
-    curTier = currentTier;
+
+  // 2. If name lookup succeeded, use it; otherwise fall back to EXP-based derivation
+  if (!curTier) {
+    curTier = tiers[0];
+    for (const t of tiers) {
+      if (RANK_EXP[t].exp <= exp) curTier = t;
+      else break;
+    }
+    // Also consider API-provided tier if it produces non-negative within-rank EXP
+    if (currentTier && RANK_EXP[currentTier] && RANK_EXP[currentTier].exp <= exp) {
+      curTier = currentTier;
+    }
   }
 
   const curInfo   = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
@@ -416,7 +439,7 @@ export default function Profile() {
 
   const handleGetTips = async () => {
     if (!cfStats) return;
-    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier);
+    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier, cfStats.rank);
     if (!rp.destInfo) return;
     setTipsLoading(true);
     setTips([]);
@@ -437,7 +460,8 @@ export default function Profile() {
         "Give 4-5 practical bullet-point tips to earn EXP faster and improve stats. Be specific to CrossFire NA gameplay.",
       ].filter(Boolean).join("\n");
 
-      const response = await puterInstance.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
+      // Use default model (gpt-4o-mini) — specialized models require extra auth on Puter
+      const response = await puterInstance.ai.chat(prompt);
       const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
       if (!text) throw new Error("Empty response from AI");
       const lines = text
@@ -733,7 +757,7 @@ export default function Profile() {
 
                   {/* ── Rank progress widget ── */}
                   {cfStats.exp !== null && (() => {
-                    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier);
+                    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier, cfStats.rank);
                     return (
                       <div
                         className="mb-4 p-4"

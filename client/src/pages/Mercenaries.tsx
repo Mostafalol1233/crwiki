@@ -232,7 +232,7 @@ export default function Mercenaries() {
                       src={resolveMercImage(merc)}
                       alt={merc.name}
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
-                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500"
+                      className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500"
                       style={{ transform: isExpanded ? "scale(1.05)" : "scale(1)" }}
                     />
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%)" }} />
@@ -296,7 +296,7 @@ export default function Mercenaries() {
                         src={resolveMercImage(merc)}
                         alt={merc.name}
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
-                        className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 25%, transparent 65%)" }} />

@@ -1,6 +1,8 @@
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { getModes, getMaps } from "@/lib/supabaseApi";
 import {
   ChevronRight, Download, Crosshair, Users, Map, Sword,
   Trophy, Gamepad2, Globe2, Shield, Star, ArrowRight
@@ -72,6 +74,8 @@ const FACTIONS = [
     descAr: "شركة عسكرية خاصة تأسست عام 1999، تعمل لحماية الشركات والحكومات.",
     color: "#3b82f6",
     side: "Defenders",
+    image: "https://static.wikia.nocookie.net/crossfire/images/b/b3/Global_Risk_Logo.png/revision/latest",
+    bgColor: "rgba(59,130,246,0.06)",
   },
   {
     name: "Black List",
@@ -80,6 +84,8 @@ const FACTIONS = [
     descAr: "منظمة إرهابية دولية تواجه جلوبال ريسك في عمليات سرية حول العالم.",
     color: "#ef4444",
     side: "Attackers",
+    image: "https://static.wikia.nocookie.net/crossfire/images/0/07/Black_List_Logo.png/revision/latest",
+    bgColor: "rgba(239,68,68,0.06)",
   },
 ];
 
@@ -102,6 +108,39 @@ const SOCIALS = [
 export default function About() {
   const { t, language } = useLanguage();
   const isAr = language === "ar";
+
+  const { data: dbModes } = useQuery({ queryKey: ["about-modes"], queryFn: getModes, staleTime: 10 * 60 * 1000 });
+  const { data: dbMaps }  = useQuery({ queryKey: ["about-maps"],  queryFn: getMaps,  staleTime: 10 * 60 * 1000 });
+
+  // Match DB mode images with our hardcoded list by partial name
+  const modeImageMap: Record<string, string> = {};
+  if (dbModes) {
+    for (const m of dbModes as any[]) {
+      modeImageMap[String(m.name || "").toLowerCase().trim()] = String(m.image || "");
+    }
+  }
+  function getModeImage(modeName: string): string {
+    const key = modeName.toLowerCase();
+    for (const [k, v] of Object.entries(modeImageMap)) {
+      if (k.includes(key.split(" ")[0]) || key.includes(k.split(" ")[0])) return v;
+    }
+    return "";
+  }
+
+  // Get maps grouped by mode type
+  const allMaps = (dbMaps as any[]) || [];
+  const tdmMaps = allMaps.filter(m =>
+    String(m.mode || m.category || "").toLowerCase().includes("tdm") ||
+    String(m.mode || m.category || "").toLowerCase().includes("deathmatch")
+  ).filter(m => m.image || m.imageUrl).slice(0, 4);
+
+  const sndMaps = allMaps.filter(m =>
+    String(m.mode || m.category || "").toLowerCase().includes("s&d") ||
+    String(m.mode || m.category || "").toLowerCase().includes("search")
+  ).filter(m => m.image || m.imageUrl).slice(0, 4);
+
+  // Generic recent maps if mode-specific ones are sparse
+  const recentMaps = allMaps.filter(m => m.image || m.imageUrl).slice(0, 6);
 
   return (
     <>
@@ -291,28 +330,60 @@ export default function About() {
               {FACTIONS.map((faction) => (
                 <div key={faction.name} style={{
                   background: CARD, border: `1px solid ${BORDER}`,
-                  borderRadius: 12, padding: 28,
+                  borderRadius: 12, overflow: "hidden",
                   borderTop: `3px solid ${faction.color}`,
                 }}>
+                  {/* Faction image banner */}
                   <div style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "3px 10px", borderRadius: 999,
-                    background: `${faction.color}18`, border: `1px solid ${faction.color}44`,
-                    marginBottom: 16,
+                    height: 160, background: faction.bgColor,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    borderBottom: `1px solid ${BORDER}`, position: "relative",
+                    overflow: "hidden",
                   }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: faction.color, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      {faction.side}
-                    </span>
+                    <img
+                      src={faction.image}
+                      alt={faction.name}
+                      style={{ maxHeight: 130, maxWidth: "70%", objectFit: "contain", position: "relative", zIndex: 1 }}
+                      onError={e => {
+                        const el = e.currentTarget as HTMLImageElement;
+                        el.style.display = "none";
+                        const parent = el.parentElement;
+                        if (parent) {
+                          const fallback = parent.querySelector('.faction-fallback-text') as HTMLElement;
+                          if (fallback) fallback.style.display = "flex";
+                        }
+                      }}
+                    />
+                    <div className="faction-fallback-text" style={{
+                      display: "none", position: "absolute", inset: 0,
+                      alignItems: "center", justifyContent: "center",
+                      fontSize: 36, fontWeight: 900, color: `${faction.color}40`,
+                      letterSpacing: "0.05em", fontFamily: "Inter, system-ui, sans-serif",
+                    }}>
+                      {faction.name.split(" ").map(w => w[0]).join("")}
+                    </div>
                   </div>
-                  <h3 style={{
-                    fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700,
-                    fontSize: "1.2rem", color: "#fff", margin: "0 0 12px",
-                  }}>
-                    {isAr ? faction.nameAr : faction.name}
-                  </h3>
-                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0, fontFamily: "Inter, system-ui, sans-serif" }}>
-                    {isAr ? faction.descAr : faction.desc}
-                  </p>
+                  <div style={{ padding: 28 }}>
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "3px 10px", borderRadius: 999,
+                      background: `${faction.color}18`, border: `1px solid ${faction.color}44`,
+                      marginBottom: 16,
+                    }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: faction.color, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                        {faction.side}
+                      </span>
+                    </div>
+                    <h3 style={{
+                      fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700,
+                      fontSize: "1.2rem", color: "#fff", margin: "0 0 12px",
+                    }}>
+                      {isAr ? faction.nameAr : faction.name}
+                    </h3>
+                    <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.7, margin: 0, fontFamily: "Inter, system-ui, sans-serif" }}>
+                      {isAr ? faction.descAr : faction.desc}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -350,38 +421,162 @@ export default function About() {
             }}>
               {GAME_MODES.map((mode) => {
                 const Icon = mode.icon;
+                const dbImg = getModeImage(mode.name);
                 return (
                   <div key={mode.name} style={{
                     background: CARD, border: `1px solid ${BORDER}`,
-                    borderRadius: 12, padding: "20px 24px",
-                    display: "flex", gap: 16, alignItems: "flex-start",
+                    borderRadius: 12, overflow: "hidden",
                     transition: "border-color 0.2s",
                   }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${mode.color}44`; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: `${mode.color}18`, border: `1px solid ${mode.color}44`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <Icon size={18} color={mode.color} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h3 style={{
-                        fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600,
-                        fontSize: 15, color: "#fff", margin: "0 0 6px",
+                    {/* Mode image */}
+                    {dbImg ? (
+                      <div style={{ height: 120, overflow: "hidden", background: "#050505", position: "relative" }}>
+                        <img
+                          src={dbImg}
+                          alt={mode.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                        />
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(17,17,17,0.85) 0%, transparent 60%)" }} />
+                        <div style={{ position: "absolute", top: 8, left: 10 }}>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
+                            padding: "2px 8px", borderRadius: 2,
+                            background: `${mode.color}30`, color: mode.color, border: `1px solid ${mode.color}50`,
+                          }}>
+                            {isAr ? mode.nameAr : mode.name}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        height: 80, background: `${mode.color}08`,
+                        borderBottom: `1px solid ${mode.color}20`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
-                        {isAr ? mode.nameAr : mode.name}
-                      </h3>
-                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: 0, lineHeight: 1.6, fontFamily: "Inter, system-ui, sans-serif" }}>
-                        {isAr ? mode.descAr : mode.desc}
-                      </p>
+                        <Icon size={32} color={`${mode.color}50`} strokeWidth={1} />
+                      </div>
+                    )}
+                    <div style={{ padding: "16px 20px", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                        background: `${mode.color}18`, border: `1px solid ${mode.color}44`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginTop: 2,
+                      }}>
+                        <Icon size={16} color={mode.color} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <h3 style={{
+                          fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600,
+                          fontSize: 15, color: "#fff", margin: "0 0 5px",
+                        }}>
+                          {isAr ? mode.nameAr : mode.name}
+                        </h3>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: 0, lineHeight: 1.6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                          {isAr ? mode.descAr : mode.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           </section>
+
+          {/* ── Maps Preview ── */}
+          {recentMaps.length > 0 && (
+            <section style={{ marginBottom: 80 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 12 }}>
+                {isAr ? "الخرائط" : "Maps"}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+                <h2 style={{
+                  fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700,
+                  fontSize: "clamp(1.4rem, 2.5vw, 2rem)",
+                  color: "#fff", margin: 0, letterSpacing: "-0.02em",
+                }}>
+                  {isAr ? "ساحات المعارك" : "Battle Arenas"}
+                </h2>
+                <Link href="/maps">
+                  <button style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "8px 16px",
+                    background: "transparent", border: `1px solid ${BORDER}`,
+                    borderRadius: 8, color: "rgba(255,255,255,0.5)",
+                    fontSize: 13, cursor: "pointer", fontFamily: "Inter, system-ui, sans-serif",
+                  }}>
+                    {isAr ? "كل الخرائط" : "All Maps"} <ChevronRight size={14} />
+                  </button>
+                </Link>
+              </div>
+
+              {/* TDM Maps */}
+              {tdmMaps.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <div style={{ width: 3, height: 14, background: "#ef4444", borderRadius: 2 }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                      Team Deathmatch
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+                    {tdmMaps.map((m: any) => (
+                      <Link key={m.id} href="/maps">
+                        <div style={{ borderRadius: 8, overflow: "hidden", position: "relative", aspectRatio: "16/9", background: "#050505", cursor: "pointer" }}>
+                          <img src={m.image || m.imageUrl} alt={m.name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 55%)" }} />
+                          <p style={{ position: "absolute", bottom: 8, left: 10, right: 8, fontSize: 11, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.3 }}>{m.name}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* S&D Maps */}
+              {sndMaps.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <div style={{ width: 3, height: 14, background: "#f5a623", borderRadius: 2 }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                      Search & Destroy
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+                    {sndMaps.map((m: any) => (
+                      <Link key={m.id} href="/maps">
+                        <div style={{ borderRadius: 8, overflow: "hidden", position: "relative", aspectRatio: "16/9", background: "#050505", cursor: "pointer" }}>
+                          <img src={m.image || m.imageUrl} alt={m.name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 55%)" }} />
+                          <p style={{ position: "absolute", bottom: 8, left: 10, right: 8, fontSize: 11, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.3 }}>{m.name}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback: all maps if no mode-specific ones found */}
+              {tdmMaps.length === 0 && sndMaps.length === 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
+                  {recentMaps.map((m: any) => (
+                    <Link key={m.id} href="/maps">
+                      <div style={{ borderRadius: 8, overflow: "hidden", position: "relative", aspectRatio: "16/9", background: "#050505", cursor: "pointer" }}>
+                        <img src={m.image || m.imageUrl} alt={m.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 55%)" }} />
+                        <p style={{ position: "absolute", bottom: 8, left: 10, right: 8, fontSize: 11, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.3 }}>{m.name}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* ── Currencies ── */}
           <section style={{ marginBottom: 80 }}>
@@ -396,27 +591,87 @@ export default function About() {
               {isAr ? "عملتان أساسيتان" : "Two Core Currencies"}
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="grid-cols-1 sm:grid-cols-2">
-              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 28 }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: "#f5a623", marginBottom: 8, fontFamily: "Inter, system-ui, sans-serif" }}>ZP</div>
-                <h3 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: "#fff", margin: "0 0 10px" }}>
-                  {isAr ? "زد-بوينتس (Z-Points)" : "Z-Points (ZP)"}
-                </h3>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.7, fontFamily: "Inter, system-ui, sans-serif" }}>
-                  {isAr
-                    ? "العملة المدفوعة. تشتريها بفلوس حقيقية وتستخدمها لشراء أسلحة وشخصيات بريميوم من الشوب."
-                    : "Premium currency purchased with real money. Used for premium weapons, characters, and items in the Item Shop."}
-                </p>
+              {/* ZP Card */}
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", borderTop: "3px solid #f5a623" }}>
+                <div style={{
+                  height: 120, background: "rgba(245,166,35,0.06)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  borderBottom: `1px solid rgba(245,166,35,0.15)`,
+                }}>
+                  <img
+                    src="https://static.wikia.nocookie.net/crossfire/images/f/f7/ZP.png/revision/latest"
+                    alt="ZP Coin"
+                    style={{ maxHeight: 90, maxWidth: "60%", objectFit: "contain" }}
+                    onError={e => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.style.display = "none";
+                      const parent = img.parentElement;
+                      if (parent) {
+                        const fb = parent.querySelector(".zp-fallback") as HTMLElement;
+                        if (fb) fb.style.display = "flex";
+                      }
+                    }}
+                  />
+                  <div className="zp-fallback" style={{
+                    display: "none", width: 72, height: 72, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #f5a623, #d4820a)",
+                    alignItems: "center", justifyContent: "center",
+                    fontSize: 22, fontWeight: 900, color: "#000",
+                    boxShadow: "0 4px 20px rgba(245,166,35,0.4)",
+                    fontFamily: "Inter, system-ui, sans-serif",
+                  }}>ZP</div>
+                </div>
+                <div style={{ padding: 24 }}>
+                  <h3 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: "#f5a623", margin: "0 0 8px" }}>
+                    {isAr ? "زد-بوينتس (Z-Points)" : "Z-Points (ZP)"}
+                  </h3>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.7, fontFamily: "Inter, system-ui, sans-serif" }}>
+                    {isAr
+                      ? "العملة المدفوعة. تشتريها بفلوس حقيقية وتستخدمها لشراء أسلحة وشخصيات بريميوم من الشوب."
+                      : "Premium currency purchased with real money. Used for premium weapons, characters, and items in the Item Shop."}
+                  </p>
+                </div>
               </div>
-              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 28 }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: "#22c55e", marginBottom: 8, fontFamily: "Inter, system-ui, sans-serif" }}>GP</div>
-                <h3 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: "#fff", margin: "0 0 10px" }}>
-                  {isAr ? "جيم-بوينتس (Game Points)" : "Game Points (GP)"}
-                </h3>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.7, fontFamily: "Inter, system-ui, sans-serif" }}>
-                  {isAr
-                    ? "عملة مجانية تكسبها من اللعب. تستخدمها في الـ MP Shop للحصول على أسلحة وأيتمات."
-                    : "Free currency earned by playing. Used in the Military Point Shop for weapons and items without spending real money."}
-                </p>
+              {/* GP Card */}
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", borderTop: "3px solid #22c55e" }}>
+                <div style={{
+                  height: 120, background: "rgba(34,197,94,0.06)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  borderBottom: `1px solid rgba(34,197,94,0.15)`,
+                }}>
+                  <img
+                    src="https://static.wikia.nocookie.net/crossfire/images/4/4f/GP.png/revision/latest"
+                    alt="GP Coin"
+                    style={{ maxHeight: 90, maxWidth: "60%", objectFit: "contain" }}
+                    onError={e => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      img.style.display = "none";
+                      const parent = img.parentElement;
+                      if (parent) {
+                        const fb = parent.querySelector(".gp-fallback") as HTMLElement;
+                        if (fb) fb.style.display = "flex";
+                      }
+                    }}
+                  />
+                  <div className="gp-fallback" style={{
+                    display: "none", width: 72, height: 72, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #22c55e, #15803d)",
+                    alignItems: "center", justifyContent: "center",
+                    fontSize: 22, fontWeight: 900, color: "#000",
+                    boxShadow: "0 4px 20px rgba(34,197,94,0.4)",
+                    fontFamily: "Inter, system-ui, sans-serif",
+                  }}>GP</div>
+                </div>
+                <div style={{ padding: 24 }}>
+                  <h3 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: "#22c55e", margin: "0 0 8px" }}>
+                    {isAr ? "جيم-بوينتس (Game Points)" : "Game Points (GP)"}
+                  </h3>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.7, fontFamily: "Inter, system-ui, sans-serif" }}>
+                    {isAr
+                      ? "عملة مجانية تكسبها من اللعب. تستخدمها في الـ MP Shop للحصول على أسلحة وأيتمات."
+                      : "Free currency earned by playing. Used in the Military Point Shop for weapons and items without spending real money."}
+                  </p>
+                </div>
               </div>
             </div>
           </section>

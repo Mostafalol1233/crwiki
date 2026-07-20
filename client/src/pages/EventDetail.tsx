@@ -10,7 +10,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { queryClient } from "@/lib/queryClient";
-import { getEventBySlug, getComments, addComment, getEvents } from "@/lib/supabaseApi";
+import { getEventBySlug, getComments, addComment, getEvents, getMercenaries } from "@/lib/supabaseApi";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 
@@ -220,6 +220,21 @@ export default function EventDetail() {
       return found;
     },
   });
+
+  // Mercenaries — used for GM author avatar (Xenon character)
+  const { data: mercenaries } = useQuery<any[]>({
+    queryKey: ["mercenaries-for-author"],
+    queryFn: () => getMercenaries(),
+    staleTime: 10 * 60 * 1000,
+  });
+  const xenon = useMemo(() => {
+    if (!mercenaries?.length) return null;
+    return (
+      mercenaries.find((m: any) => m.name?.toLowerCase().includes("xenon")) ||
+      mercenaries.find((m: any) => m.image) ||
+      null
+    );
+  }, [mercenaries]);
 
   // Related events
   const { data: relatedData } = useQuery<{ items: any[] }>({

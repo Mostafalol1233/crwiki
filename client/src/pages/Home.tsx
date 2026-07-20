@@ -71,13 +71,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
           }}>
             <Icon size={18} color={portal.accent} strokeWidth={1.5} />
           </div>
-          <span style={{
-            fontSize: 11, fontWeight: 700, color: portal.accent,
-            background: `${portal.accent}15`, border: `1px solid ${portal.accent}30`,
-            borderRadius: 999, padding: "2px 8px", letterSpacing: "0.04em",
-          }}>
-            {portal.count}
-          </span>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: `${portal.accent}60` }} />
         </div>
         {/* Label */}
         <p style={{ fontWeight: 700, fontSize: 15, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
@@ -94,21 +88,6 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
         </div>
       </div>
     </Link>
-  );
-}
-
-// ─── Animated Stat ────────────────────────────────────────────────────────────
-function AnimatedStat({ value, label, icon: Icon }: { value: string; label: string; icon: any }) {
-  return (
-    <div style={{ textAlign: "center", padding: "16px 20px", borderRight: `1px solid ${BORDER}` }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>
-        <Icon size={14} color={GOLD} strokeWidth={2} />
-        <span style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>{value}</span>
-      </div>
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        {label}
-      </p>
-    </div>
   );
 }
 
@@ -177,9 +156,9 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
         }}
       >
         {img && (
-          <div style={{ height: featured ? 200 : 150, overflow: "hidden", position: "relative" }}>
+          <div style={{ height: featured ? 200 : 150, overflow: "hidden", position: "relative", background: "#050505" }}>
             <img src={img} alt={event.title} style={{
-              width: "100%", height: "100%", objectFit: "cover",
+              width: "100%", height: "100%", objectFit: "contain",
               transition: "transform 0.4s",
               transform: hovered ? "scale(1.04)" : "scale(1)",
             }} />
@@ -427,26 +406,6 @@ export default function Home() {
           `}</style>
         </div>
 
-        {/* ── STATS BAR ────────────────────────────────────────────────────── */}
-        <div style={{ maxWidth: 1140, margin: "24px auto 0", padding: "0 24px" }}>
-          <div style={{
-            background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 6, display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-            overflow: "hidden",
-          }} className="stats-bar">
-            {[
-              { value: "3,589", label: "Weapons", icon: Target },
-              { value: "312",   label: "Maps",    icon: MapPin },
-              { value: "104",   label: "Ranks",   icon: Star },
-              { value: "61",    label: "Modes",   icon: Shield },
-            ].map((s, i) => (
-              <div key={s.label} style={{ borderRight: i < 3 ? `1px solid ${BORDER}` : "none" }}>
-                <AnimatedStat {...s} />
-              </div>
-            ))}
-          </div>
-          <style>{`@media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr)!important;}}`}</style>
-        </div>
 
         {/* ── MAIN CONTENT (Two-column wiki layout) ─────────────────────────── */}
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 64px" }}>
@@ -571,21 +530,8 @@ export default function Home() {
               {/* On This Wiki */}
               <SidebarBlock title="On This Wiki" icon={BookOpen}>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "0 0 12px", lineHeight: 1.6 }}>
-                  CrossFire Wiki is a community resource covering every aspect of the CrossFire FPS game.
+                  CrossFire Wiki is a community resource covering every aspect of the CrossFire FPS game. Explore weapons, maps, ranks, mercenaries and more.
                 </p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
-                  {[
-                    { label: "Weapons", value: "3,589" },
-                    { label: "Maps", value: "312" },
-                    { label: "Ranks", value: "104" },
-                    { label: "Modes", value: "61" },
-                  ].map(s => (
-                    <div key={s.label} style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "8px 10px" }}>
-                      <p style={{ fontSize: 16, fontWeight: 800, color: GOLD, margin: 0, letterSpacing: "-0.02em" }}>{s.value}</p>
-                      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 8px", background: CARD2, borderRadius: 4, border: `1px solid ${BORDER}` }}>
                   <Clock size={11} color="rgba(255,255,255,0.3)" />
                   <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{today}</span>

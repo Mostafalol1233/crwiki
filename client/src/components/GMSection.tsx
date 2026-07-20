@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { getMercenaries } from "@/lib/supabaseApi";
+
 const GOLD_BORDER = "rgba(154,124,63,0.25)";
 
 interface GM {
@@ -6,16 +9,37 @@ interface GM {
   role: string;
   lastSeen: string;
   color: string;
+  mercName?: string; // optional: match against mercenaries DB for image
 }
 
 const GMS: GM[] = [
   { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Support & System Operations", lastSeen: "Jun 3", color: "#e53e3e" },
-  { name: "[GM]Xenon", avatar: "", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
-  { name: "[GM]Juicebox", avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "May 21", color: "#38a169" },
-  { name: "[GM]Vinsi", avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Apr 27", color: "#3b82f6" },
+  { name: "[GM]Xenon",     avatar: "", mercName: "xenon", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
+  { name: "[GM]Juicebox",  avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "May 21", color: "#38a169" },
+  { name: "[GM]Vinsi",     avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Apr 27", color: "#3b82f6" },
 ];
 
 export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
+  const { data: mercs } = useQuery({ queryKey: ["mercs-gm"], queryFn: getMercenaries, staleTime: 10 * 60 * 1000 });
+
+  // Build a map of mercenary name → image for fast lookup
+  const mercImageMap: Record<string, string> = {};
+  if (mercs) {
+    for (const m of mercs) {
+      mercImageMap[String(m.name || "").toLowerCase().trim()] = String(m.image || "");
+    }
+  }
+
+  // Resolve final avatar for a GM: use explicit avatar, then try DB merc match, then ui-avatars fallback
+  function resolveAvatar(gm: GM): string {
+    if (gm.avatar) return gm.avatar;
+    if (gm.mercName) {
+      const dbImg = mercImageMap[gm.mercName.toLowerCase().trim()];
+      if (dbImg) return dbImg;
+    }
+    return "";
+  }
+
   return (
     <section>
       {!hideHeader && (
@@ -41,65 +65,75 @@ export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
         gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
         gap: "12px",
       }}>
-        {GMS.map((gm) => (
-          <div key={gm.name} style={{
-            background: "hsl(var(--card))",
-            border: `1px solid ${GOLD_BORDER}`,
-            padding: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            transition: "border-color 0.2s, transform 0.15s",
-            cursor: "default",
-          }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,124,63,0.6)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+        {GMS.map((gm) => {
+          const avatar = resolveAvatar(gm);
+          return (
+            <div key={gm.name} style={{
+              background: "hsl(var(--card))",
+              border: `1px solid ${GOLD_BORDER}`,
+              padding: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              transition: "border-color 0.2s, transform 0.15s",
+              cursor: "default",
             }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = GOLD_BORDER;
-              (e.currentTarget as HTMLElement).style.transform = "none";
-            }}
-          >
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <img
-                src={gm.avatar}
-                alt={gm.name}
-                style={{
-                  width: 52, height: 52,
-                  borderRadius: "50%",
-                  objectFit: "cover",
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(154,124,63,0.6)";
+                (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.borderColor = GOLD_BORDER;
+                (e.currentTarget as HTMLElement).style.transform = "none";
+              }}
+            >
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: "50%",
                   border: `2px solid ${gm.color}`,
-                }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(gm.name)}&background=1a1a1a&color=${gm.color.replace('#', '')}&size=52`;
-                }}
-              />
-              <div style={{
-                position: "absolute", bottom: 0, right: 0,
-                width: 12, height: 12, borderRadius: "50%",
-                background: "#22c55e",
-                border: "2px solid hsl(var(--card))",
-              }} />
+                  overflow: "hidden",
+                  background: "#1a1a1a",
+                  flexShrink: 0,
+                }}>
+                  <img
+                    src={avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(gm.name)}&background=1a1a1a&color=${gm.color.replace('#', '')}&size=104`}
+                    alt={gm.name}
+                    style={{
+                      width: "100%", height: "100%",
+                      objectFit: "cover",
+                      objectPosition: "top",
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(gm.name)}&background=1a1a1a&color=${gm.color.replace('#', '')}&size=104`;
+                    }}
+                  />
+                </div>
+                <div style={{
+                  position: "absolute", bottom: 0, right: 0,
+                  width: 12, height: 12, borderRadius: "50%",
+                  background: "#22c55e",
+                  border: "2px solid hsl(var(--card))",
+                }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{
+                  fontFamily: "'Cinzel', serif", fontWeight: 600,
+                  fontSize: "0.78rem", letterSpacing: "0.06em",
+                  color: gm.color, margin: "0 0 2px",
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}>
+                  {gm.name}
+                </p>
+                <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", margin: "0 0 2px", opacity: 0.75 }}>
+                  {gm.role}
+                </p>
+                <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.75rem", color: "hsl(var(--muted-foreground))", margin: 0, opacity: 0.5 }}>
+                  Last seen: {gm.lastSeen}
+                </p>
+              </div>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{
-                fontFamily: "'Cinzel', serif", fontWeight: 600,
-                fontSize: "0.78rem", letterSpacing: "0.06em",
-                color: gm.color, margin: "0 0 2px",
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              }}>
-                {gm.name}
-              </p>
-              <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", margin: "0 0 2px", opacity: 0.75 }}>
-                {gm.role}
-              </p>
-              <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.75rem", color: "hsl(var(--muted-foreground))", margin: 0, opacity: 0.5 }}>
-                Last seen: {gm.lastSeen}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

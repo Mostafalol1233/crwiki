@@ -45,7 +45,7 @@ export function SEOHead({
   const [location] = useLocation();
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
   const [siteSeo, setSiteSeo] = useState<{ publicBaseUrl?: string; seoTitle?: string; seoDescription?: string; seoKeywords?: string[]; seoOgImage?: string; robots?: string } | null>(null);
-  const currentOrigin = (siteSeo?.publicBaseUrl || envBase || (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki")).replace(/\/$/, "");
+  const currentOrigin = (siteSeo?.publicBaseUrl || envBase || "https://crossfire.wiki").replace(/\/$/, "");
   const canonicalOrigin = "https://crossfire.wiki";
   const baseUrl = (typeof window !== "undefined" && /crossfire\.wiki/i.test(window.location.hostname))
     ? canonicalOrigin

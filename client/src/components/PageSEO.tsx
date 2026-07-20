@@ -27,7 +27,7 @@ export function PageSEO({
   noindex = false,
 }: PageSEOProps) {
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
-  const base = envBase || (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki");
+  const base = envBase || "https://crossfire.wiki";
   const canonicalUrl = canonicalPath ? `${base.replace(/\/$/, "")}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}` : base;
 
   return (

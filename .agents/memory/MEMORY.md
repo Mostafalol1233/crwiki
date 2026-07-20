@@ -8,3 +8,4 @@
 - [CF Player Stats API](cf-player-api.md) — use undici+/rest/userprofile.json?usn= to bypass Akamai; axios/curl timeout.
 - [Likes tables](likes-tables.md) — three tables added: likes (universal), video_likes, comment_likes; API functions in supabaseApi.ts; uses localStorage uid.
 - [OpenRouter working model](openrouter-model.md) — only `openai/gpt-oss-20b:free` works; nemotron/deepseek/gemma all fail with guardrail or rate-limit errors.
+- [Events real data](events-real-data.md) — 10 real 2026 CF events scraped from Z8Games/Liquipedia; all old placeholder events deleted; full Arabic + SEO fields populated.

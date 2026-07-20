@@ -53,6 +53,7 @@ VITE_ADMIN_PASSWORD = ""
 FIRECRAWL_API_KEY = ""
 grok = ""
 OPENROUTER_API_KEY = ""
+VITE_PUBLIC_BASE_URL = "what is that "
 
 [deployment]
 deploymentTarget = "autoscale"

@@ -421,7 +421,7 @@ export default function Home() {
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <div style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
           {heroImage && (
-            <img src={heroImage} alt="CrossFire" style={{
+            <img src={heroImage} alt="CrossFire Wiki hero background — elite mercenaries in action" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.15,
             }} />

@@ -21,6 +21,94 @@ function parseUrlParams(url: string): { path: string; params: URLSearchParams } 
   return { path, params: new URLSearchParams(qs) };
 }
 
+// ─── Auto SEO generation ──────────────────────────────────────────────────────
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function autoGenerateSEO(title: string, contentHtml: string): {
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string[];
+} {
+  const plain = stripHtml(contentHtml || '');
+  const seo_title = title ? title.slice(0, 60).trim() : '';
+  const seo_description = plain ? plain.slice(0, 160).trim() : (title ? title.slice(0, 160) : '');
+  // Simple keyword extraction: significant words from title + first 200 chars of content
+  const raw = `${title} ${plain.slice(0, 200)}`.toLowerCase();
+  const stopWords = new Set(['the','a','an','and','or','in','on','of','to','for','with','at','by','is','was','are','were','be','been','being','it','its','this','that','from','as','have','has','had','not','but','we','they','you','he','she','do','did','does','will','can','could','would','should','our','their','your','his','her','all','new','more','over','about','up','out','into','so','if']);
+  const kws = [...new Set(
+    raw.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w))
+  )].slice(0, 10);
+  return { seo_title, seo_description, seo_keywords: kws };
+}
+
+// ─── Browser-side page scraping via CORS proxy ────────────────────────────────
+
+const PROXY_LIST = [
+  (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxy(url: string): Promise<string> {
+  for (const makeProxy of PROXY_LIST) {
+    try {
+      const proxyUrl = makeProxy(url);
+      const res = await Promise.race([
+        fetch(proxyUrl),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
+      ]) as Response;
+      if (!res.ok) continue;
+      const json = await res.json().catch(() => null);
+      if (json && (json.contents || json.data)) return json.contents || json.data;
+      const text = await res.text().catch(() => '');
+      if (text) return text;
+    } catch { /* try next */ }
+  }
+  throw new Error('All proxies failed — cannot reach the URL. Check your internet connection or try a different URL.');
+}
+
+async function scrapePageViaProxy(url: string): Promise<{
+  title: string; content: string; summary: string; image: string; contentLength: number;
+}> {
+  const html = await fetchViaProxy(url);
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  // Extract title
+  const title =
+    doc.querySelector('h1')?.textContent?.trim() ||
+    doc.querySelector('title')?.textContent?.replace(/\s*[|\-–].*$/, '').trim() ||
+    doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+    '';
+
+  // Extract main image
+  const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+  const firstImg = (doc.querySelector('.mw-content-text img, article img, .content img') as HTMLImageElement)?.src || '';
+  const image = ogImage || firstImg || '';
+
+  // Remove navigation, scripts, ads, sidebars
+  ['nav','script','style','header','footer','.navbox','.toc','.mw-indicators','.mw-editsection',
+   '#mw-navigation','#mw-head','#mw-panel','.sidebar','aside','[class*="ad-"]','[class*="advertisement"]',
+  ].forEach(sel => doc.querySelectorAll(sel).forEach(el => el.remove()));
+
+  // Get main content
+  const contentEl =
+    doc.querySelector('.mw-parser-output') ||
+    doc.querySelector('article') ||
+    doc.querySelector('main') ||
+    doc.querySelector('#content') ||
+    doc.querySelector('.content') ||
+    doc.body;
+
+  const content = contentEl?.innerHTML || '';
+  const plainText = stripHtml(content);
+  const summary = plainText.slice(0, 300).trim();
+  const contentLength = plainText.length;
+
+  return { title, content, summary, image, contentLength };
+}
+
 // ─── Field mappers ────────────────────────────────────────────────────────────
 
 function normalizePost(p: any) {
@@ -303,6 +391,13 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     }
     if (M === 'POST') {
       const row = denormalizePost(body);
+      // Auto-generate SEO if missing
+      if (!row.seo_title || !row.seo_description) {
+        const seo = autoGenerateSEO(row.title, row.content);
+        if (!row.seo_title) row.seo_title = seo.seo_title;
+        if (!row.seo_description) row.seo_description = seo.seo_description;
+        if (!row.seo_keywords || !row.seo_keywords.length) row.seo_keywords = seo.seo_keywords;
+      }
       const { data, error } = await client.from('posts').insert([row]).select().single();
       if (error) throw new Error(error.message);
       return normalizePost(data);
@@ -340,6 +435,12 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     }
     if (M === 'POST') {
       const row = denormalizeEvent(body);
+      // Auto-generate SEO if missing
+      if (!row.seo_title || !row.seo_description) {
+        const seo = autoGenerateSEO(row.title, row.description);
+        if (!row.seo_title) row.seo_title = seo.seo_title;
+        if (!row.seo_description) row.seo_description = seo.seo_description;
+      }
       const { data, error } = await client.from('events').insert([row]).select().single();
       if (error) throw new Error(error.message);
       return normalizeEvent(data);
@@ -381,6 +482,12 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     }
     if (M === 'POST') {
       const row = denormalizeNews(body);
+      // Auto-generate SEO if missing
+      if (!row.seo_title || !row.seo_description) {
+        const seo = autoGenerateSEO(row.title, row.content);
+        if (!row.seo_title) row.seo_title = seo.seo_title;
+        if (!row.seo_description) row.seo_description = seo.seo_description;
+      }
       const { data, error } = await client.from('news').insert([row]).select().single();
       if (error) throw new Error(error.message);
       return normalizeNews(data);
@@ -748,6 +855,181 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
 
   // ── Scraper (stub) ─────────────────────────────────────────────────────────
   if (path === '/scrape-events') return { scraped: 0, message: 'Scraping not available in Supabase-only mode' };
+
+  // ── Browser-side scraping ──────────────────────────────────────────────────
+
+  // POST /api/scrape/single-url — scrape a page and return structured data
+  if (path === '/scrape/single-url' && M === 'POST') {
+    const { url } = body || {};
+    if (!url || !String(url).startsWith('http')) {
+      throw new Error('Valid URL required (must start with http)');
+    }
+    const result = await scrapePageViaProxy(url);
+    const isWiki = url.includes('fandom.com') || url.includes('wiki');
+    return {
+      title: result.title,
+      content: result.content,
+      excerpt: result.summary,
+      seoDescription: result.summary,
+      seoTitle: result.title,
+      keywords: [],
+      mainImage: result.image,
+      image: result.image,
+      sourceUrl: url,
+      url,
+      isWiki,
+      contentLength: result.contentLength,
+      status: 'success',
+    };
+  }
+
+  // POST /api/admin/rescrape-item — scrape and update event/news/post in Supabase
+  if (path === '/admin/rescrape-item' && M === 'POST') {
+    const { type, id, url } = body || {};
+    if (!type || !id || !url || !String(url).startsWith('http')) {
+      throw new Error('type, id, and valid url are required');
+    }
+    const scraped = await scrapePageViaProxy(url);
+    const contentLength = scraped.contentLength;
+    const seo = autoGenerateSEO(scraped.title, scraped.content);
+
+    if (type === 'events') {
+      const { error } = await client.from('events').update({
+        description: scraped.content || '',
+        image_url: scraped.image || '',
+        seo_title: seo.seo_title,
+        seo_description: seo.seo_description,
+        source_url: url,
+      }).eq('id', id);
+      if (error) throw new Error(error.message);
+    } else if (type === 'news') {
+      const { error } = await client.from('news').update({
+        content: scraped.content || '',
+        html_content: scraped.content || '',
+        image_url: scraped.image || '',
+        seo_title: seo.seo_title,
+        seo_description: seo.seo_description,
+        source_url: url,
+      }).eq('id', id);
+      if (error) throw new Error(error.message);
+    } else if (type === 'posts') {
+      const { error } = await client.from('posts').update({
+        content: scraped.content || '',
+        image_url: scraped.image || '',
+        seo_title: seo.seo_title,
+        seo_description: seo.seo_description,
+        seo_keywords: seo.seo_keywords,
+        source_url: url,
+      }).eq('id', id);
+      if (error) throw new Error(error.message);
+    } else {
+      throw new Error('Invalid type. Use events, news, or posts');
+    }
+
+    return {
+      success: true,
+      scraped: {
+        title: scraped.title,
+        image: scraped.image,
+        contentLength,
+      },
+    };
+  }
+
+  // ── Rebuild posts from Fandom Wiki ────────────────────────────────────────
+
+  // POST /api/admin/rebuild-mercenary-posts
+  if (path === '/admin/rebuild-mercenary-posts' && M === 'POST') {
+    const mercenaries = [
+      { name: 'Wolf', wikiSlug: 'Wolf_(CrossFire)' },
+      { name: 'Vipers', wikiSlug: 'Vipers' },
+      { name: 'Sisterhood', wikiSlug: 'Sisterhood' },
+      { name: 'Black Mamba', wikiSlug: 'Black_Mamba_(CrossFire)' },
+      { name: 'Desperado', wikiSlug: 'Desperado' },
+      { name: 'Ronin', wikiSlug: 'Ronin_(CrossFire)' },
+      { name: 'Dean', wikiSlug: 'Dean' },
+      { name: 'Saber', wikiSlug: 'Saber_(CrossFire)' },
+      { name: 'Brimstone', wikiSlug: 'Brimstone_(CrossFire)' },
+      { name: 'Arch Honorary', wikiSlug: 'Arch_Honorary' },
+    ];
+    // Delete all existing posts
+    const { data: existing } = await client.from('posts').select('id').neq('category', '__ANNOUNCEMENT__');
+    let deletedCount = 0;
+    for (const p of (existing || [])) {
+      await client.from('posts').delete().eq('id', p.id);
+      deletedCount++;
+    }
+    let created = 0; let failed = 0;
+    for (const merc of mercenaries) {
+      try {
+        const wikiUrl = `https://crossfire.fandom.com/wiki/${merc.wikiSlug}`;
+        const scraped = await scrapePageViaProxy(wikiUrl);
+        const seo = autoGenerateSEO(scraped.title || merc.name, scraped.content);
+        const slug = `${slugify(scraped.title || merc.name)}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+        const { error } = await client.from('posts').insert([{
+          title: scraped.title || merc.name,
+          post_slug: slug,
+          content: scraped.content || '',
+          summary: scraped.summary || '',
+          image_url: scraped.image || '',
+          category: 'Mercenaries',
+          tags: ['mercenary', 'crossfire', merc.name.toLowerCase()],
+          author: 'CrossFire Wiki',
+          featured: false,
+          source_url: wikiUrl,
+          seo_title: seo.seo_title,
+          seo_description: seo.seo_description,
+          seo_keywords: seo.seo_keywords,
+        }]);
+        if (error) { console.error(`Failed ${merc.name}:`, error.message); failed++; } else created++;
+      } catch (e: any) { console.error(`Scrape failed ${merc.name}:`, e.message); failed++; }
+    }
+    return { deletedCount, created, failed };
+  }
+
+  // POST /api/admin/rebuild-wiki-posts (maps, characters, events from Fandom)
+  if (path === '/admin/rebuild-wiki-posts' && M === 'POST') {
+    const wikiPages = [
+      { name: 'Ghost Mode', wikiSlug: 'Ghost_Mode', category: 'Modes' },
+      { name: 'Mutation Mode', wikiSlug: 'Mutation_Mode', category: 'Modes' },
+      { name: 'Zombie Mode', wikiSlug: 'Zombie_Mode', category: 'Modes' },
+      { name: 'Black Widow', wikiSlug: 'Black_Widow_(map)', category: 'Maps' },
+      { name: 'Port', wikiSlug: 'Port_(CrossFire)', category: 'Maps' },
+      { name: 'Eagle Eye', wikiSlug: 'Eagle_Eye', category: 'Maps' },
+    ];
+    const { data: existing } = await client.from('posts').select('id').neq('category', '__ANNOUNCEMENT__');
+    let deletedCount = 0;
+    for (const p of (existing || [])) {
+      await client.from('posts').delete().eq('id', p.id);
+      deletedCount++;
+    }
+    let created = 0; let failed = 0;
+    for (const page of wikiPages) {
+      try {
+        const wikiUrl = `https://crossfire.fandom.com/wiki/${page.wikiSlug}`;
+        const scraped = await scrapePageViaProxy(wikiUrl);
+        const seo = autoGenerateSEO(scraped.title || page.name, scraped.content);
+        const slug = `${slugify(scraped.title || page.name)}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+        const { error } = await client.from('posts').insert([{
+          title: scraped.title || page.name,
+          post_slug: slug,
+          content: scraped.content || '',
+          summary: scraped.summary || '',
+          image_url: scraped.image || '',
+          category: page.category,
+          tags: ['crossfire', page.category.toLowerCase(), page.name.toLowerCase()],
+          author: 'CrossFire Wiki',
+          featured: false,
+          source_url: wikiUrl,
+          seo_title: seo.seo_title,
+          seo_description: seo.seo_description,
+          seo_keywords: seo.seo_keywords,
+        }]);
+        if (error) { console.error(`Failed ${page.name}:`, error.message); failed++; } else created++;
+      } catch (e: any) { console.error(`Scrape failed ${page.name}:`, e.message); failed++; }
+    }
+    return { deletedCount, created, failed };
+  }
 
   // ── Fandom import ──────────────────────────────────────────────────────────
   if (path === '/admin/fandom-import' || path === '/admin/fandom-import-article') {

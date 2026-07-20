@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Play, Download, Loader2, Globe, CheckSquare, Square } from 'lucide-react';
+import { supabaseService } from '@/lib/supabaseAdmin';
 import { supabase } from '@/lib/supabase';
 
+// Use service-role client to bypass RLS for inserts
+const db = supabaseService || supabase;
+
 const FORUM_URL = 'https://forum.z8games.com/categories/crossfire-announcements';
-const CORS_PROXY = 'https://api.allorigins.win/get?url=';
+
+// Try multiple CORS proxies in order
+const PROXY_LIST = [
+  (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
 interface ForumPost {
   title: string;
@@ -27,10 +36,21 @@ async function translateText(text: string): Promise<string> {
 }
 
 async function fetchProxy(url: string): Promise<string> {
-  const r = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
-  if (!r.ok) throw new Error(`Proxy error: ${r.status}`);
-  const j = await r.json();
-  return j.contents || '';
+  for (const makeProxy of PROXY_LIST) {
+    try {
+      const proxyUrl = makeProxy(url);
+      const r = await Promise.race([
+        fetch(proxyUrl),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
+      ]) as Response;
+      if (!r.ok) continue;
+      const j = await r.json().catch(() => null);
+      if (j && (j.contents || j.data)) return j.contents || j.data;
+      const text = await r.text().catch(() => '');
+      if (text) return text;
+    } catch { /* try next proxy */ }
+  }
+  throw new Error('Failed to reach forum — all proxies failed. Try again later.');
 }
 
 function parseAnnouncements(html: string): Omit<ForumPost, 'titleAr' | 'selected'>[] {
@@ -154,17 +174,23 @@ export default function ScraperManager() {
       setProgress(`Importing: ${post.title.slice(0, 50)}...`);
       try {
         const slug = `${slugify(post.title)}-${Date.now()}`;
-        const { error } = await supabase.from('events').insert({
+        const description = `CrossFire Forum Announcement. Source: ${post.url}`;
+        // Auto SEO
+        const seoTitle = post.title.slice(0, 60);
+        const seoDesc = (post.titleAr || post.title).slice(0, 160);
+        const { error } = await db.from('events').insert({
           title: post.title,
           title_ar: post.titleAr || null,
           event_name_slug: slug,
-          description: `CrossFire Forum Announcement. Source: ${post.url}`,
+          description,
           description_ar: post.titleAr ? `إعلان من منتدى كروس فاير. المصدر: ${post.url}` : null,
           image_url: post.image || null,
           type: 'announcement',
           source_url: post.url,
           date: post.date,
           created_at: new Date().toISOString(),
+          seo_title: seoTitle,
+          seo_description: seoDesc,
         });
         if (error) { console.error(error); fail++; } else ok++;
       } catch (e) { fail++; }

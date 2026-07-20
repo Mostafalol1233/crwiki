@@ -262,7 +262,7 @@ export default function EventsList() {
             </div>
 
             {/* Sidebar: Discord widget */}
-            <aside className="xl:w-[340px] flex-shrink-0">
+            <aside className="xl:w-[340px] flex-shrink-0 xl:self-start">
               <div className="sticky top-20">
                 {/* Discord section header */}
                 <div

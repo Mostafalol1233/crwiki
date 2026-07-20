@@ -522,3 +522,110 @@ export async function addComment(comment: {
   if (error) throw error;
   return data;
 }
+
+// ─── Likes (universal) ────────────────────────────────────────────────────────
+function getUserIdentifier(): string {
+  let id = localStorage.getItem("cf_user_id");
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("cf_user_id", id);
+  }
+  return id;
+}
+
+export async function getLikeCount(targetId: string, targetType: string): Promise<number> {
+  const { count } = await supabase
+    .from("likes")
+    .select("id", { count: "exact", head: true })
+    .eq("target_id", targetId)
+    .eq("target_type", targetType);
+  return count ?? 0;
+}
+
+export async function hasUserLiked(targetId: string, targetType: string): Promise<boolean> {
+  const uid = getUserIdentifier();
+  const { data } = await supabase
+    .from("likes")
+    .select("id")
+    .eq("target_id", targetId)
+    .eq("target_type", targetType)
+    .eq("user_identifier", uid)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function toggleLike(targetId: string, targetType: string): Promise<{ liked: boolean; count: number }> {
+  const uid = getUserIdentifier();
+  const already = await hasUserLiked(targetId, targetType);
+  if (already) {
+    await supabase
+      .from("likes")
+      .delete()
+      .eq("target_id", targetId)
+      .eq("target_type", targetType)
+      .eq("user_identifier", uid);
+  } else {
+    await supabase.from("likes").insert([{
+      target_id: targetId,
+      target_type: targetType,
+      user_identifier: uid,
+    }]);
+  }
+  const count = await getLikeCount(targetId, targetType);
+  return { liked: !already, count };
+}
+
+// ─── Video Likes ──────────────────────────────────────────────────────────────
+export async function getVideoLikeCount(videoId: string): Promise<number> {
+  const { count } = await supabase
+    .from("video_likes")
+    .select("id", { count: "exact", head: true })
+    .eq("video_id", videoId);
+  return count ?? 0;
+}
+
+export async function toggleVideoLike(videoId: string): Promise<{ liked: boolean; count: number }> {
+  const uid = getUserIdentifier();
+  const { data: existing } = await supabase
+    .from("video_likes")
+    .select("id")
+    .eq("video_id", videoId)
+    .eq("user_identifier", uid)
+    .maybeSingle();
+  if (existing) {
+    await supabase
+      .from("video_likes")
+      .delete()
+      .eq("video_id", videoId)
+      .eq("user_identifier", uid);
+  } else {
+    await supabase.from("video_likes").insert([{ video_id: videoId, user_identifier: uid }]);
+  }
+  const count = await getVideoLikeCount(videoId);
+  return { liked: !existing, count };
+}
+
+// ─── Comment Likes ────────────────────────────────────────────────────────────
+export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
+  const uid = getUserIdentifier();
+  const { data: existing } = await supabase
+    .from("comment_likes")
+    .select("id")
+    .eq("comment_id", commentId)
+    .eq("user_identifier", uid)
+    .maybeSingle();
+  if (existing) {
+    await supabase
+      .from("comment_likes")
+      .delete()
+      .eq("comment_id", commentId)
+      .eq("user_identifier", uid);
+  } else {
+    await supabase.from("comment_likes").insert([{ comment_id: commentId, user_identifier: uid }]);
+  }
+  const { count } = await supabase
+    .from("comment_likes")
+    .select("id", { count: "exact", head: true })
+    .eq("comment_id", commentId);
+  return { liked: !existing, count: count ?? 0 };
+}

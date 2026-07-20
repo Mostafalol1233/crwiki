@@ -5,3 +5,4 @@
 - [AdminSidebar nav](admin-sidebar-nav.md) — use div+onClick+navigate() not Link wrapping a; avoids nested anchor DOM error and invalid hook call crash.
 - [site_highlights table](site-highlights-table.md) — Supabase table needed for HighlightsManager; columns: id, title, month, year, media_type, url, sort_order.
 - [CF Player Stats API](cf-player-api.md) — use undici+/rest/userprofile.json?usn= to bypass Akamai; axios/curl timeout.
+- [Likes tables](likes-tables.md) — three tables added: likes (universal), video_likes, comment_likes; API functions in supabaseApi.ts; uses localStorage uid.

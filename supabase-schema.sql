@@ -286,6 +286,48 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ─── Site Highlights ─────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS site_highlights (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL DEFAULT '',
+  month TEXT DEFAULT '',
+  year INTEGER DEFAULT 2025,
+  media_type TEXT DEFAULT 'image',
+  url TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── Likes (universal: videos, comments, posts) ───────────────────────────────
+CREATE TABLE IF NOT EXISTS likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  target_id TEXT NOT NULL,
+  target_type TEXT NOT NULL DEFAULT 'post',
+  user_identifier TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(target_id, target_type, user_identifier)
+);
+CREATE INDEX IF NOT EXISTS likes_target_idx ON likes(target_id, target_type);
+
+-- ─── Video Likes ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS video_likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  video_id TEXT NOT NULL,
+  user_identifier TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(video_id, user_identifier)
+);
+CREATE INDEX IF NOT EXISTS video_likes_video_idx ON video_likes(video_id);
+
+-- ─── Comment Likes ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS comment_likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  user_identifier TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(comment_id, user_identifier)
+);
+
 -- ─── Row Level Security (RLS) ─────────────────────────────────────────────────
 -- Enable RLS on all tables
 ALTER TABLE weapons ENABLE ROW LEVEL SECURITY;
@@ -306,6 +348,10 @@ ALTER TABLE ticket_replies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_highlights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE video_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for content tables
 CREATE POLICY "Public read weapons" ON weapons FOR SELECT USING (true);
@@ -329,3 +375,15 @@ CREATE POLICY "Anyone can submit ticket" ON tickets FOR INSERT WITH CHECK (true)
 CREATE POLICY "Anyone can subscribe newsletter" ON newsletter_subscribers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can add comment" ON comments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can submit seller review" ON seller_reviews FOR INSERT WITH CHECK (true);
+
+-- New tables RLS
+CREATE POLICY "Public read site_highlights" ON site_highlights FOR SELECT USING (true);
+CREATE POLICY "Public read likes" ON likes FOR SELECT USING (true);
+CREATE POLICY "Anyone can add like" ON likes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can remove own like" ON likes FOR DELETE USING (true);
+CREATE POLICY "Public read video_likes" ON video_likes FOR SELECT USING (true);
+CREATE POLICY "Anyone can add video like" ON video_likes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can remove video like" ON video_likes FOR DELETE USING (true);
+CREATE POLICY "Public read comment_likes" ON comment_likes FOR SELECT USING (true);
+CREATE POLICY "Anyone can add comment like" ON comment_likes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can remove comment like" ON comment_likes FOR DELETE USING (true);

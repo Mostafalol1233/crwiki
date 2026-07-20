@@ -103,7 +103,14 @@ export function EventsRibbon({ events }: EventsRibbonProps) {
                   color: "#666",
                 }}
               >
-                {event.date}
+                {event.date
+                ? (() => {
+                    try {
+                      const d = new Date(event.date);
+                      return isNaN(d.getTime()) ? event.date : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    } catch { return event.date; }
+                  })()
+                : ""}
               </span>
             </Link>
           );

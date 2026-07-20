@@ -73,6 +73,74 @@ function cfRegisterPlugin(): Plugin {
   };
 }
 
+// ── AI Assistant endpoint — proxies OpenRouter from server side ───────────────
+function cfAiPlugin(): Plugin {
+  return {
+    name: "cf-ai",
+    configureServer(server) {
+      async function readBody(req: any): Promise<any> {
+        const chunks: Buffer[] = [];
+        await new Promise<void>((resolve, reject) => {
+          req.on("data", (c: Buffer) => chunks.push(c));
+          req.on("end", resolve);
+          req.on("error", reject);
+        });
+        try { return JSON.parse(Buffer.concat(chunks).toString()); } catch { return {}; }
+      }
+
+      function json(res: any, status: number, data: any) {
+        res.writeHead(status, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(data));
+      }
+
+      server.middlewares.use("/api/ai/chat", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { messages } = await readBody(req);
+          if (!Array.isArray(messages) || messages.length === 0) {
+            return json(res, 400, { error: "messages array required" });
+          }
+          const apiKey = process.env.OPENROUTER_API_KEY;
+          if (!apiKey) return json(res, 503, { error: "AI not configured" });
+
+          const systemPrompt = {
+            role: "system",
+            content: `You are CrossFire Wiki Assistant — a friendly, knowledgeable expert on the CrossFire online FPS game.
+You help players with game mechanics, weapons, mercenaries, ranks, maps, modes, clans, ZP/GP currencies, and general game tips.
+Keep answers concise and helpful. If you don't know something CrossFire-specific, say so honestly.
+You also speak Arabic (Egyptian dialect) — respond in the same language the user writes in.`
+          };
+
+          const { fetch: undFetch } = await import("undici") as any;
+          const response = await (undFetch as any)("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://crossfirewiki.com",
+              "X-Title": "CrossFire Wiki"
+            },
+            body: JSON.stringify({
+              model: "openai/gpt-oss-20b:free",
+              messages: [systemPrompt, ...messages.slice(-12)],
+              max_tokens: 600,
+              temperature: 0.7
+            }),
+            signal: AbortSignal.timeout(30000),
+          });
+
+          const data = await response.json() as any;
+          if (data.error) return json(res, 502, { error: data.error.message || "AI error" });
+          const reply = data.choices?.[0]?.message?.content || "";
+          json(res, 200, { reply, model: data.model });
+        } catch (err: any) {
+          json(res, 500, { error: err.message || "AI request failed" });
+        }
+      });
+    },
+  };
+}
+
 // ── Server-side scraping middleware — runs in Node.js, no CORS issues ─────────
 function cfScrapePlugin(): Plugin {
   return {
@@ -798,6 +866,7 @@ export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
     cfPlayerLookupPlugin(),
+    cfAiPlugin(),
     cfScrapePlugin(),
     cfGrokTipsPlugin(),
     react(),

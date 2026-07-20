@@ -46,6 +46,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Chat from "@/pages/Chat";
+import AIAssistant from "@/pages/AIAssistant";
 import ResetPassword from "@/pages/ResetPassword";
 import BulkSEO from "@/pages/BulkSEO";
 import { SEOHead } from "@/components/SEOHead";
@@ -120,6 +121,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/chat" component={Chat} />
+      <Route path="/ai" component={AIAssistant} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Trash2, GripVertical, Upload, Image as ImageIcon, Video, Save, X } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Upload, Image as ImageIcon, Video, Save, X, Pencil } from 'lucide-react';
 import { supabaseService } from '@/lib/supabaseAdmin';
 import { supabase } from '@/lib/supabase';
 
@@ -30,14 +30,14 @@ const S = {
   }),
   card: {
     background: '#18181b', border: '1px solid #27272a', borderRadius: 8,
-    marginBottom: 12, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center',
+    marginBottom: 12, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start',
   } as React.CSSProperties,
   input: {
     background: '#27272a', border: '1px solid #3f3f46', borderRadius: 5,
     color: '#fafafa', padding: '7px 10px', fontSize: 13, outline: 'none', width: '100%',
   } as React.CSSProperties,
   label: { fontSize: 11, color: '#71717a', marginBottom: 4, display: 'block' } as React.CSSProperties,
-  thumb: { width: 72, height: 52, borderRadius: 4, objectFit: 'cover' as const, background: '#27272a', border: '1px solid #3f3f46', flexShrink: 0 },
+  thumb: { width: 72, height: 52, borderRadius: 4, objectFit: 'contain' as const, background: '#111', border: '1px solid #3f3f46', flexShrink: 0 },
   emptyThumb: { width: 72, height: 52, borderRadius: 4, background: '#27272a', border: '1px solid #3f3f46', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' } as React.CSSProperties,
 };
 
@@ -67,11 +67,20 @@ async function deleteHighlight(id: string): Promise<void> {
   if (error) throw error;
 }
 
-function NewHighlightForm({ onDone }: { onDone: () => void }) {
+function HighlightForm({
+  initial,
+  onDone,
+  label,
+}: {
+  initial: { title: string; month: string; year: number; media_type: 'image' | 'video'; url: string; id?: string };
+  onDone: () => void;
+  label: string;
+}) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ title: '', month: 'Jan', year: CURRENT_YEAR, media_type: 'image' as 'image' | 'video', url: '' });
+  const [form, setForm] = useState({ ...initial });
   const [uploading, setUploading] = useState(false);
+  const [previewOk, setPreviewOk] = useState(true);
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
@@ -84,6 +93,7 @@ function NewHighlightForm({ onDone }: { onDone: () => void }) {
       if (error) throw error;
       const { data } = adminClient().storage.from('media').getPublicUrl(path);
       set('url', data.publicUrl);
+      setPreviewOk(true);
       toast.success('File uploaded');
     } catch (err: any) {
       toast.error(err.message || 'Upload failed');
@@ -93,15 +103,18 @@ function NewHighlightForm({ onDone }: { onDone: () => void }) {
   };
 
   const save = useMutation({
-    mutationFn: () => upsertHighlight({ ...form, sort_order: Date.now() }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['highlights'] }); toast.success('Added'); onDone(); },
+    mutationFn: () => upsertHighlight({
+      ...form,
+      sort_order: form.id ? undefined as any : Date.now(),
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['highlights'] }); toast.success(form.id ? 'Updated' : 'Added'); onDone(); },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
     <div style={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8, padding: 20, marginBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ fontSize: 14, fontWeight: 500, color: '#fafafa' }}>New Highlight</span>
+        <span style={{ fontSize: 14, fontWeight: 500, color: '#fafafa' }}>{label}</span>
         <button type="button" onClick={onDone} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#52525b' }}><X size={16} /></button>
       </div>
 
@@ -137,16 +150,35 @@ function NewHighlightForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 12 }}>
         <label style={S.label}>URL or Upload</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input style={{ ...S.input, flex: 1 }} value={form.url} onChange={e => set('url', e.target.value)} placeholder={form.media_type === 'video' ? 'Video URL (Supabase, Catbox, etc)...' : 'Image URL...'} />
+          <input style={{ ...S.input, flex: 1 }} value={form.url} onChange={e => { set('url', e.target.value); setPreviewOk(true); }} placeholder={form.media_type === 'video' ? 'Video URL...' : 'Image URL...'} />
           <button type="button" onClick={() => fileRef.current?.click()} style={S.btn('ghost')} disabled={uploading}>
             <Upload size={13} /> {uploading ? 'Uploading...' : 'Upload'}
           </button>
         </div>
         <input ref={fileRef} type="file" hidden accept={form.media_type === 'video' ? 'video/*' : 'image/*'} onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0])} />
       </div>
+
+      {/* Preview */}
+      {form.url && form.media_type === 'image' && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={S.label}>Preview</label>
+          <div style={{ width: '100%', aspectRatio: '16/7', background: '#050810', borderRadius: 6, border: '1px solid #3f3f46', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {previewOk ? (
+              <img
+                src={form.url}
+                alt="preview"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onError={() => setPreviewOk(false)}
+              />
+            ) : (
+              <span style={{ color: '#52525b', fontSize: 12 }}>Image failed to load</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button type="button" onClick={onDone} style={S.btn('ghost')}>Cancel</button>
@@ -178,16 +210,22 @@ export default function HighlightsManager() {
     <div style={S.page}>
       <div style={S.header}>
         <h1 style={S.title}>Highlights</h1>
-        <button type="button" onClick={() => setShowForm(true)} style={S.btn('primary')}>
+        <button type="button" onClick={() => { setShowForm(true); setEditId(null); }} style={S.btn('primary')}>
           <Plus size={14} /> Add Highlight
         </button>
       </div>
 
       <p style={{ fontSize: 13, color: '#52525b', marginBottom: 20, marginTop: -12 }}>
-        Manage the homepage highlights carousel. Supports images and local video files.
+        Manage the homepage highlights carousel. Supports images and video files. Images display fully without cropping.
       </p>
 
-      {showForm && <NewHighlightForm onDone={() => setShowForm(false)} />}
+      {showForm && !editId && (
+        <HighlightForm
+          label="New Highlight"
+          initial={{ title: '', month: 'Jan', year: CURRENT_YEAR, media_type: 'image', url: '' }}
+          onDone={() => setShowForm(false)}
+        />
+      )}
 
       {isLoading && (
         <div style={{ textAlign: 'center', padding: 40, color: '#52525b', fontSize: 14 }}>Loading...</div>
@@ -201,42 +239,68 @@ export default function HighlightsManager() {
       )}
 
       {highlights.map((h) => (
-        <div key={h.id} style={S.card}>
-          <div style={{ color: '#3f3f46', cursor: 'grab', flexShrink: 0 }}>
-            <GripVertical size={16} />
-          </div>
-
-          {h.media_type === 'video' ? (
-            <div style={{ ...S.emptyThumb }}>
-              <Video size={20} style={{ color: '#52525b' }} />
-            </div>
-          ) : (
-            <img src={h.url} alt={h.title} style={S.thumb} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+        <div key={h.id}>
+          {/* Inline edit form */}
+          {editId === h.id && (
+            <HighlightForm
+              label={`Edit: ${h.title}`}
+              initial={{ id: h.id, title: h.title, month: h.month, year: h.year, media_type: h.media_type, url: h.url }}
+              onDone={() => setEditId(null)}
+            />
           )}
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, color: '#fafafa', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {h.title}
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: '#71717a' }}>{h.month} {h.year}</span>
-              <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: h.media_type === 'video' ? 'rgba(96,165,250,0.1)' : 'rgba(74,222,128,0.1)', color: h.media_type === 'video' ? '#60a5fa' : '#4ade80' }}>
-                {h.media_type}
-              </span>
-            </div>
-            <div style={{ fontSize: 11, color: '#3f3f46', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {h.url}
-            </div>
-          </div>
+          {/* Card row */}
+          {editId !== h.id && (
+            <div style={S.card}>
+              <div style={{ color: '#3f3f46', cursor: 'grab', flexShrink: 0, marginTop: 2 }}>
+                <GripVertical size={16} />
+              </div>
 
-          <button
-            type="button"
-            onClick={() => deleteMut.mutate(h.id)}
-            style={{ ...S.btn('danger'), padding: '6px 10px', flexShrink: 0 }}
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
+              {h.media_type === 'video' ? (
+                <div style={S.emptyThumb}>
+                  <Video size={20} style={{ color: '#52525b' }} />
+                </div>
+              ) : (
+                <div style={{ width: 72, height: 52, background: '#050810', borderRadius: 4, border: '1px solid #3f3f46', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src={h.url} alt={h.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.2'; }} />
+                </div>
+              )}
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#fafafa', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {h.title}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: '#71717a' }}>{h.month} {h.year}</span>
+                  <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: h.media_type === 'video' ? 'rgba(96,165,250,0.1)' : 'rgba(74,222,128,0.1)', color: h.media_type === 'video' ? '#60a5fa' : '#4ade80' }}>
+                    {h.media_type}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#3f3f46', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {h.url}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => { setEditId(h.id); setShowForm(false); }}
+                  style={{ ...S.btn('ghost'), padding: '6px 10px' }}
+                  title="Edit"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteMut.mutate(h.id)}
+                  style={{ ...S.btn('danger'), padding: '6px 10px' }}
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>

@@ -6820,6 +6820,51 @@ function requireAuthOrUploadKey(req, res, next) {
     } catch { }
     return requireAuth(req, res, next);
 }
+// ── AI Assistant endpoint ──────────────────────────────────────────────────
+app2.post("/api/ai/chat", apiLimiter, async (req, res) => {
+    try {
+        const { messages } = req.body;
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return res.status(400).json({ error: "messages array required" });
+        }
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey) return res.status(503).json({ error: "AI not configured" });
+
+        const systemPrompt = {
+            role: "system",
+            content: `You are CrossFire Wiki Assistant — a friendly, knowledgeable expert on the CrossFire online FPS game.
+You help players with game mechanics, weapons, mercenaries, ranks, maps, modes, clans, ZP/GP currencies, and general game tips.
+Keep answers concise and helpful. If you don't know something CrossFire-specific, say so honestly.
+You also speak Arabic (Egyptian dialect) — respond in the same language the user writes in.`
+        };
+
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://crossfirewiki.com",
+                "X-Title": "CrossFire Wiki"
+            },
+            body: JSON.stringify({
+                model: "openai/gpt-oss-20b:free",
+                messages: [systemPrompt, ...messages.slice(-12)], // keep last 12 messages for context
+                max_tokens: 600,
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) return res.status(502).json({ error: data.error.message || "AI error" });
+
+        const reply = data.choices?.[0]?.message?.content || "";
+        res.json({ reply, model: data.model });
+    } catch (err) {
+        console.error("AI chat error:", err);
+        res.status(500).json({ error: "AI request failed" });
+    }
+});
+
 app2.post("/api/upload/insert", uploadLimiter, requireAuthOrUploadKey, uploadInsert.single("file"), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file provided" });

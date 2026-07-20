@@ -380,14 +380,32 @@ function FAQAccordionItem({
   onToggle,
   catColor,
 }: {
-  article: { id: string; title: string; titleAr: string; body: string; bodyAr: string };
+  article: { id: string; title: string; titleAr?: string; body: string; bodyAr?: string };
   isAr: boolean;
   isOpen: boolean;
   onToggle: () => void;
   catColor: string;
 }) {
-  const question = isAr ? (article.titleAr || article.title) : article.title;
-  const answer = isAr ? (article.bodyAr || article.body) : article.body;
+  const hasAr = !!(article.titleAr || article.bodyAr);
+
+  const renderBody = (text: string) => {
+    if (!text) return null;
+    const isHtml = text.startsWith("<") || /<(p|ul|ol|br|img|iframe|strong)[\s>]/.test(text);
+    if (isHtml) {
+      return (
+        <div
+          className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
+          style={{ color: "#888" }}
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
+      );
+    }
+    return (
+      <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "#888" }}>
+        {text}
+      </p>
+    );
+  };
 
   return (
     <div
@@ -403,13 +421,39 @@ function FAQAccordionItem({
         onClick={onToggle}
         className="w-full flex items-center gap-3 p-4 text-left transition-colors"
         style={{ background: isOpen ? "rgba(245,166,35,0.04)" : "transparent" }}
-        dir={isAr ? "rtl" : "ltr"}
       >
         <div
           className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors"
           style={{ background: isOpen ? "#f5a623" : "rgba(255,255,255,0.15)" }}
         />
-        <span className="flex-1 font-bold text-sm leading-snug" style={{ color: isOpen ? "var(--foreground)" : "#aaa" }}>{question}</span>
+        <div className="flex-1 min-w-0">
+          {/* English title */}
+          {!isAr && (
+            <span className="block font-bold text-sm leading-snug" style={{ color: isOpen ? "var(--foreground)" : "#aaa" }}>
+              {article.title}
+            </span>
+          )}
+          {/* Arabic title — always shown if available */}
+          {hasAr && article.titleAr && (
+            <span
+              className="block text-sm leading-snug font-bold"
+              dir="rtl"
+              style={{
+                color: isAr ? (isOpen ? "var(--foreground)" : "#aaa") : (isOpen ? "rgba(245,166,35,0.8)" : "#666"),
+                marginTop: !isAr ? 2 : 0,
+                fontFamily: "'Noto Sans Arabic', sans-serif",
+              }}
+            >
+              {article.titleAr}
+            </span>
+          )}
+          {/* English title in Arabic mode */}
+          {isAr && (
+            <span className="block text-[11px] leading-snug mt-0.5" style={{ color: "#555" }}>
+              {article.title}
+            </span>
+          )}
+        </div>
         <div
           className="flex-shrink-0 w-6 h-6 flex items-center justify-center transition-all"
           style={{
@@ -423,21 +467,44 @@ function FAQAccordionItem({
         </div>
       </button>
       {isOpen && (
-        <div
-          className="px-5 pb-5 pt-3"
-          style={{ borderTop: "1px solid rgba(245,166,35,0.1)" }}
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          {answer && (answer.startsWith("<") || answer.includes("<p>") || answer.includes("<ul>") || answer.includes("<ol>") || answer.includes("<br") || answer.includes("<img") || answer.includes("<iframe") || answer.includes("<strong>")) ? (
+        <div className="px-5 pb-5 pt-3" style={{ borderTop: "1px solid rgba(245,166,35,0.1)" }}>
+          {/* Primary language answer */}
+          <div dir={isAr ? "rtl" : "ltr"}>
+            {renderBody(isAr ? (article.bodyAr || article.body) : article.body)}
+          </div>
+
+          {/* Secondary language answer — always show Arabic translation if available and in English mode */}
+          {!isAr && hasAr && article.bodyAr && (
             <div
-              className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
-              style={{ color: "#888" }}
-              dangerouslySetInnerHTML={{ __html: answer }}
-            />
-          ) : (
-            <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "#888" }}>
-              {answer}
-            </p>
+              className="mt-4 pt-4"
+              style={{ borderTop: "1px dashed rgba(245,166,35,0.15)" }}
+              dir="rtl"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5" style={{ background: "rgba(245,166,35,0.1)", color: "#f5a623", borderRadius: 2, fontFamily: "inherit" }}>
+                  🇸🇦 عربي
+                </span>
+              </div>
+              <div style={{ fontFamily: "'Noto Sans Arabic', sans-serif" }}>
+                {renderBody(article.bodyAr)}
+              </div>
+            </div>
+          )}
+
+          {/* In Arabic mode, also show English answer lightly */}
+          {isAr && article.body && (
+            <div
+              className="mt-4 pt-4"
+              style={{ borderTop: "1px dashed rgba(255,255,255,0.06)" }}
+              dir="ltr"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5" style={{ background: "rgba(255,255,255,0.04)", color: "#444", borderRadius: 2 }}>
+                  🇺🇸 English
+                </span>
+              </div>
+              {renderBody(article.body)}
+            </div>
           )}
         </div>
       )}

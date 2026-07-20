@@ -66,13 +66,13 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
         background: "#0d1117", border: `2px solid rgba(58,123,213,0.5)`, borderRadius: "6px",
       }}>
         {/* Main media */}
-        <div className="relative" style={{ aspectRatio: "16/7", overflow: "hidden" }}>
+        <div className="relative" style={{ aspectRatio: "16/7", overflow: "hidden", background: "#050810" }}>
           {active.media_type === "video" ? (
             <video
               key={active.id}
               src={active.url}
               className="w-full h-full"
-              style={{ objectFit: "cover", display: "block" }}
+              style={{ objectFit: "contain", display: "block" }}
               autoPlay
               muted
               loop
@@ -84,8 +84,8 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
               key={active.id}
               src={active.url}
               alt={active.title}
-              className="w-full h-full object-cover"
-              style={{ transition: "opacity 0.4s" }}
+              className="w-full h-full"
+              style={{ objectFit: "contain", transition: "opacity 0.4s" }}
             />
           )}
 

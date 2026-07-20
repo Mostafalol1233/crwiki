@@ -7,3 +7,4 @@
 - [site_highlights table](site-highlights-table.md) — Supabase table needed for HighlightsManager; columns: id, title, month, year, media_type, url, sort_order.
 - [CF Player Stats API](cf-player-api.md) — use undici+/rest/userprofile.json?usn= to bypass Akamai; axios/curl timeout.
 - [Likes tables](likes-tables.md) — three tables added: likes (universal), video_likes, comment_likes; API functions in supabaseApi.ts; uses localStorage uid.
+- [OpenRouter working model](openrouter-model.md) — only `openai/gpt-oss-20b:free` works; nemotron/deepseek/gemma all fail with guardrail or rate-limit errors.

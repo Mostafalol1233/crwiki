@@ -1,12 +1,27 @@
 /**
  * Unified file upload utility using Supabase Storage.
- * Replaces the old /images/upload Express/Cloudinary endpoint.
- * Uses the service-role client when available (bypasses RLS), falls back to anon client.
+ * Always uses the service-role client to bypass RLS.
  */
 import { supabase } from './supabase';
 import { supabaseService } from './supabaseAdmin';
 
 const BUCKET = 'media';
+let bucketReady = false;
+
+/** Ensure the media bucket exists — called automatically before every upload */
+async function ensureBucket(client: any): Promise<void> {
+  if (bucketReady) return;
+  try {
+    const { data: buckets } = await client.storage.listBuckets();
+    if (!buckets?.some((b: any) => b.name === BUCKET)) {
+      await client.storage.createBucket(BUCKET, { public: true });
+    }
+    bucketReady = true;
+  } catch {
+    // Bucket may already exist or creation not permitted — proceed anyway
+    bucketReady = true;
+  }
+}
 
 export async function uploadToSupabase(
   file: File,
@@ -14,22 +29,24 @@ export async function uploadToSupabase(
   customName?: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
+  // Service-role client bypasses all RLS policies
   const client = supabaseService || supabase;
+
+  await ensureBucket(client);
+
   const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const safeName = customName
     ? `${customName}.${ext}`
     : `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const path = `${folder}/${safeName}`;
 
-  // Supabase JS v2 doesn't support onUploadProgress natively, but we can
-  // simulate start/finish for UI feedback
   onProgress?.(10);
 
   const { error } = await client.storage
     .from(BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`Upload failed: ${error.message}`);
 
   onProgress?.(100);
 
@@ -38,10 +55,8 @@ export async function uploadToSupabase(
   return data.publicUrl;
 }
 
-/** Ensure the media bucket exists (idempotent — safe to call on startup) */
+/** Ensure the media bucket exists (idempotent) */
 export async function ensureMediaBucket(): Promise<void> {
   const client = supabaseService || supabase;
-  const { data: buckets } = await client.storage.listBuckets();
-  if (buckets?.some(b => b.name === BUCKET)) return;
-  await client.storage.createBucket(BUCKET, { public: true });
+  await ensureBucket(client);
 }

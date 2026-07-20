@@ -36,9 +36,10 @@ export default function CustomPages() {
   const fetch = useCallback(async () => {
     if (!client) return;
     setLoading(true);
-    const { data } = await client.from('custom_pages').select('*').order('created_at', { ascending: false }).catch(() => ({ data: [] }));
-    setItems((data as any) || []);
-    setLoading(false);
+    try {
+      const { data } = await client.from('custom_pages').select('*').order('created_at', { ascending: false });
+      setItems((data as any) || []);
+    } catch { setItems([]); } finally { setLoading(false); }
   }, [client]);
 
   useEffect(() => { fetch(); }, [fetch]);

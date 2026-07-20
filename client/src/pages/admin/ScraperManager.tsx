@@ -9,11 +9,8 @@ const db = supabaseService || supabase;
 
 const FORUM_URL = 'https://forum.z8games.com/categories/crossfire-announcements';
 
-// Try multiple CORS proxies in order
-const PROXY_LIST = [
-  (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
+// Scraping is handled server-side via the Vite middleware (cfScrapePlugin in vite.config.ts)
+// — no CORS issues since it runs in Node.js with undici
 
 interface ForumPost {
   title: string;
@@ -35,65 +32,6 @@ async function translateText(text: string): Promise<string> {
   }
 }
 
-async function fetchProxy(url: string): Promise<string> {
-  for (const makeProxy of PROXY_LIST) {
-    try {
-      const proxyUrl = makeProxy(url);
-      const r = await Promise.race([
-        fetch(proxyUrl),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
-      ]) as Response;
-      if (!r.ok) continue;
-      const j = await r.json().catch(() => null);
-      if (j && (j.contents || j.data)) return j.contents || j.data;
-      const text = await r.text().catch(() => '');
-      if (text) return text;
-    } catch { /* try next proxy */ }
-  }
-  throw new Error('Failed to reach forum — all proxies failed. Try again later.');
-}
-
-function parseAnnouncements(html: string): Omit<ForumPost, 'titleAr' | 'selected'>[] {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const results: Omit<ForumPost, 'titleAr' | 'selected'>[] = [];
-  const seen = new Set<string>();
-
-  const candidates = doc.querySelectorAll([
-    'a[href*="thread"]',
-    'a[href*="announcement"]',
-    '.thread-title a',
-    '.subject a',
-    'h3 > a',
-    'h2 > a',
-    '.topic-title a',
-    '[class*="title"] a',
-    '[class*="thread"] a',
-    '[class*="post"] a',
-    '.thr-head a',
-    '.forumtitle a',
-    'td.alt1 a',
-  ].join(', '));
-
-  candidates.forEach((el) => {
-    const title = el.textContent?.trim() || '';
-    const href = el.getAttribute('href') || '';
-    if (!title || title.length < 5 || seen.has(title)) return;
-    if (href.includes('#') && !href.includes('thread')) return;
-
-    const fullUrl = href.startsWith('http') ? href : href.startsWith('/') ? `https://forum.z8games.com${href}` : '';
-    if (!fullUrl) return;
-    seen.add(title);
-
-    const row = el.closest('tr, li, article, [class*="thread"], [class*="post"], [class*="topic"]');
-    const dateEl = row?.querySelector('time, [class*="date"], [class*="time"], abbr');
-    const date = dateEl?.getAttribute('datetime') || dateEl?.textContent?.trim() || new Date().toISOString().slice(0, 10);
-    const img = (row?.querySelector('img') as HTMLImageElement)?.src || '';
-
-    results.push({ title, url: fullUrl, date, image: img });
-  });
-
-  return results.slice(0, 25);
-}
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
@@ -136,12 +74,18 @@ export default function ScraperManager() {
   const scrape = async () => {
     setLoading(true); setPosts([]); setProgress('Connecting to CrossFire forum...');
     try {
-      const html = await fetchProxy(FORUM_URL);
-      if (!html) throw new Error('Empty response from proxy');
-      const parsed = parseAnnouncements(html);
+      // Server-side fetch via Vite middleware — no CORS issues
+      const res = await fetch('/api/scrape/forum-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: FORUM_URL }),
+      });
+      const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok) throw new Error(data.error || 'Scrape failed');
+      const parsed: Omit<ForumPost, 'titleAr' | 'selected'>[] = data.posts || [];
       if (parsed.length === 0) {
         setProgress('No posts found — forum structure may have changed');
-        toast.warning('No posts parsed. Try the direct forum URL.');
+        toast.warning('No posts parsed. The forum HTML structure may have changed.');
         return;
       }
       setPosts(parsed.map(p => ({ ...p, titleAr: '', selected: true })));

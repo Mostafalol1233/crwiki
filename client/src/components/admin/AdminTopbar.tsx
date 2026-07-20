@@ -1,4 +1,4 @@
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { LogOut, Bell } from 'lucide-react';
 import { decodeAdminToken } from '@/lib/supabaseAdmin';
 
@@ -62,9 +62,10 @@ export default function AdminTopbar() {
     }}>
       {/* Breadcrumb */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Link href="/admin">
-          <a style={{ fontSize: 13, color: '#52525b', textDecoration: 'none' }}>Admin</a>
-        </Link>
+        <span
+          onClick={() => window.location.href = '/admin'}
+          style={{ fontSize: 13, color: '#52525b', textDecoration: 'none', cursor: 'pointer' }}
+        >Admin</span>
         {crumbs.map((c, i) => (
           <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ color: '#3f3f46', fontSize: 13 }}>/</span>

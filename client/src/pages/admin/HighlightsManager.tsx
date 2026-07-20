@@ -42,7 +42,7 @@ const S = {
 };
 
 async function fetchHighlights(): Promise<Highlight[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabaseService || supabase)
     .from('site_highlights')
     .select('*')
     .order('sort_order', { ascending: true });

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabaseService } from '@/lib/supabaseAdmin';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Upload, Copy, Trash2, Grid, List, Check } from 'lucide-react';
@@ -12,6 +13,8 @@ interface MediaFile {
 }
 
 const BUCKET = 'media';
+// Always use service-role client for storage (bypasses RLS)
+const storage = () => (supabaseService || supabase).storage;
 
 function formatSize(bytes?: number) {
   if (!bytes) return '—';
@@ -33,11 +36,17 @@ export default function MediaManager() {
   const fetch = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.storage.from(BUCKET).list('', { sortBy: { column: 'created_at', order: 'desc' }, limit: 200 });
+      const st = storage();
+      // Ensure bucket exists
+      const { data: buckets } = await st.listBuckets();
+      if (!buckets?.some((b: any) => b.name === BUCKET)) {
+        await st.createBucket(BUCKET, { public: true });
+      }
+      const { data, error } = await st.from(BUCKET).list('', { sortBy: { column: 'created_at', order: 'desc' }, limit: 200 });
       if (error) throw error;
       const withUrls: MediaFile[] = (data || []).filter((f) => f.name !== '.emptyFolderPlaceholder').map((f) => ({
         ...f,
-        publicUrl: supabase.storage.from(BUCKET).getPublicUrl(f.name).data.publicUrl,
+        publicUrl: st.from(BUCKET).getPublicUrl(f.name).data.publicUrl,
       }));
       setFiles(withUrls);
     } catch (e: any) { toast.error(e.message); } finally { setLoading(false); }
@@ -49,10 +58,11 @@ export default function MediaManager() {
     if (!fileList || fileList.length === 0) return;
     setUploading(true);
     let ok = 0;
+    const st = storage();
     for (const file of Array.from(fileList)) {
       const filename = `${Date.now()}-${file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-')}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(filename, file, { contentType: file.type, upsert: false });
-      if (!error) ok++;
+      const { error } = await st.from(BUCKET).upload(filename, file, { contentType: file.type, upsert: false });
+      if (!error) ok++; else console.error('Upload error:', error.message);
     }
     toast.success(`Uploaded ${ok} file${ok > 1 ? 's' : ''}`);
     setUploading(false);
@@ -61,7 +71,7 @@ export default function MediaManager() {
 
   const remove = async (names: string[]) => {
     if (!confirm(`Delete ${names.length} file${names.length > 1 ? 's' : ''}?`)) return;
-    const { error } = await supabase.storage.from(BUCKET).remove(names);
+    const { error } = await storage().from(BUCKET).remove(names);
     if (error) { toast.error(error.message); return; }
     toast.success('Deleted');
     setSelected(new Set());

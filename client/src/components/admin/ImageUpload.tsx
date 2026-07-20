@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { uploadToSupabase } from '@/lib/uploadToSupabase';
 import { Upload, X, Link2, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploadProps {
@@ -30,15 +30,8 @@ export default function ImageUpload({ value, onChange, label = 'Image', bucket =
     setUploading(true);
     setError('');
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const filename = `${Date.now()}-${slugifyFilename(file.name.replace(`.${ext}`, ''))}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from(bucket).upload(filename, file, {
-        contentType: file.type,
-        upsert: false,
-      });
-      if (uploadError) throw uploadError;
-      const { data } = supabase.storage.from(bucket).getPublicUrl(filename);
-      onChange(data.publicUrl);
+      const url = await uploadToSupabase(file, bucket);
+      onChange(url);
     } catch (e: any) {
       setError(e.message || 'Upload failed');
     } finally {

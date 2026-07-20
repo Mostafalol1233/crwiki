@@ -44,69 +44,26 @@ function autoGenerateSEO(title: string, contentHtml: string): {
   return { seo_title, seo_description, seo_keywords: kws };
 }
 
-// ─── Browser-side page scraping via CORS proxy ────────────────────────────────
-
-const PROXY_LIST = [
-  (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
-
-async function fetchViaProxy(url: string): Promise<string> {
-  for (const makeProxy of PROXY_LIST) {
-    try {
-      const proxyUrl = makeProxy(url);
-      const res = await Promise.race([
-        fetch(proxyUrl),
-        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
-      ]) as Response;
-      if (!res.ok) continue;
-      const json = await res.json().catch(() => null);
-      if (json && (json.contents || json.data)) return json.contents || json.data;
-      const text = await res.text().catch(() => '');
-      if (text) return text;
-    } catch { /* try next */ }
-  }
-  throw new Error('All proxies failed — cannot reach the URL. Check your internet connection or try a different URL.');
-}
+// ─── Server-side scraping via Vite middleware (no CORS issues) ────────────────
+// Delegates to cfScrapePlugin in vite.config.ts which uses undici + cheerio
 
 async function scrapePageViaProxy(url: string): Promise<{
   title: string; content: string; summary: string; image: string; contentLength: number;
 }> {
-  const html = await fetchViaProxy(url);
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-
-  // Extract title
-  const title =
-    doc.querySelector('h1')?.textContent?.trim() ||
-    doc.querySelector('title')?.textContent?.replace(/\s*[|\-–].*$/, '').trim() ||
-    doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
-    '';
-
-  // Extract main image
-  const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
-  const firstImg = (doc.querySelector('.mw-content-text img, article img, .content img') as HTMLImageElement)?.src || '';
-  const image = ogImage || firstImg || '';
-
-  // Remove navigation, scripts, ads, sidebars
-  ['nav','script','style','header','footer','.navbox','.toc','.mw-indicators','.mw-editsection',
-   '#mw-navigation','#mw-head','#mw-panel','.sidebar','aside','[class*="ad-"]','[class*="advertisement"]',
-  ].forEach(sel => doc.querySelectorAll(sel).forEach(el => el.remove()));
-
-  // Get main content
-  const contentEl =
-    doc.querySelector('.mw-parser-output') ||
-    doc.querySelector('article') ||
-    doc.querySelector('main') ||
-    doc.querySelector('#content') ||
-    doc.querySelector('.content') ||
-    doc.body;
-
-  const content = contentEl?.innerHTML || '';
-  const plainText = stripHtml(content);
-  const summary = plainText.slice(0, 300).trim();
-  const contentLength = plainText.length;
-
-  return { title, content, summary, image, contentLength };
+  const res = await fetch('/api/scrape/single-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+  if (!res.ok) throw new Error(data.error || `Scrape failed with status ${res.status}`);
+  return {
+    title: data.title || '',
+    content: data.content || '',
+    summary: data.excerpt || data.seoDescription || '',
+    image: data.image || data.mainImage || '',
+    contentLength: data.contentLength || 0,
+  };
 }
 
 // ─── Field mappers ────────────────────────────────────────────────────────────

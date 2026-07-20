@@ -73,6 +73,278 @@ function cfRegisterPlugin(): Plugin {
   };
 }
 
+// ── Server-side scraping middleware — runs in Node.js, no CORS issues ─────────
+function cfScrapePlugin(): Plugin {
+  return {
+    name: "cf-scrape",
+    configureServer(server) {
+      // Helper: read JSON body from request
+      async function readBody(req: any): Promise<any> {
+        const chunks: Buffer[] = [];
+        await new Promise<void>((resolve, reject) => {
+          req.on("data", (c: Buffer) => chunks.push(c));
+          req.on("end", resolve);
+          req.on("error", reject);
+        });
+        try { return JSON.parse(Buffer.concat(chunks).toString()); } catch { return {}; }
+      }
+
+      // Helper: fetch a URL server-side (no CORS), parse with cheerio
+      async function scrapePage(url: string): Promise<{ title: string; content: string; summary: string; image: string }> {
+        const { fetch: undFetch } = await import("undici");
+        const res = await (undFetch as any)(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; WikiBot/1.0)",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+        const html = await res.text();
+        const cheerio = await import("cheerio");
+        const $ = cheerio.load(html);
+
+        // Extract title
+        const title =
+          $("h1.page-header__title").first().text().trim() ||
+          $("h1").first().text().trim() ||
+          $("title").text().replace(/\s*[|\-–].*$/, "").trim() ||
+          $('meta[property="og:title"]').attr("content") || "";
+
+        // Extract main image
+        const image =
+          $('meta[property="og:image"]').attr("content") ||
+          $(".mw-content-text img").first().attr("src") ||
+          $("article img").first().attr("src") || "";
+
+        // Remove noise
+        $("nav,script,style,header,footer,.navbox,.toc,.mw-indicators,.mw-editsection,#mw-navigation,#mw-head,#mw-panel,.sidebar,aside,.advertisement").remove();
+
+        // Main content
+        const contentEl = $(".mw-parser-output, article, main, #content, .content").first();
+        const content = contentEl.length ? contentEl.html() || "" : $("body").html() || "";
+        const plain = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+        const summary = plain.slice(0, 300);
+
+        return { title, content, summary, image };
+      }
+
+      // Helper: send JSON
+      function json(res: any, status: number, data: any) {
+        res.writeHead(status, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(data));
+      }
+
+      // POST /api/scrape/forum-list — fetches a forum page and returns structured post list
+      server.middlewares.use("/api/scrape/forum-list", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { url } = await readBody(req);
+          if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
+          const { fetch: undFetch } = await import("undici");
+          const r = await (undFetch as any)(url, {
+            headers: { "User-Agent": "Mozilla/5.0 (compatible; WikiBot/1.0)", "Accept": "text/html,*/*" },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const html = await r.text();
+          const cheerio = await import("cheerio");
+          const $ = cheerio.load(html);
+          const posts: any[] = [];
+          const seen = new Set<string>();
+          $([
+            'a[href*="thread"]', 'a[href*="announcement"]', '.thread-title a',
+            '.subject a', 'h3 > a', 'h2 > a', '.topic-title a',
+            '[class*="title"] a', '[class*="thread"] a', '[class*="post"] a',
+            '.thr-head a', '.forumtitle a', 'td.alt1 a',
+          ].join(", ")).each((_, el) => {
+            const title = $(el).text().trim();
+            const href = $(el).attr("href") || "";
+            if (!title || title.length < 5 || seen.has(title)) return;
+            if (href.includes("#") && !href.includes("thread")) return;
+            const fullUrl = href.startsWith("http") ? href : href.startsWith("/") ? `https://forum.z8games.com${href}` : "";
+            if (!fullUrl) return;
+            seen.add(title);
+            const row = $(el).closest("tr, li, article, [class*=thread], [class*=post], [class*=topic]");
+            const dateEl = row.find("time, [class*=date], [class*=time], abbr").first();
+            const date = dateEl.attr("datetime") || dateEl.text().trim() || new Date().toISOString().slice(0, 10);
+            const img = row.find("img").first().attr("src") || "";
+            posts.push({ title, url: fullUrl, date, image: img });
+          });
+          json(res, 200, { posts: posts.slice(0, 25) });
+        } catch (e: any) {
+          json(res, 500, { error: e.message || "Forum scrape failed" });
+        }
+      });
+
+      // POST /api/scrape/single-url
+      server.middlewares.use("/api/scrape/single-url", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { url } = await readBody(req);
+          if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
+          const scraped = await scrapePage(url);
+          const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+          json(res, 200, {
+            title: scraped.title,
+            content: scraped.content,
+            excerpt: scraped.summary,
+            seoDescription: scraped.summary,
+            seoTitle: scraped.title,
+            keywords: [],
+            mainImage: scraped.image,
+            image: scraped.image,
+            sourceUrl: url,
+            url,
+            isWiki: url.includes("fandom.com") || url.includes("wiki"),
+            contentLength: plain.length,
+            status: "success",
+          });
+        } catch (e: any) {
+          json(res, 500, { error: e.message || "Scrape failed" });
+        }
+      });
+
+      // POST /api/admin/rescrape-item
+      server.middlewares.use("/api/admin/rescrape-item", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { type, id, url } = await readBody(req);
+          if (!type || !id || !url || !String(url).startsWith("http")) return json(res, 400, { error: "type, id, and valid url required" });
+
+          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+
+          const scraped = await scrapePage(url);
+          const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+          const seoTitle = (scraped.title || "").slice(0, 60);
+          const seoDesc = (scraped.summary || "").slice(0, 160);
+
+          const { fetch: undFetch } = await import("undici");
+          let table = type === "events" ? "events" : type === "news" ? "news" : "posts";
+          let updateBody: any = {};
+          if (type === "events") {
+            updateBody = { description: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+          } else if (type === "news") {
+            updateBody = { content: scraped.content, html_content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+          } else {
+            updateBody = { content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+          }
+
+          const upRes = await (undFetch as any)(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}`, "Prefer": "return=minimal" },
+            body: JSON.stringify(updateBody),
+          });
+          if (!upRes.ok) {
+            const txt = await upRes.text();
+            throw new Error(`Supabase update failed: ${txt}`);
+          }
+          json(res, 200, { success: true, scraped: { title: scraped.title, image: scraped.image, contentLength: plain.length } });
+        } catch (e: any) {
+          json(res, 500, { error: e.message || "Rescrape failed" });
+        }
+      });
+
+      // POST /api/admin/rebuild-mercenary-posts
+      server.middlewares.use("/api/admin/rebuild-mercenary-posts", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+          const { fetch: undFetch } = await import("undici");
+          const headers = { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}` };
+
+          // Delete all non-announcement posts
+          await (undFetch as any)(`${SUPABASE_URL}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, { method: "DELETE", headers });
+          const deletedCount = 0; // approximate
+
+          const mercenaries = [
+            { name: "Wolf", wikiSlug: "Wolf_(CrossFire)" }, { name: "Vipers", wikiSlug: "Vipers" },
+            { name: "Sisterhood", wikiSlug: "Sisterhood" }, { name: "Black Mamba", wikiSlug: "Black_Mamba_(CrossFire)" },
+            { name: "Desperado", wikiSlug: "Desperado" }, { name: "Ronin", wikiSlug: "Ronin_(CrossFire)" },
+            { name: "Dean", wikiSlug: "Dean" }, { name: "Saber", wikiSlug: "Saber_(CrossFire)" },
+            { name: "Brimstone", wikiSlug: "Brimstone_(CrossFire)" }, { name: "Arch Honorary", wikiSlug: "Arch_Honorary" },
+          ];
+          let created = 0, failed = 0;
+          for (const merc of mercenaries) {
+            try {
+              const wikiUrl = `https://crossfire.fandom.com/wiki/${merc.wikiSlug}`;
+              const scraped = await scrapePage(wikiUrl);
+              const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+              const slug = `${merc.name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+              const row = {
+                title: scraped.title || merc.name, post_slug: slug,
+                content: scraped.content, summary: scraped.summary,
+                image_url: scraped.image, category: "Mercenaries",
+                tags: ["mercenary", "crossfire", merc.name.toLowerCase()],
+                author: "CrossFire Wiki", featured: false, source_url: wikiUrl,
+                seo_title: (scraped.title || merc.name).slice(0, 60),
+                seo_description: plain.slice(0, 160),
+                seo_keywords: ["mercenary", "crossfire", merc.name.toLowerCase()],
+              };
+              const insRes = await (undFetch as any)(`${SUPABASE_URL}/rest/v1/posts`, {
+                method: "POST", headers: { ...headers, "Prefer": "return=minimal" }, body: JSON.stringify(row),
+              });
+              if (insRes.ok) created++; else { const t = await insRes.text(); console.error(`Failed ${merc.name}:`, t); failed++; }
+            } catch (e: any) { console.error(`Scrape failed ${merc.name}:`, e.message); failed++; }
+          }
+          json(res, 200, { deletedCount, created, failed });
+        } catch (e: any) { json(res, 500, { error: e.message }); }
+      });
+
+      // POST /api/admin/rebuild-wiki-posts
+      server.middlewares.use("/api/admin/rebuild-wiki-posts", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+          const { fetch: undFetch } = await import("undici");
+          const headers = { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}` };
+
+          await (undFetch as any)(`${SUPABASE_URL}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, { method: "DELETE", headers });
+          const wikiPages = [
+            { name: "Ghost Mode", wikiSlug: "Ghost_Mode", category: "Modes" },
+            { name: "Mutation Mode", wikiSlug: "Mutation_Mode", category: "Modes" },
+            { name: "Zombie Mode", wikiSlug: "Zombie_Mode", category: "Modes" },
+            { name: "Black Widow Map", wikiSlug: "Black_Widow_(map)", category: "Maps" },
+            { name: "Port Map", wikiSlug: "Port_(CrossFire)", category: "Maps" },
+            { name: "Eagle Eye Map", wikiSlug: "Eagle_Eye", category: "Maps" },
+          ];
+          let created = 0, failed = 0;
+          for (const page of wikiPages) {
+            try {
+              const wikiUrl = `https://crossfire.fandom.com/wiki/${page.wikiSlug}`;
+              const scraped = await scrapePage(wikiUrl);
+              const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+              const slug = `${page.name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+              const row = {
+                title: scraped.title || page.name, post_slug: slug,
+                content: scraped.content, summary: scraped.summary,
+                image_url: scraped.image, category: page.category,
+                tags: ["crossfire", page.category.toLowerCase(), page.name.toLowerCase()],
+                author: "CrossFire Wiki", featured: false, source_url: wikiUrl,
+                seo_title: (scraped.title || page.name).slice(0, 60),
+                seo_description: plain.slice(0, 160),
+                seo_keywords: ["crossfire", page.category.toLowerCase(), page.name.toLowerCase()],
+              };
+              const insRes = await (undFetch as any)(`${SUPABASE_URL}/rest/v1/posts`, {
+                method: "POST", headers: { ...headers, "Prefer": "return=minimal" }, body: JSON.stringify(row),
+              });
+              if (insRes.ok) created++; else { const t = await insRes.text(); console.error(`Failed ${page.name}:`, t); failed++; }
+            } catch (e: any) { console.error(`Scrape failed ${page.name}:`, e.message); failed++; }
+          }
+          json(res, 200, { deletedCount: 0, created, failed });
+        } catch (e: any) { json(res, 500, { error: e.message }); }
+      });
+    },
+  };
+}
+
 // CF player lookup dev middleware — bypasses Akamai using undici (HTTP/2)
 // Supports region=na (default) and region=west (tries cfwest.z8games.com first)
 function cfPlayerLookupPlugin(): Plugin {
@@ -172,6 +444,7 @@ export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
     cfPlayerLookupPlugin(),
+    cfScrapePlugin(),
     react(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&

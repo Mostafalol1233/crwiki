@@ -23,68 +23,80 @@ interface Rank {
 }
 
 const Z8 = "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_";
-const STATIC_RANKS: Rank[] = [
-  { id: "s1",  name: "Trainee 2",             tier: 2,   imageUrl: `${Z8}2.jpg`,   bonus: "Smile Grenade 7 days" },
-  { id: "s2",  name: "Private",               tier: 3,   imageUrl: `${Z8}3.jpg`,   bonus: "Boost Box 3 days" },
-  { id: "s3",  name: "Private First Class",   tier: 4,   imageUrl: `${Z8}4.jpg`,   bonus: "Starter Weapon Box 3 days" },
-  { id: "s4",  name: "Corporal",              tier: 5,   imageUrl: `${Z8}5.jpg`,   bonus: "Pottery Boost Box 7 days" },
-  { id: "s5",  name: "Sergeant 1",            tier: 6,   imageUrl: `${Z8}6.jpg`,   bonus: "Camo Box 7 days" },
-  { id: "s6",  name: "Sergeant 4",            tier: 9,   imageUrl: `${Z8}9.jpg`,   bonus: "30,000 GP" },
-  { id: "s7",  name: "Staff Sergeant 1",      tier: 10,  imageUrl: `${Z8}10.jpg`,  bonus: "Red Dragon Box 7 days" },
-  { id: "s8",  name: "Staff Sergeant 4",      tier: 13,  imageUrl: `${Z8}13.jpg`,  bonus: "VIP Weapon Box 3 days" },
-  { id: "s9",  name: "Staff Sergeant 6",      tier: 15,  imageUrl: `${Z8}15.jpg`,  bonus: "Red SMOKE 30 days" },
-  { id: "s10", name: "Sergeant First Class 2",tier: 17,  imageUrl: `${Z8}17.jpg`,  bonus: "30,000 GP" },
-  { id: "s11", name: "Sergeant First Class 4",tier: 19,  imageUrl: `${Z8}19.jpg`,  bonus: "AK-47-K-Yellow Fractal 14 days" },
-  { id: "s12", name: "Sergeant First Class 6",tier: 21,  imageUrl: `${Z8}21.jpg`,  bonus: "B.C-Axe-Ares 7 days" },
-  { id: "s13", name: "Master Sergeant 2",     tier: 23,  imageUrl: `${Z8}23.jpg`,  bonus: "M4A1-S-Yellow Fractal 14 days" },
-  { id: "s14", name: "Master Sergeant 4",     tier: 25,  imageUrl: `${Z8}25.jpg`,  bonus: "Barrett M82A1-Royal Dragon 7 days" },
-  { id: "s15", name: "Master Sergeant 6",     tier: 27,  imageUrl: `${Z8}27.jpg`,  bonus: "Sidearm Box 7 days" },
-  { id: "s16", name: "Second Lieutenant 2",   tier: 29,  imageUrl: `${Z8}29.jpg`,  bonus: "M4A1-S-Yellow Fractal 30 days" },
-  { id: "s17", name: "Second Lieutenant 4",   tier: 31,  imageUrl: `${Z8}31.jpg`,  bonus: "Throw Weapon Box 30 days" },
-  { id: "s18", name: "Second Lieutenant 6",   tier: 33,  imageUrl: `${Z8}33.jpg`,  bonus: "KAC Chainsaw-Ancient Dragon 30 days" },
-  { id: "s19", name: "Second Lieutenant 8",   tier: 35,  imageUrl: `${Z8}35.jpg`,  bonus: "Kukri-Royal Dragon 30 days" },
-  { id: "s20", name: "First Lieutenant 2",    tier: 37,  imageUrl: `${Z8}37.jpg`,  bonus: "AK-47-K-Yellow Fractal 30 days" },
-  { id: "s21", name: "First Lieutenant 4",    tier: 39,  imageUrl: `${Z8}39.jpg`,  bonus: "Bulletproof Package 30 days" },
-  { id: "s22", name: "First Lieutenant 6",    tier: 41,  imageUrl: `${Z8}41.jpg`,  bonus: "Rifle Box 30 days" },
-  { id: "s23", name: "First Lieutenant 7",    tier: 42,  imageUrl: `${Z8}42.jpg`,  bonus: "Blue Muzzle Flame 30 days" },
-  { id: "s24", name: "Captain 2",             tier: 45,  imageUrl: `${Z8}45.jpg`,  bonus: "30,000 GP" },
-  { id: "s25", name: "Captain 4",             tier: 47,  imageUrl: `${Z8}47.jpg`,  bonus: "CFWE Pistol Ticket 30 days" },
-  { id: "s26", name: "Captain 6",             tier: 49,  imageUrl: `${Z8}49.jpg`,  bonus: "Yellow Smoke 30 days" },
-  { id: "s27", name: "Captain 8",             tier: 51,  imageUrl: `${Z8}51.jpg`,  bonus: "Green Muzzle Flame 30 days" },
-  { id: "s28", name: "Major 1",               tier: 52,  imageUrl: `${Z8}52.jpg`,  bonus: "30,000 GP" },
-  { id: "s29", name: "Major 3",               tier: 54,  imageUrl: `${Z8}54.jpg`,  bonus: "Mutant Box 30 days" },
-  { id: "s30", name: "Major 6",               tier: 57,  imageUrl: `${Z8}57.jpg`,  bonus: "CFWE Sniper Ticket 30 days" },
-  { id: "s31", name: "Major 7",               tier: 58,  imageUrl: `${Z8}58.jpg`,  bonus: "Octane Camo Grenade 30 days" },
-  { id: "s32", name: "Major 8",               tier: 59,  imageUrl: `${Z8}59.jpg`,  bonus: "CFWE MG Ticket 30 days" },
-  { id: "s33", name: "Lieutenant Colonel 2",  tier: 61,  imageUrl: `${Z8}61.jpg`,  bonus: "Bulletproof Package 30 days" },
-  { id: "s34", name: "Lieutenant Colonel 3",  tier: 62,  imageUrl: `${Z8}62.jpg`,  bonus: "CFWE SMG Ticket 30 days" },
-  { id: "s35", name: "Lieutenant Colonel 4",  tier: 63,  imageUrl: `${Z8}63.jpg`,  bonus: "M4A1 Custom-Octane Camo 30 days" },
-  { id: "s36", name: "Lieutenant Colonel 6",  tier: 65,  imageUrl: `${Z8}65.jpg`,  bonus: "CFWE Rifle Ticket 30 days" },
-  { id: "s37", name: "Lieutenant Colonel 8",  tier: 67,  imageUrl: `${Z8}67.jpg`,  bonus: "10 Horus Crates" },
-  { id: "s38", name: "Colonel 3",             tier: 70,  imageUrl: `${Z8}70.jpg`,  bonus: "M4A1-S-Yellow Fractal 60 days" },
-  { id: "s39", name: "Colonel 5",             tier: 72,  imageUrl: `${Z8}72.jpg`,  bonus: "BC Axe-Octane Camo 30 days" },
-  { id: "s40", name: "Colonel 7",             tier: 74,  imageUrl: `${Z8}74.jpg`,  bonus: "Character Box 30 days" },
-  { id: "s41", name: "Colonel 8",             tier: 75,  imageUrl: `${Z8}75.jpg`,  bonus: "10 Octane Crates" },
-  { id: "s42", name: "Brigadier General 4",   tier: 79,  imageUrl: `${Z8}79.jpg`,  bonus: "AK-47-K-Yellow Fractal 60 days" },
-  { id: "s43", name: "Brigadier General 6",   tier: 81,  imageUrl: `${Z8}81.jpg`,  bonus: "30 x 7th Anniversary Crates" },
-  { id: "s44", name: "Major General 2",       tier: 83,  imageUrl: `${Z8}83.jpg`,  bonus: "G-Yellow Crystal perm" },
-  { id: "s45", name: "Major General 5",       tier: 86,  imageUrl: `${Z8}86.jpg`,  bonus: "10 Color Blaze Crates" },
-  { id: "s46", name: "Major General 6",       tier: 87,  imageUrl: `${Z8}87.jpg`,  bonus: "Slaughter Ticket Box" },
-  { id: "s47", name: "Lieutenant General 3",  tier: 90,  imageUrl: `${Z8}90.jpg`,  bonus: "M4A1-S-Yellow Fractal perm" },
-  { id: "s48", name: "Lieutenant General 6",  tier: 93,  imageUrl: `${Z8}93.jpg`,  bonus: "RPK-Infernal Dragon 30 days" },
-  { id: "s49", name: "General 2",             tier: 95,  imageUrl: `${Z8}95.jpg`,  bonus: "AK-47-K-Yellow Fractal perm" },
-  { id: "s50", name: "General 4",             tier: 97,  imageUrl: `${Z8}97.jpg`,  bonus: "AWM-Infernal Dragon 30 days" },
-  { id: "s51", name: "General 6",             tier: 99,  imageUrl: `${Z8}99.jpg`,  bonus: "AK-47 Fury 30 days" },
-  { id: "s52", name: "Grand Marshall",        tier: 104, imageUrl: `${Z8}104.jpg`, bonus: "30 Free Crate Tickets" },
-];
+
+// EXP formula calibrated so tier 79 (Brigadier General 4) ≈ 27,000,000
+// matching real player data. Grand Marshal (tier 104) ≈ 53,700,000.
+const CF_EXP: Record<number, number> = (() => {
+  const m: Record<number, number> = {};
+  for (let t = 1; t <= 104; t++) {
+    m[t] = t === 1 ? 0 : Math.round((487 * Math.pow(t, 2.5)) / 1000) * 1000;
+  }
+  return m;
+})();
+
+const RANK_BONUSES: Record<number, string> = {
+  2: "Smile Grenade 7 days", 3: "Boost Box 3 days", 4: "Starter Weapon Box 3 days",
+  5: "Pottery Boost Box 7 days", 6: "Camo Box 7 days", 9: "30,000 GP",
+  10: "Red Dragon Box 7 days", 13: "VIP Weapon Box 3 days", 15: "Red SMOKE 30 days",
+  17: "30,000 GP", 19: "AK-47-K-Yellow Fractal 14 days", 21: "B.C-Axe-Ares 7 days",
+  23: "M4A1-S-Yellow Fractal 14 days", 25: "Barrett M82A1-Royal Dragon 7 days", 27: "Sidearm Box 7 days",
+  29: "M4A1-S-Yellow Fractal 30 days", 31: "Throw Weapon Box 30 days", 33: "KAC Chainsaw-Ancient Dragon 30 days",
+  35: "Kukri-Royal Dragon 30 days", 37: "AK-47-K-Yellow Fractal 30 days", 39: "Bulletproof Package 30 days",
+  41: "Rifle Box 30 days", 42: "Blue Muzzle Flame 30 days", 45: "30,000 GP",
+  47: "CFWE Pistol Ticket 30 days", 49: "Yellow Smoke 30 days", 51: "Green Muzzle Flame 30 days",
+  52: "30,000 GP", 54: "Mutant Box 30 days", 57: "CFWE Sniper Ticket 30 days",
+  58: "Octane Camo Grenade 30 days", 59: "CFWE MG Ticket 30 days", 61: "Bulletproof Package 30 days",
+  62: "CFWE SMG Ticket 30 days", 63: "M4A1 Custom-Octane Camo 30 days", 65: "CFWE Rifle Ticket 30 days",
+  67: "10 Horus Crates", 70: "M4A1-S-Yellow Fractal 60 days", 72: "BC Axe-Octane Camo 30 days",
+  74: "Character Box 30 days", 75: "10 Octane Crates", 79: "AK-47-K-Yellow Fractal 60 days",
+  81: "30 x 7th Anniversary Crates", 83: "G-Yellow Crystal perm", 86: "10 Color Blaze Crates",
+  87: "Slaughter Ticket Box", 90: "M4A1-S-Yellow Fractal perm", 93: "RPK-Infernal Dragon 30 days",
+  95: "AK-47-K-Yellow Fractal perm", 97: "AWM-Infernal Dragon 30 days", 99: "AK-47 Fury 30 days",
+  104: "30 Free Crate Tickets",
+};
+
+// Generate complete 104-tier rank list
+function buildFullRankList(): Rank[] {
+  const entries: Array<{ tier: number; name: string }> = [
+    { tier: 1, name: "Trainee 1" }, { tier: 2, name: "Trainee 2" },
+    { tier: 3, name: "Private" }, { tier: 4, name: "Private First Class" }, { tier: 5, name: "Corporal" },
+    ...Array.from({ length: 4 }, (_, i) => ({ tier: 6 + i, name: `Sergeant ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 10 + i, name: `Staff Sergeant ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 16 + i, name: `Sergeant First Class ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 22 + i, name: `Master Sergeant ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 28 + i, name: `Second Lieutenant ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 36 + i, name: `First Lieutenant ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 44 + i, name: `Captain ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 52 + i, name: `Major ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 60 + i, name: `Lieutenant Colonel ${i + 1}` })),
+    ...Array.from({ length: 8 }, (_, i) => ({ tier: 68 + i, name: `Colonel ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 76 + i, name: `Brigadier General ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 82 + i, name: `Major General ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 88 + i, name: `Lieutenant General ${i + 1}` })),
+    ...Array.from({ length: 10 }, (_, i) => ({ tier: 94 + i, name: `General ${i + 1}` })),
+    { tier: 104, name: "Grand Marshall" },
+  ];
+  return entries.map(e => ({
+    id: `cf${e.tier}`,
+    name: e.name,
+    tier: e.tier,
+    imageUrl: `${Z8}${e.tier}.jpg`,
+    bonus: RANK_BONUSES[e.tier] || "",
+    expRequired: CF_EXP[e.tier] ?? 0,
+  }));
+}
+
+const STATIC_RANKS: Rank[] = buildFullRankList(); // 104 complete ranks
 
 const extractExpRequired = (rank: Rank) => {
-  // Supabase returns snake_case column name
   const fromDb = (rank as any).exp_required;
   if (typeof fromDb === "number" && fromDb > 0) return fromDb;
   if (typeof rank.expRequired === "number" && rank.expRequired > 0) return rank.expRequired;
   const match = String(rank.requirements || "").match(/exp required:\s*([\d,]+)/i);
-  return match ? Number(match[1].replace(/,/g, "")) : 0;
+  if (match) return Number(match[1].replace(/,/g, ""));
+  // Tier-based EXP fallback
+  if (rank.tier && rank.tier > 0) return CF_EXP[rank.tier] ?? 0;
+  return 0;
 };
 
 const extractBonus = (rank: Rank) => {
@@ -130,8 +142,25 @@ export default function Ranks() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Use static data as fallback when Supabase has no ranks
-  const ranks = ranksFromSupabase.length > 0 ? ranksFromSupabase : STATIC_RANKS;
+  // Merge Supabase ranks with the full 104-tier static list.
+  // DB entries win for any tier that appears; missing tiers are filled from STATIC_RANKS.
+  const ranks = useMemo(() => {
+    if (ranksFromSupabase.length === 0) return STATIC_RANKS;
+    const byTier = new Map<number, Rank>();
+    for (const r of ranksFromSupabase) { if (r.tier) byTier.set(r.tier, r); }
+    return STATIC_RANKS.map(fallback => {
+      const db = byTier.get(fallback.tier!);
+      if (!db) return fallback;
+      return {
+        ...fallback,
+        ...db,
+        // ensure EXP is filled in from formula when DB has 0
+        expRequired: ((db as any).exp_required > 0 ? (db as any).exp_required : db.expRequired ?? 0) || fallback.expRequired,
+        imageUrl: (db as any).image_url || db.imageUrl || fallback.imageUrl,
+        bonus: db.bonus || fallback.bonus,
+      };
+    });
+  }, [ranksFromSupabase]);
 
   const filteredRanks = useMemo(() => {
     const filtered = ranks.filter((rank) => {

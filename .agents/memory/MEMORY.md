@@ -1,3 +1,4 @@
+- [Rank calculator complete](rank-calculator-complete.md) — 104-tier list, EXP formula, dark mode root cause (ThemeProvider defaulted to light, now dark).
 - [Supabase migration](supabase-migration.md) — full MongoDB→Supabase migration done; frontend calls Supabase directly, no Express backend needed.
 - [Supabase table columns](supabase-table-columns.md) — ranks/modes/mercenaries all use `image_url` not `image`; ranks has bonus+exp_required cols; mercs has role+sounds+order_index.
 - [Admin weapons query shape](admin-weapons-shape.md) — /api/weapons shim returns {items,total,data} not array; Admin.tsx must normalize via weaponsRaw→weapons.

@@ -206,17 +206,25 @@ function getRankProgress(
   const maxTier = tiers[tiers.length - 1];
 
   // 1. Try to match the API rank name (e.g. "Brigadier General") to a tier.
-  //    The API often returns only the base name without a number suffix,
-  //    so try an exact match first, then a prefix scan.
+  //    Exact match first. If the API returns a base name without a number suffix
+  //    (e.g. "Brigadier General" instead of "Brigadier General 3"), collect ALL
+  //    tiers whose name starts with that prefix and pick the HIGHEST one whose
+  //    EXP threshold is ≤ the player's EXP — this correctly handles sub-tiers.
   let curTier: number | null = null;
   if (rankName) {
     const key = rankName.toLowerCase().trim();
     if (RANK_NAME_TO_TIER[key] !== undefined) {
       curTier = RANK_NAME_TO_TIER[key];
     } else {
-      // Partial prefix match — "Brigadier General" → first tier whose name starts with it
-      const match = tiers.find(t => RANK_EXP[t].name.toLowerCase().startsWith(key));
-      if (match !== undefined) curTier = match;
+      // Collect all tiers whose name starts with the key (e.g. all BG1–BG6)
+      const matching = tiers.filter(t => RANK_EXP[t].name.toLowerCase().startsWith(key));
+      if (matching.length > 0) {
+        // Among matching tiers, pick the highest one the player has already reached
+        const reached = matching.filter(t => RANK_EXP[t].exp <= exp);
+        curTier = reached.length > 0
+          ? reached[reached.length - 1]   // highest reached sub-tier
+          : matching[0];                   // below first sub-tier → use first
+      }
     }
   }
 
@@ -901,29 +909,23 @@ export default function Profile() {
                           </div>
                         )}
 
-                        {/* VIP row — always render the container so it's visible even when null */}
-                        <div
-                          className="flex items-center gap-3 pt-2.5 mt-2"
-                          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-                        >
-                          <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
-                          {(cfStats.vipDays != null || cfStats.vipLevel != null) ? (
-                            <>
-                              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
-                                VIP{cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
-                              </span>
-                              {cfStats.vipDays != null && (
-                                <span className="text-[10px]" style={{ color: "#666" }}>
-                                  {cfStats.vipDays} days remaining
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-[10px]" style={{ color: "#444" }}>
-                              VIP status not detected — sync again or link via profile URL
+                        {/* VIP row — only show when data is available */}
+                        {(cfStats.vipDays != null || cfStats.vipLevel != null) && (
+                          <div
+                            className="flex items-center gap-3 pt-2.5 mt-2"
+                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                          >
+                            <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
+                              VIP{cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
                             </span>
-                          )}
-                        </div>
+                            {cfStats.vipDays != null && (
+                              <span className="text-[10px]" style={{ color: "#666" }}>
+                                {cfStats.vipDays} days remaining
+                              </span>
+                            )}
+                          </div>
+                        )}
 
                         {/* AI Tips section */}
                         {!rp.isMaxRank && (

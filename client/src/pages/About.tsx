@@ -229,37 +229,13 @@ export default function About() {
                   fontWeight: 600, fontSize: 14, cursor: "pointer",
                   fontFamily: "Inter, system-ui, sans-serif",
                 }}>
-                  <Trophy size={16} /> {isAr ? "نظام الرتب" : "Rank System"}
+                  <Trophy size={16} /> {isAr ? "الرتب" : "Explore Ranks"}
                 </button>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* ── Stats bar ── */}
-        <div style={{ borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{
-            maxWidth: 1100, margin: "0 auto", padding: "28px 24px",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-            gap: 1,
-          }}>
-            {QUICK_STATS.map((s) => (
-              <div key={s.label} style={{
-                textAlign: "center", padding: "16px 8px",
-                borderRight: `1px solid ${BORDER}`,
-              }}>
-                <p style={{
-                  fontSize: 28, fontWeight: 800, color: ACCENT, margin: "0 0 4px",
-                  fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "-0.02em",
-                }}>{s.value}</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0, fontFamily: "Inter, system-ui, sans-serif" }}>
-                  {isAr ? s.labelAr : s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "64px 24px" }}>
 

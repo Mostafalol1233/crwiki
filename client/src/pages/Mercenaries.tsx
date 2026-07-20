@@ -174,7 +174,7 @@ export default function Mercenaries() {
                 {t("mercenaries") || "Mercenaries"}
               </h1>
               <p className="text-sm mt-1.5" style={{ color: "#666" }}>
-                {mercenaries.length} operatives — hover to preview, click to expand
+                {mercenaries.length} operatives — {layoutStyle === "grid" ? "click any card to view details" : "hover to preview, click to expand"}
               </p>
             </div>
 

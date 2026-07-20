@@ -403,7 +403,7 @@ export default function Modes() {
                     <div className="mb-4">
                       <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: "#f5a623" }}>Description</p>
                       <p className="text-sm leading-relaxed" style={{ color: "#888" }}>
-                        {fandomDetail?.extract || selectedMode.description || "Detailed gameplay description coming soon."}
+                        {fandomDetail?.extract || selectedMode.description || ""}
                       </p>
                       {isFandomLoading && (
                         <p className="text-[10px] mt-1.5 flex items-center gap-1" style={{ color: "#555" }}>

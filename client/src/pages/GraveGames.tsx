@@ -1,4 +1,4 @@
-import { ExternalLink, Skull } from "lucide-react";
+import { ExternalLink, Skull, Archive } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 
 export default function GraveGames() {
@@ -7,14 +7,18 @@ export default function GraveGames() {
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
-      {/* Hero Image */}
-      <div className="relative w-full h-[420px] md:h-[520px] overflow-hidden">
-        <img
-          src="/assets/news-gravegames.jpg"
-          alt="Grave Games - The Spider's Web"
-          className="absolute inset-0 w-full h-full object-cover"
-          data-testid="img-grave-games-hero"
-        />
+      {/* Archived Event Banner */}
+      <div style={{ background: "rgba(245,166,35,0.08)", borderBottom: "1px solid rgba(245,166,35,0.2)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 8 }}>
+        <Archive className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#f5a623" }} />
+        <p className="text-[11px] font-semibold" style={{ color: "#f5a623", margin: 0 }}>
+          Archived Event — This event ended October 31, 2025. Content is preserved for reference.
+        </p>
+      </div>
+
+      {/* Hero — CSS gradient fallback since image no longer exists */}
+      <div className="relative w-full h-[420px] md:h-[520px] overflow-hidden" style={{ background: "linear-gradient(135deg, #0d0008 0%, #1a0010 40%, #0a000a 70%, #050005 100%)" }}>
+        {/* Spider web pattern overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, rgba(180,0,40,0.12) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(100,0,100,0.1) 0%, transparent 50%)" }} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)" }} />
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 100%, rgba(245,166,35,0.06) 0%, transparent 60%)" }} />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 max-w-4xl">

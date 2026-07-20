@@ -50,18 +50,35 @@ export default function Maps() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const categories = useMemo(() => {
-    const cats = new Set(maps.map((m) => m.category).filter(Boolean));
-    return ["all", ...Array.from(cats)] as string[];
-  }, [maps]);
+  // Mode filters based on map name keywords (DB has no mode field populated)
+  const MODE_FILTERS = [
+    { id: "all",      label: "All" },
+    { id: "s&d",      label: "S&D",        keywords: ["s&d", "search", "destroy", "snd"] },
+    { id: "tdm",      label: "TDM",         keywords: ["tdm", "deathmatch", "team death"] },
+    { id: "ghost",    label: "Ghost Mode",  keywords: ["ghost"] },
+    { id: "zombie",   label: "Zombie",      keywords: ["zombie", "zm ", "zs ", "z-mode"] },
+    { id: "mutation", label: "Mutation",    keywords: ["mutation", "mutant"] },
+    { id: "escape",   label: "Escape",      keywords: ["escape"] },
+    { id: "sniper",   label: "Sniper",      keywords: ["sniper", "snipers"] },
+  ] as const;
 
   const filteredMaps = useMemo(() => {
     return maps.filter((map) => {
+      const nameLower = map.name.toLowerCase();
+      const descLower = (map.description || "").toLowerCase();
+      const modeLower = (map.mode || "").toLowerCase();
+      const haystack  = `${nameLower} ${descLower} ${modeLower}`;
+
       const matchesSearch =
-        map.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        map.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        map.mode?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === "all" || map.category === activeCategory;
+        nameLower.includes(searchQuery.toLowerCase()) ||
+        descLower.includes(searchQuery.toLowerCase()) ||
+        modeLower.includes(searchQuery.toLowerCase());
+
+      const filter = MODE_FILTERS.find((f) => f.id === activeCategory);
+      const matchesCategory =
+        activeCategory === "all" ||
+        (filter && "keywords" in filter && filter.keywords.some((kw) => haystack.includes(kw)));
+
       return matchesSearch && matchesCategory;
     });
   }, [maps, searchQuery, activeCategory]);
@@ -142,34 +159,38 @@ export default function Maps() {
               />
             </div>
 
-            {categories.length > 1 && (
-              <div className="flex items-center gap-1.5 overflow-x-auto">
-                <Filter className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#444" }} />
-                {categories.map((cat) => {
-                  const count = cat === "all" ? maps.length : maps.filter((m) => m.category === cat).length;
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded transition-all"
-                      style={{
-                        background: activeCategory === cat ? "#f5a623" : "var(--card)",
-                        color: activeCategory === cat ? "#000" : "#555",
-                        border: `1px solid ${activeCategory === cat ? "#f5a623" : "rgba(255,255,255,0.06)"}`,
-                      }}
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              <Filter className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#444" }} />
+              {MODE_FILTERS.map((f) => {
+                const count = f.id === "all"
+                  ? maps.length
+                  : maps.filter((m) => {
+                      const haystack = `${m.name} ${m.description || ""} ${m.mode || ""}`.toLowerCase();
+                      return "keywords" in f && f.keywords.some((kw) => haystack.includes(kw));
+                    }).length;
+                if (count === 0 && f.id !== "all") return null;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setActiveCategory(f.id)}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded transition-all"
+                    style={{
+                      background: activeCategory === f.id ? "#f5a623" : "var(--card)",
+                      color: activeCategory === f.id ? "#000" : "#555",
+                      border: `1px solid ${activeCategory === f.id ? "#f5a623" : "rgba(255,255,255,0.06)"}`,
+                    }}
+                  >
+                    {f.label}
+                    <span
+                      className="text-[8px] px-1 py-0.5 rounded-sm"
+                      style={{ background: activeCategory === f.id ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.05)", color: activeCategory === f.id ? "#000" : "#444" }}
                     >
-                      {cat === "all" ? "All" : cat}
-                      <span
-                        className="text-[8px] px-1 py-0.5 rounded-sm"
-                        style={{ background: activeCategory === cat ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.05)", color: activeCategory === cat ? "#000" : "#444" }}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* ── Content ── */}

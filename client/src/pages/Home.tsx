@@ -33,9 +33,9 @@ const PORTALS = [
     label: "Weapons",
     desc: "Rifles, pistols, snipers & melee",
     href: "/weapons",
-    img: "/portal/weapons.png",
-    imgFit: "cover" as const,
-    imgBg: "#0d0b07",
+    img: "https://static.wikia.nocookie.net/crossfirefps/images/4/41/RIFLE_AK-47-WCG2011.png",
+    imgFit: "contain" as const,
+    imgBg: "#0a0800",
   },
   {
     label: "Maps",
@@ -165,7 +165,7 @@ function HeroSearch() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Search weapons, maps, mercenaries, ranks..."
+          placeholder="Search weapons, maps, mercenaries, modes..."
           style={{
             flex: 1, padding: "12px 10px",
             background: "transparent", border: "none", outline: "none",
@@ -340,6 +340,16 @@ const DYK_FACTS = [
   "Hero rank requires reaching the maximum EXP threshold — fewer than 1% of players ever achieve it.",
   "The Ghost Mode game type is unique to CrossFire, where one team plays as invisible ghost operatives.",
   "CrossFire has been licensed in over 80 countries across six continents.",
+  "The Barrett M82A1 is considered by many to be the most powerful sniper rifle in CrossFire, capable of one-shot kills from extreme range.",
+  "Black List and Global Risk have been at war since the game's launch — and their conflict forms the narrative backbone of every match.",
+  "Zombie Mode (ZM) was originally introduced as a limited-time event before becoming one of the most popular permanent modes.",
+  "CrossFire's Search & Destroy mode inspired competitive scenes in multiple countries, spawning national leagues and world championships.",
+  "The in-game currency ZP (Nexon Points) lets players rent or purchase premium weapons, while GP is earned through gameplay.",
+  "CrossFire has a dedicated esports circuit — the CrossFire Stars (CFS) — with finals held annually and prize pools reaching millions.",
+  "Some weapons in CrossFire have holiday-exclusive skins that are only available for a limited window each year.",
+  "The SAS, S.W.A.T., and OMOH are among the oldest playable characters in CrossFire, available since the game's early days.",
+  "Ghost Mode maps are specifically designed so ghosts cannot use weapons — they win by knife-killing all Global Risk players.",
+  "Mutation Mode introduced a player-versus-mutants format where one infected player starts and spreads the mutation to others.",
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────

@@ -110,7 +110,7 @@ export default function SearchPage() {
   const tabs = [
     { id: "all",      label: "All",      count: allResults.length },
     { id: "wiki",     label: "Wiki",     count: results.weapons.length + results.modes.length + results.ranks.length + results.maps.length + results.mercenaries.length },
-    { id: "articles", label: "Articles", count: results.posts.length + results.news.length },
+    { id: "articles", label: "News & Posts", count: results.posts.length + results.news.length },
     { id: "events",   label: "Events",   count: results.events.length },
   ];
 
@@ -192,7 +192,7 @@ export default function SearchPage() {
                 {getTabResults().map((item, idx) => {
                   const title = item.title || item.name || "Untitled";
                   const desc = item.summary || item.description || item.content || "";
-                  const cleanDesc = desc.replace(/<[^>]*>/g, "").slice(0, 160);
+                  const cleanDesc = desc.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim().slice(0, 160);
                   const img = item.image || item.imageUrl || item.image_url;
                   const color = typeColors[item._type] || GOLD;
 

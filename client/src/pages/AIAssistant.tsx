@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2, Sparkles, RefreshCw, MessageSquare } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useLocation } from "wouter";
 import PageSEO from "@/components/PageSEO";
 
 interface Message {
@@ -33,12 +34,32 @@ export default function AIAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [, setLocation] = useLocation();
+
+  // Auth gate — redirect to login if not signed in (consistent with Chat)
+  useEffect(() => {
+    import("@/lib/supabase").then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) {
+          sessionStorage.setItem("authRedirectMsg", "You must be signed in to use the AI Assistant.");
+          setLocation("/login");
+        } else {
+          setAuthed(true);
+        }
+        setAuthReady(true);
+      });
+    });
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  if (!authReady || !authed) return null;
 
   const send = async (text: string) => {
     const userMsg = text.trim();

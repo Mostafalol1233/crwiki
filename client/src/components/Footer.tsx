@@ -23,8 +23,8 @@ const communityLinks = [
   { label: "Contact Us", path: "/contact" },
 ];
 const shopLinks = [
-  { label: "Sellers", path: "/sellers" },
-  { label: "Seller Reviews", path: "/reviews" },
+  { label: "Sellers Market", path: "/sellers" },
+  { label: "Community Reviews", path: "/reviews" },
 ];
 const supportLinks = [
   { label: "FAQ", path: "/faq" },
@@ -237,7 +237,7 @@ export function Footer() {
             <ul className="space-y-2.5">
               <FooterLink label="Latest News" path="/news" />
               <FooterLink label="Updates" path="/posts" />
-              <FooterLink label="Events" path="/category/events" />
+              <FooterLink label="Events" path="/events" />
               <FooterLink label="Videos" path="/videos" />
             </ul>
           </div>

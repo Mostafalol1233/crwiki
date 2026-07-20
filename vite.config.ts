@@ -511,59 +511,60 @@ function cfPlayerLookupPlugin(): Plugin {
               }
             }
 
-            // Step 2 — if REST ID failed, scrape the profile page to extract the nickname,
-            //           then fall through to the normal usn= lookup below.
+            // Step 2 — use Firecrawl to render the JS profile page and extract the nickname
             if (!data) {
               let scrapedNickname: string | null = null;
-              const profilePageUrls = region === "west"
-                ? [
-                    `https://cfwest.z8games.com/profile/${profileId}`,
-                    `https://crossfire.z8games.com/profile/${profileId}`,
-                  ]
-                : [`https://crossfire.z8games.com/profile/${profileId}`];
+              const fcKey = process.env.FIRECRAWL_API_KEY || "";
 
-              for (const pageUrl of profilePageUrls) {
+              if (fcKey) {
+                const profilePageUrl = `https://crossfire.z8games.com/profile/${profileId}`;
                 try {
-                  const htmlRes = await fetch(pageUrl, {
-                    signal: AbortSignal.timeout(8000),
+                  const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                    method: "POST",
+                    signal: AbortSignal.timeout(30000),
                     headers: {
-                      ...CF_HEADERS,
-                      "Accept": "text/html,application/xhtml+xml,*/*",
-                      "Referer": "https://crossfire.z8games.com/",
+                      "Authorization": `Bearer ${fcKey}`,
+                      "Content-Type": "application/json",
                     },
+                    body: JSON.stringify({
+                      url: profilePageUrl,
+                      formats: ["markdown"],
+                      onlyMainContent: true,
+                    }),
                   } as any);
-                  if (!htmlRes.ok) continue;
-                  const html = await htmlRes.text() as string;
 
-                  // Try OG title: "PlayerName | CrossFire" or "PlayerName's Profile"
-                  const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
-                    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)?.[1];
-                  // Try page <title>
-                  const pageTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
-                  // Try data-nickname or data-usn attribute (some CF pages embed it)
-                  const dataNick = html.match(/data-(?:nickname|usn|name)=["']([^"']{2,32})["']/i)?.[1];
-                  // Try window.__CF_USER__ or similar JSON blobs
-                  const jsonBlob = html.match(/"UserNickname"\s*:\s*"([^"]{2,32})"/)?.[1]
-                    ?? html.match(/"usn"\s*:\s*"([^"]{2,32})"/)?.[1]
-                    ?? html.match(/"nickname"\s*:\s*"([^"]{2,32})"/)?.[1];
+                  if (fcRes.ok) {
+                    const fcData = await fcRes.json() as any;
+                    const md: string = fcData?.data?.markdown || fcData?.markdown || "";
 
-                  // Clean up OG/page title to extract just the nickname
-                  const cleanTitle = (t?: string) => {
-                    if (!t) return null;
-                    return t
-                      .replace(/\s*[|\-–—:]\s*.*(CrossFire|Profile|Z8|CF).*/i, "")
-                      .replace(/'s\s+Profile.*/i, "")
-                      .trim();
-                  };
+                    if (md) {
+                      // Firecrawl renders the full SPA — extract player nickname from markdown
+                      // Pattern 1: "## PlayerName" or "# PlayerName" heading
+                      const headingMatch = md.match(/^#{1,3}\s+([^\n|]{2,32})$/m);
+                      // Pattern 2: nickname appears before "kills", "exp", "rank" keywords
+                      const contextMatch = md.match(/([A-Za-z0-9_\-\.]{2,32})\s*(?:\n|\\n)(?:[^\n]*(?:Kills|EXP|Rank|K\/D))/i);
+                      // Pattern 3: bold name at top of content
+                      const boldMatch = md.match(/\*\*([A-Za-z0-9_\-\.]{2,32})\*\*/);
+                      // Pattern 4: "UserNickname" or "nickname" JSON key embedded in page
+                      const jsonMatch = md.match(/"(?:UserNickname|usn|nickname)"\s*:\s*"([^"]{2,32})"/i);
 
-                  scrapedNickname = dataNick || jsonBlob || cleanTitle(ogTitle) || cleanTitle(pageTitle) || null;
-                  if (scrapedNickname && scrapedNickname.length >= 2 && scrapedNickname.length <= 32) break;
-                  scrapedNickname = null; // too long/short — not a valid nickname
-                } catch { /* timeout or network error */ }
+                      const rawNick = jsonMatch?.[1] || headingMatch?.[1] || contextMatch?.[1] || boldMatch?.[1] || null;
+                      if (rawNick) {
+                        scrapedNickname = rawNick
+                          .replace(/['']s\s*(profile|stats|account).*/i, "")
+                          .replace(/\s*[-|–—].*/, "")
+                          .trim();
+                        if (scrapedNickname.length < 2 || scrapedNickname.length > 32) {
+                          scrapedNickname = null;
+                        }
+                      }
+                    }
+                  }
+                } catch { /* Firecrawl timeout or error — fall through */ }
               }
 
               if (scrapedNickname) {
-                // Now do the normal nickname lookup
+                // Use the scraped nickname for the normal REST lookup
                 for (const base of restBases) {
                   try {
                     const response = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(scrapedNickname)}`, {
@@ -583,7 +584,7 @@ function cfPlayerLookupPlugin(): Plugin {
               if (!data) {
                 res.writeHead(404, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({
-                  error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the name shown in-game, not the profile number).`,
+                  error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the exact name shown in-game).`,
                   notFound: true,
                   suggestNickname: true,
                 }));

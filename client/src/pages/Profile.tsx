@@ -234,7 +234,6 @@ export default function Profile() {
   const [cfError, setCfError] = useState("");
   const [cfLinkMode, setCfLinkMode] = useState(false);
   const [cfSyncTime, setCfSyncTime] = useState<string | null>(null);
-  const [cfRegion, setCfRegion] = useState<"na" | "west">("na");
 
   useEffect(() => {
     getCurrentUser().then(async (u) => {
@@ -248,12 +247,10 @@ export default function Profile() {
         const savedNick = u.user_metadata?.cf_nickname || "";
         const savedStats = u.user_metadata?.cf_stats || null;
         const savedSync = u.user_metadata?.cf_last_sync || null;
-        const savedRegion = u.user_metadata?.cf_region || "na";
         setCfNickname(savedNick);
         setCfNicknameInput(savedNick);
         if (savedStats) setCfStats(savedStats);
         if (savedSync) setCfSyncTime(savedSync);
-        setCfRegion(savedRegion as "na" | "west");
 
         // Fetch real ticket and comment counts
         if (u.email) {
@@ -320,9 +317,9 @@ export default function Profile() {
       const parsed = parseProfileInput(raw.trim());
       let endpoint = "";
       if (parsed.type === "url") {
-        endpoint = `/api/player/lookup?profileUrl=${encodeURIComponent(parsed.profileUrl)}&region=${cfRegion}`;
+        endpoint = `/api/player/lookup?profileUrl=${encodeURIComponent(parsed.profileUrl)}&region=west`;
       } else {
-        endpoint = `/api/player/lookup?nickname=${encodeURIComponent(parsed.nickname)}&region=${cfRegion}`;
+        endpoint = `/api/player/lookup?nickname=${encodeURIComponent(parsed.nickname)}&region=west`;
       }
 
       const res = await fetch(endpoint);
@@ -345,7 +342,7 @@ export default function Profile() {
       await supabase.auth.updateUser({
         data: {
           cf_nickname: resolvedNick,
-          cf_region: cfRegion,
+          cf_region: "west",
           cf_stats: data.profile,
           cf_last_sync: now,
         },
@@ -791,25 +788,6 @@ export default function Profile() {
                       </span>
                     </div>
 
-                    {/* Region selector */}
-                    <div className="flex gap-2 mb-2">
-                      {(["na", "west"] as const).map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => { setCfRegion(r); setCfError(""); }}
-                          className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 transition-all"
-                          style={{
-                            borderRadius: "2px",
-                            border: cfRegion === r ? `1px solid ${GOLD}` : "1px solid rgba(255,255,255,0.1)",
-                            background: cfRegion === r ? "rgba(245,166,35,0.12)" : "rgba(255,255,255,0.02)",
-                            color: cfRegion === r ? GOLD : "#555",
-                          }}
-                        >
-                          {r === "na" ? "CF NA" : "CF West"}
-                        </button>
-                      ))}
-                    </div>
-
                     <div className="flex gap-2">
                       <input
                         value={cfNicknameInput}
@@ -858,7 +836,7 @@ export default function Profile() {
                   )}
 
                   <p className="text-[9px]" style={{ color: "#383838" }}>
-                    Stats are fetched live from {cfRegion === "west" ? "CrossFire West" : "CrossFire NA"} and cached on your profile.
+                    Stats are fetched live from CrossFire West and cached on your profile.
                     Case-sensitive — use your exact in-game nickname.
                   </p>
 

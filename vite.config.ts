@@ -576,6 +576,18 @@ function cfPlayerLookupPlugin(): Plugin {
                       const winRatePct = md.match(/Winner Rate\s*\n+([\d.]+)%/i)?.[1] || null;
                       const hsRate  = md.match(/Headshot Rate[\s\S]{0,200}?([\d.]+)%/i)?.[1] || null;
 
+                      // ── VIP: look for "VIP3", "VIP Level 3", "VIP 30 days" patterns ──
+                      const vipLevelMatch = md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i);
+                      const vipLevel = vipLevelMatch ? parseInt(vipLevelMatch[1], 10) : null;
+                      const vipDaysMatch = md.match(/VIP[^\n]*?(\d+)\s*day/i);
+                      const vipDays = vipDaysMatch ? parseInt(vipDaysMatch[1], 10) : null;
+
+                      // ── Clan image: look for clan-mark image URL ──
+                      // CF clan marks appear as small images near clan name
+                      const clanImgMatch = md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*clan[^)]*)\)/i)
+                        || md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*mark[^)]*)\)/i);
+                      const clanImage = clanImgMatch ? clanImgMatch[1] : null;
+
                       if (nickname) {
                         fcProfile = {
                           nickname,
@@ -592,8 +604,9 @@ function cfPlayerLookupPlugin(): Plugin {
                           winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
                           headShotRate: hsRate ? parseFloat(hsRate) : null,
                           clan,
-                          vipDays: null,
-                          vipLevel: null,
+                          clanImage,
+                          vipDays,
+                          vipLevel,
                           playtime: null,
                           level: null,
                         };

@@ -7,8 +7,26 @@ import { useToast } from "@/hooks/use-toast";
 import {
   User, Camera, Shield, Edit3, Check, X, Loader2,
   Ticket, MessageSquare, Clock, Award, LogOut,
-  Gamepad2, Swords, Trophy, Target, RefreshCw, AlertCircle, TrendingUp, Zap, ChevronDown
+  Gamepad2, Swords, Trophy, Target, RefreshCw, AlertCircle, TrendingUp, Zap, ChevronDown, Sparkles
 } from "lucide-react";
+
+// Load Puter.js via CDN — avoids bundling its own React copy
+function loadPuter(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).puter) return resolve((window as any).puter);
+    const existing = document.getElementById("puter-js-cdn");
+    if (existing) {
+      existing.addEventListener("load", () => resolve((window as any).puter));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "puter-js-cdn";
+    script.src = "https://js.puter.com/v2/";
+    script.onload = () => resolve((window as any).puter);
+    script.onerror = () => reject(new Error("Failed to load Puter.js"));
+    document.head.appendChild(script);
+  });
+}
 
 const GOLD = "#f5a623";
 const CARD_BG = "var(--card)";
@@ -172,41 +190,46 @@ const RANK_EXP: Record<number, { name: string; exp: number }> = {
 const Z8_RANK_IMG = (tier: number) =>
   `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${tier}.jpg`;
 
-/** Given current EXP + rank tier, compute progress toward a chosen target rank */
+/** Given current EXP + rank tier, compute progress toward a chosen target rank.
+ *  Handles the case where our RANK_EXP thresholds don't match the real game
+ *  (exp < curInfo.exp) by falling back to EXP-only derivation. */
 function getRankProgress(exp: number, currentTier: number | null, chosenTargetTier?: number | null) {
   const tiers = Object.keys(RANK_EXP).map(Number).sort((a, b) => a - b);
   const maxTier = tiers[tiers.length - 1];
 
-  // Resolve current tier
-  let curTier = currentTier;
-  if (!curTier || !RANK_EXP[curTier]) {
-    curTier = tiers[0];
-    for (const t of tiers) {
-      if (RANK_EXP[t].exp <= exp) curTier = t;
-      else break;
-    }
+  // Always derive tier purely from EXP so thresholds are internally consistent.
+  // If the API-provided tier IS consistent with EXP (exp >= that tier's threshold),
+  // prefer the API tier — otherwise fall back to EXP lookup.
+  let curTier: number = tiers[0];
+  for (const t of tiers) {
+    if (RANK_EXP[t].exp <= exp) curTier = t;
+    else break;
+  }
+  // Only trust API tier when it doesn't produce a negative within-rank EXP
+  if (currentTier && RANK_EXP[currentTier] && RANK_EXP[currentTier].exp <= exp) {
+    curTier = currentTier;
   }
 
-  const curInfo    = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
-  const isMaxRank  = curTier >= maxTier;
+  const curInfo   = RANK_EXP[curTier] || { name: "Unknown", exp: 0 };
+  const isMaxRank = curTier >= maxTier;
 
-  // True immediate next rank (for default & dropdown "reset")
-  const trueNextTier = tiers.find(t => t > curTier!) ?? null;
+  // True immediate next rank
+  const trueNextTier = tiers.find(t => t > curTier) ?? null;
   const trueNextInfo = trueNextTier ? RANK_EXP[trueNextTier] : null;
 
-  // Chosen destination: user's pick or fall back to trueNext
-  const destTier = (!isMaxRank && chosenTargetTier && chosenTargetTier > curTier! && RANK_EXP[chosenTargetTier])
+  // Chosen destination
+  const destTier = (!isMaxRank && chosenTargetTier && chosenTargetTier > curTier && RANK_EXP[chosenTargetTier])
     ? chosenTargetTier
     : trueNextTier;
   const destInfo = destTier ? RANK_EXP[destTier] : null;
 
-  const expIntoCurrentRank  = exp - curInfo.exp;
-  const expNeededToDest     = destInfo ? destInfo.exp - curInfo.exp : null;
-  const expToDest           = destInfo ? Math.max(0, destInfo.exp - exp) : null;
+  const expIntoCurrentRank = Math.max(0, exp - curInfo.exp);
+  const expNeededToDest    = destInfo ? destInfo.exp - curInfo.exp : null;
+  const expToDest          = destInfo ? Math.max(0, destInfo.exp - exp) : null;
   const pct = isMaxRank
     ? 100
     : destInfo && expNeededToDest && expNeededToDest > 0
-      ? Math.min(100, (expIntoCurrentRank / expNeededToDest) * 100)
+      ? Math.min(99, Math.max(0, (expIntoCurrentRank / expNeededToDest) * 100))
       : 0;
 
   return {
@@ -256,6 +279,9 @@ export default function Profile() {
   const [cfSyncTime, setCfSyncTime] = useState<string | null>(null);
   const [targetRankTier, setTargetRankTier] = useState<number | null>(null);
   const [showRankPicker, setShowRankPicker] = useState(false);
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tips, setTips] = useState<string[]>([]);
+  const [tipsError, setTipsError] = useState("");
 
   useEffect(() => {
     getCurrentUser().then(async (u) => {
@@ -382,9 +408,49 @@ export default function Profile() {
     setCfNicknameInput("");
     setCfSyncTime(null);
     setCfError("");
+    setTips([]);
     await supabase.auth.updateUser({
       data: { cf_nickname: null, cf_stats: null, cf_last_sync: null },
     });
+  };
+
+  const handleGetTips = async () => {
+    if (!cfStats) return;
+    const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier);
+    if (!rp.destInfo) return;
+    setTipsLoading(true);
+    setTips([]);
+    setTipsError("");
+    try {
+      const puterInstance = await loadPuter();
+      const expToDest = rp.expToDest ?? 0;
+      const prompt = [
+        `A CrossFire player "${cfStats.nickname || cfNickname}" is currently ranked "${cfStats.rank || rp.curInfo.name}" and wants to reach "${rp.destInfo.name}".`,
+        expToDest > 0 ? `They need ${expToDest.toLocaleString()} more EXP.` : "",
+        cfStats.kdRatio ? `Their K/D ratio is ${cfStats.kdRatio}.` : "",
+        cfStats.winRate ? `Their win rate is ${cfStats.winRate}%.` : "",
+        cfStats.clan ? `They are in clan [${cfStats.clan}].` : "",
+        (cfStats.vipLevel != null || cfStats.vipDays != null)
+          ? `VIP status: ${cfStats.vipLevel != null ? `Level ${cfStats.vipLevel}` : ""}${cfStats.vipDays != null ? ` (${cfStats.vipDays} days remaining)` : ""}.`
+          : "",
+        "",
+        "Give 4-5 practical bullet-point tips to earn EXP faster and improve stats. Be specific to CrossFire NA gameplay.",
+      ].filter(Boolean).join("\n");
+
+      const response = await puterInstance.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
+      const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
+      if (!text) throw new Error("Empty response from AI");
+      const lines = text
+        .split(/\n/)
+        .map((l: string) => l.replace(/^[\d]+[\.\)]\s*/, "").replace(/^[-•*]\s*/, "").trim())
+        .filter((l: string) => l.length > 12)
+        .slice(0, 6);
+      setTips(lines);
+    } catch (e: any) {
+      setTipsError(e.message || "Could not load tips. Try again.");
+    } finally {
+      setTipsLoading(false);
+    }
   };
 
   const initials = (displayName || user?.email || "?")[0].toUpperCase();
@@ -650,7 +716,11 @@ export default function Profile() {
                       </div>
                     )}
                     {cfStats.clan && (
-                      <div className="px-2 py-1" style={{ background: "rgba(255,255,255,0.02)", borderRadius: "3px" }}>
+                      <div className="flex items-center gap-1.5 px-2 py-1" style={{ background: "rgba(255,255,255,0.02)", borderRadius: "3px" }}>
+                        {cfStats.clanImage && (
+                          <img src={cfStats.clanImage} alt="" className="w-4 h-4 object-contain flex-shrink-0"
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        )}
                         <span className="text-[9px] font-bold" style={{ color: "#555" }}>[{cfStats.clan}]</span>
                       </div>
                     )}
@@ -717,7 +787,7 @@ export default function Profile() {
                               /* ── Progress toward chosen destination ── */
                               <div className="flex justify-between items-center mt-1.5">
                                 <span className="text-[8px]" style={{ color: "#444" }}>
-                                  {rp.expIntoCurrentRank.toLocaleString()} / {rp.expNeededToDest?.toLocaleString()} EXP
+                                  {rp.expIntoCurrentRank.toLocaleString()} / {rp.expNeededToDest?.toLocaleString() ?? "—"} EXP into rank
                                 </span>
                                 <span className="text-[8px] font-bold" style={{ color: "#666" }}>
                                   {rp.expToDest.toLocaleString()} to go
@@ -807,20 +877,78 @@ export default function Profile() {
                           </div>
                         )}
 
-                        {/* VIP row */}
-                        {(cfStats.vipDays != null || cfStats.vipLevel != null) && (
-                          <div
-                            className="flex items-center gap-3 pt-2.5"
-                            style={{ borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: showRankPicker ? 8 : 0 }}
-                          >
-                            <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
-                              VIP{cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
-                            </span>
-                            {cfStats.vipDays != null && (
-                              <span className="text-[10px]" style={{ color: "#666" }}>
-                                {cfStats.vipDays} days remaining
+                        {/* VIP row — always render the container so it's visible even when null */}
+                        <div
+                          className="flex items-center gap-3 pt-2.5 mt-2"
+                          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                        >
+                          <Trophy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#a78bfa" }} />
+                          {(cfStats.vipDays != null || cfStats.vipLevel != null) ? (
+                            <>
+                              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#a78bfa" }}>
+                                VIP{cfStats.vipLevel != null ? ` Level ${cfStats.vipLevel}` : ""}
                               </span>
+                              {cfStats.vipDays != null && (
+                                <span className="text-[10px]" style={{ color: "#666" }}>
+                                  {cfStats.vipDays} days remaining
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-[10px]" style={{ color: "#444" }}>
+                              VIP status not detected — sync again or link via profile URL
+                            </span>
+                          )}
+                        </div>
+
+                        {/* AI Tips section */}
+                        {!rp.isMaxRank && (
+                          <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: "#555" }}>
+                                AI Rank Tips
+                              </span>
+                              <button
+                                onClick={handleGetTips}
+                                disabled={tipsLoading}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded transition-all disabled:opacity-50"
+                                style={{
+                                  background: "rgba(245,166,35,0.12)",
+                                  border: "1px solid rgba(245,166,35,0.3)",
+                                  color: GOLD,
+                                  cursor: tipsLoading ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {tipsLoading
+                                  ? <><Loader2 className="h-3 w-3 animate-spin" /> Thinking...</>
+                                  : <><Sparkles className="h-3 w-3" /> Get AI Tips</>}
+                              </button>
+                            </div>
+
+                            {tipsError && (
+                              <p className="text-[10px] px-3 py-2 rounded" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
+                                {tipsError}
+                              </p>
+                            )}
+
+                            {tips.length > 0 && (
+                              <ul className="space-y-2">
+                                {tips.map((tip, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span
+                                      className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded text-[8px] font-black mt-0.5"
+                                      style={{ background: "rgba(245,166,35,0.15)", color: GOLD, border: `1px solid rgba(245,166,35,0.25)` }}
+                                    >{i + 1}</span>
+                                    <span className="text-[11px] leading-relaxed" style={{ color: "#bbb" }}>{tip}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {!tips.length && !tipsLoading && !tipsError && (
+                              <p className="text-[10px]" style={{ color: "#444" }}>
+                                Click "Get AI Tips" for personalized CrossFire rank-up advice powered by Grok via Puter.js — no API key needed.
+                              </p>
                             )}
                           </div>
                         )}

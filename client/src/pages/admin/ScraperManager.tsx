@@ -280,20 +280,24 @@ function EventList({
       try {
         const slug = `${slugify(ev.title)}-${Date.now()}`;
         const seoTitle = ev.title.slice(0, 60);
-        const plainText = ev.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const plainText = (ev.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
         const seoDesc = (plainText || ev.titleAr || ev.title).slice(0, 160);
+        // Build human-readable date range from parsed start/end, e.g. "June 11 - July 19"
+        const dateRange = ev.startDate && ev.endDate && ev.startDate !== ev.endDate
+          ? `${new Date(ev.startDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})} - ${new Date(ev.endDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})}`
+          : ev.startDate
+            ? new Date(ev.startDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})
+            : ev.date || '';
         const { error } = await db.from('events').insert({
           title: ev.title,
-          title_ar: ev.titleAr || null,
+          title_ar: ev.titleAr || '',
           event_name_slug: slug,
           description: ev.description || ev.title,
-          description_ar: ev.titleAr ? `إعلان كروس فاير — ${ev.titleAr}` : null,
-          image_url: ev.image || announcement.image || null,
-          event_type: 'Online',
-          status: 'Ongoing',
+          description_ar: ev.titleAr ? `إعلان كروس فاير — ${ev.titleAr}` : '',
+          image_url: ev.image || announcement.image || '',
+          type: 'announcement',
+          date: dateRange,
           source_url: ev.sourceUrl || announcement.url,
-          start_date: ev.startDate || null,
-          end_date: ev.endDate || null,
           created_at: new Date().toISOString(),
           seo_title: seoTitle,
           seo_description: seoDesc,

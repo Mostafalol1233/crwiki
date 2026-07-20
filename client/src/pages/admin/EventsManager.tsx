@@ -16,21 +16,19 @@ interface Event {
   description: string;
   description_ar: string;
   image_url: string;
-  start_date: string;
-  end_date: string;
+  date: string;
   location: string;
-  event_type: string;
-  registration_url: string;
-  status: string;
+  type: string;
   source_url: string;
   seo_title: string;
   seo_description: string;
+  featured: boolean;
   created_at: string;
 }
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
-const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', start_date: '', end_date: '', location: '', event_type: 'Online', registration_url: '', status: 'Upcoming', source_url: '', seo_title: '', seo_description: '' };
+const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', featured: false };
 
 const col = createColumnHelper<Event>();
 
@@ -78,15 +76,8 @@ export default function EventsManager() {
 
   const columns = [
     col.accessor('title', { header: 'Title', cell: (i) => <span style={{ color: '#fafafa', fontWeight: 500 }}>{i.getValue()}</span> }),
-    col.accessor('event_type', { header: 'Type', cell: (i) => <span style={{ fontSize: 12, color: '#a1a1aa' }}>{i.getValue()}</span> }),
-    col.accessor('status', {
-      header: 'Status',
-      cell: (i) => {
-        const c = i.getValue() === 'Upcoming' ? '#3b82f6' : i.getValue() === 'Ongoing' ? '#22c55e' : '#52525b';
-        return <span style={{ fontSize: 12, color: c, fontWeight: 500 }}>{i.getValue()}</span>;
-      },
-    }),
-    col.accessor('start_date', { header: 'Start', cell: (i) => <span style={{ fontSize: 12, color: '#52525b' }}>{i.getValue() ? new Date(i.getValue()).toLocaleDateString() : '—'}</span> }),
+    col.accessor('type', { header: 'Type', cell: (i) => <span style={{ fontSize: 12, color: '#a1a1aa' }}>{i.getValue()}</span> }),
+    col.accessor('date', { header: 'Date', cell: (i) => <span style={{ fontSize: 12, color: '#52525b' }}>{i.getValue() || '—'}</span> }),
     col.display({
       id: 'actions', header: 'Actions',
       cell: (i) => (
@@ -114,25 +105,18 @@ export default function EventsManager() {
             <div><label style={lbl}>Title (EN) *</label><input type="text" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Title (AR)</label><input type="text" value={editing.title_ar || ''} onChange={(e) => setEditing({ ...editing, title_ar: e.target.value })} style={{ ...inp, direction: 'rtl' }} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={lbl}>Start Date</label><input type="datetime-local" value={editing.start_date || ''} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} style={inp} /></div>
-              <div><label style={lbl}>End Date</label><input type="datetime-local" value={editing.end_date || ''} onChange={(e) => setEditing({ ...editing, end_date: e.target.value })} style={inp} /></div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div><label style={lbl}>Date / Date Range</label><input type="text" placeholder="e.g. June 11 - July 19" value={editing.date || ''} onChange={(e) => setEditing({ ...editing, date: e.target.value })} style={inp} /></div>
               <div>
                 <label style={lbl}>Type</label>
-                <select value={editing.event_type || 'Online'} onChange={(e) => setEditing({ ...editing, event_type: e.target.value })} style={sel}>
-                  <option>Online</option><option>Offline</option><option>Tournament</option>
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Status</label>
-                <select value={editing.status || 'Upcoming'} onChange={(e) => setEditing({ ...editing, status: e.target.value })} style={sel}>
-                  <option>Upcoming</option><option>Ongoing</option><option>Ended</option>
+                <select value={editing.type || 'announcement'} onChange={(e) => setEditing({ ...editing, type: e.target.value })} style={sel}>
+                  <option value="announcement">Announcement</option>
+                  <option value="tournament">Tournament</option>
+                  <option value="community">Community</option>
+                  <option value="online">Online</option>
                 </select>
               </div>
             </div>
             <div><label style={lbl}>Location</label><input type="text" value={editing.location || ''} onChange={(e) => setEditing({ ...editing, location: e.target.value })} style={inp} /></div>
-            <div><label style={lbl}>Registration URL</label><input type="url" value={editing.registration_url || ''} onChange={(e) => setEditing({ ...editing, registration_url: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Source URL</label><input type="url" value={editing.source_url || ''} onChange={(e) => setEditing({ ...editing, source_url: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Description (EN)</label><TipTapEditor content={editing.description || ''} onChange={(h) => setEditing({ ...editing, description: h })} /></div>
             <div><label style={lbl}>Description (AR)</label><TipTapEditor content={editing.description_ar || ''} onChange={(h) => setEditing({ ...editing, description_ar: h })} dir="rtl" /></div>

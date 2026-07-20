@@ -14,7 +14,7 @@ interface GM {
 
 const GMS: GM[] = [
   { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Support & System Operations", lastSeen: "Jun 3", color: "#e53e3e" },
-  { name: "[GM]Xenon",     avatar: "", mercName: "xenon", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
+  { name: "[GM]Xenon",     avatar: "https://z8games.akamaized.net/cfna/web/inventory/characters/700_900/A0017.jpg", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
   { name: "[GM]Juicebox",  avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "May 21", color: "#38a169" },
   { name: "[GM]Vinsi",     avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Apr 27", color: "#3b82f6" },
 ];

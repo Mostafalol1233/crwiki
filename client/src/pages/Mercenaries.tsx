@@ -77,7 +77,7 @@ function resolveMercImage(merc: Mercenary) {
 export default function Mercenaries() {
   const { t } = useLanguage();
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
-  const [layoutStyle, setLayoutStyle] = useState<"strip" | "grid">("strip");
+  const [layoutStyle, setLayoutStyle] = useState<"strip" | "grid">("grid");
   const [expandedMercId, setExpandedMercId] = useState<string | null>(null);
   const [selectedMerc, setSelectedMerc] = useState<Mercenary | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -246,11 +246,6 @@ export default function Mercenaries() {
 
                     {isExpanded && (
                       <div className="absolute inset-0 flex flex-col justify-end p-5 z-10">
-                        <div className="mb-3">
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1" style={{ background: roleStyle.bg, color: roleStyle.color, borderRadius: "2px" }}>
-                            {merc.role}
-                          </span>
-                        </div>
                         <h3 className="text-white text-2xl font-black uppercase tracking-tight leading-tight mb-1">{merc.name}</h3>
                         {merc.description && (
                           <p className="text-[11px] leading-relaxed mb-3 line-clamp-2" style={{ color: "rgba(255,255,255,0.55)" }}>{merc.description}</p>
@@ -312,9 +307,6 @@ export default function Mercenaries() {
                     )}
 
                     <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
-                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 mb-1.5 inline-block" style={{ background: roleStyle.bg, color: roleStyle.color, borderRadius: "2px" }}>
-                        {merc.role}
-                      </span>
                       <h3 className="text-white font-black text-sm uppercase tracking-tight leading-tight">{merc.name}</h3>
                       {voiceLines.length > 0 && (
                         <button
@@ -331,16 +323,6 @@ export default function Mercenaries() {
               })}
             </div>
           )}
-
-          {/* Role legend */}
-          <div className="mt-8 flex flex-wrap gap-3">
-            {Object.entries(ROLE_COLORS).map(([role, style]) => (
-              <div key={role} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-sm" style={{ background: style.color }} />
-                <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "#555" }}>{role}</span>
-              </div>
-            ))}
-          </div>
 
           <div className="mt-10 text-center">
             <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: "#222" }}>
@@ -375,15 +357,7 @@ export default function Mercenaries() {
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0d0d0d 0%, transparent 60%)" }} />
             </div>
             <div className="px-6 pb-6">
-              {(() => {
-                const rs = getRoleStyle(selectedMerc.role || "");
-                return (
-                  <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 inline-block mb-3" style={{ background: rs.bg, color: rs.color, borderRadius: "2px" }}>
-                    {selectedMerc.role}
-                  </span>
-                );
-              })()}
-              <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2">{selectedMerc.name}</h2>
+              <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2 mt-3">{selectedMerc.name}</h2>
               {selectedMerc.description && (
                 <p className="text-sm leading-relaxed mb-4" style={{ color: "#888" }}>{selectedMerc.description}</p>
               )}

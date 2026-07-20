@@ -52,6 +52,7 @@ VITE_SUPABASE_SERVICE_KEY = ""
 VITE_ADMIN_PASSWORD = ""
 FIRECRAWL_API_KEY = ""
 grok = ""
+OPENROUTER_API_KEY = ""
 
 [deployment]
 deploymentTarget = "autoscale"

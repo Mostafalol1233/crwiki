@@ -54,28 +54,12 @@ const PORTALS = [
     imgBg: "#0a0a0a",
   },
   {
-    label: "Ranks",
-    desc: "Private to Hero progression",
-    href: "/ranks",
-    img: "/portal/ranks.png",
-    imgFit: "contain" as const,
-    imgBg: "#080a0d",
-  },
-  {
     label: "Game Modes",
     desc: "Every mode with strategies",
     href: "/modes",
     img: "/portal/modes.png",
     imgFit: "cover" as const,
     imgBg: "#0a0808",
-  },
-  {
-    label: "Events",
-    desc: "Active & upcoming CF events",
-    href: "/events",
-    img: "/portal/events.jpg",
-    imgFit: "cover" as const,
-    imgBg: "#0a0a0a",
   },
 ];
 
@@ -398,7 +382,7 @@ export default function Home() {
     <>
       <PageSEO
         title="CrossFire Wiki — Weapons, Modes, Maps & Community"
-        description="The definitive CrossFire encyclopedia: weapons, maps, mercenaries, ranks, events, and community resources."
+        description="The definitive CrossFire encyclopedia: weapons, maps, mercenaries, game modes, and community resources."
       />
       <div style={{ background: BG, minHeight: "100vh", color: "#fff" }}>
 
@@ -431,7 +415,7 @@ export default function Home() {
               CrossFire Wiki
             </h1>
             <p style={{ fontSize: "clamp(0.95rem, 2vw, 1.1rem)", color: "rgba(255,255,255,0.45)", margin: "0 auto 32px", maxWidth: 480, lineHeight: 1.6 }}>
-              Weapons · Mercenaries · Ranks · Maps · Events — everything you need to dominate.
+              Weapons · Mercenaries · Maps · Game Modes — everything you need to dominate.
             </p>
 
             <div style={{ display: "flex", justifyContent: "center" }}>

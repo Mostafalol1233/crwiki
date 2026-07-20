@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, Sparkles, Trophy, Zap, Target, Gift, Shield, Loader2, ChevronRight, Star } from "lucide-react";
+import { puter } from "@heyputer/puter.js";
 
 interface Rank {
   id: string;
@@ -100,20 +101,19 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
     setTipsError("");
     setTips([]);
     try {
-      const res = await fetch("/api/grok-tips", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentRank: currentRank.name,
-          targetRank: destinationRank.name,
-          expNeeded,
-          bonusesOnPath,
-          vipBoxCount,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to get tips");
-      setTips(parseTipsToPoints(data.tips));
+      const prompt = [
+        `A CrossFire player is currently ranked "${currentRank.name}" and wants to reach "${destinationRank.name}".`,
+        expNeeded > 0 ? `They need ${expNeeded.toLocaleString()} EXP to reach their goal.` : "",
+        vipBoxCount > 0 ? `Along this path they will earn ${vipBoxCount} VIP Weapon Box reward(s).` : "",
+        bonusesOnPath.length > 0 ? `Rank-up bonuses on this path: ${bonusesOnPath.slice(0, 5).join(", ")}` : "",
+        "",
+        "Give 4-5 practical bullet-point tips to earn EXP faster, make the most of the bonus rewards, and any special strategies for their rank tier. Be concise and specific to CrossFire NA gameplay.",
+      ].filter(Boolean).join("\n");
+
+      const response = await puter.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
+      const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
+      if (!text) throw new Error("Empty response from AI");
+      setTips(parseTipsToPoints(text));
     } catch (e: any) {
       setTipsError(e.message || "Could not load tips. Try again.");
     } finally {

@@ -136,50 +136,72 @@ function cfScrapePlugin(): Plugin {
         res.end(JSON.stringify(data));
       }
 
-      // POST /api/scrape/forum-list — fetches a forum page and returns structured post list
+      // POST /api/scrape/forum-list — fetches CrossFire announcements via RSS feed
+      // RSS gives all 21 items with full HTML content (including banner images) in one request
       server.middlewares.use("/api/scrape/forum-list", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
         try {
-          const { url } = await readBody(req);
-          if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
           const { fetch: undFetch } = await import("undici");
-          const r = await (undFetch as any)(url, {
-            headers: { "User-Agent": "Mozilla/5.0 (compatible; WikiBot/1.0)", "Accept": "text/html,*/*" },
+          const RSS_URL = "https://forum.z8games.com/categories/crossfire-announcements/feed.rss";
+          const r = await (undFetch as any)(RSS_URL, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+              "Accept": "application/rss+xml, application/xml, text/xml, */*",
+            },
             signal: AbortSignal.timeout(20000),
           });
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          const html = await r.text();
-          const cheerio = await import("cheerio");
-          const $ = cheerio.load(html);
+          if (!r.ok) throw new Error(`HTTP ${r.status} fetching RSS feed`);
+          const xml = await r.text();
+
+          // Parse RSS items — extract: title, link, pubDate, creator, description HTML
+          // getTag uses simple string splitting to avoid regex escaping issues with CDATA brackets
+          const getTag = (block: string, tag: string): string => {
+            const open = `<${tag}`;
+            const close = `</${tag}>`;
+            const start = block.indexOf(open);
+            if (start === -1) return "";
+            const gtIdx = block.indexOf(">", start);
+            if (gtIdx === -1) return "";
+            const end = block.indexOf(close, gtIdx);
+            if (end === -1) return "";
+            let val = block.slice(gtIdx + 1, end).trim();
+            // Strip CDATA wrapper
+            if (val.startsWith("<![CDATA[")) val = val.slice(9);
+            if (val.endsWith("]]>")) val = val.slice(0, -3);
+            return val.trim();
+          };
+
+          const itemRegex = /<item>([\s\S]*?)<\/item>/g;
           const posts: any[] = [];
-          const seen = new Set<string>();
-          $([
-            'a[href*="thread"]', 'a[href*="announcement"]', '.thread-title a',
-            '.subject a', 'h3 > a', 'h2 > a', '.topic-title a',
-            '[class*="title"] a', '[class*="thread"] a', '[class*="post"] a',
-            '.thr-head a', '.forumtitle a', 'td.alt1 a',
-          ].join(", ")).each((_, el) => {
-            const title = $(el).text().trim();
-            const href = $(el).attr("href") || "";
-            if (!title || title.length < 5 || seen.has(title)) return;
-            if (href.includes("#") && !href.includes("thread")) return;
-            const fullUrl = href.startsWith("http") ? href : href.startsWith("/") ? `https://forum.z8games.com${href}` : "";
-            if (!fullUrl) return;
-            seen.add(title);
-            const row = $(el).closest("tr, li, article, [class*=thread], [class*=post], [class*=topic]");
-            const dateEl = row.find("time, [class*=date], [class*=time], abbr").first();
-            const date = dateEl.attr("datetime") || dateEl.text().trim() || new Date().toISOString().slice(0, 10);
-            const img = row.find("img").first().attr("src") || "";
-            posts.push({ title, url: fullUrl, date, image: img });
-          });
-          json(res, 200, { posts: posts.slice(0, 25) });
+          let m: RegExpExecArray | null;
+          while ((m = itemRegex.exec(xml)) !== null) {
+            const block = m[1];
+            const title   = getTag(block, "title");
+            const link    = getTag(block, "link");
+            const pubDate = getTag(block, "pubDate");
+            const creator = getTag(block, "dc:creator");
+            const desc    = getTag(block, "description");
+
+            // Extract first image src from the description HTML
+            const imgMatch = desc.match(/src="([^"]+)"/);
+            const image = imgMatch ? imgMatch[1] : "";
+
+            // Parse date to ISO
+            let dateISO = "";
+            try { dateISO = new Date(pubDate).toISOString(); } catch { dateISO = ""; }
+
+            if (title && link) {
+              posts.push({ title, url: link, date: pubDate || "", dateISO, image, author: creator });
+            }
+          }
+          json(res, 200, { posts });
         } catch (e: any) {
-          json(res, 500, { error: e.message || "Forum scrape failed" });
+          json(res, 500, { error: e.message || "Forum RSS fetch failed" });
         }
       });
 
-      // POST /api/scrape/forum-thread — fetches a single forum discussion thread
-      // and extracts individual events (title + image + date) from the post body
+      // POST /api/scrape/forum-thread — fetches a single CrossFire forum discussion thread.
+      // Each CF announcement = one event: uses og:title + og:image + first .Message HTML.
       server.middlewares.use("/api/scrape/forum-thread", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
         try {
@@ -193,137 +215,69 @@ function cfScrapePlugin(): Plugin {
               "Accept": "text/html,*/*",
               "Accept-Language": "en-US,en;q=0.9",
             },
-            signal: AbortSignal.timeout(20000),
+            signal: AbortSignal.timeout(25000),
           });
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           const html = await r.text();
           const cheerio = await import("cheerio");
           const $ = cheerio.load(html);
 
-          // Thread title and date
+          // ── Reliable meta fields ─────────────────────────────────────────────
           const threadTitle =
-            $("h1").first().text().trim() ||
             $('meta[property="og:title"]').attr("content") ||
-            $("title").text().replace(/\s*[|\-–].*$/, "").trim() || "";
-
-          const threadDate =
-            $("time").first().attr("datetime") ||
-            $(".DateCreated time").attr("datetime") ||
-            $('[itemprop="datePublished"]').attr("datetime") || "";
+            $("h1").first().text().trim() ||
+            $("title").text().replace(/\s*[|–\-].*$/, "").trim() || "Untitled Event";
 
           const threadImage =
             $('meta[property="og:image"]').attr("content") ||
-            $(".UserContent img, .Message img").first().attr("src") || "";
+            $('meta[name="twitter:image"]').attr("content") || "";
 
-          // Get the first post body — Vanilla Forums uses .UserContent or .Message
-          const postBody = $(".UserContent, .Message, .post-body, .entry-content").first();
+          // posted date — <time> in the first post row
+          const threadDate =
+            $(".ItemDiscussion time, #Item_0 time, .DateCreated time").first().attr("datetime") ||
+            $("time").first().attr("datetime") || "";
 
-          // Strategy: walk through the post body and extract events
-          // Each event = { title, image, date, description }
-          // Events are demarcated by: <img> elements (banner images), bold/strong text near them, and date patterns
-          const events: any[] = [];
+          // ── First post body (the OP) ─────────────────────────────────────────
+          // Vanilla Forum: first .Message div = OP body; subsequent = replies
+          const allMessages = $(".Message");
+          const opBody = allMessages.first();
+          const descriptionHtml = opBody.html() || "";
+          const descriptionText = opBody.text().replace(/\s+/g, " ").trim().slice(0, 500);
 
-          // Extract all images from the post
-          const imgs: string[] = [];
-          postBody.find("img").each((_, el) => {
-            const src = $(el).attr("src") || $(el).attr("data-src") || "";
-            // Filter out tiny icons/emojis (< 100px wide if width attr available)
-            const w = parseInt($(el).attr("width") || "9999", 10);
-            const h = parseInt($(el).attr("height") || "9999", 10);
-            if (src && w >= 100 && h >= 50 && !src.includes("emoji") && !src.includes("avatar") && !src.includes("smilie")) {
-              imgs.push(src);
-            }
-          });
+          // ── Parse start / end date from title  ──────────────────────────────
+          // e.g. "Football Frenzy: June 11 - July 19"  →  start=June 11, end=July 19
+          const dateRe = /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?/gi;
+          const dateParts = threadTitle.match(dateRe) || [];
+          const startDateStr = dateParts[0] || (threadDate ? threadDate.slice(0, 10) : "");
+          const endDateStr   = dateParts[1] || dateParts[0] || "";
 
-          // Date regex: "Month Day - Month Day", "Month Day", dates like "July 8th - August 5th"
-          const dateRe = /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:\s*[-–]\s*(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)?/gi;
+          // Convert "June 11" → ISO date (use current year)
+          const toISO = (s: string) => {
+            if (!s) return "";
+            try {
+              const d = new Date(`${s} ${new Date().getFullYear()}`);
+              return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 16);
+            } catch { return ""; }
+          };
 
-          if (imgs.length > 0) {
-            // For each image, find the nearest text (heading / bold / paragraph) before or after it
-            postBody.find("img").each((imgIdx, imgEl) => {
-              const src = $(imgEl).attr("src") || $(imgEl).attr("data-src") || "";
-              const w = parseInt($(imgEl).attr("width") || "9999", 10);
-              const h = parseInt($(imgEl).attr("height") || "9999", 10);
-              if (!src || w < 100 || h < 50 || src.includes("emoji") || src.includes("avatar") || src.includes("smilie")) return;
-
-              // Walk backwards from the image to find a heading or bold label
-              let title = "";
-              let date = "";
-              let description = "";
-
-              // Check text in parent/sibling elements nearby
-              const $img = $(imgEl);
-              const parent = $img.parent();
-
-              // Look for preceding sibling text (strong, b, heading, p)
-              const prev = parent.prevAll("p, h1, h2, h3, h4, strong, b, div").first();
-              const prevText = prev.text().trim();
-              if (prevText && prevText.length > 3 && prevText.length < 200) title = prevText;
-
-              // Look at the paragraph/element containing the image for dates
-              const containerText = parent.text().trim();
-              const dateMatch = containerText.match(dateRe);
-              if (dateMatch) date = dateMatch[0];
-
-              // Look for following sibling text
-              const next = parent.nextAll("p, h2, h3, h4, strong, b, div").first();
-              const nextText = next.text().trim();
-              if (!title && nextText && nextText.length > 3 && nextText.length < 200) title = nextText;
-              if (!date) {
-                const nextDateMatch = nextText.match(dateRe);
-                if (nextDateMatch) date = nextDateMatch[0];
-              }
-
-              // Description: concatenate a couple paragraphs after
-              const descParts: string[] = [];
-              parent.nextAll("p").slice(0, 3).each((_: any, el: any) => { descParts.push($(el).text().trim()); });
-              description = descParts.join(" ").slice(0, 400);
-
-              // Fallback title: thread title + index
-              if (!title) title = imgIdx === 0 ? threadTitle : `${threadTitle} — Event ${imgIdx + 1}`;
-
-              // Fallback date: from thread title or thread date
-              if (!date) {
-                const titleDateMatch = threadTitle.match(dateRe);
-                if (titleDateMatch) date = titleDateMatch[0];
-                else if (threadDate) date = threadDate.slice(0, 10);
-              }
-
-              events.push({
-                title: title.replace(/\s+/g, " ").trim(),
-                image: src,
-                date,
-                description,
-                selected: true,
-              });
-            });
-          }
-
-          // Deduplicate by image URL
-          const seen = new Set<string>();
-          const dedupedEvents = events.filter(e => {
-            if (seen.has(e.image)) return false;
-            seen.add(e.image);
-            return true;
-          });
-
-          // If no events found, fall back to treating the whole thread as one event
-          if (dedupedEvents.length === 0) {
-            dedupedEvents.push({
-              title: threadTitle,
-              image: threadImage,
-              date: threadDate ? threadDate.slice(0, 10) : "",
-              description: postBody.text().slice(0, 300).trim(),
-              selected: true,
-            });
-          }
+          const event = {
+            title: threadTitle,
+            image: threadImage,
+            date: startDateStr,
+            startDate: toISO(startDateStr),
+            endDate: toISO(endDateStr),
+            description: descriptionHtml,
+            descriptionText,
+            sourceUrl: url,
+            selected: true,
+          };
 
           json(res, 200, {
             threadTitle,
             threadDate,
             threadImage,
             threadUrl: url,
-            events: dedupedEvents,
+            events: [event],
           });
         } catch (e: any) {
           json(res, 500, { error: e.message || "Thread scrape failed" });

@@ -21,7 +21,10 @@ interface EventItem {
   titleAr: string;
   image: string;
   date: string;
+  startDate: string;
+  endDate: string;
   description: string;
+  sourceUrl: string;
   selected: boolean;
 }
 
@@ -244,7 +247,7 @@ function EventList({
         setProgress(`Found ${raw.length} events in this announcement`);
         toast.success(`${raw.length} events found`);
       }
-      setEvents(raw.map((e: any) => ({ ...e, titleAr: '' })));
+      setEvents(raw.map((e: any) => ({ ...e, titleAr: '', startDate: e.startDate || '', endDate: e.endDate || '', sourceUrl: e.sourceUrl || announcement.url })));
       setLoaded(true);
     } catch (e: any) {
       toast.error(e.message || 'Failed to load events'); setProgress('');
@@ -277,7 +280,8 @@ function EventList({
       try {
         const slug = `${slugify(ev.title)}-${Date.now()}`;
         const seoTitle = ev.title.slice(0, 60);
-        const seoDesc = (ev.titleAr || ev.description || ev.title).slice(0, 160);
+        const plainText = ev.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const seoDesc = (plainText || ev.titleAr || ev.title).slice(0, 160);
         const { error } = await db.from('events').insert({
           title: ev.title,
           title_ar: ev.titleAr || null,
@@ -285,9 +289,11 @@ function EventList({
           description: ev.description || ev.title,
           description_ar: ev.titleAr ? `إعلان كروس فاير — ${ev.titleAr}` : null,
           image_url: ev.image || announcement.image || null,
-          type: 'announcement',
-          source_url: announcement.url,
-          date: ev.date || announcement.date || null,
+          event_type: 'Online',
+          status: 'Ongoing',
+          source_url: ev.sourceUrl || announcement.url,
+          start_date: ev.startDate || null,
+          end_date: ev.endDate || null,
           created_at: new Date().toISOString(),
           seo_title: seoTitle,
           seo_description: seoDesc,
@@ -439,9 +445,13 @@ function EventList({
                       {ev.titleAr}
                     </p>
                   )}
-                  {ev.date && (
+                  {(ev.startDate || ev.date) && (
                     <span style={{ fontSize: 11, color: '#71717a', display: 'flex', alignItems: 'center', gap: 3, marginTop: 4 }}>
-                      <Calendar size={10} /> {ev.date}
+                      <Calendar size={10} />
+                      {ev.startDate ? new Date(ev.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ev.date}
+                      {ev.endDate && ev.endDate !== ev.startDate && (
+                        <> – {new Date(ev.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>
+                      )}
                     </span>
                   )}
                   {ev.description && (

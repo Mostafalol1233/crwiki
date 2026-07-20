@@ -653,6 +653,20 @@
   }
 }
 
+/* ── Events ribbon marquee ── */
+@keyframes cf-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.cf-marquee {
+  animation: cf-marquee linear infinite;
+}
+
+.cf-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* ========================
    CrossFire Official Style
    ======================== */

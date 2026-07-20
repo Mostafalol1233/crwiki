@@ -1,5 +1,5 @@
+import { useRef } from "react";
 import { Calendar, TrendingUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 
 export interface Event {
@@ -15,35 +15,99 @@ interface EventsRibbonProps {
 }
 
 export function EventsRibbon({ events }: EventsRibbonProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  if (!events.length) return null;
+
+  // Duplicate so the marquee loop is seamless
+  const doubled = [...events, ...events];
+  // Speed: ~3.5s per event card
+  const durationSec = Math.max(events.length * 3.5, 12);
+
   return (
-    <div className="w-full bg-card border-y py-2">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex items-center overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-4 py-2">
-          {events.map((event) => (
-            <Link 
-              key={event.id} 
-              href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`}
-              className="flex items-center gap-3 flex-shrink-0 snap-start hover-elevate active-elevate-2 px-4 py-2 rounded-lg transition-all bg-muted/30 hover:bg-muted border border-border"
-              data-testid={`link-event-${event.id}`}
+    <div
+      className="w-full border-y"
+      style={{
+        background: "var(--card)",
+        borderColor: "rgba(255,255,255,0.06)",
+        overflow: "hidden",
+        position: "relative",
+      }}
+    >
+      {/* Edge fade — left */}
+      <div
+        className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none"
+        style={{
+          width: 48,
+          background: "linear-gradient(to right, var(--card), transparent)",
+        }}
+      />
+      {/* Edge fade — right */}
+      <div
+        className="absolute right-0 top-0 bottom-0 z-10 pointer-events-none"
+        style={{
+          width: 48,
+          background: "linear-gradient(to left, var(--card), transparent)",
+        }}
+      />
+
+      {/* Scrolling track */}
+      <div
+        ref={trackRef}
+        className="flex items-center gap-3 py-2 cf-marquee"
+        style={{
+          // Width is 2× content so we can translate -50% seamlessly
+          width: "max-content",
+          animationDuration: `${durationSec}s`,
+          willChange: "transform",
+          paddingLeft: 16,
+          paddingRight: 16,
+        }}
+      >
+        {doubled.map((event, idx) => {
+          const href = event.event_name_slug
+            ? `/events/${event.event_name_slug}`
+            : `/events/${event.id}`;
+          const isTrending = event.type === "trending";
+          return (
+            <Link
+              key={`${event.id}-${idx}`}
+              href={href}
+              className="flex items-center gap-2.5 flex-shrink-0 px-4 py-2 rounded transition-all"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "var(--foreground)",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = "rgba(212,160,23,0.08)";
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(212,160,23,0.25)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
+              }}
             >
-              <div className="flex-shrink-0">
-                {event.type === "upcoming" ? (
-                  <Calendar className="h-6 w-6 md:h-7 md:w-7 text-primary" />
-                ) : (
-                  <TrendingUp className="h-6 w-6 md:h-7 md:w-7 text-destructive" />
-                )}
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center gap-1">
-                <span className="text-sm md:text-base font-semibold whitespace-nowrap">
-                  {event.title}
-                </span>
-                <Badge variant="outline" className="text-sm whitespace-nowrap w-fit">
-                  {event.date}
-                </Badge>
-              </div>
+              {isTrending ? (
+                <TrendingUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#ef4444" }} />
+              ) : (
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#d4a017" }} />
+              )}
+              <span className="text-[12px] font-semibold">{event.title}</span>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  color: "#666",
+                }}
+              >
+                {event.date}
+              </span>
             </Link>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );

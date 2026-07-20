@@ -774,3 +774,236 @@
 .tiptap-admin .ProseMirror table .selectedCell { background: rgba(212,160,23,0.08); }
 .tiptap-admin .ProseMirror iframe { width: 100%; aspect-ratio: 16/9; border: 1px solid #3f3f46; border-radius: 6px; margin: 0.75em 0; }
 .tiptap-admin .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #52525b; pointer-events: none; height: 0; float: left; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS — global rules for phones ≤ 640px
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Prevent horizontal scroll everywhere */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* All images respect their container */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── General container / hero padding on phones ─────────────────── */
+@media (max-width: 640px) {
+
+  /* Reduce hero padding on all pages */
+  [style*="padding: 80px 24px"], [style*="paddingTop: 80"] {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+
+  /* Tables scroll horizontally */
+  .overflow-x-auto, table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    width: 100%;
+  }
+
+  /* Fix sticky sidebar on mobile — unstick it */
+  aside[style*="position: sticky"] {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+/* ── About page ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* "What is CrossFire" 2-col → 1-col */
+  .about-intro-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+
+  /* Faction / currency cards 2-col → 1-col */
+  .about-factions-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Hero padding reduction */
+  .about-hero {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+
+  /* Content padding */
+  .about-content {
+    padding: 40px 16px !important;
+  }
+}
+
+/* ── Named mobile helper classes used in JSX ────────────────────── */
+@media (max-width: 768px) {
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  .mobile-full {
+    width: 100% !important;
+  }
+  .mobile-hide {
+    display: none !important;
+  }
+}
+
+/* ── Rank Calculator on phones ──────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Stats row: 2 cols instead of 4 */
+  .rank-stats-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── Weapons page grid ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .weapons-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Maps page grid ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .maps-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Mercenaries grid ───────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .mercs-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── News sidebar layout ────────────────────────────────────────── */
+@media (max-width: 900px) {
+  /* news-layout is flex not grid */
+  .news-layout {
+    flex-direction: column !important;
+  }
+  .news-sidebar {
+    display: none !important;
+  }
+  /* News article grid → 2 col */
+  .art-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Featured article → single col */
+  .feat-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .art-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Events grid ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .events-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Hero search bar on phones ──────────────────────────────────── */
+@media (max-width: 480px) {
+  form[style*="maxWidth: 520"] {
+    width: 100% !important;
+    padding: 0 4px;
+  }
+  form[style*="maxWidth: 520"] button {
+    padding: 9px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ── Ranks grid cards: smaller on phone ─────────────────────────── */
+@media (max-width: 480px) {
+  .ranks-card-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+}
+
+/* ── Modes page layout ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .modes-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── About page hero padding ────────────────────────────────────── */
+@media (max-width: 640px) {
+  .about-hero {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+  .about-content {
+    padding: 32px 16px !important;
+  }
+}
+
+/* ── Download page ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .download-steps {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── General page container padding on very small screens ───────── */
+@media (max-width: 390px) {
+  [style*="padding: \"0 24px\""],
+  [style*="padding: \"48px 24px\""],
+  [style*="padding: \"52px 24px\""],
+  [style*="padding: \"40px 24px\""] {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* ── Sellers page ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sellers-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Tutorials grid ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tutorials-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── Footer wrapping ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* ── Prevent text overflow on cards ─────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Touch-friendly tap targets ─────────────────────────────────── */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 36px;
+  }
+}

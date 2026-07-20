@@ -153,7 +153,7 @@ export default function About() {
       <div style={{ background: BG, minHeight: "100vh" }}>
 
         {/* ── Hero ── */}
-        <div style={{
+        <div className="about-hero" style={{
           position: "relative", overflow: "hidden",
           background: "linear-gradient(to bottom, #0d1117, #0a0a0a)",
           borderBottom: `1px solid ${BORDER}`,
@@ -237,14 +237,14 @@ export default function About() {
         </div>
 
 
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "64px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "64px 24px" }} className="about-content">
 
           {/* ── What is CrossFire ── */}
           <section style={{ marginBottom: 80 }}>
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48,
               alignItems: "center",
-            }} className="md:grid-cols-2 grid-cols-1">
+            }} className="about-intro-grid">
               <div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: ACCENT, letterSpacing: "0.14em", textTransform: "uppercase", display: "block", marginBottom: 12 }}>
                   {isAr ? "ما هي اللعبة؟" : "What is CrossFire?"}
@@ -302,7 +302,7 @@ export default function About() {
             }}>
               {isAr ? "فريقان يتقاتلان عبر العالم" : "Two Factions. One War."}
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="grid-cols-1 sm:grid-cols-2">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="about-factions-grid">
               {FACTIONS.map((faction) => (
                 <div key={faction.name} style={{
                   background: CARD, border: `1px solid ${BORDER}`,
@@ -566,7 +566,7 @@ export default function About() {
             }}>
               {isAr ? "عملتان أساسيتان" : "Two Core Currencies"}
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="grid-cols-1 sm:grid-cols-2">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="about-factions-grid">
               {/* ZP Card */}
               <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", borderTop: "3px solid #f5a623" }}>
                 <div style={{

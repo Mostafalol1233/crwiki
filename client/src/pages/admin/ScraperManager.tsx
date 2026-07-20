@@ -19,24 +19,90 @@ interface Announcement {
 interface EventItem {
   title: string;
   titleAr: string;
+  descriptionAr: string;
   image: string;
   date: string;
   startDate: string;
   endDate: string;
-  description: string;
+  description: string;   // full HTML from OP body
+  descriptionText: string; // plain-text excerpt (≤500 chars)
   sourceUrl: string;
   selected: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-async function translateText(text: string): Promise<string> {
+async function translateText(text: string, maxLen = 450): Promise<string> {
+  if (!text.trim()) return '';
   try {
-    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 400))}&langpair=en|ar`);
+    const q = text.replace(/&nbsp;/gi, ' ').replace(/&[a-z]+;/gi, '').trim().slice(0, maxLen);
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(q)}&langpair=en|ar`);
     const d = await r.json();
     const t = d?.responseData?.translatedText || '';
-    return t && t !== 'INVALID LANGUAGE PAIR' ? t : text;
+    return t && t !== 'INVALID LANGUAGE PAIR' && !t.startsWith('MYMEMORY') ? t : text;
   } catch { return text; }
+}
+
+// Strip HTML entities + tags → clean plain text
+function htmlToPlain(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#\d+;/gi, '')
+    .replace(/&[a-z]{2,8};/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const SITE = 'https://crossfire.wiki';
+
+function buildSEO(ev: EventItem, slug: string, dateRange: string) {
+  const cleanText = htmlToPlain(ev.description || '');
+  const hasCF = /crossfire/i.test(ev.title);
+
+  // ── seo_title: 50–60 chars, always contains "CrossFire" ─────────────────────
+  const titleBase = hasCF ? ev.title : `${ev.title} - CrossFire`;
+  let seoTitle = titleBase.length <= 57
+    ? `${titleBase} | CrossFire Wiki`
+    : titleBase.slice(0, 57).trimEnd() + '...';
+  seoTitle = seoTitle.slice(0, 60);
+
+  // If still under 50, pad with date context
+  if (seoTitle.length < 50 && dateRange) {
+    const candidate = `${ev.title} ${dateRange} | CrossFire`.slice(0, 60);
+    if (candidate.length >= 50) seoTitle = candidate;
+  }
+
+  // ── seo_description: 140–160 chars, entity-clean, keyword-rich ─────────────
+  let seoDesc = '';
+
+  // Try real content first
+  if (cleanText.length >= 60) {
+    seoDesc = hasCF ? cleanText : `CrossFire ${cleanText}`;
+    if (dateRange && !seoDesc.includes(dateRange)) seoDesc += ` Event dates: ${dateRange}.`;
+  }
+
+  // Trim to 160 at word boundary
+  if (seoDesc.length > 160) {
+    const trimmed = seoDesc.slice(0, 157).replace(/\s+\S*$/, '');
+    seoDesc = trimmed + '...';
+  }
+
+  // Pad / fallback to ensure ≥ 140 chars
+  if (seoDesc.length < 140) {
+    const dateStr = dateRange ? ` from ${dateRange}` : '';
+    seoDesc = `CrossFire event: ${ev.title}${dateStr}. Log in and play to earn exclusive in-game rewards. Limited-time offer — don't miss out on CrossFire!`;
+    if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157).replace(/\s+\S*$/, '') + '...';
+  }
+
+  const canonical = `${SITE}/events/${slug}`;
+  return { seoTitle, seoDesc, canonical };
 }
 
 function slugify(s: string) {
@@ -247,7 +313,15 @@ function EventList({
         setProgress(`Found ${raw.length} events in this announcement`);
         toast.success(`${raw.length} events found`);
       }
-      setEvents(raw.map((e: any) => ({ ...e, titleAr: '', startDate: e.startDate || '', endDate: e.endDate || '', sourceUrl: e.sourceUrl || announcement.url })));
+      setEvents(raw.map((e: any) => ({
+        ...e,
+        titleAr: '',
+        descriptionAr: '',
+        descriptionText: e.descriptionText || htmlToPlain(e.description || '').slice(0, 500),
+        startDate: e.startDate || '',
+        endDate: e.endDate || '',
+        sourceUrl: e.sourceUrl || announcement.url,
+      })));
       setLoaded(true);
     } catch (e: any) {
       toast.error(e.message || 'Failed to load events'); setProgress('');
@@ -261,13 +335,24 @@ function EventList({
     setTranslating(true);
     const updated = [...events];
     for (let i = 0; i < updated.length; i++) {
-      setProgress(`Translating ${i + 1}/${updated.length}: ${updated[i].title.slice(0, 45)}...`);
-      updated[i].titleAr = await translateText(updated[i].title);
+      const label = updated[i].title.slice(0, 40);
+      setProgress(`Translating ${i + 1}/${updated.length}: ${label}… (title)`);
+      updated[i].titleAr = await translateText(updated[i].title, 450);
       setEvents([...updated]);
+
+      // Short pause to avoid rate-limiting
+      await new Promise(r => setTimeout(r, 250));
+
+      setProgress(`Translating ${i + 1}/${updated.length}: ${label}… (description)`);
+      const plainDesc = updated[i].descriptionText || htmlToPlain(updated[i].description || '').slice(0, 450);
+      updated[i].descriptionAr = plainDesc ? await translateText(plainDesc, 450) : '';
+      setEvents([...updated]);
+
+      if (i < updated.length - 1) await new Promise(r => setTimeout(r, 250));
     }
     setProgress('Translation complete ✓');
     setTranslating(false);
-    toast.success('All titles translated to Arabic!');
+    toast.success('All content translated to Arabic!');
   };
 
   const importSelected = async () => {
@@ -279,31 +364,43 @@ function EventList({
       setProgress(`Importing: ${ev.title.slice(0, 50)}...`);
       try {
         const slug = `${slugify(ev.title)}-${Date.now()}`;
-        const seoTitle = ev.title.slice(0, 60);
-        const plainText = (ev.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-        const seoDesc = (plainText || ev.titleAr || ev.title).slice(0, 160);
-        // Build human-readable date range from parsed start/end, e.g. "June 11 - July 19"
+
+        // Human-readable date range, e.g. "June 11 - July 19"
+        const fmt = (iso: string) => iso
+          ? new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+          : '';
         const dateRange = ev.startDate && ev.endDate && ev.startDate !== ev.endDate
-          ? `${new Date(ev.startDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})} - ${new Date(ev.endDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})}`
-          : ev.startDate
-            ? new Date(ev.startDate).toLocaleDateString('en-US',{month:'long',day:'numeric'})
-            : ev.date || '';
+          ? `${fmt(ev.startDate)} - ${fmt(ev.endDate)}`
+          : ev.startDate ? fmt(ev.startDate) : ev.date || '';
+
+        // Perfect SEO fields (no &nbsp;, no entities, 50-60/140-160 char targets)
+        const { seoTitle, seoDesc, canonical } = buildSEO(ev, slug, dateRange);
+
+        // Full HTML goes to raw_html_content; plain text goes to description
+        const plainDesc = htmlToPlain(ev.description || '');
+
+        // description_ar: full translated description if available, else translate title fallback
+        const descriptionAr = ev.descriptionAr
+          || (ev.titleAr ? `حدث كروس فاير: ${ev.titleAr}. ${dateRange ? `الفترة: ${dateRange}.` : ''}` : '');
+
         const { error } = await db.from('events').insert({
-          title: ev.title,
-          title_ar: ev.titleAr || '',
-          event_name_slug: slug,
-          description: ev.description || ev.title,
-          description_ar: ev.titleAr ? `إعلان كروس فاير — ${ev.titleAr}` : '',
-          image_url: ev.image || announcement.image || '',
-          type: 'announcement',
-          date: dateRange,
-          source_url: ev.sourceUrl || announcement.url,
-          created_at: new Date().toISOString(),
-          seo_title: seoTitle,
-          seo_description: seoDesc,
+          title:            ev.title,
+          title_ar:         ev.titleAr || '',
+          event_name_slug:  slug,
+          description:      plainDesc || ev.title,
+          description_ar:   descriptionAr,
+          raw_html_content: ev.description || '',
+          image_url:        ev.image || announcement.image || '',
+          type:             'announcement',
+          date:             dateRange,
+          source_url:       ev.sourceUrl || announcement.url,
+          canonical_url:    canonical,
+          created_at:       new Date().toISOString(),
+          seo_title:        seoTitle,
+          seo_description:  seoDesc,
         });
         if (error) { console.error(error); fail++; } else ok++;
-      } catch (e) { fail++; }
+      } catch (e) { console.error(e); fail++; }
     }
     setProgress(`Done — ${ok} imported${fail > 0 ? `, ${fail} failed` : ''}`);
     toast.success(`Imported ${ok} event${ok !== 1 ? 's' : ''}${fail > 0 ? ` (${fail} failed)` : ''}`);
@@ -445,7 +542,7 @@ function EventList({
                     {ev.title}
                   </p>
                   {ev.titleAr && (
-                    <p style={{ margin: '0 0 4px', fontSize: 13, color: '#d4a017', direction: 'rtl', fontWeight: 500, lineHeight: 1.35 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, color: '#d4a017', direction: 'rtl', fontWeight: 500, lineHeight: 1.35 }}>
                       {ev.titleAr}
                     </p>
                   )}
@@ -458,9 +555,16 @@ function EventList({
                       )}
                     </span>
                   )}
-                  {ev.description && (
+                  {/* Plain-text preview of EN description */}
+                  {ev.descriptionText && (
                     <p style={{ margin: '6px 0 0', fontSize: 12, color: '#52525b', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                      {ev.description}
+                      {ev.descriptionText}
+                    </p>
+                  )}
+                  {/* Arabic description after translation */}
+                  {ev.descriptionAr && (
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: '#78716c', direction: 'rtl', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
+                      {ev.descriptionAr}
                     </p>
                   )}
                 </div>

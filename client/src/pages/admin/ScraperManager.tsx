@@ -35,11 +35,16 @@ interface EventItem {
 async function translateText(text: string, maxLen = 450): Promise<string> {
   if (!text.trim()) return '';
   try {
-    const q = text.replace(/&nbsp;/gi, ' ').replace(/&[a-z]+;/gi, '').trim().slice(0, maxLen);
-    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(q)}&langpair=en|ar`);
+    const clean = text
+      .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
+      .replace(/&[a-z]{2,8};/gi, '').replace(/\s+/g, ' ').trim().slice(0, maxLen);
+    // Google Translate unofficial endpoint — better Arabic quality than MyMemory
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(clean)}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
-    const t = d?.responseData?.translatedText || '';
-    return t && t !== 'INVALID LANGUAGE PAIR' && !t.startsWith('MYMEMORY') ? t : text;
+    const result = (d?.[0] || []).map((s: any) => s?.[0] || '').join('').trim();
+    return result || text;
   } catch { return text; }
 }
 
@@ -57,6 +62,28 @@ function htmlToPlain(html: string): string {
     .replace(/&#\d+;/gi, '')
     .replace(/&[a-z]{2,8};/gi, '')
     .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Clean forum HTML for storage in description:
+// • removes the top banner image (shown separately via image_url)
+// • decodes entities
+// • preserves colors, bold, lists, line breaks
+function cleanForumHtml(html: string): string {
+  return html
+    // Remove the large header/embed banner image at the top
+    .replace(/<img[^>]*class="[^"]*(?:embedImage|importedEmbed)[^"]*"[^>]*\/?>/gi, '')
+    // Remove redundant title="Image: https://..." attributes on any remaining imgs
+    .replace(/\s+title="Image:[^"]*"/gi, '')
+    // Decode HTML entities so text is readable
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, '\u00a0')  // keep non-breaking space as actual char
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    // Remove empty paragraphs / excessive whitespace between tags
+    .replace(/(<br\s*\/?>(\s*<br\s*\/?>){3,})/gi, '<br><br>')
     .trim();
 }
 
@@ -376,10 +403,11 @@ function EventList({
         // Perfect SEO fields (no &nbsp;, no entities, 50-60/140-160 char targets)
         const { seoTitle, seoDesc, canonical } = buildSEO(ev, slug, dateRange);
 
-        // Full HTML goes to raw_html_content; plain text goes to description
-        const plainDesc = htmlToPlain(ev.description || '');
+        // Store raw original HTML, and cleaned HTML in description (renders with colors/br/lists)
+        const rawHtml = ev.description || '';
+        const cleanedHtml = cleanForumHtml(rawHtml);
 
-        // description_ar: full translated description if available, else translate title fallback
+        // description_ar: full translated description if available, else construct from title
         const descriptionAr = ev.descriptionAr
           || (ev.titleAr ? `حدث كروس فاير: ${ev.titleAr}. ${dateRange ? `الفترة: ${dateRange}.` : ''}` : '');
 
@@ -387,9 +415,9 @@ function EventList({
           title:            ev.title,
           title_ar:         ev.titleAr || '',
           event_name_slug:  slug,
-          description:      plainDesc || ev.title,
+          description:      cleanedHtml || ev.title,   // HTML — rendered by RawHtmlPreview on event page
           description_ar:   descriptionAr,
-          raw_html_content: ev.description || '',
+          raw_html_content: rawHtml,                   // original unmodified forum HTML
           image_url:        ev.image || announcement.image || '',
           type:             'announcement',
           date:             dateRange,

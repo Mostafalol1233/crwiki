@@ -220,6 +220,12 @@ function normalizeEvent(e: any) {
     type: String(e.type || ''),
     image: String(e.image_url || ''),
     imageUrl: String(e.image_url || ''),
+    // OG image = the event banner image
+    ogImage: String(e.image_url || ''),
+    // SEO fields
+    seoTitle: String(e.seo_title || ''),
+    seoDescription: String(e.seo_description || ''),
+    canonicalUrl: String(e.canonical_url || ''),
     createdAt: e.created_at,
     featured: e.featured || false,
   };

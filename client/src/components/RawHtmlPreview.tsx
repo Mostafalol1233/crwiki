@@ -101,10 +101,19 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
           border-radius: 0.75rem;
           box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
         }
-        /* Forum specific colors */
+        /* CrossFire forum post colors */
         .raw-html-preview-container .post-color-orange { color: #ff9900 !important; }
-        .raw-html-preview-container .post-color-yellow { color: #ffff00 !important; }
-        .raw-html-preview-container .post-color-green { color: #00ff00 !important; }
+        .raw-html-preview-container .post-color-yellow { color: #f5d020 !important; }
+        .raw-html-preview-container .post-color-green  { color: #4ade80 !important; }
+        .raw-html-preview-container .post-color-blue   { color: #60a5fa !important; }
+        .raw-html-preview-container .post-color-red    { color: #f87171 !important; }
+        .raw-html-preview-container .post-color-purple { color: #c084fc !important; }
+        .raw-html-preview-container .post-color-white  { color: #f4f4f5 !important; }
+        .raw-html-preview-container .post-color-cyan   { color: #22d3ee !important; }
+        /* Keep spacing/lists from forum content */
+        .raw-html-preview-container ul { padding-left: 1.5rem; margin: 0.75rem 0; }
+        .raw-html-preview-container li { margin-bottom: 0.35rem; }
+        .raw-html-preview-container b, .raw-html-preview-container strong { color: inherit; }
       `}</style>
     </div>
   );

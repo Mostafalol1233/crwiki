@@ -145,8 +145,8 @@ export default function Support() {
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[
               { label: "Response Time", value: "24–48 hrs", color: "#f5a623" },
-              { label: "Email Updates", value: "Auto-notify", color: "#818cf8" },
-              { label: "Track Status", value: "My Tickets", color: "#4ade80" },
+              { label: "Email Updates", value: "Auto-notify", color: "#f5a623" },
+              { label: "Track Status", value: "My Tickets", color: "#f5a623" },
             ].map((info) => (
               <div key={info.label} className="p-3 text-center" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "3px" }}>
                 <p className="text-sm font-black mb-0.5" style={{ color: info.color }}>{info.value}</p>

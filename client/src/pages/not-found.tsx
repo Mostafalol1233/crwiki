@@ -19,11 +19,9 @@ export default function NotFound() {
         <p className="text-sm mb-8 max-w-xs mx-auto" style={{ color: "#555" }}>
           {t("notFoundText")}
         </p>
-        <Link href="/">
-          <a className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
-            <Home className="h-3.5 w-3.5" />
-            {t("backToHome")}
-          </a>
+        <Link href="/" className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
+          <Home className="h-3.5 w-3.5" />
+          {t("backToHome")}
         </Link>
       </div>
     </div>

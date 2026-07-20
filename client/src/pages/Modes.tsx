@@ -322,11 +322,11 @@ export default function Modes() {
                   </span>
                 </div>
 
-                {tabModes.map((mode) => {
+                {tabModes.map((mode, idx) => {
                   const isSelected = selectedMode?.id === mode.id;
                   return (
                     <button
-                      key={mode.id}
+                      key={`${mode.id}-${idx}`}
                       onClick={() => setSelectedModeId(mode.id)}
                       className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all rounded"
                       style={{

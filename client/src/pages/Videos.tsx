@@ -87,10 +87,8 @@ export default function VideosPage() {
                       <h3 className="text-xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{activeVideo.title}</h3>
                       {activeVideo.description && <p className="text-sm mb-4" style={{ color: "#666" }}>{activeVideo.description}</p>}
                       <div className="flex flex-wrap gap-2">
-                        <Link href={`/tutorials/${activeVideo.tutorial_slug || activeVideo.id}`}>
-                          <a className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
-                            Full Page
-                          </a>
+                        <Link href={`/tutorials/${activeVideo.tutorial_slug || activeVideo.id}`} className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
+                          Full Page
                         </Link>
                         <a
                           href={`https://www.youtube.com/watch?v=${activeVideo.youtubeId}`}
@@ -154,21 +152,21 @@ export default function VideosPage() {
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
                 return (
-                  <Link key={c.key} href={`/videos/${c.key}`}>
-                    <a
-                      className="block p-5 transition-all hover:brightness-105 group"
-                      style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
-                      data-testid={`card-video-category-${c.key}`}
-                    >
-                      <div className="w-9 h-9 flex items-center justify-center mb-3" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "2px" }}>
-                        <Icon className="h-4.5 w-4.5" style={{ color: "#f5a623" }} />
-                      </div>
-                      <h3 className="font-black text-sm uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>{c.title}</h3>
-                      <p className="text-[11px]" style={{ color: "#555" }}>{c.description}</p>
-                      <div className="flex items-center gap-1 mt-3 text-[10px] font-black uppercase tracking-wider" style={{ color: "#f5a623" }}>
-                        Browse <ArrowLeft className="h-3 w-3 rotate-180 transition-transform group-hover:translate-x-1" />
-                      </div>
-                    </a>
+                  <Link
+                    key={c.key}
+                    href={`/videos/${c.key}`}
+                    className="block p-5 transition-all hover:brightness-105 group"
+                    style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
+                    data-testid={`card-video-category-${c.key}`}
+                  >
+                    <div className="w-9 h-9 flex items-center justify-center mb-3" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "2px" }}>
+                      <Icon className="h-4.5 w-4.5" style={{ color: "#f5a623" }} />
+                    </div>
+                    <h3 className="font-black text-sm uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>{c.title}</h3>
+                    <p className="text-[11px]" style={{ color: "#555" }}>{c.description}</p>
+                    <div className="flex items-center gap-1 mt-3 text-[10px] font-black uppercase tracking-wider" style={{ color: "#f5a623" }}>
+                      Browse <ArrowLeft className="h-3 w-3 rotate-180 transition-transform group-hover:translate-x-1" />
+                    </div>
                   </Link>
                 );
               })}

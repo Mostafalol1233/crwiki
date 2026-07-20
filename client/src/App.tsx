@@ -76,6 +76,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/category/:category" component={Category} />
       <Route path="/reviews" component={Reviews} />
+      <Route path="/community/reviews" component={Reviews} />
       <Route path="/reviews/seller/:sellerName" component={Reviews} />
       <Route path="/reviews/seller/slug/:slug" component={Reviews} />
       <Route path="/sellers" component={Sellers} />

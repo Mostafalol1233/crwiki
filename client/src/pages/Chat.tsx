@@ -83,7 +83,11 @@ export default function Chat() {
   // ── Step 1: resolve auth from Supabase session ────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { setLocation("/login"); return; }
+      if (!session) {
+        sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
+        setLocation("/login");
+        return;
+      }
       const uname = session.user.user_metadata?.username
         || session.user.email?.split("@")[0]
         || session.user.id.slice(0, 12);

@@ -114,7 +114,7 @@ export default function News() {
 
   const filtered = useMemo(() => {
     return allNews.filter((item) => {
-      const matchCat = activeCat === "All" || item.category?.toLowerCase().includes(activeCat.toLowerCase()) || (activeCat === "Article" && item.type === "post");
+      const matchCat = activeCat === "All" || (item.category ?? "").toLowerCase().includes(activeCat.toLowerCase()) || (activeCat === "Article" && item.type === "post");
       const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || buildExcerpt(item).toLowerCase().includes(search.toLowerCase());
       return matchCat && matchSearch;
     });

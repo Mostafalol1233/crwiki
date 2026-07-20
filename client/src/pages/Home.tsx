@@ -30,45 +30,56 @@ function stripHtml(html: string) {
 // ─── Wiki Portal Grid ─────────────────────────────────────────────────────────
 const PORTALS = [
   {
-    icon: Target, label: "Weapons", desc: "Rifles, pistols, snipers & melee", href: "/weapons",
-    accent: "#f5a623", glow: "rgba(245,166,35,0.18)",
-    bg: "linear-gradient(135deg, #1a1200 0%, #110f00 40%, #0a0a0a 100%)",
-    badge: "3,589+ items",
+    label: "Weapons",
+    desc: "Rifles, pistols, snipers & melee",
+    href: "/weapons",
+    img: "/portal/weapons.png",
+    imgFit: "cover" as const,
+    imgBg: "#0d0b07",
   },
   {
-    icon: MapPin, label: "Maps", desc: "Battle arenas and layouts", href: "/maps",
-    accent: "#60a5fa", glow: "rgba(96,165,250,0.18)",
-    bg: "linear-gradient(135deg, #001830 0%, #000d1a 40%, #0a0a0a 100%)",
-    badge: "312+ arenas",
+    label: "Maps",
+    desc: "Battle arenas and layouts",
+    href: "/maps",
+    img: "/portal/maps.jpg",
+    imgFit: "cover" as const,
+    imgBg: "#0a0c10",
   },
   {
-    icon: Users, label: "Mercenaries", desc: "Elite playable operators", href: "/mercenaries",
-    accent: "#c084fc", glow: "rgba(192,132,252,0.18)",
-    bg: "linear-gradient(135deg, #12002a 0%, #0a0014 40%, #0a0a0a 100%)",
-    badge: "10 operators",
+    label: "Mercenaries",
+    desc: "Elite playable operators",
+    href: "/mercenaries",
+    img: "/portal/mercenaries.png",
+    imgFit: "cover" as const,
+    imgBg: "#0a0a0a",
   },
   {
-    icon: Star, label: "Ranks", desc: "Private to Hero progression", href: "/ranks",
-    accent: "#34d399", glow: "rgba(52,211,153,0.18)",
-    bg: "linear-gradient(135deg, #001a0f 0%, #000f08 40%, #0a0a0a 100%)",
-    badge: "104 tiers",
+    label: "Ranks",
+    desc: "Private to Hero progression",
+    href: "/ranks",
+    img: "/portal/ranks.png",
+    imgFit: "contain" as const,
+    imgBg: "#080a0d",
   },
   {
-    icon: Shield, label: "Game Modes", desc: "Every mode with strategies", href: "/modes",
-    accent: "#f87171", glow: "rgba(248,113,113,0.18)",
-    bg: "linear-gradient(135deg, #1a0000 0%, #0f0000 40%, #0a0a0a 100%)",
-    badge: "61+ modes",
+    label: "Game Modes",
+    desc: "Every mode with strategies",
+    href: "/modes",
+    img: "/portal/modes.png",
+    imgFit: "cover" as const,
+    imgBg: "#0a0808",
   },
   {
-    icon: Calendar, label: "Events", desc: "Active & upcoming CF events", href: "/events",
-    accent: "#fb923c", glow: "rgba(251,146,60,0.18)",
-    bg: "linear-gradient(135deg, #1a0c00 0%, #110700 40%, #0a0a0a 100%)",
-    badge: "Live now",
+    label: "Events",
+    desc: "Active & upcoming CF events",
+    href: "/events",
+    img: "/portal/events.jpg",
+    imgFit: "cover" as const,
+    imgBg: "#0a0a0a",
   },
 ];
 
 function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
-  const Icon = portal.icon;
   const [hovered, setHovered] = useState(false);
   return (
     <Link href={portal.href}>
@@ -76,79 +87,68 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          background: portal.bg,
-          border: `1px solid ${hovered ? portal.accent + "55" : portal.accent + "22"}`,
+          background: portal.imgBg,
+          border: `1px solid ${hovered ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.07)"}`,
           borderRadius: 8,
-          padding: "22px 18px 20px",
           cursor: "pointer",
           transition: "all 0.22s",
           position: "relative",
           overflow: "hidden",
-          boxShadow: hovered ? `0 0 32px ${portal.glow}, inset 0 0 40px ${portal.glow}` : `inset 0 0 20px ${portal.glow}`,
-          transform: hovered ? "translateY(-3px)" : "translateY(0)",
+          height: 200,
+          boxShadow: hovered ? "0 8px 32px rgba(0,0,0,0.6)" : "0 2px 8px rgba(0,0,0,0.4)",
+          transform: hovered ? "translateY(-4px)" : "translateY(0)",
         }}
       >
-        {/* Glow orb background */}
+        {/* Category image */}
+        <img
+          src={portal.img}
+          alt={portal.label}
+          style={{
+            position: "absolute", inset: 0,
+            width: "100%", height: "100%",
+            objectFit: portal.imgFit,
+            objectPosition: "center top",
+            transition: "transform 0.35s ease",
+            transform: hovered ? "scale(1.06)" : "scale(1)",
+          }}
+        />
+
+        {/* Gradient overlay — bottom fade for text */}
         <div style={{
-          position: "absolute", top: -20, right: -20,
-          width: 90, height: 90, borderRadius: "50%",
-          background: `radial-gradient(circle, ${portal.accent}22 0%, transparent 70%)`,
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.88) 100%)",
           pointerEvents: "none",
-          transition: "opacity 0.2s",
-          opacity: hovered ? 1 : 0.5,
         }} />
 
-        {/* Top accent bar */}
+        {/* Top shimmer on hover */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 2,
-          background: `linear-gradient(to right, ${portal.accent}, ${portal.accent}44, transparent)`,
+          background: "rgba(255,255,255,0.4)",
+          opacity: hovered ? 1 : 0,
           transition: "opacity 0.2s",
-          opacity: hovered ? 1 : 0.4,
         }} />
 
-        {/* Icon — large and centered-left */}
+        {/* Text at bottom */}
         <div style={{
-          width: 52, height: 52, borderRadius: 12,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: `${portal.accent}18`,
-          border: `1.5px solid ${portal.accent}40`,
-          marginBottom: 14,
-          boxShadow: hovered ? `0 0 16px ${portal.accent}33` : "none",
-          transition: "box-shadow 0.2s",
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "12px 14px",
         }}>
-          <Icon size={26} color={portal.accent} strokeWidth={1.5} />
-        </div>
-
-        {/* Label */}
-        <p style={{
-          fontWeight: 800, fontSize: 16, color: "#fff",
-          margin: "0 0 4px", letterSpacing: "-0.02em",
-          textShadow: hovered ? `0 0 12px ${portal.accent}55` : "none",
-          transition: "text-shadow 0.2s",
-        }}>
-          {portal.label}
-        </p>
-
-        {/* Desc */}
-        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.38)", margin: "0 0 14px", lineHeight: 1.45 }}>
-          {portal.desc}
-        </p>
-
-        {/* Footer row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
-            color: portal.accent, background: `${portal.accent}18`,
-            border: `1px solid ${portal.accent}33`,
-            padding: "2px 7px", borderRadius: 4,
+          <p style={{
+            fontWeight: 800, fontSize: 14, color: "#fff",
+            margin: "0 0 2px", letterSpacing: "-0.01em",
+            textShadow: "0 1px 4px rgba(0,0,0,0.8)",
           }}>
-            {portal.badge}
-          </span>
+            {portal.label}
+          </p>
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <span style={{ fontSize: 11, color: hovered ? portal.accent : "rgba(255,255,255,0.3)", fontWeight: 600, transition: "color 0.2s" }}>
+            <span style={{
+              fontSize: 10, color: hovered ? "#fff" : "rgba(255,255,255,0.5)",
+              fontWeight: 600, transition: "color 0.2s",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+            }}>
               Browse
             </span>
-            <ArrowRight size={11} color={hovered ? portal.accent : "rgba(255,255,255,0.25)"} style={{ transition: "color 0.2s" }} />
+            <ArrowRight size={10} color={hovered ? "#fff" : "rgba(255,255,255,0.4)"} style={{ transition: "color 0.2s" }} />
           </div>
         </div>
       </div>

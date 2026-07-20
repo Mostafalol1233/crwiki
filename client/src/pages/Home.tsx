@@ -503,34 +503,6 @@ export default function Home() {
           `}</style>
         </div>
 
-
-        {/* ── BLACK LIST BANNER + GP ────────────────────────────────────────── */}
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "40px 24px 0" }}>
-          <div style={{ marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 4px" }}>The War</p>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>Faction & Currency</h2>
-          </div>
-
-          {/* Black List full-width card */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20, background: CARD, border: `1px solid rgba(245,166,35,0.18)`, borderRadius: 8, padding: "20px 28px", marginBottom: 10, borderLeft: `3px solid ${GOLD}` }} className="bl-banner">
-            <img src="/black-list-logo.png" alt="Black List" style={{ height: 64, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 14px rgba(245,166,35,0.4))" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: GOLD, margin: "0 0 3px", textTransform: "uppercase", letterSpacing: "0.08em" }}>Black List</p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0, lineHeight: 1.5 }}>A powerful international terrorist organisation challenging Global Risk in covert operations globally. Choose your side.</p>
-            </div>
-          </div>
-          <style>{`@media(max-width:480px){.bl-banner{padding:14px 16px!important;gap:12px!important;}}`}</style>
-
-          {/* GP — full width */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "12px 16px" }}>
-            <img src="/gp-icon.svg" alt="GP" style={{ width: 34, height: 34, flexShrink: 0 }} />
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 800, color: GOLD, margin: "0 0 1px", letterSpacing: "0.02em" }}>GP — Game Points</p>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0, lineHeight: 1.4 }}>Free currency · earned from matches &amp; rank rewards</p>
-            </div>
-          </div>
-        </div>
-
         {/* ── MAIN CONTENT (Two-column wiki layout) ─────────────────────────── */}
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 64px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }} className="main-content-grid">

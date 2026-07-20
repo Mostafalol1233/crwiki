@@ -511,13 +511,12 @@ function cfPlayerLookupPlugin(): Plugin {
               }
             }
 
-            // Step 2 — use Firecrawl to render the JS profile page and extract the nickname
+            // Step 2 — Firecrawl renders the full JS SPA; parse ALL stats from the markdown directly
             if (!data) {
-              let scrapedNickname: string | null = null;
               const fcKey = process.env.FIRECRAWL_API_KEY || "";
+              let fcProfile: any = null;
 
               if (fcKey) {
-                const profilePageUrl = `https://crossfire.z8games.com/profile/${profileId}`;
                 try {
                   const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
                     method: "POST",
@@ -527,7 +526,7 @@ function cfPlayerLookupPlugin(): Plugin {
                       "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                      url: profilePageUrl,
+                      url: `https://crossfire.z8games.com/profile/${profileId}`,
                       formats: ["markdown"],
                       onlyMainContent: true,
                     }),
@@ -537,58 +536,85 @@ function cfPlayerLookupPlugin(): Plugin {
                     const fcData = await fcRes.json() as any;
                     const md: string = fcData?.data?.markdown || fcData?.markdown || "";
 
-                    if (md) {
-                      // Firecrawl renders the full SPA — extract player nickname from markdown
-                      // Pattern 1: "## PlayerName" or "# PlayerName" heading
-                      const headingMatch = md.match(/^#{1,3}\s+([^\n|]{2,32})$/m);
-                      // Pattern 2: nickname appears before "kills", "exp", "rank" keywords
-                      const contextMatch = md.match(/([A-Za-z0-9_\-\.]{2,32})\s*(?:\n|\\n)(?:[^\n]*(?:Kills|EXP|Rank|K\/D))/i);
-                      // Pattern 3: bold name at top of content
-                      const boldMatch = md.match(/\*\*([A-Za-z0-9_\-\.]{2,32})\*\*/);
-                      // Pattern 4: "UserNickname" or "nickname" JSON key embedded in page
-                      const jsonMatch = md.match(/"(?:UserNickname|usn|nickname)"\s*:\s*"([^"]{2,32})"/i);
+                    if (md && md.length > 200) {
+                      // ── Nickname: "# [riggedgame](https://crossfire.z8games.com/profile/...)" ──
+                      const nickname = md.match(/^#\s+\[([^\]]+)\]/m)?.[1]?.trim() || null;
 
-                      const rawNick = jsonMatch?.[1] || headingMatch?.[1] || contextMatch?.[1] || boldMatch?.[1] || null;
-                      if (rawNick) {
-                        scrapedNickname = rawNick
-                          .replace(/['']s\s*(profile|stats|account).*/i, "")
-                          .replace(/\s*[-|–—].*/, "")
-                          .trim();
-                        if (scrapedNickname.length < 2 || scrapedNickname.length > 32) {
-                          scrapedNickname = null;
-                        }
+                      // ── Rank + EXP: "## ![](…/rank_105.jpg)  Grand Marshal144018922 EXP" ──
+                      // Target specifically the ## line that has a rank_N.jpg image URL
+                      const rankLine = (
+                        md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || ""
+                      );
+                      // rankLine example: "Grand Marshal144018922 EXP"
+                      const expStr = rankLine.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
+                      const exp = expStr ? parseInt(expStr, 10) : null;
+                      const rankName = rankLine.replace(/\d[\d,]*\s*EXP.*/, "").trim() || null;
+
+                      // ── Rank tier from image URL: "rank_105.jpg" ──
+                      const rankTierMatch = md.match(/\/rank_(\d+)\.jpg/);
+                      const rankTier = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+
+                      // ── Clan: second ## heading (clan name follows clan-mark images) ──
+                      const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
+                      const clan = clanHeadings[0]?.[1]?.trim() || null;
+
+                      // ── Stats helpers ──
+                      const statNum = (label: string) => {
+                        const m = md.match(new RegExp(`#####\\s+${label}\\s*\\n+###\\s+([\\d,]+)`, "i"));
+                        return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
+                      };
+                      const inlineNum = (label: string) => {
+                        const m = md.match(new RegExp(`${label}\\s*\\n+([\\d.]+)`, "i"));
+                        return m ? parseFloat(m[1]) : null;
+                      };
+
+                      const kills   = statNum("Kills");
+                      const deaths  = statNum("Deaths");
+                      const wins    = statNum("Wins");
+                      const losses  = statNum("Losses");
+                      const kdRatio = inlineNum("Kill-Death Ratio");
+                      const winRatePct = md.match(/Winner Rate\s*\n+([\d.]+)%/i)?.[1] || null;
+                      const hsRate  = md.match(/Headshot Rate[\s\S]{0,200}?([\d.]+)%/i)?.[1] || null;
+
+                      if (nickname) {
+                        fcProfile = {
+                          nickname,
+                          region: regionLabel,
+                          exp,
+                          rank: rankName,
+                          rankTier,
+                          rankImage: rankTier ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg` : null,
+                          kills,
+                          deaths,
+                          wins,
+                          losses,
+                          kdRatio: kdRatio ?? (kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null),
+                          winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
+                          headShotRate: hsRate ? parseFloat(hsRate) : null,
+                          clan,
+                          vipDays: null,
+                          vipLevel: null,
+                          playtime: null,
+                          level: null,
+                        };
                       }
                     }
                   }
-                } catch { /* Firecrawl timeout or error — fall through */ }
+                } catch { /* Firecrawl timeout or network error */ }
               }
 
-              if (scrapedNickname) {
-                // Use the scraped nickname for the normal REST lookup
-                for (const base of restBases) {
-                  try {
-                    const response = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(scrapedNickname)}`, {
-                      signal: AbortSignal.timeout(10000),
-                      headers: CF_HEADERS,
-                    } as any);
-                    const ct = response.headers.get("content-type") || "";
-                    if (!ct.includes("json")) continue;
-                    const json = await response.json() as any;
-                    if (json.p_o_ErrID === -702) break;
-                    data = json;
-                    break;
-                  } catch { /* try next */ }
-                }
+              if (fcProfile) {
+                // Return Firecrawl-parsed profile directly — no second REST call needed
+                res.writeHead(200, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ success: true, profile: fcProfile }));
               }
 
-              if (!data) {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                return res.end(JSON.stringify({
-                  error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the exact name shown in-game).`,
-                  notFound: true,
-                  suggestNickname: true,
-                }));
-              }
+              res.writeHead(404, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({
+                error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the exact name shown in-game).`,
+                notFound: true,
+                suggestNickname: true,
+              }));
             }
           }
 

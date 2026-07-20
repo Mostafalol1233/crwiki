@@ -131,14 +131,13 @@ export default function Dashboard() {
         <h2 style={h2}>Quick Actions</h2>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {QUICK_ACTIONS.map((a) => (
-            <Link key={a.href} href={a.href}>
-              <a style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', textDecoration: 'none', fontSize: 13, cursor: 'pointer', transition: 'border-color 0.15s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#d4a017'; (e.currentTarget as HTMLAnchorElement).style.color = '#d4a017'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#3f3f46'; (e.currentTarget as HTMLAnchorElement).style.color = '#fafafa'; }}>
-                {a.icon}
-                {a.label}
-              </a>
-            </Link>
+            <a key={a.href} href={a.href}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', textDecoration: 'none', fontSize: 13, cursor: 'pointer', transition: 'border-color 0.15s' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#d4a017'; (e.currentTarget as HTMLAnchorElement).style.color = '#d4a017'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#3f3f46'; (e.currentTarget as HTMLAnchorElement).style.color = '#fafafa'; }}>
+              {a.icon}
+              {a.label}
+            </a>
           ))}
         </div>
       </div>

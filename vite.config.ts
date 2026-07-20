@@ -178,6 +178,158 @@ function cfScrapePlugin(): Plugin {
         }
       });
 
+      // POST /api/scrape/forum-thread — fetches a single forum discussion thread
+      // and extracts individual events (title + image + date) from the post body
+      server.middlewares.use("/api/scrape/forum-thread", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { url } = await readBody(req);
+          if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
+
+          const { fetch: undFetch } = await import("undici");
+          const r = await (undFetch as any)(url, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+              "Accept": "text/html,*/*",
+              "Accept-Language": "en-US,en;q=0.9",
+            },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const html = await r.text();
+          const cheerio = await import("cheerio");
+          const $ = cheerio.load(html);
+
+          // Thread title and date
+          const threadTitle =
+            $("h1").first().text().trim() ||
+            $('meta[property="og:title"]').attr("content") ||
+            $("title").text().replace(/\s*[|\-–].*$/, "").trim() || "";
+
+          const threadDate =
+            $("time").first().attr("datetime") ||
+            $(".DateCreated time").attr("datetime") ||
+            $('[itemprop="datePublished"]').attr("datetime") || "";
+
+          const threadImage =
+            $('meta[property="og:image"]').attr("content") ||
+            $(".UserContent img, .Message img").first().attr("src") || "";
+
+          // Get the first post body — Vanilla Forums uses .UserContent or .Message
+          const postBody = $(".UserContent, .Message, .post-body, .entry-content").first();
+
+          // Strategy: walk through the post body and extract events
+          // Each event = { title, image, date, description }
+          // Events are demarcated by: <img> elements (banner images), bold/strong text near them, and date patterns
+          const events: any[] = [];
+
+          // Extract all images from the post
+          const imgs: string[] = [];
+          postBody.find("img").each((_, el) => {
+            const src = $(el).attr("src") || $(el).attr("data-src") || "";
+            // Filter out tiny icons/emojis (< 100px wide if width attr available)
+            const w = parseInt($(el).attr("width") || "9999", 10);
+            const h = parseInt($(el).attr("height") || "9999", 10);
+            if (src && w >= 100 && h >= 50 && !src.includes("emoji") && !src.includes("avatar") && !src.includes("smilie")) {
+              imgs.push(src);
+            }
+          });
+
+          // Date regex: "Month Day - Month Day", "Month Day", dates like "July 8th - August 5th"
+          const dateRe = /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:\s*[-–]\s*(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)?/gi;
+
+          if (imgs.length > 0) {
+            // For each image, find the nearest text (heading / bold / paragraph) before or after it
+            postBody.find("img").each((imgIdx, imgEl) => {
+              const src = $(imgEl).attr("src") || $(imgEl).attr("data-src") || "";
+              const w = parseInt($(imgEl).attr("width") || "9999", 10);
+              const h = parseInt($(imgEl).attr("height") || "9999", 10);
+              if (!src || w < 100 || h < 50 || src.includes("emoji") || src.includes("avatar") || src.includes("smilie")) return;
+
+              // Walk backwards from the image to find a heading or bold label
+              let title = "";
+              let date = "";
+              let description = "";
+
+              // Check text in parent/sibling elements nearby
+              const $img = $(imgEl);
+              const parent = $img.parent();
+
+              // Look for preceding sibling text (strong, b, heading, p)
+              const prev = parent.prevAll("p, h1, h2, h3, h4, strong, b, div").first();
+              const prevText = prev.text().trim();
+              if (prevText && prevText.length > 3 && prevText.length < 200) title = prevText;
+
+              // Look at the paragraph/element containing the image for dates
+              const containerText = parent.text().trim();
+              const dateMatch = containerText.match(dateRe);
+              if (dateMatch) date = dateMatch[0];
+
+              // Look for following sibling text
+              const next = parent.nextAll("p, h2, h3, h4, strong, b, div").first();
+              const nextText = next.text().trim();
+              if (!title && nextText && nextText.length > 3 && nextText.length < 200) title = nextText;
+              if (!date) {
+                const nextDateMatch = nextText.match(dateRe);
+                if (nextDateMatch) date = nextDateMatch[0];
+              }
+
+              // Description: concatenate a couple paragraphs after
+              const descParts: string[] = [];
+              parent.nextAll("p").slice(0, 3).each((_: any, el: any) => { descParts.push($(el).text().trim()); });
+              description = descParts.join(" ").slice(0, 400);
+
+              // Fallback title: thread title + index
+              if (!title) title = imgIdx === 0 ? threadTitle : `${threadTitle} — Event ${imgIdx + 1}`;
+
+              // Fallback date: from thread title or thread date
+              if (!date) {
+                const titleDateMatch = threadTitle.match(dateRe);
+                if (titleDateMatch) date = titleDateMatch[0];
+                else if (threadDate) date = threadDate.slice(0, 10);
+              }
+
+              events.push({
+                title: title.replace(/\s+/g, " ").trim(),
+                image: src,
+                date,
+                description,
+                selected: true,
+              });
+            });
+          }
+
+          // Deduplicate by image URL
+          const seen = new Set<string>();
+          const dedupedEvents = events.filter(e => {
+            if (seen.has(e.image)) return false;
+            seen.add(e.image);
+            return true;
+          });
+
+          // If no events found, fall back to treating the whole thread as one event
+          if (dedupedEvents.length === 0) {
+            dedupedEvents.push({
+              title: threadTitle,
+              image: threadImage,
+              date: threadDate ? threadDate.slice(0, 10) : "",
+              description: postBody.text().slice(0, 300).trim(),
+              selected: true,
+            });
+          }
+
+          json(res, 200, {
+            threadTitle,
+            threadDate,
+            threadImage,
+            threadUrl: url,
+            events: dedupedEvents,
+          });
+        } catch (e: any) {
+          json(res, 500, { error: e.message || "Thread scrape failed" });
+        }
+      });
+
       // POST /api/scrape/single-url
       server.middlewares.use("/api/scrape/single-url", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabaseService } from '@/lib/supabaseAdmin';
-import { Link } from 'wouter';
 import { FileText, Calendar, Newspaper, Ticket, Plus } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -23,21 +22,22 @@ const CARD_COLORS = {
 
 function StatCard({ label, value, icon, color, href }: { label: string; value: number; icon: React.ReactNode; color: string; href: string }) {
   return (
-    <Link href={href}>
-      <a style={{ display: 'block', textDecoration: 'none', background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: '18px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = color; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = '#27272a'; }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: 12, color: '#52525b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{label}</div>
-            <div style={{ fontSize: 28, fontWeight: 600, color: '#fafafa', lineHeight: 1 }}>{value.toLocaleString()}</div>
-          </div>
-          <div style={{ width: 36, height: 36, background: `${color}15`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
-            {icon}
-          </div>
+    <div
+      onClick={() => { window.location.href = href; }}
+      style={{ display: 'block', textDecoration: 'none', background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: '18px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = color; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = '#27272a'; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 12, color: '#52525b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{label}</div>
+          <div style={{ fontSize: 28, fontWeight: 600, color: '#fafafa', lineHeight: 1 }}>{value.toLocaleString()}</div>
         </div>
-      </a>
-    </Link>
+        <div style={{ width: 36, height: 36, background: `${color}15`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
+          {icon}
+        </div>
+      </div>
+    </div>
   );
 }
 

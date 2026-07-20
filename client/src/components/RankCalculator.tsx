@@ -1,6 +1,23 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, Sparkles, Trophy, Zap, Target, Gift, Shield, Loader2, ChevronRight, Star } from "lucide-react";
-import { puter } from "@heyputer/puter.js";
+
+// Load Puter.js via CDN to avoid bundling its own React copy
+function loadPuter(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).puter) return resolve((window as any).puter);
+    const existing = document.getElementById("puter-js-cdn");
+    if (existing) {
+      existing.addEventListener("load", () => resolve((window as any).puter));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "puter-js-cdn";
+    script.src = "https://js.puter.com/v2/";
+    script.onload = () => resolve((window as any).puter);
+    script.onerror = () => reject(new Error("Failed to load Puter.js"));
+    document.head.appendChild(script);
+  });
+}
 
 interface Rank {
   id: string;
@@ -101,6 +118,8 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
     setTipsError("");
     setTips([]);
     try {
+      const puterInstance = await loadPuter();
+
       const prompt = [
         `A CrossFire player is currently ranked "${currentRank.name}" and wants to reach "${destinationRank.name}".`,
         expNeeded > 0 ? `They need ${expNeeded.toLocaleString()} EXP to reach their goal.` : "",
@@ -110,7 +129,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
         "Give 4-5 practical bullet-point tips to earn EXP faster, make the most of the bonus rewards, and any special strategies for their rank tier. Be concise and specific to CrossFire NA gameplay.",
       ].filter(Boolean).join("\n");
 
-      const response = await puter.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
+      const response = await puterInstance.ai.chat(prompt, { model: "x-ai/grok-4-1-fast" });
       const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
       if (!text) throw new Error("Empty response from AI");
       setTips(parseTipsToPoints(text));

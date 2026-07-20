@@ -1,0 +1,54 @@
+Grok is xAI's latest large language model, known for its unique approach to problem-solving and witty responses. In this tutorial, we'll show you how to use Grok through Puter.js to create engaging and intelligent applications.
+
+Puter is the pioneer of the "User-Pays" model, which allows developers to incorporate AI capabilities into their applications while each user will cover their own usage costs. This model enables developers to access advanced AI capabilities for free, without any API keys, usage costs, or server-side setup.
+
+Additionally, Puter.js works exceptionally well with AI coding assistants, agents, and vibe coding platforms such as Claude Code, Codex, OpenCode, Lovable, Replit, Bolt.new, and others. Its keyless, serverless design lets AI-generated apps and programs run end-to-end straight away, with no third-party backend to sign up for, no service to provision, and no API keys to copy in. The result is one fewer source of common security issues and one less setup step that usually blocks these apps from running on the first try.
+
+Prerequisites
+To use Puter.js, import our npm module in your project:
+
+// npm install @heyputer/puter.js
+import { puter } from '@heyputer/puter.js';
+Or alternatively, add our script via CDN if you are working directly with HTML, simply add it to the <head> or <body> section of your code:
+
+<script src="https://js.puter.com/v2/"></script>
+Example 1: Use Grok 4.5
+To use Grok 4.5, xAI's flagship model, you'll use the puter.ai.chat() function with the model parameter set to x-ai/grok-4.5. Here's a basic example:
+
+<html>
+<body>
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+        // Chat with Grok 4.5
+        puter.ai.chat(
+            "Explain quantum computing in a witty and engaging way.",
+            {model: 'x-ai/grok-4.5'}
+        ).then(response => {
+            puter.print(response.message.content);
+        });
+    </script>
+</body>
+</html>
+Example 2: Streaming responses
+For a more interactive experience, you can stream the responses from Grok as they're generated:
+
+<html>
+<body>
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+        (async () => {
+            const response = await puter.ai.chat(
+                "Tell me a funny story about artificial intelligence.",
+                {
+                    model: 'x-ai/grok-4-1-fast',
+                    stream: true
+                }
+            );
+
+            for await (const part of response) {
+                puter.print(part.text);
+            }
+        })();
+    </script>
+</body>
+</html>

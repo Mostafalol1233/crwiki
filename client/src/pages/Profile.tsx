@@ -257,17 +257,26 @@ function getRankProgress(
   const expIntoCurrentRank = Math.max(0, exp - curInfo.exp);
   const expNeededToDest    = destInfo ? destInfo.exp - curInfo.exp : null;
   const expToDest          = destInfo ? Math.max(0, destInfo.exp - exp) : null;
+
+  // Stale table flag: player's EXP has already passed the destination threshold
+  // even though their API rank name places them below it. This means the table
+  // EXP values for this rank range are outdated / incorrect.
+  const tableDataStale = !isMaxRank && destInfo !== null && expToDest === 0;
+
   const pct = isMaxRank
     ? 100
-    : destInfo && expNeededToDest && expNeededToDest > 0
-      ? Math.min(99, Math.max(0, (expIntoCurrentRank / expNeededToDest) * 100))
-      : 0;
+    : tableDataStale
+      ? 50   // indeterminate — show half-bar to signal "somewhere in progress"
+      : destInfo && expNeededToDest && expNeededToDest > 0
+        ? Math.min(99, Math.max(0, (expIntoCurrentRank / expNeededToDest) * 100))
+        : 0;
 
   return {
     curTier, curInfo,
     trueNextTier, trueNextInfo,
     destTier, destInfo,
     isMaxRank,
+    tableDataStale,
     expIntoCurrentRank,
     expNeededToDest,
     expToDest,
@@ -448,29 +457,27 @@ export default function Profile() {
   const handleGetTips = async () => {
     if (!cfStats) return;
     const rp = getRankProgress(cfStats.exp, cfStats.rankTier ? Number(cfStats.rankTier) : null, targetRankTier, cfStats.rank);
-    if (!rp.destInfo) return;
     setTipsLoading(true);
     setTips([]);
     setTipsError("");
     try {
-      const puterInstance = await loadPuter();
-      const expToDest = rp.expToDest ?? 0;
-      const prompt = [
-        `A CrossFire player "${cfStats.nickname || cfNickname}" is currently ranked "${cfStats.rank || rp.curInfo.name}" and wants to reach "${rp.destInfo.name}".`,
-        expToDest > 0 ? `They need ${expToDest.toLocaleString()} more EXP.` : "",
-        cfStats.kdRatio ? `Their K/D ratio is ${cfStats.kdRatio}.` : "",
-        cfStats.winRate ? `Their win rate is ${cfStats.winRate}%.` : "",
-        cfStats.clan ? `They are in clan [${cfStats.clan}].` : "",
-        (cfStats.vipLevel != null || cfStats.vipDays != null)
-          ? `VIP status: ${cfStats.vipLevel != null ? `Level ${cfStats.vipLevel}` : ""}${cfStats.vipDays != null ? ` (${cfStats.vipDays} days remaining)` : ""}.`
-          : "",
-        "",
-        "Give 4-5 practical bullet-point tips to earn EXP faster and improve stats. Be specific to CrossFire NA gameplay.",
-      ].filter(Boolean).join("\n");
-
-      // Use default model (gpt-4o-mini) — specialized models require extra auth on Puter
-      const response = await puterInstance.ai.chat(prompt);
-      const text: string = response?.message?.content ?? response?.text ?? String(response ?? "");
+      const res = await fetch("/api/grok-tips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentRank: cfStats.rank || rp.curInfo.name,
+          targetRank: rp.destInfo?.name ?? "next rank",
+          expNeeded: rp.tableDataStale ? null : (rp.expToDest ?? 0),
+          kdRatio: cfStats.kdRatio ?? null,
+          winRate: cfStats.winRate ?? null,
+          clan: cfStats.clan ?? null,
+          vipLevel: cfStats.vipLevel ?? null,
+          vipDays: cfStats.vipDays ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to get tips");
+      const text: string = data.tips || "";
       if (!text) throw new Error("Empty response from AI");
       const lines = text
         .split(/\n/)
@@ -811,9 +818,14 @@ export default function Profile() {
                             </div>
 
                             {rp.isMaxRank ? (
-                              /* ── Max rank — no destination to show ── */
+                              /* ── Max rank ── */
                               <p className="text-[9px] mt-1.5 font-bold" style={{ color: GOLD }}>
                                 🎖️ Maximum rank achieved — Grand Marshal!
+                              </p>
+                            ) : rp.tableDataStale ? (
+                              /* ── Table thresholds outdated for this rank range ── */
+                              <p className="text-[8px] mt-1.5" style={{ color: "#555" }}>
+                                EXP threshold data unavailable for this rank — progress is approximate
                               </p>
                             ) : rp.destInfo && rp.expToDest !== null ? (
                               /* ── Progress toward chosen destination ── */

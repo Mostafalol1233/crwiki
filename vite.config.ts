@@ -490,20 +490,19 @@ function cfPlayerLookupPlugin(): Plugin {
 
           // ── Path A: numeric profile ID lookup ─────────────────────────────
           if (profileId && /^\d+$/.test(profileId)) {
-            // Try multiple parameter names that z8games REST may accept
+            // Step 1 — try direct REST API ID params (fast, but rarely works)
             const idParams = ["char_no", "user_no", "UserNo", "CharNo", "usn_no", "uid", "user_id", "char_id"];
             outer: for (const base of restBases) {
               for (const param of idParams) {
                 try {
                   const response = await fetch(`${base}/userprofile.json?${param}=${profileId}`, {
-                    signal: AbortSignal.timeout(7000),
+                    signal: AbortSignal.timeout(4000),
                     headers: CF_HEADERS,
                   } as any);
                   const ct = response.headers.get("content-type") || "";
                   if (!ct.includes("json")) continue;
                   const json = await response.json() as any;
                   if (json.p_o_ErrID === -702) continue;
-                  // Validate it returned real player data (not an empty/error shell)
                   if (json.UserNickname || json.TotalExp != null || json.TotalKills != null) {
                     data = json;
                     break outer;
@@ -512,13 +511,83 @@ function cfPlayerLookupPlugin(): Plugin {
               }
             }
 
+            // Step 2 — if REST ID failed, scrape the profile page to extract the nickname,
+            //           then fall through to the normal usn= lookup below.
             if (!data) {
-              res.writeHead(404, { "Content-Type": "application/json" });
-              return res.end(JSON.stringify({
-                error: `Player profile #${profileId} could not be loaded. The profile ID lookup isn't supported on all CF server configurations. Try entering your in-game nickname directly instead.`,
-                notFound: true,
-                suggestNickname: true,
-              }));
+              let scrapedNickname: string | null = null;
+              const profilePageUrls = region === "west"
+                ? [
+                    `https://cfwest.z8games.com/profile/${profileId}`,
+                    `https://crossfire.z8games.com/profile/${profileId}`,
+                  ]
+                : [`https://crossfire.z8games.com/profile/${profileId}`];
+
+              for (const pageUrl of profilePageUrls) {
+                try {
+                  const htmlRes = await fetch(pageUrl, {
+                    signal: AbortSignal.timeout(8000),
+                    headers: {
+                      ...CF_HEADERS,
+                      "Accept": "text/html,application/xhtml+xml,*/*",
+                      "Referer": "https://crossfire.z8games.com/",
+                    },
+                  } as any);
+                  if (!htmlRes.ok) continue;
+                  const html = await htmlRes.text() as string;
+
+                  // Try OG title: "PlayerName | CrossFire" or "PlayerName's Profile"
+                  const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
+                    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)?.[1];
+                  // Try page <title>
+                  const pageTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+                  // Try data-nickname or data-usn attribute (some CF pages embed it)
+                  const dataNick = html.match(/data-(?:nickname|usn|name)=["']([^"']{2,32})["']/i)?.[1];
+                  // Try window.__CF_USER__ or similar JSON blobs
+                  const jsonBlob = html.match(/"UserNickname"\s*:\s*"([^"]{2,32})"/)?.[1]
+                    ?? html.match(/"usn"\s*:\s*"([^"]{2,32})"/)?.[1]
+                    ?? html.match(/"nickname"\s*:\s*"([^"]{2,32})"/)?.[1];
+
+                  // Clean up OG/page title to extract just the nickname
+                  const cleanTitle = (t?: string) => {
+                    if (!t) return null;
+                    return t
+                      .replace(/\s*[|\-–—:]\s*.*(CrossFire|Profile|Z8|CF).*/i, "")
+                      .replace(/'s\s+Profile.*/i, "")
+                      .trim();
+                  };
+
+                  scrapedNickname = dataNick || jsonBlob || cleanTitle(ogTitle) || cleanTitle(pageTitle) || null;
+                  if (scrapedNickname && scrapedNickname.length >= 2 && scrapedNickname.length <= 32) break;
+                  scrapedNickname = null; // too long/short — not a valid nickname
+                } catch { /* timeout or network error */ }
+              }
+
+              if (scrapedNickname) {
+                // Now do the normal nickname lookup
+                for (const base of restBases) {
+                  try {
+                    const response = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(scrapedNickname)}`, {
+                      signal: AbortSignal.timeout(10000),
+                      headers: CF_HEADERS,
+                    } as any);
+                    const ct = response.headers.get("content-type") || "";
+                    if (!ct.includes("json")) continue;
+                    const json = await response.json() as any;
+                    if (json.p_o_ErrID === -702) break;
+                    data = json;
+                    break;
+                  } catch { /* try next */ }
+                }
+              }
+
+              if (!data) {
+                res.writeHead(404, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({
+                  error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the name shown in-game, not the profile number).`,
+                  notFound: true,
+                  suggestNickname: true,
+                }));
+              }
             }
           }
 

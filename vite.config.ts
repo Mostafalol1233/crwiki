@@ -73,56 +73,6 @@ function cfRegisterPlugin(): Plugin {
   };
 }
 
-// Supabase → Backend JWT exchange — swaps a Supabase access_token for a backend
-// JWT signed with JWT_SECRET so that Chat WebSocket/API works after Supabase login.
-function cfAuthExchangePlugin(): Plugin {
-  return {
-    name: "cf-auth-exchange",
-    configureServer(server) {
-      server.middlewares.use("/api/auth/supabase-exchange", async (req: any, res: any) => {
-        if (req.method !== "POST") {
-          res.writeHead(405, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "Method not allowed" }));
-        }
-        const authHeader = (req.headers["authorization"] as string) || "";
-        const supabaseToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-        if (!supabaseToken) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "Missing token" }));
-        }
-        try {
-          const sbUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-          const sbKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
-          const r = await fetch(`${sbUrl}/auth/v1/user`, {
-            headers: { apikey: sbKey, Authorization: `Bearer ${supabaseToken}` },
-          });
-          if (!r.ok) {
-            res.writeHead(401, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: "Invalid Supabase token" }));
-          }
-          const sbUser = await r.json() as any;
-          if (!sbUser?.id) {
-            res.writeHead(401, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: "Invalid Supabase user" }));
-          }
-          const username = sbUser.user_metadata?.username
-            || (sbUser.email || "").split("@")[0]
-            || sbUser.id.slice(0, 12);
-          // Sign a JWT compatible with the backend's JWT_SECRET
-          const { default: jwt } = await import("jsonwebtoken");
-          const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-          const token = jwt.sign({ id: sbUser.id, username, role: "user" }, JWT_SECRET, { expiresIn: "7d" });
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ token, userId: sbUser.id, username }));
-        } catch (err: any) {
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err.message || "Exchange failed" }));
-        }
-      });
-    },
-  };
-}
-
 // CF player lookup dev middleware — bypasses Akamai using undici (HTTP/2)
 // Supports region=na (default) and region=west (tries cfwest.z8games.com first)
 function cfPlayerLookupPlugin(): Plugin {
@@ -221,7 +171,6 @@ function cfPlayerLookupPlugin(): Plugin {
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
-    cfAuthExchangePlugin(),
     cfPlayerLookupPlugin(),
     react(),
     runtimeErrorOverlay(),

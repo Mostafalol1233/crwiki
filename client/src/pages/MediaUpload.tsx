@@ -59,38 +59,12 @@ export default function MediaUpload({ onUploadSuccess }: { onUploadSuccess?: () 
   const uploadSingleFile = async (file: File, index: number) => {
     const fileId = `${index}-${file.name}`;
     try {
-      const tokRes = await fetch("/api/security/csrf-token");
-      const tokJson = await tokRes.json();
-      const token = tokJson?.csrfToken || "";
-      const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", bucket);
-      if (files.length === 1 && customName) fd.append("customName", customName);
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/images/upload", true);
-      if (token) xhr.setRequestHeader("X-CSRF-Token", token);
-      if (authToken) xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          setProgress(prev => ({ ...prev, [fileId]: pct }));
-        }
-      };
-
-      const res: any = await new Promise((resolve, reject) => {
-        xhr.onreadystatechange = () => {
-          if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: async () => JSON.parse(xhr.responseText || "{}") });
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.send(fd);
+      const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+      const safeName = files.length === 1 && customName ? customName : undefined;
+      const url = await uploadToSupabase(file, bucket, safeName, (pct) => {
+        setProgress(prev => ({ ...prev, [fileId]: pct }));
       });
-
-      const data = await res.json();
-      const url = data?.domainUrl || data?.domain_url || data?.secure_url || data?.url || "";
-      if (!res.ok || !url) throw new Error(data?.error || "Upload failed");
+      if (!url) throw new Error("Upload failed — no URL returned");
       return url.trim();
     } catch (e: any) {
       console.error(`Upload failed for ${file.name}:`, e);

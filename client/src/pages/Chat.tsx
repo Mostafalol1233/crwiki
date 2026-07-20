@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,407 +9,432 @@ import PageSEO from "@/components/PageSEO";
 import { useLocation } from "wouter";
 import { Send, Image as ImageIcon, Plus, Users, Hash, MoreVertical, Phone, Video, Settings, Upload, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { uploadImageToSupabase } from "@/lib/supabaseApi";
+import { supabase } from "@/lib/supabase";
+import { uploadToSupabase } from "@/lib/uploadToSupabase";
 
-interface User {
-  id: string;
-  username: string;
-  displayName?: string;
-  avatar?: string;
-}
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface Conversation {
-  id?: string;
-  _id?: string;
+  id: string;
   name?: string;
-  type: 'direct' | 'group' | 'channel';
+  type: "direct" | "group" | "channel";
   avatar?: string;
   participants: string[];
-  participantsDetails?: User[];
-  lastMessage?: string;
-  lastMessageAt?: string;
+  last_message?: string;
+  last_message_at?: string;
+  created_at?: string;
 }
 
 interface Message {
-  id?: string;
-  _id?: string;
-  conversationId: string;
-  senderId?: string; // Legacy
-  sender?: string; // New schema uses sender (username)
+  id: string;
+  conversation_id: string;
+  sender_username: string;
   content: string;
-  type?: 'text' | 'image' | 'system';
-  createdAt: string;
-  replyTo?: string;
-  replyToMessage?: Message;
+  type?: "text" | "image" | "system";
+  reply_to_id?: string;
+  reply_to_content?: string;
+  reply_to_sender?: string;
+  created_at: string;
 }
 
-function getWsUrl(token: string) {
-  const api = import.meta.env.VITE_API_URL || "";
-  let url = "/ws";
-  
-  if (api && api.trim()) {
-    try {
-      const u = new URL(api);
-      const proto = u.protocol === "https:" ? "wss:" : "ws:";
-      url = `${proto}//${u.host}/ws`;
-    } catch {
-      url = "/ws";
-    }
-  } else {
-    // Use current window location for development
-    try {
-      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.host || "localhost:5000";
-      url = `${proto}//${host}/ws`;
-    } catch {
-      url = "ws://localhost:5000/ws";
-    }
-  }
-  return `${url}?token=${token}`;
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  return (name || "?").slice(0, 2).toUpperCase();
 }
+
+function fmtTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString([], {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return ""; }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Chat() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState("");
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Modals state
-  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  
-  // Profile state
-  const [myDisplayName, setMyDisplayName] = useState("");
-  const [myAvatar, setMyAvatar] = useState("");
-
-  // Chat auth state — may need to exchange Supabase session for a backend JWT
-  const [chatToken, setChatToken] = useState<string | null>(localStorage.getItem("userToken"));
-  const [chatUserId, setChatUserId] = useState<string | null>(localStorage.getItem("userId"));
-  const [chatUsername, setChatUsername] = useState<string | null>(localStorage.getItem("username"));
-  const [authReady, setAuthReady] = useState(!!localStorage.getItem("userToken"));
-  
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // On mount: if we have no userToken but have a Supabase session, exchange it for a backend JWT
+  // Auth
+  const [username, setUsername] = useState<string | null>(null);
+  const [myDisplayName, setMyDisplayName] = useState("");
+  const [myAvatar, setMyAvatar] = useState("");
+  const [authReady, setAuthReady] = useState(false);
+
+  // Data
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // UI state
+  const [text, setText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newDMUser, setNewDMUser] = useState("");
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const realtimeRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // ── Step 1: resolve auth from Supabase session ────────────────────────────
   useEffect(() => {
-    if (chatToken) { setAuthReady(true); return; }
-    import("@/lib/supabase").then(async ({ supabase }) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { setLocation("/login"); return; }
-      try {
-        const res = await fetch("/api/auth/supabase-exchange", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) throw new Error("Exchange failed");
-        const ex = await res.json();
-        if (!ex.token) throw new Error("No token returned");
-        localStorage.setItem("userToken", ex.token);
-        if (ex.userId) { localStorage.setItem("userId", ex.userId); setChatUserId(ex.userId); }
-        if (ex.username) { localStorage.setItem("username", ex.username); setChatUsername(ex.username); }
-        setChatToken(ex.token);
-        setAuthReady(true);
-      } catch {
-        setLocation("/login");
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { setLocation("/login"); return; }
+      const uname = session.user.user_metadata?.username
+        || session.user.email?.split("@")[0]
+        || session.user.id.slice(0, 12);
+      const displayName = session.user.user_metadata?.displayName
+        || session.user.user_metadata?.username
+        || uname;
+      const avatar = session.user.user_metadata?.avatar
+        || session.user.user_metadata?.avatar_url
+        || "";
+      setUsername(uname);
+      setMyDisplayName(displayName);
+      setMyAvatar(avatar);
+      setAuthReady(true);
     });
-  }, []);
+  }, [setLocation]);
 
-  const token = chatToken;
-  const userId = chatUserId;
-  const username = chatUsername;
+  // DB migration needed flag
+  const [needsMigration, setNeedsMigration] = useState(false);
 
-  // Helper to get user details
-  const getUserDetails = (usernameArg: string, convId?: string) => {
-    if (usernameArg === username) return { id: userId || "", username: "You", displayName: myDisplayName || "You", avatar: myAvatar };
-    
-    // Try to find in the current conversation first
-    if (convId) {
-      const conv = conversations.find(c => (c.id === convId || c._id === convId));
-      const u = conv?.participantsDetails?.find(p => p.username === usernameArg);
-      if (u) return u;
-    }
-    
-    // Search in all conversations
-    for (const c of conversations) {
-      const u = c.participantsDetails?.find(p => p.username === usernameArg);
-      if (u) return u;
-    }
-    return { id: usernameArg, username: usernameArg, displayName: usernameArg };
-  };
-
-  // Connect to WS and Fetch Conversations — wait until auth is resolved
+  // ── Step 2: load conversations once auth is ready ─────────────────────────
   useEffect(() => {
-    if (!authReady) return; // still exchanging token, hold on
-    if (!token || !userId) {
-      setLocation("/login");
+    if (!authReady || !username) return;
+    fetchConversations();
+  }, [authReady, username]);
+
+  const fetchConversations = useCallback(async () => {
+    if (!username) return;
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("*")
+      .contains("participants", [username])
+      .order("last_message_at", { ascending: false });
+    if (error) {
+      // PGRST205 = table doesn't exist yet — user needs to run migration SQL
+      if (error.code === "PGRST205" || error.message?.includes("conversations")) {
+        setNeedsMigration(true);
+      } else {
+        console.error("fetchConversations:", error.message);
+      }
+      return;
+    }
+    setNeedsMigration(false);
+    setConversations((data as Conversation[]) || []);
+  }, [username]);
+
+  // ── Step 3: load messages when active conversation changes ────────────────
+  useEffect(() => {
+    if (!activeConvId) return;
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", activeConvId)
+      .order("created_at", { ascending: true })
+      .limit(100)
+      .then(({ data }) => setMessages((data as Message[]) || []));
+  }, [activeConvId]);
+
+  // ── Step 4: Supabase Realtime — broadcast channel for new messages ─────────
+  useEffect(() => {
+    if (!authReady || !username) return;
+
+    // Use broadcast channel — works without postgres_realtime publication
+    const channel = supabase.channel("cf-wiki-chat");
+
+    channel
+      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+        const msg = payload.message as Message;
+        // Add to messages if we're watching that conversation
+        setMessages(prev => {
+          if (msg.conversation_id !== activeConvId) return prev;
+          if (prev.some(m => m.id === msg.id)) return prev; // de-dupe
+          return [...prev, msg];
+        });
+        // Update conversation preview
+        setConversations(prev =>
+          prev.map(c =>
+            c.id === msg.conversation_id
+              ? { ...c, last_message: msg.content, last_message_at: msg.created_at }
+              : c
+          ).sort((a, b) =>
+            new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
+          )
+        );
+      })
+      .on("broadcast", { event: "new_conversation" }, () => {
+        fetchConversations();
+      })
+      .subscribe();
+
+    realtimeRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [authReady, username, activeConvId, fetchConversations]);
+
+  // Auto-scroll
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  const sendMessage = useCallback(async (content: string, type: "text" | "image" = "text") => {
+    if (!activeConvId || !username) return;
+
+    const msgData: Omit<Message, "id" | "created_at"> & { created_at?: string } = {
+      conversation_id: activeConvId,
+      sender_username: username,
+      content,
+      type,
+      ...(replyingTo ? {
+        reply_to_id: replyingTo.id,
+        reply_to_content: replyingTo.content.slice(0, 120),
+        reply_to_sender: replyingTo.sender_username,
+      } : {}),
+    };
+
+    const { data: inserted, error } = await supabase
+      .from("messages")
+      .insert(msgData)
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
       return;
     }
 
-    // Fetch conversations
-    fetch("/api/chat/conversations", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (Array.isArray(data)) {
-        setConversations(data);
-        
-        // Extract my profile from response if possible or fetch it
-        // Since getConversationsByUser enriches response with participantsDetails, 
-        // we can find ourselves in one of them.
-        for (const c of data) {
-          // Check if participantsDetails exists (backend might not send it yet, we might need to fetch users)
-          const me = c.participantsDetails?.find((p: User) => p.username === username);
-          if (me) {
-            setMyDisplayName(me.displayName || me.username);
-            setMyAvatar(me.avatar || "");
-            break;
-          }
-        }
-      }
-    })
-    .catch(console.error);
+    // Update conversation last_message
+    await supabase.from("conversations").update({
+      last_message: content,
+      last_message_at: inserted.created_at,
+    }).eq("id", activeConvId);
 
-    // WebSocket Connection
-    let retry = 0;
-    let closed = false;
-    
-    const connect = () => {
-      if (closed) return;
-      const ws = new WebSocket(getWsUrl(token));
-      wsRef.current = ws;
+    // Broadcast to all subscribers (including self in other tabs)
+    await realtimeRef.current?.send({
+      type: "broadcast",
+      event: "new_message",
+      payload: { message: inserted },
+    });
 
-      ws.onopen = () => { retry = 0; console.log("WS Connected"); };
-      
-      ws.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data);
-          
-          if (data.type === "message") {
-            const newMsg = data.message;
-            // Update messages if looking at this conversation
-            setMessages(prev => {
-              if (activeConversationId === newMsg.conversationId) {
-                // Check if message already exists (optimistic update or duplicate)
-                if (prev.some(m => m.id === newMsg.id || m.id === newMsg._id)) return prev;
-                return [...prev, { ...newMsg, id: newMsg.id || newMsg._id }];
-              }
-              return prev;
-            });
-            
-            // Update conversation last message time
-            setConversations(prev => prev.map(c => 
-              (c.id === newMsg.conversationId || c._id === newMsg.conversationId)
-                ? { ...c, lastMessage: newMsg.content, lastMessageAt: newMsg.createdAt } 
-                : c
-            ).sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()));
-          }
-        } catch (e) {
-          console.error("WS Parse error", e);
-        }
-      };
+    // Add to local state immediately
+    setMessages(prev => prev.some(m => m.id === inserted.id) ? prev : [...prev, inserted]);
+    setConversations(prev =>
+      prev.map(c => c.id === activeConvId
+        ? { ...c, last_message: content, last_message_at: inserted.created_at }
+        : c
+      )
+    );
 
-      ws.onclose = () => {
-        if (!closed) {
-          retry = Math.min(retry + 1, 5);
-          setTimeout(connect, 1000 * retry);
-        }
-      };
-    };
+    setText("");
+    setReplyingTo(null);
+  }, [activeConvId, username, replyingTo, toast]);
 
-    connect();
-    return () => { closed = true; wsRef.current?.close(); };
-  }, [token, userId, setLocation]);
-
-  // Fetch messages when active conversation changes
-  useEffect(() => {
-    if (!activeConversationId || !token) return;
-
-    fetch(`/api/chat/conversations/${activeConversationId}/messages`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (Array.isArray(data)) {
-        // Enrich messages with reply information
-        const enrichedMessages = data.map((msg: Message) => {
-          if (msg.replyTo) {
-            const repliedMsg = data.find((m: Message) => (m.id || m._id) === msg.replyTo);
-            return { ...msg, replyToMessage: repliedMsg };
-          }
-          return msg;
-        });
-        setMessages(enrichedMessages);
-        // Scroll to bottom
-        setTimeout(() => {
-          scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    })
-    .catch(console.error);
-  }, [activeConversationId, token]);
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!text.trim() || !activeConversationId) return;
-
-    try {
-      const res = await fetch("/api/chat/messages", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-          conversationId: activeConversationId,
-          content: text,
-          type: "text",
-          replyTo: replyingTo?.id || replyingTo?._id || undefined
-        })
-      });
-
-      if (res.ok) {
-        const msg = await res.json();
-        // Add to messages immediately (though WS will also send it back, de-dupe handled there)
-        setMessages(prev => [...prev, msg]);
-        setText("");
-        setReplyingTo(null);
-      }
-    } catch (error) {
-      console.error("Failed to send message", error);
-      toast({ title: "Failed to send message", variant: "destructive" });
-    }
-  };
-
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const handleSend = useCallback(() => {
+    if (!text.trim()) return;
+    sendMessage(text.trim(), "text");
+  }, [text, sendMessage]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isProfile = false) => {
-    if (!e.target.files?.length || !token) return;
+    if (!e.target.files?.length) return;
     const file = e.target.files[0];
     setUploadingImage(true);
     try {
-      const url = await uploadImageToSupabase(file, "uploads", isProfile ? "avatars" : "chat");
-      if (url) {
-        if (isProfile) {
-          setMyAvatar(url);
-          await fetch("/api/users/me", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ displayName: myDisplayName, avatar: url })
-          }).then(r => { if (r.ok) toast({ title: "Avatar updated" }); });
-        } else if (activeConversationId) {
-          const res = await fetch("/api/chat/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ conversationId: activeConversationId, content: url, type: "image" })
-          });
-          if (res.ok) {
-            const msg = await res.json();
-            setMessages(prev => [...prev, msg]);
-          }
-        }
+      const url = await uploadToSupabase(file, isProfile ? "avatars" : "chat");
+      if (isProfile) {
+        setMyAvatar(url);
+        await supabase.auth.updateUser({ data: { avatar: url, avatar_url: url } });
+        toast({ title: "Avatar updated" });
+      } else {
+        await sendMessage(url, "image");
       }
-    } catch (error) {
-      toast({ title: "Upload failed", description: "Could not upload image. Please try again.", variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err?.message || "Could not upload image", variant: "destructive" });
     } finally {
       setUploadingImage(false);
       e.target.value = "";
     }
   };
 
-  const handleCreateGroup = async () => {
-    if (!newGroupName.trim() || !token) return;
-
-    try {
-      const res = await fetch("/api/chat/conversations", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-          participants: [username], // Self is included, backend handles it but good to be explicit
-          type: "channel",
-          initialMessage: `Welcome to ${newGroupName}`
-        })
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        setConversations(prev => [data, ...prev]);
-        setIsNewGroupOpen(false);
-        setNewGroupName("");
-        setActiveConversationId(data.id || data._id);
-      }
-    } catch (error) {
-      toast({ title: "Failed to create group", variant: "destructive" });
-    }
-  };
-
   const handleUpdateProfile = async () => {
-    if (!token) return;
     try {
-      const res = await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-          displayName: myDisplayName,
-          avatar: myAvatar
-        })
+      await supabase.auth.updateUser({
+        data: { displayName: myDisplayName, username: myDisplayName },
       });
-      if (res.ok) {
-        toast({ title: "Profile updated" });
-        setIsSettingsOpen(false);
-      }
-    } catch (error) {
+      toast({ title: "Profile updated" });
+      setIsSettingsOpen(false);
+    } catch {
       toast({ title: "Failed to update profile", variant: "destructive" });
     }
   };
 
-  const activeConversation = conversations.find(c => (c.id === activeConversationId || c._id === activeConversationId));
+  const handleCreateChannel = async () => {
+    if (!newGroupName.trim() || !username) return;
+    const { data: conv, error } = await supabase
+      .from("conversations")
+      .insert({
+        name: newGroupName.trim(),
+        type: "channel",
+        participants: [username],
+        last_message: `${username} created this channel`,
+        last_message_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) { toast({ title: "Failed to create channel", description: error.message, variant: "destructive" }); return; }
+    setConversations(prev => [conv, ...prev]);
+    setActiveConvId(conv.id);
+    setIsNewGroupOpen(false);
+    setNewGroupName("");
+    // broadcast new conversation
+    await realtimeRef.current?.send({ type: "broadcast", event: "new_conversation", payload: {} });
+  };
+
+  const handleStartDM = async () => {
+    if (!newDMUser.trim() || !username) return;
+    const target = newDMUser.trim();
+    // Check if DM already exists
+    const existing = conversations.find(c =>
+      c.type === "direct" &&
+      c.participants.includes(username) &&
+      c.participants.includes(target)
+    );
+    if (existing) { setActiveConvId(existing.id); setIsNewGroupOpen(false); setNewDMUser(""); return; }
+
+    const { data: conv, error } = await supabase
+      .from("conversations")
+      .insert({
+        type: "direct",
+        participants: [username, target],
+        last_message: "",
+        last_message_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) { toast({ title: "Failed to start DM", description: error.message, variant: "destructive" }); return; }
+    setConversations(prev => [conv, ...prev]);
+    setActiveConvId(conv.id);
+    setIsNewGroupOpen(false);
+    setNewDMUser("");
+    await realtimeRef.current?.send({ type: "broadcast", event: "new_conversation", payload: {} });
+  };
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const activeConv = conversations.find(c => c.id === activeConvId);
+
+  function convDisplayName(c: Conversation) {
+    if (c.type !== "direct") return c.name || "Unnamed";
+    return c.participants.find(p => p !== username) || "Unknown";
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const MIGRATION_SQL = `-- Paste this in Supabase → SQL Editor → Run
+CREATE TABLE IF NOT EXISTS conversations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT, type TEXT DEFAULT 'direct'
+    CHECK (type IN ('direct','group','channel')),
+  participants TEXT[] NOT NULL DEFAULT '{}',
+  last_message TEXT, last_message_at TIMESTAMPTZ DEFAULT now(),
+  avatar TEXT, created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_username TEXT NOT NULL, content TEXT NOT NULL,
+  type TEXT DEFAULT 'text' CHECK (type IN ('text','image','system')),
+  reply_to_id UUID, reply_to_content TEXT, reply_to_sender TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_conv_participants ON conversations USING GIN (participants);
+CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages (conversation_id, created_at);
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conv_all ON conversations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY msg_all ON messages FOR ALL USING (true) WITH CHECK (true);`;
+
+  if (!authReady) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (needsMigration) {
+    return (
+      <div className="container mx-auto px-4 py-10 max-w-2xl">
+        <PageSEO title="Chat — Setup Required" description="Database setup needed" />
+        <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">⚙️</span>
+            <div>
+              <h2 className="font-black text-lg">One-time database setup needed</h2>
+              <p className="text-sm text-muted-foreground">The chat tables don't exist yet in your Supabase project. Run the SQL below — it takes 5 seconds.</p>
+            </div>
+          </div>
+          <ol className="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
+            <li>Open your <strong className="text-foreground">Supabase dashboard</strong></li>
+            <li>Go to <strong className="text-foreground">SQL Editor → New query</strong></li>
+            <li>Paste the SQL below and click <strong className="text-foreground">Run</strong></li>
+            <li>Come back here and refresh</li>
+          </ol>
+          <div className="relative">
+            <pre className="rounded bg-muted p-4 text-xs overflow-x-auto whitespace-pre-wrap">{MIGRATION_SQL}</pre>
+            <Button
+              size="sm"
+              variant="outline"
+              className="absolute top-2 right-2"
+              onClick={() => { navigator.clipboard.writeText(MIGRATION_SQL); toast({ title: "Copied!" }); }}
+            >
+              Copy
+            </Button>
+          </div>
+          <Button className="w-full" onClick={() => { setNeedsMigration(false); fetchConversations(); }}>
+            I've run it — check again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-6 h-[calc(100vh-4rem)]" style={{ background: "var(--background)" }}>
+    <div className="container mx-auto px-4 py-6 h-[calc(100vh-4rem)]">
       <PageSEO title="Live Chat" description="Real-time communication" />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
-        {/* Sidebar */}
-        <div className="md:col-span-1 h-full flex flex-col overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+        {/* ── Sidebar ──────────────────────────────────────────────────────── */}
+        <div
+          className="md:col-span-1 h-full flex flex-col overflow-hidden"
+          style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
+        >
           <div className="p-4 flex flex-row justify-between items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <span className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Chats</span>
+            <span className="font-black text-sm uppercase tracking-wider">Chats</span>
             <div className="flex gap-2">
+              {/* Profile settings */}
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
                   <Button size="icon" variant="ghost"><Settings className="h-5 w-5" /></Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Chat Profile Settings</DialogTitle>
-                  </DialogHeader>
+                  <DialogHeader><DialogTitle>Chat Profile Settings</DialogTitle></DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="h-20 w-20">
                         <AvatarImage src={myAvatar} />
-                        <AvatarFallback>{myDisplayName?.substring(0,2).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{getInitials(myDisplayName)}</AvatarFallback>
                       </Avatar>
                       <Label htmlFor="avatar-upload" className="cursor-pointer">
                         <div className="flex items-center gap-2 text-sm text-primary hover:underline">
                           <Upload className="h-4 w-4" /> Change Avatar
                         </div>
-                        <Input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, true)} />
+                        <Input id="avatar-upload" type="file" className="hidden" accept="image/*"
+                          onChange={(e) => handleFileUpload(e, true)} />
                       </Label>
                     </div>
                     <div className="space-y-2">
@@ -420,55 +445,69 @@ export default function Chat() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* New chat / channel */}
               <Dialog open={isNewGroupOpen} onOpenChange={setIsNewGroupOpen}>
                 <DialogTrigger asChild>
                   <Button size="icon" variant="ghost"><Plus className="h-5 w-5" /></Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Channel</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <DialogHeader><DialogTitle>New Chat</DialogTitle></DialogHeader>
+                  <div className="space-y-6 py-4">
                     <div className="space-y-2">
-                      <Label>Channel Name</Label>
-                      <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="# general" />
+                      <Label className="font-semibold">Direct Message</Label>
+                      <div className="flex gap-2">
+                        <Input value={newDMUser} onChange={e => setNewDMUser(e.target.value)}
+                          placeholder="Enter username..." onKeyDown={e => e.key === "Enter" && handleStartDM()} />
+                        <Button onClick={handleStartDM} disabled={!newDMUser.trim()}>Start</Button>
+                      </div>
                     </div>
-                    <Button onClick={handleCreateGroup} className="w-full">Create Channel</Button>
+                    <div className="space-y-2">
+                      <Label className="font-semibold">Create Channel</Label>
+                      <div className="flex gap-2">
+                        <Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)}
+                          placeholder="# channel-name" onKeyDown={e => e.key === "Enter" && handleCreateChannel()} />
+                        <Button onClick={handleCreateChannel} disabled={!newGroupName.trim()}>Create</Button>
+                      </div>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
+
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
+              {conversations.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">
+                  No conversations yet.<br />Click <strong>+</strong> to start one.
+                </p>
+              )}
               {conversations.map(c => {
-                const otherUser = c.participantsDetails?.find(p => p.username !== username) || { displayName: "Unknown", avatar: "", username: "Unknown" };
-                const isChannel = c.type === 'channel' || c.type === 'group';
-                const displayName = isChannel ? c.name : (otherUser.displayName || otherUser.username || c.participants.find(p => p !== username));
-                const avatar = isChannel ? c.avatar : otherUser.avatar;
-                const cId = c.id || c._id || "";
-
+                const isChannel = c.type !== "direct";
+                const name = convDisplayName(c);
+                const isActive = c.id === activeConvId;
                 return (
                   <div
-                    key={cId}
-                    onClick={() => setActiveConversationId(cId)}
+                    key={c.id}
+                    onClick={() => setActiveConvId(c.id)}
                     className="p-3 cursor-pointer transition-all flex items-center gap-3"
                     style={{
-                      background: activeConversationId === cId ? "rgba(245,166,35,0.08)" : "transparent",
+                      background: isActive ? "rgba(245,166,35,0.08)" : "transparent",
                       borderRadius: "3px",
-                      borderLeft: activeConversationId === cId ? "2px solid #f5a623" : "2px solid transparent",
+                      borderLeft: isActive ? "2px solid #f5a623" : "2px solid transparent",
                     }}
                   >
                     <Avatar>
-                      <AvatarImage src={avatar} />
+                      <AvatarImage src={c.avatar} />
                       <AvatarFallback style={{ background: "rgba(255,255,255,0.08)", color: "#888", fontSize: "11px" }}>
-                        {isChannel ? <Hash className="h-4 w-4" /> : displayName?.substring(0,2).toUpperCase()}
+                        {isChannel ? <Hash className="h-4 w-4" /> : getInitials(name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
-                      <div className="text-sm font-bold truncate" style={{ color: "var(--foreground)" }}>{displayName}</div>
+                      <div className="text-sm font-bold truncate">{name}</div>
                       <div className="text-[11px] truncate" style={{ color: "#555" }}>
-                        {c.lastMessage ? c.lastMessage : (c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString() : 'No messages')}
+                        {c.last_message || "No messages yet"}
                       </div>
                     </div>
                   </div>
@@ -478,24 +517,26 @@ export default function Chat() {
           </ScrollArea>
         </div>
 
-        {/* Chat Area */}
-        <div className="md:col-span-3 h-full flex flex-col overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-          {activeConversationId ? (
+        {/* ── Chat Area ─────────────────────────────────────────────────────── */}
+        <div
+          className="md:col-span-3 h-full flex flex-col overflow-hidden"
+          style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
+        >
+          {activeConv ? (
             <>
+              {/* Header */}
               <div className="p-4 flex flex-row justify-between items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarImage src={activeConversation?.type === 'channel' ? activeConversation.avatar : activeConversation?.participantsDetails?.find(p => p.username !== username)?.avatar} />
+                    <AvatarImage src={activeConv.avatar} />
                     <AvatarFallback style={{ background: "rgba(255,255,255,0.08)", color: "#888" }}>
-                      {activeConversation?.type === 'channel' ? <Hash className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                      {activeConv.type === "direct" ? <Users className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
-                      {activeConversation?.type === 'channel' ? activeConversation.name : (activeConversation?.participantsDetails?.find(p => p.username !== username)?.displayName || activeConversation?.participants.find(p => p !== username))}
-                    </div>
-                    {activeConversation?.type === 'channel' && (
-                      <p className="text-[10px]" style={{ color: "#555" }}>{activeConversation.participants.length} members</p>
+                    <div className="font-black text-sm uppercase tracking-tight">{convDisplayName(activeConv)}</div>
+                    {activeConv.type !== "direct" && (
+                      <p className="text-[10px]" style={{ color: "#555" }}>{activeConv.participants.length} member{activeConv.participants.length !== 1 ? "s" : ""}</p>
                     )}
                   </div>
                 </div>
@@ -506,81 +547,65 @@ export default function Chat() {
                 </div>
               </div>
 
+              {/* Messages */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
                   {messages.map((m, i) => {
-                    const isMe = m.sender === username;
-                    const sender = getUserDetails(m.sender || "Unknown", activeConversationId || undefined);
-                    const showHeader = i === 0 || messages[i-1].sender !== m.sender;
-                    const repliedMessage = m.replyTo ? messages.find(msg => (msg.id || msg._id) === m.replyTo) : null;
-                    const repliedSender = repliedMessage ? getUserDetails(repliedMessage.sender || "Unknown", activeConversationId || undefined) : null;
-
+                    const isMe = m.sender_username === username;
+                    const showHeader = i === 0 || messages[i - 1].sender_username !== m.sender_username;
                     return (
-                      <div key={m.id || m._id || i} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                      <div key={m.id} className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
                         {showHeader && !isMe && (
                           <Avatar className="h-8 w-8 mt-1">
-                            <AvatarImage src={sender.avatar} />
-                            <AvatarFallback>{sender.displayName?.substring(0,1) || sender.username?.substring(0,1)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(m.sender_username)}</AvatarFallback>
                           </Avatar>
                         )}
                         {!showHeader && !isMe && <div className="w-8" />}
 
-                        <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                        <div className={`max-w-[70%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                           {showHeader && (
-                            <div className="text-xs font-semibold text-foreground mb-1 px-1 flex items-center gap-2">
-                              {!isMe && (
-                                <Avatar className="h-4 w-4">
-                                  <AvatarImage src={sender.avatar} />
-                                  <AvatarFallback className="text-[8px]">{sender.displayName?.substring(0,1) || sender.username?.substring(0,1)}</AvatarFallback>
-                                </Avatar>
-                              )}
-                              <span>{isMe ? 'You' : (sender.displayName || sender.username || 'Unknown')}</span>
+                            <div className="text-xs font-semibold mb-1 px-1">
+                              {isMe ? "You" : m.sender_username}
                             </div>
                           )}
-                          <div 
-                            className={`p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${isMe ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border'}`}
+                          <div
+                            className={`p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${
+                              isMe ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border"
+                            }`}
                             onClick={() => setReplyingTo(m)}
                           >
-                            {repliedMessage && (
-                              <div className={`mb-2 p-2 rounded border-l-4 ${isMe ? 'bg-primary/20 border-primary-foreground/50' : 'bg-muted border-border'} text-xs opacity-80`}>
-                                <div className="font-semibold">{repliedSender?.displayName || repliedSender?.username || 'Unknown'}</div>
-                                <div className="truncate">{repliedMessage.content.substring(0, 50)}{repliedMessage.content.length > 50 ? '...' : ''}</div>
+                            {/* Reply preview */}
+                            {m.reply_to_id && (
+                              <div className={`mb-2 p-2 rounded border-l-4 text-xs opacity-80 ${
+                                isMe ? "bg-primary/20 border-primary-foreground/50" : "bg-muted border-border"
+                              }`}>
+                                <div className="font-semibold">{m.reply_to_sender || "Unknown"}</div>
+                                <div className="truncate">{(m.reply_to_content || "").slice(0, 50)}</div>
                               </div>
                             )}
-                            {m.type === 'image' && (
+
+                            {/* Content */}
+                            {m.type === "image" ? (
                               <div className="space-y-2">
-                                <img 
-                                  src={m.content} 
-                                  alt="Shared image" 
-                                  className="rounded-lg max-w-full max-h-96 object-contain cursor-pointer hover:opacity-90 transition-opacity" 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(m.content, '_blank');
-                                  }}
+                                <img
+                                  src={m.content}
+                                  alt="Shared image"
+                                  className="rounded-lg max-w-full max-h-96 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={e => { e.stopPropagation(); window.open(m.content, "_blank"); }}
                                 />
                                 <p className="text-xs opacity-80">Click to view full size</p>
                               </div>
-                            )}
-                            {m.type !== 'image' && (
-                              <div className="whitespace-pre-wrap break-words prose prose-sm dark:prose-invert max-w-none">
-                                {m.content.split('\n').map((line, idx) => (
-                                  <p key={idx} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
-                                ))}
+                            ) : (
+                              <div className="whitespace-pre-wrap break-words">
+                                {m.content}
                               </div>
                             )}
                           </div>
                           <div className="text-[10px] text-muted-foreground mt-1 px-1 opacity-70 flex items-center gap-2">
-                            <span>{new Date(m.createdAt).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}</span>
+                            <span>{fmtTime(m.created_at)}</span>
                             {!isMe && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 px-1 text-[10px] opacity-50 hover:opacity-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setReplyingTo(m);
-                                }}
-                              >
+                              <Button variant="ghost" size="sm" className="h-4 px-1 text-[10px] opacity-50 hover:opacity-100"
+                                onClick={e => { e.stopPropagation(); setReplyingTo(m); }}>
                                 Reply
                               </Button>
                             )}
@@ -593,13 +618,14 @@ export default function Chat() {
                 </div>
               </ScrollArea>
 
+              {/* Input area */}
               <div className="p-4 border-t bg-background/50 space-y-2">
                 {replyingTo && (
                   <div className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <span className="text-muted-foreground">Replying to</span>
-                      <span className="font-semibold truncate">{getUserDetails(replyingTo.sender || "Unknown", activeConversationId || undefined).displayName || getUserDetails(replyingTo.sender || "Unknown", activeConversationId || undefined).username}</span>
-                      <span className="text-muted-foreground truncate">: {replyingTo.content.substring(0, 30)}{replyingTo.content.length > 30 ? '...' : ''}</span>
+                      <span className="font-semibold truncate">{replyingTo.sender_username}</span>
+                      <span className="text-muted-foreground truncate">: {replyingTo.content.slice(0, 30)}{replyingTo.content.length > 30 ? "…" : ""}</span>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setReplyingTo(null)} className="h-6 w-6 p-0">
                       <X className="h-4 w-4" />
@@ -608,22 +634,21 @@ export default function Chat() {
                 )}
                 <div className="flex items-center gap-2">
                   <Label htmlFor="file-upload" className={`cursor-pointer p-2 hover:bg-muted rounded-full ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-                    {uploadingImage ? <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
-                    <Input id="file-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={uploadingImage} />
+                    {uploadingImage
+                      ? <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                      : <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    }
+                    <Input id="file-upload" type="file" className="hidden" accept="image/*"
+                      onChange={e => handleFileUpload(e, false)} disabled={uploadingImage} />
                   </Label>
-                  <Input 
-                    value={text} 
-                    onChange={e => setText(e.target.value)} 
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder={replyingTo ? "Type your reply..." : "Type a message or share an image..."} 
+                  <Input
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder={replyingTo ? "Type your reply…" : "Type a message…"}
                     className="flex-1 rounded-full"
                   />
-                  <Button onClick={handleSendMessage} size="icon" className="rounded-full" disabled={!text.trim()}>
+                  <Button onClick={handleSend} size="icon" className="rounded-full" disabled={!text.trim() || uploadingImage}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
@@ -632,7 +657,8 @@ export default function Chat() {
           ) : (
             <div className="flex-1 flex items-center justify-center flex-col text-muted-foreground">
               <Users className="h-16 w-16 mb-4 opacity-20" />
-              <p>Select a conversation to start chatting</p>
+              <p className="text-sm">Select a conversation to start chatting</p>
+              <p className="text-xs mt-1 opacity-60">or click <strong>+</strong> to start a new one</p>
             </div>
           )}
         </div>

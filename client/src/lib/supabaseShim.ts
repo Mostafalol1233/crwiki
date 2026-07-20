@@ -758,10 +758,11 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   if (path === '/admin/migrate-slugs') return { eventsUpdated: 0, postsUpdated: 0, newsUpdated: 0 };
   if (path === '/admin/migrate-seller-images-to-cloudinary') return { success: true };
 
-  // ── Image upload ───────────────────────────────────────────────────────────
+  // ── Image upload — now handled by uploadToSupabase.ts (Supabase Storage) ──
+  // These paths are no longer called via the shim; uploads go directly to
+  // Supabase Storage using client/src/lib/uploadToSupabase.ts
   if (path === '/images/upload' || path === '/upload-image') {
-    // If Cloudinary env available, try to upload
-    return { error: 'Image upload requires Cloudinary configuration. Please use a direct URL.' };
+    return { error: 'Use uploadToSupabase() from @/lib/uploadToSupabase instead.' };
   }
 
   // ── Auth (handled separately in AdminLogin.tsx, stub here) ────────────────

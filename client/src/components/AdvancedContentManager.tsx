@@ -482,29 +482,12 @@ export function AdvancedContentManager() {
                   setUploadLoading(true);
                   setUploadProgress(0);
                   if (uploadMethod === "server") {
-                    const tokRes = await fetch('/api/security/csrf-token');
-                    const tokJson = await tokRes.json();
-                    const token = tokJson?.csrfToken || '';
-                    const url = '/images/upload';
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', url, true);
-                    xhr.setRequestHeader('X-CSRF-Token', token);
-                    xhr.upload.onprogress = (e) => {
-                      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
-                    };
-                    const res: any = await new Promise((resolve, reject) => {
-                      xhr.onreadystatechange = () => {
-                        if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json: async () => JSON.parse(xhr.responseText || '{}') });
-                      };
-                      xhr.onerror = () => reject(new Error('Network error'));
-                      xhr.send(fd);
-                    });
-                    const data = await res.json();
-                    const uploadedUrl = data?.secure_url || data?.domain_url || '';
-                    if (!res.ok || !uploadedUrl) throw new Error(data?.error || 'Upload failed');
+                    const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                    const uploadedUrl = await uploadToSupabase(fileToUpload, "uploads");
+                    if (!uploadedUrl) throw new Error('Upload failed — no URL returned');
                     setLastUploadedUrl(String(uploadedUrl));
                     setLastUploadedMethod("server");
-                    toast({ title: 'Uploaded to Cloudinary', description: String(uploadedUrl) });
+                    toast({ title: 'Uploaded to Supabase Storage', description: String(uploadedUrl) });
                     navigator.clipboard.writeText(String(uploadedUrl));
                   } else {
                     const uploadedUrl = await uploadImageToSupabase(fileToUpload, 'uploads', 'content');

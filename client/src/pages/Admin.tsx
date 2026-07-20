@@ -126,29 +126,9 @@ const GalleryUploader = ({
         let uploadFile = file;
         try { uploadFile = await imageCompression(file, options); } catch { }
 
-        const fd = new FormData();
-        fd.append('file', uploadFile);
-        fd.append('folder', 'gallery');
-
-        const tokRes = await fetch('/api/security/csrf-token');
-        const tokJson = await tokRes.json();
-        const token = tokJson?.csrfToken || '';
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/images/upload', true);
-        xhr.setRequestHeader('X-CSRF-Token', token);
-
-        const res: any = await new Promise((resolve, reject) => {
-          xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, json: async () => JSON.parse(xhr.responseText || '{}') });
-          };
-          xhr.onerror = () => reject(new Error('Network error'));
-          xhr.send(fd);
-        });
-
-        const data = await res.json();
-        const url = data?.domainUrl || data?.domain_url || data?.secure_url || '';
-        if (res.ok && url) {
+        const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+        const url = await uploadToSupabase(uploadFile, "gallery");
+        if (url) {
           newUrls.push(url);
         }
       } catch (e) {
@@ -501,28 +481,9 @@ export default function Admin() {
     if (!file) return;
     setUploadingSellerImage(true);
     try {
-      let token = csrfToken || localStorage.getItem('csrfToken') || '';
-      if (!token) {
-        const tokRes = await fetch('/api/security/csrf-token');
-        const tokJson = await tokRes.json();
-        token = tokJson?.csrfToken || '';
-        if (token) localStorage.setItem('csrfToken', token);
-      }
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('folder', 'sellers');
-      const res = await fetch('/images/upload', {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': token },
-        body: fd,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Upload failed (${res.status})`);
-      }
-      const data = await res.json();
-      const url: string = data.secure_url || data.domain_url || data.domainUrl || data.url || data.src || data.path || '';
-      if (!url) throw new Error('No URL returned from server');
+      const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+      const url = await uploadToSupabase(file, "sellers");
+      if (!url) throw new Error('No URL returned from upload');
       const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
       if (slotIndex === -1) {
         currentList.push(url);
@@ -542,25 +503,15 @@ export default function Admin() {
     if (!imageUrl.trim()) return;
     setUploadingSellerUrl(true);
     try {
-      let token = csrfToken || localStorage.getItem('csrfToken') || '';
-      if (!token) {
-        const tokRes = await fetch('/api/security/csrf-token');
-        const tokJson = await tokRes.json();
-        token = tokJson?.csrfToken || '';
-        if (token) localStorage.setItem('csrfToken', token);
-      }
-      const res = await fetch('/api/images/upload-from-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
-        body: JSON.stringify({ url: imageUrl.trim(), folder: 'sellers' }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Upload failed (${res.status})`);
-      }
-      const data = await res.json();
-      const url: string = data.secure_url || data.domain_url || data.domainUrl || '';
-      if (!url) throw new Error('No URL returned from server');
+      // URL-based upload: fetch the image as a blob then upload to Supabase Storage
+      const blobRes = await fetch(imageUrl.trim());
+      if (!blobRes.ok) throw new Error('Could not fetch image from URL');
+      const blob = await blobRes.blob();
+      const ext = blob.type.split('/')[1] || 'jpg';
+      const file = new File([blob], `seller-${Date.now()}.${ext}`, { type: blob.type });
+      const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+      const url = await uploadToSupabase(file, "sellers");
+      if (!url) throw new Error('No URL returned from upload');
       const currentList = sellerForm.images ? sellerForm.images.split(',').map(s => s.trim()).filter(Boolean) : [];
       if (slotIndex === -1) {
         currentList.push(url);
@@ -2617,27 +2568,14 @@ export default function Admin() {
                           if (files.length === 0) return;
                           setMediaUploading(true);
                           try {
-                            const tokRes = await fetch('/api/security/csrf-token');
-                            const tokJson = await tokRes.json();
-                            const csrfToken = tokJson?.csrfToken || '';
                             let uploadedCount = 0;
+                            const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
                             for (const file of files) {
                               try {
-                                const fd = new FormData();
-                                fd.append('file', file);
-                                const res = await fetch('/images/upload', {
-                                  method: 'POST',
-                                  headers: {
-                                    'X-CSRF-Token': csrfToken,
-                                    'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-                                  },
-                                  body: fd,
-                                });
-                                const json = await res.json();
-                                if (json.ok) uploadedCount++;
-                                else toast({ title: `Upload failed: ${file.name}`, description: json.error || 'Unknown error', variant: 'destructive' });
-                              } catch {
-                                toast({ title: `Upload failed: ${file.name}`, variant: 'destructive' });
+                                await uploadToSupabase(file, "media");
+                                uploadedCount++;
+                              } catch (uploadErr: any) {
+                                toast({ title: `Upload failed: ${file.name}`, description: uploadErr.message, variant: 'destructive' });
                               }
                             }
                             if (uploadedCount > 0) {
@@ -2898,28 +2836,10 @@ export default function Admin() {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
                                     try {
-                                      const tokRes = await fetch('/api/security/csrf-token');
-                                      const tokJson = await tokRes.json();
-                                      const fd = new FormData();
-                                      fd.append('file', file);
-                                      fd.append('folder', 'posts');
-                                      const xhr = new XMLHttpRequest();
-                                      xhr.open('POST', '/images/upload', true);
-                                      xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
-                                      const result: any = await new Promise((resolve, reject) => {
-                                        xhr.onreadystatechange = () => {
-                                          if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
-                                        };
-                                        xhr.onerror = () => reject(new Error('Network error'));
-                                        xhr.send(fd);
-                                      });
-                                      const url = result.body?.domain_url || result.body?.secure_url || '';
-                                      if (result.ok && url) {
-                                        setPostForm(prev => ({ ...prev, image: url }));
-                                        toast({ title: "Image uploaded!", description: "Image URL set." });
-                                      } else {
-                                        toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
-                                      }
+                                      const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                                      const url = await uploadToSupabase(file, "posts");
+                                      setPostForm(prev => ({ ...prev, image: url }));
+                                      toast({ title: "Image uploaded!" });
                                     } catch (err: any) {
                                       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
                                     }
@@ -3552,28 +3472,10 @@ export default function Admin() {
                                         const file = e.target.files?.[0];
                                         if (!file) return;
                                         try {
-                                          const tokRes = await fetch('/api/security/csrf-token');
-                                          const tokJson = await tokRes.json();
-                                          const fd = new FormData();
-                                          fd.append('file', file);
-                                          fd.append('folder', 'events');
-                                          const xhr = new XMLHttpRequest();
-                                          xhr.open('POST', '/images/upload', true);
-                                          xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
-                                          const result: any = await new Promise((resolve, reject) => {
-                                            xhr.onreadystatechange = () => {
-                                              if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
-                                            };
-                                            xhr.onerror = () => reject(new Error('Network error'));
-                                            xhr.send(fd);
-                                          });
-                                          const url = result.body?.domain_url || result.body?.secure_url || '';
-                                          if (result.ok && url) {
-                                            setEventForm(prev => ({ ...prev, image: url }));
-                                            toast({ title: "Image uploaded!", description: "Image URL set." });
-                                          } else {
-                                            toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
-                                          }
+                                          const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                                          const url = await uploadToSupabase(file, "events");
+                                          setEventForm(prev => ({ ...prev, image: url }));
+                                          toast({ title: "Image uploaded!" });
                                         } catch (err: any) {
                                           toast({ title: "Upload failed", description: err.message, variant: "destructive" });
                                         }
@@ -3978,28 +3880,10 @@ export default function Admin() {
                                         const file = e.target.files?.[0];
                                         if (!file) return;
                                         try {
-                                          const tokRes = await fetch('/api/security/csrf-token');
-                                          const tokJson = await tokRes.json();
-                                          const fd = new FormData();
-                                          fd.append('file', file);
-                                          fd.append('folder', 'news');
-                                          const xhr = new XMLHttpRequest();
-                                          xhr.open('POST', '/images/upload', true);
-                                          xhr.setRequestHeader('X-CSRF-Token', tokJson?.csrfToken || '');
-                                          const result: any = await new Promise((resolve, reject) => {
-                                            xhr.onreadystatechange = () => {
-                                              if (xhr.readyState === 4) resolve({ ok: xhr.status < 300, body: JSON.parse(xhr.responseText || '{}') });
-                                            };
-                                            xhr.onerror = () => reject(new Error('Network error'));
-                                            xhr.send(fd);
-                                          });
-                                          const url = result.body?.domain_url || result.body?.secure_url || '';
-                                          if (result.ok && url) {
-                                            setNewsForm(prev => ({ ...prev, image: url }));
-                                            toast({ title: "Image uploaded!", description: "Image URL set." });
-                                          } else {
-                                            toast({ title: "Upload failed", description: result.body?.error || "Unknown error", variant: "destructive" });
-                                          }
+                                          const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                                          const url = await uploadToSupabase(file, "news");
+                                          setNewsForm(prev => ({ ...prev, image: url }));
+                                          toast({ title: "Image uploaded!" });
                                         } catch (err: any) {
                                           toast({ title: "Upload failed", description: err.message, variant: "destructive" });
                                         }
@@ -4630,51 +4514,16 @@ export default function Admin() {
                               const file = e.target.files?.[0];
                               if (!file) return;
                               try {
-                                const tokRes = await fetch('/api/security/csrf-token');
-                                const tokJson = await tokRes.json();
-                                const token = tokJson?.csrfToken || '';
-                                const fd = new FormData();
-                                fd.append('file', file);
-                                fd.append('folder', 'backgrounds');
-                                const xhr = new XMLHttpRequest();
-                                xhr.open('POST', '/images/upload', true);
-                                xhr.setRequestHeader('X-CSRF-Token', token);
-                                const res: any = await new Promise((resolve, reject) => {
-                                  xhr.onreadystatechange = () => {
-                                    if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, json: async () => JSON.parse(xhr.responseText || '{}') });
-                                  };
-                                  xhr.onerror = () => reject(new Error('Network error'));
-                                  xhr.send(fd);
-                                });
-                                const data = await res.json();
-                                const url = data?.domainUrl || data?.domain_url || data?.secure_url || '';
-                                if (res.ok && url) {
-                                  setSeoSettings((prev) => ({ ...prev, bg: url }));
-                                  toast({ title: 'Background uploaded', description: 'URL set from upload' });
-                                } else {
-                                  throw new Error(data?.error || 'Upload failed');
-                                }
+                                try {
+                                const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                                const url = await uploadToSupabase(file, "backgrounds");
+                                setSeoSettings((prev) => ({ ...prev, bg: url }));
+                                toast({ title: 'Background uploaded' });
                               } catch (e: any) {
                                 toast({ title: 'Upload failed', description: e?.message || String(e), variant: 'destructive' });
                               } finally {
                                 (e.target as HTMLInputElement).value = '';
                               }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => document.getElementById('bg-image-upload-appearance')?.click()}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={async () => {
-                              if (!seoSettings.bg) { toast({ title: 'Enter background URL' }); return; }
-                              try { const res = await fetch(seoSettings.bg, { method: 'HEAD' }); toast({ title: 'Background Check', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Background Check', description: 'Failed to reach image', variant: 'destructive' }); }
                             }}
                           >
                             Check
@@ -4743,51 +4592,16 @@ export default function Admin() {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
                                 try {
-                                  const tokRes = await fetch('/api/security/csrf-token');
-                                  const tokJson = await tokRes.json();
-                                  const token = tokJson?.csrfToken || '';
-                                  const fd = new FormData();
-                                  fd.append('file', file);
-                                  fd.append('folder', 'backgrounds');
-                                  const xhr = new XMLHttpRequest();
-                                  xhr.open('POST', '/images/upload', true);
-                                  xhr.setRequestHeader('X-CSRF-Token', token);
-                                  const res: any = await new Promise((resolve, reject) => {
-                                    xhr.onreadystatechange = () => {
-                                      if (xhr.readyState === 4) resolve({ ok: xhr.status >= 200 && xhr.status < 300, json: async () => JSON.parse(xhr.responseText || '{}') });
-                                    };
-                                    xhr.onerror = () => reject(new Error('Network error'));
-                                    xhr.send(fd);
-                                  });
-                                  const data = await res.json();
-                                  const url = data?.domainUrl || data?.domain_url || data?.secure_url || '';
-                                  if (res.ok && url) {
-                                    setSeoSettings((prev) => ({ ...prev, bg: url }));
-                                    toast({ title: 'Background uploaded', description: 'URL set from upload' });
-                                  } else {
-                                    throw new Error(data?.error || 'Upload failed');
-                                  }
+                                  try {
+                                  const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+                                  const url = await uploadToSupabase(file, "backgrounds");
+                                  setSeoSettings((prev) => ({ ...prev, bg: url }));
+                                  toast({ title: 'Background uploaded' });
                                 } catch (e: any) {
                                   toast({ title: 'Upload failed', description: e?.message || String(e), variant: 'destructive' });
                                 } finally {
                                   (e.target as HTMLInputElement).value = '';
                                 }
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById('bg-image-upload')?.click()}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Upload
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={async () => {
-                                if (!seoSettings.bg) { toast({ title: 'Enter background URL' }); return; }
-                                try { const res = await fetch(seoSettings.bg, { method: 'HEAD' }); toast({ title: 'Background Check', description: res.ok ? 'Accessible' : `Failed: ${res.status}` }); } catch { toast({ title: 'Background Check', description: 'Failed to reach image', variant: 'destructive' }); }
                               }}
                             >
                               Check

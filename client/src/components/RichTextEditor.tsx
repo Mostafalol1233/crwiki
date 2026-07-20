@@ -175,43 +175,8 @@ export function RichTextEditor({ value, onChange, placeholder, direction = "ltr"
             try {
               const file = files?.[0];
               if (!file) return;
-              let csrfToken = localStorage.getItem("csrfToken") || "";
-              try {
-                const tokRes = await fetch("/api/security/csrf-token", { method: "GET", credentials: "include" });
-                const tokJson = await tokRes.json().catch(() => ({}));
-                if (tokJson?.csrfToken) {
-                  csrfToken = tokJson.csrfToken;
-                  localStorage.setItem("csrfToken", csrfToken);
-                }
-              } catch { }
-
-              const fd = new FormData();
-              fd.append("file", file);
-              fd.append("folder", "editor");
-
-              const headers: Record<string, string> = {};
-              if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
-              const authToken = localStorage.getItem("adminToken") || localStorage.getItem("auth_token") || localStorage.getItem("token") || "";
-              if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
-
-              const res = await fetch("/images/upload", {
-                method: "POST",
-                headers: Object.keys(headers).length ? headers : undefined,
-                body: fd,
-                credentials: "include",
-              });
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok || data?.ok === false) {
-                throw new Error(data?.error || "Upload failed");
-              }
-              const url =
-                data?.domainUrl ||
-                data?.domain_url ||
-                data?.cloudinaryUrl ||
-                data?.cloudinary_url ||
-                data?.secure_url ||
-                data?.url ||
-                "";
+              const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+              const url = await uploadToSupabase(file, "editor");
               if (!url) throw new Error("No URL returned");
 
               uploadHandler({ result: [{ url, name: file.name, size: file.size }] });

@@ -120,14 +120,9 @@ export default function Profile() {
     if (!file || !user) return;
     setUploading(true);
     try {
-      // Use the backend upload endpoint (same as admin uses) to bypass storage RLS
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "avatars");
-      const res = await fetch("/images/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      const url = json.domain_url || json.secure_url || json.url || "";
-      if (!res.ok || !url) throw new Error(json.error || "Upload failed");
+      const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
+      const url = await uploadToSupabase(file, "avatars");
+      if (!url) throw new Error("Upload failed — no URL returned");
       setAvatarUrl(url);
       const { error } = await supabase.auth.updateUser({ data: { avatar: url, avatar_url: url } });
       if (error) throw error;

@@ -433,35 +433,18 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
       };
       const compressedFile = await imageCompression(new File([blob], `edited-image.${mimeType === 'image/png' ? 'png' : 'jpg'}`, { type: mimeType }), options);
 
-      // 4. Upload to server
-      const fd = new FormData();
-      fd.append('file', compressedFile);
-      fd.append('folder', 'editor');
-      fd.append('width', String(width));
-      fd.append('height', String(height));
+      // 4. Upload to Supabase Storage
       const ts = new Date();
       const pad = (n: number) => String(n).padStart(2, '0');
       const nameBase = `edited-${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
-      fd.append('customName', nameBase);
 
-      const tokRes = await fetch('/api/security/csrf-token');
-      const tokJson = await tokRes.json();
-      const token = tokJson?.csrfToken || '';
-
-      const res = await fetch('/images/upload', {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': token },
-        body: fd
-      });
-
-      const data = await res.json();
-      const nextUrl = data?.domainUrl || data?.domain_url || data?.secure_url || '';
-      if (res.ok && nextUrl) {
+      const { uploadToSupabase } = await import('@/lib/uploadToSupabase');
+      const nextUrl = await uploadToSupabase(compressedFile, 'editor', nameBase);
+      if (nextUrl) {
         onSave(nextUrl);
         toast({ title: "Image updated successfully" });
         onClose();
       } else {
-        // Fallback to Base64
         const base64 = finalCanvas.toDataURL(mimeType, 0.9);
         onSave(base64);
         toast({ title: "Image updated (saved as Base64)" });

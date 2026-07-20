@@ -24,21 +24,6 @@ export default function Login() {
       localStorage.setItem("userId", uid);
       localStorage.setItem("username", uname);
 
-      // Exchange Supabase session for a backend chat JWT so Chat works immediately
-      try {
-        const { session } = data;
-        if (session?.access_token) {
-          const ex = await fetch("/api/auth/supabase-exchange", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-          if (ex.ok) {
-            const exData = await ex.json();
-            if (exData.token) localStorage.setItem("userToken", exData.token);
-          }
-        }
-      } catch { /* non-fatal — chat will retry on mount */ }
-
       setLocation("/profile");
     } catch (e: any) {
       setStatus(e.message || "Login failed. Check your credentials.");

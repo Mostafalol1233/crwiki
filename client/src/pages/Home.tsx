@@ -29,12 +29,42 @@ function stripHtml(html: string) {
 
 // ─── Wiki Portal Grid ─────────────────────────────────────────────────────────
 const PORTALS = [
-  { icon: Target,     label: "Weapons",     count: "3,589", desc: "Rifles, pistols, snipers & melee", href: "/weapons",     accent: "#f5a623", border: "rgba(245,166,35,0.25)" },
-  { icon: MapPin,     label: "Maps",        count: "312",   desc: "Battle arenas and layouts",        href: "/maps",        accent: "#60a5fa", border: "rgba(96,165,250,0.25)" },
-  { icon: Users,      label: "Mercenaries", count: "10",    desc: "Elite playable operators",          href: "/mercenaries", accent: "#c084fc", border: "rgba(192,132,252,0.25)" },
-  { icon: Star,       label: "Ranks",       count: "104",   desc: "Private to Hero progression",      href: "/ranks",       accent: "#34d399", border: "rgba(52,211,153,0.25)" },
-  { icon: Shield,     label: "Game Modes",  count: "61",    desc: "Every mode with strategies",       href: "/modes",       accent: "#f87171", border: "rgba(248,113,113,0.25)" },
-  { icon: Calendar,   label: "Events",      count: "Live",  desc: "Active & upcoming CF events",      href: "/events",      accent: "#fb923c", border: "rgba(251,146,60,0.25)" },
+  {
+    icon: Target, label: "Weapons", desc: "Rifles, pistols, snipers & melee", href: "/weapons",
+    accent: "#f5a623", glow: "rgba(245,166,35,0.18)",
+    bg: "linear-gradient(135deg, #1a1200 0%, #110f00 40%, #0a0a0a 100%)",
+    badge: "3,589+ items",
+  },
+  {
+    icon: MapPin, label: "Maps", desc: "Battle arenas and layouts", href: "/maps",
+    accent: "#60a5fa", glow: "rgba(96,165,250,0.18)",
+    bg: "linear-gradient(135deg, #001830 0%, #000d1a 40%, #0a0a0a 100%)",
+    badge: "312+ arenas",
+  },
+  {
+    icon: Users, label: "Mercenaries", desc: "Elite playable operators", href: "/mercenaries",
+    accent: "#c084fc", glow: "rgba(192,132,252,0.18)",
+    bg: "linear-gradient(135deg, #12002a 0%, #0a0014 40%, #0a0a0a 100%)",
+    badge: "10 operators",
+  },
+  {
+    icon: Star, label: "Ranks", desc: "Private to Hero progression", href: "/ranks",
+    accent: "#34d399", glow: "rgba(52,211,153,0.18)",
+    bg: "linear-gradient(135deg, #001a0f 0%, #000f08 40%, #0a0a0a 100%)",
+    badge: "104 tiers",
+  },
+  {
+    icon: Shield, label: "Game Modes", desc: "Every mode with strategies", href: "/modes",
+    accent: "#f87171", glow: "rgba(248,113,113,0.18)",
+    bg: "linear-gradient(135deg, #1a0000 0%, #0f0000 40%, #0a0a0a 100%)",
+    badge: "61+ modes",
+  },
+  {
+    icon: Calendar, label: "Events", desc: "Active & upcoming CF events", href: "/events",
+    accent: "#fb923c", glow: "rgba(251,146,60,0.18)",
+    bg: "linear-gradient(135deg, #1a0c00 0%, #110700 40%, #0a0a0a 100%)",
+    badge: "Live now",
+  },
 ];
 
 function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
@@ -46,45 +76,80 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          background: hovered ? CARD2 : CARD,
-          border: `1px solid ${hovered ? portal.border : BORDER}`,
-          borderRadius: 6,
-          padding: "20px 20px 18px",
+          background: portal.bg,
+          border: `1px solid ${hovered ? portal.accent + "55" : portal.accent + "22"}`,
+          borderRadius: 8,
+          padding: "22px 18px 20px",
           cursor: "pointer",
-          transition: "all 0.2s",
+          transition: "all 0.22s",
           position: "relative",
           overflow: "hidden",
+          boxShadow: hovered ? `0 0 32px ${portal.glow}, inset 0 0 40px ${portal.glow}` : `inset 0 0 20px ${portal.glow}`,
+          transform: hovered ? "translateY(-3px)" : "translateY(0)",
         }}
       >
+        {/* Glow orb background */}
+        <div style={{
+          position: "absolute", top: -20, right: -20,
+          width: 90, height: 90, borderRadius: "50%",
+          background: `radial-gradient(circle, ${portal.accent}22 0%, transparent 70%)`,
+          pointerEvents: "none",
+          transition: "opacity 0.2s",
+          opacity: hovered ? 1 : 0.5,
+        }} />
+
         {/* Top accent bar */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: 2,
-          background: hovered ? portal.accent : "transparent",
-          transition: "background 0.2s",
+          background: `linear-gradient(to right, ${portal.accent}, ${portal.accent}44, transparent)`,
+          transition: "opacity 0.2s",
+          opacity: hovered ? 1 : 0.4,
         }} />
-        {/* Icon row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-            background: `${portal.accent}15`,
-            border: `1px solid ${portal.accent}30`,
-          }}>
-            <Icon size={18} color={portal.accent} strokeWidth={1.5} />
-          </div>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: `${portal.accent}60` }} />
+
+        {/* Icon — large and centered-left */}
+        <div style={{
+          width: 52, height: 52, borderRadius: 12,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: `${portal.accent}18`,
+          border: `1.5px solid ${portal.accent}40`,
+          marginBottom: 14,
+          boxShadow: hovered ? `0 0 16px ${portal.accent}33` : "none",
+          transition: "box-shadow 0.2s",
+        }}>
+          <Icon size={26} color={portal.accent} strokeWidth={1.5} />
         </div>
+
         {/* Label */}
-        <p style={{ fontWeight: 700, fontSize: 15, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+        <p style={{
+          fontWeight: 800, fontSize: 16, color: "#fff",
+          margin: "0 0 4px", letterSpacing: "-0.02em",
+          textShadow: hovered ? `0 0 12px ${portal.accent}55` : "none",
+          transition: "text-shadow 0.2s",
+        }}>
           {portal.label}
         </p>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0, lineHeight: 1.4 }}>
+
+        {/* Desc */}
+        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.38)", margin: "0 0 14px", lineHeight: 1.45 }}>
           {portal.desc}
         </p>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 12 }}>
-          <span style={{ fontSize: 11, color: hovered ? portal.accent : "rgba(255,255,255,0.25)", fontWeight: 600, transition: "color 0.2s" }}>
-            Browse
+
+        {/* Footer row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
+            color: portal.accent, background: `${portal.accent}18`,
+            border: `1px solid ${portal.accent}33`,
+            padding: "2px 7px", borderRadius: 4,
+          }}>
+            {portal.badge}
           </span>
-          <ArrowRight size={11} color={hovered ? portal.accent : "rgba(255,255,255,0.2)"} style={{ transition: "color 0.2s" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <span style={{ fontSize: 11, color: hovered ? portal.accent : "rgba(255,255,255,0.3)", fontWeight: 600, transition: "color 0.2s" }}>
+              Browse
+            </span>
+            <ArrowRight size={11} color={hovered ? portal.accent : "rgba(255,255,255,0.25)"} style={{ transition: "color 0.2s" }} />
+          </div>
         </div>
       </div>
     </Link>
@@ -430,7 +495,7 @@ export default function Home() {
                         <div style={{ position: "relative", overflow: "hidden", minHeight: 240 }}>
                           {(featuredEvent.image || featuredEvent.imageUrl) ? (
                             <img src={featuredEvent.image || featuredEvent.imageUrl} alt={featuredEvent.title}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 240 }} />
+                              style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", minHeight: 240, background: "#0a0a0a" }} />
                           ) : (
                             <div style={{ width: "100%", minHeight: 240, background: CARD2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                               <Calendar size={40} color="rgba(255,255,255,0.1)" />

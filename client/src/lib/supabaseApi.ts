@@ -642,6 +642,188 @@ export async function toggleVideoLike(videoId: string): Promise<{ liked: boolean
   return { liked: !existing, count };
 }
 
+// ─── Forum ───────────────────────────────────────────────────────────────────
+
+export async function getForumCategories() {
+  const { data, error } = await supabase
+    .from('forum_categories')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((c: any) => ({
+    id: String(c.id),
+    name: String(c.name),
+    nameAr: String(c.name_ar || ''),
+    slug: String(c.slug),
+    description: String(c.description || ''),
+    descriptionAr: String(c.description_ar || ''),
+    icon: String(c.icon || '💬'),
+    color: String(c.color || '#f5a623'),
+    threadCount: c.thread_count || 0,
+    postCount: c.post_count || 0,
+  }));
+}
+
+export async function getForumThreads(categoryId: string, opts: { limit?: number; offset?: number } = {}) {
+  const { limit = 20, offset = 0 } = opts;
+  const { data, error, count } = await supabase
+    .from('forum_threads')
+    .select('*', { count: 'exact' })
+    .eq('category_id', categoryId)
+    .order('is_pinned', { ascending: false })
+    .order('last_reply_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return { items: (data || []).map(normalizeThread), total: count || 0 };
+}
+
+export async function getForumThread(id: string) {
+  const { data, error } = await supabase
+    .from('forum_threads')
+    .select('*, forum_categories(name, name_ar, slug)')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return normalizeThread(data);
+}
+
+export async function createForumThread(thread: {
+  categoryId: string;
+  title: string;
+  body: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorId?: string;
+}) {
+  const { data, error } = await supabase
+    .from('forum_threads')
+    .insert([{
+      category_id: thread.categoryId,
+      title: thread.title,
+      body: thread.body,
+      author_id: thread.authorId || null,
+      author_name: thread.authorName,
+      author_avatar: thread.authorAvatar || '',
+      reply_count: 0,
+      view_count: 0,
+      last_reply_at: new Date().toISOString(),
+    }])
+    .select()
+    .single();
+  if (error) throw error;
+  // Best-effort: increment category thread_count
+  try {
+    const { data: cat } = await supabase
+      .from('forum_categories')
+      .select('thread_count')
+      .eq('id', thread.categoryId)
+      .single();
+    if (cat) {
+      await supabase
+        .from('forum_categories')
+        .update({ thread_count: (cat.thread_count || 0) + 1 })
+        .eq('id', thread.categoryId);
+    }
+  } catch { /* non-critical */ }
+  return normalizeThread(data);
+}
+
+export async function getForumPosts(threadId: string) {
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .select('*')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((p: any) => ({
+    id: String(p.id),
+    threadId: String(p.thread_id),
+    body: String(p.body || ''),
+    authorId: String(p.author_id || ''),
+    authorName: String(p.author_name || 'Anonymous'),
+    authorAvatar: String(p.author_avatar || ''),
+    isOp: p.is_op || false,
+    createdAt: p.created_at,
+  }));
+}
+
+export async function createForumPost(post: {
+  threadId: string;
+  body: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorId?: string;
+  isOp?: boolean;
+}) {
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .insert([{
+      thread_id: post.threadId,
+      body: post.body,
+      author_id: post.authorId || null,
+      author_name: post.authorName,
+      author_avatar: post.authorAvatar || '',
+      is_op: post.isOp || false,
+    }])
+    .select()
+    .single();
+  if (error) throw error;
+  // Best-effort: update thread reply_count + last_reply_at
+  if (!post.isOp) {
+    try {
+      const { data: th } = await supabase
+        .from('forum_threads')
+        .select('reply_count')
+        .eq('id', post.threadId)
+        .single();
+      if (th) {
+        await supabase
+          .from('forum_threads')
+          .update({ reply_count: (th.reply_count || 0) + 1, last_reply_at: new Date().toISOString() })
+          .eq('id', post.threadId);
+      }
+    } catch { /* non-critical */ }
+  }
+  return data;
+}
+
+export async function incrementThreadViews(threadId: string) {
+  try {
+    const { data: th } = await supabase
+      .from('forum_threads')
+      .select('view_count')
+      .eq('id', threadId)
+      .single();
+    if (th) {
+      await supabase
+        .from('forum_threads')
+        .update({ view_count: (th.view_count || 0) + 1 })
+        .eq('id', threadId);
+    }
+  } catch { /* non-critical */ }
+}
+
+function normalizeThread(t: any) {
+  return {
+    id: String(t.id),
+    categoryId: String(t.category_id || ''),
+    categoryName: String(t.forum_categories?.name || ''),
+    categoryNameAr: String(t.forum_categories?.name_ar || ''),
+    categorySlug: String(t.forum_categories?.slug || ''),
+    title: String(t.title || ''),
+    body: String(t.body || ''),
+    authorId: String(t.author_id || ''),
+    authorName: String(t.author_name || 'Anonymous'),
+    authorAvatar: String(t.author_avatar || ''),
+    isPinned: t.is_pinned || false,
+    isLocked: t.is_locked || false,
+    viewCount: t.view_count || 0,
+    replyCount: t.reply_count || 0,
+    lastReplyAt: t.last_reply_at,
+    createdAt: t.created_at,
+  };
+}
+
 // ─── Comment Likes ────────────────────────────────────────────────────────────
 export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
   const uid = getUserIdentifier();

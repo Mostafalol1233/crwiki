@@ -40,6 +40,10 @@ import Modes from "@/pages/Modes";
 import Maps from "@/pages/Maps";
 import Ranks from "@/pages/Ranks";
 import Posts from "@/pages/Posts";
+import Forum from "@/pages/Forum";
+import ForumCategory from "@/pages/ForumCategory";
+import ForumThread from "@/pages/ForumThread";
+import NewThread from "@/pages/NewThread";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import NotFound from "@/pages/not-found";
@@ -110,6 +114,10 @@ function Router() {
       <Route path="/maps" component={Maps} />
       <Route path="/ranks" component={Ranks} />
       <Route path="/posts" component={Posts} />
+      <Route path="/forum" component={Forum} />
+      <Route path="/forum/:categorySlug/new" component={(p: any) => <NewThread params={p.params} />} />
+      <Route path="/forum/:categorySlug/:threadId" component={(p: any) => <ForumThread params={p.params} />} />
+      <Route path="/forum/:categorySlug" component={(p: any) => <ForumCategory params={p.params} />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/admin/login" component={() => <Suspense fallback={<div>Loading...</div>}><AdminLogin /></Suspense>} />

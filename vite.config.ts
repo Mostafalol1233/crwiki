@@ -74,6 +74,72 @@ function cfRegisterPlugin(): Plugin {
 }
 
 // ── AI Assistant endpoint — proxies OpenRouter from server side ───────────────
+// Cache for website knowledge (fetched from Supabase, refreshed every 30 min)
+let _aiContextCache: { text: string; ts: number } | null = null;
+const AI_CONTEXT_TTL = 30 * 60 * 1000;
+
+async function fetchWebsiteContext(): Promise<string> {
+  if (_aiContextCache && Date.now() - _aiContextCache.ts < AI_CONTEXT_TTL) {
+    return _aiContextCache.text;
+  }
+  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+  const ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+  if (!SUPABASE_URL || !ANON_KEY) return "";
+  try {
+    const { fetch: undFetch } = await import("undici") as any;
+    const h = { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` };
+    const [wRes, rRes, mRes, merRes, evRes] = await Promise.allSettled([
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/weapons?select=name,category,description&limit=200&order=name`, { headers: h }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/ranks?select=name,tier,description,bonus&order=tier`, { headers: h }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/modes?select=name,description,type&order=name`, { headers: h }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/mercenaries?select=name,role&order=order_index`, { headers: h }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/events?select=title,description,date&limit=20&order=created_at.desc`, { headers: h }),
+    ]);
+    let ctx = "";
+    if (wRes.status === "fulfilled") {
+      const weapons = await (wRes.value as any).json().catch(() => []) as any[];
+      if (weapons?.length) {
+        const byCat: Record<string, string[]> = {};
+        weapons.forEach((w: any) => { const c = w.category || "Other"; if (!byCat[c]) byCat[c] = []; byCat[c].push(w.name); });
+        ctx += `\nWEAPONS (${weapons.length} total):\n`;
+        Object.entries(byCat).forEach(([c, ns]) => { ctx += `  ${c}: ${ns.join(", ")}\n`; });
+      }
+    }
+    if (rRes.status === "fulfilled") {
+      const ranks = await (rRes.value as any).json().catch(() => []) as any[];
+      if (ranks?.length) {
+        ctx += `\nRANKS (${ranks.length} total, Tier 1=lowest):\n`;
+        ranks.forEach((r: any) => { ctx += `  Tier ${r.tier}: ${r.name}${r.bonus ? ` [${r.bonus}]` : ""}\n`; });
+      }
+    }
+    if (mRes.status === "fulfilled") {
+      const modes = await (mRes.value as any).json().catch(() => []) as any[];
+      if (modes?.length) {
+        ctx += `\nGAME MODES:\n`;
+        modes.forEach((m: any) => { ctx += `  - ${m.name} (${m.type || "Standard"}): ${(m.description || "").slice(0, 80)}\n`; });
+      }
+    }
+    if (merRes.status === "fulfilled") {
+      const mercs = await (merRes.value as any).json().catch(() => []) as any[];
+      if (mercs?.length) {
+        ctx += `\nMERCENARIES:\n`;
+        mercs.forEach((m: any) => { ctx += `  - ${m.name}${m.role ? ` (${m.role})` : ""}\n`; });
+      }
+    }
+    if (evRes.status === "fulfilled") {
+      const events = await (evRes.value as any).json().catch(() => []) as any[];
+      if (events?.length) {
+        ctx += `\nRECENT EVENTS:\n`;
+        events.slice(0, 5).forEach((e: any) => { ctx += `  - ${e.title}${e.date ? ` (${e.date})` : ""}\n`; });
+      }
+    }
+    _aiContextCache = { text: ctx, ts: Date.now() };
+    return ctx;
+  } catch {
+    return "";
+  }
+}
+
 function cfAiPlugin(): Plugin {
   return {
     name: "cf-ai",
@@ -103,12 +169,25 @@ function cfAiPlugin(): Plugin {
           const apiKey = process.env.OPENROUTER_API_KEY;
           if (!apiKey) return json(res, 503, { error: "AI not configured" });
 
+          // Fetch live website data to inject as knowledge
+          const websiteData = await fetchWebsiteContext();
+
           const systemPrompt = {
             role: "system",
-            content: `You are CrossFire Wiki Assistant — a friendly, knowledgeable expert on the CrossFire online FPS game.
-You help players with game mechanics, weapons, mercenaries, ranks, maps, modes, clans, ZP/GP currencies, and general game tips.
-Keep answers concise and helpful. If you don't know something CrossFire-specific, say so honestly.
-You also speak Arabic (Egyptian dialect) — respond in the same language the user writes in.`
+            content: `You are CrossFire Wiki Assistant — the official AI for CrossFire Wiki, a comprehensive CrossFire game information website.
+You are an expert on the CrossFire online FPS game. Help players with:
+- Weapons, stats, categories, and loadout recommendations
+- All mercenary characters and their abilities
+- All ranks from lowest to highest and how to progress
+- Game modes, maps, and strategies
+- ZP/GP currencies, Black Market, and in-game items
+- Clans, tournaments, and events
+- Account issues and technical support
+- Community forum questions
+
+Be friendly, direct, and helpful. Keep answers concise. When you don't know something specific, say so honestly.
+IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get Arabic replies (Egyptian/Levantine dialect). English users get English replies.
+${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual current data from our website database:\n${websiteData}\n=== END LIVE DATA ===\n\nUse the live data above to give accurate answers about specific weapons, ranks, mercenaries, modes, and events.` : ""}`
           };
 
           const { fetch: undFetch } = await import("undici") as any;
@@ -123,8 +202,8 @@ You also speak Arabic (Egyptian dialect) — respond in the same language the us
             body: JSON.stringify({
               model: "openai/gpt-oss-20b:free",
               messages: [systemPrompt, ...messages.slice(-12)],
-              max_tokens: 600,
-              temperature: 0.7
+              max_tokens: 700,
+              temperature: 0.65
             }),
             signal: AbortSignal.timeout(30000),
           });

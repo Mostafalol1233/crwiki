@@ -299,9 +299,9 @@ export default function AIAssistant() {
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: "50%",
-                background: "linear-gradient(135deg, rgba(245,166,35,0.15) 0%, rgba(100,180,255,0.08) 100%)",
-                border: "2px solid rgba(245,166,35,0.45)",
-                boxShadow: "0 0 20px rgba(245,166,35,0.2), inset 0 0 12px rgba(245,166,35,0.05)",
+                background: "linear-gradient(135deg, rgba(245,166,35,0.28) 0%, rgba(100,180,255,0.18) 100%)",
+                border: "2px solid rgba(245,166,35,0.55)",
+                boxShadow: "0 0 20px rgba(245,166,35,0.25), inset 0 0 12px rgba(245,166,35,0.12)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <GRSoldierIcon size={36} />
@@ -351,9 +351,9 @@ export default function AIAssistant() {
                 <div style={{
                   width: 76, height: 76, margin: "0 auto 16px",
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, rgba(245,166,35,0.12) 0%, rgba(100,180,255,0.06) 100%)",
-                  border: "2px solid rgba(245,166,35,0.3)",
-                  boxShadow: "0 0 32px rgba(245,166,35,0.12)",
+                  background: "linear-gradient(135deg, rgba(245,166,35,0.25) 0%, rgba(100,180,255,0.14) 100%)",
+                  border: "2px solid rgba(245,166,35,0.45)",
+                  boxShadow: "0 0 32px rgba(245,166,35,0.2)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <GRSoldierIcon size={52} />

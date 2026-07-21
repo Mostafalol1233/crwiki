@@ -249,6 +249,14 @@ export default function Login() {
                   {loading ? t("loginSigningIn") : t("loginSignIn")}
                 </button>
               </form>
+
+              <div className="text-center mt-3">
+                <Link href="/reset-password">
+                  <span className="text-[11px] cursor-pointer hover:opacity-80 transition-opacity" style={{ color: "#555" }}>
+                    Forgot password?
+                  </span>
+                </Link>
+              </div>
             </div>
 
             <p className="text-center text-xs mt-5" style={{ color: "#555" }}>

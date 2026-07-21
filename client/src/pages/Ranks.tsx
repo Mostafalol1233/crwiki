@@ -214,6 +214,17 @@ export default function Ranks() {
             </p>
           </div>
 
+          {/* ── Tier Legend ── */}
+          <div className="flex flex-wrap gap-4 mb-6 px-3 py-2.5 rounded" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <span className="text-[9px] font-black uppercase tracking-widest self-center" style={{ color: "#444" }}>Tier Key:</span>
+            {Object.values(TIER_COLORS).map((tc) => (
+              <div key={tc.label} className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ background: tc.border, boxShadow: `0 0 6px ${tc.glow}` }} />
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#666" }}>{tc.label}</span>
+              </div>
+            ))}
+          </div>
+
           {/* ── Toolbar ── */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-8">
             <div className="relative flex-1 max-w-md">
@@ -433,17 +444,6 @@ export default function Ranks() {
             </div>
           )}
 
-          {/* ── Legend ── */}
-          {!isLoading && filteredRanks.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-3">
-              {Object.values(TIER_COLORS).map((t) => (
-                <div key={t.label} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ background: t.border }} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#555" }}>{t.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* ── Rank Calculator ── */}
           {!isLoading && ranks.length > 0 && (

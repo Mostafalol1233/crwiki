@@ -41,6 +41,11 @@ const CATEGORY_COLORS: Record<string, { color: string; icon: any }> = {
   "Melee": { color: "#2dd4bf", icon: Shield },
 };
 
+// Known CF categories used as instant fallback while API loads
+const CF_FALLBACK_CATEGORIES = [
+  "Assault Rifle", "Sniper Rifle", "SMG", "Shotgun", "Machine Gun", "Pistol", "Melee",
+];
+
 function getCatStyle(cat: string) {
   // Case-insensitive lookup — DB values may differ in casing from the keys
   const normalised = Object.keys(CATEGORY_COLORS).find(
@@ -119,20 +124,24 @@ export default function Weapons() {
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [searchQuery, selectedCategory, letter, sort, order]);
 
-  const [allCategories, setAllCategories] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>(CF_FALLBACK_CATEGORIES);
   useEffect(() => {
     import("@/lib/supabaseApi").then(({ getWeaponCategories }) =>
-      getWeaponCategories().then(cats => setAllCategories(cats)).catch(() => {})
+      getWeaponCategories()
+        .then(cats => {
+          // Merge API result with fallback — never shrink the list
+          setAllCategories(prev => {
+            const merged = new Set([...prev, ...cats]);
+            return Array.from(merged).sort();
+          });
+        })
+        .catch(() => { /* keep fallback list */ })
     );
   }, []);
 
   const categories = useMemo(() => {
-    if (allCategories.length > 0) return ["all", ...allCategories];
-    // fallback: derive from current page while categories load
-    const cats = new Set<string>();
-    results.forEach((w) => { if (w.category) cats.add(w.category); });
-    return ["all", ...Array.from(cats).sort()];
-  }, [allCategories, results]);
+    return ["all", ...allCategories];
+  }, [allCategories]);
 
   const sortedWeapons = useMemo(() => {
     const startsWithDigit = (s: string) => /^\d/.test(s);

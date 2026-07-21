@@ -91,7 +91,7 @@ export default function Forum() {
             </p>
 
             {/* Start Discussion CTA */}
-            <Link href="/forum/new" style={{ textDecoration: "none", display: "inline-block", marginBottom: 24 }}>
+            <Link href="/forum/general/new" style={{ textDecoration: "none", display: "inline-block", marginBottom: 24 }}>
               <button style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "10px 20px",

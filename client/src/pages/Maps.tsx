@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
-import { Search, MapPin, Loader2, Filter, Grid3X3, List } from "lucide-react";
+import { Search, MapPin, Loader2, Grid3X3, List } from "lucide-react";
 import { getMaps } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
@@ -146,50 +146,17 @@ export default function Maps() {
             </div>
           </div>
 
-          {/* ── Search + Category filter ── */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          {/* ── Search ── */}
+          <div className="mb-6">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#555" }} />
               <Input
-                placeholder="Search maps by name, mode..."
+                placeholder="Search maps by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
                 style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)" }}
               />
-            </div>
-
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              <Filter className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#444" }} />
-              {MODE_FILTERS.map((f) => {
-                const count = f.id === "all"
-                  ? maps.length
-                  : maps.filter((m) => {
-                      const haystack = `${m.name} ${m.description || ""} ${m.mode || ""}`.toLowerCase();
-                      return "keywords" in f && f.keywords.some((kw) => haystack.includes(kw));
-                    }).length;
-                if (count === 0 && f.id !== "all") return null;
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => setActiveCategory(f.id)}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded transition-all"
-                    style={{
-                      background: activeCategory === f.id ? "#f5a623" : "var(--card)",
-                      color: activeCategory === f.id ? "#000" : "#555",
-                      border: `1px solid ${activeCategory === f.id ? "#f5a623" : "rgba(255,255,255,0.06)"}`,
-                    }}
-                  >
-                    {f.label}
-                    <span
-                      className="text-[8px] px-1 py-0.5 rounded-sm"
-                      style={{ background: activeCategory === f.id ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.05)", color: activeCategory === f.id ? "#000" : "#444" }}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
@@ -250,7 +217,7 @@ export default function Maps() {
                       />
                       {/* Badges */}
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {map.category && (
+                        {map.category && map.category.toUpperCase() !== "OFFICIAL" && (
                           <span
                             className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5"
                             style={{ background: `${accent}20`, color: accent, border: `1px solid ${accent}40`, borderRadius: "2px", backdropFilter: "blur(4px)" }}
@@ -328,7 +295,7 @@ export default function Maps() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      {map.category && (
+                      {map.category && map.category.toUpperCase() !== "OFFICIAL" && (
                         <span
                           className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5"
                           style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}30`, borderRadius: "2px" }}

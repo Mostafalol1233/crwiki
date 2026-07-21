@@ -298,7 +298,8 @@ export async function getWeaponCategories(): Promise<string[]> {
   const { data, error } = await supabase
     .from('weapons')
     .select('category')
-    .not('category', 'is', null);
+    .not('category', 'is', null)
+    .limit(5000);
   if (error) throw error;
   const cats = new Set<string>();
   (data || []).forEach((w: any) => { if (w.category) cats.add(String(w.category)); });

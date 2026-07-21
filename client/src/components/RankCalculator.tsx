@@ -159,12 +159,15 @@ function mergeRanks(provided: Rank[]): Rank[] {
     if (r.tier) byTier.set(r.tier, r);
   }
 
-  // For every CF rank, prefer DB data but fill in missing ones
+  // For every CF rank, prefer DB data for names/images/bonuses but ALWAYS
+  // use the formula's cumulative EXP threshold. The DB stores rank-relative
+  // EXP (e.g. 3.6M for LC4) while the player API returns cumulative TotalExp
+  // (e.g. 13.4M for a player at LC1=tier 60). Using DB values here would make
+  // the calculator compare apples to oranges and show "0 EXP needed".
   return CF_ALL_RANKS.map(fallback => {
     const db = byTier.get(fallback.tier!);
     const bonus = db?.bonus || (db as any)?.bonus || BONUS_MAP[fallback.tier!] || fallback.bonus || "";
-    const expDb = db ? ((db as any).exp_required ?? db.expRequired ?? 0) : 0;
-    const exp = expDb > 0 ? expDb : CF_EXP_THRESHOLDS[fallback.tier!] ?? 0;
+    const exp = CF_EXP_THRESHOLDS[fallback.tier!] ?? 0;
 
     return {
       id: db?.id || fallback.id,
@@ -186,10 +189,12 @@ function getRankImage(r: Rank): string {
 }
 
 function getExp(r: Rank): number {
+  // Always prefer the formula's cumulative threshold — it matches the API's
+  // TotalExp field. DB exp_required is rank-relative and must not be used here.
+  if (r.tier) return CF_EXP_THRESHOLDS[r.tier] ?? 0;
+  if (typeof r.expRequired === "number" && r.expRequired > 0) return r.expRequired;
   const db = (r as any).exp_required;
   if (typeof db === "number" && db > 0) return db;
-  if (typeof r.expRequired === "number" && r.expRequired > 0) return r.expRequired;
-  if (r.tier) return CF_EXP_THRESHOLDS[r.tier] ?? 0;
   return 0;
 }
 

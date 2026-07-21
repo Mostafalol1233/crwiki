@@ -41,9 +41,10 @@ function StatCard({ label, value, icon, color, href }: { label: string; value: n
   );
 }
 
+// Static placeholder — replace with a real analytics integration
 const MOCK_VIEWS = Array.from({ length: 30 }, (_, i) => ({
   day: `${i + 1}`,
-  views: Math.floor(Math.random() * 800 + 200),
+  views: 0,
 }));
 
 const QUICK_ACTIONS = [

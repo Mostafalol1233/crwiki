@@ -14,12 +14,34 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [redirectMsg, setRedirectMsg] = useState<string>("");
   const [, setLocation] = useLocation();
+  const [dbCounts, setDbCounts] = useState({ weapons: "…", maps: "…", ranks: "…", modes: "…" });
+
+  // Fetch real DB counts for the stats panel
+  useEffect(() => {
+    import("@/lib/supabase").then(({ supabase }) => {
+      Promise.all([
+        supabase.from("weapons").select("id", { count: "exact", head: true }),
+        supabase.from("maps").select("id", { count: "exact", head: true }),
+        supabase.from("ranks").select("id", { count: "exact", head: true }),
+        supabase.from("modes").select("id", { count: "exact", head: true }),
+      ]).then(([w, m, r, md]) => {
+        setDbCounts({
+          weapons: w.count != null ? w.count.toLocaleString() : "3,589",
+          maps: m.count != null ? m.count.toLocaleString() : "312",
+          ranks: r.count != null ? r.count.toLocaleString() : "104",
+          modes: md.count != null ? md.count.toLocaleString() : "61",
+        });
+      }).catch(() => {
+        setDbCounts({ weapons: "3,589", maps: "312", ranks: "104", modes: "61" });
+      });
+    });
+  }, []);
 
   const BRAND_STATS = [
-    { value: "3,589", label: t("weapons") },
-    { value: "312", label: t("maps") },
-    { value: "104", label: t("ranks") },
-    { value: "61", label: t("modes") },
+    { value: dbCounts.weapons, label: t("weapons") },
+    { value: dbCounts.maps, label: t("maps") },
+    { value: dbCounts.ranks, label: t("ranks") },
+    { value: dbCounts.modes, label: t("modes") },
   ];
 
   const onSubmit = async (values: any) => {

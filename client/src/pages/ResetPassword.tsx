@@ -1,30 +1,54 @@
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import PageSEO from "@/components/PageSEO";
-import { Mail, Key, Lock, RotateCcw } from "lucide-react";
+import { Mail, Lock, RotateCcw, CheckCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [status, setStatus] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [status, setStatus] = useState<{ type: "idle" | "loading" | "success" | "error"; msg: string }>({ type: "idle", msg: "" });
 
-  const requestCode = async () => {
-    setStatus("Requesting reset code...");
-    const res = await fetch("/api/users/request-reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-    const data = await res.json();
-    if (!res.ok) { setStatus(data?.error || "Failed"); return; }
-    setCode(data.resetCode);
-    setStatus("Reset code generated. Check your email or use the code shown.");
+  // Detect if we arrived via a Supabase password-reset link (has access_token in hash)
+  const isResetMode = typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery"));
+
+  const requestReset = async () => {
+    if (!email.trim()) {
+      setStatus({ type: "error", msg: "Please enter your email address." });
+      return;
+    }
+    setStatus({ type: "loading", msg: "Sending reset link…" });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      setStatus({ type: "error", msg: error.message || "Failed to send reset email." });
+    } else {
+      setStatus({ type: "success", msg: "Check your email — we sent you a password reset link." });
+    }
   };
 
-  const submitReset = async () => {
-    setStatus("Resetting password...");
-    const res = await fetch("/api/users/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code, newPassword }) });
-    const data = await res.json();
-    if (!res.ok) { setStatus(data?.error || "Failed"); return; }
-    setStatus("Password changed successfully.");
+  const submitNewPassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      setStatus({ type: "error", msg: "Password must be at least 8 characters." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setStatus({ type: "error", msg: "Passwords do not match." });
+      return;
+    }
+    setStatus({ type: "loading", msg: "Updating password…" });
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setStatus({ type: "error", msg: error.message || "Could not update password." });
+    } else {
+      setStatus({ type: "success", msg: "Password updated successfully! You can now sign in." });
+    }
   };
+
+  const isLoading = status.type === "loading";
 
   return (
     <>
@@ -37,90 +61,110 @@ export default function ResetPassword() {
             <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "3px" }}>
               <RotateCcw className="h-6 w-6" style={{ color: "#f5a623" }} />
             </div>
-            <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Password Recovery</h1>
-            <p className="text-xs mt-1" style={{ color: "#555" }}>Reset your CrossFire Wiki password</p>
+            <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
+              {isResetMode ? "Set New Password" : "Password Recovery"}
+            </h1>
+            <p className="text-xs mt-1" style={{ color: "#555" }}>
+              {isResetMode ? "Enter your new password below" : "We'll send a reset link to your email"}
+            </p>
           </div>
 
           <div className="p-6 space-y-4" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
-                <Input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="pl-9 h-10 text-sm"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                />
-              </div>
-            </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={requestCode}
-                className="flex-1 h-9 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110"
-                style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
-              >
-                Request Code
-              </button>
-              {code && (
+            {!isResetMode ? (
+              /* ── Request reset link ── */
+              <>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && requestReset()}
+                      placeholder="you@example.com"
+                      className="pl-9 h-10 text-sm"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  </div>
+                </div>
+
+                {status.msg && (
+                  <p className="text-xs py-2 px-3 flex items-center gap-2" style={{
+                    background: status.type === "success" ? "rgba(74,222,128,0.08)" : status.type === "error" ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+                    color: status.type === "success" ? "#4ade80" : status.type === "error" ? "#f87171" : "#888",
+                    borderRadius: "2px",
+                  }}>
+                    {status.type === "success" && <CheckCircle className="h-3 w-3 flex-shrink-0" />}
+                    {status.msg}
+                  </p>
+                )}
+
                 <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(code)}
-                  className="h-9 px-3 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "var(--foreground)", borderRadius: "2px" }}
+                  onClick={requestReset}
+                  disabled={isLoading || status.type === "success"}
+                  className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                  style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                 >
-                  Copy
+                  {isLoading ? "Sending…" : "Send Reset Link"}
                 </button>
-              )}
-            </div>
+              </>
+            ) : (
+              /* ── Set new password ── */
+              <>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>New Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min 8 characters"
+                      className="pl-9 h-10 text-sm"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>Reset Code</label>
-              <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
-                <Input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="6-digit code"
-                  className="pl-9 h-10 text-sm"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && submitNewPassword()}
+                      placeholder="Repeat password"
+                      className="pl-9 h-10 text-sm"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-9 h-10 text-sm"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                />
-              </div>
-              <p className="text-[10px] mt-1" style={{ color: "#555" }}>Min 8 characters, at least one special character.</p>
-            </div>
+                {status.msg && (
+                  <p className="text-xs py-2 px-3 flex items-center gap-2" style={{
+                    background: status.type === "success" ? "rgba(74,222,128,0.08)" : status.type === "error" ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+                    color: status.type === "success" ? "#4ade80" : status.type === "error" ? "#f87171" : "#888",
+                    borderRadius: "2px",
+                  }}>
+                    {status.type === "success" && <CheckCircle className="h-3 w-3 flex-shrink-0" />}
+                    {status.msg}
+                  </p>
+                )}
 
-            {status && (
-              <p className="text-xs py-2 px-3" style={{
-                background: status.includes("success") ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)",
-                color: status.includes("success") ? "#4ade80" : "#888",
-                borderRadius: "2px",
-              }}>{status}</p>
+                <button
+                  onClick={submitNewPassword}
+                  disabled={isLoading || status.type === "success"}
+                  className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
+                  style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+                >
+                  {isLoading ? "Updating…" : "Set New Password"}
+                </button>
+              </>
             )}
-
-            <button
-              onClick={submitReset}
-              className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
-              style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
-            >
-              Change Password
-            </button>
           </div>
         </div>
       </div>

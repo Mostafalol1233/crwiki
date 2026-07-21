@@ -18,7 +18,6 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         placeholder={t("search")}
         value={value}
         onChange={(e) => {
-          console.log(`Search query: ${e.target.value}`);
           onChange(e.target.value);
         }}
         className="pl-10"

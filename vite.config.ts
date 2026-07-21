@@ -301,6 +301,98 @@ ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual
   };
 }
 
+// ── Server-side admin auth — password never compared in browser ───────────────
+function cfAdminAuthPlugin(): Plugin {
+  return {
+    name: "cf-admin-auth",
+    configureServer(server) {
+      async function readBody(req: any): Promise<any> {
+        const chunks: Buffer[] = [];
+        await new Promise<void>((resolve, reject) => {
+          req.on("data", (c: Buffer) => chunks.push(c));
+          req.on("end", resolve);
+          req.on("error", reject);
+        });
+        try { return JSON.parse(Buffer.concat(chunks).toString()); } catch { return {}; }
+      }
+      function sendJson(res: any, status: number, data: any) {
+        res.writeHead(status, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(data));
+      }
+      function makeToken(payload: object): string {
+        return Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 86_400_000 * 7 })).toString("base64");
+      }
+
+      server.middlewares.use("/api/admin/login", async (req: any, res: any) => {
+        if (req.method !== "POST") return sendJson(res, 405, { error: "POST only" });
+        try {
+          const { username, password } = await readBody(req);
+          if (!password) return sendJson(res, 400, { error: "Password required" });
+
+          const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "";
+          const SUPABASE_URL   = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SERVICE_KEY    = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+
+          // ── Super-admin: password-only ──────────────────────────────────
+          if (!username) {
+            if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
+              const token = makeToken({ role: "super_admin", username: "super_admin", permissions: {} });
+              return sendJson(res, 200, {
+                token,
+                admin: { roles: ["super_admin"], role: "super_admin", username: "super_admin", permissions: {} },
+              });
+            }
+            // Check admin_users table for super_admin rows (bcrypt)
+            if (SUPABASE_URL && SERVICE_KEY) {
+              const { fetch: uf } = await import("undici") as any;
+              const r = await (uf as any)(
+                `${SUPABASE_URL}/rest/v1/admin_users?role=eq.super_admin&limit=10`,
+                { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+              );
+              if (r.ok) {
+                const rows: any[] = await r.json();
+                const bcrypt = await import("bcryptjs");
+                for (const row of rows) {
+                  if (await bcrypt.compare(password, row.password_hash || "")) {
+                    const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+                    return sendJson(res, 200, {
+                      token,
+                      admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },
+                    });
+                  }
+                }
+              }
+            }
+            return sendJson(res, 401, { error: "Invalid password" });
+          }
+
+          // ── Regular admin: username + bcrypt password ────────────────────
+          if (!SUPABASE_URL || !SERVICE_KEY) return sendJson(res, 500, { error: "Server misconfigured" });
+          const { fetch: uf } = await import("undici") as any;
+          const r = await (uf as any)(
+            `${SUPABASE_URL}/rest/v1/admin_users?username=eq.${encodeURIComponent(username)}&limit=1`,
+            { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+          );
+          if (!r.ok) return sendJson(res, 401, { error: "Invalid credentials" });
+          const rows: any[] = await r.json();
+          if (!rows.length) return sendJson(res, 401, { error: "Invalid credentials" });
+          const row = rows[0];
+          const bcrypt = await import("bcryptjs");
+          if (!await bcrypt.compare(password, row.password_hash || "")) return sendJson(res, 401, { error: "Invalid credentials" });
+
+          const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+          return sendJson(res, 200, {
+            token,
+            admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },
+          });
+        } catch (err: any) {
+          return sendJson(res, 500, { error: err.message || "Login failed" });
+        }
+      });
+    },
+  };
+}
+
 // ── Server-side scraping middleware — runs in Node.js, no CORS issues ─────────
 function cfScrapePlugin(): Plugin {
   return {
@@ -1025,6 +1117,7 @@ function cfGrokTipsPlugin(): Plugin {
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
+    cfAdminAuthPlugin(),
     cfPlayerLookupPlugin(),
     cfAiPlugin(),
     cfScrapePlugin(),

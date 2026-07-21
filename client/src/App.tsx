@@ -70,6 +70,14 @@ const AdminAnnouncements = lazy(() => import("@/pages/AdminAnnouncements"));
 const MediaUpload = lazy(() => import("@/pages/MediaUpload"));
 const SearchPage = lazy(() => import("@/pages/Search"));
 
+function PageSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#f5a623", borderTopColor: "transparent" }} />
+    </div>
+  );
+}
+
 function Router() {
   return (
     <Switch>
@@ -120,12 +128,12 @@ function Router() {
       <Route path="/forum/:categorySlug" component={(p: any) => <ForumCategory params={p.params} />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/admin/login" component={() => <Suspense fallback={<div>Loading...</div>}><AdminLogin /></Suspense>} />
-      <Route path="/admin/announcements-manage" component={() => <Suspense fallback={<div>Loading...</div>}><AdminAnnouncements /></Suspense>} />
-      <Route path="/admin/media-upload" component={() => <Suspense fallback={<div>Loading...</div>}><MediaUpload /></Suspense>} />
-      <Route path="/admin/seo-bulk" component={() => <Suspense fallback={<div>Loading...</div>}><BulkSEO /></Suspense>} />
-      <Route path="/admin" component={() => <Suspense fallback={<div>Loading...</div>}><Admin /></Suspense>} />
-      <Route path="/admin/:rest*" component={() => <Suspense fallback={<div>Loading...</div>}><Admin /></Suspense>} />
+      <Route path="/admin/login" component={() => <Suspense fallback={<PageSpinner />}><AdminLogin /></Suspense>} />
+      <Route path="/admin/announcements-manage" component={() => <Suspense fallback={<PageSpinner />}><AdminAnnouncements /></Suspense>} />
+      <Route path="/admin/media-upload" component={() => <Suspense fallback={<PageSpinner />}><MediaUpload /></Suspense>} />
+      <Route path="/admin/seo-bulk" component={() => <Suspense fallback={<PageSpinner />}><BulkSEO /></Suspense>} />
+      <Route path="/admin" component={() => <Suspense fallback={<PageSpinner />}><Admin /></Suspense>} />
+      <Route path="/admin/:rest*" component={() => <Suspense fallback={<PageSpinner />}><Admin /></Suspense>} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/chat" component={Chat} />
@@ -263,7 +271,41 @@ function Layout() {
 
 // Reads language from LanguageProvider and sets wouter's base path so that
 // /ar/weapons is matched as /weapons, /ar/events as /events, etc.
+// Handles Google OAuth first-login: ensures username is set in user_metadata
+function useGoogleOAuthFirstLogin() {
+  useEffect(() => {
+    let mounted = true;
+    import("@/lib/supabase").then(({ supabase }) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted || event !== "SIGNED_IN" || !session?.user) return;
+        const user = session.user;
+        // Only act for OAuth providers (not email/password logins)
+        const isOAuth = user.app_metadata?.provider && user.app_metadata.provider !== "email";
+        if (!isOAuth) return;
+        // If username is already set, nothing to do
+        if (user.user_metadata?.username) return;
+        // Derive a username from Google's full_name or email prefix
+        const fullName: string = user.user_metadata?.full_name || user.user_metadata?.name || "";
+        const emailPrefix: string = (user.email || "").split("@")[0];
+        const username = fullName.trim().replace(/\s+/g, "_") || emailPrefix || "user";
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              username,
+              avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
+            },
+          });
+        } catch { /* non-critical */ }
+      });
+      return () => { mounted = false; subscription.unsubscribe(); };
+    });
+    return () => { mounted = false; };
+  }, []);
+}
+
 function LocalizedApp() {
+  useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
   const base = language === "ar" ? "/ar" : "";
   return (

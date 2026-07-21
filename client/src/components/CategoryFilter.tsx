@@ -56,7 +56,6 @@ export function CategoryFilter({
           variant={activeCategory === category ? "default" : "outline"}
           size="sm"
           onClick={() => {
-            console.log(`Category changed to: ${category}`);
             onCategoryChange?.(category);
           }}
           className="whitespace-nowrap"

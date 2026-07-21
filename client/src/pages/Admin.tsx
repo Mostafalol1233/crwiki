@@ -1494,7 +1494,6 @@ export default function Admin() {
       return apiRequest("/api/mercenaries", "POST", cleanData);
     },
     onSuccess: (response) => {
-      console.log("Mercenary created:", response);
       queryClient.invalidateQueries({ queryKey: ["/api/mercenaries"] });
       setIsCreatingMerc(false);
       setCreateMercForm({ name: "", image: "", role: "", description: "", voiceLines: [], order: "" });

@@ -9,51 +9,46 @@
       }
     },
     {
-      "src": "api/*.ts",
+      "src": "api/**/*.ts",
       "use": "@vercel/node"
     }
   ],
+
+  "functions": {
+    "api/ai/chat.ts":                        { "maxDuration": 60 },
+    "api/scrape/forum-list.ts":              { "maxDuration": 30 },
+    "api/scrape/forum-thread.ts":            { "maxDuration": 30 },
+    "api/scrape/single-url.ts":              { "maxDuration": 30 },
+    "api/admin/rescrape-item.ts":            { "maxDuration": 30 },
+    "api/admin/rebuild-mercenary-posts.ts":  { "maxDuration": 60 },
+    "api/admin/rebuild-wiki-posts.ts":       { "maxDuration": 60 },
+    "api/player/lookup.ts":                  { "maxDuration": 45 }
+  },
 
   "headers": [
     {
       "source": "/assets/(.*)",
       "headers": [
-        {
-          "key": "cache-control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     }
   ],
 
   "rewrites": [
-    {
-      "source": "/images/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/images/$1"
-    },
-    {
-      "source": "/videos/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/videos/$1"
-    },
-    {
-      "source": "/audio/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/audio/$1"
-    },
-    {
-      "source": "/media/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/media/$1"
-    },
-    {
-      "source": "/image/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/image/$1"
-    },
-    {
-      "source": "/cdn/(.*)",
-      "destination": "http://fi4.bot-hosting.net:20126/cdn/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/images/(.*)", "destination": "http://fi4.bot-hosting.net:20126/images/$1" },
+    { "source": "/videos/(.*)", "destination": "http://fi4.bot-hosting.net:20126/videos/$1" },
+    { "source": "/audio/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/audio/$1"  },
+    { "source": "/media/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/media/$1"  },
+    { "source": "/image/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/image/$1"  },
+    { "source": "/cdn/(.*)",    "destination": "http://fi4.bot-hosting.net:20126/cdn/$1"    },
+    { "source": "/(.*)",        "destination": "/index.html" }
   ]
 }

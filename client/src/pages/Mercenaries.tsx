@@ -382,7 +382,7 @@ export default function Mercenaries() {
           {/* ── STRIP LAYOUT ── */}
           {layoutStyle === "strip" ? (
             <div
-              className="flex overflow-x-auto w-full"
+              className="flex overflow-x-auto w-full cf-merc-strip"
               style={{ height: "480px", background: "hsl(var(--background))", border: "1px solid rgba(245,166,35,0.12)", borderRadius: "4px" }}
             >
               {mercenaries.map((merc) => {

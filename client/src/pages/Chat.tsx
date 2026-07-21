@@ -175,7 +175,12 @@ export default function Chat() {
       .on("broadcast", { event: "new_conversation" }, () => {
         fetchConversations();
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        // Silently ignore 406 / realtime-not-enabled errors — chat still works via polling
+        if (err && process.env.NODE_ENV === "development") {
+          console.debug("[Chat realtime]", status, err?.message);
+        }
+      });
 
     realtimeRef.current = channel;
     return () => { supabase.removeChannel(channel); };

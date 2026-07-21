@@ -501,6 +501,14 @@ export default function Home() {
           <style>{`
             @media(max-width:900px){.portal-grid{grid-template-columns:repeat(2,1fr)!important;}}
             @media(max-width:480px){.portal-grid{grid-template-columns:1fr!important;}}
+            @media(max-width:640px){
+              .featured-inner{grid-template-columns:1fr!important;}
+              .featured-inner > div:first-child{min-height:180px!important;}
+            }
+            @media(max-width:900px){.main-content-grid{grid-template-columns:1fr!important;}}
+            @media(max-width:640px){
+              .main-content-grid{padding-left:16px!important;padding-right:16px!important;}
+            }
           `}</style>
         </div>
 

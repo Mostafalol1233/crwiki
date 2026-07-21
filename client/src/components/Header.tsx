@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare } from "lucide-react";
+import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare, Sparkles } from "lucide-react";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -71,7 +71,6 @@ export function Header() {
       label: t("navCommunity"),
       dropdown: [
         { path: "/forum", label: t("navForum") },
-        { path: "/ai", label: t("navAI") },
         { path: "/tutorials", label: t("navTutorials") },
         { path: "/contact", label: t("navContact") },
       ],
@@ -165,6 +164,26 @@ export function Header() {
 
         {/* Right controls */}
         <div className="hidden md:flex items-center gap-1 ml-auto">
+          {/* AI prominent button */}
+          <Link href="/ai" style={{ textDecoration: "none" }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              height: 32, padding: "0 12px",
+              background: location === "/ai"
+                ? "linear-gradient(135deg, #f5a623 0%, #d4870a 100%)"
+                : "linear-gradient(135deg, rgba(245,166,35,0.15) 0%, rgba(212,135,10,0.08) 100%)",
+              border: `1px solid ${location === "/ai" ? "#f5a623" : "rgba(245,166,35,0.35)"}`,
+              borderRadius: 6,
+              color: location === "/ai" ? "#000" : "#f5a623",
+              fontSize: 12, fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.15s",
+              boxShadow: location === "/ai" ? "0 0 12px rgba(245,166,35,0.35)" : "0 0 8px rgba(245,166,35,0.1)",
+            }}>
+              <Sparkles size={12} />
+              {language === "ar" ? "مساعد ذكي" : "AI"}
+            </div>
+          </Link>
           {/* Search */}
           <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center" }}>
             <div style={{ position: "relative" }}>
@@ -281,6 +300,31 @@ export function Header() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div style={{ background: "#0d0d0d", borderTop: `1px solid ${BORDER}` }}>
+          {/* Mobile AI quick link */}
+          <div style={{ padding: "10px 16px", borderBottom: `1px solid ${BORDER}` }}>
+            <Link href="/ai" onClick={() => setMobileOpen(false)} style={{ textDecoration: "none" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "10px 14px", borderRadius: 8,
+                background: location === "/ai"
+                  ? "linear-gradient(135deg, #f5a623 0%, #d4870a 100%)"
+                  : "linear-gradient(135deg, rgba(245,166,35,0.12) 0%, rgba(212,135,10,0.06) 100%)",
+                border: `1px solid ${location === "/ai" ? "#f5a623" : "rgba(245,166,35,0.3)"}`,
+                boxShadow: "0 0 12px rgba(245,166,35,0.08)",
+              }}>
+                <Sparkles size={14} style={{ color: location === "/ai" ? "#000" : "#f5a623", flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: location === "/ai" ? "#000" : "#f5a623", letterSpacing: "0.05em" }}>
+                    {language === "ar" ? "مساعد الذكاء الاصطناعي" : "CrossFire AI Assistant"}
+                  </div>
+                  <div style={{ fontSize: 10, color: location === "/ai" ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.35)", marginTop: 1 }}>
+                    {language === "ar" ? "اسأل عن أي حاجة في اللعبة" : "Ask anything about the game"}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+
           {/* Mobile search */}
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BORDER}` }}>
             <form onSubmit={handleSearch} style={{ position: "relative" }}>

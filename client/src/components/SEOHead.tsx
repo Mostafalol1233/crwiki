@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
+interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
 interface SEOHeadProps {
   title?: string;
   description?: string;
   keywords?: string[];
   canonicalUrl?: string;
   ogImage?: string;
+  ogImageAlt?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   twitterImage?: string;
   ogTitle?: string;
   ogDescription?: string;
@@ -17,9 +25,24 @@ interface SEOHeadProps {
   robots?: string;
   noindex?: boolean;
   onlySchema?: boolean;
-  ogImageAlt?: string;
-  ogImageWidth?: number;
-  ogImageHeight?: number;
+  /** article:published_time ISO string */
+  articlePublishedTime?: string;
+  /** article:modified_time ISO string */
+  articleModifiedTime?: string;
+  /** article:author name */
+  articleAuthor?: string;
+  /** article:section e.g. "Events" */
+  articleSection?: string;
+  /** article:tag array */
+  articleTags?: string[];
+  /** hreflang alternates e.g. [{ lang: "ar", url: "https://crossfire.wiki/ar/..." }] */
+  hreflangAlternates?: { lang: string; url: string }[];
+  /** breadcrumb trail for BreadcrumbList schema */
+  breadcrumbs?: BreadcrumbItem[];
+  /** additional JSON-LD schemas to inject alongside the primary one */
+  extraSchemas?: Array<{ "@type": string; [key: string]: any }>;
+  /** publisher info for NewsArticle / BlogPosting */
+  publisher?: { name: string; logoUrl: string };
 }
 
 export function SEOHead({
@@ -41,43 +64,72 @@ export function SEOHead({
   ogImageAlt,
   ogImageWidth = 1200,
   ogImageHeight = 630,
+  articlePublishedTime,
+  articleModifiedTime,
+  articleAuthor,
+  articleSection,
+  articleTags,
+  hreflangAlternates,
+  breadcrumbs,
+  extraSchemas,
+  publisher,
 }: SEOHeadProps) {
   const [location] = useLocation();
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
-  const [siteSeo, setSiteSeo] = useState<{ publicBaseUrl?: string; seoTitle?: string; seoDescription?: string; seoKeywords?: string[]; seoOgImage?: string; robots?: string } | null>(null);
+  const [siteSeo, setSiteSeo] = useState<{
+    publicBaseUrl?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    seoKeywords?: string[];
+    seoOgImage?: string;
+    robots?: string;
+  } | null>(null);
+
   const currentOrigin = (siteSeo?.publicBaseUrl || envBase || "https://crossfire.wiki").replace(/\/$/, "");
   const canonicalOrigin = "https://crossfire.wiki";
-  const baseUrl = (typeof window !== "undefined" && /crossfire\.wiki/i.test(window.location.hostname))
-    ? canonicalOrigin
-    : currentOrigin;
+  const baseUrl =
+    typeof window !== "undefined" && /crossfire\.wiki/i.test(window.location.hostname)
+      ? canonicalOrigin
+      : currentOrigin;
   const currentUrl = baseUrl + location;
-  const finalCanonical = (canonicalUrl || currentUrl).replace("http://www.crossfire.wiki", canonicalOrigin).replace("http://crossfire.wiki", canonicalOrigin).replace("https://www.crossfire.wiki", canonicalOrigin);
+
+  const normalizeUrl = (u: string) =>
+    u.replace("http://www.crossfire.wiki", canonicalOrigin)
+      .replace("http://crossfire.wiki", canonicalOrigin)
+      .replace("https://www.crossfire.wiki", canonicalOrigin);
+
+  const finalCanonical = normalizeUrl(canonicalUrl || currentUrl);
   const finalOgUrl = ogUrl || currentUrl;
-  const normalizeTitle = (s?: string) => {
-    if (!s) return s;
-    return s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ");
-  };
-  const defaultTitle = "CrossFire Wiki | Weapons | Modes | Guides | Community";
-  const defaultDescription = "CrossFire Wiki: weapons, modes, tutorials, ranks, events, and community resources. Master CrossFire with up-to-date guides, maps and competitive intel.";
+
+  const normalizeTitle = (s?: string) =>
+    s ? s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ") : s;
+
+  const defaultTitle = "CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF";
+  const defaultDescription =
+    "The #1 CrossFire fan wiki. Explore weapons, mercenaries, modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic.";
+
   const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
   const finalOgTitle = ogTitle || finalTitle;
   const finalOgDescription = ogDescription || finalDescription;
+
   const defaultSeoLogo = `${baseUrl}/logo-new.png`;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
     if (!src) return defaultSeoLogo;
+    // Already absolute (http/https or //cdn)
+    if (/^https?:\/\//i.test(src) || src.startsWith('//')) return src;
     try {
       const u = new URL(src, baseUrl);
-      const abs = u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
-      return abs;
+      return u.protocol.startsWith('http') ? u.toString() : `${baseUrl}${src.startsWith('/') ? src : `/${src}`}`;
     } catch {
       return defaultSeoLogo;
     }
   };
+
   const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);
   const finalTwitterImage = resolveAbsolute(twitterImage || finalOgImage);
-  const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow";
+  const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1";
 
   useEffect(() => {
     let cancelled = false;
@@ -94,47 +146,40 @@ export function SEOHead({
   }, []);
 
   useEffect(() => {
+    // ── Title ──────────────────────────────────────────────────────────────────
     if (!onlySchema) {
       document.title = finalTitle;
     }
 
+    // ── Clean up previous dynamic tags ────────────────────────────────────────
     if (!onlySchema) {
-      const existingMeta = document.querySelectorAll('meta[data-seo="true"]');
-      existingMeta.forEach((meta) => meta.remove());
-      const existingCanonical = document.querySelector('link[rel="canonical"][data-seo="true"]');
-      if (existingCanonical) existingCanonical.remove();
+      document.querySelectorAll('meta[data-seo="true"]').forEach((m) => m.remove());
+      document.querySelector('link[rel="canonical"][data-seo="true"]')?.remove();
+      document.querySelectorAll('link[rel="alternate"][data-seo="true"]').forEach((l) => l.remove());
     }
+    document.querySelectorAll('script[type="application/ld+json"][data-seo="true"]').forEach((s) => s.remove());
 
-    // Remove existing schema
-    const existingSchema = document.querySelector('script[type="application/ld+json"][data-seo="true"]');
-    if (existingSchema) existingSchema.remove();
-
-    // Create and append meta tags
+    // ── Base keywords ──────────────────────────────────────────────────────────
     const baseKeywords = [
-      "CrossFire",
-      "Crossfire",
-      "CF",
-      "Cross Fire",
-      "CrossFire Wiki",
-      "كروس فاير ويكي",
-      "شرح كروس فاير",
-      "ايفنتات كروس فاير",
-      "خرائط كروس فاير",
-      "أسلحة كروس فاير",
-      "Z8Games",
-      "FPS",
-      "Shooter",
+      "CrossFire", "Crossfire", "CF", "Cross Fire",
+      "CrossFire Wiki", "كروس فاير ويكي", "شرح كروس فاير",
+      "ايفنتات كروس فاير", "خرائط كروس فاير", "أسلحة كروس فاير",
+      "Z8Games", "FPS", "Shooter",
     ];
-
     const uniqueKeywords = Array.from(new Set([...(keywords || []), ...baseKeywords]));
 
     const imgType = finalOgImage.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
     const altText = ogImageAlt || finalOgTitle;
-    const metaTags = !onlySchema
+
+    // ── Meta tags ──────────────────────────────────────────────────────────────
+    const metaTags: Array<{ name?: string; property?: string; content: string; httpEquiv?: string }> = !onlySchema
       ? [
+          // Core
           { name: "description", content: finalDescription },
           { name: "keywords", content: uniqueKeywords.join(", ") },
           { name: "robots", content: robotsValue },
+          { name: "googlebot", content: robotsValue },
+          // Open Graph
           { property: "og:site_name", content: "CrossFire Wiki" },
           { property: "og:locale", content: "en_US" },
           { property: "og:locale:alternate", content: "ar_AR" },
@@ -148,61 +193,131 @@ export function SEOHead({
           { property: "og:image:alt", content: altText },
           { property: "og:type", content: ogType },
           { property: "og:url", content: finalOgUrl },
+          // Twitter / X
           { name: "twitter:card", content: "summary_large_image" },
           { name: "twitter:site", content: "@crossfirewiki" },
+          { name: "twitter:creator", content: "@crossfirewiki" },
           { name: "twitter:title", content: finalOgTitle },
           { name: "twitter:description", content: finalOgDescription },
           { name: "twitter:image", content: finalTwitterImage },
           { name: "twitter:image:alt", content: altText },
+          // WhatsApp / Telegram rich previews
+          { property: "og:image:secure_url", content: finalOgImage },
         ]
       : [];
 
+    // Article-specific OG tags
+    if (!onlySchema && ogType === "article") {
+      if (articlePublishedTime) metaTags.push({ property: "article:published_time", content: articlePublishedTime });
+      if (articleModifiedTime)  metaTags.push({ property: "article:modified_time",  content: articleModifiedTime });
+      if (articleAuthor)        metaTags.push({ property: "article:author",          content: articleAuthor });
+      if (articleSection)       metaTags.push({ property: "article:section",         content: articleSection });
+      (articleTags || []).forEach((tag) => metaTags.push({ property: "article:tag", content: tag }));
+    }
+
     metaTags.forEach((tag) => {
       const meta = document.createElement("meta");
-      if (tag.name) {
-        meta.setAttribute("name", tag.name);
-      }
-      if (tag.property) {
-        meta.setAttribute("property", tag.property);
-      }
+      if (tag.name)      meta.setAttribute("name",     tag.name);
+      if (tag.property)  meta.setAttribute("property", tag.property);
+      if (tag.httpEquiv) meta.setAttribute("http-equiv", tag.httpEquiv);
       meta.setAttribute("content", tag.content);
       meta.setAttribute("data-seo", "true");
       document.head.appendChild(meta);
     });
 
+    // ── Canonical ─────────────────────────────────────────────────────────────
     if (!onlySchema) {
       const canonical = document.createElement("link");
       canonical.setAttribute("rel", "canonical");
       canonical.setAttribute("href", finalCanonical);
       canonical.setAttribute("data-seo", "true");
       document.head.appendChild(canonical);
+
+      // hreflang alternates
+      const alternates: Array<{ lang: string; url: string }> = [
+        { lang: "x-default", url: finalCanonical },
+        ...(hreflangAlternates || []),
+      ];
+      alternates.forEach(({ lang, url }) => {
+        const link = document.createElement("link");
+        link.setAttribute("rel", "alternate");
+        link.setAttribute("hreflang", lang);
+        link.setAttribute("href", url);
+        link.setAttribute("data-seo", "true");
+        document.head.appendChild(link);
+      });
     }
 
-    // Add Schema.org JSON-LD
+    // ── JSON-LD schemas ───────────────────────────────────────────────────────
+    const injectSchema = (obj: Record<string, any>) => {
+      const script = document.createElement("script");
+      script.setAttribute("type", "application/ld+json");
+      script.setAttribute("data-seo", "true");
+      script.textContent = JSON.stringify(obj);
+      document.head.appendChild(script);
+    };
+
+    // Primary schema
     if (schemaType && schemaData) {
-      const schema = {
+      const primarySchema: Record<string, any> = {
         "@context": "https://schema.org",
         "@type": schemaType,
         ...schemaData,
       };
 
-      const script = document.createElement("script");
-      script.setAttribute("type", "application/ld+json");
-      script.setAttribute("data-seo", "true");
-      script.textContent = JSON.stringify(schema);
-      document.head.appendChild(script);
+      // Inject publisher into NewsArticle / BlogPosting automatically
+      if (["NewsArticle", "BlogPosting", "Article"].includes(schemaType)) {
+        const pub = publisher || { name: "CrossFire Wiki", logoUrl: `${baseUrl}/logo-new.png` };
+        if (!primarySchema.publisher) {
+          primarySchema.publisher = {
+            "@type": "Organization",
+            name: pub.name,
+            logo: {
+              "@type": "ImageObject",
+              url: pub.logoUrl,
+              width: 512,
+              height: 512,
+            },
+          };
+        }
+        if (!primarySchema.mainEntityOfPage) {
+          primarySchema.mainEntityOfPage = {
+            "@type": "WebPage",
+            "@id": finalCanonical,
+          };
+        }
+      }
+
+      injectSchema(primarySchema);
     }
 
-    // Cleanup function
+    // BreadcrumbList schema
+    if (breadcrumbs && breadcrumbs.length > 0) {
+      injectSchema({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: breadcrumbs.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          item: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`,
+        })),
+      });
+    }
+
+    // Extra schemas
+    (extraSchemas || []).forEach((schema) => {
+      injectSchema({ "@context": "https://schema.org", ...schema });
+    });
+
+    // ── Cleanup ───────────────────────────────────────────────────────────────
     return () => {
       if (!onlySchema) {
-        const metaToRemove = document.querySelectorAll('meta[data-seo="true"]');
-        metaToRemove.forEach((meta) => meta.remove());
-        const canonicalToRemove = document.querySelector('link[rel="canonical"][data-seo="true"]');
-        if (canonicalToRemove) canonicalToRemove.remove();
+        document.querySelectorAll('meta[data-seo="true"]').forEach((m) => m.remove());
+        document.querySelector('link[rel="canonical"][data-seo="true"]')?.remove();
+        document.querySelectorAll('link[rel="alternate"][data-seo="true"]').forEach((l) => l.remove());
       }
-      const schemaToRemove = document.querySelector('script[type="application/ld+json"][data-seo="true"]');
-      if (schemaToRemove) schemaToRemove.remove();
+      document.querySelectorAll('script[type="application/ld+json"][data-seo="true"]').forEach((s) => s.remove());
     };
   }, [
     finalTitle,
@@ -219,6 +334,15 @@ export function SEOHead({
     schemaData,
     robotsValue,
     onlySchema,
+    articlePublishedTime,
+    articleModifiedTime,
+    articleAuthor,
+    articleSection,
+    JSON.stringify(articleTags),
+    JSON.stringify(hreflangAlternates),
+    JSON.stringify(breadcrumbs),
+    JSON.stringify(extraSchemas),
+    JSON.stringify(publisher),
   ]);
 
   return null;

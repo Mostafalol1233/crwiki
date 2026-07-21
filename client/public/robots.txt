@@ -1,39 +1,75 @@
-# CrossFire Wiki - Robots.txt
+# CrossFire Wiki — robots.txt
+# https://crossfire.wiki
+
 User-agent: *
 Allow: /
-Allow: /logo-new.png
-Allow: /crossfire-logo.png
-Allow: /feature-crossfire.jpg
 Disallow: /admin
-Disallow: /admin/*
-Disallow: /login
-Disallow: /register
-Disallow: /reset-password
-Disallow: /my-tickets
+Disallow: /admin/
 Disallow: /api/
 
-# Allow important pages
+# Explicitly allow all important page paths
 Allow: /weapons
 Allow: /modes
 Allow: /ranks
+Allow: /mercenaries
 Allow: /tutorials
 Allow: /news
 Allow: /events
 Allow: /posts
-Allow: /article/*
-Allow: /news/*
-Allow: /events/*
-Allow: /tutorials/*
-Allow: /category/*
+Allow: /sellers
+Allow: /article/
+Allow: /news/
+Allow: /events/
+Allow: /tutorials/
+Allow: /category/
 
-# Crawl delay for politeness
-Crawl-delay: 0.5
-
-# Sitemap location
-Sitemap: https://crossfire.wiki/sitemap.xml
-
-# Explicit image crawler allowance for branding and previews
-User-agent: Googlebot-Image
+# Explicitly allow crawlable image assets
 Allow: /logo-new.png
 Allow: /crossfire-logo.png
 Allow: /feature-crossfire.jpg
+Allow: /favicon*.png
+
+# Google crawlers
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-News
+Allow: /
+Allow: /news/
+Allow: /events/
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Social media crawlers (for rich previews)
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+# Sitemap Index — references all sub-sitemaps
+Sitemap: https://crossfire.wiki/sitemap-index.xml
+Sitemap: https://crossfire.wiki/sitemap.xml
+Sitemap: https://crossfire.wiki/news-sitemap.xml
+Sitemap: https://crossfire.wiki/images-sitemap.xml

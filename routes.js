@@ -178,21 +178,97 @@ export async function registerRoutes(app) {
 
     // SEO: robots.txt
     app.get('/robots.txt', async (_req, res) => {
-        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
-        try { base = String(base).trim().replace(/^[`'\"]|[`'\"]$/g, ''); } catch { }
-        base = base.replace(/\/$/, '');
-        try {
-            const s = await storage.getSiteSettings();
-            if (s?.publicBaseUrl) base = String(s.publicBaseUrl).replace(/\/$/, '');
-        } catch { }
+        const base = 'https://crossfire.wiki';
         const robots = [
             'User-agent: *',
             'Allow: /',
+            'Disallow: /admin/',
+            'Disallow: /api/',
+            '',
+            'User-agent: Googlebot',
+            'Allow: /',
+            'Disallow: /admin/',
+            'Disallow: /api/',
+            '',
+            'User-agent: Googlebot-Image',
+            'Allow: /',
+            '',
+            'User-agent: Bingbot',
+            'Allow: /',
+            'Disallow: /admin/',
+            'Disallow: /api/',
+            '',
+            'User-agent: facebookexternalhit',
+            'Allow: /',
+            '',
+            'User-agent: Twitterbot',
+            'Allow: /',
+            '',
+            'User-agent: WhatsApp',
+            'Allow: /',
+            '',
+            `Sitemap: ${base}/sitemap-index.xml`,
             `Sitemap: ${base}/sitemap.xml`,
+            `Sitemap: ${base}/news-sitemap.xml`,
+            `Sitemap: ${base}/images-sitemap.xml`,
         ].join('\n');
         res.type('text/plain').send(robots);
     });
-    // SEO: sitemap.xml (basic dynamic)
+    // SEO: Sitemap Index — references all sub-sitemaps
+    app.get('/sitemap-index.xml', async (_req, res) => {
+        const base = 'https://crossfire.wiki';
+        const today = new Date().toISOString().split('T')[0];
+        const body = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${base}/sitemap.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${base}/news-sitemap.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${base}/images-sitemap.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>`;
+        res.type('application/xml').send(body);
+    });
+    // SEO: Google News Sitemap
+    app.get('/news-sitemap.xml', async (_req, res) => {
+        const base = 'https://crossfire.wiki';
+        try {
+            const news = await storage.getAllNews().catch(() => []);
+            const items = news.slice(0, 1000);
+            const escXml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const rows = items.map(n => {
+                const slug = n.news_slug || n.id;
+                const pubDate = n.createdAt ? new Date(n.createdAt).toISOString() : new Date().toISOString();
+                return [
+                    '  <url>',
+                    `    <loc>${base}/news/${slug}</loc>`,
+                    `    <lastmod>${pubDate.split('T')[0]}</lastmod>`,
+                    '    <changefreq>never</changefreq>',
+                    '    <priority>0.8</priority>',
+                    '    <news:news>',
+                    '      <news:publication>',
+                    '        <news:name>CrossFire Wiki</news:name>',
+                    '        <news:language>en</news:language>',
+                    '      </news:publication>',
+                    `      <news:publication_date>${pubDate}</news:publication_date>`,
+                    `      <news:title>${escXml(n.title)}</news:title>`,
+                    '    </news:news>',
+                    '  </url>',
+                ].join('\n');
+            }).join('\n');
+            const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n${rows}\n</urlset>`;
+            res.type('application/xml').send(body);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+    // SEO: sitemap.xml (main dynamic sitemap)
     app.get('/sitemap.xml', async (_req, res) => {
         let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
         try { base = String(base).trim().replace(/^[`'\"]|[`'\"]$/g, ''); } catch { }
@@ -202,20 +278,23 @@ export async function registerRoutes(app) {
             if (s?.publicBaseUrl) base = String(s.publicBaseUrl).replace(/\/$/, '');
         } catch { }
         const urls = [];
+        const today = new Date().toISOString().split('T')[0];
         const push = (path, opt = {}) => {
             urls.push({ loc: `${base}${path}`, priority: opt.priority, changefreq: opt.changefreq, lastmod: opt.lastmod });
         };
-        // Static pages
-        push('/', { priority: 1.0, changefreq: 'daily' });
-        push('/posts', { priority: 0.7, changefreq: 'weekly' });
-        push('/news', { priority: 0.8, changefreq: 'daily' });
-        push('/weapons', { priority: 0.6, changefreq: 'weekly' });
-        push('/modes', { priority: 0.6, changefreq: 'weekly' });
-        push('/ranks', { priority: 0.6, changefreq: 'weekly' });
-        push('/tutorials', { priority: 0.5, changefreq: 'weekly' });
-        push('/sellers', { priority: 0.4, changefreq: 'weekly' });
-        push('/terms', { priority: 0.2, changefreq: 'yearly' });
-        push('/privacy', { priority: 0.2, changefreq: 'yearly' });
+        // Static pages — ordered by SEO importance
+        push('/',            { priority: 1.0, changefreq: 'daily',  lastmod: today });
+        push('/news',        { priority: 0.9, changefreq: 'daily',  lastmod: today });
+        push('/events',      { priority: 0.9, changefreq: 'daily',  lastmod: today });
+        push('/weapons',     { priority: 0.8, changefreq: 'weekly', lastmod: today });
+        push('/modes',       { priority: 0.8, changefreq: 'weekly', lastmod: today });
+        push('/ranks',       { priority: 0.7, changefreq: 'weekly', lastmod: today });
+        push('/mercenaries', { priority: 0.7, changefreq: 'weekly', lastmod: today });
+        push('/tutorials',   { priority: 0.7, changefreq: 'weekly', lastmod: today });
+        push('/posts',       { priority: 0.6, changefreq: 'weekly', lastmod: today });
+        push('/sellers',     { priority: 0.5, changefreq: 'weekly', lastmod: today });
+        push('/terms',       { priority: 0.2, changefreq: 'yearly', lastmod: today });
+        push('/privacy',     { priority: 0.2, changefreq: 'yearly', lastmod: today });
         // Dynamic: posts, news, events
         try {
             const [posts, news, events] = await Promise.all([
@@ -224,23 +303,20 @@ export async function registerRoutes(app) {
                 storage.getAllEvents().catch(() => []),
             ]);
             for (const p of posts) {
-                const slug = p.post_slug || '';
-                if (slug) {
-                    push(`/article/${slug}`, { priority: 0.5, changefreq: 'monthly' });
-                } else {
-                    push(`/article/${p.id}`, { priority: 0.5, changefreq: 'monthly' });
-                }
+                const slug = p.post_slug || p.id;
+                const lastmod = (p.updatedAt || p.createdAt) ? new Date(p.updatedAt || p.createdAt).toISOString().split('T')[0] : today;
+                push(`/article/${slug}`, { priority: 0.6, changefreq: 'monthly', lastmod });
             }
             for (const n of news) {
-                push(`/news/${n.id}`, { priority: 0.6, changefreq: 'weekly' });
+                // Always use slug — never expose raw DB IDs in canonical URLs
+                const slug = n.news_slug || n.id;
+                const lastmod = (n.updatedAt || n.createdAt) ? new Date(n.updatedAt || n.createdAt).toISOString().split('T')[0] : today;
+                push(`/news/${slug}`, { priority: 0.8, changefreq: 'weekly', lastmod });
             }
             for (const e of events) {
-                const slug = e.event_name_slug || '';
-                if (slug) {
-                    push(`/events/${slug}`, { priority: 0.4, changefreq: 'monthly' });
-                } else {
-                    push(`/events/${e.id}`, { priority: 0.4, changefreq: 'monthly' });
-                }
+                const slug = e.event_name_slug || e.id;
+                const lastmod = (e.updatedAt || e.createdAt) ? new Date(e.updatedAt || e.createdAt).toISOString().split('T')[0] : today;
+                push(`/events/${slug}`, { priority: 0.8, changefreq: 'weekly', lastmod });
             }
         }
         catch { }
@@ -252,7 +328,7 @@ export async function registerRoutes(app) {
                     `    <loc>${u.loc}</loc>`,
                     u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>` : '',
                     u.changefreq ? `    <changefreq>${u.changefreq}</changefreq>` : '',
-                    u.priority ? `    <priority>${u.priority.toFixed(1)}</priority>` : '',
+                    u.priority != null ? `    <priority>${u.priority.toFixed(1)}</priority>` : '',
                     '  </url>'
                 ].filter(Boolean).join('\n');
             }).join('\n') +
@@ -1624,18 +1700,23 @@ export async function registerRoutes(app) {
             res.status(500).json({ error: error.message || 'Failed to seed CF data' });
         }
     });
-    // SEO Routes - Sitemap and Robots.txt
-    app.get("/sitemap.xml", async (req, res) => {
+    // SEO Routes — duplicate sitemap removed; primary sitemap is at top of routes
+    // This handler is kept for backward compatibility only (redirects to primary)
+    app.get("/sitemap-legacy.xml", async (req, res) => {
+        res.redirect(301, '/sitemap.xml');
+    });
+    app.get("/sitemap-legacy-redirect", async (req, res) => {
         try {
             const baseUrl = process.env.BASE_URL || "https://crossfire.wiki";
             const posts = await storage.getAllPosts();
             const news = await storage.getAllNews();
             const events = await storage.getAllEvents();
+            const today = new Date().toISOString().split('T')[0];
             let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -1646,19 +1727,19 @@ export async function registerRoutes(app) {
                 const slug = post.post_slug || post.id;
                 sitemap += `  <url>
     <loc>${baseUrl}/article/${slug}</loc>
-    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>${lastmod ? new Date(lastmod).toISOString().split('T')[0] : today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 `;
             });
-            // Add news
+            // Add news — always use slug not raw ID
             news.forEach((item) => {
                 const lastmod = item.updatedAt || item.createdAt;
                 const slug = item.news_slug || item.id;
                 sitemap += `  <url>
     <loc>${baseUrl}/news/${slug}</loc>
-    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
+    <lastmod>${lastmod ? new Date(lastmod).toISOString().split('T')[0] : today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -1669,9 +1750,9 @@ export async function registerRoutes(app) {
                 const slug = event.event_name_slug || event.id;
                 sitemap += `  <url>
     <loc>${baseUrl}/events/${slug}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
 `;
             });
@@ -1694,16 +1775,7 @@ export async function registerRoutes(app) {
             res.status(500).json({ error: error.message });
         }
     });
-    app.get("/robots.txt", async (req, res) => {
-        const robots = `User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Sitemap: ${process.env.BASE_URL || "https://crossfire.wiki"}/sitemap.xml
-`;
-        res.setHeader("Content-Type", "text/plain");
-        res.send(robots);
-    });
+    // robots.txt handled by primary route at top of file
     // Weapons API routes
     app.get("/api/weapons", async (req, res) => {
         try {
@@ -4837,30 +4909,48 @@ const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
         }
     });
 
-    // Image sitemap
+    // Image sitemap — includes all images from posts, news and events
     app.get('/images-sitemap.xml', async (_req, res) => {
         try {
-            const base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+            const base = 'https://crossfire.wiki';
             const [posts, news, events] = await Promise.all([
                 storage.getAllPosts().catch(() => []),
                 storage.getAllNews().catch(() => []),
                 storage.getAllEvents().catch(() => []),
             ]);
+            // Resolve image URL: keep absolute external URLs as-is; prefix relative paths with base
+            const resolveImg = (img) => {
+                if (!img) return null;
+                const s = String(img).trim();
+                if (/^https?:\/\//i.test(s) || s.startsWith('//')) return s;
+                return `${base}${s.startsWith('/') ? '' : '/'}${s}`;
+            };
+            const escXml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             const urls = [];
-            const pushImage = (pageUrl, imageUrl, title, caption) => {
-                urls.push({ pageUrl, imageUrl, title, caption });
+            const pushImage = (pageUrl, rawImg, title, caption) => {
+                const imageUrl = resolveImg(rawImg);
+                if (imageUrl) urls.push({ pageUrl, imageUrl, title, caption });
             };
             for (const p of posts) {
                 const pageUrl = `${base}/article/${p.post_slug || p.id}`;
-                if (p.image) pushImage(pageUrl, `${base}${p.image.startsWith('/') ? '' : '/'}${p.image}`, p.title, p.summary || p.title);
+                if (p.image) pushImage(pageUrl, p.image, p.title, p.summary || p.title);
+                // Also extract images from content HTML
+                if (p.content) {
+                    const re = /<img[^>]+src=["']([^"']+)["']/gi;
+                    let m;
+                    while ((m = re.exec(p.content)) !== null) {
+                        pushImage(pageUrl, m[1], p.title, p.title);
+                    }
+                }
             }
             for (const n of news) {
-                const pageUrl = `${base}/news/${n.id}`;
-                if (n.image) pushImage(pageUrl, `${base}${n.image.startsWith('/') ? '' : '/'}${n.image}`, n.title, n.category || n.title);
+                const slug = n.news_slug || n.id;
+                const pageUrl = `${base}/news/${slug}`;
+                if (n.image) pushImage(pageUrl, n.image, n.title, n.category || n.title);
             }
             for (const e of events) {
                 const pageUrl = `${base}/events/${e.event_name_slug || e.id}`;
-                if (e.image) pushImage(pageUrl, `${base}${e.image.startsWith('/') ? '' : '/'}${e.image}`, e.title, e.type || 'event');
+                if (e.image) pushImage(pageUrl, e.image, e.title, e.type || 'CrossFire event');
             }
             const body = ['<?xml version="1.0" encoding="UTF-8"?>',
                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
@@ -4869,8 +4959,8 @@ const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
                     `    <loc>${u.pageUrl}</loc>`,
                     '    <image:image>',
                     `      <image:loc>${u.imageUrl}</image:loc>`,
-                    `      <image:title>${String(u.title || '').replace(/&/g, '&amp;')}</image:title>`,
-                    `      <image:caption>${String(u.caption || '').replace(/&/g, '&amp;')}</image:caption>`,
+                    `      <image:title>${escXml(u.title)}</image:title>`,
+                    `      <image:caption>${escXml(u.caption)}</image:caption>`,
                     '    </image:image>',
                     '  </url>'
                 ].join('\n')),

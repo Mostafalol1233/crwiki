@@ -1,0 +1,194 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+const BASE         = "https://crossfire.wiki";
+
+const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Content-Type": "application/json" });
+
+async function q(table: string, select: string, order: string, limit = 2000): Promise<any[]> {
+  if (!SUPABASE_URL || !ANON_KEY) return [];
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}&order=${encodeURIComponent(order)}&limit=${limit}`,
+      { headers: h(), signal: AbortSignal.timeout(9000) }
+    );
+    if (!r.ok) return [];
+    return r.json();
+  } catch { return []; }
+}
+
+function xe(s: string) {
+  return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function isoDate(s?: string) {
+  if (!s) return "";
+  try { return new Date(s).toISOString().split("T")[0]; } catch { return ""; }
+}
+
+interface UrlEntry {
+  loc: string;
+  lastmod?: string;
+  changefreq?: string;
+  priority?: string;
+  images?: { url: string; title?: string; caption?: string }[];
+}
+
+function entry({ loc, lastmod, changefreq, priority, images }: UrlEntry) {
+  let xml = `  <url>\n    <loc>${xe(loc)}</loc>\n`;
+  if (lastmod)    xml += `    <lastmod>${lastmod}</lastmod>\n`;
+  if (changefreq) xml += `    <changefreq>${changefreq}</changefreq>\n`;
+  if (priority)   xml += `    <priority>${priority}</priority>\n`;
+  for (const img of (images || [])) {
+    xml += `    <image:image>\n`;
+    xml += `      <image:loc>${xe(img.url)}</image:loc>\n`;
+    if (img.title)   xml += `      <image:title>${xe(img.title)}</image:title>\n`;
+    if (img.caption) xml += `      <image:caption>${xe(img.caption)}</image:caption>\n`;
+    xml += `    </image:image>\n`;
+  }
+  xml += `  </url>\n`;
+  return xml;
+}
+
+export default async function handler(_req: VercelRequest, res: VercelResponse) {
+  const today = new Date().toISOString().split("T")[0];
+
+  const [events, news, posts, tutorials, weapons, mercs, modes] = await Promise.all([
+    q("events",      "id,title,event_name_slug,image_url,date,updated_at,seo_description", "date.desc"),
+    q("news",        "id,title,slug,image,image_url,created_at,updated_at,seo_description", "created_at.desc"),
+    q("posts",       "id,title,slug,image,created_at,updated_at,seo_description",          "created_at.desc"),
+    q("tutorials",   "id,title,slug,image,created_at,updated_at",                          "created_at.desc"),
+    q("weapons",     "id,name,image_url",                                                   "name"),
+    q("mercenaries", "id,name,image_url",                                                   "order_index"),
+    q("modes",       "id,name,image_url",                                                   "name"),
+  ]);
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n`;
+  xml += `        xmlns:xhtml="http://www.w3.org/1999/xhtml"\n`;
+  xml += `        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"\n`;
+  xml += `        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n\n`;
+
+  // ── Static pages ──────────────────────────────────────────────────────
+  const statics: UrlEntry[] = [
+    { loc: `${BASE}/`,           priority: "1.0", changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/events`,     priority: "0.95",changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/weapons`,    priority: "0.9", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/modes`,      priority: "0.9", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/ranks`,      priority: "0.9", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/mercenaries`,priority: "0.9", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/maps`,       priority: "0.8", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/news`,       priority: "0.85",changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/tutorials`,  priority: "0.8", changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/category/news`,   priority: "0.7", changefreq: "daily"   },
+    { loc: `${BASE}/category/events`, priority: "0.7", changefreq: "daily"   },
+    { loc: `${BASE}/category/guides`, priority: "0.7", changefreq: "weekly"  },
+    { loc: `${BASE}/download`,   priority: "0.7", changefreq: "weekly"  },
+    { loc: `${BASE}/sellers`,    priority: "0.6", changefreq: "weekly"  },
+    { loc: `${BASE}/chat`,       priority: "0.5", changefreq: "daily"   },
+    { loc: `${BASE}/about`,      priority: "0.5", changefreq: "monthly" },
+    { loc: `${BASE}/contact`,    priority: "0.5", changefreq: "monthly" },
+    { loc: `${BASE}/support`,    priority: "0.5", changefreq: "monthly" },
+    { loc: `${BASE}/privacy`,    priority: "0.3", changefreq: "monthly" },
+    { loc: `${BASE}/terms`,      priority: "0.3", changefreq: "monthly" },
+  ];
+  for (const s of statics) xml += entry(s);
+  xml += "\n";
+
+  // ── Events ────────────────────────────────────────────────────────────
+  xml += "  <!-- Events -->\n";
+  for (const ev of events) {
+    const slug = ev.event_name_slug || ev.id;
+    if (!slug) continue;
+    const img = ev.image_url;
+    xml += entry({
+      loc:        `${BASE}/events/${slug}`,
+      lastmod:    isoDate(ev.updated_at || ev.date) || today,
+      changefreq: "weekly",
+      priority:   "0.85",
+      images:     img ? [{ url: img, title: ev.title, caption: `CrossFire event: ${ev.title}` }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── News ──────────────────────────────────────────────────────────────
+  xml += "  <!-- News -->\n";
+  for (const n of news) {
+    const slug = n.slug || n.id;
+    if (!slug) continue;
+    const img = n.image || n.image_url;
+    xml += entry({
+      loc:        `${BASE}/news/${slug}`,
+      lastmod:    isoDate(n.updated_at || n.created_at) || today,
+      changefreq: "weekly",
+      priority:   "0.75",
+      images:     img ? [{ url: img, title: n.title, caption: `CrossFire news: ${n.title}` }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── Posts ─────────────────────────────────────────────────────────────
+  xml += "  <!-- Posts -->\n";
+  for (const p of posts) {
+    const slug = p.slug || p.id;
+    if (!slug) continue;
+    const img = p.image;
+    xml += entry({
+      loc:        `${BASE}/posts/${slug}`,
+      lastmod:    isoDate(p.updated_at || p.created_at) || today,
+      changefreq: "weekly",
+      priority:   "0.65",
+      images:     img ? [{ url: img, title: p.title }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── Tutorials ─────────────────────────────────────────────────────────
+  xml += "  <!-- Tutorials -->\n";
+  for (const t of tutorials) {
+    const slug = t.slug || t.id;
+    if (!slug) continue;
+    const img = t.image;
+    xml += entry({
+      loc:        `${BASE}/tutorials/${slug}`,
+      lastmod:    isoDate(t.updated_at || t.created_at) || today,
+      changefreq: "monthly",
+      priority:   "0.65",
+      images:     img ? [{ url: img, title: t.title }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── Weapons (image sitemap) ───────────────────────────────────────────
+  xml += "  <!-- Weapons -->\n";
+  for (const w of weapons) {
+    if (!w.name) continue;
+    const slug = w.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const img = w.image_url;
+    xml += entry({
+      loc:        `${BASE}/weapons`,
+      images:     img ? [{ url: img, title: `${w.name} — CrossFire Weapon`, caption: `CrossFire weapon: ${w.name}` }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── Mercenaries (image sitemap) ───────────────────────────────────────
+  xml += "  <!-- Mercenaries -->\n";
+  for (const m of mercs) {
+    if (!m.name) continue;
+    const img = m.image_url;
+    if (!img) continue;
+    xml += entry({
+      loc:    `${BASE}/mercenaries`,
+      images: [{ url: img, title: `${m.name} — CrossFire Mercenary`, caption: `CrossFire mercenary: ${m.name}` }],
+    });
+  }
+
+  xml += "\n</urlset>";
+
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400");
+  res.setHeader("X-Robots-Tag", "noindex");
+  return res.status(200).send(xml);
+}

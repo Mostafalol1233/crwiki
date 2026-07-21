@@ -1,16 +1,44 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /admin/
 Disallow: /admin/login
+Disallow: /api/
 
-Sitemap: https://crossfire.wiki/sitemap.xml
+# Image crawlers — allow all image paths
+User-agent: Googlebot-Image
+Allow: /
 
-# Common crawlers
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: Slurp
 Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# Sitemap Index (references all sitemaps)
+Sitemap: https://crossfire.wiki/sitemap-index.xml
+Sitemap: https://crossfire.wiki/sitemap.xml
+Sitemap: https://crossfire.wiki/news-sitemap.xml
+Sitemap: https://crossfire.wiki/images-sitemap.xml

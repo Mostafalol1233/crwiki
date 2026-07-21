@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This is a static placeholder for the news sitemap.
+  In production, the server generates this dynamically from the database at /news-sitemap.xml
+  The dynamic version includes all news articles with proper publication dates.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://crossfire.wiki/news</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <news:news>
+      <news:publication>
+        <news:name>CrossFire Wiki</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-07-21T00:00:00Z</news:publication_date>
+      <news:title>CrossFire Wiki — Latest CrossFire News and Events</news:title>
+    </news:news>
+  </url>
+</urlset>

@@ -311,30 +311,65 @@ function LocalizedApp() {
   return (
     <WouterRouter base={base}>
       <SEOHead
-        title="CrossFire Wiki — Complete CrossFire Gaming Guide"
-        description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
-        keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
+        title="CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF"
+        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
+        keywords={["CrossFire", "Crossfire", "CF", "Cross Fire", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "CrossFire events", "CrossFire weapons", "CrossFire ranks", "CrossFire mercenaries", "CrossFire news", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
         ogType="website"
-        ogImage="https://crossfire.wiki/logo-new.png"
-        ogImageAlt="CrossFire Wiki default Open Graph image"
+        ogImage="https://crossfire.wiki/feature-crossfire.jpg"
+        ogImageAlt="CrossFire Wiki — The #1 CrossFire Gaming Guide"
         ogImageWidth={1200}
         ogImageHeight={630}
+        hreflangAlternates={[
+          { lang: "en", url: "https://crossfire.wiki/" },
+          { lang: "ar", url: "https://crossfire.wiki/ar/" },
+        ]}
+        breadcrumbs={[
+          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
+        ]}
       />
       <SEOHead
         onlySchema
         schemaType="Organization"
         schemaData={{
+          "@id": "https://crossfire.wiki/#organization",
           name: "CrossFire Wiki",
-          url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
-          logo: (typeof window !== "undefined" ? `${window.location.origin}/logo-new.png` : "https://crossfire.wiki/logo-new.png"),
+          alternateName: ["CF Wiki", "CrossFire Database"],
+          url: "https://crossfire.wiki",
+          logo: {
+            "@type": "ImageObject",
+            "@id": "https://crossfire.wiki/#logo",
+            url: "https://crossfire.wiki/logo-new.png",
+            width: 512,
+            height: 512,
+            caption: "CrossFire Wiki",
+          },
+          description: "The #1 CrossFire fan wiki — comprehensive resource for weapons, mercenaries, modes, ranks, events, tutorials and community guides.",
+          sameAs: ["https://twitter.com/crossfirewiki"],
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer support",
+            availableLanguage: ["English", "Arabic"],
+          },
         }}
       />
       <SEOHead
         onlySchema
         schemaType="WebSite"
         schemaData={{
+          "@id": "https://crossfire.wiki/#website",
           name: "CrossFire Wiki",
-          url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
+          alternateName: "CF Wiki",
+          url: "https://crossfire.wiki",
+          publisher: { "@id": "https://crossfire.wiki/#organization" },
+          inLanguage: ["en-US", "ar"],
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: "https://crossfire.wiki/search?q={search_term_string}",
+            },
+            "query-input": "required name=search_term_string",
+          },
         }}
       />
       <Layout />

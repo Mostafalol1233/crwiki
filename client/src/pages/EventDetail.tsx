@@ -336,26 +336,107 @@ export default function EventDetail() {
   }
 
   const seoImage = event.ogImage || event.image;
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const canonicalOrigin = "https://crossfire.wiki";
   const eventSlug = event.event_name_slug || slug || legacyId;
-  const eventUrl = `${baseUrl}/events/${eventSlug}`;
+  const eventUrl = `${canonicalOrigin}/events/${eventSlug}`;
+  const seoDesc = event.seoDescription || stripHtml(description).substring(0, 155) || "";
+  const seoTitle = event.seoTitle || `${title} | CrossFire Wiki`;
+  const eventKeywords = [
+    title,
+    event.type || "event",
+    "CrossFire event",
+    "CrossFire Wiki",
+    "كروس فاير ايفنت",
+    ...(event.tags || []),
+  ].filter(Boolean);
+
+  // Event schema endDate: default to startDate + 7 days if not provided
+  const startDate = event.date ? new Date(event.date).toISOString() : undefined;
+  const endDate = event.endDate
+    ? new Date(event.endDate).toISOString()
+    : startDate
+    ? new Date(new Date(event.date).getTime() + 7 * 86400000).toISOString()
+    : undefined;
+
+  const eventBreadcrumbs = [
+    { name: "Home", url: canonicalOrigin + "/" },
+    { name: "Events", url: canonicalOrigin + "/events" },
+    { name: title, url: eventUrl },
+  ];
 
   return (
     <>
       <SEOHead
-        title={event.seoTitle || `${title} | CrossFire Wiki`}
-        description={event.seoDescription || stripHtml(description).substring(0, 155) || ""}
-        keywords={[event.type || "event", "crossfire event", "crossfire wiki"]}
+        title={seoTitle}
+        description={seoDesc}
+        keywords={eventKeywords}
         canonicalUrl={event.canonicalUrl || eventUrl}
         ogImage={seoImage}
+        ogImageAlt={`${title} — CrossFire Event`}
+        ogImageWidth={1200}
+        ogImageHeight={630}
         twitterImage={seoImage}
         ogTitle={event.seoTitle || title}
-        ogDescription={event.seoDescription || stripHtml(description).substring(0, 155) || ""}
+        ogDescription={seoDesc}
         ogType="article"
         ogUrl={eventUrl}
         noindex={false}
+        articlePublishedTime={startDate}
+        articleModifiedTime={new Date().toISOString()}
+        articleAuthor="CrossFire Wiki"
+        articleSection="Events"
+        articleTags={eventKeywords}
+        hreflangAlternates={[
+          { lang: "en", url: eventUrl },
+          { lang: "ar", url: eventUrl.replace("https://crossfire.wiki", "https://crossfire.wiki/ar") },
+        ]}
+        breadcrumbs={eventBreadcrumbs}
         schemaType="Event"
-        schemaData={{ name: title, description: stripHtml(description).substring(0, 200), image: seoImage, startDate: event.date }}
+        schemaData={{
+          "@id": eventUrl,
+          name: title,
+          description: stripHtml(description).substring(0, 500),
+          image: seoImage
+            ? {
+                "@type": "ImageObject",
+                url: seoImage,
+                width: 1200,
+                height: 630,
+                caption: title,
+              }
+            : undefined,
+          url: eventUrl,
+          startDate,
+          endDate,
+          eventStatus: status === "ended"
+            ? "https://schema.org/EventCancelled"
+            : status === "upcoming"
+            ? "https://schema.org/EventScheduled"
+            : "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+          location: {
+            "@type": "VirtualLocation",
+            url: "https://crossfire.wiki",
+          },
+          organizer: {
+            "@type": "Organization",
+            name: "CrossFire Wiki",
+            url: "https://crossfire.wiki",
+          },
+          inLanguage: "en",
+        }}
+        extraSchemas={seoImage ? [
+          {
+            "@type": "ImageObject",
+            contentUrl: seoImage,
+            url: seoImage,
+            name: title,
+            description: seoDesc,
+            width: 1200,
+            height: 630,
+            caption: `${title} — CrossFire Event`,
+          }
+        ] : undefined}
       />
 
       <div style={{ minHeight: "100vh", background: BG }}>

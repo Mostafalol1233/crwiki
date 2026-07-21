@@ -137,11 +137,12 @@ export default function NewsDetail() {
     );
   }
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const canonicalOrigin = "https://crossfire.wiki";
   const newsSlug = newsItem.news_slug || slug || legacyId;
-  const newsUrl = `${baseUrl}/news/${newsSlug}`;
-  const breadcrumbs = [
-    { name: "News", url: "/news" },
+  const newsUrl = `${canonicalOrigin}/news/${newsSlug}`;
+  const newsBreadcrumbs = [
+    { name: "Home", url: canonicalOrigin + "/" },
+    { name: "News", url: canonicalOrigin + "/news" },
     { name: newsItem.title, url: newsUrl },
   ];
 
@@ -155,6 +156,19 @@ export default function NewsDetail() {
   const firstImageMatch = /<img[^>]+src=["']([^"']+)["']/i.exec(selectedContentRaw || "");
   const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
   const seoImage = newsItem.ogImage || newsItem.image || descriptionImage;
+  const plainText = (selectedContentRaw || '').replace(/<[^>]*>/g, '');
+  const seoDesc = newsItem.seoDescription || plainText.substring(0, 155) || "";
+  const wordCount = plainText.split(/\s+/).filter(Boolean).length;
+
+  const publishedIso = newsItem.createdAt ? new Date(newsItem.createdAt as any).toISOString() : new Date().toISOString();
+  const modifiedIso = newsItem.updatedAt ? new Date(newsItem.updatedAt as any).toISOString() : publishedIso;
+
+  const newsKeywords = [
+    ...(newsItem.seoKeywords || [newsItem.category]),
+    "CrossFire news",
+    "CrossFire Wiki",
+    "كروس فاير اخبار",
+  ].filter(Boolean);
 
   const monthYearText = (() => {
     const d = newsItem.createdAt ? new Date(newsItem.createdAt as any) : new Date();
@@ -168,45 +182,77 @@ export default function NewsDetail() {
   return (
     <>
       <SEOHead
-        title={newsItem.seoTitle || `${selectedTitle} | Crossfire Wiki`}
-        description={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
-        keywords={newsItem.seoKeywords || [newsItem.category]}
+        title={newsItem.seoTitle || `${selectedTitle} | CrossFire Wiki`}
+        description={seoDesc}
+        keywords={newsKeywords}
         canonicalUrl={newsItem.canonicalUrl || newsUrl}
         ogImage={seoImage}
-        twitterImage={newsItem.twitterImage || seoImage}
-        ogTitle={newsItem.seoTitle || selectedTitle}
-        ogDescription={newsItem.seoDescription || selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 155) || ""}
-        ogType="article"
-        ogUrl={newsUrl}
+        ogImageAlt={`${selectedTitle} — CrossFire News`}
         ogImageWidth={1200}
         ogImageHeight={630}
+        twitterImage={newsItem.twitterImage || seoImage}
+        ogTitle={newsItem.seoTitle || selectedTitle}
+        ogDescription={seoDesc}
+        ogType="article"
+        ogUrl={newsUrl}
         noindex={false}
+        articlePublishedTime={publishedIso}
+        articleModifiedTime={modifiedIso}
+        articleAuthor={newsItem.author || "CrossFire Wiki"}
+        articleSection={newsItem.category || "News"}
+        articleTags={newsKeywords}
+        hreflangAlternates={[
+          { lang: "en", url: newsUrl },
+          { lang: "ar", url: newsUrl.replace("https://crossfire.wiki", "https://crossfire.wiki/ar") },
+        ]}
+        breadcrumbs={newsBreadcrumbs}
+        publisher={{ name: "CrossFire Wiki", logoUrl: `${canonicalOrigin}/logo-new.png` }}
         schemaType={newsItem.schemaType || "NewsArticle"}
         schemaData={{
+          "@id": newsUrl,
           headline: selectedTitle,
-          description: selectedContentRaw?.replace(/<[^>]*>/g, '').substring(0, 200) || "",
-          image: newsItem.image,
+          description: plainText.substring(0, 500) || "",
+          image: seoImage
+            ? {
+                "@type": "ImageObject",
+                url: seoImage,
+                width: 1200,
+                height: 630,
+                caption: selectedTitle,
+              }
+            : undefined,
+          url: newsUrl,
           author: {
             "@type": "Person",
-            name: newsItem.author,
+            name: newsItem.author || "CrossFire Wiki Team",
           },
-          datePublished: newsItem.createdAt ? new Date(newsItem.createdAt).toISOString() : new Date().toISOString(),
-          dateModified: newsItem.updatedAt ? new Date(newsItem.updatedAt).toISOString() : new Date().toISOString(),
+          datePublished: publishedIso,
+          dateModified: modifiedIso,
+          wordCount,
+          inLanguage: language === 'ar' ? "ar" : "en",
+          isPartOf: {
+            "@type": "WebSite",
+            name: "CrossFire Wiki",
+            url: canonicalOrigin,
+          },
+          about: {
+            "@type": "Thing",
+            name: "CrossFire",
+          },
         }}
-      />
-      {newsItem.image && (
-        <SEOHead
-          onlySchema
-          schemaType="ImageObject"
-          schemaData={{
-            contentUrl: newsItem.image,
+        extraSchemas={seoImage ? [
+          {
+            "@type": "ImageObject",
+            contentUrl: seoImage,
+            url: seoImage,
             name: selectedTitle,
-            description: (selectedContentRaw || '').replace(/<[^>]*>/g, '').substring(0, 200) || selectedTitle,
+            description: seoDesc,
             width: 1200,
-            height: 800,
-          }}
-        />
-      )}
+            height: 630,
+            caption: `${selectedTitle} — CrossFire Wiki`,
+          }
+        ] : undefined}
+      />
       <div className="min-h-screen">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!(newsItem as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}

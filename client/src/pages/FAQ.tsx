@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getFaqCategories } from "@/lib/supabaseApi";
 import {
   ChevronDown, ChevronUp, Search, HelpCircle, Megaphone,
@@ -399,7 +399,30 @@ function FAQAccordionItem({
       .replace(/\s+/g, " ")
       .trim();
 
-  const renderBody = (text: string) => {
+  /**
+   * Wraps sequences of ASCII/Latin characters inside Arabic text with <bdi dir="ltr">
+   * so the Unicode bidi algorithm places them correctly within the RTL flow,
+   * preventing English brand names (CrossFire, ZP, GMs, etc.) from drifting
+   * to the wrong end of the line.
+   */
+  const wrapEnglishTerms = (text: string): React.ReactNode[] => {
+    // Split on runs of ASCII printable chars (letters, digits, common punctuation/symbols)
+    const parts = text.split(/((?:[A-Za-z0-9][\w\-./:@\\()*#+!?'"]*)+)/g);
+    return parts.map((part, i) => {
+      if (!part) return null;
+      if (/^[A-Za-z0-9]/.test(part)) {
+        // English / numeric segment — isolate as LTR
+        return (
+          <bdi key={i} dir="ltr" style={{ unicodeBidi: "isolate" }}>
+            {part}
+          </bdi>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  const renderBody = (text: string, forceAr = false) => {
     if (!text) return null;
     const isHtml = text.startsWith("<") || /<(p|ul|ol|br|img|iframe|strong)[\s>]/.test(text);
     if (isHtml) {
@@ -412,6 +435,19 @@ function FAQAccordionItem({
       );
     }
     const clean = decodeEntities(text);
+    // For Arabic text, split into lines first then wrap English terms inside each line
+    if (forceAr || isAr) {
+      const lines = clean.split("\n");
+      return (
+        <div className="text-sm leading-relaxed" style={{ color: "#888" }}>
+          {lines.map((line, idx) => (
+            <p key={idx} className="mb-1 last:mb-0" dir="rtl">
+              {wrapEnglishTerms(line)}
+            </p>
+          ))}
+        </div>
+      );
+    }
     return (
       <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "#888" }}>
         {clean}
@@ -456,7 +492,7 @@ function FAQAccordionItem({
                 fontFamily: "'Noto Sans Arabic', sans-serif",
               }}
             >
-              {article.titleAr}
+              {wrapEnglishTerms(article.titleAr)}
             </span>
           )}
           {/* English title in Arabic mode */}
@@ -498,7 +534,7 @@ function FAQAccordionItem({
                 </span>
               </div>
               <div style={{ fontFamily: "'Noto Sans Arabic', sans-serif" }}>
-                {renderBody(article.bodyAr)}
+                {renderBody(article.bodyAr, true)}
               </div>
             </div>
           )}

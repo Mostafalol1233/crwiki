@@ -510,7 +510,7 @@ const translations: Record<Language, Record<string, string>> = {
     newsNotFound: "الخبر غير موجود",
     backToNews: "العودة للأخبار",
     readMoreNews: "اقرأ المزيد من الأخبار",
-    newsAndUpdates: "والتحديثات",
+    newsAndUpdates: "الأخبار والتحديثات",
     translationNote: "ملاحظة الترجمة:",
     translationNoteText: "سيتم ترجمة هذا المقال تلقائياً باستخدام واجهة برمجة التطبيقات للترجمة الآلية عند التفعيل.",
     mercenaries: "الشخصيات",

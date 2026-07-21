@@ -3,6 +3,11 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
+import { createRequire } from "module";
+// Pre-import undici at module level to avoid async gap inside SSE handler
+const _require = createRequire(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const undFetch: any = _require("undici").fetch;
 
 // Register endpoint — creates user with email already confirmed (no confirmation step)
 function cfRegisterPlugin(): Plugin {
@@ -161,22 +166,62 @@ function cfAiPlugin(): Plugin {
         res.end(JSON.stringify(data));
       }
 
-      server.middlewares.use("/api/ai/chat", async (req: any, res: any) => {
-        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
-        try {
-          const { messages } = await readBody(req);
-          if (!Array.isArray(messages) || messages.length === 0) {
-            return json(res, 400, { error: "messages array required" });
-          }
-          const apiKey = process.env.OPENROUTER_API_KEY;
-          if (!apiKey) return json(res, 503, { error: "AI not configured" });
+      // SSE streaming fix: connect does NOT await async middleware — any `await`
+      // after the middleware function returns causes the connect finalhandler to close
+      // the response. The solution: use a SYNCHRONOUS middleware that immediately writes
+      // SSE headers (setting headersSent=true, so connect stops), then fires the async
+      // streaming work as a detached promise (background task).
+      server.middlewares.use("/api/ai/chat", (req: any, res: any) => {
+        if (req.method !== "POST") {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "POST only" }));
+          return;
+        }
 
-          // Fetch live website data to inject as knowledge
-          const websiteData = await fetchWebsiteContext();
+        // Claim the response synchronously before connect can touch it
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no",
+        });
+        const sock = res.socket || res.connection;
+        if (sock?.setNoDelay) sock.setNoDelay(true);
+        if (sock?.setTimeout) sock.setTimeout(0);
+        res.write(": ok\n\n"); // initial SSE keepalive
 
-          const systemPrompt = {
-            role: "system",
-            content: `You are CrossFire Wiki Assistant — the official AI for CrossFire Wiki, a comprehensive CrossFire game information website.
+        // Debug: intercept res.end to find caller
+        const _origEnd = res.end.bind(res);
+        res.end = function(...args: any[]) {
+          console.log("[AI] res.end CALLED:", new Error("end caller").stack?.split("\n").slice(1, 6).join(" | "));
+          return _origEnd(...args);
+        };
+
+        // All async work runs in the background; response is already "owned"
+        (async () => {
+          try {
+            console.log("[AI-IIFE] started, res.writableEnded:", res.writableEnded);
+            const body = await readBody(req);
+            console.log("[AI-IIFE] body read, keys:", Object.keys(body || {}), "res.writableEnded:", res.writableEnded);
+            const { messages } = body;
+            if (!Array.isArray(messages) || messages.length === 0) {
+              console.log("[AI-IIFE] no messages");
+              res.write(`data: ${JSON.stringify({ error: "messages array required" })}\n\n`);
+              return res.end();
+            }
+            const apiKey = process.env.OPENROUTER_API_KEY;
+            if (!apiKey) {
+              res.write(`data: ${JSON.stringify({ error: "AI not configured" })}\n\n`);
+              return res.end();
+            }
+            console.log("[AI-IIFE] apiKey ok, fetching context...");
+
+            const websiteData = await fetchWebsiteContext();
+            console.log("[AI-IIFE] context fetched, calling OpenRouter, res.writableEnded:", res.writableEnded);
+
+            const systemPrompt = {
+              role: "system",
+              content: `You are CrossFire Wiki Assistant — the official AI for CrossFire Wiki, a comprehensive CrossFire game information website.
 You are an expert on the CrossFire online FPS game. Help players with:
 - Weapons, stats, categories, and loadout recommendations
 - All mercenary characters and their abilities
@@ -190,72 +235,67 @@ You are an expert on the CrossFire online FPS game. Help players with:
 Format responses using Markdown when helpful: **bold** for key terms, bullet lists for multiple items, tables for comparisons (use | col | col | headers), and code blocks for item names. Be friendly, direct, and helpful. Keep answers concise. When you don't know something specific, say so honestly.
 IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get Arabic replies (Egyptian/Levantine dialect). English users get English replies.
 ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual current data from our website database:\n${websiteData}\n=== END LIVE DATA ===\n\nUse the live data above to give accurate answers about specific weapons, ranks, mercenaries, modes, and events.` : ""}`
-          };
+            };
 
-          // Set SSE headers for streaming
-          res.writeHead(200, {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-          });
+            const upstream = await (undFetch as any)("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://crossfirewiki.com",
+                "X-Title": "CrossFire Wiki"
+              },
+              body: JSON.stringify({
+                model: "openai/gpt-oss-20b:free",
+                messages: [systemPrompt, ...messages.slice(-6)],
+                max_tokens: 480,
+                temperature: 0.5,
+                stream: true,
+              }),
+              signal: AbortSignal.timeout(35000),
+            });
 
-          const { fetch: undFetch } = await import("undici") as any;
-          const upstream = await (undFetch as any)("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://crossfirewiki.com",
-              "X-Title": "CrossFire Wiki"
-            },
-            body: JSON.stringify({
-              model: "openai/gpt-oss-20b:free",
-              messages: [systemPrompt, ...messages.slice(-6)],
-              max_tokens: 480,
-              temperature: 0.5,
-              stream: true,
-            }),
-            signal: AbortSignal.timeout(35000),
-          });
-
-          if (!upstream.ok) {
-            res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
-            return res.end();
-          }
-
-          // Stream the response as SSE
-          const body = upstream.body as any;
-          let buffer = "";
-
-          for await (const rawChunk of body) {
-            const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8") : String(rawChunk);
-            buffer += chunk;
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || !trimmed.startsWith("data:")) continue;
-              const jsonStr = trimmed.slice(5).trim();
-              if (jsonStr === "[DONE]") {
-                res.write("data: [DONE]\n\n");
-                continue;
-              }
-              try {
-                const parsed = JSON.parse(jsonStr) as any;
-                const delta = parsed.choices?.[0]?.delta?.content;
-                if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
-              } catch { /* skip malformed */ }
+            console.log("[AI-IIFE] upstream status:", upstream.status, upstream.ok, "body type:", upstream.body?.constructor?.name);
+            if (!upstream.ok) {
+              const errText = await upstream.text().catch(() => "");
+              console.error("[AI] upstream error:", upstream.status, errText.slice(0, 200));
+              res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
+              return res.end();
             }
-          }
-          res.end();
-        } catch (err: any) {
-          try {
-            res.write(`data: ${JSON.stringify({ error: err.message || "AI request failed" })}\n\n`);
+
+            let buffer = "";
+            let chunkCount = 0;
+            let writeCount = 0;
+            for await (const rawChunk of upstream.body as any) {
+              chunkCount++;
+              const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8") : String(rawChunk);
+              buffer += chunk;
+              const lines = buffer.split("\n");
+              buffer = lines.pop() || "";
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith("data:")) continue;
+                const jsonStr = trimmed.slice(5).trim();
+                if (jsonStr === "[DONE]") { res.write("data: [DONE]\n\n"); continue; }
+                try {
+                  const parsed = JSON.parse(jsonStr) as any;
+                  const delta = parsed.choices?.[0]?.delta?.content;
+                  if (delta) { res.write(`data: ${JSON.stringify({ delta })}\n\n`); writeCount++; }
+                } catch { /* skip malformed */ }
+              }
+            }
+            console.log("[AI-IIFE] loop done, chunks:", chunkCount, "writes:", writeCount, "res.writableEnded:", res.writableEnded);
             res.end();
-          } catch { /* already ended */ }
-        }
+          } catch (err: any) {
+            console.error("[AI] error:", err?.message, err?.stack?.slice(0, 200));
+            try {
+              res.write(`data: ${JSON.stringify({ error: err.message || "AI request failed" })}\n\n`);
+              res.end();
+            } catch { /* already ended */ }
+          }
+        })();
+        // Intentionally NOT returning the promise — keeps middleware synchronous
+        // so connect sees headersSent=true and leaves this response alone.
       });
     },
   };

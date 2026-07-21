@@ -226,7 +226,11 @@ export default function AIAssistant() {
         }
       }
 
-      setMessages(prev => [...prev, { role: "assistant", content: fullContent }]);
+      if (fullContent) {
+        setMessages(prev => [...prev, { role: "assistant", content: fullContent }]);
+      } else {
+        setError(isAr ? "لم يصل ردٌّ من الذكاء الاصطناعي — حاول مرة أخرى." : "No response from AI — please try again.");
+      }
       setStreamingContent(null);
     } catch (err: any) {
       if (err.name === "AbortError") return;
@@ -546,7 +550,11 @@ function AssistantBubble({ isAr, mdComponents, streaming, streamingContent, cont
                 <span style={{ display: "inline-block", width: 2, height: 13, marginLeft: 3, background: "#f5a623", borderRadius: 1, verticalAlign: "middle", animation: "pulse 0.8s infinite" }} />
               )}
             </>
-          ) : null}
+          ) : (
+            <span style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>
+              {isAr ? "لم أتلقَّ ردًا — حاول مرة أخرى." : "No response received — please try again."}
+            </span>
+          )}
         </div>
       </div>
     </div>

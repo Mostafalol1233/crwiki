@@ -303,8 +303,9 @@ export default function EventsList() {
   return (
     <>
       <PageSEO
-        title="CrossFire Events — Tournaments, Updates & Community"
-        description="Stay up-to-date with CrossFire events, tournaments, and seasonal updates."
+        title="CrossFire Events — Tournaments, Esports & Seasonal Updates | CrossFire Wiki"
+        description="Stay up-to-date with CrossFire esports tournaments, seasonal events, competitive matches and community activities. Live event schedules and results."
+        image="https://cdnr.escharts.com/uploads/public/68a/d91/360/68ad913604b0e066419134.jpg?width=1140&height=570&quality=90&extension=jpg"
         canonicalPath="/events"
       />
 

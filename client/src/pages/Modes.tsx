@@ -229,12 +229,18 @@ export default function Modes() {
   return (
     <>
       <SEOHead
-        title="CrossFire Game Modes — Complete Guide | Crossfire Wiki"
-        description="Explore all CrossFire game modes including Zombie Mode, Ghost Mode, and more. Complete guide with images and descriptions."
-        keywords={["crossfire modes", "zombie mode", "ghost mode", "cf game modes"]}
-        canonicalUrl="/modes"
+        title="CrossFire Game Modes — Complete Guide | CrossFire Wiki"
+        description="Explore all CrossFire game modes: Zombie Mode, Ghost Mode, Mutation Mode, Team Deathmatch, Search & Destroy and more. Full guide with descriptions and objectives."
+        keywords={["crossfire modes", "zombie mode", "ghost mode", "cf game modes", "mutation mode", "crossfire search and destroy", "crossfire TDM"]}
+        canonicalUrl="https://crossfire.wiki/modes"
+        ogImage="https://z8games.akamaized.net/cfna/web/main/carousel/260702_cfwe_mutation_zmplay_carouselm.jpg"
+        ogImageAlt="CrossFire Game Modes — Zombie Mode, Ghost Mode & More"
         schemaType="CollectionPage"
-        schemaData={{ name: "CrossFire Game Modes", description: "Complete collection of CrossFire game modes" }}
+        schemaData={{ name: "CrossFire Game Modes", description: "Complete guide to all CrossFire game modes including competitive, cooperative and event modes" }}
+        breadcrumbs={[
+          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
+          { name: "Game Modes", url: "https://crossfire.wiki/modes" },
+        ]}
       />
 
       <div className="min-h-screen py-10 md:py-14" style={{ background: "var(--background)" }}>

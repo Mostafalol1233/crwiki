@@ -166,12 +166,18 @@ export default function Weapons() {
   return (
     <>
       <SEOHead
-        title="CrossFire Weapons — Complete Weapon Guide | Crossfire Wiki"
-        description="Explore all CrossFire weapons with detailed stats, images, and descriptions. Find the best weapons for your gameplay style."
-        keywords={["crossfire weapons", "cf weapons", "weapon guide", "weapon stats"]}
-        canonicalUrl="/weapons"
+        title="CrossFire Weapons — Complete Arsenal Guide | CrossFire Wiki"
+        description="Explore the full CrossFire weapon arsenal: Assault Rifles, Sniper Rifles, SMGs, Shotguns, Machine Guns, Pistols and Melee. Detailed stats, images and descriptions."
+        keywords={["crossfire weapons", "cf weapons", "weapon guide", "weapon stats", "crossfire AK47", "crossfire M4A1", "crossfire sniper", "best weapons crossfire"]}
+        canonicalUrl="https://crossfire.wiki/weapons"
+        ogImage="https://z8games.akamaized.net/cfna/web/main/carousel/260715_cfwe_sniperweek_carouselm.jpg"
+        ogImageAlt="CrossFire Weapons — Full Arsenal with Stats"
         schemaType="CollectionPage"
-        schemaData={{ name: "CrossFire Weapons", description: "Complete collection of CrossFire weapons" }}
+        schemaData={{ name: "CrossFire Weapons", description: "Complete CrossFire weapon database with stats, categories and descriptions" }}
+        breadcrumbs={[
+          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
+          { name: "Weapons", url: "https://crossfire.wiki/weapons" },
+        ]}
       />
 
       <div className="min-h-screen py-10 md:py-14" style={{ background: "var(--background)" }}>

@@ -182,12 +182,20 @@ export default function Ranks() {
   return (
     <>
       <SEOHead
-        title="CrossFire Ranks System - Complete Rank Guide | Crossfire Wiki"
-        description="Explore all CrossFire ranks with images and requirements. Learn about the ranking system and progression in CrossFire."
-        keywords={["crossfire ranks", "cf ranks", "rank system", "crossfire progression"]}
-        canonicalUrl="/ranks"
+        title="CrossFire Ranks System — Complete Rank Guide | CrossFire Wiki"
+        description="Explore all 104 CrossFire ranks with images, EXP requirements and bonuses. Full progression guide from Private to Grand Marshal."
+        keywords={["crossfire ranks", "cf ranks", "rank system", "crossfire progression", "grand marshal", "crossfire exp"]}
+        canonicalUrl="https://crossfire.wiki/ranks"
+        ogImage="https://static.wikia.nocookie.net/crossfirefps/images/0/0f/NA_class_1.png/revision/latest?cb=20130706213819"
+        ogImageAlt="CrossFire Ranks — Full Progression System"
+        ogImageWidth={512}
+        ogImageHeight={512}
         schemaType="CollectionPage"
-        schemaData={{ name: "CrossFire Ranks", description: "Complete collection of CrossFire ranks" }}
+        schemaData={{ name: "CrossFire Ranks", description: "Complete 104-tier CrossFire rank system with EXP requirements and rewards" }}
+        breadcrumbs={[
+          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
+          { name: "Ranks", url: "https://crossfire.wiki/ranks" },
+        ]}
       />
 
       <div className="min-h-screen py-12 md:py-16" style={{ background: "var(--background)" }}>

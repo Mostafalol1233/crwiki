@@ -317,8 +317,9 @@ export default function News() {
   return (
     <>
       <PageSEO
-        title="News & Updates — CrossFire Wiki"
-        description="Latest CrossFire news, events, posts, and updates from the community."
+        title="CrossFire News & Updates — Latest Events, Patches & Community | CrossFire Wiki"
+        description="Latest CrossFire news, patch notes, esports events, community posts and game updates. Stay up-to-date with everything happening in CrossFire Z8Games."
+        image="https://z8games.akamaized.net/cfna/web/main/carousel/CFNA_NewsUpdate_Carousel.jpg"
         canonicalPath="/news"
       />
 

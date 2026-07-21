@@ -427,8 +427,10 @@ export default function Home() {
   return (
     <>
       <PageSEO
-        title="CrossFire Wiki — Weapons, Modes, Maps & Community"
-        description="The definitive CrossFire encyclopedia: weapons, maps, mercenaries, game modes, and community resources."
+        title="CrossFire Wiki — Weapons, Ranks, Events, Maps & Guides"
+        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, competitive events and tutorials for Z8Games CrossFire — in English and Arabic."
+        image="https://crossfire.wiki/feature-crossfire.jpg"
+        canonicalPath="/"
       />
       <div style={{ background: BG, minHeight: "100vh", color: "#fff" }}>
 

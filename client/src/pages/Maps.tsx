@@ -88,12 +88,18 @@ export default function Maps() {
   return (
     <>
       <SEOHead
-        title="CrossFire Maps — Complete Guide | Crossfire Wiki"
-        description="Browse all CrossFire maps with detailed images and descriptions. Find your favorite battlefields from every game mode."
-        keywords={["crossfire maps", "cf maps", "crossfire maps guide", "fps maps"]}
-        canonicalUrl="/maps"
+        title="CrossFire Maps — Complete Map Guide | CrossFire Wiki"
+        description="Browse all CrossFire maps with detailed images and descriptions. Find every battlefield across Search & Destroy, TDM, Ghost Mode, Zombie and more."
+        keywords={["crossfire maps", "cf maps", "crossfire maps guide", "fps maps", "crossfire battlefields", "S&D maps", "TDM maps"]}
+        canonicalUrl="https://crossfire.wiki/maps"
+        ogImage="https://z8games.akamaized.net/cfna/web/main/carousel/CFNA_OriginalMaps_Carousel.jpg"
+        ogImageAlt="CrossFire Maps — Complete Battlefield Guide"
         schemaType="CollectionPage"
-        schemaData={{ name: "CrossFire Maps", description: "Complete collection of CrossFire game maps" }}
+        schemaData={{ name: "CrossFire Maps", description: "Complete collection of CrossFire game maps across all game modes" }}
+        breadcrumbs={[
+          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
+          { name: "Maps", url: "https://crossfire.wiki/maps" },
+        ]}
       />
 
       <div className="min-h-screen py-10 md:py-14" style={{ background: "var(--background)" }}>

@@ -319,8 +319,9 @@ export default function Mercenaries() {
   return (
     <>
       <PageSEO
-        title="Mercenaries — CrossFire Wiki"
-        description="Browse CrossFire mercenaries with roles, abilities and voice lines."
+        title="CrossFire Mercenaries — Characters, Roles & Voice Lines | CrossFire Wiki"
+        description="Browse all CrossFire mercenaries with roles, abilities, voice lines and detailed profiles. Discover Wolf, Sisterhood, Black Mamba, Desperado and more."
+        image="https://z8games.akamaized.net/cfna/templates/assets/images/feature-cf-left.jpg"
         canonicalPath="/mercenaries"
       />
 

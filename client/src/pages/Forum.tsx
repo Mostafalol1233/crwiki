@@ -1,36 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import {
-  MessageSquare, Users, TrendingUp, Sparkles, Bot, ChevronRight,
-  MessageCircle, Crosshair, Brain, UserCog, Trophy, HelpCircle
-} from "lucide-react";
+import { MessageSquare, Users, TrendingUp, Sparkles, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { getForumCategories } from "@/lib/supabaseApi";
 
 const ACCENT = "#f5a623";
 
-// Map category slugs to Lucide icons
-const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
-  general: MessageCircle,
-  weapons: Crosshair,
-  strategies: Brain,
-  mercenaries: UserCog,
-  events: Trophy,
-  help: HelpCircle,
+/* Category short labels — no SVG icons, just bold letters */
+const CAT_ABBR: Record<string, string> = {
+  general: "GD",
+  weapons: "WL",
+  strategies: "ST",
+  mercenaries: "MR",
+  events: "EV",
+  help: "HP",
 };
-
-function CategoryIcon({ slug, color }: { slug: string; color: string }) {
-  const Icon = CATEGORY_ICONS[slug] || MessageSquare;
-  return (
-    <div
-      className="w-10 h-10 flex items-center justify-center flex-shrink-0 rounded"
-      style={{ background: `${color}18`, border: `1px solid ${color}30` }}
-    >
-      <Icon className="h-5 w-5" style={{ color }} />
-    </div>
-  );
-}
 
 interface ForumCategory {
   id: string;
@@ -64,103 +49,148 @@ export default function Forum() {
 
   return (
     <>
+      <style>{`
+        @keyframes forumFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .forum-cat { animation: forumFadeIn 0.35s ease forwards; }
+        .forum-cat:hover .forum-cat-abbr { color: #f5a623; }
+        .forum-cat:hover .forum-cat-arrow { opacity: 1; transform: translateX(3px); }
+        .forum-cat-arrow { opacity: 0; transition: opacity 0.2s, transform 0.2s; }
+      `}</style>
+
       <PageSEO
         title={isAr ? "منتدى المجتمع — CrossFire Wiki" : "Community Forum — CrossFire Wiki"}
         description={isAr ? "انضم إلى مجتمع CrossFire — ناقش الأسلحة والاستراتيجيات والفعاليات مع لاعبين من كل مكان." : "Join the CrossFire community — discuss weapons, strategies, events and more with players worldwide."}
         canonicalPath="/forum"
       />
 
-      <div className="min-h-screen" style={{ background: "var(--background)" }}>
-        {/* Hero */}
-        <div className="relative py-16 text-center overflow-hidden" style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.12)" }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 70%)" }} />
-          <div className="relative container mx-auto px-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: 2 }}>
-              <MessageSquare className="h-3.5 w-3.5" style={{ color: ACCENT }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: ACCENT }}>
+      <div style={{ background: "var(--background)", minHeight: "100%" }}>
+
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
+        <div style={{
+          background: "linear-gradient(135deg, #080808 0%, #100c00 60%, #080808 100%)",
+          borderBottom: "1px solid rgba(245,166,35,0.12)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(245,166,35,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(245,166,35,0.02) 1px, transparent 1px)", backgroundSize: "32px 32px", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 100% at 50% 0%, rgba(245,166,35,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
+
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "44px 24px 36px", position: "relative", textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 2, marginBottom: 16 }}>
+              <MessageSquare style={{ width: 11, height: 11, color: ACCENT }} />
+              <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.3em", textTransform: "uppercase", color: ACCENT }}>
                 {isAr ? "مجتمع اللاعبين" : "Player Community"}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight leading-none mb-3" style={{ color: "var(--foreground)" }}>
-              {isAr ? (
-                <><span style={{ color: ACCENT }}>منتدى</span> CrossFire</>
-              ) : (
-                <>CrossFire <span style={{ color: ACCENT }}>Forum</span></>
-              )}
+
+            <h1 style={{ fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.03em", lineHeight: 1, color: "var(--foreground)", margin: "0 0 12px" }}>
+              CrossFire{" "}
+              <span style={{ color: ACCENT }}>Forum</span>
             </h1>
-            <p className="text-sm mb-8" style={{ color: "#666" }}>
-              {isAr ? "ناقش، اسأل، شارك — مع لاعبين من كل مكان" : "Discuss, ask, share — with players from everywhere"}
+            <p style={{ fontSize: 13, color: "#555", marginBottom: 32 }}>
+              {isAr ? "ناقش، اسأل، شارك مع لاعبين من كل مكان" : "Discuss, ask and share with CrossFire players worldwide"}
             </p>
 
-            {/* Stats */}
-            <div className="flex justify-center gap-8">
+            {/* Stats bar */}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 0, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, overflow: "hidden" }}>
               {[
                 { icon: MessageSquare, label: isAr ? "موضوع" : "Threads", value: totalThreads },
                 { icon: Users, label: isAr ? "ردود" : "Posts", value: totalPosts },
                 { icon: TrendingUp, label: isAr ? "تصنيفات" : "Categories", value: categories.length },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="text-center">
-                  <div className="text-2xl font-black" style={{ color: ACCENT }}>{value.toLocaleString()}</div>
-                  <div className="text-[11px] uppercase tracking-widest mt-0.5" style={{ color: "#555" }}>{label}</div>
+              ].map(({ icon: Icon, label, value }, i) => (
+                <div key={label} style={{ padding: "12px 24px", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none", textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: ACCENT, lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: 10, color: "#444", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: 2 }}>{label}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-10 max-w-5xl">
-          {/* Error state */}
+        {/* ── Categories ────────────────────────────────────────────── */}
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "36px 20px" }}>
+
+          {/* Section label */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.05)" }} />
+            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.3em", textTransform: "uppercase", color: "#333" }}>
+              {isAr ? "التصنيفات" : "CATEGORIES"}
+            </span>
+            <div style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.05)" }} />
+          </div>
+
           {error && (
-            <div className="mb-8 p-5 rounded-lg text-center" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <p className="text-sm" style={{ color: "#ef4444" }}>
-                {isAr ? "تعذّر تحميل الفئات. تأكد من إعداد الجداول في Supabase." : "Failed to load categories. Check your Supabase setup."}
-              </p>
+            <div style={{ marginBottom: 24, padding: "14px 18px", borderRadius: 6, background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 13 }}>
+              {isAr ? "تعذّر تحميل الفئات." : "Failed to load categories."}
             </div>
           )}
 
-          {/* Loading */}
+          {/* Loading skeleton */}
           {loading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="h-32 rounded-lg animate-pulse" style={{ background: "var(--card)" }} />
+                <div key={i} style={{ height: 100, borderRadius: 6, background: "var(--card)", animation: "pulse 1.5s ease-in-out infinite", opacity: 0.5 }} />
               ))}
             </div>
           )}
 
-          {/* Category Grid */}
+          {/* Grid */}
           {!loading && categories.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categories.map((cat) => (
-                <Link key={cat.id} href={`/forum/${cat.slug}`}>
-                  <div className="group p-5 rounded-lg cursor-pointer transition-all duration-200 hover:translate-y-[-2px]"
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+              {categories.map((cat, idx) => (
+                <Link key={cat.id} href={`/forum/${cat.slug}`} style={{ textDecoration: "none" }}>
+                  <div
+                    className="forum-cat"
                     style={{
-                      background: "var(--card)",
+                      animationDelay: `${idx * 0.05}s`,
+                      padding: "18px 20px",
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.02)",
                       border: "1px solid rgba(255,255,255,0.06)",
-                      borderLeft: `3px solid ${cat.color}`,
+                      cursor: "pointer",
+                      transition: "background 0.18s, border-color 0.18s",
+                      position: "relative",
+                      overflow: "hidden",
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = cat.color; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "var(--card)"; }}>
-                    <div className="flex items-start gap-4">
-                      <CategoryIcon slug={cat.slug} color={cat.color} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-sm" style={{ color: "var(--foreground)" }}>
-                            {isAr && cat.nameAr ? cat.nameAr : cat.name}
-                          </h3>
-                          <ChevronRight className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-1" style={{ color: "#444" }} />
-                        </div>
-                        <p className="text-xs leading-relaxed mb-3" style={{ color: "#666" }}>
-                          {isAr && cat.descriptionAr ? cat.descriptionAr : cat.description}
-                        </p>
-                        <div className="flex gap-4">
-                          <span className="text-[11px]" style={{ color: "#555" }}>
-                            <span style={{ color: cat.color, fontWeight: 700 }}>{cat.threadCount}</span> {isAr ? "موضوع" : "threads"}
-                          </span>
-                          <span className="text-[11px]" style={{ color: "#555" }}>
-                            <span style={{ color: "#888", fontWeight: 700 }}>{cat.postCount}</span> {isAr ? "رد" : "posts"}
-                          </span>
-                        </div>
-                      </div>
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(245,166,35,0.04)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(245,166,35,0.18)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
+                    }}
+                  >
+                    {/* Top row: abbr label + arrow */}
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+                      <span className="forum-cat-abbr" style={{
+                        fontSize: 11, fontWeight: 900, letterSpacing: "0.2em",
+                        color: "#333", textTransform: "uppercase", transition: "color 0.18s",
+                      }}>
+                        {CAT_ABBR[cat.slug] || "—"}
+                      </span>
+                      <ChevronRight className="forum-cat-arrow" style={{ width: 14, height: 14, color: ACCENT }} />
+                    </div>
+
+                    {/* Name */}
+                    <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--foreground)", margin: "0 0 5px", letterSpacing: "-0.01em" }}>
+                      {isAr && cat.nameAr ? cat.nameAr : cat.name}
+                    </h3>
+
+                    {/* Description */}
+                    <p style={{ fontSize: 11, color: "#555", margin: "0 0 14px", lineHeight: 1.5 }}>
+                      {isAr && cat.descriptionAr ? cat.descriptionAr : cat.description}
+                    </p>
+
+                    {/* Stats */}
+                    <div style={{ display: "flex", gap: 16, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span style={{ fontSize: 11, color: "#444" }}>
+                        <span style={{ color: "var(--foreground)", fontWeight: 700 }}>{cat.threadCount}</span>
+                        {" "}{isAr ? "موضوع" : "threads"}
+                      </span>
+                      <span style={{ fontSize: 11, color: "#444" }}>
+                        <span style={{ color: "#666", fontWeight: 700 }}>{cat.postCount}</span>
+                        {" "}{isAr ? "رد" : "posts"}
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -168,31 +198,44 @@ export default function Forum() {
             </div>
           )}
 
-          {/* Empty state */}
+          {/* Empty */}
           {!loading && !error && categories.length === 0 && (
-            <div className="text-center py-16">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4" style={{ color: "#333" }} />
-              <p className="text-sm" style={{ color: "#555" }}>No categories found.</p>
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "#444" }}>
+              <MessageSquare style={{ width: 40, height: 40, margin: "0 auto 12px", opacity: 0.3 }} />
+              <p style={{ fontSize: 13 }}>No categories found.</p>
             </div>
           )}
 
-          {/* AI Assistant CTA */}
-          <div className="mt-10 p-6 rounded-lg flex items-center gap-5" style={{ background: "linear-gradient(135deg, rgba(245,166,35,0.06) 0%, rgba(245,166,35,0.02) 100%)", border: "1px solid rgba(245,166,35,0.15)" }}>
-            <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 rounded-full" style={{ background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.25)" }}>
-              <Bot className="h-6 w-6" style={{ color: ACCENT }} />
+          {/* ── AI CTA ─────────────────────────────────────────────── */}
+          <div style={{
+            marginTop: 32, padding: "20px 24px",
+            background: "linear-gradient(135deg, rgba(245,166,35,0.05) 0%, rgba(245,166,35,0.02) 100%)",
+            border: "1px solid rgba(245,166,35,0.12)", borderRadius: 6,
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{
+              width: 40, height: 40, flexShrink: 0, borderRadius: "50%",
+              background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Sparkles style={{ width: 18, height: 18, color: ACCENT }} />
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-sm mb-1" style={{ color: "var(--foreground)" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", marginBottom: 3 }}>
                 {isAr ? "مش لاقي إجابة؟ اسأل الذكاء الاصطناعي!" : "Can't find an answer? Ask the AI!"}
-              </h3>
-              <p className="text-xs" style={{ color: "#555" }}>
-                {isAr ? "المساعد الذكي يعرف كل حاجة عن CrossFire — أسلحة، رتب، مرتزقة، وأكتر." : "Our AI assistant knows everything about CrossFire — weapons, ranks, mercenaries, and more."}
-              </p>
+              </div>
+              <div style={{ fontSize: 11, color: "#555" }}>
+                {isAr ? "المساعد الذكي يعرف كل حاجة عن CrossFire — أسلحة، رتب، مرتزقة، وأكتر." : "Our AI knows everything about CrossFire — weapons, ranks, mercenaries and more."}
+              </div>
             </div>
-            <Link href="/ai">
-              <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded transition-all hover:brightness-110 flex-shrink-0"
-                style={{ background: ACCENT, color: "#000", border: "none", cursor: "pointer" }}>
-                <Sparkles className="h-3.5 w-3.5" />
+            <Link href="/ai" style={{ textDecoration: "none", flexShrink: 0 }}>
+              <button style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 16px", background: ACCENT, color: "#000",
+                border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+                <Sparkles style={{ width: 12, height: 12 }} />
                 {isAr ? "اسأل الذكاء الاصطناعي" : "Ask AI"}
               </button>
             </Link>

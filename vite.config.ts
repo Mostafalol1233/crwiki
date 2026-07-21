@@ -78,22 +78,23 @@ function cfRegisterPlugin(): Plugin {
 let _aiContextCache: { text: string; ts: number } | null = null;
 const AI_CONTEXT_TTL = 30 * 60 * 1000;
 
-async function fetchWebsiteContext(): Promise<string> {
-  if (_aiContextCache && Date.now() - _aiContextCache.ts < AI_CONTEXT_TTL) {
-    return _aiContextCache.text;
-  }
+let _aiContextRefreshing = false;
+
+async function _refreshContextInBackground() {
+  if (_aiContextRefreshing) return;
+  _aiContextRefreshing = true;
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
   const ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
-  if (!SUPABASE_URL || !ANON_KEY) return "";
+  if (!SUPABASE_URL || !ANON_KEY) { _aiContextRefreshing = false; return; }
   try {
     const { fetch: undFetch } = await import("undici") as any;
     const h = { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` };
     const [wRes, rRes, mRes, merRes, evRes] = await Promise.allSettled([
-      (undFetch as any)(`${SUPABASE_URL}/rest/v1/weapons?select=name,category,description&limit=200&order=name`, { headers: h }),
-      (undFetch as any)(`${SUPABASE_URL}/rest/v1/ranks?select=name,tier,description,bonus&order=tier`, { headers: h }),
-      (undFetch as any)(`${SUPABASE_URL}/rest/v1/modes?select=name,description,type&order=name`, { headers: h }),
-      (undFetch as any)(`${SUPABASE_URL}/rest/v1/mercenaries?select=name,role&order=order_index`, { headers: h }),
-      (undFetch as any)(`${SUPABASE_URL}/rest/v1/events?select=title,description,date&limit=20&order=created_at.desc`, { headers: h }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/weapons?select=name,category&limit=150&order=name`, { headers: h, signal: AbortSignal.timeout(8000) }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/ranks?select=name,tier,bonus&order=tier`, { headers: h, signal: AbortSignal.timeout(8000) }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/modes?select=name,type&order=name`, { headers: h, signal: AbortSignal.timeout(8000) }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/mercenaries?select=name,role&order=order_index`, { headers: h, signal: AbortSignal.timeout(8000) }),
+      (undFetch as any)(`${SUPABASE_URL}/rest/v1/events?select=title,date&limit=10&order=created_at.desc`, { headers: h, signal: AbortSignal.timeout(8000) }),
     ]);
     let ctx = "";
     if (wRes.status === "fulfilled") {
@@ -101,43 +102,44 @@ async function fetchWebsiteContext(): Promise<string> {
       if (weapons?.length) {
         const byCat: Record<string, string[]> = {};
         weapons.forEach((w: any) => { const c = w.category || "Other"; if (!byCat[c]) byCat[c] = []; byCat[c].push(w.name); });
-        ctx += `\nWEAPONS (${weapons.length} total):\n`;
-        Object.entries(byCat).forEach(([c, ns]) => { ctx += `  ${c}: ${ns.join(", ")}\n`; });
+        ctx += `\nWEAPONS:\n`;
+        Object.entries(byCat).forEach(([c, ns]) => { ctx += `  ${c}: ${ns.slice(0, 20).join(", ")}\n`; });
       }
     }
     if (rRes.status === "fulfilled") {
       const ranks = await (rRes.value as any).json().catch(() => []) as any[];
       if (ranks?.length) {
-        ctx += `\nRANKS (${ranks.length} total, Tier 1=lowest):\n`;
-        ranks.forEach((r: any) => { ctx += `  Tier ${r.tier}: ${r.name}${r.bonus ? ` [${r.bonus}]` : ""}\n`; });
+        ctx += `\nRANKS (${ranks.length}):\n`;
+        ranks.forEach((r: any) => { ctx += `  T${r.tier}: ${r.name}${r.bonus ? ` [${r.bonus}]` : ""}\n`; });
       }
     }
     if (mRes.status === "fulfilled") {
       const modes = await (mRes.value as any).json().catch(() => []) as any[];
-      if (modes?.length) {
-        ctx += `\nGAME MODES:\n`;
-        modes.forEach((m: any) => { ctx += `  - ${m.name} (${m.type || "Standard"}): ${(m.description || "").slice(0, 80)}\n`; });
-      }
+      if (modes?.length) ctx += `\nMODES: ${modes.map((m: any) => m.name).join(", ")}\n`;
     }
     if (merRes.status === "fulfilled") {
       const mercs = await (merRes.value as any).json().catch(() => []) as any[];
-      if (mercs?.length) {
-        ctx += `\nMERCENARIES:\n`;
-        mercs.forEach((m: any) => { ctx += `  - ${m.name}${m.role ? ` (${m.role})` : ""}\n`; });
-      }
+      if (mercs?.length) ctx += `\nMERCS: ${mercs.map((m: any) => `${m.name}${m.role ? `(${m.role})` : ""}`).join(", ")}\n`;
     }
     if (evRes.status === "fulfilled") {
       const events = await (evRes.value as any).json().catch(() => []) as any[];
-      if (events?.length) {
-        ctx += `\nRECENT EVENTS:\n`;
-        events.slice(0, 5).forEach((e: any) => { ctx += `  - ${e.title}${e.date ? ` (${e.date})` : ""}\n`; });
-      }
+      if (events?.length) ctx += `\nEVENTS: ${events.slice(0, 5).map((e: any) => e.title).join(", ")}\n`;
     }
     _aiContextCache = { text: ctx, ts: Date.now() };
-    return ctx;
-  } catch {
-    return "";
+  } catch { /* silently skip */ }
+  finally { _aiContextRefreshing = false; }
+}
+
+// Pre-warm on startup (non-blocking)
+setTimeout(_refreshContextInBackground, 3000);
+
+async function fetchWebsiteContext(): Promise<string> {
+  if (_aiContextCache && Date.now() - _aiContextCache.ts < AI_CONTEXT_TTL) {
+    return _aiContextCache.text; // return cached immediately
   }
+  // Trigger background refresh; return stale or empty so we don't block the request
+  _refreshContextInBackground();
+  return _aiContextCache?.text ?? "";
 }
 
 function cfAiPlugin(): Plugin {

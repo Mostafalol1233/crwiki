@@ -43,12 +43,6 @@
   ],
 
   "rewrites": [
-    { "source": "/images/(.*)", "destination": "http://fi4.bot-hosting.net:20126/images/$1" },
-    { "source": "/videos/(.*)", "destination": "http://fi4.bot-hosting.net:20126/videos/$1" },
-    { "source": "/audio/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/audio/$1"  },
-    { "source": "/media/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/media/$1"  },
-    { "source": "/image/(.*)",  "destination": "http://fi4.bot-hosting.net:20126/image/$1"  },
-    { "source": "/cdn/(.*)",    "destination": "http://fi4.bot-hosting.net:20126/cdn/$1"    },
-    { "source": "/(.*)",        "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

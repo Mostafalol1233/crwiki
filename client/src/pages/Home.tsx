@@ -11,6 +11,7 @@ import {
   TrendingUp, Sword, Info,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
+import { useLanguage } from "@/components/LanguageProvider";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -30,69 +31,46 @@ function stripHtml(html: string) {
 // ─── Wiki Portal Grid ─────────────────────────────────────────────────────────
 const PORTALS = [
   {
-    label: "Weapons",
+    label: "Weapons", labelKey: "weapons", descKey: "portalWeaponsDesc",
     settingsKey: "portal_img_weapons",
-    desc: "Rifles, pistols, snipers & melee",
-    href: "/weapons",
-    img: "/portal/weapons.png",
-    imgFit: "cover" as const,
-    imgBg: "#0a0800",
-    imgPos: "center top",
+    href: "/weapons", img: "/portal/weapons.png",
+    imgFit: "cover" as const, imgBg: "#0a0800", imgPos: "center top",
   },
   {
-    label: "Maps",
+    label: "Maps", labelKey: "maps", descKey: "portalMapsDesc",
     settingsKey: "portal_img_maps",
-    desc: "Battle arenas and layouts",
-    href: "/maps",
-    img: "/portal/maps.webp",
-    imgFit: "cover" as const,
-    imgBg: "#0a0c10",
-    imgPos: "center center",
+    href: "/maps", img: "/portal/maps.webp",
+    imgFit: "cover" as const, imgBg: "#0a0c10", imgPos: "center center",
   },
   {
-    label: "Mercenaries",
+    label: "Mercenaries", labelKey: "mercenaries", descKey: "portalMercenariesDesc",
     settingsKey: "portal_img_mercenaries",
-    desc: "Elite playable operators",
-    href: "/mercenaries",
-    img: "/portal/mercenaries.webp",
-    imgFit: "cover" as const,
-    imgBg: "#0a0a0a",
-    imgPos: "center top",
+    href: "/mercenaries", img: "/portal/mercenaries.webp",
+    imgFit: "cover" as const, imgBg: "#0a0a0a", imgPos: "center top",
   },
   {
-    label: "Game Modes",
+    label: "Game Modes", labelKey: "modes", descKey: "portalModesDesc",
     settingsKey: "portal_img_modes",
-    desc: "Every mode with strategies",
-    href: "/modes",
-    img: "/portal/modes.webp",
-    imgFit: "cover" as const,
-    imgBg: "#0a0808",
-    imgPos: "center center",
+    href: "/modes", img: "/portal/modes.webp",
+    imgFit: "cover" as const, imgBg: "#0a0808", imgPos: "center center",
   },
   {
-    label: "Ranks",
+    label: "Ranks", labelKey: "ranks", descKey: "portalRanksDesc",
     settingsKey: "portal_img_ranks",
-    desc: "Rank tiers, EXP & progression",
-    href: "/ranks",
-    img: "/portal/ranks.webp",
-    imgFit: "cover" as const,
-    imgBg: "#0a0a0c",
-    imgPos: "center center",
+    href: "/ranks", img: "/portal/ranks.webp",
+    imgFit: "cover" as const, imgBg: "#0a0a0c", imgPos: "center center",
   },
   {
-    label: "Events",
+    label: "Events", labelKey: "events", descKey: "portalEventsDesc",
     settingsKey: "portal_img_events",
-    desc: "Tournaments & limited-time ops",
-    href: "/events",
-    img: "/portal/events.jpg",
-    imgFit: "cover" as const,
-    imgBg: "#0a080a",
-    imgPos: "center center",
+    href: "/events", img: "/portal/events.jpg",
+    imgFit: "cover" as const, imgBg: "#0a080a", imgPos: "center center",
   },
 ];
 
 function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
   const [hovered, setHovered] = useState(false);
+  const { t } = useLanguage();
   return (
     <Link href={portal.href}>
       <div
@@ -151,7 +129,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
             margin: "0 0 2px", letterSpacing: "-0.01em",
             textShadow: "0 1px 4px rgba(0,0,0,0.8)",
           }}>
-            {portal.label}
+            {t(portal.labelKey)}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
             <span style={{
@@ -159,7 +137,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
               fontWeight: 600, transition: "color 0.2s",
               textShadow: "0 1px 4px rgba(0,0,0,0.8)",
             }}>
-              Browse
+              {t("browse")}
             </span>
             <ArrowRight size={10} color={hovered ? "#fff" : "rgba(255,255,255,0.4)"} style={{ transition: "color 0.2s" }} />
           </div>
@@ -174,6 +152,7 @@ function HeroSearch() {
   const [query, setQuery] = useState("");
   const [, setLocation] = useLocation();
   const [focused, setFocused] = useState(false);
+  const { t } = useLanguage();
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) setLocation(`/search?q=${encodeURIComponent(query.trim())}`);
@@ -194,7 +173,7 @@ function HeroSearch() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Search weapons, maps, mercenaries, modes..."
+          placeholder={t("heroSearchPlaceholder")}
           style={{
             flex: 1, padding: "12px 10px",
             background: "transparent", border: "none", outline: "none",
@@ -206,7 +185,7 @@ function HeroSearch() {
           background: GOLD, border: "none", borderRadius: 5,
           color: "#000", fontWeight: 700, fontSize: 13, cursor: "pointer",
         }}>
-          Search
+          {t("heroSearchBtn")}
         </button>
       </div>
     </form>
@@ -216,6 +195,7 @@ function HeroSearch() {
 // ─── Event Card ───────────────────────────────────────────────────────────────
 function EventCard({ event, featured = false }: { event: any; featured?: boolean }) {
   const [hovered, setHovered] = useState(false);
+  const { t } = useLanguage();
   const href = event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`;
   const dateStr = event.date ? new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
   const img = event.image || event.imageUrl || event.image_url;
@@ -267,7 +247,7 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
             </p>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <span style={{ fontSize: 11, color: GOLD, fontWeight: 600 }}>Read more</span>
+            <span style={{ fontSize: 11, color: GOLD, fontWeight: 600 }}>{t("readMore")}</span>
             <ChevronRight size={11} color={GOLD} />
           </div>
         </div>
@@ -322,6 +302,7 @@ function NewsListItem({ item }: { item: any }) {
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 function SectionHeader({ eyebrow, title, href }: { eyebrow: string; title: string; href?: string }) {
+  const { t } = useLanguage();
   return (
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20 }}>
       <div>
@@ -331,7 +312,7 @@ function SectionHeader({ eyebrow, title, href }: { eyebrow: string; title: strin
       {href && (
         <Link href={href}>
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            View all <ArrowRight size={13} />
+            {t("viewAll")} <ArrowRight size={13} />
           </span>
         </Link>
       )}
@@ -381,8 +362,28 @@ const DYK_FACTS = [
   "Mutation Mode introduced a player-versus-mutants format where one infected player starts and spreads the mutation to others.",
 ];
 
+const DYK_FACTS_AR = [
+  "يمتلك CrossFire أكثر من 650 مليون لاعب مسجل حول العالم، مما يجعله من أكثر ألعاب FPS لعباً في التاريخ.",
+  "كان AK-47 أول سلاح يُقدَّم في CrossFire ولا يزال من أكثر الأسلحة شهرةً حتى اليوم.",
+  "رتبة البطل تتطلب الوصول إلى الحد الأقصى من نقاط الخبرة — أقل من 1% من اللاعبين يصلون إليها.",
+  "وضع Ghost Mode فريد من نوعه في CrossFire، حيث يلعب أحد الفريقين كعمليين غير مرئيين.",
+  "حصل CrossFire على ترخيص في أكثر من 80 دولة عبر القارات الست.",
+  "يعتبر Barrett M82A1 من قِبَل كثيرين أقوى بندقية قنص في CrossFire، قادرة على القتل بضربة واحدة من مسافات بعيدة.",
+  "القائمة السوداء والخطر العالمي في حرب منذ إطلاق اللعبة — وصراعهما يشكّل العمود الفقري السردي لكل مباراة.",
+  "قُدِّم وضع Zombie Mode أصلاً كحدث محدود المدة قبل أن يصبح أحد أكثر الأوضاع الدائمة شعبيةً.",
+  "ألهم وضع Search & Destroy في CrossFire مشاهد تنافسية في دول عديدة، وأثمر عن دوريات وطنية وبطولات عالمية.",
+  "عملة ZP تتيح للاعبين استئجار أو شراء أسلحة مميزة، بينما يتم الحصول على GP عبر اللعب.",
+  "يمتلك CrossFire دوري رياضي إلكتروني مخصص — CrossFire Stars — تُقام نهائياته سنوياً بجوائز تصل لملايين الدولارات.",
+  "بعض الأسلحة في CrossFire لديها سكنات حصرية للأعياد لا تتوفر إلا في فترة محدودة من العام.",
+  "SAS وS.W.A.T. وOMOH من أقدم الشخصيات في CrossFire، متوفرة منذ الأيام الأولى للعبة.",
+  "خرائط Ghost Mode مُصممة خصيصاً بحيث لا يستطيع الأشباح استخدام الأسلحة — يفوزون بقتل لاعبي Global Risk بالسكين.",
+  "قدّم Mutation Mode نمطاً لاعب ضد مسوخ حيث يبدأ لاعب واحد مصاباً وينشر العدوى للآخرين.",
+];
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Home() {
+  const { t, language } = useLanguage();
+  const dykFacts = language === "ar" ? DYK_FACTS_AR : DYK_FACTS;
   const [dykIndex] = useState(() => Math.floor(Math.random() * DYK_FACTS.length));
 
   const { data: siteSettingsData } = useQuery({ queryKey: ["site-settings-home"], queryFn: getSiteSettings, staleTime: 2 * 60 * 1000 });
@@ -450,7 +451,7 @@ export default function Home() {
               borderRadius: 999, marginBottom: 20,
             }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, letterSpacing: "0.08em" }}>The Definitive CrossFire Encyclopedia</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: GOLD, letterSpacing: "0.08em" }}>{t("exploreTheWiki")}</span>
             </div>
 
             <h1 style={{
@@ -460,7 +461,7 @@ export default function Home() {
               CrossFire Wiki
             </h1>
             <p style={{ fontSize: "clamp(0.95rem, 2vw, 1.1rem)", color: "rgba(255,255,255,0.45)", margin: "0 auto 32px", maxWidth: 480, lineHeight: 1.6 }}>
-              Weapons · Mercenaries · Maps · Game Modes — everything you need to dominate.
+              {t("loginTagline")}
             </p>
 
             <div style={{ display: "flex", justifyContent: "center" }}>
@@ -479,10 +480,10 @@ export default function Home() {
         {/* ── PORTAL HUB ───────────────────────────────────────────────────── */}
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "52px 24px 0" }}>
           <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 6px" }}>Explore The Wiki</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 6px" }}>{t("exploreTheWiki")}</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>Category Portals</h2>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: 0 }}>Jump to any section</p>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{t("categoryPortals")}</h2>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: 0 }}>{t("jumpToAnySection")}</p>
             </div>
           </div>
 
@@ -513,7 +514,7 @@ export default function Home() {
               {/* FEATURED EVENT - wiki spotlight */}
               {featuredEvent && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow="Featured" title="Event Spotlight" href="/events" />
+                  <SectionHeader eyebrow={t("featured")} title={t("eventSpotlight")} href="/events" />
                   <Link href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}>
                     <div style={{
                       background: CARD, border: `1px solid rgba(245,166,35,0.2)`,
@@ -535,7 +536,7 @@ export default function Home() {
                           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 50%, rgba(17,17,17,0.9) 100%)" }} />
                           <div style={{ position: "absolute", top: 12, left: 12 }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 8px", background: GOLD, color: "#000", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderRadius: 2 }}>
-                              <Zap size={9} /> Featured Event
+                              <Zap size={9} /> {t("featuredEventBadge")}
                             </span>
                           </div>
                         </div>
@@ -563,7 +564,7 @@ export default function Home() {
                             </div>
                           )}
                           <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-                            View Event <ChevronRight size={13} />
+                            {t("viewEvent")} <ChevronRight size={13} />
                           </span>
                         </div>
                       </div>
@@ -580,7 +581,7 @@ export default function Home() {
               {/* EVENTS GRID */}
               {sideEvents.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow="Latest" title="Recent Events" href="/events" />
+                  <SectionHeader eyebrow={t("latest")} title={t("recentEvents")} href="/events" />
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="events-mini-grid">
                     {sideEvents.map((ev: any) => <EventCard key={ev.id} event={ev} />)}
                   </div>
@@ -594,7 +595,7 @@ export default function Home() {
               {/* NEWS FEED */}
               {newsItems.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow="Stay Informed" title="News & Updates" href="/news" />
+                  <SectionHeader eyebrow={t("footerStayInformed")} title={t("newsUpdatesTitle")} href="/news" />
                   <div>
                     {newsItems.slice(0, 7).map((item: any) => <NewsListItem key={item.id} item={item} />)}
                   </div>
@@ -606,7 +607,7 @@ export default function Home() {
 
               {/* HIGHLIGHTS */}
               <section style={{ marginBottom: 48 }}>
-                <SectionHeader eyebrow="Archive" title="Monthly Highlights" />
+                <SectionHeader eyebrow={t("archiveEyebrow")} title={t("monthlyHighlights")} />
                 <HighlightsSection hideHeader />
               </section>
 
@@ -615,7 +616,7 @@ export default function Home() {
 
               {/* GAME MASTERS */}
               <section>
-                <SectionHeader eyebrow="Official Staff" title="Game Masters" />
+                <SectionHeader eyebrow={t("officialStaffEyebrow")} title={t("gameMasters")} />
                 <GMSection hideHeader />
               </section>
             </div>
@@ -624,9 +625,9 @@ export default function Home() {
             <aside style={{ position: "sticky", top: 80 }}>
 
               {/* On This Wiki */}
-              <SidebarBlock title="On This Wiki" icon={BookOpen}>
+              <SidebarBlock title={t("onThisWiki")} icon={BookOpen}>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "0 0 12px", lineHeight: 1.6 }}>
-                  CrossFire Wiki is a community resource covering every aspect of the CrossFire FPS game. Explore weapons, maps, ranks, mercenaries and more.
+                  {t("onThisWikiDesc")}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 8px", background: CARD2, borderRadius: 4, border: `1px solid ${BORDER}` }}>
                   <Clock size={11} color="rgba(255,255,255,0.3)" />
@@ -635,24 +636,24 @@ export default function Home() {
               </SidebarBlock>
 
               {/* Did You Know */}
-              <SidebarBlock title="Did You Know?" icon={Info}>
+              <SidebarBlock title={t("didYouKnow")} icon={Info}>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.7, fontStyle: "italic" }}>
-                  "{DYK_FACTS[dykIndex]}"
+                  "{dykFacts[dykIndex]}"
                 </p>
               </SidebarBlock>
 
               {/* Quick Navigation */}
-              <SidebarBlock title="Quick Navigation" icon={Globe}>
+              <SidebarBlock title={t("quickNavigation")} icon={Globe}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {[
-                    { label: "Download CrossFire", href: "/download" },
-                    { label: "Rank Calculator",    href: "/ranks" },
-                    { label: "Weapon Database",    href: "/weapons" },
-                    { label: "All Game Modes",     href: "/modes" },
-                    { label: "Mercenaries",        href: "/mercenaries" },
-                    { label: "Event Calendar",     href: "/events" },
-                    { label: "Community Reviews",  href: "/reviews" },
-                    { label: "Support Center",     href: "/support" },
+                    { label: t("downloadCrossFire"), href: "/download" },
+                    { label: t("rankCalculator"),    href: "/ranks" },
+                    { label: t("weaponDatabase"),    href: "/weapons" },
+                    { label: t("allGameModes"),      href: "/modes" },
+                    { label: t("mercenaries"),       href: "/mercenaries" },
+                    { label: t("eventCalendar"),     href: "/events" },
+                    { label: t("communityReviewsLabel"), href: "/reviews" },
+                    { label: t("supportCenterLabel"),    href: "/support" },
                   ].map(({ label, href }) => (
                     <Link key={href} href={href}>
                       <div style={{
@@ -671,21 +672,21 @@ export default function Home() {
               </SidebarBlock>
 
               {/* Discord CTA */}
-              <SidebarBlock title="Community" icon={MessageSquare}>
+              <SidebarBlock title={t("communityLabel")} icon={MessageSquare}>
                 <div style={{
                   background: "rgba(88,101,242,0.12)", border: "1px solid rgba(88,101,242,0.25)",
                   borderRadius: 5, padding: "14px", marginBottom: 10, textAlign: "center",
                 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>Join our Discord</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: "0 0 4px" }}>{t("joinOurDiscord")}</p>
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "0 0 12px", lineHeight: 1.5 }}>
-                    Hundreds of active CF players
+                    {t("activePlayersCount")}
                   </p>
                   <a href="https://discord.gg/7AbuDrNNJM" target="_blank" rel="noopener noreferrer" style={{
                     display: "block", padding: "8px", background: "#5865f2",
                     borderRadius: 4, color: "#fff", fontSize: 12, fontWeight: 700,
                     textDecoration: "none", textAlign: "center",
                   }}>
-                    Join Now
+                    {t("joinNow")}
                   </a>
                 </div>
                 <Link href="/chat">
@@ -694,7 +695,7 @@ export default function Home() {
                     padding: "8px 10px", background: CARD2, border: `1px solid ${BORDER}`,
                     borderRadius: 4, cursor: "pointer",
                   }}>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>Live Chat</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>{t("liveChat")}</span>
                     <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
                   </div>
                 </Link>

@@ -1,12 +1,12 @@
 import * as React from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { useEffect, useState, Suspense, lazy } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { LanguageProvider } from "@/components/LanguageProvider";
+import { LanguageProvider, useLanguage } from "@/components/LanguageProvider";
 import DataSeeder from "@/components/DataSeeder";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -253,42 +253,54 @@ function Layout() {
   );
 }
 
+// Reads language from LanguageProvider and sets wouter's base path so that
+// /ar/weapons is matched as /weapons, /ar/events as /events, etc.
+function LocalizedApp() {
+  const { language } = useLanguage();
+  const base = language === "ar" ? "/ar" : "";
+  return (
+    <WouterRouter base={base}>
+      <SEOHead
+        title="CrossFire Wiki — Complete CrossFire Gaming Guide"
+        description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
+        keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
+        ogType="website"
+        ogImage="https://crossfire.wiki/logo-new.png"
+        ogImageAlt="CrossFire Wiki default Open Graph image"
+        ogImageWidth={1200}
+        ogImageHeight={630}
+      />
+      <SEOHead
+        onlySchema
+        schemaType="Organization"
+        schemaData={{
+          name: "CrossFire Wiki",
+          url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
+          logo: (typeof window !== "undefined" ? `${window.location.origin}/logo-new.png` : "https://crossfire.wiki/logo-new.png"),
+        }}
+      />
+      <SEOHead
+        onlySchema
+        schemaType="WebSite"
+        schemaData={{
+          name: "CrossFire Wiki",
+          url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
+        }}
+      />
+      <Layout />
+      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+      <Toaster />
+    </WouterRouter>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
           <LanguageProvider>
-            <SEOHead
-              title="CrossFire Wiki — Complete CrossFire Gaming Guide"
-              description="CrossFire Wiki: news, events, guides, modes, weapons, ranks, mercenaries, and community updates. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
-              keywords={["CrossFire", "Crossfire", "CF", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
-              ogType="website"
-              ogImage="https://crossfire.wiki/logo-new.png"
-              ogImageAlt="CrossFire Wiki default Open Graph image"
-              ogImageWidth={1200}
-              ogImageHeight={630}
-            />
-            <SEOHead
-              onlySchema
-              schemaType="Organization"
-              schemaData={{
-                name: "CrossFire Wiki",
-                url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
-                logo: (typeof window !== "undefined" ? `${window.location.origin}/logo-new.png` : "https://crossfire.wiki/logo-new.png"),
-              }}
-            />
-            <SEOHead
-              onlySchema
-              schemaType="WebSite"
-              schemaData={{
-                name: "CrossFire Wiki",
-                url: (typeof window !== "undefined" ? window.location.origin : "https://crossfire.wiki"),
-              }}
-            />
-            <Layout />
-            <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
-            <Toaster />
+            <LocalizedApp />
           </LanguageProvider>
         </ThemeProvider>
       </TooltipProvider>

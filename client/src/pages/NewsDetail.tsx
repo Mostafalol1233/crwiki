@@ -207,7 +207,7 @@ export default function NewsDetail() {
           }}
         />
       )}
-      <div className="min-h-screen" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="min-h-screen">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!(newsItem as any).fullLayout && <Breadcrumbs items={breadcrumbs} />}
           <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">

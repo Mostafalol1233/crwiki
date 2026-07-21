@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Search as SearchIcon, FileText, Calendar, Newspaper, Trophy, Crosshair, Shield, Loader2, MapPin, Users } from "lucide-react";
 import { getEvents, getWeapons, getModes, getRanks, getPosts, getNews, getMaps, getMercenaries } from "@/lib/supabaseApi";
+import { useLanguage } from "@/components/LanguageProvider";
 
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -23,6 +24,7 @@ function normalizeToArray(d: any): any[] {
 }
 
 export default function SearchPage() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const initialQuery = searchParams.get("q") || "";
@@ -113,10 +115,10 @@ export default function SearchPage() {
   };
 
   const tabs = [
-    { id: "all",      label: "All",      count: allResults.length },
-    { id: "wiki",     label: "Wiki",     count: results.weapons.length + results.modes.length + results.ranks.length + results.maps.length + results.mercenaries.length },
-    { id: "articles", label: "News & Posts", count: results.posts.length + results.news.length },
-    { id: "events",   label: "Events",   count: results.events.length },
+    { id: "all",      label: t("all"),             count: allResults.length },
+    { id: "wiki",     label: t("searchTabWiki"),   count: results.weapons.length + results.modes.length + results.ranks.length + results.maps.length + results.mercenaries.length },
+    { id: "articles", label: t("searchTabArticles"), count: results.posts.length + results.news.length },
+    { id: "events",   label: t("events"),          count: results.events.length },
   ];
 
   const getTabResults = () => {
@@ -141,10 +143,10 @@ export default function SearchPage() {
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: 3, marginBottom: 12 }}>
             <SearchIcon size={11} color={GOLD} />
-            <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.3em", color: GOLD }}>Search</span>
+            <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.3em", color: GOLD }}>{t("search")}</span>
           </div>
           <h1 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontWeight: 900, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 20px" }}>
-            Search <span style={{ color: GOLD }}>Wiki</span>
+            {t("searchWikiTitle")}
           </h1>
 
           {/* Search input */}
@@ -153,7 +155,7 @@ export default function SearchPage() {
             <input
               autoFocus
               type="text"
-              placeholder="Search weapons, maps, events, ranks..."
+              placeholder={t("searchInputPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
@@ -251,10 +253,10 @@ export default function SearchPage() {
                       border: `1px solid ${page === 1 ? "rgba(255,255,255,0.06)" : "rgba(245,166,35,0.3)"}`,
                       borderRadius: 3, cursor: page === 1 ? "default" : "pointer",
                     }}
-                  >← Prev</button>
+                  >{t("searchPrev")}</button>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 700 }}>
-                    Page {page} / {Math.ceil(getTabResults().length / PAGE_SIZE)}
-                    <span style={{ color: "rgba(255,255,255,0.15)", marginLeft: 8 }}>({getTabResults().length} results)</span>
+                    {t("searchPageLabel")} {page} / {Math.ceil(getTabResults().length / PAGE_SIZE)}
+                    <span style={{ color: "rgba(255,255,255,0.15)", marginLeft: 8 }}>({getTabResults().length})</span>
                   </span>
                   <button
                     onClick={() => setPage(p => Math.min(Math.ceil(getTabResults().length / PAGE_SIZE), p + 1))}
@@ -266,22 +268,22 @@ export default function SearchPage() {
                       border: `1px solid ${page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "rgba(255,255,255,0.06)" : "rgba(245,166,35,0.3)"}`,
                       borderRadius: 3, cursor: page === Math.ceil(getTabResults().length / PAGE_SIZE) ? "default" : "pointer",
                     }}
-                  >Next →</button>
+                  >{t("searchNext")}</button>
                 </div>
               )}
               </div>
             ) : (
               <div style={{ padding: "60px 20px", textAlign: "center", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 4 }}>
                 <SearchIcon size={32} color="rgba(255,255,255,0.08)" style={{ marginBottom: 12 }} />
-                <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>No results for "{debouncedQuery}"</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", marginTop: 4 }}>Try a different term or browse the wiki categories</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>{t("searchNoResultsFor")} "{debouncedQuery}"</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", marginTop: 4 }}>{t("searchTryDifferent")}</p>
               </div>
             )}
           </div>
         ) : (
           <div style={{ paddingTop: 80, textAlign: "center" }}>
             <SearchIcon size={40} color="rgba(255,255,255,0.06)" style={{ marginBottom: 16 }} />
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>Start typing to search the wiki</p>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.2)" }}>{t("searchStartTyping")}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 24 }}>
               {["Barrett M82A1", "Sniper Week", "Ghost Mode", "Zombie Mode", "Mercenaries"].map((hint) => (
                 <button key={hint} onClick={() => setQuery(hint)} style={{

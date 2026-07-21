@@ -322,7 +322,7 @@ export default function News() {
         canonicalPath="/news"
       />
 
-      <div style={{ minHeight: "100vh", background: "var(--background)" }} dir={language === "ar" ? "rtl" : "ltr"}>
+      <div style={{ minHeight: "100vh", background: "var(--background)" }}>
 
         {/* ── PAGE HEADER ── */}
         <div style={{

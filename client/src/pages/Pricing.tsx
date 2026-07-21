@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const ZP_PACKAGES = [
   { zp: "400",    price: "$5",   bonus: "",           popular: false },
@@ -101,7 +102,7 @@ function CopyButton({ code }: { code: string }) {
 }
 
 export default function PricingPage() {
-  const isArabic = typeof window !== "undefined" && (document.documentElement.lang === "ar" || localStorage.getItem("lang") === "ar");
+  const { t } = useLanguage();
 
   return (
     <>
@@ -111,7 +112,7 @@ export default function PricingPage() {
         canonicalPath="/pricing"
       />
 
-      <div className="min-h-screen" style={{ background: "hsl(var(--background))" }} dir={isArabic ? "rtl" : "ltr"}>
+      <div className="min-h-screen" style={{ background: "hsl(var(--background))" }}>
 
         {/* Hero */}
         <div style={{ borderBottom: `1px solid ${GOLD_BORDER}`, padding: "72px 24px 64px" }}>
@@ -122,7 +123,7 @@ export default function PricingPage() {
             }}>
               <Zap size={12} style={{ color: GOLD }} />
               <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: GOLD, textTransform: "uppercase" }}>
-                ZP Pricing Guide
+                {t("pricingGuideLabel")}
               </span>
             </div>
 
@@ -131,11 +132,11 @@ export default function PricingPage() {
               letterSpacing: "0.08em", color: "hsl(var(--foreground))", lineHeight: 1.15, marginBottom: 18,
             }}>
               CrossFire<br />
-              <span style={{ color: GOLD }}>ZP Packages</span>
+              <span style={{ color: GOLD }}>{t("pricingPackagesTitle")}</span>
             </h1>
 
             <p style={{ fontSize: 15, color: "hsl(var(--muted-foreground))", lineHeight: 1.7, maxWidth: 480, margin: "0 auto" }}>
-              Everything you need — prices, what to spend on, and where to top up safely.
+              {t("pricingSubheading")}
             </p>
           </div>
         </div>
@@ -144,7 +145,7 @@ export default function PricingPage() {
 
           {/* ZP Packages */}
           <section style={{ marginBottom: 80 }}>
-            <SectionHeader icon={<ShoppingBag size={16} />} label="ZP Package Prices" sub="USD (approximate)" />
+            <SectionHeader icon={<ShoppingBag size={16} />} label={t("pricingPackagesSection")} sub={t("pricingPackagesSub")} />
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="zp-grid">
               {ZP_PACKAGES.map((pkg) => (
@@ -160,7 +161,7 @@ export default function PricingPage() {
                       background: GOLD, color: "#09090b", fontSize: 9, fontWeight: 700,
                       letterSpacing: "0.15em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 10,
                     }}>
-                      Most Popular
+                      {t("pricingMostPopular")}
                     </div>
                   )}
 
@@ -169,7 +170,7 @@ export default function PricingPage() {
                       {pkg.zp}
                     </div>
                     <div style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", marginTop: 2, letterSpacing: "0.06em" }}>
-                      ZEN POINTS
+                      {t("zpPointsLabel")}
                     </div>
                   </div>
 
@@ -177,7 +178,7 @@ export default function PricingPage() {
                     <span style={{ fontSize: 22, fontWeight: 800, color: "hsl(var(--foreground))" }}>{pkg.price}</span>
                     {pkg.bonus && (
                       <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 600 }}>
-                        +{pkg.bonus} bonus
+                        +{pkg.bonus} {t("pricingBonus")}
                       </span>
                     )}
                   </div>
@@ -190,19 +191,19 @@ export default function PricingPage() {
                       background: pkg.popular ? GOLD : "rgba(255,255,255,0.05)",
                       color: pkg.popular ? "#09090b" : "hsl(var(--muted-foreground))",
                     }}>
-                    Buy on Z8Games <ExternalLink size={10} />
+                    {t("pricingBuyBtn")} <ExternalLink size={10} />
                   </a>
                 </div>
               ))}
             </div>
             <p style={{ marginTop: 10, fontSize: 11, color: "#555" }}>
-              Prices are approximate and may vary by region. Always verify on the official Z8Games store.
+              {t("pricingPriceNote")}
             </p>
           </section>
 
           {/* Where to top up */}
           <section style={{ marginBottom: 80 }}>
-            <SectionHeader icon={<ShieldCheck size={16} />} label="Where to Top Up" />
+            <SectionHeader icon={<ShieldCheck size={16} />} label={t("pricingTopUpSection")} />
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }} className="methods-grid">
               {TOP_UP_METHODS.map((m) => (
@@ -233,13 +234,13 @@ export default function PricingPage() {
                     {m.internal ? (
                       <Link href={m.url}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: GOLD, cursor: "pointer" }}>
-                          Visit Sellers <ChevronRight size={12} />
+                          {t("pricingVisitSellers")} <ChevronRight size={12} />
                         </span>
                       </Link>
                     ) : (
                       <a href={m.url} target="_blank" rel="noopener noreferrer"
                         style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: GOLD, textDecoration: "none" }}>
-                        Visit Site <ExternalLink size={12} />
+                        {t("pricingVisitSite")} <ExternalLink size={12} />
                       </a>
                     )}
                   </div>
@@ -250,7 +251,7 @@ export default function PricingPage() {
 
           {/* What ZP buys */}
           <section style={{ marginBottom: 80 }}>
-            <SectionHeader icon={<Star size={16} />} label="What Can ZP Buy?" />
+            <SectionHeader icon={<Star size={16} />} label={t("pricingWhatBuySection")} />
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }} className="uses-grid">
               {ZP_USES.map((item) => (
@@ -277,7 +278,7 @@ export default function PricingPage() {
 
           {/* Promo codes */}
           <section style={{ marginBottom: 80 }}>
-            <SectionHeader icon={<Gift size={16} />} label="Promo Codes & Free ZP" />
+            <SectionHeader icon={<Gift size={16} />} label={t("pricingPromoSection")} />
 
             <div style={{
               background: "hsl(var(--card))", border: `1px solid ${GOLD_BORDER}`,
@@ -285,7 +286,7 @@ export default function PricingPage() {
             }}>
               <div style={{ padding: "14px 20px", borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
                 <p style={{ fontSize: 13, color: "hsl(var(--muted-foreground))", margin: 0 }}>
-                  CrossFire occasionally releases promo codes through official channels. Check regularly for free ZP and bonus items.
+                  {t("pricingPromoNote")}
                 </p>
               </div>
               {PROMO_CODES.map((p, i) => (
@@ -304,9 +305,9 @@ export default function PricingPage() {
               ))}
             </div>
             <p style={{ marginTop: 10, fontSize: 12, color: "#555" }}>
-              Codes expire fast — follow{" "}
-              <a href="https://discord.gg/7AbuDrNNJM" target="_blank" rel="noopener noreferrer" style={{ color: "#5865f2" }}>our Discord</a>{" "}
-              and <a href="/news" style={{ color: GOLD }}>news page</a> for the latest drops.
+              {t("pricingCodesExpireNote")}{" "}
+              <a href="https://discord.gg/7AbuDrNNJM" target="_blank" rel="noopener noreferrer" style={{ color: "#5865f2" }}>Discord</a>{" "}
+              · <a href="/news" style={{ color: GOLD }}>{t("navUpdates")}</a>
             </p>
           </section>
 
@@ -320,16 +321,16 @@ export default function PricingPage() {
                 <AlertTriangle size={15} style={{ color: "#ef4444" }} />
               </div>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: "#f87171", margin: 0, letterSpacing: "0.05em" }}>
-                Stay Safe When Buying ZP
+                {t("pricingStaySafe")}
               </h2>
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                "Only buy from the official Z8Games store or verified community sellers with reviews.",
-                "Never share your account password with anyone claiming to sell ZP.",
-                "Z8Games staff and GMs will NEVER ask for your ZP or account access.",
-                "If a deal sounds too good to be true, it probably is — stick to trusted sources.",
-                "Check our verified sellers page for community-reviewed providers.",
+                t("pricingSafeTip1"),
+                t("pricingSafeTip2"),
+                t("pricingSafeTip3"),
+                t("pricingSafeTip4"),
+                t("pricingSafeTip5"),
               ].map((tip) => (
                 <li key={tip} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: "hsl(var(--muted-foreground))" }}>
                   <Lock size={11} style={{ color: "#ef4444", flexShrink: 0, marginTop: 2 }} />

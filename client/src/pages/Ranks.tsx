@@ -335,9 +335,12 @@ export default function Ranks() {
 
                     {/* EXP */}
                     {exp > 0 && (
-                      <span className="text-[9px] font-bold" style={{ color: tierStyle.border }}>
-                        {exp.toLocaleString()} EXP
-                      </span>
+                      <div className="flex flex-col items-center gap-0">
+                        <span className="text-[9px] font-bold" style={{ color: tierStyle.border }}>
+                          {exp.toLocaleString()} EXP
+                        </span>
+                        <span className="text-[7px]" style={{ color: "#444" }}>to advance</span>
+                      </div>
                     )}
 
                     {/* Bonus pill */}

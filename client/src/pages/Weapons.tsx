@@ -42,7 +42,11 @@ const CATEGORY_COLORS: Record<string, { color: string; icon: any }> = {
 };
 
 function getCatStyle(cat: string) {
-  return CATEGORY_COLORS[cat] || { color: "#f5a623", icon: Zap };
+  // Case-insensitive lookup — DB values may differ in casing from the keys
+  const normalised = Object.keys(CATEGORY_COLORS).find(
+    k => k.toLowerCase() === cat.toLowerCase()
+  );
+  return (normalised ? CATEGORY_COLORS[normalised] : null) || { color: "#f5a623", icon: Zap };
 }
 
 function StatBar({ label, value, color = "#f5a623" }: { label: string; value: any; color?: string }) {
@@ -114,8 +118,6 @@ export default function Weapons() {
     }, 250);
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [searchQuery, selectedCategory, letter, sort, order]);
-
-  useEffect(() => { fetchWeapons({ reset: true }); }, []);
 
   const [allCategories, setAllCategories] = useState<string[]>([]);
   useEffect(() => {

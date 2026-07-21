@@ -13,12 +13,12 @@ interface Highlight {
 }
 
 const STATIC_HIGHLIGHTS: Highlight[] = [
-  { id: "1", month: "Jun", year: 2026, media_type: "image", url: "https://files.catbox.moe/ctwnqz.jpeg", title: "CrossFire Arch Honorary — June 2026", sort_order: 1 },
-  { id: "2", month: "Apr", year: 2026, media_type: "image", url: "https://files.catbox.moe/r26ox6.jpeg", title: "Black Mamba Season — April 2026", sort_order: 2 },
-  { id: "3", month: "Mar", year: 2026, media_type: "image", url: "https://files.catbox.moe/3o58nb.jpeg", title: "Sisterhood Event — March 2026", sort_order: 3 },
-  { id: "4", month: "Jan", year: 2026, media_type: "image", url: "https://files.catbox.moe/4il6hi.jpeg", title: "Vipers Return — January 2026", sort_order: 4 },
-  { id: "5", month: "Dec", year: 2025, media_type: "image", url: "https://files.catbox.moe/hh7h5u.jpeg", title: "Desperado Winter — December 2025", sort_order: 5 },
-  { id: "6", month: "Nov", year: 2025, media_type: "image", url: "https://files.catbox.moe/eck3jc.jpeg", title: "Ronin Tournament — November 2025", sort_order: 6 },
+  { id: "1", month: "Jun", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260528_cfwe_zppu_bonus_forums.jpg", title: "Summer Breeze Bonus — June 2026", sort_order: 1 },
+  { id: "2", month: "Apr", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260330_cfwe_bp_apr_main_forum.jpg", title: "Mercenary Pass Season 59: Rising Tide — April 2026", sort_order: 2 },
+  { id: "3", month: "Mar", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260223_cfwe_zppubonus_forums.jpg", title: "March Of Gold — March 2026", sort_order: 3 },
+  { id: "4", month: "Jan", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251223_cfwe_bp_jan2026_main_forum.jpg", title: "Mercenary Pass Season 58: Timeless Treasures — January 2026", sort_order: 4 },
+  { id: "5", month: "Dec", year: 2025, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251126_cfwe_npu_forum.jpg", title: "Sleighbell Bonus — December 2025", sort_order: 5 },
+  { id: "6", month: "Nov", year: 2025, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251027_cfwe_zppubonus_forums.jpg", title: "Wavelite Bonus Surge — November 2025", sort_order: 6 },
 ];
 
 const GOLD_BORDER = "rgba(154,124,63,0.25)";

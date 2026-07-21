@@ -250,7 +250,50 @@ export default function Login() {
                 </button>
               </form>
 
-              <div className="text-center mt-3">
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#444" }}>or</span>
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+              </div>
+
+              {/* Google Sign-In */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  setStatus("");
+                  try {
+                    const { signInWithGoogle } = await import("@/lib/supabaseApi");
+                    await signInWithGoogle();
+                    // Supabase redirects to Google — nothing else needed here
+                  } catch (e: any) {
+                    setStatus(e.message || "Google sign-in failed.");
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full h-10 flex items-center justify-center gap-2.5 text-[11px] font-bold tracking-wide transition-all disabled:opacity-50"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "2px",
+                  color: "#ccc",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)"; }}
+              >
+                {/* Google logo SVG */}
+                <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M47.532 24.552c0-1.636-.148-3.2-.422-4.704H24.48v8.898h12.943c-.558 3.01-2.25 5.56-4.794 7.272v6.04h7.765c4.542-4.184 7.138-10.345 7.138-17.506z" fill="#4285F4"/>
+                  <path d="M24.48 48c6.494 0 11.944-2.152 15.924-5.832l-7.765-6.04c-2.152 1.44-4.908 2.296-8.16 2.296-6.274 0-11.59-4.238-13.49-9.928H2.956v6.24C6.924 42.664 15.158 48 24.48 48z" fill="#34A853"/>
+                  <path d="M10.99 28.496a14.48 14.48 0 0 1 0-9.248V13.01H2.956a23.98 23.98 0 0 0 0 21.726l8.034-6.24z" fill="#FBBC05"/>
+                  <path d="M24.48 9.528c3.536 0 6.71 1.216 9.206 3.6l6.9-6.9C36.416 2.38 30.974 0 24.48 0 15.158 0 6.924 5.336 2.956 13.01l8.034 6.24c1.9-5.69 7.216-9.722 13.49-9.722z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </button>
+
+              <div className="text-center mt-4">
                 <Link href="/reset-password">
                   <span className="text-[11px] cursor-pointer hover:opacity-80 transition-opacity" style={{ color: "#555" }}>
                     Forgot password?

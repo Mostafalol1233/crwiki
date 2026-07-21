@@ -9,3 +9,4 @@
 - [Likes tables](likes-tables.md) — three tables added: likes (universal), video_likes, comment_likes; API functions in supabaseApi.ts; uses localStorage uid.
 - [OpenRouter working model](openrouter-model.md) — only `openai/gpt-oss-20b:free` works; nemotron/deepseek/gemma all fail with guardrail or rate-limit errors.
 - [Events real data](events-real-data.md) — 10 real 2026 CF events scraped from Z8Games/Liquipedia; all old placeholder events deleted; full Arabic + SEO fields populated.
+- [Arabic i18n Setup](arabic-i18n-setup.md) — URL /ar routing, RTL fix, ~100 new translation keys, Footer/Support/Contact/Login all use t(); Footer links must stay inside component to access t().

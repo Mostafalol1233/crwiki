@@ -2,35 +2,11 @@ import { Link } from "wouter";
 import { ChevronUp, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { SiDiscord, SiFacebook, SiInstagram, SiTwitch, SiWhatsapp, SiX, SiYoutube } from "react-icons/si";
+import { useLanguage } from "./LanguageProvider";
 
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
 const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
-
-const gameLinks = [
-  { label: "Game Overview", path: "/about" },
-  { label: "Game Modes", path: "/modes" },
-  { label: "Weapons", path: "/weapons" },
-  { label: "Maps", path: "/maps" },
-  { label: "Mercenaries", path: "/mercenaries" },
-  { label: "Rankings", path: "/ranks" },
-  { label: "Download", path: "/download" },
-];
-const communityLinks = [
-  { label: "Forum / Posts", path: "/posts" },
-  { label: "Reviews", path: "/reviews" },
-  { label: "Tutorials", path: "/tutorials" },
-  { label: "Contact Us", path: "/contact" },
-];
-const shopLinks = [
-  { label: "Sellers Market", path: "/sellers" },
-  { label: "Community Reviews", path: "/reviews" },
-];
-const supportLinks = [
-  { label: "FAQ", path: "/faq" },
-  { label: "Submit Ticket", path: "/support" },
-  { label: "My Tickets", path: "/my-tickets" },
-];
 const socials = [
   { href: WHATSAPP_CHANNEL_URL, icon: SiWhatsapp, title: "WhatsApp Channel", color: "#25d366" },
   { href: "https://www.facebook.com/crossfireonline", icon: SiFacebook, title: "Facebook", color: "#1877f2" },
@@ -89,6 +65,7 @@ function FooterLink({ label, path }: { label: string; path: string }) {
 }
 
 export function Footer() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState<"idle" | "ok" | "err">("idle");
 
@@ -99,6 +76,31 @@ export function Footer() {
     setEmail("");
     setTimeout(() => setSubStatus("idle"), 4000);
   };
+
+  const gameLinks = [
+    { label: t("footerGameOverview"), path: "/about" },
+    { label: t("footerGameModes"), path: "/modes" },
+    { label: t("weapons"), path: "/weapons" },
+    { label: t("maps"), path: "/maps" },
+    { label: t("mercenaries"), path: "/mercenaries" },
+    { label: t("ranks"), path: "/ranks" },
+    { label: t("download"), path: "/download" },
+  ];
+  const communityLinks = [
+    { label: t("footerForumPosts"), path: "/posts" },
+    { label: t("reviews"), path: "/reviews" },
+    { label: t("footerTutorials"), path: "/tutorials" },
+    { label: t("footerContactUs"), path: "/contact" },
+  ];
+  const shopLinks = [
+    { label: t("footerSellersMarket"), path: "/sellers" },
+    { label: t("footerCommunityReviews"), path: "/reviews" },
+  ];
+  const supportLinks = [
+    { label: t("faq"), path: "/faq" },
+    { label: t("footerSubmitTicket"), path: "/support" },
+    { label: t("footerMyTickets"), path: "/my-tickets" },
+  ];
 
   return (
     <footer
@@ -123,7 +125,7 @@ export function Footer() {
                 marginBottom: "6px",
               }}
             >
-              Stay Informed
+              {t("footerStayInformed")}
             </p>
             <h3
               style={{
@@ -135,7 +137,7 @@ export function Footer() {
                 margin: "0 0 4px",
               }}
             >
-              CrossFire News &amp; Events
+              {t("footerNewsEventsTitle")}
             </h3>
             <p
               style={{
@@ -146,14 +148,14 @@ export function Footer() {
                 opacity: 0.6,
               }}
             >
-              Weekly digest of updates, tournaments and guides.
+              {t("footerNewsletterSubtitle")}
             </p>
           </div>
 
           <form onSubmit={handleSubscribe} className="flex items-stretch gap-0 w-full md:w-auto">
             <input
               type="email"
-              placeholder="Your email address"
+              placeholder={t("footerEmailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -190,13 +192,13 @@ export function Footer() {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(154,124,63,0.08)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
-              Subscribe <ArrowRight size={12} strokeWidth={1.5} />
+              {t("footerSubscribe")} <ArrowRight size={12} strokeWidth={1.5} />
             </button>
           </form>
 
           {subStatus === "ok" && (
             <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.88rem", color: GOLD }}>
-              Subscribed
+              {t("footerSubscribed")}
             </span>
           )}
         </div>
@@ -225,7 +227,7 @@ export function Footer() {
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.5"; }}
         >
-          <ChevronUp size={14} strokeWidth={1.5} /> BACK TO TOP
+          <ChevronUp size={14} strokeWidth={1.5} /> {t("footerBackToTop")}
         </button>
       </div>
 
@@ -233,34 +235,34 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-6 md:px-10 py-14">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-10">
           <div>
-            <SectionTitle label="NEWS" />
+            <SectionTitle label={t("footerNewsSection")} />
             <ul className="space-y-2.5">
-              <FooterLink label="Latest News" path="/news" />
-              <FooterLink label="Updates" path="/posts" />
-              <FooterLink label="Events" path="/events" />
-              <FooterLink label="Videos" path="/videos" />
+              <FooterLink label={t("footerLatestNews")} path="/news" />
+              <FooterLink label={t("footerUpdates")} path="/posts" />
+              <FooterLink label={t("events")} path="/events" />
+              <FooterLink label={t("videos")} path="/videos" />
             </ul>
           </div>
           <div>
-            <SectionTitle label="GAME" />
+            <SectionTitle label={t("footerGameSection")} />
             <ul className="space-y-2.5">{gameLinks.map((l) => <FooterLink key={l.path} label={l.label} path={l.path} />)}</ul>
           </div>
           <div>
-            <SectionTitle label="COMMUNITY" />
+            <SectionTitle label={t("footerCommunitySection")} />
             <ul className="space-y-2.5">{communityLinks.map((l) => <FooterLink key={l.path} label={l.label} path={l.path} />)}</ul>
           </div>
           <div>
-            <SectionTitle label="SHOP" />
+            <SectionTitle label={t("footerShopSection")} />
             <ul className="space-y-2.5">{shopLinks.map((l) => <FooterLink key={l.path} label={l.label} path={l.path} />)}</ul>
           </div>
           <div>
-            <SectionTitle label="SUPPORT" />
+            <SectionTitle label={t("footerSupportSection")} />
             <ul className="space-y-2.5">{supportLinks.map((l) => <FooterLink key={l.path} label={l.label} path={l.path} />)}</ul>
           </div>
 
           {/* Socials */}
           <div>
-            <SectionTitle label="FOLLOW CROSSFIRE" />
+            <SectionTitle label={t("footerFollowSection")} />
             <div className="grid grid-cols-4 gap-2 mb-5">
               {socials.map(({ href, icon: Icon, title, color }) => (
                 <a
@@ -309,8 +311,8 @@ export function Footer() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.12)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(37,211,102,0.06)"; }}
               >
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>JOIN COMMUNITY</p>
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: "#128c4a" }}>WhatsApp Channel</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>{t("footerJoinCommunity")}</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: "#128c4a" }}>{t("footerWhatsappChannel")}</p>
               </div>
             </a>
             <Link href="/download">
@@ -325,8 +327,8 @@ export function Footer() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(154,124,63,0.06)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>PLAY NOW</p>
-                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: GOLD }}>Download CrossFire</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "10px", fontWeight: 800, letterSpacing: "0.2em", color: "hsl(var(--foreground))", opacity: 0.75, marginBottom: "2px" }}>{t("footerPlayNow")}</p>
+                <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: GOLD }}>{t("footerDownloadCF")}</p>
               </div>
             </Link>
           </div>
@@ -345,13 +347,13 @@ export function Footer() {
               opacity: 0.7,
             }}
           >
-            &copy; {new Date().getFullYear()} Bimora Gaming &middot; CrossFire Wiki &mdash; The Community Hub for CrossFire Players.
+            {t("copyright")}
           </span>
           <div style={{ display: "flex", gap: "20px" }}>
             {[
-              { href: "/privacy", label: "Privacy" },
-              { href: "/terms", label: "Terms" },
-              { href: "/about", label: "About" },
+              { href: "/privacy", label: t("footerPrivacy") },
+              { href: "/terms", label: t("footerTerms") },
+              { href: "/about", label: t("about") },
             ].map(({ href, label }) => (
               <Link key={href} href={href}>
                 <span

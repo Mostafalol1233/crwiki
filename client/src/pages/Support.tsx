@@ -74,8 +74,8 @@ export default function Support() {
     },
     onSuccess: () => {
       toast({
-        title: "Ticket Submitted",
-        description: "Your support ticket has been submitted. We'll get back to you soon!",
+        title: t("supportTicketToast"),
+        description: t("supportTicketToastDesc"),
       });
       setIsSubmitted(true);
       setAttachmentUrl("");
@@ -84,8 +84,8 @@ export default function Support() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit ticket. Please try again.",
+        title: t("supportErrorToast"),
+        description: error.message || t("supportNeedHelp"),
         variant: "destructive",
       });
     },
@@ -107,22 +107,22 @@ export default function Support() {
 
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
-            <a href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>Home</a>
+            <a href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>{t("supportBreadcrumbHome")}</a>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
-            <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>Support</span>
+            <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>{t("support")}</span>
           </div>
 
           {/* Header */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
               <HelpCircle size={14} strokeWidth={1.5} style={{ color: "#f5a623" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Support Center</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>{t("supportCenter")}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight mb-2" style={{ color: "hsl(var(--foreground))" }}>
-              Submit a Ticket
+              {t("supportSubmitTitle")}
             </h1>
             <p className="text-base font-semibold" style={{ color: "hsl(var(--foreground))", opacity: 0.72 }}>
-              Need help? Fill out the form below and our team will get back to you.
+              {t("supportNeedHelp")}
             </p>
           </div>
 
@@ -139,21 +139,21 @@ export default function Support() {
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               </div>
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: "#25d366" }}>WhatsApp Channel</p>
-                <p className="text-base font-extrabold" style={{ color: "hsl(var(--foreground))" }}>Join our WhatsApp channel for updates and quick community support.</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: "#25d366" }}>{t("footerWhatsappChannel")}</p>
+                <p className="text-base font-extrabold" style={{ color: "hsl(var(--foreground))" }}>{t("supportJoinWhatsapp")}</p>
               </div>
             </div>
             <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: "#25d366" }}>
-              Open Channel <ExternalLink size={14} strokeWidth={1.5} />
+              {t("supportOpenChannel")} <ExternalLink size={14} strokeWidth={1.5} />
             </span>
           </a>
 
           {/* Info cards */}
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[
-              { label: "Response Time", value: "24–48 hrs", color: "#f5a623" },
-              { label: "Email Updates", value: "Auto-notify", color: "#f5a623" },
-              { label: "Track Status", value: "My Tickets", color: "#f5a623" },
+              { label: t("supportResponseTime"), value: "24–48 hrs", color: "#f5a623" },
+              { label: t("supportEmailUpdates"), value: t("supportAutoNotify"), color: "#f5a623" },
+              { label: t("supportTrackStatus"), value: t("supportMyTickets"), color: "#f5a623" },
             ].map((info) => (
               <div key={info.label} className="p-3 text-center" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "3px" }}>
                 <p className="text-sm font-black mb-0.5" style={{ color: info.color }}>{info.value}</p>
@@ -166,15 +166,15 @@ export default function Support() {
             <div className="mb-6 flex items-center gap-3 p-4" style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: "3px" }}>
               <span style={{ color: "#4ade80", fontSize: "18px" }}>✓</span>
               <p className="text-sm font-bold" style={{ color: "#4ade80" }}>
-                Ticket submitted successfully! Check your email for updates.
+                {t("supportTicketSuccess")}
               </p>
             </div>
           )}
 
           <div style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "4px" }}>
             <div className="p-5 md:p-6" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
-              <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "hsl(var(--foreground))" }}>Support Ticket Form</h2>
-              <p className="text-[11px] mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>All fields are required unless marked optional.</p>
+              <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: "hsl(var(--foreground))" }}>{t("supportTicketFormTitle")}</h2>
+              <p className="text-[11px] mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>{t("supportAllRequired")}</p>
             </div>
             <div className="p-5 md:p-6">
               <Form {...form}>
@@ -185,11 +185,11 @@ export default function Support() {
                       name="userName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Your Name</FormLabel>
+                          <FormLabel>{t("supportYourName")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <User size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                              <Input placeholder="John Doe" className="pl-10" {...field} />
+                              <Input placeholder={t("yourName")} className="pl-10" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -201,11 +201,11 @@ export default function Support() {
                       name="userEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address</FormLabel>
+                          <FormLabel>{t("supportEmailAddress")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Mail size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                              <Input type="email" placeholder="john@example.com" className="pl-10" {...field} />
+                              <Input type="email" placeholder={t("yourEmail")} className="pl-10" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -220,20 +220,20 @@ export default function Support() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
+                          <FormLabel>{t("supportCategory")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
+                                <SelectValue placeholder={t("supportSelectCategory")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="technical">Technical Issue</SelectItem>
-                              <SelectItem value="account">Account Support</SelectItem>
-                              <SelectItem value="billing">Billing Question</SelectItem>
-                              <SelectItem value="feature">Feature Request</SelectItem>
-                              <SelectItem value="bug">Bug Report</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="technical">{t("supportCategoryTech")}</SelectItem>
+                              <SelectItem value="account">{t("supportCategoryAccount")}</SelectItem>
+                              <SelectItem value="billing">{t("supportCategoryBilling")}</SelectItem>
+                              <SelectItem value="feature">{t("supportCategoryFeature")}</SelectItem>
+                              <SelectItem value="bug">{t("supportCategoryBug")}</SelectItem>
+                              <SelectItem value="other">{t("supportCategoryOther")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -245,17 +245,17 @@ export default function Support() {
                       name="priority"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Priority</FormLabel>
+                          <FormLabel>{t("supportPriority")}</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
+                                <SelectValue placeholder={t("supportSelectPriority")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="normal">Normal</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="low">{t("supportLow")}</SelectItem>
+                              <SelectItem value="normal">{t("supportNormal")}</SelectItem>
+                              <SelectItem value="high">{t("supportHigh")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -269,9 +269,9 @@ export default function Support() {
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Subject</FormLabel>
+                        <FormLabel>{t("supportSubject")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Brief description of your issue" {...field} />
+                          <Input placeholder={t("supportSubjectPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -283,10 +283,10 @@ export default function Support() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>{t("supportDescription")}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Please provide detailed information about your issue..."
+                            placeholder={t("supportDescriptionPlaceholder")}
                             rows={7}
                             {...field}
                           />
@@ -298,14 +298,14 @@ export default function Support() {
 
                   {/* Attachment */}
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Attachment (optional)</p>
+                    <p className="text-sm font-medium">{t("supportAttachment")}</p>
                     <ImageUploadButton
                       onUpload={setAttachmentUrl}
                       folder="tickets"
-                      label="Upload Screenshot or Image"
+                      label={t("supportUploadImage")}
                     />
                     {attachmentUrl && (
-                      <p className="text-xs text-green-500">✓ Image uploaded — will be included with your ticket</p>
+                      <p className="text-xs text-green-500">{t("supportImageUploaded")}</p>
                     )}
                   </div>
 
@@ -315,7 +315,7 @@ export default function Support() {
                     style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                     disabled={createTicketMutation.isPending}
                   >
-                    {createTicketMutation.isPending ? "Submitting…" : "Submit Ticket"}
+                    {createTicketMutation.isPending ? t("supportSubmitting") : t("supportSubmitBtn")}
                   </button>
                 </form>
               </Form>

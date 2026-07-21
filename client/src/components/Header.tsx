@@ -71,7 +71,7 @@ export function Header() {
       label: t("navCommunity"),
       dropdown: [
         { path: "/posts", label: t("navForum") },
-        { path: "/tutorials", label: "Tutorials" },
+        { path: "/tutorials", label: t("navTutorials") },
         { path: "/contact", label: t("navContact") },
       ],
     },

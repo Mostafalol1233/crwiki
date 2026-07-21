@@ -4,6 +4,7 @@ type Language = "en" | "ar";
 
 interface LanguageContextType {
   language: Language;
+  setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: string) => string;
 }
@@ -201,6 +202,119 @@ const translations: Record<Language, Record<string, string>> = {
     beFirstToComment: "Be the first to comment!",
     commentPosted: "Comment posted!",
     failedToPost: "Failed to post",
+
+    // Header
+    navTutorials: "Tutorials",
+
+    // Footer
+    footerStayInformed: "Stay Informed",
+    footerNewsEventsTitle: "CrossFire News & Events",
+    footerNewsletterSubtitle: "Weekly digest of updates, tournaments and guides.",
+    footerEmailPlaceholder: "Your email address",
+    footerSubscribe: "Subscribe",
+    footerSubscribed: "Subscribed!",
+    footerBackToTop: "BACK TO TOP",
+    footerNewsSection: "NEWS",
+    footerGameSection: "GAME",
+    footerCommunitySection: "COMMUNITY",
+    footerShopSection: "SHOP",
+    footerSupportSection: "SUPPORT",
+    footerFollowSection: "FOLLOW CROSSFIRE",
+    footerLatestNews: "Latest News",
+    footerUpdates: "Updates",
+    footerGameOverview: "Game Overview",
+    footerGameModes: "Game Modes",
+    footerForumPosts: "Forum / Posts",
+    footerTutorials: "Tutorials",
+    footerContactUs: "Contact Us",
+    footerSellersMarket: "Sellers Market",
+    footerCommunityReviews: "Community Reviews",
+    footerSubmitTicket: "Submit Ticket",
+    footerMyTickets: "My Tickets",
+    footerJoinCommunity: "JOIN COMMUNITY",
+    footerWhatsappChannel: "WhatsApp Channel",
+    footerPlayNow: "PLAY NOW",
+    footerDownloadCF: "Download CrossFire",
+    footerPrivacy: "Privacy",
+    footerTerms: "Terms",
+
+    // Support page
+    supportCenter: "Support Center",
+    supportSubmitTitle: "Submit a Ticket",
+    supportNeedHelp: "Need help? Fill out the form below and our team will get back to you.",
+    supportJoinWhatsapp: "Join our WhatsApp channel for updates and quick community support.",
+    supportOpenChannel: "Open Channel",
+    supportResponseTime: "Response Time",
+    supportEmailUpdates: "Email Updates",
+    supportTrackStatus: "Track Status",
+    supportAutoNotify: "Auto-notify",
+    supportMyTickets: "My Tickets",
+    supportTicketSuccess: "Ticket submitted successfully! Check your email for updates.",
+    supportTicketFormTitle: "Support Ticket Form",
+    supportAllRequired: "All fields are required unless marked optional.",
+    supportYourName: "Your Name",
+    supportEmailAddress: "Email Address",
+    supportCategory: "Category",
+    supportSelectCategory: "Select a category",
+    supportCategoryTech: "Technical Issue",
+    supportCategoryAccount: "Account Support",
+    supportCategoryBilling: "Billing Question",
+    supportCategoryFeature: "Feature Request",
+    supportCategoryBug: "Bug Report",
+    supportCategoryOther: "Other",
+    supportPriority: "Priority",
+    supportSelectPriority: "Select priority",
+    supportLow: "Low",
+    supportNormal: "Normal",
+    supportHigh: "High",
+    supportSubject: "Subject",
+    supportSubjectPlaceholder: "Brief description of your issue",
+    supportDescription: "Description",
+    supportDescriptionPlaceholder: "Please provide detailed information about your issue...",
+    supportAttachment: "Attachment (optional)",
+    supportUploadImage: "Upload Screenshot or Image",
+    supportImageUploaded: "✓ Image uploaded — will be included with your ticket",
+    supportSubmitting: "Submitting…",
+    supportSubmitBtn: "Submit Ticket",
+    supportTicketToast: "Ticket Submitted",
+    supportTicketToastDesc: "Your support ticket has been submitted. We'll get back to you soon!",
+    supportErrorToast: "Error",
+    supportBreadcrumbHome: "Home",
+
+    // Contact page
+    contactGetInTouch: "Get In Touch",
+    contactSubtitleFull: "Have a question, suggestion, or want to contribute? We'd love to hear from you.",
+    contactEmailTitle: "Email",
+    contactEmailDesc: "Response within 24–48 hours",
+    contactTicketTitle: "Support Ticket",
+    contactTicketValue: "Official support system",
+    contactTicketDesc: "Submit and track your request",
+    contactWhatsappValue: "Join WhatsApp updates",
+    contactWhatsappDesc: "News, alerts, and community support",
+    contactMessageSent: "Message Sent!",
+    contactMessageSentDesc: "We'll get back to you within 24–48 hours.",
+    contactFailedSend: "Failed to send. Please try again or email us directly.",
+    contactSending: "Sending…",
+    contactFollowUs: "Follow Us",
+    contactNeedSupport: "Need Support?",
+    contactNeedSupportDesc: "For account issues, bugs, or ZP seller disputes, submit an official ticket.",
+    contactSubmitTicketBtn: "Submit Ticket",
+
+    // Login page
+    loginTitle: "Sign In",
+    loginWelcome: "Welcome back to CrossFire Wiki",
+    loginCFResource: "CF Resource",
+    loginTagline: "Weapons, mercenaries, ranks, maps, events — everything you need to dominate.",
+    loginEmailLabel: "Email / Username / Phone",
+    loginEmailPlaceholder: "Enter your identifier",
+    loginPasswordLabel: "Password",
+    loginSigningIn: "Signing In...",
+    loginSignIn: "Sign In",
+    loginNoAccount: "Don't have an account?",
+    loginCreateOne: "Create one",
+    loginRankCalc: "Rank Progression Calculator",
+    loginArsenalDB: "Full Arsenal Database",
+    loginLiveEvents: "Live Events & Updates",
   },
   ar: {
     home: "الرئيسية",
@@ -394,6 +508,119 @@ const translations: Record<Language, Record<string, string>> = {
     beFirstToComment: "كن أول من يعلق!",
     commentPosted: "تم نشر التعليق!",
     failedToPost: "فشل في النشر",
+
+    // Header
+    navTutorials: "الدروس",
+
+    // Footer
+    footerStayInformed: "ابقَ على اطلاع",
+    footerNewsEventsTitle: "أخبار وفعاليات CrossFire",
+    footerNewsletterSubtitle: "ملخص أسبوعي للتحديثات والبطولات والأدلة.",
+    footerEmailPlaceholder: "بريدك الإلكتروني",
+    footerSubscribe: "اشترك",
+    footerSubscribed: "تم الاشتراك!",
+    footerBackToTop: "العودة للأعلى",
+    footerNewsSection: "الأخبار",
+    footerGameSection: "اللعبة",
+    footerCommunitySection: "المجتمع",
+    footerShopSection: "المتجر",
+    footerSupportSection: "الدعم",
+    footerFollowSection: "تابع CrossFire",
+    footerLatestNews: "آخر الأخبار",
+    footerUpdates: "التحديثات",
+    footerGameOverview: "نظرة عامة على اللعبة",
+    footerGameModes: "أوضاع اللعب",
+    footerForumPosts: "المنتدى والمقالات",
+    footerTutorials: "الدروس",
+    footerContactUs: "اتصل بنا",
+    footerSellersMarket: "سوق البائعين",
+    footerCommunityReviews: "تقييمات المجتمع",
+    footerSubmitTicket: "رفع تذكرة",
+    footerMyTickets: "تذاكري",
+    footerJoinCommunity: "انضم للمجتمع",
+    footerWhatsappChannel: "قناة واتساب",
+    footerPlayNow: "العب الآن",
+    footerDownloadCF: "حمّل CrossFire",
+    footerPrivacy: "الخصوصية",
+    footerTerms: "الشروط",
+
+    // Support page
+    supportCenter: "مركز الدعم",
+    supportSubmitTitle: "ارفع تذكرة",
+    supportNeedHelp: "محتاج مساعدة؟ املأ الفورم وفريقنا هيرد عليك.",
+    supportJoinWhatsapp: "انضم لقناة واتساب بتاعتنا للتحديثات والدعم السريع.",
+    supportOpenChannel: "افتح القناة",
+    supportResponseTime: "وقت الرد",
+    supportEmailUpdates: "تحديثات البريد",
+    supportTrackStatus: "تتبع الحالة",
+    supportAutoNotify: "تلقائي",
+    supportMyTickets: "تذاكري",
+    supportTicketSuccess: "تم رفع التذكرة بنجاح! تحقق من بريدك للتحديثات.",
+    supportTicketFormTitle: "فورم تذكرة الدعم",
+    supportAllRequired: "كل الحقول مطلوبة إلا اللي مكتوب عليها اختياري.",
+    supportYourName: "اسمك",
+    supportEmailAddress: "البريد الإلكتروني",
+    supportCategory: "التصنيف",
+    supportSelectCategory: "اختار تصنيف",
+    supportCategoryTech: "مشكلة تقنية",
+    supportCategoryAccount: "دعم الحساب",
+    supportCategoryBilling: "سؤال عن الفواتير",
+    supportCategoryFeature: "طلب ميزة",
+    supportCategoryBug: "بلاغ باج",
+    supportCategoryOther: "أخرى",
+    supportPriority: "الأولوية",
+    supportSelectPriority: "اختار الأولوية",
+    supportLow: "منخفض",
+    supportNormal: "عادي",
+    supportHigh: "عالي",
+    supportSubject: "الموضوع",
+    supportSubjectPlaceholder: "وصف مختصر للمشكلة",
+    supportDescription: "التفاصيل",
+    supportDescriptionPlaceholder: "اكتب تفاصيل المشكلة بالكامل...",
+    supportAttachment: "مرفق (اختياري)",
+    supportUploadImage: "ارفع سكرين شوت أو صورة",
+    supportImageUploaded: "✓ تم رفع الصورة — هتتحط مع التذكرة",
+    supportSubmitting: "جاري الإرسال...",
+    supportSubmitBtn: "ارفع التذكرة",
+    supportTicketToast: "تم رفع التذكرة",
+    supportTicketToastDesc: "تم إرسال تذكرة الدعم. هنرد عليك قريباً!",
+    supportErrorToast: "خطأ",
+    supportBreadcrumbHome: "الرئيسية",
+
+    // Contact page
+    contactGetInTouch: "تواصل معنا",
+    contactSubtitleFull: "عندك سؤال أو اقتراح أو عايز تشارك؟ يسعدنا نسمع منك.",
+    contactEmailTitle: "البريد الإلكتروني",
+    contactEmailDesc: "رد خلال 24–48 ساعة",
+    contactTicketTitle: "تذكرة دعم",
+    contactTicketValue: "نظام الدعم الرسمي",
+    contactTicketDesc: "ارفع وتابع طلبك",
+    contactWhatsappValue: "انضم لتحديثات واتساب",
+    contactWhatsappDesc: "أخبار وتنبيهات ودعم المجتمع",
+    contactMessageSent: "تم إرسال الرسالة!",
+    contactMessageSentDesc: "هنرد عليك خلال 24–48 ساعة.",
+    contactFailedSend: "فشل الإرسال. جرب تاني أو راسلنا على البريد مباشرة.",
+    contactSending: "جاري الإرسال...",
+    contactFollowUs: "تابعنا",
+    contactNeedSupport: "محتاج دعم؟",
+    contactNeedSupportDesc: "لمشاكل الحساب أو الباج أو نزاعات البائعين، ارفع تذكرة رسمية.",
+    contactSubmitTicketBtn: "ارفع تذكرة",
+
+    // Login page
+    loginTitle: "تسجيل الدخول",
+    loginWelcome: "أهلاً بعودتك لـ CrossFire Wiki",
+    loginCFResource: "مرجع CF",
+    loginTagline: "أسلحة، شخصيات، رتب، خرائط، فعاليات — كل اللي محتاجه عشان تتصدر.",
+    loginEmailLabel: "البريد / الاسم / الهاتف",
+    loginEmailPlaceholder: "أدخل بياناتك",
+    loginPasswordLabel: "كلمة المرور",
+    loginSigningIn: "جاري الدخول...",
+    loginSignIn: "دخول",
+    loginNoAccount: "مش عندك حساب؟",
+    loginCreateOne: "أنشئ واحد",
+    loginRankCalc: "حاسبة الرتب",
+    loginArsenalDB: "قاعدة بيانات الأسلحة",
+    loginLiveEvents: "فعاليات ومستجدات مباشرة",
   },
 };
 
@@ -401,23 +628,53 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
+function getInitialLanguage(): Language {
+  // 1. Check URL path — /ar prefix takes highest priority
+  try {
+    const path = window.location.pathname;
+    if (path === "/ar" || path.startsWith("/ar/")) return "ar";
+  } catch { }
+  // 2. Check saved preference
+  try {
     const saved = localStorage.getItem("language");
     if (saved === "ar" || saved === "en") return saved;
-    // Auto-detect Arabic locale for first-time visitors
+  } catch { }
+  // 3. Auto-detect from browser locale
+  try {
+    const langs = navigator.languages || [navigator.language || ""];
+    if (langs.some((l) => l.startsWith("ar"))) return "ar";
+  } catch { }
+  return "en";
+}
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    // Update URL to reflect language change
     try {
-      const langs = navigator.languages || [navigator.language || ""];
-      if (langs.some((l) => l.startsWith("ar"))) return "ar";
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const isArPath = path === "/ar" || path.startsWith("/ar/");
+      const basePath = isArPath ? (path === "/ar" ? "/" : path.slice(3) || "/") : path;
+      if (lang === "ar") {
+        const newPath = basePath === "/" ? "/ar" : `/ar${basePath}`;
+        window.history.replaceState(null, "", newPath + search + hash);
+      } else {
+        window.history.replaceState(null, "", basePath + search + hash);
+      }
     } catch { }
-    return "en";
-  });
+  };
 
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("lang", language);
-    root.setAttribute("dir", "ltr");
-    document.body.setAttribute("dir", "ltr");
+    // ✅ Fix RTL: Arabic is right-to-left
+    const dir = language === "ar" ? "rtl" : "ltr";
+    root.setAttribute("dir", dir);
+    document.body.setAttribute("dir", dir);
 
     if (language === "ar") {
       root.classList.add("font-arabic");
@@ -429,8 +686,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("language", language);
   }, [language]);
 
+  // Sync language when user navigates to /ar or away from it
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const isAr = path === "/ar" || path.startsWith("/ar/");
+      setLanguageState(isAr ? "ar" : (localStorage.getItem("language") as Language) || "en");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "en" ? "ar" : "en"));
+    setLanguage(language === "en" ? "ar" : "en");
   };
 
   const t = (key: string) => {
@@ -438,7 +706,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

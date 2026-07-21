@@ -5,20 +5,22 @@ import { useState } from "react";
 import PageSEO from "@/components/PageSEO";
 import { useLocation, Link } from "wouter";
 import { LogIn, User, Lock, Shield, Crosshair, Target, Zap } from "lucide-react";
-
-const BRAND_STATS = [
-  { value: "3,589", label: "Weapons" },
-  { value: "312", label: "Maps" },
-  { value: "104", label: "Ranks" },
-  { value: "61", label: "Game Modes" },
-];
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function Login() {
+  const { t } = useLanguage();
   const { register, handleSubmit, setValue } = useForm();
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [redirectMsg, setRedirectMsg] = useState<string>("");
   const [, setLocation] = useLocation();
+
+  const BRAND_STATS = [
+    { value: "3,589", label: t("weapons") },
+    { value: "312", label: t("maps") },
+    { value: "104", label: t("ranks") },
+    { value: "61", label: t("modes") },
+  ];
 
   const onSubmit = async (values: any) => {
     setLoading(true);
@@ -118,19 +120,19 @@ export default function Login() {
             </div>
             <h2 className="text-3xl font-black uppercase tracking-tight leading-none mb-3" style={{ color: "#fff" }}>
               The Definitive<br />
-              <span style={{ color: "#f5a623" }}>CF Resource</span>
+              <span style={{ color: "#f5a623" }}>{t("loginCFResource")}</span>
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: "#555" }}>
-              Weapons, mercenaries, ranks, maps, events — everything you need to dominate.
+              {t("loginTagline")}
             </p>
           </div>
 
           {/* Feature icons */}
           <div className="relative space-y-4">
             {[
-              { icon: Shield, label: "Rank Progression Calculator" },
-              { icon: Target, label: "Full Arsenal Database" },
-              { icon: Zap, label: "Live Events & Updates" },
+              { icon: Shield, label: t("loginRankCalc") },
+              { icon: Target, label: t("loginArsenalDB") },
+              { icon: Zap, label: t("loginLiveEvents") },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3">
                 <div
@@ -175,8 +177,8 @@ export default function Login() {
               >
                 <LogIn className="h-6 w-6" style={{ color: "#f5a623" }} />
               </div>
-              <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Sign In</h1>
-              <p className="text-xs mt-1" style={{ color: "#555" }}>Welcome back to CrossFire Wiki</p>
+              <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>{t("loginTitle")}</h1>
+              <p className="text-xs mt-1" style={{ color: "#555" }}>{t("loginWelcome")}</p>
             </div>
 
             {/* Redirect message */}
@@ -201,12 +203,12 @@ export default function Login() {
               <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>
-                    Email / Username / Phone
+                    {t("loginEmailLabel")}
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
                     <Input
-                      placeholder="Enter your identifier"
+                      placeholder={t("loginEmailPlaceholder")}
                       className="pl-9 h-10 text-sm"
                       autoComplete="username"
                       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
@@ -217,7 +219,7 @@ export default function Login() {
 
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: "#888" }}>
-                    Password
+                    {t("loginPasswordLabel")}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
@@ -244,15 +246,15 @@ export default function Login() {
                   className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110 disabled:opacity-50"
                   style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  {loading ? t("loginSigningIn") : t("loginSignIn")}
                 </button>
               </form>
             </div>
 
             <p className="text-center text-xs mt-5" style={{ color: "#555" }}>
-              Don't have an account?{" "}
+              {t("loginNoAccount")}{" "}
               <Link href="/register">
-                <span className="font-bold cursor-pointer hover:opacity-80" style={{ color: "#f5a623" }}>Create one</span>
+                <span className="font-bold cursor-pointer hover:opacity-80" style={{ color: "#f5a623" }}>{t("loginCreateOne")}</span>
               </Link>
             </p>
           </div>

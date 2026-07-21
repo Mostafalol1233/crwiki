@@ -209,12 +209,12 @@ ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual
             },
             body: JSON.stringify({
               model: "openai/gpt-oss-20b:free",
-              messages: [systemPrompt, ...messages.slice(-12)],
-              max_tokens: 800,
-              temperature: 0.65,
+              messages: [systemPrompt, ...messages.slice(-6)],
+              max_tokens: 480,
+              temperature: 0.5,
               stream: true,
             }),
-            signal: AbortSignal.timeout(60000),
+            signal: AbortSignal.timeout(35000),
           });
 
           if (!upstream.ok) {

@@ -274,7 +274,7 @@ export function Header() {
                 {t("login")}
               </Link>
               <Link href="/register" style={{
-                height: 32, padding: "0 14px", display: "flex", alignItems: "center",
+                height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 600, fontFamily: "Inter, system-ui, sans-serif",
                 color: "#000", textDecoration: "none",
                 background: ACCENT, borderRadius: 6,
@@ -283,6 +283,10 @@ export function Header() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.88"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
                 {t("signUp")}
+                <span style={{
+                  fontSize: 9, fontWeight: 800, background: "rgba(0,0,0,0.18)",
+                  color: "#000", padding: "1px 5px", borderRadius: 3, letterSpacing: "0.05em",
+                }}>FREE</span>
               </Link>
             </div>
           )}

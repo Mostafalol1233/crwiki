@@ -272,7 +272,7 @@ export default function Ranks() {
           ) : view === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {filteredRanks.map((rank, idx) => {
-                const tierStyle = getTierStyle(idx, filteredRanks.length);
+                const tierStyle = getTierStyle((rank.tier || idx + 1) - 1, ranks.length || 104);
                 const exp = extractExpRequired(rank);
                 const bonus = extractBonus(rank);
                 return (
@@ -376,7 +376,7 @@ export default function Ranks() {
                 </thead>
                 <tbody>
                   {filteredRanks.map((rank, idx) => {
-                    const tierStyle = getTierStyle(idx, filteredRanks.length);
+                    const tierStyle = getTierStyle((rank.tier || idx + 1) - 1, ranks.length || 104);
                     const exp = extractExpRequired(rank);
                     const bonus = extractBonus(rank);
                     return (

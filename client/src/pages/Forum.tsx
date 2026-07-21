@@ -86,9 +86,29 @@ export default function Forum() {
               CrossFire{" "}
               <span style={{ color: ACCENT }}>Forum</span>
             </h1>
-            <p style={{ fontSize: 13, color: "#555", marginBottom: 32 }}>
+            <p style={{ fontSize: 13, color: "#555", marginBottom: 20 }}>
               {isAr ? "ناقش، اسأل، شارك مع لاعبين من كل مكان" : "Discuss, ask and share with CrossFire players worldwide"}
             </p>
+
+            {/* Start Discussion CTA */}
+            <Link href="/forum/new" style={{ textDecoration: "none", display: "inline-block", marginBottom: 24 }}>
+              <button style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "10px 20px",
+                background: ACCENT, color: "#000",
+                border: "none", borderRadius: 6,
+                fontSize: 13, fontWeight: 800,
+                cursor: "pointer", letterSpacing: "0.02em",
+                boxShadow: "0 4px 16px rgba(245,166,35,0.3)",
+                transition: "opacity 0.15s",
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity = "1"}
+              >
+                <MessageSquare style={{ width: 14, height: 14 }} />
+                {isAr ? "ابدأ نقاشاً جديداً" : "Start a Discussion"}
+              </button>
+            </Link>
 
             {/* Stats bar */}
             <div style={{ display: "inline-flex", alignItems: "center", gap: 0, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, overflow: "hidden" }}>

@@ -147,6 +147,11 @@ export default function AIAssistant() {
   const { language } = useLanguage();
   const isAr = language === "ar";
 
+  // Scroll to top on mount so the chat header is visible, not the footer
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
       const saved = sessionStorage.getItem(SESSION_KEY);
@@ -170,7 +175,9 @@ export default function AIAssistant() {
   }, [messages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 || loading || streamingContent !== null) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, streamingContent, loading]);
 
   const send = useCallback(async (text: string) => {

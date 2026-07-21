@@ -345,6 +345,7 @@ export default function Weapons() {
                               alt={weapon.name}
                               className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-110"
                               loading="lazy"
+                              onError={(e) => { e.currentTarget.style.display = "none"; }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

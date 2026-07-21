@@ -185,13 +185,21 @@ You are an expert on the CrossFire online FPS game. Help players with:
 - Account issues and technical support
 - Community forum questions
 
-Be friendly, direct, and helpful. Keep answers concise. When you don't know something specific, say so honestly.
+Format responses using Markdown when helpful: **bold** for key terms, bullet lists for multiple items, tables for comparisons (use | col | col | headers), and code blocks for item names. Be friendly, direct, and helpful. Keep answers concise. When you don't know something specific, say so honestly.
 IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get Arabic replies (Egyptian/Levantine dialect). English users get English replies.
 ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual current data from our website database:\n${websiteData}\n=== END LIVE DATA ===\n\nUse the live data above to give accurate answers about specific weapons, ranks, mercenaries, modes, and events.` : ""}`
           };
 
+          // Set SSE headers for streaming
+          res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+          });
+
           const { fetch: undFetch } = await import("undici") as any;
-          const response = await (undFetch as any)("https://openrouter.ai/api/v1/chat/completions", {
+          const upstream = await (undFetch as any)("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${apiKey}`,
@@ -202,18 +210,49 @@ ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual
             body: JSON.stringify({
               model: "openai/gpt-oss-20b:free",
               messages: [systemPrompt, ...messages.slice(-12)],
-              max_tokens: 700,
-              temperature: 0.65
+              max_tokens: 800,
+              temperature: 0.65,
+              stream: true,
             }),
-            signal: AbortSignal.timeout(30000),
+            signal: AbortSignal.timeout(60000),
           });
 
-          const data = await response.json() as any;
-          if (data.error) return json(res, 502, { error: data.error.message || "AI error" });
-          const reply = data.choices?.[0]?.message?.content || "";
-          json(res, 200, { reply, model: data.model });
+          if (!upstream.ok) {
+            res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
+            return res.end();
+          }
+
+          // Stream the response as SSE
+          const body = upstream.body as any;
+          let buffer = "";
+
+          for await (const rawChunk of body) {
+            const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8") : String(rawChunk);
+            buffer += chunk;
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith("data:")) continue;
+              const jsonStr = trimmed.slice(5).trim();
+              if (jsonStr === "[DONE]") {
+                res.write("data: [DONE]\n\n");
+                continue;
+              }
+              try {
+                const parsed = JSON.parse(jsonStr) as any;
+                const delta = parsed.choices?.[0]?.delta?.content;
+                if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+              } catch { /* skip malformed */ }
+            }
+          }
+          res.end();
         } catch (err: any) {
-          json(res, 500, { error: err.message || "AI request failed" });
+          try {
+            res.write(`data: ${JSON.stringify({ error: err.message || "AI request failed" })}\n\n`);
+            res.end();
+          } catch { /* already ended */ }
         }
       });
     },

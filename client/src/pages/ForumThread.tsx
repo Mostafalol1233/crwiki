@@ -226,7 +226,7 @@ export default function ForumThread({ params }: { params: { categorySlug: string
           ) : (
             <div className="mt-8 p-5 rounded-lg" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)" }}>
               <h3 className="font-bold text-sm mb-4" style={{ color: "var(--foreground)" }}>
-                {isAr ? "💬 أضف ردك" : "💬 Post a Reply"}
+                {isAr ? "أضف ردك" : "Post a Reply"}
               </h3>
 
               {/* Name field (only if not logged in) */}

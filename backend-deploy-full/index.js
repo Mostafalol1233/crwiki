@@ -6820,7 +6820,7 @@ function requireAuthOrUploadKey(req, res, next) {
     } catch { }
     return requireAuth(req, res, next);
 }
-// ── AI Assistant endpoint ──────────────────────────────────────────────────
+// ── AI Assistant endpoint (streaming SSE) ──────────────────────────────────
 app2.post("/api/ai/chat", apiLimiter, async (req, res) => {
     try {
         const { messages } = req.body;
@@ -6834,11 +6834,18 @@ app2.post("/api/ai/chat", apiLimiter, async (req, res) => {
             role: "system",
             content: `You are CrossFire Wiki Assistant — a friendly, knowledgeable expert on the CrossFire online FPS game.
 You help players with game mechanics, weapons, mercenaries, ranks, maps, modes, clans, ZP/GP currencies, and general game tips.
-Keep answers concise and helpful. If you don't know something CrossFire-specific, say so honestly.
+Format responses using Markdown when helpful: use **bold** for key terms, bullet lists for multiple items, tables for comparisons, and code blocks for item names. Keep answers concise and helpful. If you don't know something CrossFire-specific, say so honestly.
 You also speak Arabic (Egyptian dialect) — respond in the same language the user writes in.`
         };
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        // Set SSE headers for streaming
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("X-Accel-Buffering", "no");
+        res.flushHeaders?.();
+
+        const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
@@ -6848,20 +6855,54 @@ You also speak Arabic (Egyptian dialect) — respond in the same language the us
             },
             body: JSON.stringify({
                 model: "openai/gpt-oss-20b:free",
-                messages: [systemPrompt, ...messages.slice(-12)], // keep last 12 messages for context
-                max_tokens: 600,
-                temperature: 0.7
+                messages: [systemPrompt, ...messages.slice(-12)],
+                max_tokens: 800,
+                temperature: 0.7,
+                stream: true
             })
         });
 
-        const data = await response.json();
-        if (data.error) return res.status(502).json({ error: data.error.message || "AI error" });
+        if (!upstream.ok) {
+            const err = await upstream.text();
+            res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
+            return res.end();
+        }
 
-        const reply = data.choices?.[0]?.message?.content || "";
-        res.json({ reply, model: data.model });
+        const reader = upstream.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith("data:")) continue;
+                const jsonStr = trimmed.slice(5).trim();
+                if (jsonStr === "[DONE]") {
+                    res.write("data: [DONE]\n\n");
+                    continue;
+                }
+                try {
+                    const chunk = JSON.parse(jsonStr);
+                    const delta = chunk.choices?.[0]?.delta?.content;
+                    if (delta) {
+                        res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+                    }
+                } catch { /* skip malformed chunks */ }
+            }
+        }
+        res.end();
     } catch (err) {
         console.error("AI chat error:", err);
-        res.status(500).json({ error: "AI request failed" });
+        try {
+            res.write(`data: ${JSON.stringify({ error: "AI request failed" })}\n\n`);
+            res.end();
+        } catch { /* already ended */ }
     }
 });
 

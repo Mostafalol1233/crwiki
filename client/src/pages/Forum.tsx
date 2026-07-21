@@ -1,68 +1,36 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { MessageSquare, Users, TrendingUp, Sparkles, Bot, ChevronRight, Pin } from "lucide-react";
+import {
+  MessageSquare, Users, TrendingUp, Sparkles, Bot, ChevronRight,
+  MessageCircle, Crosshair, Brain, UserCog, Trophy, HelpCircle
+} from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { getForumCategories } from "@/lib/supabaseApi";
 
 const ACCENT = "#f5a623";
 
-const SETUP_SQL = `-- Run this SQL in your Supabase SQL Editor to set up the forum
+// Map category slugs to Lucide icons
+const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
+  general: MessageCircle,
+  weapons: Crosshair,
+  strategies: Brain,
+  mercenaries: UserCog,
+  events: Trophy,
+  help: HelpCircle,
+};
 
-CREATE TABLE IF NOT EXISTS forum_categories (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL, name_ar TEXT, slug TEXT UNIQUE NOT NULL,
-  description TEXT DEFAULT '', description_ar TEXT DEFAULT '',
-  icon TEXT DEFAULT '💬', color TEXT DEFAULT '#f5a623',
-  sort_order INT DEFAULT 0, thread_count INT DEFAULT 0, post_count INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE TABLE IF NOT EXISTS forum_threads (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  category_id UUID REFERENCES forum_categories(id) ON DELETE CASCADE,
-  title TEXT NOT NULL, body TEXT NOT NULL DEFAULT '',
-  author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  author_name TEXT NOT NULL DEFAULT 'Anonymous', author_avatar TEXT DEFAULT '',
-  is_pinned BOOLEAN DEFAULT FALSE, is_locked BOOLEAN DEFAULT FALSE,
-  view_count INT DEFAULT 0, reply_count INT DEFAULT 0,
-  last_reply_at TIMESTAMPTZ DEFAULT NOW(), created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE TABLE IF NOT EXISTS forum_posts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  thread_id UUID REFERENCES forum_threads(id) ON DELETE CASCADE,
-  body TEXT NOT NULL,
-  author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  author_name TEXT NOT NULL DEFAULT 'Anonymous', author_avatar TEXT DEFAULT '',
-  is_op BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE forum_categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE forum_threads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE forum_posts ENABLE ROW LEVEL SECURITY;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='forum_categories' AND policyname='forum_cat_read') THEN
-    CREATE POLICY "forum_cat_read" ON forum_categories FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='forum_threads' AND policyname='forum_thr_read') THEN
-    CREATE POLICY "forum_thr_read" ON forum_threads FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='forum_posts' AND policyname='forum_post_read') THEN
-    CREATE POLICY "forum_post_read" ON forum_posts FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='forum_threads' AND policyname='forum_thr_insert') THEN
-    CREATE POLICY "forum_thr_insert" ON forum_threads FOR INSERT WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='forum_posts' AND policyname='forum_post_insert') THEN
-    CREATE POLICY "forum_post_insert" ON forum_posts FOR INSERT WITH CHECK (true);
-  END IF;
-END $$;
-INSERT INTO forum_categories (name,name_ar,slug,description,description_ar,icon,color,sort_order) VALUES
-  ('General Discussion','نقاش عام','general','Chat about anything CrossFire','تحدث عن أي شيء يتعلق بـ CrossFire','🗣️','#f5a623',1),
-  ('Weapons & Loadouts','الأسلحة والتجهيزات','weapons','Discuss weapons, builds, and loadouts','ناقش الأسلحة والتجهيزات','🔫','#ef4444',2),
-  ('Strategies & Tips','استراتيجيات ونصائح','strategies','Share your tactics and game strategies','شارك تكتيكاتك واستراتيجياتك','🧠','#3b82f6',3),
-  ('Mercenaries','المرتزقة','mercenaries','Talk about mercenary characters','تحدث عن شخصيات المرتزقة','🎭','#8b5cf6',4),
-  ('Events & Tournaments','الفعاليات والبطولات','events','Discuss events and compete together','ناقش الفعاليات وتنافس معاً','🏆','#10b981',5),
-  ('Help & Support','المساعدة والدعم','help','Ask for help from the community','اطلب المساعدة من المجتمع','🆘','#f97316',6)
-ON CONFLICT (slug) DO NOTHING;`;
+function CategoryIcon({ slug, color }: { slug: string; color: string }) {
+  const Icon = CATEGORY_ICONS[slug] || MessageSquare;
+  return (
+    <div
+      className="w-10 h-10 flex items-center justify-center flex-shrink-0 rounded"
+      style={{ background: `${color}18`, border: `1px solid ${color}30` }}
+    >
+      <Icon className="h-5 w-5" style={{ color }} />
+    </div>
+  );
+}
 
 interface ForumCategory {
   id: string;
@@ -78,26 +46,18 @@ interface ForumCategory {
 }
 
 export default function Forum() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const isAr = language === "ar";
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [needsSetup, setNeedsSetup] = useState(false);
-  const [sqlCopied, setSqlCopied] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     getForumCategories()
       .then(setCategories)
-      .catch(() => setNeedsSetup(true))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
-
-  const copySql = () => {
-    navigator.clipboard.writeText(SETUP_SQL).then(() => {
-      setSqlCopied(true);
-      setTimeout(() => setSqlCopied(false), 2000);
-    });
-  };
 
   const totalThreads = categories.reduce((s, c) => s + c.threadCount, 0);
   const totalPosts = categories.reduce((s, c) => s + c.postCount, 0);
@@ -149,17 +109,12 @@ export default function Forum() {
         </div>
 
         <div className="container mx-auto px-4 py-10 max-w-5xl">
-          {/* Setup notice */}
-          {needsSetup && (
-            <div className="mb-8 p-5 rounded-lg" style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.2)" }}>
-              <h3 className="font-bold text-sm mb-2" style={{ color: ACCENT }}>⚙️ Forum Setup Required</h3>
-              <p className="text-xs mb-3" style={{ color: "#888" }}>Run this SQL in your Supabase SQL Editor to create the forum tables and seed default categories.</p>
-              <div className="rounded p-3 mb-3 text-[11px] font-mono overflow-x-auto" style={{ background: "rgba(0,0,0,0.4)", color: "#aaa", maxHeight: 160, whiteSpace: "pre" }}>
-                {SETUP_SQL.slice(0, 400)}...
-              </div>
-              <button onClick={copySql} className="text-xs px-4 py-2 font-semibold rounded transition-all" style={{ background: sqlCopied ? "#10b981" : ACCENT, color: "#000", border: "none", cursor: "pointer" }}>
-                {sqlCopied ? "✓ Copied!" : "Copy Full SQL"}
-              </button>
+          {/* Error state */}
+          {error && (
+            <div className="mb-8 p-5 rounded-lg text-center" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <p className="text-sm" style={{ color: "#ef4444" }}>
+                {isAr ? "تعذّر تحميل الفئات. تأكد من إعداد الجداول في Supabase." : "Failed to load categories. Check your Supabase setup."}
+              </p>
             </div>
           )}
 
@@ -186,7 +141,7 @@ export default function Forum() {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = cat.color; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "var(--card)"; }}>
                     <div className="flex items-start gap-4">
-                      <div className="text-3xl flex-shrink-0 mt-0.5">{cat.icon}</div>
+                      <CategoryIcon slug={cat.slug} color={cat.color} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <h3 className="font-bold text-sm" style={{ color: "var(--foreground)" }}>
@@ -214,10 +169,10 @@ export default function Forum() {
           )}
 
           {/* Empty state */}
-          {!loading && !needsSetup && categories.length === 0 && (
+          {!loading && !error && categories.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-5xl mb-4">💬</div>
-              <p className="text-sm" style={{ color: "#555" }}>No categories yet. Run the setup SQL to seed the default categories.</p>
+              <MessageSquare className="h-12 w-12 mx-auto mb-4" style={{ color: "#333" }} />
+              <p className="text-sm" style={{ color: "#555" }}>No categories found.</p>
             </div>
           )}
 

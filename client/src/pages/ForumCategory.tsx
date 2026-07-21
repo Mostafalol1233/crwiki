@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronRight, MessageSquare, Eye, Clock, Pin, Plus, ArrowLeft, Lock } from "lucide-react";
+import { ChevronRight, MessageSquare, Eye, Clock, Pin, Plus, ArrowLeft, Lock, MessageCircle, Crosshair, Brain, UserCog, Trophy, HelpCircle } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { getForumCategories, getForumThreads } from "@/lib/supabaseApi";
@@ -121,7 +121,17 @@ export default function ForumCategory({ params }: { params: { categorySlug: stri
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="text-4xl">{category.icon}</div>
+              <div className="w-12 h-12 flex items-center justify-center rounded flex-shrink-0"
+                style={{ background: `${category.color}18`, border: `1px solid ${category.color}30` }}>
+                {(() => {
+                  const icons: Record<string, React.ComponentType<any>> = {
+                    general: MessageCircle, weapons: Crosshair, strategies: Brain,
+                    mercenaries: UserCog, events: Trophy, help: HelpCircle,
+                  };
+                  const Icon = icons[categorySlug] || MessageSquare;
+                  return <Icon className="h-6 w-6" style={{ color: category.color }} />;
+                })()}
+              </div>
               <div>
                 <h1 className="text-2xl font-black" style={{ color: "var(--foreground)" }}>{catName}</h1>
                 <p className="text-sm mt-1" style={{ color: "#555" }}>{catDesc}</p>
@@ -148,7 +158,7 @@ export default function ForumCategory({ params }: { params: { categorySlug: stri
           {/* Threads list */}
           {threads.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-5xl mb-4">💬</div>
+              <div className="flex justify-center mb-4"><MessageSquare className="h-12 w-12" style={{ color: "#333" }} /></div>
               <p className="font-bold text-sm mb-2" style={{ color: "var(--foreground)" }}>
                 {isAr ? "لا توجد مواضيع بعد" : "No threads yet"}
               </p>

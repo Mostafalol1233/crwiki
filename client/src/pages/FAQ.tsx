@@ -435,8 +435,10 @@ function FAQAccordionItem({
       );
     }
     const clean = decodeEntities(text);
-    // For Arabic text, split into lines first then wrap English terms inside each line
-    if (forceAr || isAr) {
+    // Detect if the text actually contains Arabic characters before applying RTL
+    const textIsArabic = /[\u0600-\u06FF]/.test(clean);
+    // Apply RTL line-by-line rendering only when the text is genuinely Arabic
+    if (forceAr || textIsArabic) {
       const lines = clean.split("\n");
       return (
         <div className="text-sm leading-relaxed" style={{ color: "#888" }}>
@@ -582,15 +584,18 @@ export default function FAQ() {
 
   useEffect(() => {
     if (serverFaq && Array.isArray(serverFaq) && serverFaq.length > 0) {
-      // Only use server data if it has Arabic content; otherwise keep rich static data
-      const hasArabic = serverFaq.some((cat: any) =>
-        cat.nameAr ||
-        (Array.isArray(cat.articles) && cat.articles.some((a: any) => a.titleAr || a.bodyAr))
+      // Only override static data if server ARTICLES themselves have Arabic translations.
+      // Category nameAr alone is not enough — articles must carry titleAr or bodyAr,
+      // otherwise Arabic mode would display English body text.
+      const articlesHaveArabic = serverFaq.some((cat: any) =>
+        Array.isArray(cat.articles) &&
+        cat.articles.some((a: any) => a.titleAr || a.bodyAr)
       );
-      if (hasArabic) {
+      if (articlesHaveArabic) {
         setFaqData(serverFaq);
       }
-      // If server data has no Arabic, keep STATIC_FAQ_DATA which has full عامية translations
+      // Keep STATIC_FAQ_DATA when server articles lack Arabic translations —
+      // it contains complete Egyptian-Arabic (عامية) content for all 40 questions.
     }
   }, [serverFaq]);
 

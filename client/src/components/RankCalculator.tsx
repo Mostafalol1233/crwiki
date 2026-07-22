@@ -395,32 +395,28 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const destinationRank = sortedRanks.find(r => r.id === activeDestId) ?? null;
   const destIdx = destinationRank ? sortedRanks.findIndex(r => r.id === destinationRank.id) : -1;
 
-  // Each rank's expRequired = per-rank EXP cost (EXP to complete just that rank).
-  // exp_required is NOT a cumulative milestone — it's the cost of that single tier.
-  const currentRankExp = effectiveCurrentRank ? getExp(effectiveCurrentRank) : 0;
+  // exp_required = CUMULATIVE XP required to reach that rank from the very start.
+  // player's currentXP (TotalExp from API) is also cumulative.
+  // remainingXP = destinationRank.expRequired - currentXP
+  // progress    = (currentXP - currentRank.expRequired) / (destinationRank.expRequired - currentRank.expRequired)
+  const currentRankExp  = effectiveCurrentRank ? getExp(effectiveCurrentRank) : 0;
+  const destinationExp  = destinationRank      ? getExp(destinationRank)      : 0;
 
-  // Sum of per-rank costs for a slice of sortedRanks
-  const sumRangeCosts = (fromIdx: number, toIdx: number): number => {
-    if (fromIdx > toIdx) return 0;
-    return sortedRanks.slice(fromIdx, toIdx + 1).reduce((s, r) => s + getExp(r), 0);
-  };
-
-  // EXP needed = remaining in current rank + full cost of every rank up to destination
   const expNeeded = useMemo(() => {
-    if (!destinationRank || currentIdx < 0 || destIdx <= currentIdx) return 0;
-    const remainingInCurrent = currentExp != null
-      ? Math.max(0, currentRankExp - currentExp)
-      : currentRankExp;
-    // sum of full per-rank costs for ranks AFTER current up to (and including) destination
-    const pathCost = sumRangeCosts(currentIdx + 1, destIdx);
-    return remainingInCurrent + pathCost;
-  }, [destinationRank, currentExp, currentRankExp, currentIdx, destIdx, sortedRanks]);
+    if (!destinationRank || destinationExp <= 0) return 0;
+    if (currentExp != null) return Math.max(0, destinationExp - currentExp);
+    // No profile: show full gap from current rank threshold to destination
+    return destinationExp > currentRankExp ? destinationExp - currentRankExp : 0;
+  }, [destinationRank, currentExp, destinationExp, currentRankExp]);
 
-  // Progress = how far through the current rank (0–100%)
+  // Progress within the current rank segment (currentRank.exp → destinationRank.exp)
   const progressPct = useMemo(() => {
-    if (!effectiveCurrentRank || currentExp == null || currentRankExp <= 0) return 0;
-    return Math.min(100, Math.round((currentExp / currentRankExp) * 100));
-  }, [effectiveCurrentRank, currentExp, currentRankExp]);
+    if (!effectiveCurrentRank || !destinationRank || currentExp == null) return 0;
+    const start = currentRankExp;
+    const end   = destinationExp;
+    if (end <= start) return 0;
+    return Math.min(100, Math.round(((currentExp - start) / (end - start)) * 100));
+  }, [effectiveCurrentRank, destinationRank, currentExp, currentRankExp, destinationExp]);
 
   const pathRanks = useMemo(() => {
     if (currentIdx < 0 || destIdx <= currentIdx) return [];
@@ -713,12 +709,12 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
               )}
             </div>
 
-            {/* Progress bar — shows progress within current rank */}
-            {currentExp != null && currentRankExp > 0 && (
+            {/* Progress bar */}
+            {currentExp != null && destinationExp > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[10px] font-bold" style={{ color: "#555" }}>
-                    Progress in {effectiveCurrentRank.name}
+                    Progress: {effectiveCurrentRank.name} → {destinationRank.name}
                   </p>
                   <p className="text-[11px] font-black" style={{ color: "#d4a017" }}>{progressPct}%</p>
                 </div>
@@ -730,10 +726,10 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(currentExp)} EXP
+                    {fmt(currentRankExp)} XP
                   </span>
                   <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(currentRankExp)} EXP needed for this rank
+                    {fmt(destinationExp)} XP
                   </span>
                 </div>
               </div>

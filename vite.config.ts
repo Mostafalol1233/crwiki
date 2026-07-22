@@ -882,14 +882,23 @@ function cfPlayerLookupPlugin(): Plugin {
                     }
 
                     if (resolvedNickname && md.length > 200) {
-                      // ── Rank + EXP line ──────────────────────────────────────────
-                      const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
-                      const expStr   = rankLine.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
-                      const exp      = expStr ? parseInt(expStr, 10) : null;
-                      const rankName = rankLine.replace(/\d[\d,]*\s*EXP.*/, "").trim() || null;
-
+                      // ── Rank tier from image URL ─────────────────────────────────
                       const rankTierMatch = md.match(/\/rank_(\d+)\.(?:jpg|png|webp)/i);
                       const rankTier      = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+
+                      // ── EXP: primary source is the progress bar line
+                      //    e.g. "3413595/3465373 (72.5%)"
+                      //    The rank headline concatenates the tier digit onto EXP
+                      //    ("Lieutenant colonel13413595 EXP") so we NEVER trust that number.
+                      const progressBarMatch = md.match(/(\d{4,})\s*\/\s*(\d{4,})\s*\([\d.]+%\)/);
+                      const exp = progressBarMatch ? parseInt(progressBarMatch[1], 10) : null;
+
+                      // ── Rank name: strip leading/trailing digits and "EXP" suffix ─
+                      const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
+                      const rankName = rankLine
+                        .replace(/[\d,]+\s*EXP.*/i, "")   // remove EXP number and everything after
+                        .replace(/\d+$/, "")               // remove trailing rank-tier digit (e.g. "1" in "Lieutenant colonel1")
+                        .trim() || null;
 
                       const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
                       const clan = clanHeadings[0]?.[1]?.trim() || null;

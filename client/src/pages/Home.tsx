@@ -34,48 +34,42 @@ const PORTALS = [
     label: "Weapons", labelKey: "weapons", descKey: "portalWeaponsDesc",
     settingsKey: "portal_img_weapons",
     href: "/weapons",
-    // Z8 sniper week carousel — confirmed working, landscape promo shot
-    img: "https://z8games.akamaized.net/cfna/web/main/carousel/260715_cfwe_sniperweek_carouselm.jpg",
+    img: "/portal/weapons.jpg",
     imgFit: "cover" as const, imgBg: "#0a0800", imgPos: "center center",
   },
   {
     label: "Maps", labelKey: "maps", descKey: "portalMapsDesc",
     settingsKey: "portal_img_maps",
     href: "/maps",
-    // CrossFire Egypt map landscape screenshot from Fandom wiki (stable CDN)
-    img: "https://static.wikia.nocookie.net/crossfirefps/images/2/24/CrossFire_2.0_EGYPT_(New_Design_2.0)_Map_Review_%26_Comparison/revision/latest?cb=20141207050018",
+    img: "/portal/maps.jpg",
     imgFit: "cover" as const, imgBg: "#0a0c10", imgPos: "center center",
   },
   {
     label: "Mercenaries", labelKey: "mercenaries", descKey: "portalMercenariesDesc",
     settingsKey: "portal_img_mercenaries",
     href: "/mercenaries",
-    // Z8 official site character artwork — confirmed working
-    img: "https://z8games.akamaized.net/cfna/templates/assets/images/feature-cf-left.jpg",
+    img: "/portal/mercenaries.jpg",
     imgFit: "cover" as const, imgBg: "#0a0a0a", imgPos: "center top",
   },
   {
     label: "Game Modes", labelKey: "modes", descKey: "portalModesDesc",
     settingsKey: "portal_img_modes",
     href: "/modes",
-    // Z8 mutation/zombie mode carousel — confirmed working
-    img: "https://z8games.akamaized.net/cfna/web/main/carousel/260702_cfwe_mutation_zmplay_carouselm.jpg",
+    img: "/portal/modes.jpg",
     imgFit: "cover" as const, imgBg: "#0a0808", imgPos: "center center",
   },
   {
     label: "Ranks", labelKey: "ranks", descKey: "portalRanksDesc",
     settingsKey: "portal_img_ranks",
     href: "/ranks",
-    // Replaced broken tiny-icon PNG with a proper CF competitive landscape promo
-    img: "https://z8games.akamaized.net/cfna/web/main/images/bg-lobby.jpg",
+    img: "/portal/ranks.jpg",
     imgFit: "cover" as const, imgBg: "#0d0a14", imgPos: "center center",
   },
   {
     label: "Events", labelKey: "events", descKey: "portalEventsDesc",
     settingsKey: "portal_img_events",
     href: "/events",
-    // esCharts CF Global tournament banner
-    img: "https://cdnr.escharts.com/uploads/public/68a/d91/360/68ad913604b0e066419134.jpg?width=1140&height=570&quality=90&extension=jpg",
+    img: "/portal/events.jpg",
     imgFit: "cover" as const, imgBg: "#0a080a", imgPos: "center center",
   },
 ];

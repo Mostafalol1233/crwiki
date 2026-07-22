@@ -94,7 +94,9 @@ ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== EN
       body: JSON.stringify({
         model: "openai/gpt-oss-20b:free",
         messages: [systemPrompt, ...messages.slice(-6)],
-        max_tokens: 480,
+        // 2048 gives enough room for reasoning tokens (~300-600) plus full response.
+        // Old 480 was exhausted entirely by reasoning, leaving 0 tokens for output.
+        max_tokens: 2048,
         temperature: 0.5,
         stream: true,
       }),

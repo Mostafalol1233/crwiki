@@ -190,22 +190,12 @@ function cfAiPlugin(): Plugin {
         if (sock?.setTimeout) sock.setTimeout(0);
         res.write(": ok\n\n"); // initial SSE keepalive
 
-        // Debug: intercept res.end to find caller
-        const _origEnd = res.end.bind(res);
-        res.end = function(...args: any[]) {
-          console.log("[AI] res.end CALLED:", new Error("end caller").stack?.split("\n").slice(1, 6).join(" | "));
-          return _origEnd(...args);
-        };
-
         // All async work runs in the background; response is already "owned"
         (async () => {
           try {
-            console.log("[AI-IIFE] started, res.writableEnded:", res.writableEnded);
             const body = await readBody(req);
-            console.log("[AI-IIFE] body read, keys:", Object.keys(body || {}), "res.writableEnded:", res.writableEnded);
             const { messages } = body;
             if (!Array.isArray(messages) || messages.length === 0) {
-              console.log("[AI-IIFE] no messages");
               res.write(`data: ${JSON.stringify({ error: "messages array required" })}\n\n`);
               return res.end();
             }
@@ -214,7 +204,6 @@ function cfAiPlugin(): Plugin {
               res.write(`data: ${JSON.stringify({ error: "AI not configured" })}\n\n`);
               return res.end();
             }
-            console.log("[AI-IIFE] apiKey ok, fetching context...");
 
             const websiteData = await fetchWebsiteContext();
             console.log("[AI-IIFE] context fetched, calling OpenRouter, res.writableEnded:", res.writableEnded);
@@ -248,43 +237,46 @@ ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual
               body: JSON.stringify({
                 model: "openai/gpt-oss-20b:free",
                 messages: [systemPrompt, ...messages.slice(-6)],
-                max_tokens: 480,
+                // 2048 gives the model enough room to finish reasoning (~300-600 tokens)
+                // and still produce a full response. 480 was too small once this model
+                // became reasoning-first and reasoning tokens count against max_tokens.
+                max_tokens: 2048,
                 temperature: 0.5,
                 stream: true,
               }),
               signal: AbortSignal.timeout(35000),
             });
 
-            console.log("[AI-IIFE] upstream status:", upstream.status, upstream.ok, "body type:", upstream.body?.constructor?.name);
             if (!upstream.ok) {
               const errText = await upstream.text().catch(() => "");
-              console.error("[AI] upstream error:", upstream.status, errText.slice(0, 200));
               res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
               return res.end();
             }
 
             let buffer = "";
-            let chunkCount = 0;
-            let writeCount = 0;
+
+            function processSSELine(line: string) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith("data:")) return;
+              const jsonStr = trimmed.slice(5).trim();
+              if (jsonStr === "[DONE]") { res.write("data: [DONE]\n\n"); return; }
+              try {
+                const parsed = JSON.parse(jsonStr) as any;
+                const delta = parsed.choices?.[0]?.delta?.content;
+                if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+              } catch { /* skip malformed */ }
+            }
+
             for await (const rawChunk of upstream.body as any) {
-              chunkCount++;
-              const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8") : String(rawChunk);
+              const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8")
+                : (rawChunk instanceof Uint8Array) ? Buffer.from(rawChunk).toString("utf-8")
+                : String(rawChunk);
               buffer += chunk;
               const lines = buffer.split("\n");
               buffer = lines.pop() || "";
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || !trimmed.startsWith("data:")) continue;
-                const jsonStr = trimmed.slice(5).trim();
-                if (jsonStr === "[DONE]") { res.write("data: [DONE]\n\n"); continue; }
-                try {
-                  const parsed = JSON.parse(jsonStr) as any;
-                  const delta = parsed.choices?.[0]?.delta?.content;
-                  if (delta) { res.write(`data: ${JSON.stringify({ delta })}\n\n`); writeCount++; }
-                } catch { /* skip malformed */ }
-              }
+              for (const line of lines) processSSELine(line);
             }
-            console.log("[AI-IIFE] loop done, chunks:", chunkCount, "writes:", writeCount, "res.writableEnded:", res.writableEnded);
+            if (buffer.trim()) processSSELine(buffer);
             res.end();
           } catch (err: any) {
             console.error("[AI] error:", err?.message, err?.stack?.slice(0, 200));

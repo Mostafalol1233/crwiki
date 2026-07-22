@@ -83,9 +83,9 @@ function buildCFRankList(): Rank[] {
 const CF_ALL_RANKS = buildCFRankList(); // 104 ranks
 
 /* ─── EXP threshold map (tier → cumulative EXP) ─────────────────────────────
-   Formula: EXP(t) = round(487 * t^2.5, 1000)
-   Calibrated so tier 79 (BG4) ≈ 27,000,000  — matches real player data.
-   tier 104 (Grand Marshal) ≈ 53,700,000.
+   These are fallback estimates only — used when the Supabase ranks table has
+   no exp_required value for a tier. The DB values (which match the Z8Games
+   profile page) are always preferred over these estimates.
 */
 const CF_EXP_THRESHOLDS: Record<number, number> = (() => {
   const m: Record<number, number> = {};
@@ -159,15 +159,15 @@ function mergeRanks(provided: Rank[]): Rank[] {
     if (r.tier) byTier.set(r.tier, r);
   }
 
-  // For every CF rank, prefer DB data for names/images/bonuses but ALWAYS
-  // use the formula's cumulative EXP threshold. The DB stores rank-relative
-  // EXP (e.g. 3.6M for LC4) while the player API returns cumulative TotalExp
-  // (e.g. 13.4M for a player at LC1=tier 60). Using DB values here would make
-  // the calculator compare apples to oranges and show "0 EXP needed".
+  // For every CF rank, prefer DB data for names/images/bonuses/EXP.
+  // The DB stores cumulative EXP totals matching the Z8Games profile page
+  // (e.g. ~3M for Major 8 at tier 59). Only fall back to the formula when
+  // the DB has no value for a tier.
   return CF_ALL_RANKS.map(fallback => {
     const db = byTier.get(fallback.tier!);
     const bonus = db?.bonus || (db as any)?.bonus || BONUS_MAP[fallback.tier!] || fallback.bonus || "";
-    const exp = CF_EXP_THRESHOLDS[fallback.tier!] ?? 0;
+    const dbExp = (db as any)?.exp_required ?? db?.expRequired ?? 0;
+    const exp = dbExp > 0 ? dbExp : (CF_EXP_THRESHOLDS[fallback.tier!] ?? 0);
 
     return {
       id: db?.id || fallback.id,
@@ -189,12 +189,12 @@ function getRankImage(r: Rank): string {
 }
 
 function getExp(r: Rank): number {
-  // Always prefer the formula's cumulative threshold — it matches the API's
-  // TotalExp field. DB exp_required is rank-relative and must not be used here.
-  if (r.tier) return CF_EXP_THRESHOLDS[r.tier] ?? 0;
+  // Prefer DB cumulative EXP (matches Z8Games profile totals).
+  // Fall back to formula estimate only when DB value is absent.
   if (typeof r.expRequired === "number" && r.expRequired > 0) return r.expRequired;
   const db = (r as any).exp_required;
   if (typeof db === "number" && db > 0) return db;
+  if (r.tier) return CF_EXP_THRESHOLDS[r.tier] ?? 0;
   return 0;
 }
 

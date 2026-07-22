@@ -6671,26 +6671,17 @@ app.post("/api/auth/supabase-exchange", apiLimiter, async (req, res) => {
 // Uses undici (HTTP/2 capable) to bypass Akamai CDN protection
 // Real API discovered from naprofile2 React bundle: /rest/userprofile.json?usn=<nickname>
 app.get("/api/player/lookup", apiLimiter, async (req, res) => {
-    const nickname = String(req.query.nickname || "").trim();
-    const region = String(req.query.region || "na").toLowerCase(); // "na" or "west"
-    if (!nickname || nickname.length < 2 || nickname.length > 32) {
-        return res.status(400).json({ error: "Invalid nickname" });
-    }
+    const nickname      = String(req.query.nickname    || "").trim();
+    const region        = String(req.query.region      || "na").toLowerCase();
+    const rawProfileUrl = String(req.query.profileUrl  || "").trim();
+    const rawProfileId  = String(req.query.profileId   || "").trim();
 
-    // Region → base API URLs to try in order
-    // CF West (cfwest.z8games.com) was shut down by Bigpoint but the endpoint may still exist;
-    // we try it first for "west", then fall back to the NA endpoint as some accounts transferred.
-    const endpointsByRegion = {
-        west: [
-            "https://cfwest.z8games.com/rest/userprofile.json",
-            "https://crossfire.z8games.com/rest/userprofile.json",
-        ],
-        na: [
-            "https://crossfire.z8games.com/rest/userprofile.json",
-        ],
-    };
-    const endpoints = endpointsByRegion[region] || endpointsByRegion.na;
+    // Extract numeric profile ID from URL if present (e.g. /profile/12345)
+    const profileIdFromUrl = rawProfileUrl.match(/\/profile\/(\d+)/)?.[1] || "";
+    const profileId = (rawProfileId || profileIdFromUrl).trim();
+
     const regionLabel = region === "west" ? "CrossFire West" : "CrossFire NA";
+    const fcKey = process.env.FIRECRAWL_API_KEY || "";
 
     const CF_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -6702,71 +6693,220 @@ app.get("/api/player/lookup", apiLimiter, async (req, res) => {
         "sec-fetch-dest": "empty",
     };
 
-    async function tryFetch(baseUrl) {
-        const { fetch } = await import("undici");
-        const url = `${baseUrl}?usn=${encodeURIComponent(nickname)}`;
-        const response = await fetch(url, { signal: AbortSignal.timeout(10000), headers: CF_HEADERS });
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("json")) return null; // not JSON — skip this endpoint
-        const data = await response.json();
-        if (data.p_o_ErrID === -702 || data.p_o_ErrDesc === "Character not found") return "not_found";
-        return data;
+    const restBases = region === "west"
+        ? ["https://cfwest.z8games.com/rest", "https://crossfire.z8games.com/rest"]
+        : ["https://crossfire.z8games.com/rest"];
+
+    /** Parse Firecrawl markdown into a normalized profile, or null if insufficient data. */
+    function parseFirecrawlMd(md) {
+        if (!md || md.length < 100) return null;
+
+        const nick =
+            md.match(/^#+\s+\[([^\]]{2,32})\]/m)?.[1]?.trim() ||
+            md.match(/^#+\s+([A-Za-z0-9_\-\.\[\]]{2,32})\s*$/m)?.[1]?.trim() ||
+            null;
+        if (!nick) return null;
+
+        const rankTierMatch = md.match(/\/rank_(\d{1,3})\.(jpg|png|webp)/i);
+        const rankTier = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+
+        const rankImgLine = md.match(/!\[[^\]]*\]\([^)]*\/rank_\d+\.[^\)]+\)[^\S\n]*([^\n]*)/);
+        const rankLineFull = rankImgLine?.[1]?.trim() || "";
+        const expRaw = rankLineFull.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "")
+            || md.match(/(\d[\d,]+)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
+        const exp = expRaw ? parseInt(expRaw, 10) : null;
+        const rankName = rankLineFull.replace(/\d[\d,]*\s*EXP.*/i, "").trim() || null;
+
+        const statNum = (label) => {
+            const m =
+                md.match(new RegExp(`#####?\\s+${label}\\s*\\n+###?\\s+([\\d,]+)`, "i")) ||
+                md.match(new RegExp(`\\*\\*${label}\\*\\*[:\\s]+([\\d,]+)`, "i")) ||
+                md.match(new RegExp(`${label}[:\\s]+([\\d,]+)`, "i"));
+            return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
+        };
+
+        const kills  = statNum("Kills");
+        const deaths = statNum("Deaths");
+        const wins   = statNum("Wins");
+        const losses = statNum("Losses");
+
+        const kdRatio = kills !== null && deaths !== null && deaths > 0
+            ? parseFloat((kills / deaths).toFixed(2)) : null;
+
+        const winRatePct = md.match(/Winner\s*Rate\s*\n+([\d.]+)\s*%/i)?.[1]
+            || md.match(/Win\s*Rate[:\s]+([\d.]+)\s*%/i)?.[1] || null;
+        const winRate = winRatePct
+            ? parseFloat(winRatePct)
+            : wins !== null && losses !== null && (wins + losses) > 0
+                ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1))
+                : null;
+
+        const hsRate = md.match(/Headshot\s*Rate[\s\S]{0,200}?([\d.]+)\s*%/i)?.[1] || null;
+
+        const vipLevelMatch = md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i);
+        const vipLevel = vipLevelMatch ? parseInt(vipLevelMatch[1], 10) : null;
+        const vipDaysMatch = md.match(/VIP[^\n]*?(\d+)\s*day/i);
+        const vipDays = vipDaysMatch ? parseInt(vipDaysMatch[1], 10) : null;
+
+        const clanImgMatch =
+            md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*clan[^)]*)\)/i) ||
+            md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*mark[^)]*)\)/i);
+        const clanImage = clanImgMatch ? clanImgMatch[1] : null;
+        const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
+        const clan = clanHeadings[0]?.[1]?.trim() || null;
+
+        return {
+            nickname: nick, region: regionLabel, exp,
+            rank: rankName, rankTier,
+            rankImage: rankTier
+                ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg`
+                : null,
+            kills, deaths, wins, losses, kdRatio, winRate,
+            headShotRate: hsRate ? parseFloat(hsRate) : null,
+            clan, clanImage, vipDays, vipLevel, playtime: null, level: null,
+        };
     }
 
-    try {
-        let data = null;
-        for (const endpoint of endpoints) {
-            const result = await tryFetch(endpoint).catch(() => null);
-            if (result && result !== "not_found") { data = result; break; }
-            if (result === "not_found") break; // definitive not-found from this server
-        }
+    /** Scrape a URL with Firecrawl and parse the result, or return null. */
+    async function firecrawlScrape(targetUrl) {
+        if (!fcKey) return null;
+        try {
+            const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                method: "POST",
+                signal: AbortSignal.timeout(30000),
+                headers: { Authorization: `Bearer ${fcKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    url: targetUrl,
+                    formats: ["markdown"],
+                    onlyMainContent: true,
+                    waitFor: 2000,
+                }),
+            });
+            if (!fcRes.ok) return null;
+            const fcData = await fcRes.json();
+            const md = fcData?.data?.markdown || fcData?.markdown || "";
+            return parseFirecrawlMd(md);
+        } catch { return null; }
+    }
 
-        if (!data) {
-            if (region === "west") {
-                return res.status(404).json({
-                    error: `Player "${nickname}" not found. CrossFire West was discontinued — if you played CF West, stats may no longer be available. Try switching to CrossFire NA.`,
-                    notFound: true,
-                });
+    /** Try all REST endpoints for a numeric profile ID. */
+    async function restLookupById(pid) {
+        const idParams = ["char_no", "user_no", "UserNo", "CharNo", "usn_no", "uid", "user_id", "char_id"];
+        for (const base of restBases) {
+            for (const param of idParams) {
+                try {
+                    const r = await fetch(`${base}/userprofile.json?${param}=${pid}`, {
+                        signal: AbortSignal.timeout(5000), headers: CF_HEADERS,
+                    });
+                    const ct = r.headers.get("content-type") || "";
+                    if (!ct.includes("json")) continue;
+                    const j = await r.json();
+                    if (j.p_o_ErrID === -702) continue;
+                    if (j.UserNickname || j.TotalExp != null || j.TotalKills != null) return j;
+                } catch { /* try next */ }
             }
-            return res.status(404).json({ error: `Player "${nickname}" not found on ${regionLabel}. Check spelling (case-sensitive) and try again.`, notFound: true });
         }
+        return null;
+    }
 
-        // Normalize the response to a clean shape
-        const profile = {
-            nickname: data.UserNickname || data.usn || nickname,
-            region: regionLabel,
-            exp: data.TotalExp ?? data.UserExp ?? data.exp ?? null,
+    /** Normalise a raw REST response into our profile shape. */
+    function normalizeRestData(data, fallbackNick) {
+        const kills  = data.TotalKills  ?? data.total_kills  ?? data.Kills  ?? null;
+        const deaths = data.TotalDeaths ?? data.total_deaths ?? data.Deaths ?? null;
+        const wins   = data.TotalWins   ?? data.total_wins   ?? data.Wins   ?? null;
+        const losses = data.TotalLosses ?? data.total_losses ?? data.Losses ?? null;
+        const exp    = data.TotalExp    ?? data.UserExp      ?? data.exp    ?? null;
+        return {
+            nickname: data.UserNickname || data.usn || fallbackNick,
+            region: regionLabel, exp,
             rank: data.RankName || data.rank_name || data.Rank || null,
             rankTier: data.RankNo || data.rank_no || data.RankTier || null,
             rankImage: data.RankImg || data.rank_img || null,
-            kills: data.TotalKills ?? data.total_kills ?? data.Kills ?? null,
-            deaths: data.TotalDeaths ?? data.total_deaths ?? data.Deaths ?? null,
-            wins: data.TotalWins ?? data.total_wins ?? data.Wins ?? null,
-            losses: data.TotalLosses ?? data.total_losses ?? data.Losses ?? null,
-            kdRatio: null,
-            winRate: null,
+            kills, deaths, wins, losses,
+            kdRatio: kills !== null && deaths !== null && deaths > 0
+                ? parseFloat((kills / deaths).toFixed(2)) : null,
+            winRate: wins !== null && losses !== null && (wins + losses) > 0
+                ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null,
             playtime: data.PlayTime || data.play_time || null,
             level: data.UserLevel || data.level || null,
             clan: data.ClanName || data.clan_name || null,
-            raw: data,
+            vipDays: data.VIPDays ?? data.VipDays ?? data.VipRemainDays ?? null,
+            vipLevel: data.VIPLevel ?? data.VipLevel ?? null,
         };
+    }
 
-        // Calculate derived stats
-        if (profile.kills !== null && profile.deaths !== null && profile.deaths > 0) {
-            profile.kdRatio = (profile.kills / profile.deaths).toFixed(2);
-        }
-        if (profile.wins !== null && profile.losses !== null) {
-            const total = profile.wins + profile.losses;
-            if (total > 0) profile.winRate = ((profile.wins / total) * 100).toFixed(1);
+    try {
+        // ── Path A: profile URL provided → Firecrawl FIRST ─────────────────
+        if (rawProfileUrl) {
+            const targetUrl = rawProfileUrl.startsWith("http")
+                ? rawProfileUrl
+                : `https://${rawProfileUrl}`;
+
+            const profile = await firecrawlScrape(targetUrl);
+            if (profile) return res.json({ success: true, profile });
+
+            // Firecrawl failed — try REST if we extracted a numeric ID
+            if (profileId && /^\d+$/.test(profileId)) {
+                const data = await restLookupById(profileId);
+                if (data) return res.json({ success: true, profile: normalizeRestData(data, profileId) });
+            }
+
+            return res.status(404).json({
+                error: "Could not load profile from that URL. Try entering your in-game nickname directly.",
+                notFound: true, suggestNickname: true,
+            });
         }
 
-        return res.json({ success: true, profile });
+        // ── Path B: bare numeric profile ID ────────────────────────────────
+        if (profileId && /^\d+$/.test(profileId)) {
+            const data = await restLookupById(profileId);
+            if (data) return res.json({ success: true, profile: normalizeRestData(data, profileId) });
+
+            // REST failed → Firecrawl fallback
+            const profile = await firecrawlScrape(`https://crossfire.z8games.com/profile/${profileId}`);
+            if (profile) return res.json({ success: true, profile });
+
+            return res.status(404).json({
+                error: `Could not load profile #${profileId}. Please enter your in-game nickname directly.`,
+                notFound: true, suggestNickname: true,
+            });
+        }
+
+        // ── Path C: nickname lookup ─────────────────────────────────────────
+        if (!nickname || nickname.length < 2 || nickname.length > 32) {
+            return res.status(400).json({ error: "Invalid nickname — must be 2–32 characters." });
+        }
+
+        let data = null;
+        for (const base of restBases) {
+            try {
+                const r = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(nickname)}`, {
+                    signal: AbortSignal.timeout(10000), headers: CF_HEADERS,
+                });
+                const ct = r.headers.get("content-type") || "";
+                if (!ct.includes("json")) continue;
+                const j = await r.json();
+                if (j.p_o_ErrID === -702 || j.p_o_ErrDesc === "Character not found") break;
+                data = j;
+                break;
+            } catch { /* try next */ }
+        }
+
+        if (!data) {
+            const msg = region === "west"
+                ? `Player "${nickname}" not found. CrossFire West was discontinued — try switching to CrossFire NA.`
+                : `Player "${nickname}" not found on ${regionLabel}. Nicknames are case-sensitive.`;
+            return res.status(404).json({ error: msg, notFound: true });
+        }
+
+        return res.json({ success: true, profile: normalizeRestData(data, nickname) });
+
     } catch (err) {
         if (err.name === "TimeoutError" || err.message?.includes("timeout")) {
-            return res.status(504).json({ error: "CF servers timed out, try again shortly" });
+            return res.status(504).json({ error: "CF servers timed out — try again shortly." });
         }
         console.error("[CF Player Lookup] Error:", err.message);
-        return res.status(500).json({ error: "Failed to fetch player data" });
+        return res.status(500).json({ error: "Failed to fetch player data." });
     }
 });
 

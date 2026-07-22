@@ -800,200 +800,168 @@ function cfPlayerLookupPlugin(): Plugin {
 
           let data: any = null;
 
-          // ── Path A: numeric profile ID lookup ─────────────────────────────
-          if (profileId && /^\d+$/.test(profileId)) {
-            // Step 1 — try direct REST API ID params (fast, but rarely works)
+          // ── Shared helpers ─────────────────────────────────────────────────
+
+          /** Parse a CF profile page markdown (+ optional raw HTML) into a profile object. */
+          const parseCFMarkdown = (md: string, html: string = "") => {
+            // Nickname: "# [Nick](url)" heading, og:title, or plain "# Nick"
+            let nick = md.match(/^#\s+\[([^\]]{2,32})\]/m)?.[1]?.trim() || null;
+            if (!nick && html) {
+              const ogTitle = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1]
+                           || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i)?.[1];
+              const pgTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+              const raw = ogTitle || pgTitle || "";
+              const cleaned = raw.replace(/\s*[-–|]\s*(crossfire|z8games)[^$]*/i, "")
+                                 .replace(/'s\s+profile$/i, "").trim();
+              if (cleaned && cleaned.length >= 2 && cleaned.length <= 32) nick = cleaned;
+            }
+            if (!nick) nick = md.match(/^#\s+([^\[\n]{2,32})/m)?.[1]?.trim() || null;
+            if (!nick) return null;
+
+            const rankTierMatch = md.match(/\/rank_(\d{1,3})\.(?:jpg|png|webp)/i);
+            const rankTier      = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+
+            // EXP: prefer progress-bar "current/total (pct%)" over headline
+            const progressBarMatch = md.match(/(\d{4,})\s*\/\s*(\d{4,})\s*\([\d.]+%\)/);
+            const expRaw = progressBarMatch
+              ? progressBarMatch[1]
+              : (md.match(/\/rank_\d+\.[^)]+\)[^\S\n]*[^\n]*?(\d[\d,]{3,})\s*EXP/i)?.[1]?.replace(/,/g, "")
+                ?? md.match(/(\d[\d,]{3,})\s*EXP/i)?.[1]?.replace(/,/g, "") ?? null);
+            const exp = expRaw ? parseInt(expRaw, 10) : null;
+
+            const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
+            const rankName = rankLine.replace(/[\d,]+\s*EXP.*/i, "").replace(/\d+$/, "").trim() || null;
+
+            const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
+            const clan = clanHeadings[0]?.[1]?.trim() || null;
+
+            const statNum = (label: string) => {
+              const m = md.match(new RegExp(`#####?\\s+${label}\\s*\\n+###?\\s+([\\d,]+)`, "i"))
+                     || md.match(new RegExp(`\\*\\*${label}\\*\\*[:\\s]+([\\d,]+)`, "i"))
+                     || md.match(new RegExp(`${label}[:\\s]+([\\d,]+)`, "i"));
+              return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
+            };
+            const inlineNum = (label: string) => {
+              const m = md.match(new RegExp(`${label}\\s*\\n+([\\d.]+)`, "i"));
+              return m ? parseFloat(m[1]) : null;
+            };
+
+            const kills      = statNum("Kills");
+            const deaths     = statNum("Deaths");
+            const wins       = statNum("Wins");
+            const losses     = statNum("Losses");
+            const kdRatio    = inlineNum("Kill-Death Ratio");
+            const winRatePct = md.match(/Winner\s*Rate\s*\n+([\d.]+)\s*%/i)?.[1]
+                            || md.match(/Win\s*Rate[:\s]+([\d.]+)\s*%/i)?.[1] || null;
+            const hsRate     = md.match(/Headshot\s*Rate[\s\S]{0,200}?([\d.]+)\s*%/i)?.[1] || null;
+            const vipLevel   = parseInt(md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i)?.[1] || "0", 10) || null;
+            const vipDays    = parseInt(md.match(/VIP[^\n]*?(\d+)\s*day/i)?.[1]       || "0", 10) || null;
+            const clanImgMatch = md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*(?:clan|mark)[^)]*)\)/i);
+            const clanImage    = clanImgMatch ? clanImgMatch[1] : null;
+
+            return {
+              nickname: nick, region: regionLabel, exp, rank: rankName, rankTier,
+              rankImage: rankTier ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg` : null,
+              kills, deaths, wins, losses,
+              kdRatio: kdRatio ?? (kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null),
+              winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
+              headShotRate: hsRate ? parseFloat(hsRate) : null,
+              clan, clanImage, vipDays, vipLevel, playtime: null, level: null,
+            };
+          };
+
+          /** Scrape a URL with Firecrawl (JS-rendered) and return a parsed profile, or null. */
+          const firecrawlScrape = async (targetUrl: string): Promise<any> => {
+            const fcKey = process.env.FIRECRAWL_API_KEY || "";
+            if (!fcKey) return null;
+            try {
+              const fcRes = await (fetch as any)("https://api.firecrawl.dev/v1/scrape", {
+                method: "POST",
+                signal: AbortSignal.timeout(45000),
+                headers: { "Authorization": `Bearer ${fcKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  url: targetUrl,
+                  formats: ["markdown", "html"],
+                  waitFor: 6000,
+                  onlyMainContent: false,
+                }),
+              });
+              if (!fcRes.ok) return null;
+              const fcData = await fcRes.json() as any;
+              const md: string   = fcData?.data?.markdown || fcData?.markdown || "";
+              const html: string = fcData?.data?.html     || fcData?.html     || "";
+              if (md.length < 100) return null;
+              return parseCFMarkdown(md, html);
+            } catch { return null; }
+          };
+
+          /** Try all REST endpoints for a numeric profile ID. */
+          const restLookupById = async (pid: string): Promise<any> => {
             const idParams = ["char_no", "user_no", "UserNo", "CharNo", "usn_no", "uid", "user_id", "char_id"];
-            outer: for (const base of restBases) {
+            for (const base of restBases) {
               for (const param of idParams) {
                 try {
-                  const response = await fetch(`${base}/userprofile.json?${param}=${profileId}`, {
-                    signal: AbortSignal.timeout(4000),
-                    headers: CF_HEADERS,
-                  } as any);
-                  const ct = response.headers.get("content-type") || "";
+                  const r = await (fetch as any)(`${base}/userprofile.json?${param}=${pid}`, {
+                    signal: AbortSignal.timeout(4000), headers: CF_HEADERS,
+                  });
+                  const ct = r.headers.get("content-type") || "";
                   if (!ct.includes("json")) continue;
-                  const json = await response.json() as any;
-                  if (json.p_o_ErrID === -702) continue;
-                  if (json.UserNickname || json.TotalExp != null || json.TotalKills != null) {
-                    data = json;
-                    break outer;
-                  }
-                } catch { /* timeout or bad response — try next */ }
+                  const j = await r.json() as any;
+                  if (j.p_o_ErrID === -702) continue;
+                  if (j.UserNickname || j.TotalExp != null || j.TotalKills != null) return j;
+                } catch { /* try next */ }
               }
             }
+            return null;
+          };
 
-            // Step 2 — Firecrawl renders the full JS SPA (waitFor lets React/Vue hydrate)
+          // ── Path A: profile URL provided → Firecrawl FIRST ────────────────
+          if (rawProfileUrl) {
+            const targetUrl = rawProfileUrl.startsWith("http") ? rawProfileUrl : `https://${rawProfileUrl}`;
+
+            // Primary: Firecrawl (handles JS-rendered pages, Akamai-protected content)
+            const fcProfile = await firecrawlScrape(targetUrl);
+            if (fcProfile) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({ success: true, profile: fcProfile }));
+            }
+
+            // Secondary: if we extracted a numeric ID from the URL, try REST
+            if (profileId && /^\d+$/.test(profileId)) {
+              const restData = await restLookupById(profileId);
+              if (restData) { data = restData; }
+            }
+
             if (!data) {
-              const fcKey = process.env.FIRECRAWL_API_KEY || "";
-              console.log("[FC-CHECK] key exists:", !!fcKey, "len:", fcKey.length, "profileId:", profileId);
-              let resolvedNickname: string | null = null;
-              let fcProfile: any = null;
+              res.writeHead(404, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({
+                error: "Could not load profile from that URL. Try entering your in-game nickname directly.",
+                notFound: true, suggestNickname: true,
+              }));
+            }
+          }
 
-              if (fcKey) {
-                try {
-                  const fcRes = await (fetch as any)("https://api.firecrawl.dev/v1/scrape", {
-                    method: "POST",
-                    signal: AbortSignal.timeout(45000),
-                    headers: {
-                      "Authorization": `Bearer ${fcKey}`,
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      url: `https://crossfire.z8games.com/profile/${profileId}`,
-                      formats: ["markdown", "html"],
-                      waitFor: 6000,          // ← wait for JS SPA to render
-                      onlyMainContent: false, // ← full page needed for title/og tags
-                    }),
-                  });
+          // ── Path B: bare numeric profile ID (no URL) ───────────────────────
+          else if (profileId && /^\d+$/.test(profileId)) {
+            // Step 1: REST APIs (fast)
+            data = await restLookupById(profileId);
 
-                  console.log("[FC] status:", fcRes.status, fcRes.ok);
-                  if (fcRes.ok) {
-                    const fcData = await fcRes.json() as any;
-                    const md: string   = fcData?.data?.markdown || fcData?.markdown || "";
-                    const html: string = fcData?.data?.html     || fcData?.html     || "";
-                    console.log("[FC] md.length:", md.length, "html.length:", html.length, "success:", fcData?.success);
-                    if (md) console.log("[FC] md[:400]:", md.slice(0, 400));
-                    if (html) {
-                      const t = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
-                      const og = html.match(/property="og:title"[^>]+content="([^"]+)"/i)?.[1];
-                      console.log("[FC] title:", t, "og:title:", og);
-                    }
-                    if (!fcData?.success) console.log("[FC] error:", fcData?.error);
-
-                    // ── Try 1: markdown heading  "# [NickName](url)" ──────────────
-                    resolvedNickname = md.match(/^#\s+\[([^\]]+)\]/m)?.[1]?.trim() || null;
-
-                    // ── Try 2: og:title / <title> in HTML  ────────────────────────
-                    if (!resolvedNickname && html) {
-                      const ogTitle  = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1]
-                                    || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i)?.[1];
-                      const pgTitle  = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
-                      const raw = ogTitle || pgTitle || "";
-                      // CF titles: "PlayerName - CrossFire", "PlayerName's Profile – CrossFire", etc.
-                      const cleaned = raw.replace(/\s*[-–|]\s*(crossfire|z8games)[^$]*/i, "")
-                                         .replace(/'s\s+profile$/i, "").trim();
-                      if (cleaned && cleaned.length >= 2 && cleaned.length <= 32) resolvedNickname = cleaned;
-                    }
-
-                    // ── Try 3: markdown plain heading "# NickName" ────────────────
-                    if (!resolvedNickname) {
-                      resolvedNickname = md.match(/^#\s+([^\[\n]+)/m)?.[1]?.trim() || null;
-                    }
-
-                    if (resolvedNickname && md.length > 200) {
-                      // ── Rank tier from image URL ─────────────────────────────────
-                      const rankTierMatch = md.match(/\/rank_(\d+)\.(?:jpg|png|webp)/i);
-                      const rankTier      = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
-
-                      // ── EXP: primary source is the progress bar line
-                      //    e.g. "3413595/3465373 (72.5%)"
-                      //    The rank headline concatenates the tier digit onto EXP
-                      //    ("Lieutenant colonel13413595 EXP") so we NEVER trust that number.
-                      const progressBarMatch = md.match(/(\d{4,})\s*\/\s*(\d{4,})\s*\([\d.]+%\)/);
-                      const exp = progressBarMatch ? parseInt(progressBarMatch[1], 10) : null;
-
-                      // ── Rank name: strip leading/trailing digits and "EXP" suffix ─
-                      const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
-                      const rankName = rankLine
-                        .replace(/[\d,]+\s*EXP.*/i, "")   // remove EXP number and everything after
-                        .replace(/\d+$/, "")               // remove trailing rank-tier digit (e.g. "1" in "Lieutenant colonel1")
-                        .trim() || null;
-
-                      const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
-                      const clan = clanHeadings[0]?.[1]?.trim() || null;
-
-                      const statNum = (label: string) => {
-                        const m = md.match(new RegExp(`#####\\s+${label}\\s*\\n+###\\s+([\\d,]+)`, "i"));
-                        return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
-                      };
-                      const inlineNum = (label: string) => {
-                        const m = md.match(new RegExp(`${label}\\s*\\n+([\\d.]+)`, "i"));
-                        return m ? parseFloat(m[1]) : null;
-                      };
-
-                      const kills      = statNum("Kills");
-                      const deaths     = statNum("Deaths");
-                      const wins       = statNum("Wins");
-                      const losses     = statNum("Losses");
-                      const kdRatio    = inlineNum("Kill-Death Ratio");
-                      const winRatePct = md.match(/Winner Rate\s*\n+([\d.]+)%/i)?.[1] || null;
-                      const hsRate     = md.match(/Headshot Rate[\s\S]{0,200}?([\d.]+)%/i)?.[1] || null;
-
-                      const vipLevel = parseInt(md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i)?.[1] || "0", 10) || null;
-                      const vipDays  = parseInt(md.match(/VIP[^\n]*?(\d+)\s*day/i)?.[1]   || "0", 10) || null;
-
-                      const clanImgMatch = md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*(?:clan|mark)[^)]*)\)/i);
-                      const clanImage    = clanImgMatch ? clanImgMatch[1] : null;
-
-                      fcProfile = {
-                        nickname: resolvedNickname,
-                        region: regionLabel,
-                        exp,
-                        rank: rankName,
-                        rankTier,
-                        rankImage: rankTier ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg` : null,
-                        kills,
-                        deaths,
-                        wins,
-                        losses,
-                        kdRatio: kdRatio ?? (kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null),
-                        winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
-                        headShotRate: hsRate ? parseFloat(hsRate) : null,
-                        clan,
-                        clanImage,
-                        vipDays,
-                        vipLevel,
-                        playtime: null,
-                        level: null,
-                      };
-                    }
-                  }
-                } catch { /* Firecrawl timeout or network error */ }
-              }
-
-              // ── Step 2b: if Firecrawl only gave us the nickname (page wasn't fully
-              //    rendered), retry via the REST nickname endpoint to get full stats ──
-              if (!fcProfile && resolvedNickname) {
-                try {
-                  for (const base of restBases) {
-                    const r = await (fetch as any)(`${base}/userprofile.json?usn=${encodeURIComponent(resolvedNickname)}`, {
-                      signal: AbortSignal.timeout(8000),
-                      headers: CF_HEADERS,
-                    });
-                    const ct = r.headers.get("content-type") || "";
-                    if (!ct.includes("json")) continue;
-                    const j = await r.json() as any;
-                    if (j.p_o_ErrID === -702) break;
-                    if (j.UserNickname || j.TotalExp != null) { data = j; break; }
-                  }
-                } catch { /* ignore */ }
-
-                if (!data) {
-                  // Firecrawl gave us the nickname but REST has no stats — return nickname-only profile
-                  fcProfile = { nickname: resolvedNickname, region: regionLabel, exp: null, rank: null, rankTier: null, rankImage: null, kills: null, deaths: null, wins: null, losses: null, kdRatio: null, winRate: null, headShotRate: null, clan: null, clanImage: null, vipDays: null, vipLevel: null, playtime: null, level: null };
-                }
-              }
-
+            // Step 2: Firecrawl fallback (full JS render)
+            if (!data) {
+              const fcProfile = await firecrawlScrape(`https://crossfire.z8games.com/profile/${profileId}`);
               if (fcProfile) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({ success: true, profile: fcProfile }));
               }
-
-              // data was set by Step 2b REST retry — fall through to profile mapping below
-              if (!data) {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                return res.end(JSON.stringify({
-                  error: `Profile #${profileId} could not be loaded from the CrossFire servers. Enter your in-game nickname directly instead.`,
-                  notFound: true,
-                  suggestNickname: true,
-                  profileId,
-                }));
-              }
+              res.writeHead(404, { "Content-Type": "application/json" });
+              return res.end(JSON.stringify({
+                error: `Profile #${profileId} could not be loaded. Enter your in-game nickname directly instead.`,
+                notFound: true, suggestNickname: true, profileId,
+              }));
             }
           }
 
-          // ── Path B: nickname lookup ────────────────────────────────────────
+          // ── Path C: nickname lookup ────────────────────────────────────────
           else {
             if (!nickname || nickname.length < 2 || nickname.length > 32) {
               res.writeHead(400, { "Content-Type": "application/json" });
@@ -1002,10 +970,10 @@ function cfPlayerLookupPlugin(): Plugin {
 
             for (const base of restBases) {
               try {
-                const response = await fetch(`${base}/userprofile.json?usn=${encodeURIComponent(nickname)}`, {
+                const response = await (fetch as any)(`${base}/userprofile.json?usn=${encodeURIComponent(nickname)}`, {
                   signal: AbortSignal.timeout(10000),
                   headers: CF_HEADERS,
-                } as any);
+                });
                 const ct = response.headers.get("content-type") || "";
                 if (!ct.includes("json")) continue;
                 const json = await response.json() as any;

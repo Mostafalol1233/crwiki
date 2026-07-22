@@ -8,6 +8,64 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider, useLanguage } from "@/components/LanguageProvider";
 import DataSeeder from "@/components/DataSeeder";
+
+// ── Chunk-load error boundary ─────────────────────────────────────────────────
+// After a new deployment, hashed JS chunk filenames change. Old cached HTML pages
+// try to load non-existent chunks and crash. This catches those specific errors
+// and does a single hard-reload to pick up the fresh index.html.
+class ChunkErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(err: Error) {
+    const msg = err?.message || "";
+    const isChunkError =
+      msg.includes("Failed to fetch dynamically imported module") ||
+      msg.includes("Loading chunk") ||
+      msg.includes("Importing a module script failed") ||
+      msg.includes("error loading dynamically imported module");
+    if (isChunkError) return { hasError: true };
+    return null; // let other errors bubble up
+  }
+
+  componentDidCatch(err: Error) {
+    const msg = err?.message || "";
+    const isChunkError =
+      msg.includes("Failed to fetch dynamically imported module") ||
+      msg.includes("Loading chunk") ||
+      msg.includes("Importing a module script failed") ||
+      msg.includes("error loading dynamically imported module");
+    if (!isChunkError) return;
+
+    const key = "__cf_chunk_reload";
+    // Only reload once per session to avoid infinite loop
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      window.location.reload();
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: "100vh", background: "#09090b", color: "#fafafa",
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", gap: 16, fontFamily: "Inter, sans-serif",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Updating to the latest version…</div>
+          <div style={{ fontSize: 13, color: "#71717a" }}>The page will reload automatically.</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import Home from "@/pages/Home";
@@ -128,12 +186,12 @@ function Router() {
       <Route path="/forum/:categorySlug" component={(p: any) => <ForumCategory params={p.params} />} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
-      <Route path="/admin/login" component={() => <Suspense fallback={<PageSpinner />}><AdminLogin /></Suspense>} />
-      <Route path="/admin/announcements-manage" component={() => <Suspense fallback={<PageSpinner />}><AdminAnnouncements /></Suspense>} />
-      <Route path="/admin/media-upload" component={() => <Suspense fallback={<PageSpinner />}><MediaUpload /></Suspense>} />
-      <Route path="/admin/seo-bulk" component={() => <Suspense fallback={<PageSpinner />}><BulkSEO /></Suspense>} />
-      <Route path="/admin" component={() => <Suspense fallback={<PageSpinner />}><Admin /></Suspense>} />
-      <Route path="/admin/:rest*" component={() => <Suspense fallback={<PageSpinner />}><Admin /></Suspense>} />
+      <Route path="/admin/login" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><AdminLogin /></Suspense></ChunkErrorBoundary>} />
+      <Route path="/admin/announcements-manage" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><AdminAnnouncements /></Suspense></ChunkErrorBoundary>} />
+      <Route path="/admin/media-upload" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><MediaUpload /></Suspense></ChunkErrorBoundary>} />
+      <Route path="/admin/seo-bulk" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><BulkSEO /></Suspense></ChunkErrorBoundary>} />
+      <Route path="/admin" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><Admin /></Suspense></ChunkErrorBoundary>} />
+      <Route path="/admin/:rest*" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><Admin /></Suspense></ChunkErrorBoundary>} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/chat" component={Chat} />

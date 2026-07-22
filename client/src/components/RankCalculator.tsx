@@ -331,6 +331,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const [lookupInput, setLookupInput] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
+  const [suggestNickname, setSuggestNickname] = useState(false);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
 
   /* ── Manual mode ── */
@@ -426,16 +427,25 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
     if (!input) { setLookupError("Enter your nickname or profile URL."); return; }
     setLookupLoading(true);
     setLookupError("");
+    setSuggestNickname(false);
     setProfile(null);
     setCurrentRankId("");
     setDestinationRankId("");
     setTips([]);
     try {
-      const isUrl = input.startsWith("http");
+      const isUrl = input.startsWith("http") || input.includes("z8games.com");
       const qs = isUrl ? `profileUrl=${encodeURIComponent(input)}` : `nickname=${encodeURIComponent(input)}`;
       const res = await fetch(`/api/player/lookup?${qs}`);
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Player not found. Check the nickname spelling.");
+      if (!res.ok || !data.success) {
+        if (data.suggestNickname) {
+          setSuggestNickname(true);
+          setLookupError(data.error || "Could not load via URL. Enter your in-game nickname directly.");
+        } else {
+          throw new Error(data.error || "Player not found. Check the nickname spelling.");
+        }
+        return;
+      }
       const p = data.profile;
       setProfile({
         nickname: p.nickname || input,
@@ -536,9 +546,28 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                   {lookupLoading ? "Looking up…" : "Look Up"}
                 </button>
               </div>
-              {lookupError && (
+              {lookupError && !suggestNickname && (
                 <div className="flex items-center gap-2 mt-2 text-[11px]" style={{ color: "#ef4444" }}>
                   <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /> {lookupError}
+                </div>
+              )}
+              {suggestNickname && (
+                <div className="mt-2 rounded p-2.5" style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)" }}>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: "#f5a623" }} />
+                    <div className="flex-1">
+                      <p className="text-[11px] font-bold" style={{ color: "#f5a623" }}>Profile URL couldn't be loaded directly</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "#888" }}>
+                        The CrossFire servers don't allow ID lookups. Type your <strong style={{ color: "#ccc" }}>in-game nickname</strong> (the exact name shown when you log in) and click Look Up again.
+                      </p>
+                      <button
+                        onClick={() => { setLookupInput(""); setSuggestNickname(false); setLookupError(""); }}
+                        className="mt-1.5 text-[10px] font-black uppercase tracking-wide px-2 py-1 rounded"
+                        style={{ background: "rgba(245,166,35,0.15)", color: "#f5a623", border: "1px solid rgba(245,166,35,0.3)" }}>
+                        Clear & enter nickname
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </>

@@ -823,54 +823,77 @@ function cfPlayerLookupPlugin(): Plugin {
               }
             }
 
-            // Step 2 — Firecrawl renders the full JS SPA; parse ALL stats from the markdown directly
+            // Step 2 — Firecrawl renders the full JS SPA (waitFor lets React/Vue hydrate)
             if (!data) {
               const fcKey = process.env.FIRECRAWL_API_KEY || "";
+              console.log("[FC-CHECK] key exists:", !!fcKey, "len:", fcKey.length, "profileId:", profileId);
+              let resolvedNickname: string | null = null;
               let fcProfile: any = null;
 
               if (fcKey) {
                 try {
-                  const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                  const fcRes = await (fetch as any)("https://api.firecrawl.dev/v1/scrape", {
                     method: "POST",
-                    signal: AbortSignal.timeout(30000),
+                    signal: AbortSignal.timeout(45000),
                     headers: {
                       "Authorization": `Bearer ${fcKey}`,
                       "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                       url: `https://crossfire.z8games.com/profile/${profileId}`,
-                      formats: ["markdown"],
-                      onlyMainContent: true,
+                      formats: ["markdown", "html"],
+                      waitFor: 6000,          // ← wait for JS SPA to render
+                      onlyMainContent: false, // ← full page needed for title/og tags
                     }),
-                  } as any);
+                  });
 
+                  console.log("[FC] status:", fcRes.status, fcRes.ok);
                   if (fcRes.ok) {
                     const fcData = await fcRes.json() as any;
-                    const md: string = fcData?.data?.markdown || fcData?.markdown || "";
+                    const md: string   = fcData?.data?.markdown || fcData?.markdown || "";
+                    const html: string = fcData?.data?.html     || fcData?.html     || "";
+                    console.log("[FC] md.length:", md.length, "html.length:", html.length, "success:", fcData?.success);
+                    if (md) console.log("[FC] md[:400]:", md.slice(0, 400));
+                    if (html) {
+                      const t = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+                      const og = html.match(/property="og:title"[^>]+content="([^"]+)"/i)?.[1];
+                      console.log("[FC] title:", t, "og:title:", og);
+                    }
+                    if (!fcData?.success) console.log("[FC] error:", fcData?.error);
 
-                    if (md && md.length > 200) {
-                      // ── Nickname: "# [riggedgame](https://crossfire.z8games.com/profile/...)" ──
-                      const nickname = md.match(/^#\s+\[([^\]]+)\]/m)?.[1]?.trim() || null;
+                    // ── Try 1: markdown heading  "# [NickName](url)" ──────────────
+                    resolvedNickname = md.match(/^#\s+\[([^\]]+)\]/m)?.[1]?.trim() || null;
 
-                      // ── Rank + EXP: "## ![](…/rank_105.jpg)  Grand Marshal144018922 EXP" ──
-                      // Target specifically the ## line that has a rank_N.jpg image URL
-                      const rankLine = (
-                        md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || ""
-                      );
-                      // rankLine example: "Grand Marshal144018922 EXP"
-                      const expStr = rankLine.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
-                      const exp = expStr ? parseInt(expStr, 10) : null;
+                    // ── Try 2: og:title / <title> in HTML  ────────────────────────
+                    if (!resolvedNickname && html) {
+                      const ogTitle  = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1]
+                                    || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i)?.[1];
+                      const pgTitle  = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+                      const raw = ogTitle || pgTitle || "";
+                      // CF titles: "PlayerName - CrossFire", "PlayerName's Profile – CrossFire", etc.
+                      const cleaned = raw.replace(/\s*[-–|]\s*(crossfire|z8games)[^$]*/i, "")
+                                         .replace(/'s\s+profile$/i, "").trim();
+                      if (cleaned && cleaned.length >= 2 && cleaned.length <= 32) resolvedNickname = cleaned;
+                    }
+
+                    // ── Try 3: markdown plain heading "# NickName" ────────────────
+                    if (!resolvedNickname) {
+                      resolvedNickname = md.match(/^#\s+([^\[\n]+)/m)?.[1]?.trim() || null;
+                    }
+
+                    if (resolvedNickname && md.length > 200) {
+                      // ── Rank + EXP line ──────────────────────────────────────────
+                      const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
+                      const expStr   = rankLine.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
+                      const exp      = expStr ? parseInt(expStr, 10) : null;
                       const rankName = rankLine.replace(/\d[\d,]*\s*EXP.*/, "").trim() || null;
 
-                      // ── Rank tier from image URL: "rank_105.jpg" ──
-                      const rankTierMatch = md.match(/\/rank_(\d+)\.jpg/);
-                      const rankTier = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+                      const rankTierMatch = md.match(/\/rank_(\d+)\.(?:jpg|png|webp)/i);
+                      const rankTier      = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
 
-                      // ── Clan: second ## heading (clan name follows clan-mark images) ──
                       const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
                       const clan = clanHeadings[0]?.[1]?.trim() || null;
 
-                      // ── Stats helpers ──
                       const statNum = (label: string) => {
                         const m = md.match(new RegExp(`#####\\s+${label}\\s*\\n+###\\s+([\\d,]+)`, "i"));
                         return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
@@ -880,66 +903,84 @@ function cfPlayerLookupPlugin(): Plugin {
                         return m ? parseFloat(m[1]) : null;
                       };
 
-                      const kills   = statNum("Kills");
-                      const deaths  = statNum("Deaths");
-                      const wins    = statNum("Wins");
-                      const losses  = statNum("Losses");
-                      const kdRatio = inlineNum("Kill-Death Ratio");
+                      const kills      = statNum("Kills");
+                      const deaths     = statNum("Deaths");
+                      const wins       = statNum("Wins");
+                      const losses     = statNum("Losses");
+                      const kdRatio    = inlineNum("Kill-Death Ratio");
                       const winRatePct = md.match(/Winner Rate\s*\n+([\d.]+)%/i)?.[1] || null;
-                      const hsRate  = md.match(/Headshot Rate[\s\S]{0,200}?([\d.]+)%/i)?.[1] || null;
+                      const hsRate     = md.match(/Headshot Rate[\s\S]{0,200}?([\d.]+)%/i)?.[1] || null;
 
-                      // ── VIP: look for "VIP3", "VIP Level 3", "VIP 30 days" patterns ──
-                      const vipLevelMatch = md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i);
-                      const vipLevel = vipLevelMatch ? parseInt(vipLevelMatch[1], 10) : null;
-                      const vipDaysMatch = md.match(/VIP[^\n]*?(\d+)\s*day/i);
-                      const vipDays = vipDaysMatch ? parseInt(vipDaysMatch[1], 10) : null;
+                      const vipLevel = parseInt(md.match(/\bVIP\s*(?:Level\s*)?(\d+)/i)?.[1] || "0", 10) || null;
+                      const vipDays  = parseInt(md.match(/VIP[^\n]*?(\d+)\s*day/i)?.[1]   || "0", 10) || null;
 
-                      // ── Clan image: look for clan-mark image URL ──
-                      // CF clan marks appear as small images near clan name
-                      const clanImgMatch = md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*clan[^)]*)\)/i)
-                        || md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*mark[^)]*)\)/i);
-                      const clanImage = clanImgMatch ? clanImgMatch[1] : null;
+                      const clanImgMatch = md.match(/!\[[^\]]*\]\((https?:\/\/[^)]*(?:clan|mark)[^)]*)\)/i);
+                      const clanImage    = clanImgMatch ? clanImgMatch[1] : null;
 
-                      if (nickname) {
-                        fcProfile = {
-                          nickname,
-                          region: regionLabel,
-                          exp,
-                          rank: rankName,
-                          rankTier,
-                          rankImage: rankTier ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg` : null,
-                          kills,
-                          deaths,
-                          wins,
-                          losses,
-                          kdRatio: kdRatio ?? (kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null),
-                          winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
-                          headShotRate: hsRate ? parseFloat(hsRate) : null,
-                          clan,
-                          clanImage,
-                          vipDays,
-                          vipLevel,
-                          playtime: null,
-                          level: null,
-                        };
-                      }
+                      fcProfile = {
+                        nickname: resolvedNickname,
+                        region: regionLabel,
+                        exp,
+                        rank: rankName,
+                        rankTier,
+                        rankImage: rankTier ? `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_${rankTier}.jpg` : null,
+                        kills,
+                        deaths,
+                        wins,
+                        losses,
+                        kdRatio: kdRatio ?? (kills !== null && deaths !== null && deaths > 0 ? parseFloat((kills / deaths).toFixed(2)) : null),
+                        winRate: winRatePct ? parseFloat(winRatePct) : (wins !== null && losses !== null && (wins + losses) > 0 ? parseFloat(((wins / (wins + losses)) * 100).toFixed(1)) : null),
+                        headShotRate: hsRate ? parseFloat(hsRate) : null,
+                        clan,
+                        clanImage,
+                        vipDays,
+                        vipLevel,
+                        playtime: null,
+                        level: null,
+                      };
                     }
                   }
                 } catch { /* Firecrawl timeout or network error */ }
               }
 
+              // ── Step 2b: if Firecrawl only gave us the nickname (page wasn't fully
+              //    rendered), retry via the REST nickname endpoint to get full stats ──
+              if (!fcProfile && resolvedNickname) {
+                try {
+                  for (const base of restBases) {
+                    const r = await (fetch as any)(`${base}/userprofile.json?usn=${encodeURIComponent(resolvedNickname)}`, {
+                      signal: AbortSignal.timeout(8000),
+                      headers: CF_HEADERS,
+                    });
+                    const ct = r.headers.get("content-type") || "";
+                    if (!ct.includes("json")) continue;
+                    const j = await r.json() as any;
+                    if (j.p_o_ErrID === -702) break;
+                    if (j.UserNickname || j.TotalExp != null) { data = j; break; }
+                  }
+                } catch { /* ignore */ }
+
+                if (!data) {
+                  // Firecrawl gave us the nickname but REST has no stats — return nickname-only profile
+                  fcProfile = { nickname: resolvedNickname, region: regionLabel, exp: null, rank: null, rankTier: null, rankImage: null, kills: null, deaths: null, wins: null, losses: null, kdRatio: null, winRate: null, headShotRate: null, clan: null, clanImage: null, vipDays: null, vipLevel: null, playtime: null, level: null };
+                }
+              }
+
               if (fcProfile) {
-                // Return Firecrawl-parsed profile directly — no second REST call needed
                 res.writeHead(200, { "Content-Type": "application/json" });
                 return res.end(JSON.stringify({ success: true, profile: fcProfile }));
               }
 
-              res.writeHead(404, { "Content-Type": "application/json" });
-              return res.end(JSON.stringify({
-                error: `Could not load profile #${profileId}. Please enter your in-game nickname directly (the exact name shown in-game).`,
-                notFound: true,
-                suggestNickname: true,
-              }));
+              // data was set by Step 2b REST retry — fall through to profile mapping below
+              if (!data) {
+                res.writeHead(404, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({
+                  error: `Profile #${profileId} could not be loaded from the CrossFire servers. Enter your in-game nickname directly instead.`,
+                  notFound: true,
+                  suggestNickname: true,
+                  profileId,
+                }));
+              }
             }
           }
 

@@ -3,14 +3,12 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/client",
   "functions": {
-    "api/ai/chat.ts":                        { "maxDuration": 60 },
-    "api/scrape/forum-list.ts":              { "maxDuration": 30 },
-    "api/scrape/forum-thread.ts":            { "maxDuration": 30 },
-    "api/scrape/single-url.ts":              { "maxDuration": 30 },
-    "api/admin/rescrape-item.ts":            { "maxDuration": 30 },
-    "api/admin/rebuild-mercenary-posts.ts":  { "maxDuration": 60 },
-    "api/admin/rebuild-wiki-posts.ts":       { "maxDuration": 60 },
-    "api/player/lookup.ts":                  { "maxDuration": 45 }
+    "api/ai/chat.ts":           { "maxDuration": 60 },
+    "api/admin/rebuild.ts":     { "maxDuration": 60 },
+    "api/scrape/forum-list.ts": { "maxDuration": 30 },
+    "api/scrape/forum-thread.ts": { "maxDuration": 30 },
+    "api/scrape/single-url.ts": { "maxDuration": 30 },
+    "api/player/lookup.ts":     { "maxDuration": 45 }
   },
 
   "headers": [

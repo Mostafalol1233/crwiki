@@ -70,7 +70,7 @@ export default function WikiRescraper() {
     if (!confirm("هيحذف كل المقالات الموجودة وينشئ مقالات جديدة عن الخرائط والشخصيات والأحداث من فاندوم ويكي — متأكد؟")) return;
     setIsRebuildingWiki(true);
     try {
-      const result = await apiRequest("/api/admin/rebuild-wiki-posts", "POST", {});
+      const result = await apiRequest("/api/admin/rebuild", "POST", { action: "rebuild-wiki-posts" });
       toast({
         title: "تم بناء مقالات الويكي",
         description: `حذف ${result.deletedCount} مقال قديم — أنشأ ${result.created} جديد — فشل ${result.failed}`,
@@ -87,7 +87,7 @@ export default function WikiRescraper() {
     if (!confirm("هيحذف كل المقالات الموجودة وينشئ مقالات جديدة عن المرتزقة من فاندوم ويكي — متأكد؟")) return;
     setIsRebuildingMercs(true);
     try {
-      const result = await apiRequest("/api/admin/rebuild-mercenary-posts", "POST", {});
+      const result = await apiRequest("/api/admin/rebuild", "POST", { action: "rebuild-mercenary-posts" });
       toast({
         title: "تم بناء مقالات المرتزقة",
         description: `حذف ${result.deletedCount} مقال قديم — أنشأ ${result.created} جديد — فشل ${result.failed}`,
@@ -142,7 +142,7 @@ export default function WikiRescraper() {
     }
     setRescraping(prev => ({ ...prev, [id]: true }));
     try {
-      const result = await apiRequest("/api/admin/rescrape-item", "POST", { type: tab, id, url });
+      const result = await apiRequest("/api/admin/rebuild", "POST", { action: "rescrape-item", type: tab, id, url });
       if (result.success) {
         setDone(prev => ({ ...prev, [id]: true }));
         setItems(prev => prev.map(i => (i._id === id || i.id === id)

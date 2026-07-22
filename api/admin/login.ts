@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+const CORS = new Map([
+  ["Access-Control-Allow-Origin", "*"],
+  ["Access-Control-Allow-Methods", "POST, OPTIONS"],
+  ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
+]);
 
 function makeToken(payload: object): string {
   return Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 86_400_000 * 7 })).toString("base64");

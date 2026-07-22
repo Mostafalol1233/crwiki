@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+const CORS = new Map([
+  ["Access-Control-Allow-Origin", "*"],
+  ["Access-Control-Allow-Methods", "GET, OPTIONS"],
+  ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
+]);
 
 const CF_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",

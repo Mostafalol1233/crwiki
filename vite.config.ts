@@ -624,6 +624,56 @@ function cfScrapePlugin(): Plugin {
         }
       });
 
+      // POST /api/admin/scraper — re-scrapes a content item by source_url (called by WikiRescraper)
+      server.middlewares.use("/api/admin/scraper", async (req: any, res: any) => {
+        if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        try {
+          const { url, type } = await readBody(req);
+          if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
+
+          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+
+          const scraped = await scrapePage(url);
+          const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+          const seoTitle = (scraped.title || "").slice(0, 60);
+          const seoDesc = (scraped.summary || "").slice(0, 160);
+
+          const contentType: string = ["news", "events", "posts"].includes(type) ? type : "posts";
+          const table = contentType === "events" ? "events" : contentType === "news" ? "news" : "posts";
+          let updateBody: any = { seo_title: seoTitle, seo_description: seoDesc };
+          if (scraped.image) updateBody.image_url = scraped.image;
+          if (contentType === "events") {
+            updateBody.description = scraped.content;
+          } else if (contentType === "news") {
+            updateBody.content = scraped.content;
+            updateBody.html_content = scraped.content;
+          } else {
+            updateBody.content = scraped.content;
+          }
+
+          const { fetch: undFetch } = await import("undici");
+          const sbHeaders = {
+            "Content-Type": "application/json",
+            "apikey": SERVICE_KEY,
+            "Authorization": `Bearer ${SERVICE_KEY}`,
+            "Prefer": "return=minimal",
+          };
+          const upRes = await (undFetch as any)(
+            `${SUPABASE_URL}/rest/v1/${table}?source_url=eq.${encodeURIComponent(url)}`,
+            { method: "PATCH", headers: sbHeaders, body: JSON.stringify(updateBody) }
+          );
+          if (!upRes.ok) {
+            const txt = await upRes.text();
+            throw new Error(`Supabase update failed: ${txt}`);
+          }
+          json(res, 200, { success: true, scraped: { title: scraped.title, image: scraped.image, contentLength: plain.length } });
+        } catch (e: any) {
+          json(res, 500, { error: e.message || "Scrape failed" });
+        }
+      });
+
       // POST /api/admin/rescrape-item
       server.middlewares.use("/api/admin/rescrape-item", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });

@@ -25,9 +25,9 @@ export default function PortalsManager() {
       try {
         const { data } = await client
           .from('site_settings')
-          .select('portal_img_weapons, portal_img_maps, portal_img_mercenaries, portal_img_modes, portal_img_ranks, portal_img_events')
+          .select('*')
           .limit(1)
-          .single();
+          .maybeSingle();
         const map: Record<string, string> = {};
         if (data) {
           for (const [k, v] of Object.entries(data)) {
@@ -50,7 +50,7 @@ export default function PortalsManager() {
     if (!client) { toast.error('No admin client'); return; }
     setSaving(true);
     try {
-      const { data: existing } = await client.from('site_settings').select('id').limit(1).single();
+      const { data: existing } = await client.from('site_settings').select('id').limit(1).maybeSingle();
       if (!existing?.id) { toast.error('Site settings row not found'); return; }
       const { error } = await client
         .from('site_settings')

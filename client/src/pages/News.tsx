@@ -317,8 +317,8 @@ export default function News() {
   return (
     <>
       <PageSEO
-        title="CrossFire News & Updates — Latest Events, Patches & Community | CrossFire Wiki"
-        description="Latest CrossFire news, patch notes, esports events, community posts and game updates. Stay up-to-date with everything happening in CrossFire Z8Games."
+        title="CrossFire Events & News — Tournaments, Patches & Community | CrossFire Wiki"
+        description="Latest CrossFire esports events, patch notes, news, community posts and game updates. Stay up-to-date with everything happening in CrossFire Z8Games."
         image="https://z8games.akamaized.net/cfna/web/main/carousel/CFNA_NewsUpdate_Carousel.jpg"
         canonicalPath="/news"
       />
@@ -339,14 +339,14 @@ export default function News() {
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
               <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
               <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
-              <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>News & Updates</span>
+              <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>Events & News</span>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
-                <p style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 4px" }}>Latest Updates</p>
+                <p style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 4px" }}>Events & Community</p>
                 <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.03em", color: "var(--foreground)", margin: 0 }}>
-                  News & Updates
+                  Events & News
                 </h1>
               </div>
               <button

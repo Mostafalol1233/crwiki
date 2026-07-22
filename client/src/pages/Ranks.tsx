@@ -25,16 +25,28 @@ interface Rank {
 
 const Z8 = "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_";
 
-// EXP formula calibrated so tier 79 (Brigadier General 4) ≈ 27,000,000
-// matching real player data. Grand Marshal (tier 104) ≈ 53,700,000.
-const CF_EXP: Record<number, number> = (() => {
-  const m: Record<number, number> = {};
-  for (let t = 1; t <= 104; t++) {
-    m[t] = t === 1 ? 0 : Math.round((487 * Math.pow(t, 2.5)) / 1000) * 1000;
-  }
-  return m;
-})();
+// Real EXP values scraped from https://crossfire.z8games.com/ranks.html (2026-07-22)
+const CF_EXP: Record<number, number> = {
+  1: 0, 2: 457, 3: 913, 4: 1825, 5: 3193,
+  6: 5017, 7: 7297, 8: 10033, 9: 13225,
+  10: 17785, 11: 23941, 12: 33061, 13: 43093, 14: 54037, 15: 65893,
+  16: 78661, 17: 92341, 18: 106933, 19: 122437, 20: 138853, 21: 156181,
+  22: 174421, 23: 193573, 24: 213637, 25: 234613, 26: 256501, 27: 279301,
+  28: 326725, 29: 375973, 30: 427045, 31: 479941, 32: 534661, 33: 591205, 34: 649573, 35: 709765,
+  36: 771781, 37: 835621, 38: 901285, 39: 968773, 40: 1038085, 41: 1109221, 42: 1182181, 43: 1256965,
+  44: 1333573, 45: 1412005, 46: 1492261, 47: 1574341, 48: 1658245, 49: 1743973, 50: 1831525, 51: 1920901,
+  52: 2057701, 53: 2107237, 54: 2339509, 55: 2484517, 56: 2632261, 57: 2782741, 58: 2935957, 59: 3091909,
+  60: 3277045, 61: 3465373, 62: 3673537, 63: 3885178, 64: 4100296, 65: 4318891, 66: 4540963, 67: 4766512,
+  68: 5028199, 69: 5319184, 70: 5614501, 71: 5914150, 72: 6218131, 73: 6526501, 74: 6839203, 75: 7156237,
+  76: 7578037, 77: 8026912, 78: 8481772, 79: 8964562, 80: 9475852, 81: 10016212,
+  82: 10586212, 83: 11186422, 84: 11817412, 85: 12479752, 86: 13174012, 87: 13900762,
+  88: 14660572, 89: 15454012, 90: 16281652, 91: 17144062, 92: 18041812, 93: 18975472,
+  94: 19945612, 95: 20952802, 96: 21997612, 97: 23080612, 98: 24202372, 99: 25363462,
+  100: 26564452,
+  104: 100000000,
+};
 
+// Real bonus data from https://crossfire.z8games.com/ranks.html
 const RANK_BONUSES: Record<number, string> = {
   2: "Smile Grenade 7 days", 3: "Boost Box 3 days", 4: "Starter Weapon Box 3 days",
   5: "Pottery Boost Box 7 days", 6: "Camo Box 7 days", 9: "30,000 GP",
@@ -56,7 +68,7 @@ const RANK_BONUSES: Record<number, string> = {
   104: "30 Free Crate Tickets",
 };
 
-// Generate complete 104-tier rank list
+// Real rank list from https://crossfire.z8games.com/ranks.html — 101 ranks total
 function buildFullRankList(): Rank[] {
   const entries: Array<{ tier: number; name: string }> = [
     { tier: 1, name: "Trainee 1" }, { tier: 2, name: "Trainee 2" },
@@ -74,7 +86,8 @@ function buildFullRankList(): Rank[] {
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 76 + i, name: `Brigadier General ${i + 1}` })),
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 82 + i, name: `Major General ${i + 1}` })),
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 88 + i, name: `Lieutenant General ${i + 1}` })),
-    ...Array.from({ length: 10 }, (_, i) => ({ tier: 94 + i, name: `General ${i + 1}` })),
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 94 + i, name: `General ${i + 1}` })),
+    { tier: 100, name: "Marshall" },
     { tier: 104, name: "Grand Marshall" },
   ];
   return entries.map(e => ({

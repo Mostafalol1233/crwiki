@@ -1,12 +1,17 @@
 ---
-name: Rank Calculator — complete 104-tier system
-description: All details of the rank calculator implementation and EXP threshold formula.
+name: Rank Calculator — real rank data from Z8Games
+description: All details of the rank system — real EXP values scraped from z8games.com, tier layout, and image URLs.
 ---
 
-## EXP formula
-`EXP(tier) = round(487 * tier^2.5, 1000)` — calibrated so tier 79 (Brigadier General 4) ≈ 27,000,000, matching real player data. Tier 1 = 0 EXP.
+## Data source
+Real EXP values scraped from https://crossfire.z8games.com/ranks.html on 2026-07-22.
+The old polynomial formula (`487 * tier^2.5`) was WRONG — replaced with a hardcoded lookup table in both `Ranks.tsx` and `RankCalculator.tsx`.
 
-## Tier layout (104 total)
+## Rank count: 101 (not 104)
+The real site has 101 ranks: tiers 1–100 plus tier 104 (Grand Marshall).
+Tiers 101–103 do not exist on the official site.
+
+## Tier layout (real, from z8games)
 | Tiers | Rank group |
 |-------|-----------|
 | 1-2 | Trainee |
@@ -21,18 +26,23 @@ description: All details of the rank calculator implementation and EXP threshold
 | 52-59 | Major 1-8 |
 | 60-67 | Lieutenant Colonel 1-8 |
 | 68-75 | Colonel 1-8 |
-| 76-81 | Brigadier General 1-6 (confirmed BG4=79, BG6=81) |
-| 82-87 | Major General 1-6 (confirmed MG2=83, MG5=86, MG6=87) |
-| 88-93 | Lieutenant General 1-6 (confirmed LTG3=90, LTG6=93) |
-| 94-103 | General 1-10 (confirmed Gen2=95, Gen4=97, Gen6=99) |
+| 76-81 | Brigadier General 1-6 |
+| 82-87 | Major General 1-6 |
+| 88-93 | Lieutenant General 1-6 |
+| 94-99 | General 1-6 (NOT 1-10 — old code was wrong) |
+| 100 | Marshall (new rank — did not exist in old code) |
 | 104 | Grand Marshall |
+
+## Key EXP values (real)
+- Tier 2: 457 EXP | Tier 9: 13,225 | Tier 27: 279,301 | Tier 79: 8,964,562 | Tier 100: 26,564,452 | Tier 104: 100,000,000
 
 ## Image URL
 `https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_{tier}.jpg`
 
-## Dark mode fix
-- Site default was "light" — ThemeProvider now defaults to "dark" and migrates old "light" localStorage.
-- `<html class="dark">` in index.html for before-JS-runs coverage.
-- ThemeProvider clears stale "light" preference on init.
+## Supabase SQL
+Full upsert SQL at `supabase/seed-ranks-real.sql` — run in Supabase SQL editor to sync DB.
+The SUPABASE_SERVICE_KEY secret is not injected into ShellExec so the seeding script must be run manually or via the Supabase dashboard.
 
-**Why:** Site is dark-only wiki; many Tailwind classes (bg-card, bg-muted, border-border) relied on CSS vars that defaulted to light, causing white EventsRibbon and other broken elements.
+## Dark mode fix
+- ThemeProvider defaults to "dark", clears stale "light" localStorage.
+- `<html class="dark">` in index.html for before-JS-runs coverage.

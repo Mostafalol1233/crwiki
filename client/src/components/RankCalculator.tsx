@@ -33,7 +33,7 @@ interface RankCalculatorProps {
 /* ─── Complete 104-tier CF rank list ────────────────────────────────────────── */
 const Z8 = "https://z8games.akamaized.net/cfna/templates/assets/imgs/rank_";
 
-// Build the full 104-tier name+image list
+// Real rank list from https://crossfire.z8games.com/ranks.html (2026-07-22)
 function buildCFRankList(): Rank[] {
   const entries: Array<{ tier: number; name: string }> = [
     { tier: 1, name: "Trainee 1" },
@@ -61,14 +61,15 @@ function buildCFRankList(): Rank[] {
     ...Array.from({ length: 8 }, (_, i) => ({ tier: 60 + i, name: `Lieutenant Colonel ${i + 1}` })),
     // Colonel 1-8: tiers 68-75
     ...Array.from({ length: 8 }, (_, i) => ({ tier: 68 + i, name: `Colonel ${i + 1}` })),
-    // Brigadier General 1-6: tiers 76-81  (BG4=79, BG6=81 confirmed)
+    // Brigadier General 1-6: tiers 76-81
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 76 + i, name: `Brigadier General ${i + 1}` })),
-    // Major General 1-6: tiers 82-87  (MG2=83, MG5=86, MG6=87 confirmed)
+    // Major General 1-6: tiers 82-87
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 82 + i, name: `Major General ${i + 1}` })),
-    // Lieutenant General 1-6: tiers 88-93  (LTG3=90, LTG6=93 confirmed)
+    // Lieutenant General 1-6: tiers 88-93
     ...Array.from({ length: 6 }, (_, i) => ({ tier: 88 + i, name: `Lieutenant General ${i + 1}` })),
-    // General 1-10: tiers 94-103  (Gen2=95, Gen4=97, Gen6=99 confirmed)
-    ...Array.from({ length: 10 }, (_, i) => ({ tier: 94 + i, name: `General ${i + 1}` })),
+    // General 1-6: tiers 94-99
+    ...Array.from({ length: 6 }, (_, i) => ({ tier: 94 + i, name: `General ${i + 1}` })),
+    { tier: 100, name: "Marshall" },
     { tier: 104, name: "Grand Marshall" },
   ];
 
@@ -82,18 +83,27 @@ function buildCFRankList(): Rank[] {
 
 const CF_ALL_RANKS = buildCFRankList(); // 104 ranks
 
-/* ─── EXP threshold map (tier → cumulative EXP) ─────────────────────────────
-   These are fallback estimates only — used when the Supabase ranks table has
-   no exp_required value for a tier. The DB values (which match the Z8Games
-   profile page) are always preferred over these estimates.
+/* ─── Real EXP thresholds from https://crossfire.z8games.com/ranks.html ──────
+   Scraped 2026-07-22. DB values always preferred; this is the static fallback.
 */
-const CF_EXP_THRESHOLDS: Record<number, number> = (() => {
-  const m: Record<number, number> = {};
-  for (let t = 1; t <= 104; t++) {
-    m[t] = t === 1 ? 0 : Math.round((487 * Math.pow(t, 2.5)) / 1000) * 1000;
-  }
-  return m;
-})();
+const CF_EXP_THRESHOLDS: Record<number, number> = {
+  1: 0, 2: 457, 3: 913, 4: 1825, 5: 3193,
+  6: 5017, 7: 7297, 8: 10033, 9: 13225,
+  10: 17785, 11: 23941, 12: 33061, 13: 43093, 14: 54037, 15: 65893,
+  16: 78661, 17: 92341, 18: 106933, 19: 122437, 20: 138853, 21: 156181,
+  22: 174421, 23: 193573, 24: 213637, 25: 234613, 26: 256501, 27: 279301,
+  28: 326725, 29: 375973, 30: 427045, 31: 479941, 32: 534661, 33: 591205, 34: 649573, 35: 709765,
+  36: 771781, 37: 835621, 38: 901285, 39: 968773, 40: 1038085, 41: 1109221, 42: 1182181, 43: 1256965,
+  44: 1333573, 45: 1412005, 46: 1492261, 47: 1574341, 48: 1658245, 49: 1743973, 50: 1831525, 51: 1920901,
+  52: 2057701, 53: 2107237, 54: 2339509, 55: 2484517, 56: 2632261, 57: 2782741, 58: 2935957, 59: 3091909,
+  60: 3277045, 61: 3465373, 62: 3673537, 63: 3885178, 64: 4100296, 65: 4318891, 66: 4540963, 67: 4766512,
+  68: 5028199, 69: 5319184, 70: 5614501, 71: 5914150, 72: 6218131, 73: 6526501, 74: 6839203, 75: 7156237,
+  76: 7578037, 77: 8026912, 78: 8481772, 79: 8964562, 80: 9475852, 81: 10016212,
+  82: 10586212, 83: 11186422, 84: 11817412, 85: 12479752, 86: 13174012, 87: 13900762,
+  88: 14660572, 89: 15454012, 90: 16281652, 91: 17144062, 92: 18041812, 93: 18975472,
+  94: 19945612, 95: 20952802, 96: 21997612, 97: 23080612, 98: 24202372, 99: 25363462,
+  100: 26564452, 104: 100000000,
+};
 
 /* ─── Bonus overrides for milestone ranks (from static data) ────────────────── */
 const BONUS_MAP: Record<number, string> = {

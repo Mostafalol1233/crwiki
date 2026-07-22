@@ -83,7 +83,7 @@ export default function DownloadPage() {
 
         {/* ── Hero ── */}
         <div
-          className="relative overflow-hidden py-24 md:py-32 text-center"
+          className="relative overflow-hidden py-14 md:py-20 text-center"
           style={{ background: "linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--background)) 100%)", borderBottom: "1px solid rgba(245,166,35,0.1)" }}
         >
           <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245,166,35,0.05) 0%, transparent 70%)" }} />
@@ -208,7 +208,7 @@ export default function DownloadPage() {
           </section>
 
           {/* ── CTA ── */}
-          <section className="text-center py-12" style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "4px" }}>
+          <section className="relative text-center py-12" style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.15)", borderRadius: "4px" }}>
             <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(to right, transparent, #f5a623, transparent)" }} />
             <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-3" style={{ color: "var(--foreground)" }}>
               {t("readyToJoin") || "Ready to Join the Fight?"}

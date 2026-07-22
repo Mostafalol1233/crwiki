@@ -388,13 +388,14 @@ export async function getTutorials(category?: string) {
 
 // ─── Portal Images ────────────────────────────────────────────────────────────
 // Reads portal_img_* columns from the single-row site_settings table.
+// Uses select('*') so missing columns never cause a 400 error.
 export async function getPortalImages(): Promise<Record<string, string>> {
   try {
     const { data } = await supabase
       .from('site_settings')
-      .select('portal_img_weapons, portal_img_maps, portal_img_mercenaries, portal_img_modes, portal_img_ranks, portal_img_events')
+      .select('*')
       .limit(1)
-      .single();
+      .maybeSingle();
     if (!data) return {};
     const map: Record<string, string> = {};
     for (const [k, v] of Object.entries(data)) {
@@ -483,9 +484,8 @@ export function normalizeSiteSettings(data: any) {
 }
 
 export async function getSiteSettings() {
-  const { data, error } = await supabase.from('site_settings').select('*').limit(1).single();
-  if (error || !data) return normalizeSiteSettings(null);
-  return normalizeSiteSettings(data);
+  const { data } = await supabase.from('site_settings').select('*').limit(1).maybeSingle();
+  return normalizeSiteSettings(data ?? null);
 }
 
 export async function updateSiteSettings(patch: Record<string, any>) {
@@ -497,7 +497,7 @@ export async function updateSiteSettings(patch: Record<string, any>) {
     dbPatch[dbKey] = value;
   }
 
-  const { data: existing } = await supabase.from('site_settings').select('id').limit(1).single();
+  const { data: existing } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
   if (existing?.id) {
     const { data, error } = await supabase.from('site_settings').update(dbPatch).eq('id', existing.id).select().single();
     if (error) throw error;

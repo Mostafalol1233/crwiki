@@ -387,23 +387,19 @@ export async function getTutorials(category?: string) {
 }
 
 // ─── Portal Images ────────────────────────────────────────────────────────────
-const PORTAL_KEYS = [
-  'portal_img_weapons',
-  'portal_img_maps',
-  'portal_img_mercenaries',
-  'portal_img_modes',
-  'portal_img_ranks',
-  'portal_img_events',
-];
-
+// Reads portal_img_* columns from the single-row site_settings table.
 export async function getPortalImages(): Promise<Record<string, string>> {
   try {
     const { data } = await supabase
       .from('site_settings')
-      .select('key, value')
-      .in('key', PORTAL_KEYS);
+      .select('portal_img_weapons, portal_img_maps, portal_img_mercenaries, portal_img_modes, portal_img_ranks, portal_img_events')
+      .limit(1)
+      .single();
+    if (!data) return {};
     const map: Record<string, string> = {};
-    (data || []).forEach((row: any) => { if (row.value) map[row.key] = row.value; });
+    for (const [k, v] of Object.entries(data)) {
+      if (v && typeof v === 'string' && k.startsWith('portal_img_')) map[k] = v;
+    }
     return map;
   } catch {
     return {};
@@ -411,35 +407,105 @@ export async function getPortalImages(): Promise<Record<string, string>> {
 }
 
 // ─── Site Settings ────────────────────────────────────────────────────────────
+// Map camelCase app keys → snake_case DB column names
+const SETTINGS_FIELD_MAP: Record<string, string> = {
+  reviewVerificationEnabled:          'review_verification_enabled',
+  reviewVerificationVideoUrl:         'review_verification_video_url',
+  reviewVerificationPrompt:           'review_verification_prompt',
+  reviewVerificationPassphrase:       'review_verification_passphrase',
+  reviewVerificationTimecode:         'review_verification_timecode',
+  reviewVerificationYouTubeChannelUrl:'review_verification_you_tube_channel_url',
+  announcementsEnabled:               'announcements_enabled',
+  seoTitle:                           'seo_title',
+  seoDescription:                     'seo_description',
+  seoKeywords:                        'seo_keywords',
+  seoOgImageUrl:                      'seo_og_image_url',
+  heroImage:                          'hero_image',
+  robots:                             'robots',
+  featuredWeapons:                    'featured_weapons',
+  featuredEventId:                    'featured_event_id',
+  secondaryEventIds:                  'secondary_event_ids',
+  publicBaseUrl:                      'public_base_url',
+};
+
+export function normalizeSiteSettings(data: any) {
+  if (!data) return {
+    reviewVerificationEnabled: false,
+    reviewVerificationVideoUrl: '',
+    reviewVerificationPrompt: '',
+    reviewVerificationPassphrase: '',
+    reviewVerificationTimecode: '',
+    reviewVerificationYouTubeChannelUrl: '',
+    announcementsEnabled: true,
+    seoTitle: 'CrossFire Wiki',
+    seoDescription: 'Comprehensive CrossFire gaming wiki',
+    seoKeywords: [] as string[],
+    seoOgImageUrl: '',
+    heroImage: '',
+    robots: 'index, follow',
+    featuredWeapons: [] as string[],
+    featuredEventId: '',
+    secondaryEventIds: [] as string[],
+    publicBaseUrl: '',
+    portal_img_weapons: '',
+    portal_img_maps: '',
+    portal_img_mercenaries: '',
+    portal_img_modes: '',
+    portal_img_ranks: '',
+    portal_img_events: '',
+  };
+  return {
+    id: data.id,
+    reviewVerificationEnabled:          data.review_verification_enabled          ?? false,
+    reviewVerificationVideoUrl:         data.review_verification_video_url         || '',
+    reviewVerificationPrompt:           data.review_verification_prompt            || '',
+    reviewVerificationPassphrase:       data.review_verification_passphrase        || '',
+    reviewVerificationTimecode:         data.review_verification_timecode          || '',
+    reviewVerificationYouTubeChannelUrl:data.review_verification_you_tube_channel_url || '',
+    announcementsEnabled:               data.announcements_enabled                 ?? true,
+    seoTitle:                           data.seo_title                             || 'CrossFire Wiki',
+    seoDescription:                     data.seo_description                       || 'Comprehensive CrossFire gaming wiki',
+    seoKeywords:                        data.seo_keywords                          || [],
+    seoOgImageUrl:                      data.seo_og_image_url                      || '',
+    heroImage:                          data.hero_image || data.seo_og_image_url   || '',
+    robots:                             data.robots                                || 'index, follow',
+    featuredWeapons:                    data.featured_weapons                      || [],
+    featuredEventId:                    data.featured_event_id                     || '',
+    secondaryEventIds:                  data.secondary_event_ids                   || [],
+    publicBaseUrl:                      data.public_base_url                       || '',
+    portal_img_weapons:                 data.portal_img_weapons                    || '',
+    portal_img_maps:                    data.portal_img_maps                       || '',
+    portal_img_mercenaries:             data.portal_img_mercenaries                || '',
+    portal_img_modes:                   data.portal_img_modes                      || '',
+    portal_img_ranks:                   data.portal_img_ranks                      || '',
+    portal_img_events:                  data.portal_img_events                     || '',
+  };
+}
+
 export async function getSiteSettings() {
   const { data, error } = await supabase.from('site_settings').select('*').limit(1).single();
-  if (error) {
-    return {
-      reviewVerificationEnabled: false,
-      announcementsEnabled: true,
-      seoTitle: 'CrossFire Wiki',
-      seoDescription: 'Comprehensive CrossFire gaming wiki',
-      seoKeywords: [],
-      featuredWeapons: [] as string[],
-      featuredEventId: '',
-      secondaryEventIds: [] as string[],
-      heroImage: '',
-      robots: 'index, follow',
-    };
-  }
-  return data;
+  if (error || !data) return normalizeSiteSettings(null);
+  return normalizeSiteSettings(data);
 }
 
 export async function updateSiteSettings(patch: Record<string, any>) {
+  // Convert camelCase app keys to snake_case DB column names
+  const dbPatch: Record<string, any> = { updated_at: new Date().toISOString() };
+  for (const [key, value] of Object.entries(patch)) {
+    if (key === 'id' || key === 'updated_at' || key === 'created_at') continue;
+    const dbKey = SETTINGS_FIELD_MAP[key] ?? key; // portal_img_* keys pass through as-is
+    dbPatch[dbKey] = value;
+  }
+
   const { data: existing } = await supabase.from('site_settings').select('id').limit(1).single();
   if (existing?.id) {
-    const { data, error } = await supabase.from('site_settings').update(patch).eq('id', existing.id).select().single();
+    const { data, error } = await supabase.from('site_settings').update(dbPatch).eq('id', existing.id).select().single();
     if (error) throw error;
-    return data;
+    return normalizeSiteSettings(data);
   } else {
-    const { data, error } = await supabase.from('site_settings').insert(patch).select().single();
+    const { data, error } = await supabase.from('site_settings').insert(dbPatch).select().single();
     if (error) throw error;
-    return data;
+    return normalizeSiteSettings(data);
   }
 }
 

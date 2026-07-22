@@ -23,13 +23,17 @@ export default function PortalsManager() {
     if (!client) { setLoading(false); return; }
     (async () => {
       try {
-        const keys = PORTALS.map(p => p.key);
         const { data } = await client
           .from('site_settings')
-          .select('key, value')
-          .in('key', keys);
+          .select('portal_img_weapons, portal_img_maps, portal_img_mercenaries, portal_img_modes, portal_img_ranks, portal_img_events')
+          .limit(1)
+          .single();
         const map: Record<string, string> = {};
-        (data || []).forEach((row: any) => { map[row.key] = row.value; });
+        if (data) {
+          for (const [k, v] of Object.entries(data)) {
+            if (v && typeof v === 'string' && k.startsWith('portal_img_')) map[k] = v;
+          }
+        }
         setImages(map);
       } catch (e) {
         console.error(e);
@@ -46,14 +50,16 @@ export default function PortalsManager() {
     if (!client) { toast.error('No admin client'); return; }
     setSaving(true);
     try {
-      for (const [key, value] of Object.entries(images)) {
-        await client
-          .from('site_settings')
-          .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-      }
+      const { data: existing } = await client.from('site_settings').select('id').limit(1).single();
+      if (!existing?.id) { toast.error('Site settings row not found'); return; }
+      const { error } = await client
+        .from('site_settings')
+        .update({ ...images, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+      if (error) throw error;
       toast.success('Portal images saved — live on homepage!');
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e.message || 'Failed to save portal images');
     } finally {
       setSaving(false);
     }

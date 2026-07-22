@@ -30,6 +30,7 @@ const FAQManager = lazy(() => import('./FAQManager'));
 const SiteSettings = lazy(() => import('./SiteSettings'));
 const HighlightsManager = lazy(() => import('./HighlightsManager'));
 const PortalsManager = lazy(() => import('./PortalsManager'));
+const HardcodedConfig = lazy(() => import('./HardcodedConfig'));
 
 function Loading() {
   return (
@@ -72,6 +73,7 @@ function SectionContent({ section }: { section: string }) {
     case 'site-settings': return <SiteSettings />;
     case 'highlights': return <HighlightsManager />;
     case 'portals': return <PortalsManager />;
+    case 'hardcoded-config': return <HardcodedConfig />;
     default: return <Dashboard />;
   }
 }

@@ -6,7 +6,7 @@ import {
   BookOpen, Megaphone, Swords, RefreshCw, Store, Star,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
   ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
-  Zap, Film, LayoutGrid,
+  Zap, Film, LayoutGrid, Code2,
 } from 'lucide-react';
 
 interface NavItem {
@@ -75,6 +75,7 @@ const NAV: NavSection[] = [
       { label: 'Custom Pages', path: '/admin/custom-pages', icon: <FileCode size={16} /> },
       { label: 'FAQ', path: '/admin/faq', icon: <HelpCircle size={16} /> },
       { label: 'Site Settings', path: '/admin/site-settings', icon: <Settings size={16} />, roles: ['super_admin'] },
+      { label: 'Hardcoded Config', path: '/admin/hardcoded-config', icon: <Code2 size={16} />, roles: ['super_admin'] },
     ],
   },
 ];

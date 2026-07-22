@@ -150,7 +150,7 @@ export default function Sellers() {
   const slug = slugMatch ? (slugParams?.slug as string) : "";
   const { data: sellersData = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
-    queryFn: getSellers,
+    queryFn: getSellers as any,
     enabled: !slugMatch,
   });
 

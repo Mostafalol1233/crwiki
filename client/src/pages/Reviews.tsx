@@ -79,7 +79,7 @@ export default function Reviews() {
 
   const { data: sellers = [] } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
-    queryFn: getSellers,
+    queryFn: getSellers as any,
     enabled: !match,
   });
 
@@ -89,7 +89,7 @@ export default function Reviews() {
     enabled: !!selectedSeller && !match,
   });
 
-  const { data: sellerByName } = useQuery<{ seller: Seller & { verified: boolean }, reviews: Review[], pageInfo: { page: number; pageSize: number; total: number; totalPages: number } }>({
+  const { data: sellerByName } = useQuery<any>({
     queryKey: ["/api/reviews/seller/by-name", sellerNameParam, sort, page],
     enabled: !!match && !!sellerNameParam,
     queryFn: async () => {
@@ -102,7 +102,7 @@ export default function Reviews() {
     }
   });
 
-  const { data: sellerDetails } = useQuery<Seller>({
+  const { data: sellerDetails } = useQuery<any>({
     queryKey: ["/api/sellers", sellerByName?.seller?.id],
     enabled: !!match && !!sellerByName?.seller?.id,
     queryFn: async () => {
@@ -116,10 +116,10 @@ export default function Reviews() {
     enabled: false,
   });
 
-  const { data: verificationSettings } = useQuery<ReviewVerificationSettings>({
+  const { data: verificationSettings } = useQuery<any>({
     queryKey: ["/api/public/settings/review-verification"],
     queryFn: async () => {
-      const settings = await getSiteSettings();
+      await getSiteSettings();
       return { reviewVerificationEnabled: false, reviewVerificationVideoUrl: '', reviewVerificationTimecode: '' };
     },
   });
@@ -374,8 +374,8 @@ export default function Reviews() {
                             const ok = window.confirm('Delete this image from seller page?');
                             if (!ok) return;
                             try {
-                              const nextBlocks = (sellerPage?.blocks || []).filter((_b, i) => i !== 0);
-                              const nextImages = (sellerPage?.images || []).filter((url) => url !== sellerPage!.blocks[0].image);
+                              const nextBlocks = (sellerPage?.blocks || []).filter((_b: any, i: any) => i !== 0);
+                              const nextImages = (sellerPage?.images || []).filter((url: any) => url !== sellerPage!.blocks[0].image);
                               toast({ title: "Image management requires admin backend" });
                             } catch (err: any) {
                               alert(err?.message || 'Failed to delete image');
@@ -511,7 +511,7 @@ export default function Reviews() {
                 <p className="text-sm text-muted-foreground">No reviews yet.</p>
               ) : (
                 <div className="space-y-4">
-                  {sellerByName.reviews.map((review) => (
+                  {sellerByName.reviews.map((review: any) => (
                     <Card key={review.id}>
                       <CardContent className="pt-6 space-y-2">
                         <div className="flex items-center justify-between">

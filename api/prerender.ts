@@ -186,7 +186,6 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     return {
       title:       sp.title!,
       description: sp.description!,
-      image:       DEFAULT_IMG,
       url:         `${BASE}${path}`,
       type:        "website",
       image:       `${BASE}/feature-crossfire.jpg`,

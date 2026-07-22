@@ -26,7 +26,7 @@ export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
   const mercImageMap: Record<string, string> = {};
   if (mercs) {
     for (const m of mercs) {
-      mercImageMap[String(m.name || "").toLowerCase().trim()] = String(m.image_url || m.image || "");
+      mercImageMap[String(m.name || "").toLowerCase().trim()] = String(m.image || "");
     }
   }
 

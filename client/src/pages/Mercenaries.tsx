@@ -230,7 +230,7 @@ function getRoleStyle(role: string) {
 }
 
 function resolveMercImage(merc: Mercenary) {
-  const image = String(merc.image_url || merc.image || "").trim();
+  const image = String((merc as any).image_url || merc.image || "").trim();
   if (/^https?:\/\//i.test(image)) return image;
   const key = String(merc.name || "").toLowerCase().trim();
   if (mercenaryImageByName[key]) return mercenaryImageByName[key];

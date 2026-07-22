@@ -48,11 +48,11 @@ export default function Article() {
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const { data: postsData } = useQuery<{ items: Article[]; total: number }>({
+  const { data: postsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/posts"],
-    queryFn: () => getPosts({ limit: 50 }),
+    queryFn: () => getPosts({ limit: 50 }) as any,
   });
-  const allPosts = postsData?.items || [];
+  const allPosts: Article[] = (postsData?.items || []) as any[];
 
   const finalArticle = useMemo(() => {
     if (article) return article;
@@ -403,7 +403,7 @@ export default function Article() {
                       {t("relatedArticles")}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {relatedArticles.map((relatedArticle) => (
+                      {relatedArticles.map((relatedArticle: Article) => (
                         <ArticleCard
                           key={relatedArticle.id}
                           article={relatedArticle}

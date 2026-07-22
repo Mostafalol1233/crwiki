@@ -44,10 +44,10 @@ export default function MediaManager() {
       }
       const { data, error } = await st.from(BUCKET).list('', { sortBy: { column: 'created_at', order: 'desc' }, limit: 200 });
       if (error) throw error;
-      const withUrls: MediaFile[] = (data || []).filter((f) => f.name !== '.emptyFolderPlaceholder').map((f) => ({
+      const withUrls: MediaFile[] = (data || []).filter((f: any) => f.name !== '.emptyFolderPlaceholder').map((f: any) => ({
         ...f,
         publicUrl: st.from(BUCKET).getPublicUrl(f.name).data.publicUrl,
-      }));
+      })) as MediaFile[];
       setFiles(withUrls);
     } catch (e: any) { toast.error(e.message); } finally { setLoading(false); }
   }, []);

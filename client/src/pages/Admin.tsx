@@ -882,19 +882,19 @@ export default function Admin() {
   const filteredPosts = useMemo(() => {
     const q = postSearch.trim().toLowerCase();
     if (!q) return posts;
-    return posts.filter((post) => [post.title, post.post_slug, post.author, post.category].some((value) => String(value || "").toLowerCase().includes(q)));
+    return posts.filter((post: any) => [post.title, post.post_slug, post.author, post.category].some((value: any) => String(value || "").toLowerCase().includes(q)));
   }, [postSearch, posts]);
 
   const filteredEvents = useMemo(() => {
     const q = eventSearch.trim().toLowerCase();
     if (!q) return events;
-    return events.filter((event) => [event.title, event.titleAr, event.event_name_slug, event.date, event.type].some((value) => String(value || "").toLowerCase().includes(q)));
+    return events.filter((event: any) => [event.title, event.titleAr, event.event_name_slug, event.date, event.type].some((value: any) => String(value || "").toLowerCase().includes(q)));
   }, [eventSearch, events]);
 
   const filteredNews = useMemo(() => {
     const q = newsSearch.trim().toLowerCase();
     if (!q) return newsItems;
-    return newsItems.filter((news) => [news.title, news.titleAr, news.news_slug, news.author, news.category, news.dateRange].some((value) => String(value || "").toLowerCase().includes(q)));
+    return newsItems.filter((news: any) => [news.title, news.titleAr, news.news_slug, news.author, news.category, news.dateRange].some((value: any) => String(value || "").toLowerCase().includes(q)));
   }, [newsItems, newsSearch]);
 
   const renderPagination = (currentPage: number, totalItems: number, onPageChange: (page: number) => void) => {
@@ -4474,6 +4474,9 @@ export default function Admin() {
                                   monetizationAffiliateEnabled: siteSettings.monetizationAffiliateEnabled !== false,
                                   monetizationAffiliateCommissionPct: siteSettings.monetizationAffiliateCommissionPct ?? 4,
                                   featuredWeapons: Array.isArray((siteSettings as any).featuredWeapons) ? (siteSettings as any).featuredWeapons : [],
+                                  heroImage: (siteSettings as any).heroImage || "",
+                                  featuredEventId: (siteSettings as any).featuredEventId || "",
+                                  secondaryEventIds: Array.isArray((siteSettings as any).secondaryEventIds) ? (siteSettings as any).secondaryEventIds : [],
                                 });
                               }
                             }}
@@ -4513,7 +4516,6 @@ export default function Admin() {
                               const file = e.target.files?.[0];
                               if (!file) return;
                               try {
-                                try {
                                 const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
                                 const url = await uploadToSupabase(file, "backgrounds");
                                 setSeoSettings((prev) => ({ ...prev, bg: url }));
@@ -4524,8 +4526,12 @@ export default function Admin() {
                                 (e.target as HTMLInputElement).value = '';
                               }
                             }}
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => (document.getElementById('bg-image-upload-appearance') as HTMLInputElement)?.click()}
                           >
-                            Check
+                            Upload
                           </Button>
                           <Button
                             type="button"
@@ -4591,7 +4597,6 @@ export default function Admin() {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
                                 try {
-                                  try {
                                   const { uploadToSupabase } = await import("@/lib/uploadToSupabase");
                                   const url = await uploadToSupabase(file, "backgrounds");
                                   setSeoSettings((prev) => ({ ...prev, bg: url }));
@@ -4602,8 +4607,12 @@ export default function Admin() {
                                   (e.target as HTMLInputElement).value = '';
                                 }
                               }}
+                            />
+                            <Button
+                              type="button"
+                              onClick={() => (document.getElementById('bg-image-upload') as HTMLInputElement)?.click()}
                             >
-                              Check
+                              Upload
                             </Button>
                             <Button
                               type="button"

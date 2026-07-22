@@ -26,7 +26,7 @@ export default function TutorialDetailPage() {
 
   const [showLikeDialog, setShowLikeDialog] = useState(false);
 
-  const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<Tutorial>({
+  const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<any>({
     queryKey: ["tutorial", slug || legacyId || ""],
     enabled: !!(slug || legacyId),
     queryFn: async () => {

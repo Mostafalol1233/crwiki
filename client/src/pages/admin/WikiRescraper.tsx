@@ -36,11 +36,11 @@ export default function WikiRescraper() {
     setScraping((p) => ({ ...p, [item.id]: true }));
     setLog((l) => [`Scraping: ${item.title}...`, ...l]);
     try {
-      const res = await fetch(`/api/admin/scraper`, {
+      const res = await globalThis.fetch(`/api/admin/scraper`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
         body: JSON.stringify({ url: item.source_url, type }),
-      } as any);
+      });
       if (!res.ok) throw new Error('Scrape failed');
       setLog((l) => [`Done: ${item.title}`, ...l]);
       toast.success(`Rescraped: ${item.title}`);

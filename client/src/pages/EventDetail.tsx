@@ -903,9 +903,7 @@ export default function EventDetail() {
         .event-article-body hr { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 2em 0; }
       `}</style>
 
-      {viewer.open && (
-        <ImageViewerOverlay src={viewer.src} alt={viewer.alt} onClose={() => setViewer({ open: false, src: "" })} />
-      )}
+      <ImageViewerOverlay open={viewer.open} src={viewer.src} alt={viewer.alt} onClose={() => setViewer({ open: false, src: "" })} />
     </>
   );
 }

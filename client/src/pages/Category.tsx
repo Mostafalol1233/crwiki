@@ -17,11 +17,11 @@ export default function Category() {
 
   const cap = 200;
 
-  const { data: postsResp, isLoading } = useQuery<{ items: Article[]; total: number }>({
+  const { data: postsResp, isLoading } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/posts", "category-cap"],
-    queryFn: () => getPosts({ limit: cap }),
+    queryFn: () => getPosts({ limit: cap }) as any,
   });
-  const allPosts = postsResp?.items || [];
+  const allPosts: Article[] = (postsResp?.items || []) as any[];
 
   const { data: allEvents = [] } = useQuery<any[]>({
     queryKey: ["/api/events", "category-cap"],
@@ -45,13 +45,13 @@ export default function Category() {
     const normalize = (s: string) => (s || "").toLowerCase().trim().replace(/s$/, "");
     const target = normalize(category);
 
-    return allPosts.filter((article) => {
+    return allPosts.filter((article: any) => {
       return normalize(article.category) === target;
     });
   }, [allPosts, category]);
 
   const recentPosts = useMemo(() => {
-    return allPosts.slice(0, 3).map((post) => ({
+    return allPosts.slice(0, 3).map((post: any) => ({
       id: post.id,
       post_slug: post.post_slug,
       title: post.title,
@@ -62,8 +62,8 @@ export default function Category() {
 
   const popularTags = useMemo(() => {
     const tagCounts: Record<string, number> = {};
-    allPosts.forEach((post) => {
-      post.tags.forEach((tag) => {
+    allPosts.forEach((post: any) => {
+      (post.tags || []).forEach((tag: any) => {
         tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       });
     });
@@ -75,9 +75,9 @@ export default function Category() {
 
   const mostViewed = useMemo(() => {
     return [...allPosts]
-      .sort((a, b) => b.views - a.views)
+      .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
       .slice(0, 3)
-      .map((post) => ({
+      .map((post: any) => ({
         id: post.id,
         post_slug: post.post_slug,
         title: post.title,
@@ -87,9 +87,9 @@ export default function Category() {
 
   const bimoraPicks = useMemo(() => {
     return allPosts
-      .filter((post) => post.featured)
+      .filter((post: any) => post.featured)
       .slice(0, 2)
-      .map((post) => ({
+      .map((post: any) => ({
         id: post.id,
         post_slug: post.post_slug,
         title: post.title,
@@ -285,7 +285,7 @@ export default function Category() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                    {filteredArticles.map((article) => (
+                    {filteredArticles.map((article: any) => (
                       <ArticleCard key={article.id} article={article} />
                     ))}
                   </div>

@@ -29,14 +29,17 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
   const [activeIdx, setActiveIdx] = useState(0);
 
   useEffect(() => {
-    supabase
-      .from("site_highlights")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("site_highlights")
+          .select("*")
+          .order("sort_order", { ascending: true });
         if (data && data.length > 0) setHighlights(data as Highlight[]);
-      })
-      .catch(() => {});
+      } catch {
+        // ignore errors — static fallback is already shown
+      }
+    })();
   }, []);
 
   const active = highlights[activeIdx] || highlights[0];

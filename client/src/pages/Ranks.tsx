@@ -15,6 +15,7 @@ interface Rank {
   tier?: number;
   emblem?: string;
   image?: string;
+  image_url?: string;
   imageUrl?: string;
   description?: string;
   requirements?: string;

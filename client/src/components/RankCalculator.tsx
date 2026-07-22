@@ -395,23 +395,32 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const destinationRank = sortedRanks.find(r => r.id === activeDestId) ?? null;
   const destIdx = destinationRank ? sortedRanks.findIndex(r => r.id === destinationRank.id) : -1;
 
-  // EXP needed
-  const destinationExp = destinationRank ? getExp(destinationRank) : 0;
+  // Each rank's expRequired = per-rank EXP cost (EXP to complete just that rank).
+  // exp_required is NOT a cumulative milestone — it's the cost of that single tier.
   const currentRankExp = effectiveCurrentRank ? getExp(effectiveCurrentRank) : 0;
 
-  const expNeeded = useMemo(() => {
-    if (!destinationRank) return 0;
-    if (currentExp != null && destinationExp > 0) return Math.max(0, destinationExp - currentExp);
-    return 0;
-  }, [destinationRank, currentExp, destinationExp]);
+  // Sum of per-rank costs for a slice of sortedRanks
+  const sumRangeCosts = (fromIdx: number, toIdx: number): number => {
+    if (fromIdx > toIdx) return 0;
+    return sortedRanks.slice(fromIdx, toIdx + 1).reduce((s, r) => s + getExp(r), 0);
+  };
 
+  // EXP needed = remaining in current rank + full cost of every rank up to destination
+  const expNeeded = useMemo(() => {
+    if (!destinationRank || currentIdx < 0 || destIdx <= currentIdx) return 0;
+    const remainingInCurrent = currentExp != null
+      ? Math.max(0, currentRankExp - currentExp)
+      : currentRankExp;
+    // sum of full per-rank costs for ranks AFTER current up to (and including) destination
+    const pathCost = sumRangeCosts(currentIdx + 1, destIdx);
+    return remainingInCurrent + pathCost;
+  }, [destinationRank, currentExp, currentRankExp, currentIdx, destIdx, sortedRanks]);
+
+  // Progress = how far through the current rank (0–100%)
   const progressPct = useMemo(() => {
-    if (!effectiveCurrentRank || !destinationRank || currentExp == null) return 0;
-    const start = currentRankExp;
-    const end = destinationExp;
-    if (end <= start) return 0;
-    return Math.min(100, Math.round(((currentExp - start) / (end - start)) * 100));
-  }, [effectiveCurrentRank, destinationRank, currentExp, currentRankExp, destinationExp]);
+    if (!effectiveCurrentRank || currentExp == null || currentRankExp <= 0) return 0;
+    return Math.min(100, Math.round((currentExp / currentRankExp) * 100));
+  }, [effectiveCurrentRank, currentExp, currentRankExp]);
 
   const pathRanks = useMemo(() => {
     if (currentIdx < 0 || destIdx <= currentIdx) return [];
@@ -689,11 +698,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
               <div className="rounded-md p-3" style={{ background: "rgba(212,160,23,0.06)", border: "1px solid rgba(212,160,23,0.15)" }}>
                 <p className="text-[9px] font-black uppercase tracking-wide mb-1" style={{ color: "#555" }}>EXP Needed</p>
                 <p className="text-[15px] font-black tabular-nums" style={{ color: "#d4a017" }}>
-                  {currentExp != null
-                    ? expNeeded > 0 ? fmt(expNeeded) : "0"
-                    : destinationExp > currentRankExp
-                      ? fmt(destinationExp - currentRankExp)
-                      : "—"}
+                  {expNeeded > 0 ? fmt(expNeeded) : "—"}
                 </p>
               </div>
               <div className="rounded-md p-3" style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -708,12 +713,12 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
               )}
             </div>
 
-            {/* Progress bar */}
-            {currentExp != null && destinationExp > 0 && (
+            {/* Progress bar — shows progress within current rank */}
+            {currentExp != null && currentRankExp > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[10px] font-bold" style={{ color: "#555" }}>
-                    Progress: {effectiveCurrentRank.name} → {destinationRank.name}
+                    Progress in {effectiveCurrentRank.name}
                   </p>
                   <p className="text-[11px] font-black" style={{ color: "#d4a017" }}>{progressPct}%</p>
                 </div>
@@ -725,10 +730,10 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(currentRankExp)} EXP
+                    {fmt(currentExp)} EXP
                   </span>
                   <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(destinationExp)} EXP
+                    {fmt(currentRankExp)} EXP needed for this rank
                   </span>
                 </div>
               </div>

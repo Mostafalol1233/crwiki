@@ -433,7 +433,12 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   /* ── Handlers ── */
   const handleLookup = async () => {
     const input = lookupInput.trim();
-    if (!input) { setLookupError("Enter your nickname or profile URL."); return; }
+    if (!input) { setLookupError("Enter your in-game nickname."); return; }
+    // If they pasted a URL, immediately tell them to use their nickname
+    if (input.startsWith("http") || input.includes("z8games.com") || input.includes("/profile/")) {
+      setSuggestNickname(true);
+      return;
+    }
     setLookupLoading(true);
     setLookupError("");
     setSuggestNickname(false);
@@ -442,18 +447,10 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
     setDestinationRankId("");
     setTips([]);
     try {
-      const isUrl = input.startsWith("http") || input.includes("z8games.com");
-      const qs = isUrl ? `profileUrl=${encodeURIComponent(input)}` : `nickname=${encodeURIComponent(input)}`;
-      const res = await fetch(`/api/player/lookup?${qs}`);
+      const res = await fetch(`/api/player/lookup?nickname=${encodeURIComponent(input)}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
-        if (data.suggestNickname) {
-          setSuggestNickname(true);
-          setLookupError(data.error || "Could not load via URL. Enter your in-game nickname directly.");
-        } else {
-          throw new Error(data.error || "Player not found. Check the nickname spelling.");
-        }
-        return;
+        throw new Error(data.error || "Player not found. Check the nickname spelling.");
       }
       const p = data.profile;
       setProfile({
@@ -534,7 +531,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "#444" }} />
                   <input
                     type="text"
-                    placeholder="In-game nickname  OR  z8games.com/profile/… URL"
+                    placeholder="Your in-game nickname (e.g. ProPlayer123)"
                     value={lookupInput}
                     onChange={e => { setLookupInput(e.target.value); setLookupError(""); }}
                     onKeyDown={e => e.key === "Enter" && handleLookup()}

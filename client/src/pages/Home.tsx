@@ -99,6 +99,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
         <img
           src={portal.img}
           alt={portal.label}
+          width={400} height={300}
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
@@ -107,7 +108,14 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
             transition: "transform 0.35s ease",
             transform: hovered ? "scale(1.06)" : "scale(1)",
           }}
-          onError={(e) => { e.currentTarget.style.opacity = "0"; }}
+          onError={(e) => {
+            const img = e.currentTarget;
+            img.style.display = "none";
+            const ph = document.createElement("div");
+            ph.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);";
+            ph.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+            img.parentElement?.appendChild(ph);
+          }}
         />
 
         {/* Gradient overlay — bottom fade for text */}
@@ -221,7 +229,7 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
       >
         {img && (
           <div style={{ height: featured ? 200 : 150, overflow: "hidden", position: "relative", background: "#050505" }}>
-            <img src={img} alt={event.title} style={{
+            <img src={img} alt={event.title} width={600} height={200} style={{
               width: "100%", height: "100%", objectFit: "contain",
               transition: "transform 0.4s",
               transform: hovered ? "scale(1.04)" : "scale(1)",
@@ -282,7 +290,7 @@ function NewsListItem({ item }: { item: any }) {
       >
         {item.image || item.imageUrl ? (
           <div style={{ width: 60, height: 60, borderRadius: 4, overflow: "hidden", flexShrink: 0 }}>
-            <img src={item.image || item.imageUrl} alt={item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={item.image || item.imageUrl} alt={item.title} width={60} height={60} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         ) : (
           <div style={{ width: 60, height: 60, borderRadius: 4, background: CARD2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${BORDER}` }}>

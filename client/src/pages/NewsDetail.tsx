@@ -325,10 +325,9 @@ export default function NewsDetail() {
                     const purifier = (createDOMPurify as any)(window as any);
                     const html = transformEmbeds(selectedContentRaw || "");
                     return purifier.sanitize(html, {
-                      ADD_TAGS: ['style', 'script', 'iframe'],
+                      ADD_TAGS: ['iframe'],
                       ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
                       FORCE_BODY: true,
-                      ALLOW_UNKNOWN_PROTOCOLS: true,
                     });
                   })()
                 }}

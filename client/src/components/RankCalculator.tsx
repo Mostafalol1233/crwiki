@@ -169,15 +169,18 @@ function mergeRanks(provided: Rank[]): Rank[] {
     if (r.tier) byTier.set(r.tier, r);
   }
 
-  // For every CF rank, prefer DB data for names/images/bonuses/EXP.
-  // The DB stores cumulative EXP totals matching the Z8Games profile page
-  // (e.g. ~3M for Major 8 at tier 59). Only fall back to the formula when
-  // the DB has no value for a tier.
+  // For every CF rank, prefer DB data for names/images/bonuses.
+  // EXP thresholds: ALWAYS use CF_EXP_THRESHOLDS (verified from Z8Games ranks
+  // page 2026-07-22). DB exp_required is only a fallback for tiers not in the
+  // static list — this guarantees the subtraction (destEXP - playerEXP) uses
+  // the real, unmodified cumulative EXP values scraped from the official site.
   return CF_ALL_RANKS.map(fallback => {
     const db = byTier.get(fallback.tier!);
     const bonus = db?.bonus || (db as any)?.bonus || BONUS_MAP[fallback.tier!] || fallback.bonus || "";
+    const staticExp = CF_EXP_THRESHOLDS[fallback.tier!];
     const dbExp = (db as any)?.exp_required ?? db?.expRequired ?? 0;
-    const exp = dbExp > 0 ? dbExp : (CF_EXP_THRESHOLDS[fallback.tier!] ?? 0);
+    // Static threshold wins; DB value only fills gaps where static list has no entry
+    const exp = staticExp != null ? staticExp : (dbExp > 0 ? dbExp : 0);
 
     return {
       id: db?.id || fallback.id,
@@ -689,6 +692,11 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                 <p className="text-[15px] font-black tabular-nums" style={{ color: "#d4a017" }}>
                   {expNeeded > 0 ? fmt(expNeeded) : "—"}
                 </p>
+                {currentExp != null && destinationExp > 0 && (
+                  <p className="text-[9px] tabular-nums mt-0.5" style={{ color: "#444" }}>
+                    {fmt(destinationExp)} − {fmt(currentExp)}
+                  </p>
+                )}
               </div>
               <div className="rounded-md p-3" style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <p className="text-[9px] font-black uppercase tracking-wide mb-1" style={{ color: "#555" }}>Ranks to Pass</p>

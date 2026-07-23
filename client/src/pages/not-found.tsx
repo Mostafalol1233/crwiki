@@ -1,12 +1,18 @@
 import { useLanguage } from "@/components/LanguageProvider";
 import { Link } from "wouter";
 import { Home, AlertTriangle } from "lucide-react";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function NotFound() {
   const { t } = useLanguage();
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--background)" }}>
+      <SEOHead
+        title="404 — Page Not Found | CrossFire Wiki"
+        description="The page you're looking for doesn't exist or has been moved."
+        robots="noindex, nofollow"
+      />
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 50% 40% at 50% 30%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
       <div className="relative text-center">
         <div className="w-16 h-16 flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px" }}>

@@ -205,7 +205,7 @@ export function Header() {
           </form>
 
           {/* Language */}
-          <button onClick={toggleLanguage} title={language === "en" ? "العربية" : "English"} style={{
+          <button onClick={toggleLanguage} title={language === "en" ? "العربية" : "English"} aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"} style={{
             width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
             background: "none", border: `1px solid ${BORDER}`, borderRadius: 6,
             color: "rgba(255,255,255,0.5)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
@@ -293,7 +293,7 @@ export function Header() {
         </div>
 
         {/* Mobile hamburger */}
-        <button className="md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} style={{
+        <button className="md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} style={{
           width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
           background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, color: "rgba(255,255,255,0.7)", cursor: "pointer",
         }}>

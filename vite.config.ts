@@ -54,7 +54,7 @@ function cfRegisterPlugin(): Plugin {
             body: JSON.stringify({
               email,
               password,
-              email_confirm: true,
+              email_confirm: false,
               user_metadata: { username, phone: phone || "", avatar: avatar || "" },
             }),
           } as any);
@@ -871,16 +871,46 @@ function cfPlayerLookupPlugin(): Plugin {
             const rankTierMatch = md.match(/\/rank_(\d{1,3})\.(?:jpg|png|webp)/i);
             const rankTier      = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
 
-            // EXP: prefer progress-bar "current/total (pct%)" over headline
-            const progressBarMatch = md.match(/(\d{4,})\s*\/\s*(\d{4,})\s*\([\d.]+%\)/);
-            const expRaw = progressBarMatch
-              ? progressBarMatch[1]
-              : (md.match(/\/rank_\d+\.[^)]+\)[^\S\n]*[^\n]*?(\d[\d,]{3,})\s*EXP/i)?.[1]?.replace(/,/g, "")
-                ?? md.match(/(\d[\d,]{3,})\s*EXP/i)?.[1]?.replace(/,/g, "") ?? null);
-            const exp = expRaw ? parseInt(expRaw, 10) : null;
-
+            // Rank badge heading: "## ![rank](url) 28,179,536 EXP General 1"
             const rankLine = md.match(/##\s+!\[[^\]]*\]\([^)]*\/rank_\d+\.[^)]+\)[^\S\n]*([^\n]+)/)?.[1]?.trim() || "";
             const rankName = rankLine.replace(/[\d,]+\s*EXP.*/i, "").replace(/\d+$/, "").trim() || null;
+
+            // EXP extraction — ordered from most to least reliable
+            let exp: number | null = null;
+
+            // 1. EXP on the rank badge line itself (e.g. "28,179,536 EXP General 1")
+            if (!exp) {
+              const m = rankLine.match(/(\d[\d,]{3,})\s*EXP/i);
+              if (m) exp = parseInt(m[1].replace(/,/g, ""), 10);
+            }
+
+            // 2. EXP directly after rank image in markdown (inline on same token line)
+            if (!exp) {
+              const m = md.match(/\/rank_\d+\.[^)]+\)[^\S\n]*[^\n]*?(\d[\d,]{3,})\s*EXP/i);
+              if (m) exp = parseInt(m[1].replace(/,/g, ""), 10);
+            }
+
+            // 3. Progress bar: "28179536 / 30000000 (94%)" — current is the smaller value
+            if (!exp) {
+              const m = md.match(/(\d{4,})\s*\/\s*(\d{4,})\s*\([\d.]+%\)/);
+              if (m) exp = Math.min(parseInt(m[1], 10), parseInt(m[2], 10));
+            }
+
+            // 4. TotalExp / Total EXP label
+            if (!exp) {
+              const m = md.match(/(?:Total\s*Exp|TotalExp)[:\s]+([0-9,]+)/i);
+              if (m) exp = parseInt(m[1].replace(/,/g, ""), 10);
+            }
+
+            // 5. Any "XXXXXX EXP" value that is >= the Trainee 2 threshold (457)
+            //    Take the FIRST one — closest to the profile header
+            if (!exp) {
+              const m = md.match(/(\d[\d,]{3,})\s*EXP/i);
+              if (m) {
+                const val = parseInt(m[1].replace(/,/g, ""), 10);
+                if (val >= 457) exp = val;
+              }
+            }
 
             const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
             const clan = clanHeadings[0]?.[1]?.trim() || null;

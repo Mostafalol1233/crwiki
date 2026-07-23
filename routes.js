@@ -53,10 +53,17 @@ const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
-const CSRF_TOKEN = process.env.CSRF_TOKEN || process.env.CSRF_SECRET || ('cf-' + Math.random().toString(36).slice(2));
+const CSRF_TOKEN = process.env.CSRF_TOKEN || process.env.CSRF_SECRET || crypto.randomBytes(32).toString('hex');
+
+// ── Centralised server-side constants ─────────────────────────────────────────
+// Change once here; every route picks up the new value automatically.
+const SITE_URL              = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
+// ──────────────────────────────────────────────────────────────────────────────
+
 const ensureDir = (p) => { try { fs.mkdirSync(p, { recursive: true }); } catch { } };
-const IMAGES_DIR = path.resolve('backend-deploy-full/uploads/images');
-const BACKUP_DIR = path.resolve('backend-deploy-full/uploads/images_backup');
+const IMAGES_DIR = path.resolve('uploads/images');
+const BACKUP_DIR = path.resolve('uploads/images_backup');
 ensureDir(IMAGES_DIR);
 ensureDir(BACKUP_DIR);
 
@@ -104,7 +111,7 @@ function buildSeoFilename({ title, category, date, feature }) {
     return `${game}-${theme}-${content}-${year}-${feat}`;
 }
 
-const LOG_DIR = path.resolve('backend-deploy-full/logs');
+const LOG_DIR = path.resolve('uploads/logs');
 ensureDir(LOG_DIR);
 const LOG_FILE = path.join(LOG_DIR, 'image-processing.jsonl');
 const logChange = (entry) => { try { fs.appendFileSync(LOG_FILE, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { } };
@@ -155,7 +162,7 @@ export async function registerRoutes(app) {
     app.use('/images', express.static(IMAGES_DIR));
 
     async function resolveBaseUrl() {
-        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
+        let base = (SITE_URL);
         try { base = String(base).trim().replace(/^[`'\"]|[`'\"]$/g, ''); } catch { }
         base = base.replace(/\/$/, '');
         try {
@@ -178,7 +185,7 @@ export async function registerRoutes(app) {
 
     // SEO: robots.txt
     app.get('/robots.txt', async (_req, res) => {
-        const base = 'https://crossfire.wiki';
+        const base = SITE_URL;
         const robots = [
             'User-agent: *',
             'Allow: /',
@@ -216,7 +223,7 @@ export async function registerRoutes(app) {
     });
     // SEO: Sitemap Index — references all sub-sitemaps
     app.get('/sitemap-index.xml', async (_req, res) => {
-        const base = 'https://crossfire.wiki';
+        const base = SITE_URL;
         const today = new Date().toISOString().split('T')[0];
         const body = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -237,7 +244,7 @@ export async function registerRoutes(app) {
     });
     // SEO: Google News Sitemap
     app.get('/news-sitemap.xml', async (_req, res) => {
-        const base = 'https://crossfire.wiki';
+        const base = SITE_URL;
         try {
             const news = await storage.getAllNews().catch(() => []);
             const items = news.slice(0, 1000);
@@ -270,7 +277,7 @@ export async function registerRoutes(app) {
     });
     // SEO: sitemap.xml (main dynamic sitemap)
     app.get('/sitemap.xml', async (_req, res) => {
-        let base = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki');
+        let base = (SITE_URL);
         try { base = String(base).trim().replace(/^[`'\"]|[`'\"]$/g, ''); } catch { }
         base = base.replace(/\/$/, '');
         try {
@@ -503,7 +510,7 @@ export async function registerRoutes(app) {
                     for (const field of urlFields) {
                         if (item[field] && typeof item[field] === 'string' && !item[field].startsWith('http') && !item[field].startsWith('data:')) {
                             try {
-                                const filePath = path.resolve('backend-deploy-full', item[field].replace(/^\//, ''));
+                                const filePath = path.resolve('uploads', item[field].replace(/^\//, ''));
                                 if (fs.existsSync(filePath)) {
                                     const fileBuffer = await fs.promises.readFile(filePath);
                                     const result = await uploadStream(fileBuffer, { folder: collection });
@@ -525,7 +532,7 @@ export async function registerRoutes(app) {
                         for (const imageUrl of item.imageUrls) {
                             if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
                                 try {
-                                    const filePath = path.resolve('backend-deploy-full', imageUrl.replace(/^\//, ''));
+                                    const filePath = path.resolve('uploads', imageUrl.replace(/^\//, ''));
                                     if (fs.existsSync(filePath)) {
                                         const fileBuffer = await fs.promises.readFile(filePath);
                                         const result = await uploadStream(fileBuffer, { folder: collection });
@@ -875,7 +882,7 @@ export async function registerRoutes(app) {
                 updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                 updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
                 try {
-                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    const imagesDir = path.resolve('uploads/images');
                     fs.mkdirSync(imagesDir, { recursive: true });
                     const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'post', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'post' });
                     if (!updates.ogImage) updates.ogImage = seoImage.url;
@@ -973,9 +980,8 @@ export async function registerRoutes(app) {
     app.get('/api/health', (_req, res) => {
         res.json({ ok: true, time: Date.now() });
     });
-    // Welcome endpoint with logging
-    app.get('/api/welcome', (req, res) => {
-        console.log(`Request received: ${req.method} ${req.path}`);
+    // Welcome endpoint
+    app.get('/api/welcome', (_req, res) => {
         res.json({ message: 'Welcome to the API' });
     });
     app.get('/api/security/csrf-token', async (_req, res) => {
@@ -1116,7 +1122,7 @@ export async function registerRoutes(app) {
                 updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                 updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
                 try {
-                    const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                    const imagesDir = path.resolve('uploads/images');
                     fs.mkdirSync(imagesDir, { recursive: true });
                     const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title || 'event', title: updates.seoTitle || title, keywords: updates.seoKeywords, type: 'event' });
                     if (!updates.ogImage) updates.ogImage = seoImage.url;
@@ -1231,7 +1237,7 @@ export async function registerRoutes(app) {
                     const isTrustedImageUrl = (url) => !url || url.includes('wof38b') || url.includes('catbox.moe') || url.includes('cloudinary.com') || url.includes('crossfire.wiki') || url.startsWith('/images/');
                     if (!eventData.image || !isTrustedImageUrl(eventData.image)) {
                         try {
-                            const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                            const imagesDir = path.resolve('uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
                             if (seoImage?.url) eventData.image = seoImage.url;
@@ -1306,7 +1312,7 @@ export async function registerRoutes(app) {
                     const isTrustedImg = (url) => !url || url.includes('wof38b') || url.includes('catbox.moe') || url.includes('cloudinary.com') || url.includes('crossfire.wiki') || url.startsWith('/images/');
                     if (!eventData.image || !isTrustedImg(eventData.image)) {
                         try {
-                            const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                            const imagesDir = path.resolve('uploads/images');
                             fs.mkdirSync(imagesDir, { recursive: true });
                             const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: title, keywords: [], type: 'event' });
                             if (seoImage?.url) eventData.image = seoImage.url;
@@ -1707,7 +1713,7 @@ export async function registerRoutes(app) {
     });
     app.get("/sitemap-legacy-redirect", async (req, res) => {
         try {
-            const baseUrl = process.env.BASE_URL || "https://crossfire.wiki";
+            const baseUrl = SITE_URL;
             const posts = await storage.getAllPosts();
             const news = await storage.getAllNews();
             const events = await storage.getAllEvents();
@@ -2138,11 +2144,11 @@ export async function registerRoutes(app) {
 
     app.post("/api/mercenaries", requireAuth, requireWeaponManager, async (req, res) => {
         try {
-            // Basic creation if needed, schema validation would need to be imported or inline
-            // For now, assuming direct pass-through as user requested "from website"
-            const data = req.body;
-            // TODO: Validate with insertMercenarySchema if available, or basic checks
-            if (!data.name) return res.status(400).json({ error: "Name is required" });
+            const parsed = insertMercenarySchema.safeParse(req.body);
+            if (!parsed.success) {
+                return res.status(400).json({ error: "Validation failed", details: parsed.error.flatten().fieldErrors });
+            }
+            const data = parsed.data;
 
             const merc = await storage.createMercenary(data);
             res.status(201).json(merc);
@@ -2599,7 +2605,7 @@ export async function registerRoutes(app) {
                     updates.seoTitle = updates.seoTitle && updates.seoTitle.trim() ? updates.seoTitle : generateSeoTitle(title, content);
                     updates.seoDescription = updates.seoDescription && updates.seoDescription.trim() ? updates.seoDescription : summarize(content);
                     try {
-                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                        const imagesDir = path.resolve('uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
                         const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: title, title: updates.seoTitle || title, keywords: updates.seoKeywords });
                         if (!updates.ogImage) updates.ogImage = seoImage.url;
@@ -2692,7 +2698,7 @@ export async function registerRoutes(app) {
         // Admin: Merge & Optimize News — preview changes
         app.get("/api/admin/news/merge/preview", requireAuth, requireNewsManager, async (_req, res) => {
             try {
-                const baseUrl = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+                const baseUrl = (SITE_URL).replace(/\/$/, '');
                 const result = await storage.getAllNews();
                 const news = result.items || [];
                 const changes = [];
@@ -2731,7 +2737,7 @@ export async function registerRoutes(app) {
                     if (updates.htmlContent) itemChanges.htmlContent = { preview: true };
                     let imageChange = null;
                     try {
-                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                        const imagesDir = path.resolve('uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
                         const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: n.title, title: seoTitle || n.title, keywords: seoKeywords });
                         if (seoImage?.url && seoImage.url !== n.ogImage) {
@@ -2753,7 +2759,7 @@ export async function registerRoutes(app) {
         app.post("/api/admin/news/merge", requireAuth, requireNewsManager, async (req, res) => {
             const apply = String(req.body?.apply || 'true').toLowerCase() !== 'false';
             try {
-                const baseUrl = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+                const baseUrl = (SITE_URL).replace(/\/$/, '');
                 const result = await storage.getAllNews();
                 const news = result.items || [];
                 const changelog = [];
@@ -2784,7 +2790,7 @@ export async function registerRoutes(app) {
                     updates.seoTitle = n.seoTitle && n.seoTitle.trim() ? n.seoTitle : generateSeoTitle(n.title, n.content || n.htmlContent || '');
                     updates.seoDescription = n.seoDescription && n.seoDescription.trim() ? n.seoDescription : summarize(n.content || n.htmlContent || '');
                     try {
-                        const imagesDir = path.resolve('backend-deploy-full/uploads/images');
+                        const imagesDir = path.resolve('uploads/images');
                         fs.mkdirSync(imagesDir, { recursive: true });
                         const seoImage = await generateSeoImage({ baseDir: imagesDir, slug: n.title, title: updates.seoTitle || n.title, keywords: updates.seoKeywords });
                         if (!n.ogImage) updates.ogImage = seoImage.url;
@@ -3577,7 +3583,6 @@ export async function registerRoutes(app) {
                     const duration = Date.now() - started;
                     const secureUrl = json.secure_url;
                     const domainUrl = await buildDomainUrl(secureUrl, req);
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     let thumbnail_secure_url = '';
                     let thumbnail_domain_url = '';
                     try {
@@ -3591,9 +3596,8 @@ export async function registerRoutes(app) {
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: 'video', thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = 'mp4';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     const parts = ['video', 'upload', folder, `${publicId}.${ext}`];
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
@@ -3639,7 +3643,6 @@ export async function registerRoutes(app) {
         }
         // Signed Cloudinary upload with retries and domain URL mapping
         async function cloudinarySignedUpload(buffer, filename, mimetype, opts = {}) {
-            const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
             const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
             const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
             const resourceType = 'auto';
@@ -3770,7 +3773,6 @@ export async function registerRoutes(app) {
                     const duration = Date.now() - started;
                     const secureUrl = json.secure_url;
                     const domainUrl = await buildDomainUrl(secureUrl, req);
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     let thumbnail_secure_url = '';
                     let thumbnail_domain_url = '';
                     try {
@@ -3786,14 +3788,13 @@ export async function registerRoutes(app) {
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', bytes: json.bytes, created_at: json.created_at, thumbnail_secure_url, thumbnail_domain_url, original_filename: req.file.originalname });
                 } catch (error) {
                     // Fallback to local server, while preserving Cloudinary-style domain URL
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
                     const localPathParts = [resource, 'upload'];
                     if (folder) localPathParts.push(folder);
                     const relativeFile = `${publicId}.${ext}`;
                     localPathParts.push(relativeFile);
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...localPathParts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...localPathParts), req.file.buffer);
                     const secureUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${localPathParts.join('/')}`;
@@ -3886,7 +3887,7 @@ export async function registerRoutes(app) {
                     return upstream.body.pipe(res);
                 }
                 // Local fallback
-                const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                 const localPath = path.join(LOCAL_CLOUD_DIR, ...rest.split('/'));
                 if (!fs.existsSync(localPath)) {
                     return res.status(502).json({ ok: false, error: `Upstream failed and no local fallback` });
@@ -3905,7 +3906,6 @@ export async function registerRoutes(app) {
 
         app.get('/media/*', async (req, res) => {
             try {
-                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 let rest = String(req.params[0] || '').replace(/^\/+/, '');
                 if (!rest) return res.status(400).json({ ok: false, error: 'Missing path' });
                 if (!/^([a-z0-9_-]+)\//i.test(rest)) {
@@ -3932,7 +3932,6 @@ export async function registerRoutes(app) {
             try {
                 const name = String(req.params.filename || '').replace(/[^A-Za-z0-9._-]+/g, '');
                 if (!name) return res.status(400).json({ ok: false, error: 'Invalid image name' });
-                const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                 const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${name}`;
                 const u = new URL(url);
                 if (!/res\.cloudinary\.com$/i.test(u.hostname)) {
@@ -3947,7 +3946,7 @@ export async function registerRoutes(app) {
                     if (method === 'HEAD') return res.sendStatus(200);
                     return upstream.body.pipe(res);
                 }
-                const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                 const localPath = path.join(LOCAL_CLOUD_DIR, 'image', 'upload', name);
                 if (!fs.existsSync(localPath)) {
                     return res.status(502).json({ ok: false, error: `Upstream failed and no local fallback` });
@@ -4042,10 +4041,9 @@ export async function registerRoutes(app) {
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     const parts = [resource, 'upload', folder, `${publicId}.${ext}`].filter(Boolean);
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
@@ -4142,10 +4140,9 @@ export async function registerRoutes(app) {
                     }
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'image', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || 'bin';
                     const resource = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
@@ -4191,10 +4188,9 @@ export async function registerRoutes(app) {
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || 'auto', original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || 'bin';
                     const resource = req.file.mimetype === 'application/pdf' ? 'raw' : (req.file.mimetype.startsWith('image/') ? 'image' : 'video');
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
@@ -4246,10 +4242,9 @@ export async function registerRoutes(app) {
                     recordUpload(true, duration);
                     return res.json({ ok: true, secure_url: secureUrl, domain_url: domainUrl, public_id: json.public_id, format: json.format, resource_type: json.resource_type || kind, original_filename: req.file.originalname });
                 } catch (err) {
-                    const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dkpdidm89';
                     const ext = mimeToExt(req.file.mimetype) || (kind === 'raw' ? 'pdf' : 'bin');
                     const resource = kind === 'image' ? 'image' : kind === 'video' ? 'video' : 'raw';
-                    const LOCAL_CLOUD_DIR = path.resolve('backend-deploy-full/uploads/cloudinary_fallback');
+                    const LOCAL_CLOUD_DIR = path.resolve('uploads/cloudinary_fallback');
                     const parts = [resource, 'upload', folder, `${publicId}.${ext}`];
                     ensureDir(path.join(LOCAL_CLOUD_DIR, ...parts.slice(0, -1)));
                     await fs.promises.writeFile(path.join(LOCAL_CLOUD_DIR, ...parts), req.file.buffer);
@@ -4775,7 +4770,7 @@ const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
                 await optimizeToWebP(destPath, base, pickKindFromContext('', ''));
             }
         } catch { }
-        const baseUrl = (process.env.PUBLIC_BASE_URL || 'https://crossfire.wiki').replace(/\/$/, '');
+        const baseUrl = (SITE_URL).replace(/\/$/, '');
         const url = `/images/${filename}`;
         const fullUrl = `${baseUrl}${url}`;
         return { url, fullUrl, filename };
@@ -4912,7 +4907,7 @@ const SEO_LOG_FILE = path.join(LOG_DIR, 'seo-changes.jsonl');
     // Image sitemap — includes all images from posts, news and events
     app.get('/images-sitemap.xml', async (_req, res) => {
         try {
-            const base = 'https://crossfire.wiki';
+            const base = SITE_URL;
             const [posts, news, events] = await Promise.all([
                 storage.getAllPosts().catch(() => []),
                 storage.getAllNews().catch(() => []),

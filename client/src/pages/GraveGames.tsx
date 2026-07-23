@@ -1,11 +1,18 @@
 import { ExternalLink, Skull, Archive } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function GraveGames() {
   const { t } = useLanguage();
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
+      <SEOHead
+        title="Grave Games — Archived CrossFire Halloween Event | CrossFire Wiki"
+        description="Grave Games was a limited-time Halloween event in CrossFire. Archived here for reference — explore the old missions, rewards, and lore."
+        keywords={["CrossFire Grave Games", "CrossFire Halloween event", "CF archived event"]}
+        ogType="article"
+      />
 
       {/* Archived Event Banner */}
       <div style={{ background: "rgba(245,166,35,0.08)", borderBottom: "1px solid rgba(245,166,35,0.2)", padding: "10px 24px", display: "flex", alignItems: "center", gap: 8 }}>

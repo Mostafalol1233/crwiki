@@ -426,11 +426,15 @@ function FAQAccordionItem({
     if (!text) return null;
     const isHtml = text.startsWith("<") || /<(p|ul|ol|br|img|iframe|strong)[\s>]/.test(text);
     if (isHtml) {
+      // Sanitize before injecting — FAQ answers can contain HTML from the DB
+      const safeHtml = (window as any).DOMPurify
+        ? (window as any).DOMPurify.sanitize(text)
+        : text.replace(/<script[\s\S]*?<\/script>/gi, "");
       return (
         <div
           className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none faq-html-content"
           style={{ color: "#888" }}
-          dangerouslySetInnerHTML={{ __html: text }}
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       );
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { SEOHead } from "@/components/SEOHead";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,6 +133,12 @@ export default function TutorialDetailPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
+      <SEOHead
+        title={tutorial?.title ? `${tutorial.title} — CrossFire Wiki` : "Tutorial — CrossFire Wiki"}
+        description={tutorial?.description || "Watch CrossFire tutorials and guides on CrossFire Wiki."}
+        image={tutorial?.thumbnailUrl || tutorial?.thumbnail_url || undefined}
+        type="article"
+      />
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <button
           onClick={() => setLocation("/videos")}

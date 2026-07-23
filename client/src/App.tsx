@@ -68,66 +68,68 @@ class ChunkErrorBoundary extends React.Component<
 }
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+// Home & Maintenance load synchronously — they are the entry points
 import Home from "@/pages/Home";
 import Maintenance from "@/pages/Maintenance";
-import Article from "@/pages/Article";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import Download from "@/pages/Download";
-
-import News from "@/pages/News";
-import NewsDetail from "@/pages/NewsDetail";
-import EventDetail from "@/pages/EventDetail";
-import Mercenaries from "@/pages/Mercenaries";
-import GraveGames from "@/pages/GraveGames";
-import Category from "@/pages/Category";
-import CategoryNews from "@/pages/CategoryNews";
-import EventsList from "@/pages/EventsList";
-import Profile from "@/pages/Profile";
-import Reviews from "@/pages/Reviews";
-import Sellers from "@/pages/Sellers";
-import Support from "@/pages/Support";
-import FAQ from "@/pages/FAQ";
-import MyTickets from "@/pages/MyTickets";
-import Tutorials from "@/pages/Tutorials";
-import TutorialDetail from "@/pages/TutorialDetail";
-import Videos from "@/pages/Videos";
-import VideosCategory from "@/pages/VideosCategory";
-import Weapons from "@/pages/Weapons";
-import Modes from "@/pages/Modes";
-import Maps from "@/pages/Maps";
-import Ranks from "@/pages/Ranks";
-import Posts from "@/pages/Posts";
-import Forum from "@/pages/Forum";
-import ForumCategory from "@/pages/ForumCategory";
-import ForumThread from "@/pages/ForumThread";
-import NewThread from "@/pages/NewThread";
-import Terms from "@/pages/Terms";
-import Privacy from "@/pages/Privacy";
-import NotFound from "@/pages/not-found";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Chat from "@/pages/Chat";
-import AIAssistant from "@/pages/AIAssistant";
-import ResetPassword from "@/pages/ResetPassword";
-import BulkSEO from "@/pages/BulkSEO";
 import { SEOHead } from "@/components/SEOHead";
 import AnnouncementModal from "@/components/AnnouncementModal";
 import SiteBanner from "@/components/SiteBanner";
 import TargetCursor from "@/components/TargetCursor";
-
 
 // ══════════════════════════════════════════════
 // 🔧 MAINTENANCE MODE — غير true لـ false لفتح الموقع
 const MAINTENANCE_MODE = false;
 // ══════════════════════════════════════════════
 
-// Lazy load admin pages
-const Admin = lazy(() => import("@/pages/admin/index"));
-const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+// ── Lazy page chunks ──────────────────────────────────────────────────────────
+// Every page except Home/Maintenance is code-split. They only load when the
+// user navigates to that route, keeping the initial bundle small.
+const Article        = lazy(() => import("@/pages/Article"));
+const About          = lazy(() => import("@/pages/About"));
+const Contact        = lazy(() => import("@/pages/Contact"));
+const Download       = lazy(() => import("@/pages/Download"));
+const News           = lazy(() => import("@/pages/News"));
+const NewsDetail     = lazy(() => import("@/pages/NewsDetail"));
+const EventDetail    = lazy(() => import("@/pages/EventDetail"));
+const GraveGames     = lazy(() => import("@/pages/GraveGames"));
+const Category       = lazy(() => import("@/pages/Category"));
+const CategoryNews   = lazy(() => import("@/pages/CategoryNews"));
+const EventsList     = lazy(() => import("@/pages/EventsList"));
+const Profile        = lazy(() => import("@/pages/Profile"));
+const Reviews        = lazy(() => import("@/pages/Reviews"));
+const Sellers        = lazy(() => import("@/pages/Sellers"));
+const Support        = lazy(() => import("@/pages/Support"));
+const FAQ            = lazy(() => import("@/pages/FAQ"));
+const MyTickets      = lazy(() => import("@/pages/MyTickets"));
+const Tutorials      = lazy(() => import("@/pages/Tutorials"));
+const TutorialDetail = lazy(() => import("@/pages/TutorialDetail"));
+const Videos         = lazy(() => import("@/pages/Videos"));
+const VideosCategory = lazy(() => import("@/pages/VideosCategory"));
+const Posts          = lazy(() => import("@/pages/Posts"));
+const Forum          = lazy(() => import("@/pages/Forum"));
+const ForumCategory  = lazy(() => import("@/pages/ForumCategory"));
+const ForumThread    = lazy(() => import("@/pages/ForumThread"));
+const NewThread      = lazy(() => import("@/pages/NewThread"));
+const Terms          = lazy(() => import("@/pages/Terms"));
+const Privacy        = lazy(() => import("@/pages/Privacy"));
+const NotFound       = lazy(() => import("@/pages/not-found"));
+const Login          = lazy(() => import("@/pages/Login"));
+const Register       = lazy(() => import("@/pages/Register"));
+const Chat           = lazy(() => import("@/pages/Chat"));
+const AIAssistant    = lazy(() => import("@/pages/AIAssistant"));
+const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
+// Admin & heavy wiki pages
+const Admin              = lazy(() => import("@/pages/admin/index"));
+const AdminLogin         = lazy(() => import("@/pages/AdminLogin"));
 const AdminAnnouncements = lazy(() => import("@/pages/AdminAnnouncements"));
-const MediaUpload = lazy(() => import("@/pages/MediaUpload"));
-const SearchPage = lazy(() => import("@/pages/Search"));
+const MediaUpload        = lazy(() => import("@/pages/MediaUpload"));
+const BulkSEO            = lazy(() => import("@/pages/BulkSEO"));
+const SearchPage         = lazy(() => import("@/pages/Search"));
+const Mercenaries        = lazy(() => import("@/pages/Mercenaries"));
+const Weapons            = lazy(() => import("@/pages/Weapons"));
+const Modes              = lazy(() => import("@/pages/Modes"));
+const Maps               = lazy(() => import("@/pages/Maps"));
+const Ranks              = lazy(() => import("@/pages/Ranks"));
 
 function PageSpinner() {
   return (
@@ -137,68 +139,99 @@ function PageSpinner() {
   );
 }
 
+// Wraps any lazy component in ChunkErrorBoundary + Suspense so we don't have
+// to repeat the boilerplate on every single Route.
+function L({ C, params }: { C: React.ComponentType<any>; params?: any }) {
+  return (
+    <ChunkErrorBoundary>
+      <Suspense fallback={<PageSpinner />}>
+        <C {...(params ? { params } : {})} />
+      </Suspense>
+    </ChunkErrorBoundary>
+  );
+}
+
 function Router() {
   return (
     <Switch>
+      {/* Home loads synchronously for best LCP */}
       <Route path="/" component={Home} />
-      <Route path="/search" component={() => <Suspense fallback={<div>Loading...</div>}><SearchPage /></Suspense>} />
-      <Route path="/category/news" component={CategoryNews} />
-      <Route path="/events" component={EventsList} />
-      <Route path="/blog" component={Posts} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/category/:category" component={Category} />
-      <Route path="/reviews" component={Reviews} />
-      <Route path="/community/reviews" component={Reviews} />
-      <Route path="/reviews/seller/:sellerName" component={Reviews} />
-      <Route path="/reviews/seller/slug/:slug" component={Reviews} />
-      <Route path="/sellers" component={Sellers} />
-      <Route path="/seller/:slug" component={Sellers} />
-      <Route path="/news" component={News} />
-      <Route path="/news/:slug" component={NewsDetail} />
-      <Route path="/news/id/:legacyId" component={NewsDetail} />
-      <Route path="/events/:slug" component={EventDetail} />
-      <Route path="/events/id/:legacyId" component={EventDetail} />
-      <Route path="/mercenaries" component={Mercenaries} />
-      <Route path="/grave-games" component={GraveGames} />
-      <Route path="/posts/:slug" component={Article} />
-      <Route path="/article/:slug" component={Article} />
-      <Route path="/article/id/:legacyId" component={Article} />
-      <Route path="/support" component={Support} />
-      <Route path="/faq" component={FAQ} />
 
-      <Route path="/my-tickets" component={MyTickets} />
-      <Route path="/about" component={About} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/download" component={Download} />
-      <Route path="/videos" component={Videos} />
-      <Route path="/videos/:category" component={VideosCategory} />
-      <Route path="/videos/:category/:slug" component={TutorialDetail} />
-      <Route path="/tutorials" component={Tutorials} />
-      <Route path="/tutorials/:slug" component={TutorialDetail} />
-      <Route path="/tutorials/id/:legacyId" component={TutorialDetail} />
-      <Route path="/weapons" component={Weapons} />
-      <Route path="/modes" component={Modes} />
-      <Route path="/maps" component={Maps} />
-      <Route path="/ranks" component={Ranks} />
-      <Route path="/posts" component={Posts} />
-      <Route path="/forum" component={Forum} />
-      <Route path="/forum/:categorySlug/new" component={(p: any) => <NewThread params={p.params} />} />
-      <Route path="/forum/:categorySlug/:threadId" component={(p: any) => <ForumThread params={p.params} />} />
-      <Route path="/forum/:categorySlug" component={(p: any) => <ForumCategory params={p.params} />} />
-      <Route path="/terms" component={Terms} />
-      <Route path="/privacy" component={Privacy} />
-      <Route path="/admin/login" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><AdminLogin /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/admin/announcements-manage" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><AdminAnnouncements /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/admin/media-upload" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><MediaUpload /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/admin/seo-bulk" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><BulkSEO /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/admin" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><Admin /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/admin/:rest*" component={() => <ChunkErrorBoundary><Suspense fallback={<PageSpinner />}><Admin /></Suspense></ChunkErrorBoundary>} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/chat" component={Chat} />
-      <Route path="/ai" component={AIAssistant} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route component={NotFound} />
+      {/* Content */}
+      <Route path="/search"                    component={() => <L C={SearchPage} />} />
+      <Route path="/category/news"             component={() => <L C={CategoryNews} />} />
+      <Route path="/events"                    component={() => <L C={EventsList} />} />
+      <Route path="/blog"                      component={() => <L C={Posts} />} />
+      <Route path="/posts"                     component={() => <L C={Posts} />} />
+      <Route path="/posts/:slug"               component={() => <L C={Article} />} />
+      <Route path="/article/:slug"             component={() => <L C={Article} />} />
+      <Route path="/article/id/:legacyId"      component={() => <L C={Article} />} />
+      <Route path="/profile"                   component={() => <L C={Profile} />} />
+      <Route path="/category/:category"        component={() => <L C={Category} />} />
+      <Route path="/reviews"                   component={() => <L C={Reviews} />} />
+      <Route path="/community/reviews"         component={() => <L C={Reviews} />} />
+      <Route path="/reviews/seller/:sellerName" component={() => <L C={Reviews} />} />
+      <Route path="/reviews/seller/slug/:slug" component={() => <L C={Reviews} />} />
+      <Route path="/sellers"                   component={() => <L C={Sellers} />} />
+      <Route path="/seller/:slug"              component={() => <L C={Sellers} />} />
+      <Route path="/news"                      component={() => <L C={News} />} />
+      <Route path="/news/:slug"                component={() => <L C={NewsDetail} />} />
+      <Route path="/news/id/:legacyId"         component={() => <L C={NewsDetail} />} />
+      <Route path="/events/:slug"              component={() => <L C={EventDetail} />} />
+      <Route path="/events/id/:legacyId"       component={() => <L C={EventDetail} />} />
+
+      {/* Wiki */}
+      <Route path="/mercenaries"               component={() => <L C={Mercenaries} />} />
+      <Route path="/grave-games"               component={() => <L C={GraveGames} />} />
+      <Route path="/weapons"                   component={() => <L C={Weapons} />} />
+      <Route path="/modes"                     component={() => <L C={Modes} />} />
+      <Route path="/maps"                      component={() => <L C={Maps} />} />
+      <Route path="/ranks"                     component={() => <L C={Ranks} />} />
+
+      {/* Support */}
+      <Route path="/support"                   component={() => <L C={Support} />} />
+      <Route path="/faq"                       component={() => <L C={FAQ} />} />
+      <Route path="/my-tickets"                component={() => <L C={MyTickets} />} />
+
+      {/* Info */}
+      <Route path="/about"                     component={() => <L C={About} />} />
+      <Route path="/contact"                   component={() => <L C={Contact} />} />
+      <Route path="/download"                  component={() => <L C={Download} />} />
+      <Route path="/terms"                     component={() => <L C={Terms} />} />
+      <Route path="/privacy"                   component={() => <L C={Privacy} />} />
+
+      {/* Media */}
+      <Route path="/videos"                    component={() => <L C={Videos} />} />
+      <Route path="/videos/:category"          component={() => <L C={VideosCategory} />} />
+      <Route path="/videos/:category/:slug"    component={() => <L C={TutorialDetail} />} />
+      <Route path="/tutorials"                 component={() => <L C={Tutorials} />} />
+      <Route path="/tutorials/:slug"           component={() => <L C={TutorialDetail} />} />
+      <Route path="/tutorials/id/:legacyId"    component={() => <L C={TutorialDetail} />} />
+
+      {/* Forum */}
+      <Route path="/forum"                     component={() => <L C={Forum} />} />
+      <Route path="/forum/:categorySlug/new"   component={(p: any) => <L C={NewThread} params={p.params} />} />
+      <Route path="/forum/:categorySlug/:threadId" component={(p: any) => <L C={ForumThread} params={p.params} />} />
+      <Route path="/forum/:categorySlug"       component={(p: any) => <L C={ForumCategory} params={p.params} />} />
+
+      {/* Auth */}
+      <Route path="/login"                     component={() => <L C={Login} />} />
+      <Route path="/register"                  component={() => <L C={Register} />} />
+      <Route path="/reset-password"            component={() => <L C={ResetPassword} />} />
+
+      {/* Community */}
+      <Route path="/chat"                      component={() => <L C={Chat} />} />
+      <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
+
+      {/* Admin */}
+      <Route path="/admin/login"               component={() => <L C={AdminLogin} />} />
+      <Route path="/admin/announcements-manage" component={() => <L C={AdminAnnouncements} />} />
+      <Route path="/admin/media-upload"        component={() => <L C={MediaUpload} />} />
+      <Route path="/admin/seo-bulk"            component={() => <L C={BulkSEO} />} />
+      <Route path="/admin"                     component={() => <L C={Admin} />} />
+      <Route path="/admin/:rest*"              component={() => <L C={Admin} />} />
+
+      <Route component={() => <L C={NotFound} />} />
     </Switch>
   );
 }
@@ -269,13 +302,7 @@ function Layout() {
     } catch { }
   }, []);
 
-  useEffect(() => {
-    try {
-      const audio = new Audio('/sounds/startup.mp3');
-      audio.volume = 0.3;
-      audio.play().catch(() => { });
-    } catch { }
-  }, []);
+  // startup.mp3 removed — sound file not present in public/sounds/
 
   useEffect(() => {
     try {
@@ -315,8 +342,6 @@ function Layout() {
       <div
         className="flex flex-col min-h-screen"
       >
-        <audio id="intro-audio" src={introOverride || "https://files.catbox.moe/imua96.mp3"} preload="auto" playsInline autoPlay muted />
-        <audio id="route-audio" src="https://files.catbox.moe/7ljomr.mp3" preload="auto" playsInline />
         <SiteBanner />
         <Header />
         <main className="flex-1">

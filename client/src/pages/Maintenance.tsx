@@ -3,6 +3,18 @@ import { SiWhatsapp } from "react-icons/si";
 const WHATSAPP_LINK = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 const HERO_BG = "/cf-heroes-bg.png";
 
+// Minimal head meta for maintenance — injected directly so it works before
+// the full React tree mounts. noindex keeps search engines from caching it.
+function MaintenanceMeta() {
+  if (typeof document !== "undefined") {
+    document.title = "CrossFire Wiki — Back Soon";
+    let meta = document.querySelector('meta[name="robots"]');
+    if (!meta) { meta = document.createElement("meta"); meta.setAttribute("name", "robots"); document.head.appendChild(meta); }
+    meta.setAttribute("content", "noindex, nofollow");
+  }
+  return null;
+}
+
 export default function Maintenance() {
   return (
     <div style={{

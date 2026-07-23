@@ -36,7 +36,7 @@ export default function PortalsManager() {
         }
         setImages(map);
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load portal images:', e instanceof Error ? e.message : String(e));
       } finally {
         setLoading(false);
       }

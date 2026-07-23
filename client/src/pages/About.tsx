@@ -8,6 +8,7 @@ import {
   Trophy, Gamepad2, Globe2, Shield, Star, ArrowRight
 } from "lucide-react";
 import { SiDiscord, SiFacebook, SiYoutube, SiX } from "react-icons/si";
+import { SITE_CONFIG } from "@/lib/siteConfig";
 
 const ACCENT = "#d4a017";
 const BG = "#0a0a0a";
@@ -99,10 +100,10 @@ const QUICK_STATS = [
 ];
 
 const SOCIALS = [
-  { href: "https://discord.gg/7AbuDrNNJM", icon: SiDiscord, label: "Discord", color: "#5865f2" },
-  { href: "https://www.facebook.com/crossfireonline", icon: SiFacebook, label: "Facebook", color: "#1877f2" },
-  { href: "https://www.youtube.com/c/CrossFireWest", icon: SiYoutube, label: "YouTube", color: "#ff0033" },
-  { href: "https://x.com/CrossFireOnline", icon: SiX, label: "X / Twitter", color: "#fff" },
+  { href: SITE_CONFIG.socials.discord,  icon: SiDiscord,  label: "Discord",    color: "#5865f2" },
+  { href: SITE_CONFIG.socials.facebook, icon: SiFacebook, label: "Facebook",   color: "#1877f2" },
+  { href: SITE_CONFIG.socials.youtube,  icon: SiYoutube,  label: "YouTube",    color: "#ff0033" },
+  { href: SITE_CONFIG.socials.twitter,  icon: SiX,        label: "X / Twitter", color: "#fff" },
 ];
 
 export default function About() {
@@ -283,7 +284,7 @@ export default function About() {
                 background: CARD, border: `1px solid ${BORDER}`,
                 borderRadius: 12, overflow: "hidden",
               }}>
-                <img src="/cf-heroes-bg.png" alt="CrossFire"
+                <img src="/cf-heroes-bg.png" alt="CrossFire" width={1200} height={260}
                   style={{ width: "100%", height: 260, objectFit: "cover", display: "block", opacity: 0.85 }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               </div>
@@ -319,6 +320,7 @@ export default function About() {
                     <img
                       src={faction.image}
                       alt={faction.name}
+                      width={300} height={130}
                       style={{ maxHeight: 130, maxWidth: "70%", objectFit: "contain", position: "relative", zIndex: 1 }}
                       onError={e => {
                         const el = e.currentTarget as HTMLImageElement;

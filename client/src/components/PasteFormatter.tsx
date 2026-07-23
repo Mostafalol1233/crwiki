@@ -172,7 +172,11 @@ export function PasteFormatter({
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-[400px] overflow-y-auto">
               <div
                 className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: pastedText }}
+                dangerouslySetInnerHTML={{
+                  __html: (window as any).DOMPurify
+                    ? (window as any).DOMPurify.sanitize(pastedText)
+                    : pastedText.replace(/<script[\s\S]*?<\/script>/gi, "")
+                }}
               />
             </div>
             <div className="flex gap-2">

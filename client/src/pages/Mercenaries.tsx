@@ -402,6 +402,7 @@ export default function Mercenaries() {
                     <img
                       src={resolveMercImage(merc)}
                       alt={merc.name}
+                      width={300} height={400}
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
                       className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500"
                       style={{ transform: isExpanded ? "scale(1.05)" : "scale(1)" }}
@@ -461,6 +462,7 @@ export default function Mercenaries() {
                       <img
                         src={resolveMercImage(merc)}
                         alt={merc.name}
+                        width={240} height={320}
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
                         className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                       />

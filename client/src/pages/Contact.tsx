@@ -6,8 +6,7 @@ import PageSEO from "@/components/PageSEO";
 import { Mail, MessageSquare, Send, CheckCircle, ArrowRight } from "lucide-react";
 import { SiDiscord, SiFacebook, SiWhatsapp, SiX } from "react-icons/si";
 import { Link } from "wouter";
-
-const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
+import { SITE_CONFIG } from "@/lib/siteConfig";
 
 export default function Contact() {
   const { t } = useLanguage();
@@ -16,7 +15,7 @@ export default function Contact() {
     {
       icon: Mail,
       title: t("contactEmailTitle"),
-      value: "contact@crossfire.wiki",
+      value: SITE_CONFIG.contactEmail,
       desc: t("contactEmailDesc"),
       color: "#f5a623",
     },
@@ -34,15 +33,15 @@ export default function Contact() {
       value: t("contactWhatsappValue"),
       desc: t("contactWhatsappDesc"),
       color: "#25d366",
-      href: WHATSAPP_CHANNEL_URL,
+      href: SITE_CONFIG.socials.whatsapp,
     },
   ];
 
   const SOCIALS = [
-    { href: WHATSAPP_CHANNEL_URL, icon: <SiWhatsapp className="h-5 w-5" />, label: t("footerWhatsappChannel"), color: "#25d366" },
-    { href: "https://discord.gg/7AbuDrNNJM", icon: <SiDiscord className="h-5 w-5" />, label: "Discord", color: "#5865f2" },
-    { href: "https://www.facebook.com/crossfireonline", icon: <SiFacebook className="h-5 w-5" />, label: "Facebook", color: "#1877f2" },
-    { href: "https://x.com/CrossFireOnline", icon: <SiX className="h-5 w-5" />, label: "Twitter / X", color: "#e0e0e0" },
+    { href: SITE_CONFIG.socials.whatsapp, icon: <SiWhatsapp className="h-5 w-5" />, label: t("footerWhatsappChannel"), color: "#25d366" },
+    { href: SITE_CONFIG.socials.discord,  icon: <SiDiscord  className="h-5 w-5" />, label: "Discord",    color: "#5865f2" },
+    { href: SITE_CONFIG.socials.facebook, icon: <SiFacebook className="h-5 w-5" />, label: "Facebook",   color: "#1877f2" },
+    { href: SITE_CONFIG.socials.twitter,  icon: <SiX        className="h-5 w-5" />, label: "Twitter / X", color: "#e0e0e0" },
   ];
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

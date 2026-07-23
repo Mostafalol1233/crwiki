@@ -3,18 +3,18 @@ import { ChevronUp, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { SiDiscord, SiFacebook, SiInstagram, SiTwitch, SiWhatsapp, SiX, SiYoutube } from "react-icons/si";
 import { useLanguage } from "./LanguageProvider";
+import { SITE_CONFIG } from "@/lib/siteConfig";
 
 const GOLD = "#9a7c3f";
 const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
-const WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 const socials = [
-  { href: WHATSAPP_CHANNEL_URL, icon: SiWhatsapp, title: "WhatsApp Channel", color: "#25d366" },
-  { href: "https://www.facebook.com/crossfireonline", icon: SiFacebook, title: "Facebook", color: "#1877f2" },
-  { href: "https://x.com/CrossFireOnline", icon: SiX, title: "X / Twitter", color: "hsl(var(--foreground))" },
-  { href: "https://www.youtube.com/c/CrossFireWest", icon: SiYoutube, title: "YouTube", color: "#ff0033" },
-  { href: "https://discord.gg/7AbuDrNNJM", icon: SiDiscord, title: "Discord", color: "#5865f2" },
-  { href: "https://www.instagram.com/crossfirewest/", icon: SiInstagram, title: "Instagram", color: "#e4405f" },
-  { href: "https://www.twitch.tv/cfonline/", icon: SiTwitch, title: "Twitch", color: "#9146ff" },
+  { href: SITE_CONFIG.socials.whatsapp,  icon: SiWhatsapp,  title: "WhatsApp Channel", color: "#25d366" },
+  { href: SITE_CONFIG.socials.facebook,  icon: SiFacebook,  title: "Facebook",          color: "#1877f2" },
+  { href: SITE_CONFIG.socials.twitter,   icon: SiX,         title: "X / Twitter",       color: "hsl(var(--foreground))" },
+  { href: SITE_CONFIG.socials.youtube,   icon: SiYoutube,   title: "YouTube",           color: "#ff0033" },
+  { href: SITE_CONFIG.socials.discord,   icon: SiDiscord,   title: "Discord",           color: "#5865f2" },
+  { href: SITE_CONFIG.socials.instagram, icon: SiInstagram, title: "Instagram",         color: "#e4405f" },
+  { href: SITE_CONFIG.socials.twitch,    icon: SiTwitch,    title: "Twitch",            color: "#9146ff" },
 ];
 
 function SectionTitle({ label }: { label: string }) {
@@ -294,7 +294,7 @@ export function Footer() {
               ))}
             </div>
             <a
-              href={WHATSAPP_CHANNEL_URL}
+              href={SITE_CONFIG.socials.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}

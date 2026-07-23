@@ -341,7 +341,6 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const [lookupInput, setLookupInput] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
-  const [suggestNickname, setSuggestNickname] = useState(false);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
 
   /* ── Manual mode ── */
@@ -439,27 +438,22 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   /* ── Handlers ── */
   const handleLookup = async () => {
     const input = lookupInput.trim();
-    if (!input) { setLookupError("Enter your nickname or profile URL."); return; }
+    if (!input) { setLookupError("Paste your z8games.com profile URL."); return; }
+    if (!input.startsWith("http") && !input.includes("z8games.com")) {
+      setLookupError("Please paste a full profile URL (e.g. https://crossfire.z8games.com/profile/12345).");
+      return;
+    }
     setLookupLoading(true);
     setLookupError("");
-    setSuggestNickname(false);
     setProfile(null);
     setCurrentRankId("");
     setDestinationRankId("");
     setTips([]);
     try {
-      const isUrl = input.startsWith("http") || input.includes("z8games.com");
-      const qs = isUrl ? `profileUrl=${encodeURIComponent(input)}` : `nickname=${encodeURIComponent(input)}`;
-      const res = await fetch(`/api/player/lookup?${qs}`);
+      const res = await fetch(`/api/player/lookup?profileUrl=${encodeURIComponent(input)}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
-        if (data.suggestNickname) {
-          setSuggestNickname(true);
-          setLookupError(data.error || "Could not load via URL. Enter your in-game nickname directly.");
-        } else {
-          throw new Error(data.error || "Player not found. Check the nickname spelling.");
-        }
-        return;
+        throw new Error(data.error || "Profile not found. Make sure your profile is public on z8games.com.");
       }
       const p = data.profile;
       setProfile({
@@ -471,7 +465,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
         wins: p.wins ?? null,
       });
     } catch (e: any) {
-      setLookupError(e.message || "Lookup failed. Try entering your nickname instead.");
+      setLookupError(e.message || "Lookup failed. Check the URL and try again.");
     } finally {
       setLookupLoading(false);
     }
@@ -520,7 +514,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
             Rank Progression Calculator
           </p>
           <p className="text-[10px]" style={{ color: "#555" }}>
-            Look up your profile or manually enter EXP — works for all {sortedRanks.length} ranks
+            Paste your z8games.com profile URL, or manually enter EXP — works for all {sortedRanks.length} ranks
           </p>
         </div>
       </div>
@@ -535,12 +529,15 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
 
           {!profile ? (
             <>
+              <p className="text-[10px] mb-2" style={{ color: "#555" }}>
+                Go to <strong style={{ color: "#aaa" }}>crossfire.z8games.com</strong> → your profile → copy the page URL and paste it below.
+              </p>
               <div className="flex gap-2">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "#444" }} />
                   <input
-                    type="text"
-                    placeholder="In-game nickname  OR  z8games.com/profile/… URL"
+                    type="url"
+                    placeholder="https://crossfire.z8games.com/profile/…"
                     value={lookupInput}
                     onChange={e => { setLookupInput(e.target.value); setLookupError(""); }}
                     onKeyDown={e => e.key === "Enter" && handleLookup()}
@@ -558,31 +555,12 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                   className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-black uppercase tracking-wide rounded transition-all disabled:opacity-40"
                   style={{ background: "#d4a017", color: "#000", cursor: lookupLoading ? "not-allowed" : "pointer", flexShrink: 0 }}>
                   {lookupLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-                  {lookupLoading ? "Looking up…" : "Look Up"}
+                  {lookupLoading ? "Loading…" : "Look Up"}
                 </button>
               </div>
-              {lookupError && !suggestNickname && (
+              {lookupError && (
                 <div className="flex items-center gap-2 mt-2 text-[11px]" style={{ color: "#ef4444" }}>
                   <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /> {lookupError}
-                </div>
-              )}
-              {suggestNickname && (
-                <div className="mt-2 rounded p-2.5" style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)" }}>
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: "#f5a623" }} />
-                    <div className="flex-1">
-                      <p className="text-[11px] font-bold" style={{ color: "#f5a623" }}>Profile URL couldn't be loaded directly</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: "#888" }}>
-                        The CrossFire servers don't allow ID lookups. Type your <strong style={{ color: "#ccc" }}>in-game nickname</strong> (the exact name shown when you log in) and click Look Up again.
-                      </p>
-                      <button
-                        onClick={() => { setLookupInput(""); setSuggestNickname(false); setLookupError(""); }}
-                        className="mt-1.5 text-[10px] font-black uppercase tracking-wide px-2 py-1 rounded"
-                        style={{ background: "rgba(245,166,35,0.15)", color: "#f5a623", border: "1px solid rgba(245,166,35,0.3)" }}>
-                        Clear & enter nickname
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
             </>

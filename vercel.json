@@ -13,7 +13,6 @@
     "api/player/lookup.ts":       { "maxDuration": 45 },
     "api/prerender.ts":           { "maxDuration": 30 },
     "api/send-email.ts":          { "maxDuration": 20 },
-    "api/grok-tips.ts":           { "maxDuration": 20 },
     "api/sitemap.ts":             { "maxDuration": 20 },
     "api/admin/scraper.ts":       { "maxDuration": 60 }
   },

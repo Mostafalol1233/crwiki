@@ -357,32 +357,37 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const manualExp = parseInt(manualExpInput.replace(/,/g, ""), 10);
   const currentExp: number | null = profile?.exp ?? (isNaN(manualExp) ? null : manualExp);
 
-  // Auto-detect rank from profile lookup
+  // Auto-detect rank from profile lookup.
+  // EXP is the ground truth — scraper rank names are often wrong.
+  // Only fall back to name/tier when EXP is absent.
   const autoCurrentRank = useMemo<Rank | null>(() => {
     if (!profile) return null;
-    // Match by tier first (most accurate)
-    if (profile.rankTier) {
-      const r = sortedRanks.find(r => r.tier === profile.rankTier);
-      if (r) return r;
-    }
-    // Match by rank name from API (fuzzy: includes)
-    if (profile.rank) {
-      const nameL = profile.rank.toLowerCase().trim();
-      const r = sortedRanks.find(r => r.name.toLowerCase() === nameL);
-      if (r) return r;
-      // Partial match
-      const r2 = sortedRanks.find(r => r.name.toLowerCase().includes(nameL) || nameL.includes(r.name.toLowerCase()));
-      if (r2) return r2;
-    }
-    // Match by EXP: highest rank where expRequired <= currentExp
-    if (profile.exp != null) {
+
+    // 1. EXP-based detection (most reliable — rank name from Firecrawl can be wrong)
+    if (profile.exp != null && profile.exp > 0) {
       let best: Rank | null = null;
       for (const r of sortedRanks) {
         if (getExp(r) <= profile.exp!) best = r;
         else break;
       }
-      return best;
+      if (best) return best;
     }
+
+    // 2. Tier number fallback
+    if (profile.rankTier) {
+      const r = sortedRanks.find(r => r.tier === profile.rankTier);
+      if (r) return r;
+    }
+
+    // 3. Rank name fallback (least reliable)
+    if (profile.rank) {
+      const nameL = profile.rank.toLowerCase().trim();
+      const r = sortedRanks.find(r => r.name.toLowerCase() === nameL);
+      if (r) return r;
+      const r2 = sortedRanks.find(r => r.name.toLowerCase().includes(nameL) || nameL.includes(r.name.toLowerCase()));
+      if (r2) return r2;
+    }
+
     return null;
   }, [profile, sortedRanks]);
 

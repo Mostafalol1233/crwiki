@@ -113,6 +113,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import BulkSEO from "@/pages/BulkSEO";
 import { SEOHead } from "@/components/SEOHead";
 import AnnouncementModal from "@/components/AnnouncementModal";
+import SiteBanner from "@/components/SiteBanner";
 import TargetCursor from "@/components/TargetCursor";
 
 
@@ -316,6 +317,7 @@ function Layout() {
       >
         <audio id="intro-audio" src={introOverride || "https://files.catbox.moe/imua96.mp3"} preload="auto" playsInline autoPlay muted />
         <audio id="route-audio" src="https://files.catbox.moe/7ljomr.mp3" preload="auto" playsInline />
+        <SiteBanner />
         <Header />
         <main className="flex-1">
           <AnnouncementModal location={location} />

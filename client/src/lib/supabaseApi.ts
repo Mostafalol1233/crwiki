@@ -640,6 +640,14 @@ export async function getTicketsByEmail(email: string) {
 }
 
 export async function getTicketReplies(ticketId: string) {
+  // Try ticket_replies first; fall back to ticket_messages
+  const { data: replies, error: rErr } = await supabase
+    .from('ticket_replies')
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: true });
+  if (!rErr) return replies || [];
+
   const { data, error } = await supabase
     .from('ticket_messages')
     .select('*')
@@ -647,6 +655,16 @@ export async function getTicketReplies(ticketId: string) {
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data || [];
+}
+
+export async function addTicketReply(ticketId: string, content: string, authorName: string) {
+  const { data, error } = await supabase
+    .from('ticket_replies')
+    .insert([{ ticket_id: ticketId, content, author_name: authorName, is_admin: false }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────

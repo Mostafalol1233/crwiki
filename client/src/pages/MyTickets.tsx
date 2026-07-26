@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getTicketsByEmail, getTicketReplies } from "@/lib/supabaseApi";
+import { getTicketsByEmail, getTicketReplies, addTicketReply } from "@/lib/supabaseApi";
 import { Ticket, MessageSquare, Clock, Mail, ArrowLeft, Send } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 
@@ -56,7 +55,6 @@ export default function MyTickets() {
   const [searchedEmail, setSearchedEmail] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
   const [replyContent, setReplyContent] = useState("");
-  const [replyAttachment, setReplyAttachment] = useState<File | null>(null);
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets/my", searchedEmail],
@@ -72,16 +70,7 @@ export default function MyTickets() {
 
   const addReplyMutation = useMutation({
     mutationFn: async (data: { ticketId: string; content: string; authorName: string }) => {
-      const formData = new FormData();
-      formData.append("authorName", data.authorName);
-      formData.append("content", data.content);
-      formData.append("isAdmin", "false");
-      if (replyAttachment) formData.append("attachment", replyAttachment);
-      const base = (import.meta as any).env?.VITE_API_URL || "";
-      const url = base ? `${base}/api/tickets/${data.ticketId}/replies` : `/api/tickets/${data.ticketId}/replies`;
-      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
-      if (!res.ok) throw new Error(await res.text() || "Failed to add reply");
-      return await res.json();
+      return await addTicketReply(data.ticketId, data.content, data.authorName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", selectedTicket?.id, "replies"] });
@@ -287,14 +276,6 @@ export default function MyTickets() {
                           data-testid="textarea-ticket-reply"
                         />
                         <div className="flex items-center gap-2">
-                          <Input
-                            type="file"
-                            accept="image/*,video/*"
-                            onChange={(e) => setReplyAttachment(e.target.files?.[0] || null)}
-                            className="flex-1 h-8 text-xs"
-                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
-                            data-testid="input-ticket-reply-attachment"
-                          />
                           <button
                             onClick={handleAddReply}
                             disabled={!replyContent.trim() || addReplyMutation.isPending}

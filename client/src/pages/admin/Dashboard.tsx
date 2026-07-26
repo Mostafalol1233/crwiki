@@ -88,6 +88,24 @@ ALTER TABLE posts ADD COLUMN IF NOT EXISTS updated_at      TIMESTAMPTZ DEFAULT n
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS title         TEXT;
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at    TIMESTAMPTZ DEFAULT now();
 ALTER TABLE sellers ADD COLUMN IF NOT EXISTS logo_url      TEXT;
+ALTER TABLE sellers ADD COLUMN IF NOT EXISTS updated_at    TIMESTAMPTZ DEFAULT now();
+
+ALTER TABLE news ADD COLUMN IF NOT EXISTS breaking         BOOLEAN DEFAULT false;
+
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS title_ar    TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS content     TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS content_ar  TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS video_url   TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS image_url   TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS slug        TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS seo_title   TEXT DEFAULT '';
+ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS seo_description TEXT DEFAULT '';
+
+-- Fix integer overflow: sort_order / order_index can receive large values
+ALTER TABLE site_highlights ALTER COLUMN sort_order TYPE BIGINT;
+ALTER TABLE events          ALTER COLUMN sort_order TYPE BIGINT;
+ALTER TABLE mercenaries     ALTER COLUMN order_index TYPE BIGINT;
+ALTER TABLE tutorials       ALTER COLUMN order_index TYPE BIGINT;
 
 -- 2. CREATE MISSING TABLES
 

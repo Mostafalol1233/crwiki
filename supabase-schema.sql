@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS news (
   raw_html_content TEXT DEFAULT '',
   author TEXT NOT NULL,
   featured BOOLEAN DEFAULT FALSE,
+  breaking BOOLEAN DEFAULT FALSE,
   preview_on_home BOOLEAN DEFAULT TRUE,
   seo_title TEXT DEFAULT '',
   seo_description TEXT DEFAULT '',
@@ -197,7 +198,8 @@ CREATE TABLE IF NOT EXISTS sellers (
   seo_title TEXT DEFAULT '',
   seo_description TEXT DEFAULT '',
   og_image TEXT DEFAULT '',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ─── Seller Reviews ───────────────────────────────────────────────────────────
@@ -216,11 +218,20 @@ CREATE TABLE IF NOT EXISTS seller_reviews (
 CREATE TABLE IF NOT EXISTS tutorials (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
+  title_ar TEXT DEFAULT '',
   description TEXT DEFAULT '',
-  youtube_url TEXT NOT NULL,
-  youtube_id TEXT NOT NULL,
+  content TEXT DEFAULT '',
+  content_ar TEXT DEFAULT '',
+  youtube_url TEXT DEFAULT '',
+  youtube_id TEXT DEFAULT '',
+  video_url TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  slug TEXT DEFAULT '',
   category TEXT DEFAULT 'tutorial',
-  order_index INTEGER DEFAULT 0,
+  difficulty TEXT DEFAULT 'Beginner',
+  seo_title TEXT DEFAULT '',
+  seo_description TEXT DEFAULT '',
+  order_index BIGINT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -294,7 +305,7 @@ CREATE TABLE IF NOT EXISTS site_highlights (
   year INTEGER DEFAULT 2025,
   media_type TEXT DEFAULT 'image',
   url TEXT NOT NULL DEFAULT '',
-  sort_order INTEGER DEFAULT 0,
+  sort_order BIGINT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

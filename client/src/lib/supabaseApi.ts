@@ -641,7 +641,7 @@ export async function getTicketsByEmail(email: string) {
 
 export async function getTicketReplies(ticketId: string) {
   const { data, error } = await supabase
-    .from('ticket_replies')
+    .from('ticket_messages')
     .select('*')
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });

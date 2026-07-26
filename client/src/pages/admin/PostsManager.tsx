@@ -71,14 +71,29 @@ export default function PostsManager() {
     if (!client || !editing.title) { toast.error('Title is required'); return; }
     setSaving(true);
     try {
-      const { title_ar, content_ar, og_image, canonical_url, focus_keyword, ...rest } = editing as any;
-      const payload = {
-        ...rest,
-        gallery: Array.isArray(editing.gallery) ? editing.gallery : [],
-        post_slug: editing.post_slug || slugify(editing.title || ''),
-        updated_at: new Date().toISOString(),
+      const payload: Record<string, any> = {
+        title:          editing.title || '',
+        title_ar:       editing.title_ar || '',
+        post_slug:      editing.post_slug || slugify(editing.title || ''),
+        content:        editing.content || '',
+        content_ar:     editing.content_ar || '',
+        summary:        editing.summary || '',
+        image_url:      editing.image_url || '',
+        category:       editing.category || '',
+        tags:           Array.isArray(editing.tags) ? editing.tags : [],
+        author:         editing.author || '',
+        featured:       editing.featured || false,
+        language:       editing.language || 'en',
+        seo_title:      editing.seo_title || '',
+        seo_description:editing.seo_description || '',
+        og_image:       editing.og_image || '',
+        canonical_url:  editing.canonical_url || '',
+        focus_keyword:  editing.focus_keyword || '',
+        gallery:        Array.isArray(editing.gallery) ? editing.gallery : [],
+        updated_at:     new Date().toISOString(),
       };
-      const doSave = async (p: any) => {
+
+      const doSave = async (p: Record<string, any>) => {
         if (editing.id) {
           const { error } = await client.from('posts').update(p).eq('id', editing.id);
           return error;
@@ -87,11 +102,18 @@ export default function PostsManager() {
           return error;
         }
       };
+
+      // Try full save; if a column is missing, strip it and retry
       let err = await doSave(payload);
-      if (err && (err.message?.includes('gallery') || err.code === '42703')) {
-        const { gallery: _g, ...noGallery } = payload;
-        err = await doSave(noGallery);
-        if (!err) toast.warning('Gallery not saved — run in Supabase SQL editor: ALTER TABLE posts ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT \'[]\';');
+      if (err?.code === '42703') {
+        // Strip unknown columns one by one based on error message
+        const badCol = err.message?.match(/column "([^"]+)"/)?.[1];
+        if (badCol && badCol in payload) {
+          const stripped = { ...payload };
+          delete stripped[badCol];
+          err = await doSave(stripped);
+          if (!err) toast.warning(`Column "${badCol}" missing — run the SQL setup from Dashboard to enable all features.`);
+        }
       }
       if (err) throw err;
       toast.success(editing.id ? 'Post updated' : 'Post created');

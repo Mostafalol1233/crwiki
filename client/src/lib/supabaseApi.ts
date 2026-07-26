@@ -129,6 +129,13 @@ export async function getPostById(id: string) {
 }
 
 function normalizePost(p: any) {
+  let gallery: { url: string; description?: string }[] = [];
+  if (Array.isArray(p.gallery)) {
+    gallery = p.gallery.filter((g: any) => g && typeof g.url === 'string' && g.url.trim());
+  } else if (typeof p.gallery === 'string') {
+    try { gallery = JSON.parse(p.gallery) || []; } catch { gallery = []; }
+  }
+
   return {
     id: String(p.id || ''),
     title: String(p.title || ''),
@@ -148,6 +155,7 @@ function normalizePost(p: any) {
     language: p.language || 'en',
     seoTitle: p.seo_title || '',
     seoDescription: p.seo_description || '',
+    gallery,
   };
 }
 
@@ -202,12 +210,37 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
 }
 
 export async function getEventBySlug(slug: string) {
+  // 1. Exact match
   const { data, error } = await supabase.from('events').select('*').eq('event_name_slug', slug).single();
-  if (error) throw error;
-  return normalizeEvent(data);
+  if (!error && data) return normalizeEvent(data);
+
+  // 2. Case-insensitive match (handles capitalisation drift)
+  const { data: ci } = await supabase.from('events').select('*').ilike('event_name_slug', slug).limit(1);
+  if (ci?.[0]) return normalizeEvent(ci[0]);
+
+  // 3. Title-derived slug match — covers events whose slug was never saved but title matches
+  const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const { data: rows } = await supabase.from('events').select('*');
+  const match = (rows || []).find((e: any) => {
+    const stored = toSlug(e.event_name_slug || '');
+    const fromTitle = toSlug(e.title || '');
+    const needle = toSlug(slug);
+    return stored === needle || fromTitle === needle;
+  });
+  if (match) return normalizeEvent(match);
+
+  throw new Error('Event not found');
 }
 
 function normalizeEvent(e: any) {
+  // Parse gallery – stored as JSONB array [{url, description}]
+  let gallery: { url: string; description?: string }[] = [];
+  if (Array.isArray(e.gallery)) {
+    gallery = e.gallery.filter((g: any) => g && typeof g.url === 'string' && g.url.trim());
+  } else if (typeof e.gallery === 'string') {
+    try { gallery = JSON.parse(e.gallery) || []; } catch { gallery = []; }
+  }
+
   return {
     id: String(e.id || ''),
     title: String(e.title || ''),
@@ -231,6 +264,8 @@ function normalizeEvent(e: any) {
     canonicalUrl: String(e.canonical_url || ''),
     createdAt: e.created_at,
     featured: e.featured || false,
+    gallery,
+    tags: Array.isArray(e.tags) ? e.tags : [],
   };
 }
 

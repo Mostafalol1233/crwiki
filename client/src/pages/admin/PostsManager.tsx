@@ -9,6 +9,7 @@ import SEOPanel from '@/components/admin/SEOPanel';
 import ImageUpload from '@/components/admin/ImageUpload';
 import BilingualField from '@/components/admin/BilingualField';
 import { useAutoSave } from './hooks/useAutoSave';
+import GalleryManager, { GalleryItem } from '@/components/admin/GalleryManager';
 
 interface Post {
   id: string;
@@ -30,6 +31,7 @@ interface Post {
   canonical_url: string;
   focus_keyword: string;
   created_at: string;
+  gallery: GalleryItem[];
 }
 
 function slugify(str: string) {
@@ -40,7 +42,7 @@ const EMPTY_POST: Partial<Post> = {
   title: '', title_ar: '', post_slug: '', content: '', content_ar: '',
   summary: '', image_url: '', category: '', tags: [], author: '',
   featured: false, language: 'en', seo_title: '', seo_description: '',
-  og_image: '', canonical_url: '', focus_keyword: '',
+  og_image: '', canonical_url: '', focus_keyword: '', gallery: [],
 };
 
 const col = createColumnHelper<Post>();
@@ -72,18 +74,27 @@ export default function PostsManager() {
       const { title_ar, content_ar, og_image, canonical_url, focus_keyword, ...rest } = editing as any;
       const payload = {
         ...rest,
+        gallery: Array.isArray(editing.gallery) ? editing.gallery : [],
         post_slug: editing.post_slug || slugify(editing.title || ''),
         updated_at: new Date().toISOString(),
       };
-      if (editing.id) {
-        const { error } = await client.from('posts').update(payload).eq('id', editing.id);
-        if (error) throw error;
-        toast.success('Post updated');
-      } else {
-        const { error } = await client.from('posts').insert({ ...payload, created_at: new Date().toISOString() });
-        if (error) throw error;
-        toast.success('Post created');
+      const doSave = async (p: any) => {
+        if (editing.id) {
+          const { error } = await client.from('posts').update(p).eq('id', editing.id);
+          return error;
+        } else {
+          const { error } = await client.from('posts').insert({ ...p, created_at: new Date().toISOString() });
+          return error;
+        }
+      };
+      let err = await doSave(payload);
+      if (err && (err.message?.includes('gallery') || err.code === '42703')) {
+        const { gallery: _g, ...noGallery } = payload;
+        err = await doSave(noGallery);
+        if (!err) toast.warning('Gallery not saved — run in Supabase SQL editor: ALTER TABLE posts ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT \'[]\';');
       }
+      if (err) throw err;
+      toast.success(editing.id ? 'Post updated' : 'Post created');
       await fetch();
       setView('list');
       setEditing(EMPTY_POST);
@@ -181,6 +192,13 @@ export default function PostsManager() {
             <div>
               <label style={labelStyle}>Content (AR)</label>
               <TipTapEditor content={editing.content_ar || ''} onChange={(html) => setEditing({ ...editing, content_ar: html })} placeholder="اكتب محتوى المقال..." dir="rtl" />
+            </div>
+            {/* Gallery */}
+            <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
+              <GalleryManager
+                value={editing.gallery || []}
+                onChange={(items) => setEditing({ ...editing, gallery: items })}
+              />
             </div>
           </div>
 

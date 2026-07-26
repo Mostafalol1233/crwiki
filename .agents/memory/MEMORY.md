@@ -13,3 +13,4 @@
 - [Forum + AI upgrade](forum-ai-upgrade.md) — Forum system (3 Supabase tables); AI open to all users, injects live site data into prompt.
 - [Admin auth security](admin-auth-security.md) — adminLogin moved server-side to /api/admin/login (cfAdminAuthPlugin); service key still in client bundle for admin CRUD — known risk, full backend refactor needed to eliminate.
 - [Events date parsing](events-date-parsing.md) — EventsList + EventDetail use parseDateRange() for human date strings like "July 20–26, 2026"; formatDate guards isNaN; SiteBanner removed from App.tsx (was "experiencing issues").
+- [Gallery + Editor upgrades](gallery-editor-upgrades.md) — Gallery column needs SQL migration; TipTap got font color (@tiptap/extension-color@3.25.0, must use --legacy-peer-deps) and raw HTML insert button.

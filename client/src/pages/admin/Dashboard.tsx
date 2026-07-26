@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabaseService } from '@/lib/supabaseAdmin';
-import { FileText, Calendar, Newspaper, Ticket, Plus } from 'lucide-react';
+import { FileText, Calendar, Newspaper, Ticket, Plus, Database, X } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
@@ -57,10 +57,18 @@ const QUICK_ACTIONS = [
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({ posts: 0, events: 0, news: 0, tickets: 0 });
   const [loading, setLoading] = useState(true);
+  const [needsMigration, setNeedsMigration] = useState(false);
+  const [migrationDismissed, setMigrationDismissed] = useState(() => localStorage.getItem('gallery_migration_dismissed') === '1');
   const client = supabaseService;
 
   useEffect(() => {
     if (!client) { setLoading(false); return; }
+    // Check if gallery column exists
+    client.from('events').select('gallery').limit(0).then(({ error }) => {
+      if (error?.message?.toLowerCase().includes('gallery') || error?.message?.includes('42703')) {
+        setNeedsMigration(true);
+      }
+    });
     Promise.all([
       client.from('posts').select('id', { count: 'exact', head: true }),
       client.from('events').select('id', { count: 'exact', head: true }),
@@ -85,6 +93,28 @@ export default function Dashboard() {
         <h1 style={{ fontSize: 20, fontWeight: 600, color: '#fafafa', margin: 0 }}>Dashboard</h1>
         <p style={{ fontSize: 13, color: '#52525b', margin: '4px 0 0' }}>Overview of your CrossFire Wiki</p>
       </div>
+
+      {/* Gallery migration notice */}
+      {needsMigration && !migrationDismissed && (
+        <div style={{ background: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.3)', borderRadius: 6, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <Database size={16} color="#f5a623" style={{ marginTop: 1, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#f5a623', margin: '0 0 4px' }}>One-time Gallery Setup Required</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: '0 0 8px', lineHeight: 1.5 }}>
+              To enable the gallery feature on events &amp; posts, run this SQL once in your{' '}
+              <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" style={{ color: '#f5a623' }}>Supabase SQL editor</a>:
+            </p>
+            <pre style={{ background: '#09090b', border: '1px solid #27272a', borderRadius: 4, padding: '8px 12px', fontSize: 12, color: '#a1a1aa', margin: 0, whiteSpace: 'pre-wrap', userSelect: 'all' }}>
+{`ALTER TABLE events ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT '[]';
+ALTER TABLE posts  ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT '[]';`}
+            </pre>
+          </div>
+          <button onClick={() => { setMigrationDismissed(true); localStorage.setItem('gallery_migration_dismissed', '1'); }}
+            style={{ background: 'none', border: 'none', color: '#52525b', cursor: 'pointer', padding: 2, flexShrink: 0 }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>

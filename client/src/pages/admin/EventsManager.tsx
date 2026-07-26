@@ -7,6 +7,7 @@ import DataTable from '@/components/admin/DataTable';
 import TipTapEditor from '@/components/admin/TipTapEditor';
 import ImageUpload from '@/components/admin/ImageUpload';
 import SEOPanel from '@/components/admin/SEOPanel';
+import GalleryManager, { GalleryItem } from '@/components/admin/GalleryManager';
 
 interface Event {
   id: string;
@@ -27,6 +28,7 @@ interface Event {
   canonical_url: string;
   featured: boolean;
   created_at: string;
+  gallery: GalleryItem[];
 }
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
@@ -101,7 +103,7 @@ function buildEventSEO(title: string, description: string, slug: string, date: s
   return { seo_title: seoTitle, seo_description: seoDesc, canonical_url: canonicalUrl };
 }
 
-const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', start_date: '', end_date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', canonical_url: '', featured: false };
+const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', start_date: '', end_date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', canonical_url: '', featured: false, gallery: [] };
 
 const col = createColumnHelper<Event>();
 
@@ -137,9 +139,11 @@ export default function EventsManager() {
         ...(needsSEO ? autoSEO : {}),
         // Always keep canonical in sync with slug
         canonical_url: editing.canonical_url || `${SITE}/events/${slug}`,
+        // gallery: normalize to JSON-serializable array
+        gallery: Array.isArray(editing.gallery) ? editing.gallery : [],
       };
-      // Try with start_date/end_date; if columns don't exist yet, fall back without them
-      const saveWithDates = async (p: any) => {
+      // Try saving; gracefully strip missing columns if DB schema lags behind
+      const doSave = async (p: any) => {
         if (editing.id) {
           const { error } = await client.from('events').update(p).eq('id', editing.id);
           return error;
@@ -148,12 +152,18 @@ export default function EventsManager() {
           return error;
         }
       };
-      let err = await saveWithDates(payload);
+      let err = await doSave(payload);
+      // Strip gallery if column missing
+      if (err && (err.message?.includes('gallery') || err.code === '42703')) {
+        const { gallery: _g, ...noGallery } = payload;
+        err = await doSave(noGallery);
+        if (!err) toast.warning('Gallery not saved — run this SQL in Supabase: ALTER TABLE events ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT \'[]\';');
+      }
+      // Strip date columns if missing
       if (err && (err.message?.includes('start_date') || err.message?.includes('end_date') || err.code === '42703')) {
-        // Columns don't exist yet — save without them and remind user to run migration
-        const { start_date: _s, end_date: _e, ...payloadNoDate } = payload;
-        err = await saveWithDates(payloadNoDate);
-        if (!err) toast.warning('Saved without countdown dates. Run the SQL migration in supabase/migrations/ to enable countdown.');
+        const { start_date: _s, end_date: _e, gallery: _g2, ...payloadMin } = payload;
+        err = await doSave(payloadMin);
+        if (!err) toast.warning('Saved without countdown dates. Run the SQL migration to enable countdown.');
       }
       if (err) throw err;
       toast.success(editing.id ? 'Event updated' : 'Event created');
@@ -195,7 +205,60 @@ export default function EventsManager() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div><label style={lbl}>Title (EN) *</label><input type="text" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} style={inp} /></div>
+            <div>
+              <label style={lbl}>Title (EN) *</label>
+              <input
+                type="text"
+                value={editing.title || ''}
+                onChange={(e) => {
+                  const newTitle = e.target.value;
+                  // For new events, auto-generate slug from title; for existing, leave slug alone
+                  if (!editing.id) {
+                    const newSlug = slugify(newTitle);
+                    setEditing(prev => ({
+                      ...prev,
+                      title: newTitle,
+                      event_name_slug: newSlug,
+                      canonical_url: newSlug ? `${SITE}/events/${newSlug}` : '',
+                    }));
+                  } else {
+                    setEditing(prev => ({ ...prev, title: newTitle }));
+                  }
+                }}
+                style={inp}
+              />
+            </div>
+            {/* Page URL / Slug */}
+            <div>
+              <label style={lbl}>
+                Page URL
+                <span style={{ color: '#52525b', fontWeight: 400, marginLeft: 6 }}>— controls the link to this event</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, overflow: 'hidden' }}>
+                <span style={{ padding: '8px 10px', fontSize: 13, color: '#52525b', whiteSpace: 'nowrap', borderRight: '1px solid #3f3f46', userSelect: 'none' }}>
+                  crossfire.wiki/events/
+                </span>
+                <input
+                  type="text"
+                  value={editing.event_name_slug || ''}
+                  placeholder="auto-generated-from-title"
+                  onChange={(e) => {
+                    const newSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+                    setEditing(prev => ({
+                      ...prev,
+                      event_name_slug: newSlug,
+                      canonical_url: newSlug ? `${SITE}/events/${newSlug}` : '',
+                    }));
+                  }}
+                  style={{ ...inp, border: 'none', borderRadius: 0, background: 'transparent', flex: 1 }}
+                />
+              </div>
+              {editing.event_name_slug && (
+                <span style={{ fontSize: 11, color: '#52525b', marginTop: 4, display: 'block' }}>
+                  Live at: <a href={`https://crossfire.wiki/events/${editing.event_name_slug}`} target="_blank" rel="noreferrer" style={{ color: '#d4a017' }}>crossfire.wiki/events/{editing.event_name_slug}</a>
+                </span>
+              )}
+            </div>
             <div><label style={lbl}>Title (AR)</label><input type="text" value={editing.title_ar || ''} onChange={(e) => setEditing({ ...editing, title_ar: e.target.value })} style={{ ...inp, direction: 'rtl' }} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
@@ -249,6 +312,14 @@ export default function EventsManager() {
             <div><label style={lbl}>Source URL</label><input type="url" value={editing.source_url || ''} onChange={(e) => setEditing({ ...editing, source_url: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Description (EN)</label><TipTapEditor content={editing.description || ''} onChange={(h) => setEditing({ ...editing, description: h })} /></div>
             <div><label style={lbl}>Description (AR)</label><TipTapEditor content={editing.description_ar || ''} onChange={(h) => setEditing({ ...editing, description_ar: h })} dir="rtl" /></div>
+
+            {/* Gallery */}
+            <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
+              <GalleryManager
+                value={editing.gallery || []}
+                onChange={(items) => setEditing({ ...editing, gallery: items })}
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>

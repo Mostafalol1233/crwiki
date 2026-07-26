@@ -11,6 +11,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { queryClient } from "@/lib/queryClient";
 import { getEventBySlug, getComments, addComment, getEvents, getMercenaries } from "@/lib/supabaseApi";
+import GallerySection from "@/components/GallerySection";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 
@@ -667,6 +668,13 @@ export default function EventDetail() {
               >
                 <RawHtmlPreview html={rawDescription || ""} isFullPage={false} isRTL={useAr} />
               </div>
+
+              {/* Gallery */}
+              {Array.isArray(event.gallery) && event.gallery.length > 0 && (
+                <div style={{ marginTop: 40 }}>
+                  <GallerySection items={event.gallery} title="Event Gallery" />
+                </div>
+              )}
 
               {/* Divider */}
               <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${BORDER} 20%, ${BORDER} 80%, transparent)`, margin: "40px 0" }} />

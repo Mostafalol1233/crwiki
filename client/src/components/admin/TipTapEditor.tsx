@@ -12,13 +12,16 @@ import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
+import Color from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
 import { createLowlight, common } from 'lowlight';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter,
   AlignRight, AlignJustify, List, ListOrdered, Quote, Code, Code2,
   Link2, Image as ImageIcon, Youtube as YoutubeIcon, Table as TableIcon,
   Heading1, Heading2, Heading3, HighlighterIcon, Undo, Redo, Minus,
+  Palette, FileCode,
 } from 'lucide-react';
 
 const lowlight = createLowlight(common);
@@ -83,6 +86,13 @@ function Divider() {
   );
 }
 
+// Preset text colors
+const TEXT_COLORS = [
+  '#ffffff', '#f5a623', '#ef4444', '#22c55e', '#3b82f6',
+  '#a855f7', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
+  '#06b6d4', '#6366f1', '#000000', '#6b7280', '#fbbf24',
+];
+
 export default function TipTapEditor({ content, onChange, placeholder = 'Start writing...', dir = 'ltr', minHeight = 320 }: TipTapEditorProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -90,6 +100,10 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
   const [showImageInput, setShowImageInput] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showHtmlInput, setShowHtmlInput] = useState(false);
+  const [htmlInput, setHtmlInput] = useState('');
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -105,7 +119,9 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
       Placeholder.configure({ placeholder }),
       CharacterCount,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Highlight.configure({ multicolor: false }),
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
     ],
     content,
     onUpdate({ editor }) {
@@ -144,10 +160,28 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
     setYoutubeUrl('');
   }, [editor, youtubeUrl]);
 
+  const insertHtml = useCallback(() => {
+    if (!editor || !htmlInput.trim()) return;
+    editor.chain().focus().insertContent(htmlInput).run();
+    setShowHtmlInput(false);
+    setHtmlInput('');
+  }, [editor, htmlInput]);
+
+  const setColor = useCallback((color: string) => {
+    if (!editor) return;
+    if (color === 'reset') {
+      editor.chain().focus().unsetColor().run();
+    } else {
+      editor.chain().focus().setColor(color).run();
+    }
+    setShowColorPicker(false);
+  }, [editor]);
+
   if (!editor) return null;
 
   const charCount = editor.storage.characterCount?.characters() ?? 0;
   const wordCount = editor.storage.characterCount?.words() ?? 0;
+  const currentColor = editor.getAttributes('textStyle').color || '#ffffff';
 
   return (
     <div style={{ border: '1px solid #3f3f46', borderRadius: 6, background: '#18181b', overflow: 'hidden' }}>
@@ -189,6 +223,75 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
         <ToolbarButton onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive('highlight')} title="Highlight">
           <HighlighterIcon size={14} />
         </ToolbarButton>
+
+        {/* Font Color */}
+        <div style={{ position: 'relative' }} ref={colorPickerRef}>
+          <button
+            type="button"
+            title="Text Color"
+            onClick={() => setShowColorPicker((v) => !v)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 28,
+              height: 28,
+              borderRadius: 4,
+              border: 'none',
+              cursor: 'pointer',
+              background: showColorPicker ? 'rgba(212,160,23,0.15)' : 'transparent',
+              color: '#a1a1aa',
+              gap: 1,
+              padding: 0,
+            }}
+          >
+            <Palette size={13} />
+            <div style={{ width: 14, height: 3, borderRadius: 1, background: currentColor, border: '1px solid rgba(255,255,255,0.2)' }} />
+          </button>
+          {showColorPicker && (
+            <div style={{
+              position: 'absolute', top: 32, left: 0, zIndex: 100,
+              background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6,
+              padding: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              minWidth: 180,
+            }}>
+              <p style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px', fontWeight: 600 }}>Text Color</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginBottom: 8 }}>
+                {TEXT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    title={c}
+                    onClick={() => setColor(c)}
+                    style={{
+                      width: 24, height: 24, borderRadius: 4, border: currentColor === c ? '2px solid #d4a017' : '1px solid rgba(255,255,255,0.15)',
+                      background: c, cursor: 'pointer', padding: 0,
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Custom color input */}
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 6 }}>
+                <input
+                  type="color"
+                  defaultValue={currentColor || '#ffffff'}
+                  onChange={(e) => setColor(e.target.value)}
+                  style={{ width: 28, height: 24, border: 'none', padding: 0, background: 'none', cursor: 'pointer', borderRadius: 3 }}
+                  title="Custom color"
+                />
+                <span style={{ fontSize: 11, color: '#a1a1aa' }}>Custom</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setColor('reset')}
+                style={{ width: '100%', padding: '4px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 3, color: '#a1a1aa', fontSize: 11, cursor: 'pointer' }}
+              >
+                Reset Color
+              </button>
+            </div>
+          )}
+        </div>
 
         <Divider />
 
@@ -244,6 +347,9 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} active={false} title="Divider">
           <Minus size={14} />
         </ToolbarButton>
+        <ToolbarButton onClick={() => setShowHtmlInput((v) => !v)} active={showHtmlInput} title="Insert Raw HTML">
+          <FileCode size={14} />
+        </ToolbarButton>
       </div>
 
       {/* Inline inputs */}
@@ -295,9 +401,32 @@ export default function TipTapEditor({ content, onChange, placeholder = 'Start w
           <button type="button" onClick={() => setShowYoutubeInput(false)} style={{ padding: '4px 10px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#a1a1aa', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
         </div>
       )}
+      {showHtmlInput && (
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid #3f3f46', background: '#09090b' }}>
+          <p style={{ fontSize: 11, color: '#52525b', marginBottom: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Insert Raw HTML — paste any HTML code (gallery, tables, embeds…)
+          </p>
+          <textarea
+            placeholder='<div class="my-gallery">...</div>'
+            value={htmlInput}
+            onChange={(e) => setHtmlInput(e.target.value)}
+            rows={5}
+            autoFocus
+            style={{
+              width: '100%', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4,
+              color: '#fafafa', padding: '8px 10px', fontSize: 12, outline: 'none',
+              resize: 'vertical', fontFamily: 'monospace', boxSizing: 'border-box',
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button type="button" onClick={insertHtml} style={{ padding: '5px 14px', background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Insert HTML</button>
+            <button type="button" onClick={() => { setShowHtmlInput(false); setHtmlInput(''); }} style={{ padding: '5px 10px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#a1a1aa', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Editor area */}
-      <div className="tiptap-admin">
+      <div className="tiptap-admin" onClick={() => setShowColorPicker(false)}>
         <EditorContent editor={editor} />
       </div>
 

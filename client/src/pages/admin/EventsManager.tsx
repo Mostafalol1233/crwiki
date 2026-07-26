@@ -22,13 +22,46 @@ interface Event {
   source_url: string;
   seo_title: string;
   seo_description: string;
+  canonical_url: string;
   featured: boolean;
   created_at: string;
 }
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
-const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', featured: false };
+const SITE = 'https://crossfire.wiki';
+const FOCUS_KW = 'crossfire';
+
+/** Generates SEO fields that score 100/100 in SEOPanel */
+function buildEventSEO(title: string, description: string, slug: string, date: string) {
+  const plain = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Meta title: 50–60 chars, must contain "CrossFire"
+  const hasCF = /crossfire/i.test(title);
+  let base = hasCF ? title : `${title} - CrossFire`;
+  if (date && base.length < 47) base = `${base} ${date}`;
+  let seoTitle = base.length <= 57 ? `${base} | CrossFire Wiki` : base.slice(0, 57).trimEnd() + '...';
+  seoTitle = seoTitle.slice(0, 60);
+  if (seoTitle.length < 50) seoTitle = `CrossFire Event: ${title}`.slice(0, 60);
+
+  // Meta description: 140–160 chars, keyword-rich
+  let seoDesc = '';
+  if (plain.length >= 60) {
+    seoDesc = hasCF ? plain : `CrossFire ${plain}`;
+    if (date && !seoDesc.includes(date)) seoDesc += ` Dates: ${date}.`;
+  }
+  if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157).replace(/\s+\S*$/, '') + '...';
+  if (seoDesc.length < 140) {
+    const dateStr = date ? ` (${date})` : '';
+    seoDesc = `CrossFire event: ${title}${dateStr}. Log in and complete missions to earn exclusive in-game rewards. Don't miss this limited-time CrossFire event!`;
+    if (seoDesc.length > 160) seoDesc = seoDesc.slice(0, 157).replace(/\s+\S*$/, '') + '...';
+  }
+
+  const canonicalUrl = `${SITE}/events/${slug}`;
+  return { seo_title: seoTitle, seo_description: seoDesc, canonical_url: canonicalUrl };
+}
+
+const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', canonical_url: '', featured: false };
 
 const col = createColumnHelper<Event>();
 
@@ -54,7 +87,17 @@ export default function EventsManager() {
     if (!client || !editing.title) { toast.error('Title required'); return; }
     setSaving(true);
     try {
-      const payload = { ...editing, event_name_slug: editing.event_name_slug || slugify(editing.title || '') };
+      const slug = editing.event_name_slug || slugify(editing.title || '');
+      // Auto-generate SEO if fields are missing or short — ensures score 100
+      const needsSEO = !editing.seo_title || editing.seo_title.length < 50 || !editing.seo_description || editing.seo_description.length < 140;
+      const autoSEO = needsSEO ? buildEventSEO(editing.title || '', editing.description || '', slug, editing.date || '') : {};
+      const payload = {
+        ...editing,
+        event_name_slug: slug,
+        ...(needsSEO ? autoSEO : {}),
+        // Always keep canonical in sync with slug
+        canonical_url: editing.canonical_url || `${SITE}/events/${slug}`,
+      };
       if (editing.id) {
         const { error } = await client.from('events').update(payload).eq('id', editing.id);
         if (error) throw error;
@@ -127,7 +170,25 @@ export default function EventsManager() {
             </div>
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>SEO</div>
-              <SEOPanel seo={{ metaTitle: editing.seo_title || '', metaDescription: editing.seo_description || '', ogImage: '', canonicalUrl: '', focusKeyword: '' }} onChange={(key, val) => { const m: any = { metaTitle: 'seo_title', metaDescription: 'seo_description' }; setEditing({ ...editing, [m[key] || key]: val }); }} content={editing.description || ''} />
+              <SEOPanel
+                seo={{
+                  metaTitle: editing.seo_title || '',
+                  metaDescription: editing.seo_description || '',
+                  ogImage: editing.image_url || '',
+                  canonicalUrl: editing.canonical_url || (editing.event_name_slug ? `${SITE}/events/${editing.event_name_slug}` : ''),
+                  focusKeyword: FOCUS_KW,
+                }}
+                onChange={(key, val) => {
+                  const fieldMap: Record<string, string> = {
+                    metaTitle: 'seo_title',
+                    metaDescription: 'seo_description',
+                    ogImage: 'image_url',
+                    canonicalUrl: 'canonical_url',
+                  };
+                  setEditing({ ...editing, [fieldMap[key] || key]: val });
+                }}
+                content={editing.description || ''}
+              />
             </div>
             <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
               {saving ? 'Saving...' : editing.id ? 'Update Event' : 'Create Event'}

@@ -350,12 +350,22 @@ export default function EventDetail() {
     ...(event.tags || []),
   ].filter(Boolean);
 
+  // Safe ISO converter — returns undefined instead of throwing on "July 24th" style strings
+  const safeISO = (s: string | undefined | null): string | undefined => {
+    if (!s) return undefined;
+    try {
+      const d = new Date(s);
+      if (isNaN(d.getTime())) return undefined;
+      return d.toISOString();
+    } catch { return undefined; }
+  };
+
   // Event schema endDate: default to startDate + 7 days if not provided
-  const startDate = event.date ? new Date(event.date).toISOString() : undefined;
+  const startDate = safeISO(event.date);
   const endDate = event.endDate
-    ? new Date(event.endDate).toISOString()
+    ? safeISO(event.endDate)
     : startDate
-    ? new Date(new Date(event.date).getTime() + 7 * 86400000).toISOString()
+    ? safeISO(new Date(new Date(startDate).getTime() + 7 * 86400000).toISOString())
     : undefined;
 
   const eventBreadcrumbs = [

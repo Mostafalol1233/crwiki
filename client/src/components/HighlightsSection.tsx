@@ -95,8 +95,8 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)", pointerEvents: "none" }} />
 
           {/* Title overlay */}
-          <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
-            <h3 className="font-black text-white text-xl uppercase tracking-tight" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
+          <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 md:px-6 md:pb-5">
+            <h3 className="font-black text-white text-[11px] sm:text-sm md:text-xl uppercase tracking-tight leading-snug" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9)" }}>
               {active.title}
             </h3>
           </div>

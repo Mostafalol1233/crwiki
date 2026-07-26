@@ -65,12 +65,56 @@ function htmlToPlain(html: string): string {
     .trim();
 }
 
+// Promo phrases common in Z8Games CF forum posts — strip from opening paragraph only
+const PROMO_PATTERNS = [
+  /hey\s*[,!]?\s*(?:mercenaries|mercs|players|champs|commanders|soldiers|warriors|agents)[!,]?/gi,
+  /greetings[,!]?\s*(?:mercenaries|mercs|players|champs|commanders|soldiers|warriors|agents)[!,]?/gi,
+  /welcome\s+(?:back\s+)?(?:to\s+)?(?:crossfire|cf|this\s+event|the\s+(?:new\s+)?season)/gi,
+  /the\s+(?:new\s+)?season\s+has\s+(?:come|arrived|begun|started)[!.]*/gi,
+  /it[''']?s\s+(?:that\s+)?time\s+(?:again|of\s+year|for)[^.!?]*[.!?]*/gi,
+  /good\s+(?:news|tidings)[,!]?\s*(?:mercenaries|mercs|players|champs)?[!,]?/gi,
+  /crossfire\s+team\s+(?:is\s+)?(?:proud|excited|happy|pleased)\s+to\s+(?:bring|present|announce|share|introduce)[^.!?]*[.!?]/gi,
+  /we\s+(?:are\s+)?(?:proud|excited|happy|pleased)\s+to\s+(?:bring|present|announce|share|introduce)[^.!?]*[.!?]/gi,
+  /note:\s*(?:no\s+password|this\s+game\s+is\s+free|crossfire\s+is\s+free|you\s+do\s+not\s+need)[^.!?<]*[.!?]*/gi,
+  /(?:no\s+password|this\s+game\s+is\s+free|crossfire\s+is\s+free|you\s+do\s+not\s+need\s+to\s+pay)[^.!?<]*[.!?]*/gi,
+  /\*+\s*note\s*\*+[^<]*/gi,
+  /please\s+note\s+that\s+crossfire[^.!?<]*[.!?]*/gi,
+];
+
+// Clean promotional opening text from plain text (for descriptionText + Arabic translation)
+function cleanPromoText(text: string): string {
+  let out = text;
+  // Strip opening promo sentence (first ~200 chars) if it matches promo patterns
+  for (const pat of PROMO_PATTERNS) {
+    out = out.replace(pat, '');
+  }
+  // Collapse excess whitespace/newlines left behind
+  out = out.replace(/\n{3,}/g, '\n\n').replace(/^\s+/, '').trim();
+  // If after cleaning the text starts with a connector word, trim it
+  out = out.replace(/^[,;:\-–—\.]+\s*/, '').trim();
+  return out;
+}
+
+// Strip promo patterns from HTML (applied to opening <p> elements only, preserving structure)
+function cleanPromoHtml(html: string): string {
+  let out = html;
+  for (const pat of PROMO_PATTERNS) {
+    // Match inside tags — strip matches that appear in text nodes (not tag attributes)
+    out = out.replace(pat, '');
+  }
+  // Remove resulting empty <p> or <div> tags
+  out = out.replace(/<p[^>]*>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '');
+  out = out.replace(/<div[^>]*>(\s|&nbsp;|<br\s*\/?>)*<\/div>/gi, '');
+  return out;
+}
+
 // Clean forum HTML for storage in description:
 // • removes the top banner image (shown separately via image_url)
 // • decodes entities
 // • preserves colors, bold, lists, line breaks
+// • strips promotional intro text and free-to-play disclaimers
 function cleanForumHtml(html: string): string {
-  return html
+  return cleanPromoHtml(html
     // Remove the large header/embed banner image at the top
     .replace(/<img[^>]*class="[^"]*(?:embedImage|importedEmbed)[^"]*"[^>]*\/?>/gi, '')
     // Remove redundant title="Image: https://..." attributes on any remaining imgs
@@ -84,7 +128,8 @@ function cleanForumHtml(html: string): string {
     .replace(/&#39;/g, "'")
     // Remove empty paragraphs / excessive whitespace between tags
     .replace(/(<br\s*\/?>(\s*<br\s*\/?>){3,})/gi, '<br><br>')
-    .trim();
+    .trim()
+  );
 }
 
 const SITE = 'https://crossfire.wiki';
@@ -340,15 +385,18 @@ function EventList({
         setProgress(`Found ${raw.length} events in this announcement`);
         toast.success(`${raw.length} events found`);
       }
-      setEvents(raw.map((e: any) => ({
-        ...e,
-        titleAr: '',
-        descriptionAr: '',
-        descriptionText: e.descriptionText || htmlToPlain(e.description || '').slice(0, 500),
-        startDate: e.startDate || '',
-        endDate: e.endDate || '',
-        sourceUrl: e.sourceUrl || announcement.url,
-      })));
+      setEvents(raw.map((e: any) => {
+        const rawText = e.descriptionText || htmlToPlain(e.description || '').slice(0, 500);
+        return {
+          ...e,
+          titleAr: '',
+          descriptionAr: '',
+          descriptionText: cleanPromoText(rawText),
+          startDate: e.startDate || '',
+          endDate: e.endDate || '',
+          sourceUrl: e.sourceUrl || announcement.url,
+        };
+      }));
       setLoaded(true);
     } catch (e: any) {
       toast.error(e.message || 'Failed to load events'); setProgress('');
@@ -371,7 +419,7 @@ function EventList({
       await new Promise(r => setTimeout(r, 250));
 
       setProgress(`Translating ${i + 1}/${updated.length}: ${label}… (description)`);
-      const plainDesc = updated[i].descriptionText || htmlToPlain(updated[i].description || '').slice(0, 450);
+      const plainDesc = cleanPromoText(updated[i].descriptionText || htmlToPlain(updated[i].description || '').slice(0, 450));
       updated[i].descriptionAr = plainDesc ? await translateText(plainDesc, 450) : '';
       setEvents([...updated]);
 

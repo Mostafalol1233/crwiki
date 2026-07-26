@@ -26,12 +26,12 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
       return out;
     }
 
-    // Sanitize to match the detail pages
+    // Sanitize — preserve inline colors/styles from forum posts; block dangerous attrs
     return DOMPurify.sanitize(out, {
-      ADD_TAGS: ['style', 'iframe'],
-      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
+      ADD_TAGS: ['iframe'],
+      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target', 'style'],
       FORCE_BODY: true,
-      ALLOW_UNKNOWN_PROTOCOLS: true,
+      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
     });
   }, [html, isFullPage]);
 
@@ -101,7 +101,7 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
           border-radius: 0.75rem;
           box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
         }
-        /* CrossFire forum post colors */
+        /* CrossFire forum post colors — class-based */
         .raw-html-preview-container .post-color-orange { color: #ff9900 !important; }
         .raw-html-preview-container .post-color-yellow { color: #f5d020 !important; }
         .raw-html-preview-container .post-color-green  { color: #4ade80 !important; }
@@ -110,6 +110,12 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
         .raw-html-preview-container .post-color-purple { color: #c084fc !important; }
         .raw-html-preview-container .post-color-white  { color: #f4f4f5 !important; }
         .raw-html-preview-container .post-color-cyan   { color: #22d3ee !important; }
+        /* Preserve inline style colors from forum spans — prose must not override */
+        .raw-html-preview-container span[style*="color"] { color: revert !important; }
+        .raw-html-preview-container font[color] { color: revert !important; }
+        .raw-html-preview-container p[style*="color"],
+        .raw-html-preview-container div[style*="color"],
+        .raw-html-preview-container li[style*="color"] { color: revert !important; }
         /* Keep spacing/lists from forum content */
         .raw-html-preview-container ul { padding-left: 1.5rem; margin: 0.75rem 0; }
         .raw-html-preview-container li { margin-bottom: 0.35rem; }

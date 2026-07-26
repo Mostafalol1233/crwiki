@@ -76,7 +76,7 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
               {title}
             </h2>
             <p style={{ fontSize: 13, color: "#666", margin: "0 0 16px", lineHeight: 1.65, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-              {excerpt || "Click to read the full article."}
+              {excerpt || "Read the full article for details."}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
               {author && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><User size={11} />{normalizeAuthor(author)}</span>}

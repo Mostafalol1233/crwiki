@@ -13,10 +13,10 @@ interface GM {
 }
 
 const GMS: GM[] = [
-  { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Support & System Operations", lastSeen: "Jun 3", color: "#e53e3e" },
-  { name: "[GM]Xenon",     avatar: "https://files.catbox.moe/t78mvu.jpeg", role: "Community Events & Engagement", lastSeen: "Jun 10", color: "#d4a017" },
-  { name: "[GM]Juicebox",  avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "May 21", color: "#38a169" },
-  { name: "[GM]Vinsi",     avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Apr 27", color: "#3b82f6" },
+  { name: "[GM]Celestine", avatar: "https://files.catbox.moe/ctwnqz.jpeg", role: "Support & System Operations", lastSeen: "Active", color: "#e53e3e" },
+  { name: "[GM]Xenon",     avatar: "https://files.catbox.moe/t78mvu.jpeg", role: "Community Events & Engagement", lastSeen: "Active", color: "#d4a017" },
+  { name: "[GM]Juicebox",  avatar: "https://files.catbox.moe/4il6hi.jpeg", role: "Security & Anti-Cheat Operations", lastSeen: "Active", color: "#38a169" },
+  { name: "[GM]Vinsi",     avatar: "https://files.catbox.moe/hh7h5u.jpeg", role: "Community Liaison & Forums", lastSeen: "Active", color: "#3b82f6" },
 ];
 
 export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
@@ -127,8 +127,9 @@ export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
                 <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", margin: "0 0 2px", opacity: 0.75 }}>
                   {gm.role}
                 </p>
-                <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.75rem", color: "hsl(var(--muted-foreground))", margin: 0, opacity: 0.5 }}>
-                  Last seen: {gm.lastSeen}
+                <p style={{ fontSize: "0.72rem", color: "#22c55e", margin: 0, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 6px #22c55e" }} />
+                  Official CF Staff
                 </p>
               </div>
             </div>

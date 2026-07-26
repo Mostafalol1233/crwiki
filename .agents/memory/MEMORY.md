@@ -12,3 +12,4 @@
 - [Arabic i18n Setup](arabic-i18n-setup.md) — URL /ar routing, RTL fix, ~100 new translation keys, Footer/Support/Contact/Login all use t(); Footer links must stay inside component to access t().
 - [Forum + AI upgrade](forum-ai-upgrade.md) — Forum system (3 Supabase tables); AI open to all users, injects live site data into prompt.
 - [Admin auth security](admin-auth-security.md) — adminLogin moved server-side to /api/admin/login (cfAdminAuthPlugin); service key still in client bundle for admin CRUD — known risk, full backend refactor needed to eliminate.
+- [Events date parsing](events-date-parsing.md) — EventsList + EventDetail use parseDateRange() for human date strings like "July 20–26, 2026"; formatDate guards isNaN; SiteBanner removed from App.tsx (was "experiencing issues").

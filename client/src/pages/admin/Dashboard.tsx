@@ -23,7 +23,7 @@ const CARD_COLORS = {
 function StatCard({ label, value, icon, color, href }: { label: string; value: number; icon: React.ReactNode; color: string; href: string }) {
   return (
     <div
-      onClick={() => { window.location.href = href; }}
+      onClick={() => { window.history.pushState(null, '', href); window.dispatchEvent(new PopStateEvent('popstate')); }}
       style={{ display: 'block', textDecoration: 'none', background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: '18px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = color; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = '#27272a'; }}

@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { decodeAdminToken } from '@/lib/supabaseAdmin';
 
 const BREADCRUMBS: Record<string, string[]> = {
@@ -45,13 +45,13 @@ function getBreadcrumb(location: string): string[] {
 }
 
 export default function AdminTopbar() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const crumbs = getBreadcrumb(location);
   const token = decodeAdminToken();
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
-    window.location.href = '/admin/login';
+    navigate('/admin/login');
   };
 
   return (
@@ -63,7 +63,7 @@ export default function AdminTopbar() {
       {/* Breadcrumb */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span
-          onClick={() => window.location.href = '/admin'}
+          onClick={() => navigate('/admin')}
           style={{ fontSize: 13, color: '#52525b', textDecoration: 'none', cursor: 'pointer' }}
         >Admin</span>
         {crumbs.map((c, i) => (

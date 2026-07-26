@@ -73,7 +73,6 @@ import Home from "@/pages/Home";
 import Maintenance from "@/pages/Maintenance";
 import { SEOHead } from "@/components/SEOHead";
 import AnnouncementModal from "@/components/AnnouncementModal";
-import SiteBanner from "@/components/SiteBanner";
 import TargetCursor from "@/components/TargetCursor";
 
 // ══════════════════════════════════════════════
@@ -342,7 +341,6 @@ function Layout() {
       <div
         className="flex flex-col min-h-screen"
       >
-        <SiteBanner />
         <Header />
         <main className="flex-1">
           <AnnouncementModal location={location} />

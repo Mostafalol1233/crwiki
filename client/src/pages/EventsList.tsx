@@ -19,7 +19,11 @@ const FALLBACK = "/cf-heroes-bg.png";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
   if (!d) return "";
-  try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
+  try {
+    const parsed = new Date(d);
+    if (isNaN(parsed.getTime())) return d; // return raw string if not ISO-parseable
+    return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
   catch { return d; }
 }
 
@@ -27,14 +31,37 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
 }
 
+// Parse human-readable date ranges like "July 20–26, 2026" or "June 10 – August 5"
+const MONTH_MAP: Record<string, number> = {
+  jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,
+  jun:5,june:5,jul:6,july:6,aug:7,august:7,sep:8,september:8,
+  oct:9,october:9,nov:10,november:10,dec:11,december:11,
+};
+function parseDateRange(s: string): { start: Date | null; end: Date | null } {
+  if (!s) return { start: null, end: null };
+  const direct = new Date(s);
+  if (!isNaN(direct.getTime())) return { start: direct, end: direct };
+  const yr = s.match(/20\d{2}/); const y = yr ? parseInt(yr[0]) : new Date().getFullYear();
+  const xm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (xm) { const m1=MONTH_MAP[xm[1].toLowerCase()],m2=MONTH_MAP[xm[3].toLowerCase()]; if(m1!==undefined&&m2!==undefined){const y2=m2<m1?y+1:y;return{start:new Date(y,m1,+xm[2]),end:new Date(y2,m2,+xm[4],23,59)};} }
+  const sm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*(\d+)(?:st|nd|rd|th)?/i);
+  if (sm) { const m=MONTH_MAP[sm[1].toLowerCase()]; if(m!==undefined)return{start:new Date(y,m,+sm[2]),end:new Date(y,m,+sm[3],23,59)}; }
+  const sg = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (sg) { const m=MONTH_MAP[sg[1].toLowerCase()]; if(m!==undefined)return{start:new Date(y,m,+sg[2]),end:new Date(y,m,+sg[2],23,59)}; }
+  return { start: null, end: null };
+}
+
 function classifyEvent(dateStr: string): "active" | "upcoming" | "past" {
   if (!dateStr) return "past";
-  const d = new Date(dateStr);
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAhead = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  if (d < sevenDaysAgo) return "past";
-  if (d > thirtyDaysAhead) return "upcoming";
+  // Try ISO parse first, then smart range parse
+  const { start, end } = parseDateRange(dateStr);
+  const refDate = end || start;
+  if (!refDate) return "past";
+  if (refDate < sevenDaysAgo) return "past";
+  if (start && start > thirtyDaysAhead) return "upcoming";
   return "active";
 }
 
@@ -47,10 +74,18 @@ function getStatusStyle(status: string) {
 // ─── Countdown Timer ──────────────────────────────────────────────────────────
 function Countdown({ dateStr }: { dateStr: string }) {
   const [parts, setParts] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  // Resolve to an ISO-parseable string
+  const resolvedDate = (() => {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return dateStr;
+    const { start } = parseDateRange(dateStr);
+    return start ? start.toISOString() : "";
+  })();
 
   useEffect(() => {
+    if (!resolvedDate) return;
     function calc() {
-      const diff = new Date(dateStr).getTime() - Date.now();
+      const diff = new Date(resolvedDate).getTime() - Date.now();
       if (diff <= 0) return setParts({ d: 0, h: 0, m: 0, s: 0 });
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
@@ -61,7 +96,7 @@ function Countdown({ dateStr }: { dateStr: string }) {
     calc();
     const id = setInterval(calc, 1000);
     return () => clearInterval(id);
-  }, [dateStr]);
+  }, [resolvedDate]);
 
   const cells = [
     { v: parts.d, l: "Days" },

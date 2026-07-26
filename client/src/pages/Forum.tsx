@@ -186,7 +186,7 @@ export default function Forum() {
                         fontSize: 11, fontWeight: 900, letterSpacing: "0.2em",
                         color: "#333", textTransform: "uppercase", transition: "color 0.18s",
                       }}>
-                        {CAT_ABBR[cat.slug] || "—"}
+                        {CAT_ABBR[cat.slug] || cat.name?.split(/\s+/).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "—"}
                       </span>
                       <ChevronRight className="forum-cat-arrow" style={{ width: 14, height: 14, color: ACCENT }} />
                     </div>

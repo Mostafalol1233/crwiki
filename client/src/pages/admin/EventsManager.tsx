@@ -31,6 +31,44 @@ interface Event {
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
+// ─── Auto date parser ──────────────────────────────────────────────────────────
+const MONTHS: Record<string, number> = {
+  jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
+  apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
+  aug: 7, august: 7, sep: 8, september: 8, oct: 9, october: 9,
+  nov: 10, november: 10, dec: 11, december: 11,
+};
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function autoParseEventDates(s: string): { start: string; end: string } {
+  if (!s) return { start: '', end: '' };
+  const yearM = s.match(/20(\d{2})/); const year = yearM ? parseInt(yearM[0]) : new Date().getFullYear();
+  // "Month D – Month D" cross-month: "June 10 – August 5"
+  const xm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (xm) {
+    const m1 = MONTHS[xm[1].toLowerCase()], m2 = MONTHS[xm[3].toLowerCase()];
+    if (m1 !== undefined && m2 !== undefined) {
+      const y2 = m2 < m1 ? year + 1 : year;
+      return { start: toDatetimeLocal(new Date(year, m1, +xm[2], 0, 0)), end: toDatetimeLocal(new Date(y2, m2, +xm[4], 23, 59)) };
+    }
+  }
+  // "Month D – D" same-month: "July 20th – 26th"
+  const sm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*(\d+)(?:st|nd|rd|th)?/i);
+  if (sm) {
+    const m = MONTHS[sm[1].toLowerCase()];
+    if (m !== undefined) return { start: toDatetimeLocal(new Date(year, m, +sm[2], 0, 0)), end: toDatetimeLocal(new Date(year, m, +sm[3], 23, 59)) };
+  }
+  // Single date: "July 26"
+  const sg = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (sg) {
+    const m = MONTHS[sg[1].toLowerCase()];
+    if (m !== undefined) return { start: toDatetimeLocal(new Date(year, m, +sg[2], 0, 0)), end: toDatetimeLocal(new Date(year, m, +sg[2], 23, 59)) };
+  }
+  return { start: '', end: '' };
+}
+
 const SITE = 'https://crossfire.wiki';
 const FOCUS_KW = 'crossfire';
 
@@ -160,7 +198,33 @@ export default function EventsManager() {
             <div><label style={lbl}>Title (EN) *</label><input type="text" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Title (AR)</label><input type="text" value={editing.title_ar || ''} onChange={(e) => setEditing({ ...editing, title_ar: e.target.value })} style={{ ...inp, direction: 'rtl' }} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={lbl}>Display Date / Date Range</label><input type="text" placeholder="e.g. June 11 - July 19, 2026" value={editing.date || ''} onChange={(e) => setEditing({ ...editing, date: e.target.value })} style={inp} /></div>
+              <div>
+                <label style={lbl}>
+                  Display Date / Date Range
+                  {editing.date && !editing.start_date && !editing.end_date && (
+                    <span style={{ marginLeft: 8, fontSize: 11, color: '#d4a017', fontWeight: 400, cursor: 'pointer' }}
+                      onClick={() => {
+                        const p = autoParseEventDates(editing.date || '');
+                        if (p.start || p.end) setEditing(prev => ({ ...prev, start_date: p.start, end_date: p.end }));
+                      }}>
+                      ⚡ Auto-fill countdown dates
+                    </span>
+                  )}
+                </label>
+                <input type="text" placeholder="e.g. June 11 - July 19, 2026" value={editing.date || ''}
+                  onChange={(e) => {
+                    const dateVal = e.target.value;
+                    const parsed = autoParseEventDates(dateVal);
+                    setEditing(prev => ({
+                      ...prev,
+                      date: dateVal,
+                      // Auto-fill start/end only if they haven't been manually set
+                      start_date: prev.start_date || parsed.start,
+                      end_date: prev.end_date || parsed.end,
+                    }));
+                  }}
+                  style={inp} />
+              </div>
               <div>
                 <label style={lbl}>Type</label>
                 <select value={editing.type || 'announcement'} onChange={(e) => setEditing({ ...editing, type: e.target.value })} style={sel}>

@@ -1204,6 +1204,176 @@ function cfGrokTipsPlugin(): Plugin {
   };
 }
 
+// ── Portal Images Search Plugin ────────────────────────────────────────────────
+// GET /api/portal-images/search?category=ranks|events|maps|weapons|mercenaries|modes
+// Returns { images: [{url, label, thumb}] } from official CrossFire CDN + Firecrawl scrape
+function cfPortalImagesPlugin(): Plugin {
+  return {
+    name: "cf-portal-images",
+    configureServer(server) {
+      server.middlewares.use("/api/portal-images/search", async (req: any, res: any) => {
+        if (req.method !== "GET") {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          return res.end(JSON.stringify({ error: "GET only" }));
+        }
+        const url = new URL(req.url, "http://localhost");
+        const category = (url.searchParams.get("category") || "").toLowerCase();
+
+        const AKAMAI = "https://z8games.akamaized.net/cfna";
+
+        // Pre-catalogued official CDN image collections (no API needed)
+        const STATIC: Record<string, { url: string; label: string }[]> = {
+          ranks: Array.from({ length: 20 }, (_, i) => ({
+            url: `${AKAMAI}/templates/assets/imgs/rank_${i + 1}.jpg`,
+            label: `Rank ${i + 1}`,
+          })),
+          maps: [
+            { url: `${AKAMAI}/web/maps/TDM_Egypt_thumb.jpg`,          label: "Egypt" },
+            { url: `${AKAMAI}/web/maps/TDM_Mexico_thumb.jpg`,         label: "Mexico" },
+            { url: `${AKAMAI}/web/maps/TDM_Train_thumb.jpg`,          label: "Train" },
+            { url: `${AKAMAI}/web/maps/TDM_Monaco_thumb.jpg`,         label: "Monaco" },
+            { url: `${AKAMAI}/web/maps/TDM_Factory_thumb.jpg`,        label: "Factory" },
+            { url: `${AKAMAI}/web/maps/TDM_PowerPlant_thumb.jpg`,     label: "Power Plant" },
+            { url: `${AKAMAI}/web/maps/TDM_Arena_thumb.jpg`,          label: "Arena" },
+            { url: `${AKAMAI}/web/maps/TDM_ForbiddenPalace_thumb.jpg`,label: "Forbidden Palace" },
+            { url: `${AKAMAI}/web/maps/TDM_Fortress_thumb.jpg`,       label: "Fortress" },
+            { url: `${AKAMAI}/web/maps/TDM_Prison_thumb.jpg`,         label: "Prison" },
+            { url: `${AKAMAI}/web/maps/TDM_Cairo_thumb.jpg`,          label: "Cairo" },
+            { url: `${AKAMAI}/web/maps/TDM_ChinaTown_thumb.jpg`,      label: "Chinatown" },
+            { url: `${AKAMAI}/web/maps/TDM_OrbitalStation_thumb.jpg`, label: "Orbital Station" },
+            { url: `${AKAMAI}/web/maps/TDM_Stadium_thumb.jpg`,        label: "Stadium" },
+            { url: `${AKAMAI}/web/maps/TDM_Ship_thumb.jpg`,           label: "Ship" },
+            { url: `${AKAMAI}/web/maps/TDM_SubmarineBay_thumb.jpg`,   label: "Submarine Bay" },
+            { url: `${AKAMAI}/web/maps/TDM_SnowValley_thumb.jpg`,     label: "Snow Valley" },
+            { url: `${AKAMAI}/web/maps/TDM_Theater_thumb.jpg`,        label: "Theater" },
+            { url: `${AKAMAI}/web/maps/TDM_ShoppingMall_thumb.jpg`,   label: "Shopping Mall" },
+            { url: `${AKAMAI}/web/maps/TDM_City_thumb.jpg`,           label: "City" },
+          ],
+          weapons: [
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9997.png`, label: "Weapon #9997" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9996.png`, label: "Weapon #9996" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9995.png`, label: "Weapon #9995" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9885.png`, label: "Weapon #9885" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9884.png`, label: "Weapon #9884" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9773.png`, label: "Weapon #9773" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9769.png`, label: "Weapon #9769" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9751.png`, label: "Weapon #9751" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9518.png`, label: "Weapon #9518" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/W9554.png`, label: "Weapon #9554" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/C8019.png`, label: "Crate #8019" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/C8018.png`, label: "Crate #8018" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/C4118.png`, label: "Crate #4118" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/C4026.png`, label: "Crate #4026" },
+            { url: `${AKAMAI}/web/inventory/weapons/540_400/C5470.png`, label: "Crate #5470" },
+            { url: `${AKAMAI}/templates/assets/imgs/screenshot-12-960x540.jpg`, label: "In-Game Screenshot" },
+          ],
+          mercenaries: [
+            { url: `${AKAMAI}/web/inventory/characters/700_900/A0001.jpg`, label: "Character A0001" },
+            { url: `${AKAMAI}/web/media/wallpapers/characters-split/preview.jpg`, label: "Characters Split Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/ghost/preview.jpg`,    label: "Ghost Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/Urdr_preview.jpg`,     label: "Urdr Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/Gigi_Wallpaper_1920x1080.png`, label: "Gigi Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/fates/preview.jpg`,    label: "Fates Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/rose/preview.jpg`,     label: "Rose Wallpaper" },
+            { url: `${AKAMAI}/web/media/wallpapers/by-scanced/preview.jpg`, label: "By Scanced" },
+          ],
+          modes: [
+            { url: `${AKAMAI}/web/media/wallpapers/fates/preview.jpg`,       label: "Fates Combat" },
+            { url: `${AKAMAI}/web/media/wallpapers/zombie/preview.jpg`,       label: "Zombie Mode" },
+            { url: `${AKAMAI}/web/media/wallpapers/fatal-canyon/preview.jpg`, label: "Fatal Canyon" },
+            { url: `${AKAMAI}/web/media/wallpapers/operation-ui/preview.jpg`, label: "Operation UI" },
+            { url: `${AKAMAI}/web/media/wallpapers/ghost/preview.jpg`,        label: "Ghost Ops" },
+            { url: `${AKAMAI}/web/media/wallpapers/sheep/preview.jpg`,        label: "Sheep Mode" },
+            { url: `${AKAMAI}/web/media/wallpapers/cf20-1/preview.jpg`,       label: "CF 20th Anniversary" },
+            { url: `${AKAMAI}/web/media/wallpapers/cf20-2/preview.jpg`,       label: "CF 20th Anniversary 2" },
+            { url: `${AKAMAI}/templates/assets/imgs/screenshot-12-960x540.jpg`, label: "In-Game Screenshot" },
+          ],
+        };
+
+        try {
+          if (category !== "events" && STATIC[category]) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ images: STATIC[category] }));
+          }
+
+          // For "events" — use Firecrawl to scrape the official events page for real banner images
+          const FIRECRAWL_KEY = process.env.FIRECRAWL_API_KEY;
+          if (!FIRECRAWL_KEY) {
+            // Fallback: return static screenshot/wallpaper images for events
+            const fallback = [
+              { url: `${AKAMAI}/templates/assets/imgs/screenshot-12-960x540.jpg`, label: "In-Game Screenshot" },
+              { url: `${AKAMAI}/templates/assets/imgs/cfbrss-06.jpg`,             label: "CF Promo 1" },
+              { url: `${AKAMAI}/templates/assets/imgs/cfbrss-02.jpg`,             label: "CF Promo 2" },
+              { url: `${AKAMAI}/templates/assets/imgs/cfbrss-01.jpg`,             label: "CF Promo 3" },
+              { url: `${AKAMAI}/web/media/wallpapers/cf20-1/preview.jpg`,         label: "CF Anniversary" },
+              { url: `${AKAMAI}/web/media/wallpapers/cf20-2/preview.jpg`,         label: "CF Anniversary 2" },
+            ];
+            res.writeHead(200, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ images: fallback }));
+          }
+
+          // Scrape multiple sources for event images
+          const scrapeUrls = [
+            "https://crossfire.z8games.com/events.html",
+            "https://forum.z8games.com/categories/crossfire-announcements",
+          ];
+
+          const images: { url: string; label: string }[] = [];
+
+          for (const scrapeUrl of scrapeUrls) {
+            try {
+              const fcRes = await (fetch as any)("https://api.firecrawl.dev/v1/scrape", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${FIRECRAWL_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ url: scrapeUrl, formats: ["markdown", "links"], onlyMainContent: false }),
+                signal: AbortSignal.timeout(12000),
+              });
+              if (!fcRes.ok) continue;
+              const fcData: any = await fcRes.json();
+              const md: string = fcData.data?.markdown || "";
+              const links: string[] = fcData.data?.links || [];
+
+              // Extract image URLs from markdown and links
+              const imgRegex = /https?:\/\/[^\s\)\"]+\.(?:jpg|jpeg|png|webp)/gi;
+              const found = [...md.matchAll(imgRegex), ...links.filter((l: string) => /\.(jpg|jpeg|png|webp)$/i.test(l))];
+              const relevantImgs = [...new Set(
+                (found as any[]).map(m => typeof m === "string" ? m : m[0])
+                  .filter((u: string) => u.includes("akamai") || u.includes("z8game") || u.includes("crossfire"))
+                  .filter((u: string) => !u.includes("avatar") && !u.includes("favicon") && !u.includes("icon"))
+              )];
+
+              for (const imgUrl of relevantImgs.slice(0, 12)) {
+                const label = imgUrl.split("/").pop()?.replace(/\.\w+$/, "").replace(/[-_]/g, " ") || "Image";
+                images.push({ url: imgUrl, label });
+              }
+            } catch { /* skip failed scrape */ }
+          }
+
+          // Always append known static event/promo images
+          images.push(
+            { url: `${AKAMAI}/templates/assets/imgs/screenshot-12-960x540.jpg`, label: "In-Game Screenshot" },
+            { url: `${AKAMAI}/templates/assets/imgs/cfbrss-06.jpg`,             label: "CF Promo 1" },
+            { url: `${AKAMAI}/templates/assets/imgs/cfbrss-02.jpg`,             label: "CF Promo 2" },
+            { url: `${AKAMAI}/templates/assets/imgs/cfbrss-01.jpg`,             label: "CF Promo 3" },
+            { url: `${AKAMAI}/web/media/wallpapers/cf20-1/preview.jpg`,         label: "CF Anniversary" },
+            { url: `${AKAMAI}/web/media/wallpapers/cf20-2/preview.jpg`,         label: "CF Anniversary 2" },
+          );
+
+          // Deduplicate
+          const seen = new Set<string>();
+          const deduped = images.filter(i => { if (seen.has(i.url)) return false; seen.add(i.url); return true; });
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ images: deduped.slice(0, 30) }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Failed to fetch images" }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
@@ -1212,6 +1382,7 @@ export default defineConfig({
     cfAiPlugin(),
     cfScrapePlugin(),
     cfGrokTipsPlugin(),
+    cfPortalImagesPlugin(),
     react(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&

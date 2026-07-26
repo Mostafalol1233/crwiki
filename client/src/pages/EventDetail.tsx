@@ -28,6 +28,43 @@ function stripHtml(html: string): string {
   return tmp.textContent || tmp.innerText || "";
 }
 
+// Parse human-readable date ranges like "July 20–26, 2026" or "June 10 – August 5"
+const MONTHS_MAP: Record<string, number> = {
+  jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
+  apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
+  aug: 7, august: 7, sep: 8, september: 8, oct: 9, october: 9,
+  nov: 10, november: 10, dec: 11, december: 11,
+};
+function parseDateStr(s: string): { start: Date | null; end: Date | null } {
+  if (!s) return { start: null, end: null };
+  // Already a valid ISO/parseable date?
+  const direct = new Date(s);
+  if (!isNaN(direct.getTime())) return { start: direct, end: direct };
+  const yearM = s.match(/20\d{2}/); const year = yearM ? parseInt(yearM[0]) : new Date().getFullYear();
+  // Cross-month: "June 10 – August 5"
+  const xm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (xm) {
+    const m1 = MONTHS_MAP[xm[1].toLowerCase()], m2 = MONTHS_MAP[xm[3].toLowerCase()];
+    if (m1 !== undefined && m2 !== undefined) {
+      const y2 = m2 < m1 ? year + 1 : year;
+      return { start: new Date(year, m1, +xm[2], 0, 0), end: new Date(y2, m2, +xm[4], 23, 59) };
+    }
+  }
+  // Same-month: "July 20th – 26th"
+  const sm = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?\s*[-–—~]+\s*(\d+)(?:st|nd|rd|th)?/i);
+  if (sm) {
+    const m = MONTHS_MAP[sm[1].toLowerCase()];
+    if (m !== undefined) return { start: new Date(year, m, +sm[2], 0, 0), end: new Date(year, m, +sm[3], 23, 59) };
+  }
+  // Single: "July 26"
+  const sg = s.match(/([a-z]+)\s+(\d+)(?:st|nd|rd|th)?/i);
+  if (sg) {
+    const m = MONTHS_MAP[sg[1].toLowerCase()];
+    if (m !== undefined) return { start: new Date(year, m, +sg[2], 0, 0), end: new Date(year, m, +sg[2], 23, 59) };
+  }
+  return { start: null, end: null };
+}
+
 function classifyStatus(dateStr: string): "active" | "upcoming" | "ended" {
   if (!dateStr) return "ended";
   const d = new Date(dateStr);
@@ -306,9 +343,21 @@ export default function EventDetail() {
     return doc.body.innerHTML;
   }, [description]);
 
-  // Use end_date (ISO) for countdown when available; fall back to date display string
-  const countdownDateStr = event?.end_date || event?.start_date || event?.date || "";
+  // Derive ISO-parseable countdown date: prefer stored ISO fields, then auto-parse date string
+  const storedEnd = event?.end_date || event?.start_date;
+  const parsedFromDate = useMemo(() => parseDateStr(event?.date || ""), [event?.date]);
+  const countdownDateStr: string = (() => {
+    if (storedEnd) {
+      const d = new Date(storedEnd);
+      if (!isNaN(d.getTime())) return storedEnd;
+    }
+    // Auto-derive from human-readable date string
+    if (parsedFromDate.end) return parsedFromDate.end.toISOString();
+    if (parsedFromDate.start) return parsedFromDate.start.toISOString();
+    return event?.date || "";
+  })();
   const status = classifyStatus(countdownDateStr);
+  const isCountdownActive = (status === "upcoming" || status === "active") && !!countdownDateStr;
   const statusStyle = getStatusStyle(status);
 
   // ── Loading / Error states ──────────────────────────────────────────────────
@@ -572,6 +621,16 @@ export default function EventDetail() {
                   </span>
                 )}
               </div>
+
+              {/* Hero countdown — auto-shown for active/upcoming events */}
+              {isCountdownActive && (
+                <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                    {status === "upcoming" ? "Starts In" : "Ends In"}
+                  </span>
+                  <Countdown dateStr={countdownDateStr} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -787,7 +846,7 @@ export default function EventDetail() {
                   )}
 
                   {/* Countdown for upcoming events */}
-                  {(status === "upcoming" || status === "active") && countdownDateStr && (
+                  {isCountdownActive && (
                     <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}` }}>
                       <p style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>
                         {status === "upcoming" ? "Starts In" : "Time Remaining"}

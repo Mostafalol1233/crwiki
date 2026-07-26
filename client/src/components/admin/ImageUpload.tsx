@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { uploadToSupabase } from '@/lib/uploadToSupabase';
-import { Upload, X, Link2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Link2, Search } from 'lucide-react';
 
 interface ImageUploadProps {
   value?: string;
@@ -9,6 +9,7 @@ interface ImageUploadProps {
   bucket?: string;
   accept?: string;
   hint?: string;
+  searchQuery?: string; // optional override for search term
 }
 
 function slugifyFilename(name: string): string {
@@ -18,11 +19,10 @@ function slugifyFilename(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export default function ImageUpload({ value, onChange, label = 'Image', bucket = 'media', accept = 'image/*', hint }: ImageUploadProps) {
+export default function ImageUpload({ value, onChange, label = 'Image', bucket = 'media', accept = 'image/*', hint, searchQuery }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [urlInput, setUrlInput] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -117,36 +117,40 @@ export default function ImageUpload({ value, onChange, label = 'Image', bucket =
         </div>
       )}
 
-      {/* URL Input toggle */}
+      {/* URL Input — always visible */}
       <div style={{ display: 'flex', gap: 6 }}>
-        <button
-          type="button"
-          onClick={() => setShowUrlInput((v) => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 12, background: 'transparent', border: '1px solid #27272a', borderRadius: 4, color: '#52525b', cursor: 'pointer' }}
-        >
-          <Link2 size={12} />
-          Use URL
-        </button>
-      </div>
-
-      {showUrlInput && (
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, padding: '0 10px', overflow: 'hidden' }}>
+          <Link2 size={12} color="#52525b" style={{ flexShrink: 0 }} />
           <input
             type="url"
-            placeholder="https://..."
+            placeholder="Paste image URL…"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
-            style={{ flex: 1, background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', padding: '6px 10px', fontSize: 13, outline: 'none' }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && urlInput) { onChange(urlInput); setUrlInput(''); } }}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: '#fafafa', padding: '6px 4px', fontSize: 13, outline: 'none', minWidth: 0 }}
           />
+        </div>
+        {urlInput && (
           <button
             type="button"
-            onClick={() => { if (urlInput) { onChange(urlInput); setUrlInput(''); setShowUrlInput(false); } }}
-            style={{ padding: '6px 12px', background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
+            onClick={() => { onChange(urlInput); setUrlInput(''); }}
+            style={{ padding: '6px 12px', background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}
           >
-            Apply
+            Use
           </button>
-        </div>
-      )}
+        )}
+        <button
+          type="button"
+          title={`Search Google Images for "${searchQuery || label}"`}
+          onClick={() => {
+            const q = encodeURIComponent((searchQuery || label) + ' crossfire game');
+            window.open(`https://www.google.com/search?tbm=isch&q=${q}`, '_blank');
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', fontSize: 12, background: 'transparent', border: '1px solid #27272a', borderRadius: 4, color: '#52525b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          <Search size={12} /> Search
+        </button>
+      </div>
 
       {error && <span style={{ fontSize: 12, color: '#ef4444' }}>{error}</span>}
 

@@ -252,7 +252,7 @@ export default function EventsManager() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
-              <ImageUpload label="Event Image" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} />
+              <ImageUpload label="Event Image" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} searchQuery={editing.title ? `CrossFire ${editing.title} event` : 'CrossFire event'} />
             </div>
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>SEO</div>

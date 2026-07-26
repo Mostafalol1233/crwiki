@@ -79,7 +79,7 @@ export default function MapsManager() {
             <div><label style={lbl}>Category</label><input type="text" value={editing.category || ''} onChange={(e) => setEditing({ ...editing, category: e.target.value })} style={inp} /></div>
           </div>
           <div><label style={lbl}>Description</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
-          <ImageUpload label="Map Image" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} />
+          <ImageUpload label="Map Image" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} searchQuery={editing.name ? `CrossFire ${editing.name} map screenshot` : 'CrossFire map'} />
           <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>{saving ? 'Saving...' : 'Save'}</button>
         </div>
       </div>

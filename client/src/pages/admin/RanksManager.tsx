@@ -83,7 +83,7 @@ export default function RanksManager() {
           <div><label style={lbl}>Description</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
           <div><label style={lbl}>Requirements</label><textarea value={editing.requirements || ''} onChange={(e) => setEditing({ ...editing, requirements: e.target.value })} rows={2} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
           <div><label style={lbl}>Bonus</label><input type="text" value={editing.bonus || ''} onChange={(e) => setEditing({ ...editing, bonus: e.target.value })} style={inp} /></div>
-          <ImageUpload label="Rank Emblem" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} hint="Square image recommended" />
+          <ImageUpload label="Rank Emblem" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} hint="Square image recommended" searchQuery={editing.name ? `CrossFire ${editing.name} rank emblem` : 'CrossFire rank emblem'} />
           <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>{saving ? 'Saving...' : 'Save'}</button>
         </div>
       </div>

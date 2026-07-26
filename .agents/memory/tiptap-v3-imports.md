@@ -6,6 +6,8 @@ description: Which TipTap v3 extensions use named vs default exports — critica
 **Rule:** In TipTap v3 (`^3.x`), `@tiptap/extension-table` is a **named-only** export. Use `import { Table } from '@tiptap/extension-table'`. Using the default import crashes the whole editor module.
 
 **Other extensions:**
+- `@tiptap/extension-color` — use `import { Color }` (named). Default import builds locally but **fails Vercel/rollup**.
+- `@tiptap/extension-text-style` — use `import { TextStyle }` (named only, no default export at all).
 - `@tiptap/extension-link` — has both named `{ Link }` and default. Either works; alias it to avoid conflict with lucide `Link`.
 - `TableRow`, `TableCell`, `TableHeader` — default exports only.
 - `@tiptap/extension-underline` — must be installed AND added to `extensions[]` before adding a toolbar button for it.

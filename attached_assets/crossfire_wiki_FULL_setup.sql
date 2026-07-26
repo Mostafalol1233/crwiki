@@ -300,13 +300,15 @@ CREATE TABLE IF NOT EXISTS ticket_messages (
 CREATE TABLE IF NOT EXISTS site_highlights (
   id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
   title       TEXT        NOT NULL,
-  month       INTEGER,
+  month       TEXT,                          -- e.g. 'Jan', 'Feb' (NOT integer)
   year        INTEGER,
   media_type  TEXT        DEFAULT 'image',
   url         TEXT,
   sort_order  INTEGER     DEFAULT 0,
   created_at  TIMESTAMPTZ DEFAULT now()
 );
+-- If you already ran the old SQL with month as INTEGER, convert it:
+ALTER TABLE site_highlights ALTER COLUMN month TYPE TEXT USING month::TEXT;
 
 -- Announcements (site-wide banners)
 CREATE TABLE IF NOT EXISTS announcements (

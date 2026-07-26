@@ -215,6 +215,32 @@ ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority   TEXT DEFAULT 'normal';
 -- sellers
 ALTER TABLE sellers ADD COLUMN IF NOT EXISTS logo_url TEXT;
 
+-- site_settings: add all columns in case table already existed without them
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_title                             TEXT    DEFAULT 'CrossFire Wiki';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_description                      TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_keywords                         TEXT[]  DEFAULT '{}';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS seo_og_image_url                     TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_image                           TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS robots                               TEXT    DEFAULT 'index, follow';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS announcements_enabled                BOOLEAN DEFAULT true;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_enabled          BOOLEAN DEFAULT false;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_video_url        TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_prompt           TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_passphrase       TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_timecode         TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS review_verification_you_tube_channel_url TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS featured_weapons                     TEXT[]  DEFAULT '{}';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS featured_event_id                    TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS secondary_event_ids                  TEXT[]  DEFAULT '{}';
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS public_base_url                      TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_weapons                   TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_maps                      TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_mercenaries               TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_modes                     TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_ranks                     TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS portal_img_events                    TEXT;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS updated_at                           TIMESTAMPTZ DEFAULT now();
+
 
 -- ────────────────────────────────────────────────────────────────
 -- 3. MISSING TABLES

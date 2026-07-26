@@ -392,6 +392,15 @@ function useGoogleOAuthFirstLogin() {
 function LocalizedApp() {
   useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
+
+  // Auto-redirect "/" → "/ar" when Arabic is active so the router base matches the URL
+  React.useEffect(() => {
+    if (language === "ar" && window.location.pathname === "/") {
+      window.history.replaceState(null, "", "/ar");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  }, [language]);
+
   const base = language === "ar" ? "/ar" : "";
   return (
     <WouterRouter base={base}>

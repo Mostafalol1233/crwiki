@@ -17,6 +17,8 @@ interface Event {
   description_ar: string;
   image_url: string;
   date: string;
+  start_date: string;
+  end_date: string;
   location: string;
   type: string;
   source_url: string;
@@ -61,7 +63,7 @@ function buildEventSEO(title: string, description: string, slug: string, date: s
   return { seo_title: seoTitle, seo_description: seoDesc, canonical_url: canonicalUrl };
 }
 
-const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', canonical_url: '', featured: false };
+const EMPTY: Partial<Event> = { title: '', title_ar: '', description: '', description_ar: '', image_url: '', date: '', start_date: '', end_date: '', location: '', type: 'announcement', source_url: '', seo_title: '', seo_description: '', canonical_url: '', featured: false };
 
 const col = createColumnHelper<Event>();
 
@@ -98,15 +100,25 @@ export default function EventsManager() {
         // Always keep canonical in sync with slug
         canonical_url: editing.canonical_url || `${SITE}/events/${slug}`,
       };
-      if (editing.id) {
-        const { error } = await client.from('events').update(payload).eq('id', editing.id);
-        if (error) throw error;
-        toast.success('Event updated');
-      } else {
-        const { error } = await client.from('events').insert({ ...payload, created_at: new Date().toISOString() });
-        if (error) throw error;
-        toast.success('Event created');
+      // Try with start_date/end_date; if columns don't exist yet, fall back without them
+      const saveWithDates = async (p: any) => {
+        if (editing.id) {
+          const { error } = await client.from('events').update(p).eq('id', editing.id);
+          return error;
+        } else {
+          const { error } = await client.from('events').insert({ ...p, created_at: new Date().toISOString() });
+          return error;
+        }
+      };
+      let err = await saveWithDates(payload);
+      if (err && (err.message?.includes('start_date') || err.message?.includes('end_date') || err.code === '42703')) {
+        // Columns don't exist yet — save without them and remind user to run migration
+        const { start_date: _s, end_date: _e, ...payloadNoDate } = payload;
+        err = await saveWithDates(payloadNoDate);
+        if (!err) toast.warning('Saved without countdown dates. Run the SQL migration in supabase/migrations/ to enable countdown.');
       }
+      if (err) throw err;
+      toast.success(editing.id ? 'Event updated' : 'Event created');
       await fetch(); setView('list'); setEditing(EMPTY);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
@@ -148,7 +160,7 @@ export default function EventsManager() {
             <div><label style={lbl}>Title (EN) *</label><input type="text" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} style={inp} /></div>
             <div><label style={lbl}>Title (AR)</label><input type="text" value={editing.title_ar || ''} onChange={(e) => setEditing({ ...editing, title_ar: e.target.value })} style={{ ...inp, direction: 'rtl' }} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><label style={lbl}>Date / Date Range</label><input type="text" placeholder="e.g. June 11 - July 19" value={editing.date || ''} onChange={(e) => setEditing({ ...editing, date: e.target.value })} style={inp} /></div>
+              <div><label style={lbl}>Display Date / Date Range</label><input type="text" placeholder="e.g. June 11 - July 19, 2026" value={editing.date || ''} onChange={(e) => setEditing({ ...editing, date: e.target.value })} style={inp} /></div>
               <div>
                 <label style={lbl}>Type</label>
                 <select value={editing.type || 'announcement'} onChange={(e) => setEditing({ ...editing, type: e.target.value })} style={sel}>
@@ -157,6 +169,16 @@ export default function EventsManager() {
                   <option value="community">Community</option>
                   <option value="online">Online</option>
                 </select>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={lbl}>Start Date &amp; Time <span style={{ color: '#52525b', fontWeight: 400 }}>(for countdown)</span></label>
+                <input type="datetime-local" value={editing.start_date || ''} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} style={{ ...inp, colorScheme: 'dark' }} />
+              </div>
+              <div>
+                <label style={lbl}>End Date &amp; Time <span style={{ color: '#52525b', fontWeight: 400 }}>(for countdown)</span></label>
+                <input type="datetime-local" value={editing.end_date || ''} onChange={(e) => setEditing({ ...editing, end_date: e.target.value })} style={{ ...inp, colorScheme: 'dark' }} />
               </div>
             </div>
             <div><label style={lbl}>Location</label><input type="text" value={editing.location || ''} onChange={(e) => setEditing({ ...editing, location: e.target.value })} style={inp} /></div>

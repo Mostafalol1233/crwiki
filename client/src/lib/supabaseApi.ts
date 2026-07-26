@@ -216,6 +216,9 @@ function normalizeEvent(e: any) {
     description: String(e.description || ''),
     descriptionAr: String(e.description_ar || ''),
     date: String(e.date || ''),
+    // ISO datetime fields for accurate countdown timer
+    start_date: String(e.start_date || ''),
+    end_date: String(e.end_date || ''),
     location: String(e.location || ''),
     type: String(e.type || ''),
     image: String(e.image_url || ''),

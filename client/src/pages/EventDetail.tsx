@@ -306,7 +306,9 @@ export default function EventDetail() {
     return doc.body.innerHTML;
   }, [description]);
 
-  const status = classifyStatus(event?.date || "");
+  // Use end_date (ISO) for countdown when available; fall back to date display string
+  const countdownDateStr = event?.end_date || event?.start_date || event?.date || "";
+  const status = classifyStatus(countdownDateStr);
   const statusStyle = getStatusStyle(status);
 
   // ── Loading / Error states ──────────────────────────────────────────────────
@@ -785,12 +787,12 @@ export default function EventDetail() {
                   )}
 
                   {/* Countdown for upcoming events */}
-                  {(status === "upcoming" || status === "active") && event.date && (
+                  {(status === "upcoming" || status === "active") && countdownDateStr && (
                     <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}` }}>
                       <p style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>
                         {status === "upcoming" ? "Starts In" : "Time Remaining"}
                       </p>
-                      <Countdown dateStr={event.date} />
+                      <Countdown dateStr={countdownDateStr} />
                     </div>
                   )}
 

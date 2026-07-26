@@ -636,7 +636,29 @@ export async function getTicketsByEmail(email: string) {
     .eq('user_email', email)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []).map((t: any) => ({
+    id: String(t.id),
+    title: t.title || '',
+    description: t.description || '',
+    userName: t.user_name || '',
+    userEmail: t.user_email || '',
+    status: t.status || 'open',
+    priority: t.priority || 'normal',
+    category: t.category || '',
+    createdAt: t.created_at || '',
+    updatedAt: t.updated_at || t.created_at || '',
+  }));
+}
+
+function normalizeReply(r: any) {
+  return {
+    id: String(r.id),
+    ticketId: r.ticket_id || '',
+    authorName: r.author_name || r.sender_id || 'User',
+    content: r.content || r.message || '',
+    isAdmin: r.is_admin || r.is_internal || false,
+    createdAt: r.created_at || '',
+  };
 }
 
 export async function getTicketReplies(ticketId: string) {
@@ -646,7 +668,7 @@ export async function getTicketReplies(ticketId: string) {
     .select('*')
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });
-  if (!rErr) return replies || [];
+  if (!rErr) return (replies || []).map(normalizeReply);
 
   const { data, error } = await supabase
     .from('ticket_messages')
@@ -654,7 +676,7 @@ export async function getTicketReplies(ticketId: string) {
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalizeReply);
 }
 
 export async function addTicketReply(ticketId: string, content: string, authorName: string) {

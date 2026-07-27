@@ -570,9 +570,10 @@ export default function News() {
           )}
 
           <style>{`
-            @media(max-width:1024px){.news-sidebar{display:none!important;}}
+            @media(max-width:1024px){.news-sidebar{display:none!important;}.news-layout{flex-direction:column!important;}}
             @media(max-width:700px){.art-grid{grid-template-columns:1fr!important;}}
             @media(max-width:900px){.art-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            @media(max-width:900px){.feat-grid{grid-template-columns:1fr!important;}}
           `}</style>
         </div>
       </div>

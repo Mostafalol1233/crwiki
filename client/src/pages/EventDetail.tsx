@@ -66,13 +66,29 @@ function parseDateStr(s: string): { start: Date | null; end: Date | null } {
   return { start: null, end: null };
 }
 
-function classifyStatus(dateStr: string): "active" | "upcoming" | "ended" {
-  if (!dateStr) return "ended";
-  const d = new Date(dateStr);
+function classifyStatus(evOrDateStr: any): "active" | "upcoming" | "ended" {
+  if (!evOrDateStr) return "ended";
   const now = new Date();
-  const sevenAgo = new Date(now.getTime() - 7 * 86400000);
-  if (d < sevenAgo) return "ended";
-  if (d > new Date(now.getTime() + 30 * 86400000)) return "upcoming";
+  let startDate: Date | null = null;
+  let endDate: Date | null = null;
+  if (typeof evOrDateStr === "string") {
+    // Legacy: single date string (e.g. from related events list)
+    const d = new Date(evOrDateStr);
+    if (isNaN(d.getTime())) return "ended";
+    endDate = d;
+  } else {
+    const ev = evOrDateStr;
+    if (ev.start_date) { const d = new Date(ev.start_date); if (!isNaN(d.getTime())) startDate = d; }
+    if (ev.end_date)   { const d = new Date(ev.end_date);   if (!isNaN(d.getTime())) endDate = d; }
+    if (!startDate && !endDate && ev.date) {
+      const parsed = parseDateStr(ev.date);
+      startDate = parsed.start;
+      endDate = parsed.end;
+    }
+  }
+  const refEnd = endDate || startDate;
+  if (!refEnd || refEnd < now) return "ended";
+  if (startDate && startDate > now) return "upcoming";
   return "active";
 }
 
@@ -344,20 +360,22 @@ export default function EventDetail() {
     return doc.body.innerHTML;
   }, [description]);
 
-  // Derive ISO-parseable countdown date: prefer stored ISO fields, then auto-parse date string
-  const storedEnd = event?.end_date || event?.start_date;
+  // Compute status using stored ISO date fields (start_date + end_date), falling back to date string
   const parsedFromDate = useMemo(() => parseDateStr(event?.date || ""), [event?.date]);
+  const status = classifyStatus(event ?? null);
+  // Countdown target: count to start for upcoming, count to end for active
   const countdownDateStr: string = (() => {
-    if (storedEnd) {
-      const d = new Date(storedEnd);
-      if (!isNaN(d.getTime())) return storedEnd;
+    if (status === "upcoming") {
+      if (event?.start_date) { const d = new Date(event.start_date); if (!isNaN(d.getTime())) return event.start_date; }
+      if (parsedFromDate.start) return parsedFromDate.start.toISOString();
     }
-    // Auto-derive from human-readable date string
+    // Active or ended: count to end date
+    if (event?.end_date) { const d = new Date(event.end_date); if (!isNaN(d.getTime())) return event.end_date; }
     if (parsedFromDate.end) return parsedFromDate.end.toISOString();
+    if (event?.start_date) { const d = new Date(event.start_date); if (!isNaN(d.getTime())) return event.start_date; }
     if (parsedFromDate.start) return parsedFromDate.start.toISOString();
     return event?.date || "";
   })();
-  const status = classifyStatus(countdownDateStr);
   const isCountdownActive = (status === "upcoming" || status === "active") && !!countdownDateStr;
   const statusStyle = getStatusStyle(status);
 
@@ -690,7 +708,7 @@ export default function EventDetail() {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }} className="related-grid">
                     {relatedEvents.map((ev: any) => {
-                      const evStatus = getStatusStyle(classifyStatus(ev.date));
+                      const evStatus = getStatusStyle(classifyStatus(ev));
                       return (
                         <Link key={ev.id} href={`/events/${ev.event_name_slug || ev.id}`}>
                           <div style={{

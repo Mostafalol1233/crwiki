@@ -609,7 +609,10 @@ export default function Home() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="events-mini-grid">
                     {sideEvents.map((ev: any) => <EventCard key={ev.id} event={ev} />)}
                   </div>
-                  <style>{`@media(max-width:640px){.events-mini-grid{grid-template-columns:1fr!important;}}`}</style>
+                  <style>{`
+                    @media(max-width:900px){.events-mini-grid{grid-template-columns:repeat(2,1fr)!important;}}
+                    @media(max-width:480px){.events-mini-grid{grid-template-columns:1fr!important;}}
+                  `}</style>
                 </section>
               )}
 

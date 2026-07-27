@@ -51,18 +51,24 @@ function parseDateRange(s: string): { start: Date | null; end: Date | null } {
   return { start: null, end: null };
 }
 
-function classifyEvent(dateStr: string): "active" | "upcoming" | "past" {
-  if (!dateStr) return "past";
+function classifyEvent(ev: any): "active" | "upcoming" | "past" {
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAhead = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  // Try ISO parse first, then smart range parse
-  const { start, end } = parseDateRange(dateStr);
-  const refDate = end || start;
-  if (!refDate) return "past";
-  if (refDate < sevenDaysAgo) return "past";
-  if (start && start > thirtyDaysAhead) return "upcoming";
-  return "active";
+  let startDate: Date | null = null;
+  let endDate: Date | null = null;
+  // Prefer stored ISO date fields set in admin
+  if (ev.start_date) { const d = new Date(ev.start_date); if (!isNaN(d.getTime())) startDate = d; }
+  if (ev.end_date)   { const d = new Date(ev.end_date);   if (!isNaN(d.getTime())) endDate = d; }
+  // Fall back to parsing the human-readable date string
+  if (!startDate && !endDate && ev.date) {
+    const parsed = parseDateRange(ev.date);
+    startDate = parsed.start;
+    endDate = parsed.end;
+  }
+  const refEnd = endDate || startDate;
+  if (!refEnd) return "past";
+  if (refEnd < now) return "past";                     // event has ended
+  if (startDate && startDate > now) return "upcoming"; // hasn't started yet
+  return "active";                                     // in progress
 }
 
 function getStatusStyle(status: string) {
@@ -127,7 +133,7 @@ function Countdown({ dateStr }: { dateStr: string }) {
 function FeaturedCard({ ev }: { ev: any }) {
   const slug = ev.event_name_slug || ev.id;
   const img = ev.image_url || ev.image || ev.imageUrl || FALLBACK;
-  const status = classifyEvent(ev.date);
+  const status = classifyEvent(ev);
   const statusStyle = getStatusStyle(status);
 
   return (
@@ -143,9 +149,9 @@ function FeaturedCard({ ev }: { ev: any }) {
 
         <div className="featured-inner" style={{ display: "grid", gridTemplateColumns: "55% 1fr" }}>
           {/* Image */}
-          <div style={{ position: "relative", overflow: "hidden", minHeight: 300 }}>
+          <div style={{ position: "relative", overflow: "hidden", minHeight: 300 }} className="featured-img-wrap">
             <img src={img} alt={ev.title}
-              className="group-hover:scale-105 transition-transform duration-700"
+              className="group-hover:scale-105 transition-transform duration-700 featured-img"
               style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 300 }}
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
             />
@@ -221,7 +227,7 @@ function FeaturedCard({ ev }: { ev: any }) {
 function EventCard({ ev }: { ev: any }) {
   const slug = ev.event_name_slug || ev.id;
   const img = ev.image_url || ev.image || ev.imageUrl || FALLBACK;
-  const status = classifyEvent(ev.date);
+  const status = classifyEvent(ev);
   const statusStyle = getStatusStyle(status);
 
   return (
@@ -325,7 +331,7 @@ export default function EventsList() {
   const hasMore = page * limit < total;
 
   const classified = events.reduce((acc: any, ev: any) => {
-    acc[classifyEvent(ev.date)].push(ev);
+    acc[classifyEvent(ev)].push(ev);
     return acc;
   }, { active: [] as any[], upcoming: [] as any[], past: [] as any[] });
 
@@ -518,7 +524,7 @@ export default function EventsList() {
                   <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
                     {[
                       { color: "#34d399", label: "Active", desc: "Currently running" },
-                      { color: GOLD, label: "Upcoming", desc: "Starting within 30 days" },
+                      { color: GOLD, label: "Upcoming", desc: "Not yet started" },
                       { color: "rgba(255,255,255,0.25)", label: "Ended", desc: "Event has concluded" },
                     ].map(({ color, label, desc }) => (
                       <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -540,6 +546,10 @@ export default function EventsList() {
             @media(max-width:1024px){.events-sidebar{display:none!important;}}
             @media(max-width:700px){.ev-grid{grid-template-columns:1fr!important;}}
             @media(max-width:900px){.ev-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            @media(max-width:680px){
+              .featured-img-wrap{min-height:0!important;height:220px!important;}
+              .featured-img{min-height:0!important;object-fit:contain!important;background:#050505;}
+            }
             .load-more-btn:hover{background:rgba(245,166,35,0.15)!important;}
             .quick-link-item:hover{background:rgba(255,255,255,0.04)!important;}
           `}</style>

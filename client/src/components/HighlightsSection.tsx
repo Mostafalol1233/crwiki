@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Video } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface Highlight {
@@ -21,12 +21,17 @@ const STATIC_HIGHLIGHTS: Highlight[] = [
   { id: "6", month: "Nov", year: 2025, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251027_cfwe_zppubonus_forums.jpg", title: "Wavelite Bonus Surge — November 2025", sort_order: 6 },
 ];
 
-const GOLD_BORDER = "rgba(154,124,63,0.25)";
-const ACCENT = "#3a7bd5";
+const GOLD = "#f5a623";
+const GOLD_DIM = "rgba(245,166,35,0.18)";
+const BG_DARK = "#07090d";
+const BG_CARD = "#0d1117";
+const BORDER = "rgba(245,166,35,0.15)";
 
 export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {}) {
   const [highlights, setHighlights] = useState<Highlight[]>(STATIC_HIGHLIGHTS);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -36,119 +41,259 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
           .select("*")
           .order("sort_order", { ascending: true });
         if (data && data.length > 0) setHighlights(data as Highlight[]);
-      } catch {
-        // ignore errors — static fallback is already shown
-      }
+      } catch { /* use static fallback */ }
     })();
   }, []);
 
   const active = highlights[activeIdx] || highlights[0];
   if (!active) return null;
 
-  const prev = () => setActiveIdx((i) => (i - 1 + highlights.length) % highlights.length);
-  const next = () => setActiveIdx((i) => (i + 1) % highlights.length);
+  const prev = () => { setImgLoaded(false); setActiveIdx((i) => (i - 1 + highlights.length) % highlights.length); };
+  const next = () => { setImgLoaded(false); setActiveIdx((i) => (i + 1) % highlights.length); };
+
+  // Rows of 3 for the thumbnail grid
+  const rows: Highlight[][] = [];
+  for (let i = 0; i < highlights.length; i += 3) rows.push(highlights.slice(i, i + 3));
 
   return (
     <section>
       {!hideHeader && (
         <div style={{
-          display: "flex", alignItems: "baseline", justifyContent: "space-between",
-          marginBottom: "20px", paddingBottom: "12px", borderBottom: `1px solid ${GOLD_BORDER}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 16, paddingBottom: 10, borderBottom: `1px solid ${BORDER}`,
         }}>
           <h2 style={{
             fontFamily: "'Cinzel', serif", fontWeight: 300,
-            fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
-            color: "hsl(var(--foreground))", margin: 0,
+            fontSize: "clamp(1.1rem, 2.5vw, 1.6rem)", letterSpacing: "0.2em",
+            color: "hsl(var(--foreground))", margin: 0, textTransform: "uppercase",
           }}>
-            HIGHLIGHTS
+            Highlights
           </h2>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            {highlights.length} entries
+          </span>
         </div>
       )}
 
-      <div className="relative overflow-hidden" style={{
-        background: "#0d1117", border: `2px solid rgba(58,123,213,0.5)`, borderRadius: "6px",
+      <div style={{
+        background: BG_CARD,
+        border: `1px solid ${BORDER}`,
+        borderRadius: 8,
+        overflow: "hidden",
+        boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
       }}>
-        {/* Main media */}
-        <div className="relative" style={{ aspectRatio: "16/7", overflow: "hidden", background: "#050810" }}>
+
+        {/* ── Featured hero ──────────────────────────────────── */}
+        <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden", background: BG_DARK }}>
+
           {active.media_type === "video" ? (
             <video
               key={active.id}
               src={active.url}
-              className="w-full h-full"
-              style={{ objectFit: "contain", display: "block" }}
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+              autoPlay muted loop playsInline controls
             />
           ) : (
-            <img
-              key={active.id}
-              src={active.url}
-              alt={active.title}
-              className="w-full h-full"
-              style={{ objectFit: "contain", transition: "opacity 0.4s" }}
-            />
+            <>
+              {/* Blur placeholder while loading */}
+              {!imgLoaded && (
+                <div style={{ position: "absolute", inset: 0, background: "#0d1117", zIndex: 1 }} />
+              )}
+              <img
+                ref={imgRef}
+                key={active.id}
+                src={active.url}
+                alt={active.title}
+                onLoad={() => setImgLoaded(true)}
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover",
+                  display: "block",
+                  transition: "opacity 0.35s ease",
+                  opacity: imgLoaded ? 1 : 0,
+                }}
+              />
+            </>
           )}
 
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)", pointerEvents: "none" }} />
+          {/* Bottom gradient */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 45%, transparent 100%)",
+            pointerEvents: "none",
+          }} />
 
-          {/* Title overlay */}
-          <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 md:px-6 md:pb-5">
-            <h3 className="font-black text-white text-[11px] sm:text-sm md:text-xl uppercase tracking-tight leading-snug" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9)" }}>
-              {active.title}
-            </h3>
-          </div>
-
-          {/* Nav arrows */}
-          <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: "rgba(0,0,0,0.6)", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", color: "#fff" }}>
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center transition-all hover:scale-110"
-            style={{ background: "rgba(0,0,0,0.6)", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", color: "#fff" }}>
-            <ChevronRight className="h-5 w-5" />
-          </button>
-
-          {/* Media type badge */}
-          <div className="absolute top-3 left-4 flex items-center gap-1.5 px-2 py-1"
-            style={{ background: "rgba(0,0,0,0.55)", borderRadius: 4, backdropFilter: "blur(4px)" }}>
-            {active.media_type === "video"
-              ? <Video className="h-3 w-3" style={{ color: "#60a5fa" }} />
-              : <ImageIcon className="h-3 w-3" style={{ color: "rgba(255,255,255,0.4)" }} />}
-            <span style={{ fontSize: 10, color: active.media_type === "video" ? "#60a5fa" : "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: "0.08em" }}>
+          {/* Top-left: date badge */}
+          <div style={{
+            position: "absolute", top: 14, left: 14,
+            display: "flex", alignItems: "center", gap: 6,
+            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
+            border: `1px solid ${BORDER}`, borderRadius: 4,
+            padding: "4px 10px",
+          }}>
+            {active.media_type === "video" && <Play size={10} style={{ color: GOLD }} />}
+            <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: "0.1em", textTransform: "uppercase" }}>
               {active.month} {active.year}
             </span>
           </div>
+
+          {/* Dot indicators */}
+          <div style={{
+            position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 5, alignItems: "center",
+          }}>
+            {highlights.map((_, i) => (
+              <button key={i} onClick={() => { setImgLoaded(false); setActiveIdx(i); }}
+                style={{
+                  width: i === activeIdx ? 20 : 6, height: 6,
+                  borderRadius: 3, border: "none", cursor: "pointer",
+                  background: i === activeIdx ? GOLD : "rgba(255,255,255,0.25)",
+                  transition: "all 0.25s", padding: 0,
+                }} />
+            ))}
+          </div>
+
+          {/* Title overlay */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 18px 14px" }}>
+            <p style={{
+              fontSize: "clamp(11px, 2.2vw, 15px)", fontWeight: 800,
+              color: "#fff", margin: 0,
+              textTransform: "uppercase", letterSpacing: "0.04em",
+              textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+              lineHeight: 1.3,
+            }}>
+              {active.title}
+            </p>
+          </div>
+
+          {/* Nav arrows */}
+          {highlights.length > 1 && (
+            <>
+              <button onClick={prev}
+                style={{
+                  position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
+                  border: `1px solid rgba(255,255,255,0.15)`,
+                  color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+                className="hlights-arrow"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button onClick={next}
+                style={{
+                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",
+                  border: `1px solid rgba(255,255,255,0.15)`,
+                  color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+                className="hlights-arrow"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Thumbnail strip */}
-        <div className="flex gap-0 overflow-x-auto" style={{ background: "#080d14", borderTop: `1px solid rgba(58,123,213,0.3)` }}>
-          {highlights.map((h, idx) => (
-            <button key={h.id} onClick={() => setActiveIdx(idx)}
-              className="relative flex-shrink-0 overflow-hidden transition-all"
-              style={{ width: "90px", height: "64px", outline: "none", border: "none", borderRight: "1px solid rgba(58,123,213,0.2)", cursor: "pointer" }}>
-              {h.media_type === "video" ? (
-                <div className="w-full h-full flex items-center justify-center" style={{ background: "#0d1117", opacity: activeIdx === idx ? 1 : 0.45 }}>
-                  <Video className="h-5 w-5" style={{ color: "#60a5fa" }} />
-                </div>
-              ) : (
-                <img src={h.url} alt={h.title} className="w-full h-full object-cover"
-                  style={{ opacity: activeIdx === idx ? 1 : 0.45, transition: "opacity 0.2s" }} />
-              )}
-              {activeIdx === idx && (
-                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: ACCENT }} />
-              )}
-              <div className="absolute bottom-0 left-0 right-0 px-1.5 py-1" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}>
-                <p className="text-[9px] font-black leading-none" style={{ color: activeIdx === idx ? "#60a5fa" : "rgba(255,255,255,0.5)" }}>
-                  {h.month}. {h.year}
-                </p>
-              </div>
-            </button>
+        {/* ── Thumbnail grid ─────────────────────────────────── */}
+        <div style={{ borderTop: `1px solid ${BORDER}`, background: "#090c12" }}>
+          {rows.map((row, rowIdx) => (
+            <div
+              key={rowIdx}
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+                borderBottom: rowIdx < rows.length - 1 ? `1px solid ${BORDER}` : undefined,
+              }}
+            >
+              {row.map((h) => {
+                const globalIdx = highlights.indexOf(h);
+                const isActive = globalIdx === activeIdx;
+                return (
+                  <button
+                    key={h.id}
+                    onClick={() => { setImgLoaded(false); setActiveIdx(globalIdx); }}
+                    style={{
+                      position: "relative",
+                      height: 80,
+                      border: "none",
+                      borderRight: globalIdx % 3 < 2 ? `1px solid ${BORDER}` : undefined,
+                      cursor: "pointer",
+                      padding: 0,
+                      overflow: "hidden",
+                      outline: "none",
+                      background: BG_DARK,
+                    }}
+                  >
+                    {/* Thumbnail image */}
+                    <img
+                      src={h.url}
+                      alt={h.title}
+                      style={{
+                        width: "100%", height: "100%", objectFit: "cover",
+                        display: "block",
+                        filter: isActive ? "none" : "brightness(0.45) saturate(0.6)",
+                        transition: "filter 0.25s",
+                      }}
+                    />
+
+                    {/* Gradient overlay */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      background: isActive
+                        ? "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 55%)"
+                        : "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)",
+                    }} />
+
+                    {/* Active gold top bar */}
+                    {isActive && (
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                        background: `linear-gradient(to right, ${GOLD}, rgba(245,166,35,0.3))`,
+                      }} />
+                    )}
+
+                    {/* Month label */}
+                    <div style={{
+                      position: "absolute", bottom: 6, left: 0, right: 0,
+                      textAlign: "center",
+                    }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800,
+                        color: isActive ? GOLD : "rgba(255,255,255,0.55)",
+                        textTransform: "uppercase", letterSpacing: "0.06em",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+                        transition: "color 0.2s",
+                      }}>
+                        {h.month}. {h.year}
+                      </span>
+                    </div>
+
+                    {/* Active glow */}
+                    {isActive && (
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        boxShadow: `inset 0 0 0 1px ${GOLD}40`,
+                        pointerEvents: "none",
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </div>
       </div>
+
+      <style>{`
+        .hlights-arrow:hover {
+          background: rgba(245,166,35,0.2) !important;
+          border-color: rgba(245,166,35,0.4) !important;
+        }
+      `}</style>
     </section>
   );
 }

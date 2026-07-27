@@ -135,11 +135,13 @@ CREATE TABLE IF NOT EXISTS announcements (
 CREATE TABLE IF NOT EXISTS custom_pages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL, title_en TEXT, title_ar TEXT,
-  content_en TEXT, content_ar TEXT, template TEXT DEFAULT 'default',
+  content_en TEXT, content_ar TEXT, source_url TEXT,
+  template TEXT DEFAULT 'default',
   status TEXT DEFAULT 'draft', show_in_nav BOOLEAN DEFAULT false,
   seo_title TEXT, seo_description TEXT,
   created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
 );
+ALTER TABLE custom_pages ADD COLUMN IF NOT EXISTS source_url TEXT;
 
 CREATE TABLE IF NOT EXISTS tutorials (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

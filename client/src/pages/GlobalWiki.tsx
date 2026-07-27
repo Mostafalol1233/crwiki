@@ -1,5 +1,5 @@
 import { SEOHead } from "@/components/SEOHead";
-import { buildComparisonRows, getRegionBySlug, getRegionLanding, getWeaponBySlug, REGIONS } from "../../../shared/crossfire-regions.js";
+import { buildComparisonRows, getRegionBreadcrumbs, getRegionBySlug, getRegionLanding, getWeaponBreadcrumbs, getWeaponBySlug, REGIONS } from "../../../shared/crossfire-regions.js";
 
 interface GlobalWikiProps {
   params?: {
@@ -29,9 +29,12 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
       );
     }
 
+    const regionMeta = weapon.regions?.[region.slug];
+    const breadcrumbs = getWeaponBreadcrumbs(regionSlug, weaponSlug);
+
     return (
       <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
-        <SEOHead title={`${region.name} ${weapon.name} | CrossFire Global Wiki`} description={`Region-specific coverage for ${weapon.name} in ${region.name}.`} />
+        <SEOHead title={`${region.name} ${weapon.name} | CrossFire Global Wiki`} description={`Region-specific coverage for ${weapon.name} in ${region.name}.`} breadcrumbs={breadcrumbs} />
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="rounded-3xl border border-amber-400/30 bg-slate-900/70 p-8">
             <p className="text-sm uppercase tracking-[0.35em] text-amber-400">{region.shortName}</p>
@@ -49,8 +52,14 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
               </ul>
             </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-              <h2 className="text-xl font-semibold">Region snapshot</h2>
-              <p className="mt-3 text-sm text-slate-300">This route is now part of the new global wiki structure, making it possible to expand from a single-region wiki to a cross-region archive.</p>
+              <h2 className="text-xl font-semibold">Local coverage</h2>
+              <p className="mt-3 text-sm text-slate-300">{regionMeta?.notes || "Coverage for this region is being expanded in the global wiki."}</p>
+              <div className="mt-4 text-sm text-slate-300">
+                <strong>Availability:</strong> {regionMeta?.available ? "Verified in this region" : "Pending verification"}
+              </div>
+              {typeof regionMeta?.damage === "number" ? (
+                <div className="mt-2 text-sm text-slate-300"><strong>Damage:</strong> {regionMeta.damage}</div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -67,15 +76,17 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
           <SEOHead title="Region not found" description="The requested CrossFire region is not available in the global wiki yet." />
           <div className="mx-auto max-w-3xl rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
             <h1 className="text-3xl font-semibold">Unknown region</h1>
-            <p className="mt-4 text-slate-300">Use one of the core regions to browse the new structure: West, China, CFHD, Vietnam, or Brazil.</p>
+            <p className="mt-4 text-slate-300">Use one of the core regions to browse the new structure: West, China, Vietnam, Brazil, Philippines, Korea, or Russia.</p>
           </div>
         </div>
       );
     }
 
+    const breadcrumbs = getRegionBreadcrumbs(regionSlug);
+
     return (
       <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
-        <SEOHead title={`${landing.region.name} | CrossFire Global Wiki`} description={`Regional overview for ${landing.region.name} in the global CrossFire wiki.`} />
+        <SEOHead title={`${landing.region.name} | CrossFire Global Wiki`} description={`Regional overview for ${landing.region.name} in the global CrossFire wiki.`} breadcrumbs={breadcrumbs} />
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="rounded-3xl border border-amber-400/30 bg-slate-900/70 p-8">
             <p className="text-sm uppercase tracking-[0.35em] text-amber-400">Global wiki</p>
@@ -94,6 +105,30 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
               </div>
             ))}
           </div>
+
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+            <h2 className="text-xl font-semibold">Regions table</h2>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="pb-3 pr-4">Region</th>
+                    <th className="pb-3 pr-4">Base</th>
+                    <th className="pb-3">Focus</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REGIONS.map((region) => (
+                    <tr key={region.slug} className="border-b border-slate-800/70">
+                      <td className="py-3 pr-4 font-medium text-slate-100"><a className="text-amber-400 underline underline-offset-4" href={`/${region.slug}`}>{region.name}</a></td>
+                      <td className="py-3 pr-4 text-slate-300">{region.base}</td>
+                      <td className="py-3 text-slate-300">{region.focus}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -108,7 +143,7 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
         <div className="rounded-3xl border border-amber-400/30 bg-slate-900/70 p-8">
           <p className="text-sm uppercase tracking-[0.35em] text-amber-400">Global wiki</p>
           <h1 className="mt-3 text-4xl font-semibold">CrossFire Global Wiki</h1>
-          <p className="mt-4 max-w-3xl text-slate-300">This launch page introduces the new region-based structure for West, China, CFHD, Vietnam, and Brazil so the project can grow from a single-region wiki into a true global archive.</p>
+          <p className="mt-4 max-w-3xl text-slate-300">This launch page introduces the new region-based structure for West, China, Vietnam, Brazil, Philippines, Korea, and Russia so the project can grow from a single-region wiki into a true global archive.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

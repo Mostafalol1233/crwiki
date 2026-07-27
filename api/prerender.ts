@@ -4,6 +4,7 @@
  * Called by middleware.ts when a known bot user-agent is detected.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getRegionBySlug, getWeaponBySlug } from "../shared/crossfire-regions.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
@@ -166,6 +167,29 @@ async function resolveMeta(path: string): Promise<PageMeta> {
           image: item.image || DEFAULT_IMG,
           publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE },
         },
+      };
+    }
+  }
+
+  // ── /:region and /:region/weapons/:slug ───────────────────────────
+  const regionMatch = path.match(/^\/([a-z0-9-]+)(?:\/weapons\/([a-z0-9-]+))?$/);
+  if (regionMatch) {
+    const region = getRegionBySlug(regionMatch[1]);
+    if (region) {
+      const weaponSlug = regionMatch[2];
+      const weapon = weaponSlug ? getWeaponBySlug(weaponSlug) : null;
+      const title = weapon
+        ? `${region.name} ${weapon.name} | CrossFire Global Wiki`
+        : region.seoTitle || `${region.name} | CrossFire Global Wiki`;
+      const description = weapon
+        ? `Region-specific coverage for ${weapon.name} in ${region.name}.`
+        : region.seoDescription || `Regional overview for ${region.name} in the global CrossFire wiki.`;
+      return {
+        title,
+        description: description.substring(0, 160),
+        image: `${BASE}/feature-crossfire.jpg`,
+        url: `${BASE}${path}`,
+        type: "website",
       };
     }
   }

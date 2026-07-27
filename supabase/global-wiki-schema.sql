@@ -6,8 +6,26 @@ create table if not exists regions (
   base_domain text,
   focus text,
   status text default 'active',
+  seo_title text,
+  seo_description text,
   created_at timestamptz default now()
 );
+
+create table if not exists entity_regions (
+  id uuid primary key default gen_random_uuid(),
+  entity_type text not null,
+  entity_id uuid not null,
+  region_id uuid references regions(id) on delete cascade,
+  available boolean default false,
+  damage integer,
+  notes text,
+  metadata jsonb default '{}',
+  created_at timestamptz default now(),
+  unique (entity_type, entity_id, region_id)
+);
+
+create index if not exists entity_regions_region_idx on entity_regions(region_id);
+create index if not exists entity_regions_entity_idx on entity_regions(entity_type, entity_id);
 
 create table if not exists weapons (
   id uuid primary key default gen_random_uuid(),

@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
@@ -95,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Static pages ──────────────────────────────────────────────────────
   const statics: UrlEntry[] = [
     { loc: `${BASE}/`,           priority: "1.0", changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/global-wiki`,priority: "0.98",changefreq: "daily",   lastmod: today },
     { loc: `${BASE}/events`,     priority: "0.95",changefreq: "daily",   lastmod: today },
     { loc: `${BASE}/weapons`,    priority: "0.9", changefreq: "weekly",  lastmod: today },
     { loc: `${BASE}/modes`,      priority: "0.9", changefreq: "weekly",  lastmod: today },
@@ -116,6 +118,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/terms`,      priority: "0.3", changefreq: "monthly" },
   ];
   for (const s of statics) xml += entry(s);
+  xml += "\n";
+
+  xml += "  <!-- Regional wiki landing pages -->\n";
+  for (const region of REGIONS) {
+    xml += entry({ loc: `${BASE}/${region.slug}`, priority: "0.9", changefreq: "weekly", lastmod: today });
+    for (const weapon of WEAPONS) {
+      xml += entry({ loc: `${BASE}/${region.slug}/weapons/${weapon.slug}`, priority: "0.8", changefreq: "weekly", lastmod: today });
+    }
+  }
   xml += "\n";
 
   // ── Events ────────────────────────────────────────────────────────────

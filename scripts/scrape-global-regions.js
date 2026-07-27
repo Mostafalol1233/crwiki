@@ -1,19 +1,21 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { REGIONS } from '../shared/crossfire-regions.js';
 
-const SOURCES = [
-  { name: 'west', url: 'https://www.z8games.com/news' },
-  { name: 'china', url: 'https://cf.qq.com/' },
-  { name: 'cfhd', url: 'https://cfhd.cf.qq.com/' },
-  { name: 'vietnam', url: 'https://cf.vtcgame.vn/' },
-  { name: 'brazil', url: 'https://crossfire.lat/' },
-  { name: 'fandom', url: 'https://crossfire.fandom.com/wiki/CrossFire_Wiki' },
+const REGION_SOURCES = [
+  { slug: 'west', name: 'CrossFire West', url: 'https://www.z8games.com/news' },
+  { slug: 'china', name: 'CrossFire China', url: 'https://cf.qq.com/' },
+  { slug: 'vietnam', name: 'CrossFire Vietnam', url: 'https://cf.vtcgame.vn/' },
+  { slug: 'brazil', name: 'CrossFire Brazil', url: 'https://crossfire.lat/' },
+  { slug: 'philippines', name: 'CrossFire Philippines', url: 'https://crossfire.ph/' },
+  { slug: 'korea', name: 'CrossFire Korea', url: 'https://crossfire.co.kr/' },
+  { slug: 'russia', name: 'CrossFire Russia', url: 'https://crossfire.rus/' },
 ];
 
 function buildFallbackItems() {
-  return SOURCES.map((source) => ({
-    region: source.name,
-    title: `${source.name.toUpperCase()} feed ready`,
+  return REGION_SOURCES.map((source) => ({
+    region: source.slug,
+    title: `${source.name} feed ready`,
     link: source.url,
     image: '',
     source: source.url,
@@ -38,25 +40,52 @@ async function scrapeWithFirecrawl(url) {
   return payload?.data?.markdown || payload?.markdown || '';
 }
 
+export async function scrapeRegion(regionConfig) {
+  try {
+    const markdown = await scrapeWithFirecrawl(regionConfig.url);
+    if (markdown) {
+      const title = markdown.split(/\n+/).find((line) => line.trim()) || regionConfig.name;
+      return {
+        region: regionConfig.slug,
+        title: title.replace(/^#+\s*/, '').slice(0, 120),
+        link: regionConfig.url,
+        image: '',
+        source: regionConfig.url,
+        sourceName: regionConfig.name,
+        fetchedAt: new Date().toISOString(),
+      };
+    }
+
+    const { data } = await axios.get(regionConfig.url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const $ = cheerio.load(data);
+    const title = $('title').first().text().trim() || regionConfig.name;
+    return {
+      region: regionConfig.slug,
+      title,
+      link: regionConfig.url,
+      image: '',
+      source: regionConfig.url,
+      sourceName: regionConfig.name,
+      fetchedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    return {
+      region: regionConfig.slug,
+      title: `${regionConfig.name} feed synced from fallback data`,
+      link: regionConfig.url,
+      image: '',
+      source: regionConfig.url,
+      sourceName: regionConfig.name,
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+}
+
 export async function scrapeGlobalRegions() {
   const items = [];
 
-  for (const source of SOURCES) {
-    try {
-      const markdown = await scrapeWithFirecrawl(source.url);
-      if (markdown) {
-        const title = markdown.split(/\n+/).find((line) => line.trim()) || source.name;
-        items.push({ region: source.name, title: title.replace(/^#+\s*/, '').slice(0, 100), link: source.url, image: '', source: source.url });
-        continue;
-      }
-
-      const { data } = await axios.get(source.url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-      const $ = cheerio.load(data);
-      const title = $('title').first().text().trim() || source.name;
-      items.push({ region: source.name, title, link: source.url, image: '', source: source.url });
-    } catch (error) {
-      items.push({ region: source.name, title: `${source.name} feed synced from fallback data`, link: source.url, image: '', source: source.url });
-    }
+  for (const source of REGION_SOURCES) {
+    items.push(await scrapeRegion(source));
   }
 
   return items.length ? items : buildFallbackItems();

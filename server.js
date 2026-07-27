@@ -9,7 +9,7 @@ import cors from "cors";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { REGIONS, WEAPONS, FORUM_POSTS, buildComparisonRows } from "./shared/crossfire-regions.js";
+import { REGIONS, WEAPONS, FORUM_POSTS, buildComparisonRows, getRegionBySlug } from "./shared/crossfire-regions.js";
 import { scrapeGlobalRegions } from "./scripts/scrape-global-regions.js";
 
 const app = express();
@@ -82,7 +82,24 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/api/regions", (_req, res) => {
-  res.json({ regions: REGIONS });
+  res.json({ regions: REGIONS, count: REGIONS.length, supportedSlugs: REGIONS.map((region) => region.slug) });
+});
+
+app.get("/api/regions/:slug", (req, res) => {
+  const region = getRegionBySlug(req.params.slug);
+  if (!region) {
+    return res.status(404).json({ ok: false, error: "Region not found" });
+  }
+
+  const coverage = WEAPONS.map((weapon) => ({
+    slug: weapon.slug,
+    name: weapon.name,
+    category: weapon.category,
+    description: weapon.description,
+    region: weapon.regions?.[region.slug] || null,
+  })).filter((item) => item.region);
+
+  return res.json({ region, coverage, count: coverage.length });
 });
 
 app.get("/api/weapons", async (_req, res) => {

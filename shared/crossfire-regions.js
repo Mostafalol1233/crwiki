@@ -6,6 +6,8 @@ export const REGIONS = [
     base: "z8games.com",
     focus: "Official West builds, shop, and seasonal events",
     status: "active",
+    seoTitle: "CrossFire West | Global Wiki",
+    seoDescription: "Explore CrossFire West weapons, events, and regional coverage in the global wiki.",
   },
   {
     slug: "china",
@@ -14,14 +16,8 @@ export const REGIONS = [
     base: "cf.qq.com",
     focus: "Largest content volume and patch note coverage",
     status: "active",
-  },
-  {
-    slug: "cfhd",
-    name: "CrossFire HD",
-    shortName: "CFHD",
-    base: "cfhd.cf.qq.com",
-    focus: "Modern client content and event rollouts",
-    status: "active",
+    seoTitle: "CrossFire China | Global Wiki",
+    seoDescription: "Browse the broadest Chinese CrossFire content archive and patch-note coverage.",
   },
   {
     slug: "vietnam",
@@ -30,6 +26,8 @@ export const REGIONS = [
     base: "cf.vtcgame.vn",
     focus: "Community and regional event tracking",
     status: "active",
+    seoTitle: "CrossFire Vietnam | Global Wiki",
+    seoDescription: "Track Vietnam-focused CrossFire content, events, and locally discussed weapons.",
   },
   {
     slug: "brazil",
@@ -38,6 +36,8 @@ export const REGIONS = [
     base: "crossfire.lat",
     focus: "Regional availability and localized content",
     status: "active",
+    seoTitle: "CrossFire Brazil | Global Wiki",
+    seoDescription: "Discover Brazil-specific CrossFire availability notes and community coverage.",
   },
   {
     slug: "philippines",
@@ -46,8 +46,34 @@ export const REGIONS = [
     base: "crossfire.ph",
     focus: "Localized events and community content",
     status: "active",
+    seoTitle: "CrossFire Philippines | Global Wiki",
+    seoDescription: "Follow the Philippines CrossFire community, updates, and regional weapon notes.",
+  },
+  {
+    slug: "korea",
+    name: "CrossFire Korea",
+    shortName: "CF Korea",
+    base: "crossfire.co.kr",
+    focus: "Korean client trends and localized updates",
+    status: "active",
+    seoTitle: "CrossFire Korea | Global Wiki",
+    seoDescription: "Explore Korean CrossFire content, regional updates, and live community notes.",
+  },
+  {
+    slug: "russia",
+    name: "CrossFire Russia",
+    shortName: "CF Russia",
+    base: "crossfire.rus",
+    focus: "Russia-specific community and regional tracking",
+    status: "active",
+    seoTitle: "CrossFire Russia | Global Wiki",
+    seoDescription: "Track Russia-focused CrossFire updates, weapon availability, and community records.",
   },
 ];
+
+export const REGION_ALIASES = {
+  cfhd: "china",
+};
 
 export const WEAPONS = [
   {
@@ -305,8 +331,15 @@ export const FORUM_POSTS = [
   },
 ];
 
+export function normalizeRegionSlug(slug) {
+  const normalized = String(slug || "").trim().toLowerCase();
+  if (!normalized) return "";
+  return REGION_ALIASES[normalized] || normalized;
+}
+
 export function getRegionBySlug(slug) {
-  return REGIONS.find((region) => region.slug === slug) || null;
+  const normalized = normalizeRegionSlug(slug);
+  return REGIONS.find((region) => region.slug === normalized) || null;
 }
 
 export function getWeaponBySlug(slug) {
@@ -317,14 +350,34 @@ export function getForumPosts() {
   return FORUM_POSTS;
 }
 
+export function getRegionBreadcrumbs(regionSlug) {
+  const region = getRegionBySlug(regionSlug);
+  return [
+    { name: "Home", url: "/" },
+    { name: "Global wiki", url: "/global-wiki" },
+    ...(region ? [{ name: region.name, url: `/${region.slug}` }] : []),
+  ];
+}
+
+export function getWeaponBreadcrumbs(regionSlug, weaponSlug) {
+  const region = getRegionBySlug(regionSlug);
+  const weapon = getWeaponBySlug(weaponSlug);
+  return [
+    { name: "Home", url: "/" },
+    { name: "Global wiki", url: "/global-wiki" },
+    ...(region ? [{ name: region.name, url: `/${region.slug}` }] : []),
+    ...(weapon ? [{ name: weapon.name, url: `/${region?.slug || "global-wiki"}/weapons/${weapon.slug}` }] : []),
+  ];
+}
+
 export function getRegionLanding(regionSlug) {
   const region = getRegionBySlug(regionSlug);
   if (!region) return null;
 
   return {
     region,
-    featuredWeapons: WEAPONS.slice(0, 3),
-    summary: `${region.name} is part of the global CrossFire wiki expansion plan.`,
+    featuredWeapons: WEAPONS.slice(0, 4),
+    summary: `${region.name} is now part of the global CrossFire wiki expansion plan, linking region-specific content to a single global archive.`,
   };
 }
 
@@ -335,7 +388,7 @@ export function buildComparisonRows(slug) {
   }
 
   return REGIONS.map((region) => {
-    const data = weapon.regions[region.slug];
+    const data = weapon.regions?.[region.slug];
     return {
       region: region.slug,
       name: region.name,

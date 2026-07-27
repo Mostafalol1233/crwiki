@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SERVICE_KEY  = import.meta.env.VITE_SUPABASE_SERVICE_KEY as string;
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const SERVICE_KEY  = (import.meta.env.VITE_SUPABASE_SERVICE_KEY || import.meta.env.VITE_SERVICE_ROLE || '').trim();
 
 // Service-role client — used only inside the admin panel for CRUD operations.
 // The service key is bundled client-side; for a future hardening step, proxy

@@ -6,8 +6,39 @@ import multer from "multer";
 import fetch from "node-fetch";
 import FormData from "form-data";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { REGIONS, WEAPONS, FORUM_POSTS, buildComparisonRows } from "./shared/crossfire-regions.js";
+import { scrapeGlobalRegions } from "./scripts/scrape-global-regions.js";
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.join(__dirname, "dist", "client");
+const indexPath = path.join(distPath, "index.html");
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.VITE_SERVICE_ROLE || process.env.service_role || process.env.SUPABASE_SERVICE_KEY || "";
+
+async function readSupabaseRows(table, select, orderBy = "") {
+  if (!SUPABASE_URL || !SERVICE_KEY) return null;
+
+  const query = new URLSearchParams();
+  query.set("select", select);
+  if (orderBy) query.set("order", orderBy);
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query.toString()}`, {
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
 
 // Allow cross-domain calls (configure as needed)
 app.use(cors({
@@ -16,9 +47,94 @@ app.use(cors({
   allowedHeaders: ["Content-Type"],
 }));
 
+app.use(express.static(distPath, { index: false }));
+
 // Health check
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/", (_req, res) => {
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  return res.type("html").send(`<!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>CrossFire Global Wiki</title>
+      <style>body{font-family:Inter,Arial,sans-serif;background:#05070d;color:#f8fafc;padding:2rem;line-height:1.6;}a{color:#f59e0b;text-decoration:none;}code{background:#111827;padding:0.2rem 0.4rem;border-radius:4px;}</style>
+    </head>
+    <body>
+      <h1>CrossFire Global Wiki is live</h1>
+      <p>The app shell is now being served directly from the Express server.</p>
+      <ul>
+        <li><a href="/api/regions">Regions API</a></li>
+        <li><a href="/api/compare/ak47-beast">Comparison API</a></li>
+        <li><a href="/api/global-scrape">Global scrape API</a></li>
+        <li><a href="/global-wiki">Global wiki page</a></li>
+      </ul>
+      <p>Build the client bundle with <code>npm run build:client</code> for the full React UI.</p>
+    </body>
+  </html>`);
+});
+
+app.get("/api/regions", (_req, res) => {
+  res.json({ regions: REGIONS });
+});
+
+app.get("/api/weapons", async (_req, res) => {
+  const dbRows = await readSupabaseRows("weapons", "id,name,category,description,stats,image_url,created_at", "name");
+  if (dbRows && dbRows.length) {
+    const mapped = dbRows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category || "Uncategorized",
+      description: row.description || "",
+      stats: row.stats || {},
+      image_url: row.image_url || "",
+      created_at: row.created_at || null,
+    }));
+    return res.json({ weapons: mapped });
+  }
+
+  res.json({ weapons: WEAPONS });
+});
+
+app.get("/api/forum-posts", async (_req, res) => {
+  const dbRows = await readSupabaseRows("posts", "id,title,post_slug,summary,content,category,author,tags,created_at", "created_at.desc");
+  if (dbRows && dbRows.length) {
+    const mapped = dbRows.map((row) => ({
+      id: row.id,
+      slug: row.post_slug || row.title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+      title: row.title,
+      author: row.author || "CrossFire Wiki",
+      region: row.category === "global-wiki" ? "global" : "community",
+      tags: row.tags || [],
+      excerpt: row.summary || row.content || "",
+      date: row.created_at || null,
+      link: row.canonical_url || "/global-wiki",
+    }));
+    return res.json({ posts: mapped });
+  }
+
+  res.json({ posts: FORUM_POSTS });
+});
+
+app.get("/api/compare/:slug", (req, res) => {
+  const rows = buildComparisonRows(req.params.slug || "ak47-beast");
+  res.json({ slug: req.params.slug || "ak47-beast", rows });
+});
+
+app.get("/api/global-scrape", async (_req, res) => {
+  try {
+    const items = await scrapeGlobalRegions();
+    res.json({ ok: true, items });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 
 // Multer memory storage and basic limits
@@ -122,10 +238,42 @@ app.get("/cdn/fetch", async (req, res) => {
   }
 });
 
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/") || req.path.startsWith("/images/") || req.path.startsWith("/cdn/")) {
+    return next();
+  }
+
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  const title = req.path === "/" ? "CrossFire Global Wiki" : req.path.replace(/^\//, "").replace(/\//g, " · ");
+  return res.type("html").send(`<!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>${title}</title>
+      <style>body{font-family:Inter,Arial,sans-serif;background:#05070d;color:#f8fafc;padding:2rem;line-height:1.6;}a{color:#f59e0b;text-decoration:none;}code{background:#111827;padding:0.2rem 0.4rem;border-radius:4px;}</style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      <p>The CrossFire wiki content route is live. Use the API endpoints below to browse the expanded data.</p>
+      <ul>
+        <li><a href="/api/regions">Regions API</a></li>
+        <li><a href="/api/weapons">Weapons API</a></li>
+        <li><a href="/api/forum-posts">Forum posts API</a></li>
+        <li><a href="/api/compare/ak47-beast">Comparison API</a></li>
+      </ul>
+    </body>
+  </html>`);
+});
+
 // Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Cloudinary upload server listening on port ${PORT}`);
+const configuredPort = process.env.SERVER_PORT || process.env.PORT;
+const PORT = configuredPort && configuredPort !== '5173' ? configuredPort : 8080;
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`CrossFire wiki API server listening on port ${PORT}`);
 });
 
 process.on("unhandledRejection", (e) => {

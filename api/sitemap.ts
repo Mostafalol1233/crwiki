@@ -18,6 +18,13 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
   } catch { return []; }
 }
 
+async function readContentRows(type: 'weapons' | 'posts'): Promise<any[]> {
+  if (type === 'weapons') {
+    return q('weapons', 'id,name,category,description,stats,image_url,created_at', 'name');
+  }
+  return q('posts', 'id,title,post_slug,summary,content,category,author,tags,created_at', 'created_at.desc');
+}
+
 function xe(s: string) {
   return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -51,7 +58,22 @@ function entry({ loc, lastmod, changefreq, priority, images }: UrlEntry) {
   return xml;
 }
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(204).end();
+  }
+
+  const rawType = Array.isArray(req.query.type) ? req.query.type[0] : req.query.type;
+  if (req.method === 'GET' && typeof rawType === 'string' && (rawType === 'weapons' || rawType === 'posts')) {
+    const rows = await readContentRows(rawType as 'weapons' | 'posts');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');
+    return res.status(200).json(rawType === 'weapons' ? { weapons: rows || [] } : { posts: rows || [] });
+  }
+
   const today = new Date().toISOString().split("T")[0];
 
   const [events, news, posts, tutorials, weapons, mercs, modes] = await Promise.all([

@@ -35,6 +35,7 @@
   ],
 
   "rewrites": [
+    { "source": "/api/content", "destination": "/api/sitemap" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

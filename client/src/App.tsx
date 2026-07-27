@@ -129,6 +129,7 @@ const Weapons            = lazy(() => import("@/pages/Weapons"));
 const Modes              = lazy(() => import("@/pages/Modes"));
 const Maps               = lazy(() => import("@/pages/Maps"));
 const Ranks              = lazy(() => import("@/pages/Ranks"));
+const GlobalWiki         = lazy(() => import("@/pages/GlobalWiki"));
 
 function PageSpinner() {
   return (
@@ -186,6 +187,10 @@ function Router() {
       <Route path="/modes"                     component={() => <L C={Modes} />} />
       <Route path="/maps"                      component={() => <L C={Maps} />} />
       <Route path="/ranks"                     component={() => <L C={Ranks} />} />
+      <Route path="/global-wiki"               component={() => <L C={GlobalWiki} />} />
+      <Route path="/compare/:slug"            component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
+      <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
+      <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
 
       {/* Support */}
       <Route path="/support"                   component={() => <L C={Support} />} />

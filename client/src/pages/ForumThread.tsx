@@ -121,9 +121,10 @@ export default function ForumThread({ params }: { params: { categorySlug: string
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUserSession(data.session);
-      if (data.session?.user) {
+    supabase.auth.getSession().then((result: any) => {
+      const data = result?.data;
+      setUserSession(data?.session);
+      if (data?.session?.user) {
         const meta = data.session.user.user_metadata;
         setReplyName(meta?.username || data.session.user.email?.split("@")[0] || "");
       }

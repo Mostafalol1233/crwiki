@@ -29,7 +29,7 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
       );
     }
 
-    const regionMeta = weapon.regions?.[region.slug];
+    const regionMeta = weapon.regions ? (weapon.regions as Record<string, { available?: boolean; damage?: number | string; notes?: string }>)[region.slug] : undefined;
     const breadcrumbs = getWeaponBreadcrumbs(regionSlug, weaponSlug);
 
     return (
@@ -154,6 +154,18 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
               <p className="mt-3 text-sm text-slate-300">{region.focus}</p>
             </a>
           ))}
+        </div>
+
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Expand the archive</h2>
+              <p className="mt-2 text-sm text-slate-300">Add new content sections and page templates from the new content hub as the global wiki grows.</p>
+            </div>
+            <a href="/content-hub" className="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950">
+              Open content hub
+            </a>
+          </div>
         </div>
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">

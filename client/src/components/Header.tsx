@@ -19,6 +19,7 @@ export function Header() {
   const [searchQ, setSearchQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [customNavItems, setCustomNavItems] = useState<DropdownItem[]>([]);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 4);
@@ -28,10 +29,33 @@ export function Header() {
 
   // Reactive auth state — tracks Supabase session changes (login / logout)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession().then((result: any) => setSession(result?.data?.session));
+    const authState = supabase.auth.onAuthStateChange((...args: any[]) => {
+      const [, s] = args;
+      setSession(s);
+    });
+    return () => authState.data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const loadCustomNavItems = async () => {
+      const { data, error } = await supabase
+        .from("custom_pages")
+        .select("slug, title_en, title_ar")
+        .eq("status", "published")
+        .eq("show_in_nav", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        setCustomNavItems(data.map((item: any) => ({
+          path: `/pages/${item.slug}`,
+          label: language === "ar" ? (item.title_ar || item.title_en) : (item.title_en || item.title_ar),
+        })));
+      }
+    };
+
+    loadCustomNavItems();
+  }, [language]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +96,8 @@ export function Header() {
       dropdown: [
         { path: "/forum", label: t("navForum") },
         { path: "/tutorials", label: t("navTutorials") },
+        { path: "/content-hub", label: "Global Content Hub" },
+        ...customNavItems,
         { path: "/contact", label: t("navContact") },
       ],
     },

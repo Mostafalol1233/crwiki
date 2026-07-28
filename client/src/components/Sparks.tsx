@@ -52,7 +52,6 @@ const Sparks = ({ count = 200 }) => {
       <pointLight ref={light} distance={40} intensity={8} color="orange" />
       <instancedMesh ref={mesh as any} args={[undefined, undefined, count]}>
         <dodecahedronGeometry args={[0.2, 0]} />
-        {/* @ts-expect-error three-fiber material type mismatch */}
         <meshStandardMaterial color="#f0f0f0" roughness={0.5} />
       </instancedMesh>
     </>

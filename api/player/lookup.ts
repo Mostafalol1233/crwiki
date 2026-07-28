@@ -6,6 +6,14 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
+function addCorsHeaders(res: VercelResponse) {
+  for (const [key, value] of CORS) {
+    res.setHeader(key, value);
+  }
+  return res;
+}
+
+
 /** Parse Firecrawl markdown into a profile object. Returns null if insufficient data. */
 function parseFirecrawlMarkdown(md: string, regionLabel: string) {
   if (!md || md.length < 100) return null;
@@ -92,13 +100,13 @@ function parseFirecrawlMarkdown(md: string, regionLabel: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(204).setHeaders(CORS).end();
+  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
 
   try {
     const rawProfileUrl = String(req.query.profileUrl || "").trim();
 
     if (!rawProfileUrl) {
-      return res.status(400).setHeaders(CORS).json({
+      return addCorsHeaders(res).status(400).json({
         error: "A profile URL is required. Paste your z8games.com/profile/… link.",
       });
     }
@@ -109,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const fcKey = process.env.FIRECRAWL_API_KEY || "";
     if (!fcKey) {
-      return res.status(503).setHeaders(CORS).json({
+      return addCorsHeaders(res).status(503).json({
         error: "Scraping service not configured.",
       });
     }
@@ -133,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (!fcRes.ok) {
-      return res.status(502).setHeaders(CORS).json({
+      return addCorsHeaders(res).status(502).json({
         error: "Could not scrape the profile page. Make sure the URL is a valid z8games.com profile link.",
       });
     }
@@ -143,16 +151,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profile = parseFirecrawlMarkdown(md, regionLabel);
 
     if (!profile) {
-      return res.status(404).setHeaders(CORS).json({
+      return addCorsHeaders(res).status(404).json({
         error: "Profile data not found on that page. Make sure your profile is set to public on z8games.com.",
         notFound: true,
       });
     }
 
-    return res.status(200).setHeaders(CORS).json({ success: true, profile });
+    return addCorsHeaders(res).status(200).json({ success: true, profile });
   } catch (err: any) {
     const isTimeout = err?.name === "TimeoutError" || err?.message?.includes("timeout");
-    return res.status(isTimeout ? 504 : 500).setHeaders(CORS).json({
+    return addCorsHeaders(res).status(isTimeout ? 504 : 500).json({
       error: isTimeout ? "Scraping timed out — try again shortly." : "Failed to fetch profile.",
     });
   }

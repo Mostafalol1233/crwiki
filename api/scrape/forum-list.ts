@@ -6,9 +6,17 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
+function addCorsHeaders(res: VercelResponse) {
+  for (const [key, value] of CORS) {
+    res.setHeader(key, value);
+  }
+  return res;
+}
+
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(204).setHeaders(CORS).end();
-  if (req.method !== "POST") return res.status(405).setHeaders(CORS).json({ error: "POST only" });
+  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
 
   try {
     const RSS_URL = "https://forum.z8games.com/categories/crossfire-announcements/feed.rss";
@@ -53,8 +61,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try { dateISO = new Date(pubDate).toISOString(); } catch { /* invalid date */ }
       if (title && link) posts.push({ title, url: link, date: pubDate || "", dateISO, image, author: creator });
     }
-    return res.status(200).setHeaders(CORS).json({ posts });
+    return addCorsHeaders(res).status(200).json({ posts });
   } catch (e: any) {
-    return res.status(500).setHeaders(CORS).json({ error: e.message || "Forum RSS fetch failed" });
+    return addCorsHeaders(res).status(500).json({ error: e.message || "Forum RSS fetch failed" });
   }
 }

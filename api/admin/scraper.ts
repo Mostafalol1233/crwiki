@@ -15,6 +15,14 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
+function addCorsHeaders(res: VercelResponse) {
+  for (const [key, value] of CORS) {
+    res.setHeader(key, value);
+  }
+  return res;
+}
+
+
 type ContentType = "news" | "events" | "posts";
 
 async function scrapeWithFirecrawl(url: string, fcKey: string) {
@@ -78,14 +86,14 @@ async function scrapeDirect(url: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(204).setHeaders(CORS).end();
-  if (req.method !== "POST") return res.status(405).setHeaders(CORS).json({ error: "POST only" });
+  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
 
   try {
     const { url, type } = req.body || {};
 
     if (!url || !String(url).startsWith("http"))
-      return res.status(400).setHeaders(CORS).json({ error: "Valid URL required" });
+      return addCorsHeaders(res).status(400).json({ error: "Valid URL required" });
 
     const contentType: ContentType = ["news", "events", "posts"].includes(type) ? type : "posts";
 
@@ -94,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const FC_KEY       = process.env.FIRECRAWL_API_KEY || "";
 
     if (!SUPABASE_URL || !SERVICE_KEY)
-      return res.status(500).setHeaders(CORS).json({ error: "Supabase not configured" });
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     // Scrape — Firecrawl first (renders JS), direct fetch as fallback
     let scraped: { title: string; content: string; summary: string; image: string };
@@ -154,12 +162,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const plain = scraped.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-    return res.status(200).setHeaders(CORS).json({
+    return addCorsHeaders(res).status(200).json({
       success: true,
       scraped: { title: scraped.title, image: scraped.image, contentLength: plain.length },
     });
   } catch (err: any) {
     console.error("[admin/scraper]", err.message);
-    return res.status(500).setHeaders(CORS).json({ error: err.message || "Scrape failed" });
+    return addCorsHeaders(res).status(500).json({ error: err.message || "Scrape failed" });
   }
 }

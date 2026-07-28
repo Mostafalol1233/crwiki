@@ -6,6 +6,14 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
+function addCorsHeaders(res: VercelResponse) {
+  for (const [key, value] of CORS) {
+    res.setHeader(key, value);
+  }
+  return res;
+}
+
+
 const toISO = (s: string) => {
   if (!s) return "";
   try {
@@ -15,13 +23,13 @@ const toISO = (s: string) => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(204).setHeaders(CORS).end();
-  if (req.method !== "POST") return res.status(405).setHeaders(CORS).json({ error: "POST only" });
+  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
 
   try {
     const { url } = req.body || {};
     if (!url || !String(url).startsWith("http"))
-      return res.status(400).setHeaders(CORS).json({ error: "Valid URL required" });
+      return addCorsHeaders(res).status(400).json({ error: "Valid URL required" });
 
     const r = await fetch(url, {
       headers: {
@@ -65,10 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description: descriptionHtml, descriptionText, sourceUrl: url, selected: true,
     };
 
-    return res.status(200).setHeaders(CORS).json({
+    return addCorsHeaders(res).status(200).json({
       threadTitle, threadDate, threadImage, threadUrl: url, events: [event],
     });
   } catch (e: any) {
-    return res.status(500).setHeaders(CORS).json({ error: e.message || "Thread scrape failed" });
+    return addCorsHeaders(res).status(500).json({ error: e.message || "Thread scrape failed" });
   }
 }

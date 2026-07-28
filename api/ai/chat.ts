@@ -1,4 +1,7 @@
+import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+dotenv.config();
 
 // Fetch live website context from Supabase for the AI system prompt
 async function fetchWebsiteContext(): Promise<string> {
@@ -59,7 +62,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: "messages array required" });
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY;
+  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "openai/gpt-oss-20b:free";
   if (!apiKey) return res.status(500).json({ error: "AI not configured" });
 
   // Set SSE headers and claim the response immediately
@@ -92,7 +96,7 @@ ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== EN
         "X-Title": "CrossFire Wiki",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b:free",
+        model,
         messages: [systemPrompt, ...messages.slice(-6)],
         // 2048 gives enough room for reasoning tokens (~300-600) plus full response.
         // Old 480 was exhausted entirely by reasoning, leaving 0 tokens for output.
@@ -104,7 +108,9 @@ ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== EN
     });
 
     if (!upstream.ok) {
-      res.write(`data: ${JSON.stringify({ error: "AI upstream error" })}\n\n`);
+      const upstreamText = await upstream.text().catch(() => "");
+      const upstreamError = upstreamText ? upstreamText.slice(0, 500) : "AI upstream error";
+      res.write(`data: ${JSON.stringify({ error: upstreamError })}\n\n`);
       return res.end();
     }
 

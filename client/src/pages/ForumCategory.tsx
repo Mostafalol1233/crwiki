@@ -55,7 +55,7 @@ export default function ForumCategory({ params }: { params: { categorySlug: stri
   const PAGE_SIZE = 20;
 
   useEffect(() => {
-    getForumCategories().then(cats => {
+    getForumCategories().then((cats: any[]) => {
       const cat = cats.find(c => c.slug === categorySlug);
       if (cat) {
         setCategory(cat);

@@ -32,14 +32,15 @@ export default function NewThread({ params }: { params: { categorySlug: string }
   const [userSession, setUserSession] = useState<any>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUserSession(data.session);
-      if (data.session?.user) {
+    supabase.auth.getSession().then((result: any) => {
+      const data = result?.data;
+      setUserSession(data?.session);
+      if (data?.session?.user) {
         const meta = data.session.user.user_metadata;
         setAuthorName(meta?.username || data.session.user.email?.split("@")[0] || "");
       }
     });
-    getForumCategories().then(cats => {
+    getForumCategories().then((cats: any[]) => {
       const cat = cats.find(c => c.slug === categorySlug);
       if (cat) setCategory(cat);
       else setLocation("/forum");

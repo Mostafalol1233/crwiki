@@ -15,6 +15,7 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "types": ["node", "vite/client"],
     "paths": {

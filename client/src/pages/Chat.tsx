@@ -82,7 +82,8 @@ export default function Chat() {
 
   // ── Step 1: resolve auth from Supabase session ────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((result: any) => {
+      const session = result?.data?.session;
       if (!session) {
         sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
         setLocation("/login");
@@ -142,7 +143,7 @@ export default function Chat() {
       .eq("conversation_id", activeConvId)
       .order("created_at", { ascending: true })
       .limit(100)
-      .then(({ data }) => setMessages((data as Message[]) || []));
+      .then((result: any) => setMessages((result.data as Message[]) || []));
   }, [activeConvId]);
 
   // ── Step 4: Supabase Realtime — broadcast channel for new messages ─────────
@@ -153,7 +154,7 @@ export default function Chat() {
     const channel = supabase.channel("cf-wiki-chat");
 
     channel
-      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+      .on("broadcast", { event: "new_message" }, ({ payload }: { payload: any }) => {
         const msg = payload.message as Message;
         // Add to messages if we're watching that conversation
         setMessages(prev => {
@@ -175,7 +176,7 @@ export default function Chat() {
       .on("broadcast", { event: "new_conversation" }, () => {
         fetchConversations();
       })
-      .subscribe((status, err) => {
+      .subscribe((status: any, err: any) => {
         // Silently ignore 406 / realtime-not-enabled errors — chat still works via polling
         if (err && process.env.NODE_ENV === "development") {
           console.debug("[Chat realtime]", status, err?.message);

@@ -6,6 +6,14 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
+function addCorsHeaders(res: VercelResponse) {
+  for (const [key, value] of CORS) {
+    res.setHeader(key, value);
+  }
+  return res;
+}
+
+
 async function scrapePage(url: string) {
   const r = await fetch(url, {
     headers: {
@@ -33,8 +41,8 @@ async function scrapePage(url: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return res.status(204).setHeaders(CORS).end();
-  if (req.method !== "POST") return res.status(405).setHeaders(CORS).json({ error: "POST only" });
+  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
 
   const { action, type, id, url } = req.body || {};
 
@@ -44,9 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── action: rescrape-item ─────────────────────────────────────────────────
   if (action === "rescrape-item") {
     if (!type || !id || !url || !String(url).startsWith("http"))
-      return res.status(400).setHeaders(CORS).json({ error: "type, id, and valid url required" });
+      return addCorsHeaders(res).status(400).json({ error: "type, id, and valid url required" });
     if (!SUPABASE_URL || !SERVICE_KEY)
-      return res.status(500).setHeaders(CORS).json({ error: "Supabase not configured" });
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     try {
       const scraped = await scrapePage(url);
@@ -70,19 +78,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (!upRes.ok) throw new Error(`Supabase update failed: ${await upRes.text()}`);
 
-      return res.status(200).setHeaders(CORS).json({
+      return addCorsHeaders(res).status(200).json({
         success: true,
         scraped: { title: scraped.title, image: scraped.image, contentLength: plain.length },
       });
     } catch (e: any) {
-      return res.status(500).setHeaders(CORS).json({ error: e.message || "Rescrape failed" });
+      return addCorsHeaders(res).status(500).json({ error: e.message || "Rescrape failed" });
     }
   }
 
   // ── action: rebuild-mercenary-posts ───────────────────────────────────────
   if (action === "rebuild-mercenary-posts") {
     if (!SUPABASE_URL || !SERVICE_KEY)
-      return res.status(500).setHeaders(CORS).json({ error: "Supabase not configured" });
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     try {
       const headers: Record<string, string> = {
@@ -131,16 +139,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (insRes.ok) created++; else failed++;
         } catch { failed++; }
       }
-      return res.status(200).setHeaders(CORS).json({ deletedCount: 0, created, failed });
+      return addCorsHeaders(res).status(200).json({ deletedCount: 0, created, failed });
     } catch (e: any) {
-      return res.status(500).setHeaders(CORS).json({ error: e.message });
+      return addCorsHeaders(res).status(500).json({ error: e.message });
     }
   }
 
   // ── action: rebuild-wiki-posts ────────────────────────────────────────────
   if (action === "rebuild-wiki-posts") {
     if (!SUPABASE_URL || !SERVICE_KEY)
-      return res.status(500).setHeaders(CORS).json({ error: "Supabase not configured" });
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     try {
       const headers: Record<string, string> = {
@@ -185,11 +193,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (insRes.ok) created++; else failed++;
         } catch { failed++; }
       }
-      return res.status(200).setHeaders(CORS).json({ deletedCount: 0, created, failed });
+      return addCorsHeaders(res).status(200).json({ deletedCount: 0, created, failed });
     } catch (e: any) {
-      return res.status(500).setHeaders(CORS).json({ error: e.message });
+      return addCorsHeaders(res).status(500).json({ error: e.message });
     }
   }
 
-  return res.status(400).setHeaders(CORS).json({ error: "Unknown action. Use: rescrape-item, rebuild-mercenary-posts, rebuild-wiki-posts" });
+  return addCorsHeaders(res).status(400).json({ error: "Unknown action. Use: rescrape-item, rebuild-mercenary-posts, rebuild-wiki-posts" });
 }

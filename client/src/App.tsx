@@ -130,6 +130,9 @@ const Modes              = lazy(() => import("@/pages/Modes"));
 const Maps               = lazy(() => import("@/pages/Maps"));
 const Ranks              = lazy(() => import("@/pages/Ranks"));
 const GlobalWiki         = lazy(() => import("@/pages/GlobalWiki"));
+const GlobalContentHub   = lazy(() => import("@/pages/GlobalContentHub"));
+const CustomPagesIndex   = lazy(() => import("@/pages/CustomPagesIndex"));
+const CustomPageRoute    = lazy(() => import("@/pages/CustomPageRoute"));
 
 function PageSpinner() {
   return (
@@ -188,6 +191,10 @@ function Router() {
       <Route path="/maps"                      component={() => <L C={Maps} />} />
       <Route path="/ranks"                     component={() => <L C={Ranks} />} />
       <Route path="/global-wiki"               component={() => <L C={GlobalWiki} />} />
+      <Route path="/content-hub"              component={() => <L C={GlobalContentHub} />} />
+      <Route path="/content-hub/:slug"        component={(p: any) => <L C={GlobalContentHub} params={p.params} />} />
+      <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
+      <Route path="/pages/:slug"              component={(p: any) => <L C={CustomPageRoute} params={p.params} />} />
       <Route path="/compare/:slug"            component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
       <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
       <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
@@ -228,6 +235,7 @@ function Router() {
       <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
 
       {/* Admin */}
+            <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
       <Route path="/admin/login"               component={() => <L C={AdminLogin} />} />
       <Route path="/admin/announcements-manage" component={() => <L C={AdminAnnouncements} />} />
       <Route path="/admin/media-upload"        component={() => <L C={MediaUpload} />} />
@@ -364,7 +372,7 @@ function useGoogleOAuthFirstLogin() {
   useEffect(() => {
     let mounted = true;
     import("@/lib/supabase").then(({ supabase }) => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
         if (!mounted || event !== "SIGNED_IN" || !session?.user) return;
         const user = session.user;
         // Only act for OAuth providers (not email/password logins)

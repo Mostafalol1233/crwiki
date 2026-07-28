@@ -136,8 +136,8 @@ export default function TutorialDetailPage() {
       <SEOHead
         title={tutorial?.title ? `${tutorial.title} — CrossFire Wiki` : "Tutorial — CrossFire Wiki"}
         description={tutorial?.description || "Watch CrossFire tutorials and guides on CrossFire Wiki."}
-        image={tutorial?.thumbnailUrl || tutorial?.thumbnail_url || undefined}
-        type="article"
+        ogImage={tutorial?.thumbnailUrl || tutorial?.thumbnail_url || undefined}
+        ogType="article"
       />
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <button

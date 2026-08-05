@@ -23,10 +23,11 @@ import {
   AlignJustify, List, ListOrdered, Quote, Code, Code2, Link2,
   Image as ImageIcon, Youtube as YoutubeIcon, Table as TableIcon,
   Heading1, Heading2, Heading3, HighlighterIcon, Undo, Redo, Minus,
-  Palette, FileCode, Upload, Pencil, Maximize2, Braces, Eye,
+  Palette, FileCode, Upload, Pencil, Maximize2, Braces, Eye, Columns3, ImagePlus,
 } from 'lucide-react';
 import { ImageEditorModal } from '@/components/ImageEditorModal';
 import { uploadToSupabase } from '@/lib/uploadToSupabase';
+import { isAdvancedHtml } from '@/components/AdvancedHtmlRenderer';
 
 const lowlight = createLowlight(common);
 
@@ -124,6 +125,7 @@ export default function TipTapEditor({
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceHtml, setSourceHtml] = useState(content || '');
   const [sourceNotice, setSourceNotice] = useState('');
+  const [showSourcePreview, setShowSourcePreview] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
@@ -135,6 +137,7 @@ export default function TipTapEditor({
   const [imageEditorOpen, setImageEditorOpen] = useState(false);
   const [editingImageSrc, setEditingImageSrc] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sourceFileInputRef = useRef<HTMLInputElement>(null);
   const lastPropContent = useRef(content || '');
 
   const editor = useEditor({
@@ -200,11 +203,45 @@ export default function TipTapEditor({
     lastPropContent.current = sourceHtml || '';
     setSourceMode(false);
     setSourceNotice(
-      /<(?:section|article|style|script|template|svg|custom-|iframe)\b/i.test(sourceHtml)
+      isAdvancedHtml(sourceHtml)
         ? 'Advanced markup is preserved in Source mode. Visual mode shows the parts supported by the rich editor.'
         : '',
     );
   }, [content, editor, sourceHtml, sourceMode]);
+
+
+  const importSourceFile = useCallback(async (file: File) => {
+    const text = await file.text();
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith('.css')) {
+      setSource(`${sourceHtml}\n<style>\n${text}\n</style>`);
+      toast.success('CSS file added to Source mode');
+    } else if (lowerName.endsWith('.js')) {
+      setSource(`${sourceHtml}\n<script>\n${text}\n</script>`);
+      toast.success('JavaScript file added to Source mode');
+    } else {
+      setSource(text);
+      toast.success('HTML file loaded into Source mode');
+    }
+    setSourceMode(true);
+    setShowSourcePreview(true);
+    if (sourceFileInputRef.current) sourceFileInputRef.current.value = '';
+  }, [setSource, sourceHtml]);
+
+  const insertThreeImageGrid = useCallback(() => {
+    const snippet = `\n<section class="crwiki-image-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:32px 0;">\n  <figure style="margin:0;border:1px solid rgba(212,160,23,.35);border-radius:16px;overflow:hidden;background:#202020;">\n    <img src="https://placehold.co/900x520" alt="Image one" style="width:100%;height:220px;object-fit:cover;display:block;" />\n    <figcaption style="padding:14px;text-align:center;color:#d4a017;font-weight:800;">First image</figcaption>\n  </figure>\n  <figure style="margin:0;border:1px solid rgba(212,160,23,.35);border-radius:16px;overflow:hidden;background:#202020;">\n    <img src="https://placehold.co/900x520" alt="Image two" style="width:100%;height:220px;object-fit:cover;display:block;" />\n    <figcaption style="padding:14px;text-align:center;color:#d4a017;font-weight:800;">Second image</figcaption>\n  </figure>\n  <figure style="margin:0;border:1px solid rgba(212,160,23,.35);border-radius:16px;overflow:hidden;background:#202020;">\n    <img src="https://placehold.co/900x520" alt="Image three" style="width:100%;height:220px;object-fit:cover;display:block;" />\n    <figcaption style="padding:14px;text-align:center;color:#d4a017;font-weight:800;">Third image</figcaption>\n  </figure>\n</section>`;
+    setSourceMode(true);
+    setSource(`${sourceHtml || editor?.getHTML() || ''}${snippet}`);
+    toast.success('3-image row template inserted');
+  }, [editor, setSource, sourceHtml]);
+
+  const insertHeroLayout = useCallback(() => {
+    const snippet = `<section dir="rtl" style="min-height:720px;background:linear-gradient(rgba(8,8,12,.76),rgba(8,8,12,.9)),url('https://placehold.co/1920x1080') center/cover fixed;color:#f8fafc;padding:80px 24px;font-family:Inter,Tahoma,sans-serif;">\n  <div style="max-width:1180px;margin:0 auto;text-align:center;">\n    <img src="https://placehold.co/220x80" alt="Logo" style="width:170px;border-radius:8px;margin-bottom:38px;" />\n    <h1 style="font-size:clamp(42px,7vw,82px);line-height:1.1;margin:0 0 24px;color:#d4a017;text-shadow:0 6px 20px #000;font-weight:900;">الموسوعة الأسطورية: GOD ZONE</h1>\n    <p style="font-size:26px;margin:0 0 52px;color:#e5e7eb;">الدليل الشامل لتفعيل لعب الآلهة</p>\n    <div style="background:#151515;border:1px solid rgba(255,255,255,.12);border-radius:26px;padding:48px;box-shadow:0 22px 60px rgba(0,0,0,.45);">\n      <h2 style="color:#d4a017;font-size:38px;margin:0 0 28px;border-bottom:2px solid #d4a017;padding-bottom:18px;">1. حكاية السحاب وأرض الأساطير 🏯</h2>\n      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px;align-items:center;">\n        <img src="https://placehold.co/900x520" alt="Map" style="width:100%;border:2px solid #d4a017;border-radius:18px;" />\n        <p style="font-size:20px;line-height:2;text-align:right;">اكتب المحتوى هنا. يمكنك تغيير الخلفية، الحدود، حجم الصور، وإضافة أي CSS أو JavaScript في Source mode.</p>\n      </div>\n    </div>\n  </div>\n</section>`;
+    setSourceMode(true);
+    setSource(snippet);
+    setShowSourcePreview(true);
+    toast.success('Full-page hero template inserted');
+  }, [setSource]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -320,10 +357,14 @@ export default function TipTapEditor({
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal Rule"><Minus size={14} /></ToolbarButton>
         <ToolbarButton onClick={() => setShowImageTools((value) => !value)} active={showImageTools || !!selectedImage} disabled={!selectedImage} title="Image Size & Edit"><Maximize2 size={14} /></ToolbarButton>
         <Divider />
+        <ToolbarButton onClick={insertHeroLayout} title="Insert full-page hero layout"><ImagePlus size={14} /></ToolbarButton>
+        <ToolbarButton onClick={insertThreeImageGrid} title="Insert 3 images in one row"><Columns3 size={14} /></ToolbarButton>
+        <ToolbarButton onClick={() => sourceFileInputRef.current?.click()} title="Upload HTML, CSS, or JavaScript file"><FileCode size={14} /></ToolbarButton>
         <button type="button" onClick={toggleSourceMode} title={sourceMode ? 'Return to visual editor' : 'Edit complete HTML source'} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 4, border: `1px solid ${sourceMode ? '#d4a017' : '#3f3f46'}`, background: sourceMode ? 'rgba(212,160,23,0.15)' : '#18181b', color: sourceMode ? '#d4a017' : '#a1a1aa', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
           {sourceMode ? <Eye size={13} /> : <Braces size={13} />} {sourceMode ? 'Visual' : 'HTML Source'}
         </button>
         <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadImage(file); }} />
+        <input ref={sourceFileInputRef} type="file" accept=".html,.htm,.css,.js,text/html,text/css,text/javascript,application/javascript" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void importSourceFile(file); }} />
       </div>
 
       {showLinkInput && !sourceMode && (
@@ -358,8 +399,12 @@ export default function TipTapEditor({
         <div style={{ background: '#09090b' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid #27272a', color: '#a1a1aa', fontSize: 11 }}>
             <FileCode size={13} color="#d4a017" />
-            <span>Complete HTML source — HTML, CSS, embeds, custom attributes, and code are preserved.</span>
+            <span style={{ flex: 1 }}>Complete HTML source — HTML, CSS, embeds, custom attributes, and code are preserved.</span>
+            <button type="button" onClick={() => setShowSourcePreview((value) => !value)} style={{ padding: '4px 8px', background: showSourcePreview ? '#d4a017' : '#27272a', color: showSourcePreview ? '#09090b' : '#a1a1aa', border: '1px solid #3f3f46', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{showSourcePreview ? 'Hide preview' : 'Live preview'}</button>
           </div>
+          {showSourcePreview && (
+            <iframe title="Source preview" srcDoc={sourceHtml} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms" style={{ width: '100%', minHeight: 420, border: 0, borderBottom: '1px solid #27272a', background: '#111' }} />
+          )}
           <textarea
             value={sourceHtml}
             onChange={(event) => setSource(event.target.value)}

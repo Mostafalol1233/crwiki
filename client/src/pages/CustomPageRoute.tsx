@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
-import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
+import AdvancedHtmlRenderer from "@/components/AdvancedHtmlRenderer";
 
 interface CustomPageRecord {
   id: string;
@@ -94,8 +94,6 @@ export default function CustomPageRoute({ params }: CustomPageRouteProps) {
     );
   }
 
-  const safeHtml = sanitizeRichHtml(content);
-
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
       <SEOHead title={page.seo_title || title} description={page.seo_description || `Content page for ${title}`} />
@@ -107,7 +105,7 @@ export default function CustomPageRoute({ params }: CustomPageRouteProps) {
         </div>
 
         <div className={`rounded-3xl border border-slate-800 bg-slate-900/60 p-8 ${page.template === "minimal" ? "max-w-3xl" : ""}`}>
-          <div className="prose prose-invert max-w-none rich-html-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+          <AdvancedHtmlRenderer html={content} dir={isAr ? "rtl" : "ltr"} iframeTitle={`${title} custom page layout`} className="prose prose-invert max-w-none rich-html-content" />
         </div>
       </div>
     </div>

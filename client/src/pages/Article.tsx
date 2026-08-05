@@ -12,7 +12,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
-import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
+import AdvancedHtmlRenderer from "@/components/AdvancedHtmlRenderer";
 
 interface WikiTab {
   title: string;
@@ -317,10 +317,11 @@ export default function Article() {
                       ))}
                     </div>
                     {activeTab === -1 ? (
-                      <div
-                        ref={contentRef}
+                      <AdvancedHtmlRenderer
+                        html={rawContent}
+                        dir={isRTL ? "rtl" : undefined}
+                        iframeTitle={`${finalArticle?.title || "Post"} custom layout`}
                         className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
-                        dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(rawContent) }}
                       />
                     ) : (
                       <div>
@@ -334,27 +335,27 @@ export default function Article() {
                             />
                           </div>
                         )}
-                        <div
-                          ref={contentRef}
+                        <AdvancedHtmlRenderer
+                          html={(finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || ""}
+                          dir={isRTL ? "rtl" : undefined}
+                          iframeTitle={`${(finalArticle.wikiTabs as WikiTab[])[activeTab]?.title || "Post tab"} custom layout`}
                           className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
-                          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml((finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") }}
                         />
                       </div>
                     )}
                   </div>
                 ) : (
                 <div className="wiki-article-body mt-12">
-                  <div
-                    ref={contentRef}
+                  <AdvancedHtmlRenderer
+                    html={rawContent}
+                    dir={isRTL ? "rtl" : undefined}
+                    iframeTitle={`${finalArticle?.title || "Post"} custom layout`}
                     className={`prose prose-slate dark:prose-invert max-w-none 
                       prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter
                       prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium
                       prose-a:text-primary prose-a:no-underline hover:prose-a:underline
                       prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50
                       ${isRTL ? "rtl" : ""}`}
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeRichHtml(rawContent)
-                    }}
                   />
                 </div>
                 )}

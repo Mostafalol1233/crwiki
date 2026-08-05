@@ -160,6 +160,15 @@ function Router() {
       {/* Home loads synchronously for best LCP */}
       <Route path="/" component={Home} />
 
+      {/* Admin routes must come before the generic /:region route below.
+         Otherwise "/admin" is interpreted as an unknown wiki region. */}
+      <Route path="/admin/login"               component={() => <L C={AdminLogin} />} />
+      <Route path="/admin/announcements-manage" component={() => <L C={AdminAnnouncements} />} />
+      <Route path="/admin/media-upload"        component={() => <L C={MediaUpload} />} />
+      <Route path="/admin/seo-bulk"            component={() => <L C={BulkSEO} />} />
+      <Route path="/admin"                     component={() => <L C={Admin} />} />
+      <Route path="/admin/:rest*"              component={() => <L C={Admin} />} />
+
       {/* Content */}
       <Route path="/search"                    component={() => <L C={SearchPage} />} />
       <Route path="/category/news"             component={() => <L C={CategoryNews} />} />
@@ -235,13 +244,7 @@ function Router() {
       <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
 
       {/* Admin */}
-            <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
-      <Route path="/admin/login"               component={() => <L C={AdminLogin} />} />
-      <Route path="/admin/announcements-manage" component={() => <L C={AdminAnnouncements} />} />
-      <Route path="/admin/media-upload"        component={() => <L C={MediaUpload} />} />
-      <Route path="/admin/seo-bulk"            component={() => <L C={BulkSEO} />} />
-      <Route path="/admin"                     component={() => <L C={Admin} />} />
-      <Route path="/admin/:rest*"              component={() => <L C={Admin} />} />
+      <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
 
       <Route component={() => <L C={NotFound} />} />
     </Switch>

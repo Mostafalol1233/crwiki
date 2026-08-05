@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
-import createDOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Target, Globe, Loader2 } from "lucide-react";
@@ -10,6 +9,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useZoomableImages, ImageViewerOverlay } from "@/components/ImageViewer";
 import { useToast } from "@/hooks/use-toast";
+import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 
 interface NewsItem {
   id: string;
@@ -322,13 +322,8 @@ export default function NewsDetail() {
                       out = out.replace(/https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/g, (_m, id) => `<div class="aspect-video mb-8"><iframe src="https://www.youtube.com/embed/${id}" width="560" height="315" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`);
                       return out;
                     };
-                    const purifier = (createDOMPurify as any)(window as any);
                     const html = transformEmbeds(selectedContentRaw || "");
-                    return purifier.sanitize(html, {
-                      ADD_TAGS: ['iframe'],
-                      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
-                      FORCE_BODY: true,
-                    });
+                    return sanitizeRichHtml(html);
                   })()
                 }}
               />

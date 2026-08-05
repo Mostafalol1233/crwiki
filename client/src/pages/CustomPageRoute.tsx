@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 
 interface CustomPageRecord {
   id: string;
@@ -94,7 +94,7 @@ export default function CustomPageRoute({ params }: CustomPageRouteProps) {
     );
   }
 
-  const safeHtml = DOMPurify.sanitize(content, { USE_PROFILES: { html: true } });
+  const safeHtml = sanitizeRichHtml(content);
 
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
@@ -107,7 +107,7 @@ export default function CustomPageRoute({ params }: CustomPageRouteProps) {
         </div>
 
         <div className={`rounded-3xl border border-slate-800 bg-slate-900/60 p-8 ${page.template === "minimal" ? "max-w-3xl" : ""}`}>
-          <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+          <div className="prose prose-invert max-w-none rich-html-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
         </div>
       </div>
     </div>

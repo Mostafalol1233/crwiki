@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "overrides": {
+    "shell-quote": "1.10.0"
+  },
   "scripts": {
     "dev": "vite --port 5000 --host 0.0.0.0",
     "dev:client": "vite",

@@ -12,7 +12,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 
 interface WikiTab {
   title: string;
@@ -320,7 +320,7 @@ export default function Article() {
                       <div
                         ref={contentRef}
                         className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawContent, { ADD_TAGS: ['iframe'], ADD_ATTR: ['allow','allowfullscreen','frameborder','scrolling','target'], FORCE_BODY: true }) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(rawContent) }}
                       />
                     ) : (
                       <div>
@@ -337,7 +337,7 @@ export default function Article() {
                         <div
                           ref={contentRef}
                           className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
-                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "", { ADD_TAGS: ['style','iframe'], ADD_ATTR: ['allow','allowfullscreen','frameborder','scrolling','target'], FORCE_BODY: true, ALLOW_UNKNOWN_PROTOCOLS: true }) }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml((finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") }}
                         />
                       </div>
                     )}
@@ -353,12 +353,7 @@ export default function Article() {
                       prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50
                       ${isRTL ? "rtl" : ""}`}
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(rawContent, {
-                        ADD_TAGS: ['style', 'script', 'iframe'],
-                        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target'],
-                        FORCE_BODY: true,
-                        ALLOW_UNKNOWN_PROTOCOLS: true,
-                      })
+                      __html: sanitizeRichHtml(rawContent)
                     }}
                   />
                 </div>

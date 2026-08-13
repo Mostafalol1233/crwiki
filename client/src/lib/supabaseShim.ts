@@ -853,7 +853,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     return (data || []).map(postToAnn);
   }
 
-  // ── Admin users (stub — use VITE_ADMIN_PASSWORD for auth) ─────────────────
+  // ── Admin users (stub — use the authenticated server admin flow) ────────
   if (path === '/admin/users' || path === '/admin/admins') {
     return M === 'GET' ? [] : { success: true };
   }

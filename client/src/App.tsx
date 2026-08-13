@@ -205,8 +205,6 @@ function Router() {
       <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
       <Route path="/pages/:slug"              component={(p: any) => <L C={CustomPageRoute} params={p.params} />} />
       <Route path="/compare/:slug"            component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
-      <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
-      <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
 
       {/* Support */}
       <Route path="/support"                   component={() => <L C={Support} />} />
@@ -243,8 +241,9 @@ function Router() {
       <Route path="/chat"                      component={() => <L C={Chat} />} />
       <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
 
-      {/* Admin */}
-      <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
+      {/* Regional wiki fallbacks must follow every fixed public route. */}
+      <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
+      <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
 
       <Route component={() => <L C={NotFound} />} />
     </Switch>

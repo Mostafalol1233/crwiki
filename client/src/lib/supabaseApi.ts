@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
@@ -9,6 +9,10 @@ function isMissingTableError(error: any) {
 }
 
 async function runSafeQuery<T>(fallback: T, executor: () => Promise<any>): Promise<{ data: T; count?: number }> {
+  if (!isSupabaseConfigured) {
+    return { data: fallback, count: Array.isArray(fallback) ? fallback.length : undefined };
+  }
+
   try {
     const result = await executor();
     if (result?.error && isMissingTableError(result.error)) {

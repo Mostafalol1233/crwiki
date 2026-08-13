@@ -5,9 +5,10 @@
  * matching Supabase record.  Called by WikiRescraper.tsx.
  *
  * Body: { url: string, type: "news" | "events" | "posts" }
- * Auth: Authorization: Bearer <adminToken>  (base64 JSON token)
+ * Auth: Authorization: Bearer <signed-admin-token>
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { verifyAdminRequest } from "../../server/adminAuth";
 
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],
@@ -88,6 +89,9 @@ async function scrapeDirect(url: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
+  if (!verifyAdminRequest(req.headers as Record<string, unknown>)) {
+    return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+  }
 
   try {
     const { url, type } = req.body || {};
@@ -98,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const contentType: ContentType = ["news", "events", "posts"].includes(type) ? type : "posts";
 
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-    const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+    const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
     const FC_KEY       = process.env.FIRECRAWL_API_KEY || "";
 
     if (!SUPABASE_URL || !SERVICE_KEY)

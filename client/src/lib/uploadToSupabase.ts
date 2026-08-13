@@ -1,62 +1,50 @@
 /**
- * Unified file upload utility using Supabase Storage.
- * Always uses the service-role client to bypass RLS.
+ * Unified media upload utility.
+ *
+ * Uploads are sent to the server-side media endpoint. The browser must never
+ * receive a Supabase service-role key, and the server validates the signed
+ * admin session before forwarding the file to Cloudinary.
  */
-import { supabase } from './supabase';
-import { supabaseService } from './supabaseAdmin';
 
-const BUCKET = 'media';
-let bucketReady = false;
+const API_BASE = String(import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const UPLOAD_ENDPOINT = API_BASE ? `${API_BASE}/images/upload` : "/api/images/upload";
 
-/** Ensure the media bucket exists — called automatically before every upload */
-async function ensureBucket(client: any): Promise<void> {
-  if (bucketReady) return;
-  try {
-    const { data: buckets } = await client.storage.listBuckets();
-    if (!buckets?.some((b: any) => b.name === BUCKET)) {
-      await client.storage.createBucket(BUCKET, { public: true });
-    }
-    bucketReady = true;
-  } catch {
-    // Bucket may already exist or creation not permitted — proceed anyway
-    bucketReady = true;
-  }
+function getAdminHeaders(): Record<string, string> {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function uploadToSupabase(
   file: File,
-  folder: string = 'uploads',
-  customName?: string,
+  _folder: string = "uploads",
+  _customName?: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  // Service-role client bypasses all RLS policies
-  const client = supabaseService || supabase;
+  if (!file || file.size === 0) throw new Error("Choose a file before uploading");
 
-  await ensureBucket(client);
-
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const safeName = customName
-    ? `${customName}.${ext}`
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const path = `${folder}/${safeName}`;
-
+  const form = new FormData();
+  form.append("file", file, file.name);
   onProgress?.(10);
 
-  const { error } = await client.storage
-    .from(BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type });
+  const response = await fetch(UPLOAD_ENDPOINT, {
+    method: "POST",
+    headers: getAdminHeaders(),
+    body: form,
+  });
+  const payload = await response.json().catch(() => ({}));
 
-  if (error) throw new Error(`Upload failed: ${error.message}`);
+  if (!response.ok || !payload.secure_url) {
+    throw new Error(payload.error || `Upload failed with status ${response.status}`);
+  }
 
   onProgress?.(100);
-
-  const { data } = client.storage.from(BUCKET).getPublicUrl(path);
-  if (!data?.publicUrl) throw new Error('Could not get public URL after upload');
-  return data.publicUrl;
+  return String(payload.domain_url || payload.secure_url);
 }
 
-/** Ensure the media bucket exists (idempotent) */
+/**
+ * Kept for backwards compatibility with existing admin components. Bucket
+ * provisioning is now handled by the server-side upload service.
+ */
 export async function ensureMediaBucket(): Promise<void> {
-  const client = supabaseService || supabase;
-  await ensureBucket(client);
+  return undefined;
 }

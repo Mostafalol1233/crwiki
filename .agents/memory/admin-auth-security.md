@@ -1,16 +1,20 @@
 ---
 name: Admin auth security
-description: How admin login is secured; remaining known risks with the service key in the client bundle.
+description: How admin login and privileged browser operations are secured.
 ---
 
-## Rule
-Admin password comparison (ADMIN_PASSWORD and bcrypt for admin_users rows) happens in the Vite server plugin `cfAdminAuthPlugin()` at `/api/admin/login`. The client calls this endpoint — plaintext passwords and hashes never reach the browser.
+## Current rule
 
-**Why:** VITE_ADMIN_PASSWORD was previously compared client-side (visible in DevTools). Any visitor could extract it.
+Admin password comparison (`ADMIN_PASSWORD` and bcrypt for `admin_users` rows) happens server-side in the Vite and production admin login handlers. The browser calls `adminLogin()` and never receives a password hash or service-role credential.
 
-**How to apply:** `adminLogin()` in `supabaseAdmin.ts` just POSTs to `/api/admin/login`. The plugin reads `process.env.ADMIN_PASSWORD` and `process.env.VITE_ADMIN_PASSWORD` (both work from the server side).
+Successful logins receive an HMAC-signed, seven-day token from `server/adminAuth.ts`. Production admin mutations verify the bearer token before using `SUPABASE_SERVICE_KEY`; the development scraper and rebuild middleware use the same shared verifier. The optional Express media upload endpoint also requires a valid signed token.
 
-## Known remaining risk
-`VITE_SUPABASE_SERVICE_KEY` is still in the client bundle because `supabaseService` is imported by admin CRUD pages (Dashboard, WeaponsManager, etc.) to bypass RLS. Anyone who inspects the JS bundle can extract this key and bypass all Supabase RLS.
+`ADMIN_TOKEN_SECRET` should be configured explicitly in production. The implementation supports a server-only secret fallback for backwards compatibility, but privileged values must never use the `VITE_` prefix.
 
-**Long-term fix:** proxy all admin writes through server-side endpoints so the service key lives only in `process.env.SUPABASE_SERVICE_KEY` (no VITE_ prefix = not bundled). This requires a full admin API layer.
+## Browser credential boundary
+
+`client/src/lib/supabaseAdmin.ts` no longer creates a service-role client. Its legacy `supabaseService` export is only a compatibility alias for the publishable Supabase client and remains subject to RLS. Browser uploads delegate to the authenticated media endpoint, and the CI workflow rejects service-role environment names in `client/src`.
+
+## Remaining migration boundary
+
+Some older admin CRUD screens still call Supabase directly through the publishable client. Those operations are safe from service-key exposure but depend on Supabase RLS policies. Privileged CRUD that must bypass RLS should be migrated to authenticated server endpoints rather than reintroducing a service-role client in browser code.

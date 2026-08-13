@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { uploadToSupabase } from './uploadToSupabase';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -727,26 +728,13 @@ export async function updateSiteSettings(patch: Record<string, any>) {
   }
 }
 
-// ─── Image Upload (Supabase Storage) ─────────────────────────────────────────
+// ─── Image Upload ─────────────────────────────────────────────────────────────
 export async function uploadImageToSupabase(
   file: File,
-  bucket = 'uploads',
+  _bucket = 'uploads',
   folder = 'images'
 ): Promise<string> {
-  // Use service-role client so uploads bypass storage RLS policies
-  const { supabaseService } = await import('@/lib/supabaseAdmin');
-  const client = supabaseService || supabase;
-
-  const ext = file.name.split('.').pop() || 'jpg';
-  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await client.storage.from(bucket).upload(fileName, file, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: file.type,
-  });
-  if (error) throw new Error(error.message);
-  const { data: urlData } = client.storage.from(bucket).getPublicUrl(data.path);
-  return urlData.publicUrl;
+  return uploadToSupabase(file, folder);
 }
 
 // ─── Auth (Supabase Auth) ─────────────────────────────────────────────────────

@@ -1,13 +1,13 @@
 /**
  * supabaseShim.ts
- * Intercepts all /api/... calls from Admin and routes them to Supabase directly.
- * No backend server needed — everything runs via the Supabase service-role client.
+ * Compatibility shim for public reads while the application migrates its
+ * administrative mutations to authenticated server endpoints.
  */
-import { supabaseService } from './supabaseAdmin';
 import { supabase } from './supabase';
 
-// Use service-role client for writes (bypasses RLS), anon client for reads
-const db = () => supabaseService || supabase;
+// Never use a service-role credential in browser code. Supabase RLS remains the
+// final authority for any direct client-side operation.
+const db = () => supabase;
 
 function slugify(text: string) {
   return String(text || '')

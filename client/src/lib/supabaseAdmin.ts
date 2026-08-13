@@ -1,24 +1,58 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Browser-safe admin session helpers.
+ *
+ * Privileged Supabase service-role credentials must never be included in a Vite
+ * client bundle: every VITE_* value is readable by anyone visiting the site.
+ * All privileged mutations now belong on server-side endpoints that verify the
+ * signed admin token before using SUPABASE_SERVICE_KEY.
+ */
 
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-const SERVICE_KEY  = (import.meta.env.VITE_SUPABASE_SERVICE_KEY || import.meta.env.VITE_SERVICE_ROLE || '').trim();
+import { supabase } from "./supabase";
 
-// Service-role client — used only inside the admin panel for CRUD operations.
-// The service key is bundled client-side; for a future hardening step, proxy
-// all admin writes through a server-side API so this key is never exposed.
-export const supabaseService = SERVICE_KEY
-  ? createClient(SUPABASE_URL, SERVICE_KEY, {
-      auth: { autoRefreshToken: false, persistSession: false, storageKey: 'sb-admin-auth' },
-    })
-  : null;
+/**
+ * Deprecated compatibility alias. Existing admin screens import this symbol,
+ * but it now always points to the publishable client and therefore remains
+ * subject to Supabase RLS. New privileged work must use a server endpoint.
+ */
+export const supabaseService: any = supabase;
 
-export function decodeAdminToken(): { role: string; username: string; permissions: Record<string, boolean> } | null {
+type AdminTokenPayload = {
+  id?: string;
+  exp: number;
+  role: string;
+  username: string;
+  permissions: Record<string, boolean>;
+};
+
+function decodeBase64Url(value: string): string {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return atob(padded);
+}
+
+export function decodeAdminToken(): AdminTokenPayload | null {
   try {
-    const raw = localStorage.getItem('adminToken');
+    const raw = localStorage.getItem("adminToken");
     if (!raw) return null;
-    const p = JSON.parse(atob(raw));
-    if (p.exp < Date.now()) return null;
-    return p;
+
+    // Signed tokens are payload.signature. The signature is verified server-side;
+    // the browser only decodes the payload to render the current session state.
+    // The legacy fallback is intentionally read-only for a smooth logout/upgrade.
+    const payloadPart = raw.includes(".") ? raw.split(".")[0] : raw;
+    const payload = JSON.parse(decodeBase64Url(payloadPart)) as Partial<AdminTokenPayload>;
+    if (
+      typeof payload.exp !== "number" ||
+      payload.exp <= Date.now() ||
+      typeof payload.role !== "string" ||
+      typeof payload.username !== "string" ||
+      !payload.permissions ||
+      typeof payload.permissions !== "object"
+    ) {
+      localStorage.removeItem("adminToken");
+      return null;
+    }
+
+    return payload as AdminTokenPayload;
   } catch {
     return null;
   }
@@ -29,21 +63,21 @@ export function isAdminAuthenticated(): boolean {
 }
 
 /**
- * adminLogin — all password comparison happens server-side via /api/admin/login.
- * Neither the plaintext admin password nor the bcrypt hash is ever sent to the
- * browser, and the service-role key is not used for authentication here.
+ * adminLogin — password comparison and token signing happen server-side.
+ * Neither the plaintext admin password, bcrypt hash, nor service-role key is
+ * ever sent to the browser.
  */
 export async function adminLogin(params: { username?: string; password: string }): Promise<{
   token: string;
   admin: { roles: string[]; role: string; username: string; permissions: Record<string, boolean> };
 }> {
-  const res = await fetch('/api/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: params.username, password: params.password }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed');
+  if (!res.ok) throw new Error(data.error || "Login failed");
   return data as {
     token: string;
     admin: { roles: string[]; role: string; username: string; permissions: Record<string, boolean> };

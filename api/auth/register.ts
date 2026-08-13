@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return addCorsHeaders(res).status(400).json({ error: "Email, password and username are required" });
 
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
+    const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Server misconfigured" });
 

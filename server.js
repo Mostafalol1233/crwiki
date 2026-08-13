@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, "dist", "client");
 const indexPath = path.join(distPath, "index.html");
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-const SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.VITE_SERVICE_ROLE || process.env.service_role || process.env.SUPABASE_SERVICE_KEY || "";
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 
 async function readSupabaseRows(table, select, orderBy = "") {
   if (!SUPABASE_URL || !SERVICE_KEY) return null;

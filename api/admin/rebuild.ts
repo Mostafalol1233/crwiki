@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-import { verifyAdminRequest } from "../../server/adminAuth";
+import { verifyAdminRequest } from "../../server/adminAuth.js";
 
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],

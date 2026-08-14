@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-import { makeAdminToken } from "../../server/adminAuth";
+import { makeAdminToken } from "../../server/adminAuth.js";
 
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],

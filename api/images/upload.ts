@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
-import { verifyAdminRequest } from "../../server/adminAuth";
+import { verifyAdminRequest } from "../../server/adminAuth.js";
 
 export const config = {
   api: { bodyParser: false },

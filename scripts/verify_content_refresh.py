@@ -17,9 +17,10 @@ def load_env(path: Path) -> dict[str, str]:
             out[key.strip()] = value.strip().strip('"').strip("'")
     return out
 
-env = {**load_env(Path('/home/ubuntu/upload/.env')), **os.environ}
-base = (env.get('VITE_SUPABASE_URL') or env.get('SUPABASE_URL')).rstrip('/')
-key = env.get('VITE_SUPABASE_PUBLISHABLE_KEY') or env.get('SUPABASE_PUBLISHABLE_KEY')
+raw_env = {**load_env(Path('/home/ubuntu/upload/.env')), **os.environ}
+env = {k: (v.strip() if isinstance(v, str) else v) for k, v in raw_env.items()}
+base = (env.get('VITE_SUPABASE_URL') or env.get('SUPABASE_URL') or '').rstrip('/')
+key = (env.get('VITE_SUPABASE_PUBLISHABLE_KEY') or env.get('SUPABASE_PUBLISHABLE_KEY') or '').strip()
 headers = {'apikey': key, 'Authorization': f'Bearer {key}'}
 
 

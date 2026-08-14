@@ -41,9 +41,10 @@ interface UrlEntry {
   changefreq?: string;
   priority?: string;
   images?: { url: string; title?: string; caption?: string }[];
+  videos?: { thumbnail: string; title: string; description?: string; contentLoc?: string; playerLoc?: string; publicationDate?: string }[];
 }
 
-function entry({ loc, lastmod, changefreq, priority, images }: UrlEntry) {
+function entry({ loc, lastmod, changefreq, priority, images, videos }: UrlEntry) {
   let xml = `  <url>\n    <loc>${xe(loc)}</loc>\n`;
   if (lastmod)    xml += `    <lastmod>${lastmod}</lastmod>\n`;
   if (changefreq) xml += `    <changefreq>${changefreq}</changefreq>\n`;
@@ -54,6 +55,16 @@ function entry({ loc, lastmod, changefreq, priority, images }: UrlEntry) {
     if (img.title)   xml += `      <image:title>${xe(img.title)}</image:title>\n`;
     if (img.caption) xml += `      <image:caption>${xe(img.caption)}</image:caption>\n`;
     xml += `    </image:image>\n`;
+  }
+  for (const video of (videos || [])) {
+    xml += `    <video:video>\n`;
+    xml += `      <video:thumbnail_loc>${xe(video.thumbnail)}</video:thumbnail_loc>\n`;
+    xml += `      <video:title>${xe(video.title)}</video:title>\n`;
+    if (video.description) xml += `      <video:description>${xe(video.description)}</video:description>\n`;
+    if (video.contentLoc) xml += `      <video:content_loc>${xe(video.contentLoc)}</video:content_loc>\n`;
+    if (video.playerLoc) xml += `      <video:player_loc>${xe(video.playerLoc)}</video:player_loc>\n`;
+    if (video.publicationDate) xml += `      <video:publication_date>${xe(video.publicationDate)}</video:publication_date>\n`;
+    xml += `    </video:video>\n`;
   }
   xml += `  </url>\n`;
   return xml;
@@ -77,21 +88,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [events, news, posts, tutorials, weapons, mercs, modes] = await Promise.all([
-    q("events",      "id,title,event_name_slug,image_url,date,updated_at,seo_description", "date.desc"),
-    q("news",        "id,title,news_slug,image_url,created_at,updated_at,seo_description", "created_at.desc"),
-    q("posts",       "id,title,post_slug,image_url,created_at,updated_at,seo_description", "created_at.desc"),
-    q("tutorials",   "id,title,slug,image,created_at,updated_at",                          "created_at.desc"),
-    q("weapons",     "id,name,image_url",                                                   "name"),
-    q("mercenaries", "id,name,image_url",                                                   "order_index"),
-    q("modes",       "id,name,image_url",                                                   "name"),
+  const [events, news, posts, tutorials, customPages, weapons, mercs, modes] = await Promise.all([
+    q("events",       "id,title,event_name_slug,image_url,date,updated_at,seo_description,source_url", "date.desc"),
+    q("news",         "id,title,news_slug,image_url,created_at,updated_at,seo_description,source_url", "created_at.desc"),
+    q("posts",        "id,title,post_slug,image_url,created_at,updated_at,seo_description,source_url", "created_at.desc"),
+    q("tutorials",    "id,title,slug,image_url,created_at,seo_title,seo_description,youtube_url,youtube_id,video_url", "created_at.desc"),
+    q("custom_pages", "id,slug,title_en,title_ar,seo_title,seo_description,updated_at,status", "updated_at.desc"),
+    q("weapons",      "id,name,image_url",                                                   "name", 10000),
+    q("mercenaries",  "id,name,image_url",                                                   "order_index", 10000),
+    q("modes",        "id,name,image_url",                                                   "name", 10000),
   ]);
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n`;
   xml += `        xmlns:xhtml="http://www.w3.org/1999/xhtml"\n`;
   xml += `        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"\n`;
-  xml += `        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n\n`;
+  xml += `        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"\n`;
+  xml += `        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n\n`;
 
   // ── Static pages ──────────────────────────────────────────────────────
   const statics: UrlEntry[] = [
@@ -105,6 +118,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/maps`,       priority: "0.8", changefreq: "weekly",  lastmod: today },
     { loc: `${BASE}/news`,       priority: "0.85",changefreq: "daily",   lastmod: today },
     { loc: `${BASE}/tutorials`,  priority: "0.8", changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/videos`,      priority: "0.8", changefreq: "daily",   lastmod: today },
+    { loc: `${BASE}/pages`,       priority: "0.7", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/content-hub`, priority: "0.7", changefreq: "weekly",  lastmod: today },
+    { loc: `${BASE}/faq`,         priority: "0.6", changefreq: "monthly", lastmod: today },
+    { loc: `${BASE}/grave-games`, priority: "0.5", changefreq: "monthly", lastmod: today },
     { loc: `${BASE}/category/news`,   priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/events`, priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/guides`, priority: "0.7", changefreq: "weekly"  },
@@ -182,13 +200,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (const t of tutorials) {
     const slug = t.slug || t.id;
     if (!slug) continue;
-    const img = t.image;
+    const img = t.image_url;
     xml += entry({
       loc:        `${BASE}/tutorials/${slug}`,
       lastmod:    isoDate(t.updated_at || t.created_at) || today,
       changefreq: "monthly",
       priority:   "0.65",
       images:     img ? [{ url: img, title: t.title }] : [],
+      videos: t.youtube_id || t.youtube_url || t.video_url ? [{
+        thumbnail: img || `https://img.youtube.com/vi/${t.youtube_id}/hqdefault.jpg`,
+        title: t.title || "CrossFire tutorial",
+        description: t.seo_description || `CrossFire tutorial: ${t.title}`,
+        playerLoc: t.youtube_id ? `https://www.youtube.com/embed/${t.youtube_id}` : undefined,
+        contentLoc: t.video_url || undefined,
+        publicationDate: t.created_at ? new Date(t.created_at).toISOString() : undefined,
+      }] : [],
+    });
+  }
+  xml += "\n";
+
+  // ── Custom pages ───────────────────────────────────────────────────────
+  xml += "  <!-- Published custom pages -->\n";
+  for (const page of customPages) {
+    if (page.status && page.status !== "published") continue;
+    const slug = page.slug || page.id;
+    if (!slug) continue;
+    xml += entry({
+      loc: `${BASE}/pages/${slug}`,
+      lastmod: isoDate(page.updated_at) || today,
+      changefreq: "weekly",
+      priority: "0.65",
     });
   }
   xml += "\n";

@@ -146,12 +146,39 @@ export default function Article() {
   return (
     <>
       <SEOHead
-        title={finalArticle?.title}
-        description={finalArticle?.summary}
-        keywords={finalArticle?.tags?.join(", ")}
-        ogImage={finalArticle?.image || descriptionImage}
-        canonicalUrl={finalArticle?.canonicalUrl || (slug ? `https://crossfire.wiki/article/${slug}` : undefined)}
-        schemaType={finalArticle?.schemaType || "Article"}
+        title={finalArticle?.seo_title || finalArticle?.title}
+        description={finalArticle?.seo_description || finalArticle?.summary || (finalArticle?.title ? `Complete CrossFire guide: ${finalArticle.title}` : undefined)}
+        keywords={finalArticle?.tags || []}
+        ogImage={finalArticle?.og_image || finalArticle?.image || descriptionImage}
+        ogImageAlt={`${finalArticle?.title || "CrossFire article"} — CrossFire Wiki`}
+        ogImageWidth={1200}
+        ogImageHeight={630}
+        twitterImage={finalArticle?.twitter_image || finalArticle?.og_image || finalArticle?.image || descriptionImage}
+        ogTitle={finalArticle?.seo_title || finalArticle?.title}
+        ogDescription={finalArticle?.seo_description || finalArticle?.summary}
+        ogType="article"
+        canonicalUrl={finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : undefined)}
+        articlePublishedTime={finalArticle?.created_at || finalArticle?.createdAt}
+        articleModifiedTime={finalArticle?.updated_at || finalArticle?.updatedAt || finalArticle?.created_at || finalArticle?.createdAt}
+        articleAuthor={finalArticle?.author || "CrossFire Wiki"}
+        articleSection={finalArticle?.category || "Guides"}
+        articleTags={finalArticle?.tags || []}
+        breadcrumbs={breadcrumbs}
+        schemaType={finalArticle?.schema_type || finalArticle?.schemaType || "Article"}
+        schemaData={{
+          "@id": `${finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : "https://crossfire.wiki/posts")}#article`,
+          headline: finalArticle?.title,
+          description: (finalArticle?.seo_description || finalArticle?.summary || finalArticle?.title || "").substring(0, 500),
+          image: finalArticle?.og_image || finalArticle?.image || descriptionImage,
+          url: finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : "https://crossfire.wiki/posts"),
+          author: { "@type": "Person", name: finalArticle?.author || "CrossFire Wiki Team" },
+          datePublished: finalArticle?.created_at || finalArticle?.createdAt,
+          dateModified: finalArticle?.updated_at || finalArticle?.updatedAt || finalArticle?.created_at || finalArticle?.createdAt,
+          articleSection: finalArticle?.category || "Guides",
+          keywords: finalArticle?.tags || [],
+          inLanguage: finalArticle?.language === "ar" ? "ar" : "en",
+          isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: "https://crossfire.wiki" },
+        }}
       />
       {finalArticle.image && (
         <SEOHead

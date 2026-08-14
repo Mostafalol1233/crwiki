@@ -430,13 +430,13 @@ export default function EventDetail() {
     } catch { return undefined; }
   };
 
-  // Event schema endDate: default to startDate + 7 days if not provided
-  const startDate = safeISO(event.date);
-  const endDate = event.endDate
-    ? safeISO(event.endDate)
-    : startDate
+  // Event schema uses persisted ISO fields first, then the human-readable date as a fallback.
+  const startDate = safeISO(event.start_date) || safeISO(event.date);
+  const endDate = safeISO(event.end_date) || (startDate
     ? safeISO(new Date(new Date(startDate).getTime() + 7 * 86400000).toISOString())
-    : undefined;
+    : undefined);
+  const modifiedDate = safeISO(event.updated_at) || startDate;
+
 
   const eventBreadcrumbs = [
     { name: "Home", url: canonicalOrigin + "/" },
@@ -462,7 +462,7 @@ export default function EventDetail() {
         ogUrl={eventUrl}
         noindex={false}
         articlePublishedTime={startDate}
-        articleModifiedTime={new Date().toISOString()}
+        articleModifiedTime={modifiedDate}
         articleAuthor="CrossFire Wiki"
         articleSection="Events"
         articleTags={eventKeywords}
@@ -489,9 +489,7 @@ export default function EventDetail() {
           startDate,
           endDate,
           eventStatus: status === "ended"
-            ? "https://schema.org/EventCancelled"
-            : status === "upcoming"
-            ? "https://schema.org/EventScheduled"
+            ? "https://schema.org/EventCompleted"
             : "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
           location: {
@@ -503,7 +501,7 @@ export default function EventDetail() {
             name: "CrossFire Wiki",
             url: "https://crossfire.wiki",
           },
-          inLanguage: "en",
+          inLanguage: useAr ? "ar" : "en",
         }}
         extraSchemas={seoImage ? [
           {

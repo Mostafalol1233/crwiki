@@ -89,7 +89,8 @@ export default function TutorialDetailPage() {
 
   const handleLikeYoutube = () => {
     if (tutorial) {
-      window.open(tutorial.youtubeUrl, "_blank");
+      const externalUrl = tutorial.youtube_url || tutorial.youtubeUrl || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined);
+      if (externalUrl) window.open(externalUrl, "_blank");
     }
     setShowLikeDialog(false);
   };
@@ -131,13 +132,64 @@ export default function TutorialDetailPage() {
     );
   }
 
+  const tutorialSlug = tutorial?.tutorial_slug || tutorial?.slug || slug || legacyId || tutorial?.id;
+  const canonicalOrigin = "https://crossfire.wiki";
+  const canonicalUrl = `${canonicalOrigin}/tutorials/${tutorialSlug}`;
+  const videoId = tutorial?.youtube_id || tutorial?.youtubeId || (() => {
+    const raw = tutorial?.youtube_url || tutorial?.youtubeUrl || "";
+    const match = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&/]+)/i);
+    return match?.[1];
+  })();
+  const image = tutorial?.image_url || tutorial?.image || tutorial?.thumbnailUrl || tutorial?.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : `${canonicalOrigin}/logo-new.png`);
+  const publishedIso = tutorial?.created_at || tutorial?.createdAt ? new Date(tutorial.created_at || tutorial.createdAt).toISOString() : undefined;
+  const modifiedIso = tutorial?.updated_at || tutorial?.updatedAt ? new Date(tutorial.updated_at || tutorial.updatedAt).toISOString() : publishedIso;
+  const description = tutorial?.seo_description || tutorial?.description || `Complete CrossFire tutorial for ${tutorial?.title || "players"}, including practical steps, strategy and gameplay advice.`;
+
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
       <SEOHead
-        title={tutorial?.title ? `${tutorial.title} — CrossFire Wiki` : "Tutorial — CrossFire Wiki"}
-        description={tutorial?.description || "Watch CrossFire tutorials and guides on CrossFire Wiki."}
-        ogImage={tutorial?.thumbnailUrl || tutorial?.thumbnail_url || undefined}
-        ogType="article"
+        title={tutorial?.seo_title || (tutorial?.title ? `${tutorial.title} — CrossFire Wiki` : "Tutorial — CrossFire Wiki")}
+        description={description}
+        keywords={["CrossFire tutorial", tutorial?.category || "CrossFire guide", "CrossFire video", "Z8Games"]}
+        canonicalUrl={canonicalUrl}
+        ogImage={image}
+        ogImageAlt={`${tutorial?.title || "CrossFire tutorial"} — CrossFire Wiki`}
+        ogImageWidth={1200}
+        ogImageHeight={675}
+        twitterImage={image}
+        ogType="video.other"
+        ogUrl={canonicalUrl}
+        articlePublishedTime={publishedIso}
+        articleModifiedTime={modifiedIso}
+        articleAuthor="CrossFire Wiki"
+        articleSection="Tutorials & Videos"
+        breadcrumbs={[
+          { name: "Home", url: `${canonicalOrigin}/` },
+          { name: "Videos", url: `${canonicalOrigin}/videos` },
+          { name: tutorial?.title || "Tutorial", url: canonicalUrl },
+        ]}
+        schemaType="VideoObject"
+        schemaData={{
+          "@id": `${canonicalUrl}#video`,
+          name: tutorial?.title || "CrossFire Tutorial",
+          description: description.substring(0, 500),
+          thumbnailUrl: [image],
+          uploadDate: publishedIso,
+          dateModified: modifiedIso,
+          duration: tutorial?.duration || undefined,
+          embedUrl: videoId ? `https://www.youtube.com/embed/${videoId}` : undefined,
+          contentUrl: tutorial?.video_url || tutorial?.videoUrl || tutorial?.youtube_url || tutorial?.youtubeUrl || undefined,
+          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: canonicalOrigin, logo: { "@type": "ImageObject", url: `${canonicalOrigin}/logo-new.png` } },
+          isFamilyFriendly: true,
+          inLanguage: "en",
+        }}
+        extraSchemas={[{
+          "@type": "HowTo",
+          name: tutorial?.title || "CrossFire Tutorial",
+          description: description.substring(0, 500),
+          image,
+          step: [],
+        }]}
       />
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <button
@@ -154,7 +206,7 @@ export default function TutorialDetailPage() {
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${tutorial.youtubeId}`}
+              src={videoId ? `https://www.youtube.com/embed/${videoId}` : undefined}
               title={tutorial.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen

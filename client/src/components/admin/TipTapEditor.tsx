@@ -139,7 +139,7 @@ export default function TipTapEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ codeBlock: false }),
+      StarterKit.configure({ codeBlock: false, link: false }),
       ResizableImage.configure({ inline: false, allowBase64: true }),
       TiptapLink.configure({ openOnClick: false, autolink: true, linkOnPaste: true }),
       Table.configure({ resizable: true }),

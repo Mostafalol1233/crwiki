@@ -53,20 +53,21 @@ export default function CustomPages() {
   const scrapeUrl = async () => {
     const url = editing.source_url?.trim();
     if (!url) { toast.error('Enter a URL first'); return; }
-    const apiKey = (import.meta as any).env?.VITE_FIRECRAWL_API_KEY;
-    if (!apiKey) { toast.error('VITE_FIRECRAWL_API_KEY is not set'); return; }
+    const adminToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') || '' : '';
+    if (!adminToken) { toast.error('Admin login required'); return; }
     setScraping(true);
     try {
-      const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      const res = await fetch('/api/admin/scraper', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, formats: ['markdown'] }),
+        headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, type: 'posts', preview: true }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Firecrawl scrape failed');
-      const md = data.data?.markdown || '';
-      const title = data.data?.metadata?.title || data.data?.metadata?.ogTitle || '';
-      const desc = data.data?.metadata?.description || data.data?.metadata?.ogDescription || '';
+      if (!res.ok || !data.success) throw new Error(data.error || 'Scrape failed');
+      const scraped = data.scraped || {};
+      const md = scraped.content || '';
+      const title = scraped.title || '';
+      const desc = scraped.summary || '';
       setEditing(prev => ({
         ...prev,
         content_en: md,

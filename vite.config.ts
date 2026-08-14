@@ -633,14 +633,18 @@ function cfScrapePlugin(): Plugin {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
         if (!requireAdmin(req, res)) return;
         try {
-          const { url, type } = await readBody(req);
+          const { url, type, preview } = await readBody(req);
           if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
 
-          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+          const SUPABASE_URL = process.env.SUPABASE_URL || "";
           const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
-          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+          if (!preview && (!SUPABASE_URL || !SERVICE_KEY)) return json(res, 500, { error: "Supabase not configured" });
 
           const scraped = await scrapePage(url);
+          if (preview) {
+            const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+            return json(res, 200, { success: true, preview: true, scraped: { title: scraped.title, content: scraped.content, summary: scraped.summary, image: scraped.image, contentLength: plain.length } });
+          }
           const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
           const seoTitle = (scraped.title || "").slice(0, 60);
           const seoDesc = (scraped.summary || "").slice(0, 160);

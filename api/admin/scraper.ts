@@ -94,18 +94,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { url, type } = req.body || {};
+    const { url, type, preview } = req.body || {};
 
     if (!url || !String(url).startsWith("http"))
       return addCorsHeaders(res).status(400).json({ error: "Valid URL required" });
 
     const contentType: ContentType = ["news", "events", "posts"].includes(type) ? type : "posts";
 
-    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+    const SUPABASE_URL = process.env.SUPABASE_URL || "";
     const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
     const FC_KEY       = process.env.FIRECRAWL_API_KEY || "";
 
-    if (!SUPABASE_URL || !SERVICE_KEY)
+    if (!preview && (!SUPABASE_URL || !SERVICE_KEY))
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     // Scrape — Firecrawl first (renders JS), direct fetch as fallback
@@ -116,6 +116,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : await scrapeDirect(url);
     } catch {
       scraped = await scrapeDirect(url);
+    }
+
+    if (preview) {
+      const plain = scraped.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      return addCorsHeaders(res).status(200).json({
+        success: true,
+        preview: true,
+        scraped: { title: scraped.title, content: scraped.content, summary: scraped.summary, image: scraped.image, contentLength: plain.length },
+      });
     }
 
     const seoTitle = (scraped.title || "").slice(0, 60);

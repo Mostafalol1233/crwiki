@@ -772,7 +772,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   if (path === '/public/settings/seo') {
-    const { data } = await client.from('site_settings').select('*').limit(1).single();
+    const { data } = await client.from('site_settings').select('*').limit(1).maybeSingle();
     return {
       seoTitle: data?.seo_title || 'CrossFire Wiki',
       seoDescription: data?.seo_description || '',
@@ -783,7 +783,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   if (path === '/public/settings/announcements') {
-    const { data } = await client.from('site_settings').select('announcements_enabled').limit(1).single();
+    const { data } = await client.from('site_settings').select('announcements_enabled').limit(1).maybeSingle();
     return { enabled: data?.announcements_enabled ?? true };
   }
 
@@ -791,7 +791,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   if (path === '/announcements/global') {
     if (M === 'GET') {
       const { data } = await client.from('posts').select('*')
-        .eq('category', ANN_CATEGORY).contains('tags', ['global']).eq('featured', true).order('created_at', { ascending: false }).limit(1).single();
+        .eq('category', ANN_CATEGORY).contains('tags', ['global']).eq('featured', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (!data) return null;
       return postToAnn(data);
     }

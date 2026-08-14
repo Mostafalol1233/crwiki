@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { uploadToSupabase } from '@/lib/uploadToSupabase';
 import { Upload, X, Link2, Search } from 'lucide-react';
+import ContentImage from '@/components/ContentImage';
 
 interface ImageUploadProps {
   value?: string;
@@ -57,9 +58,10 @@ export default function ImageUpload({ value, onChange, label = 'Image', bucket =
 
       {value ? (
         <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
-          <img
+          <ContentImage
             src={value}
             alt="Preview"
+            onError={() => setError('This URL did not return a usable image. Use a direct image URL or upload a file.')}
             style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 6, border: '1px solid #3f3f46', display: 'block' }}
           />
           <button

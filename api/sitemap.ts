@@ -79,8 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const [events, news, posts, tutorials, weapons, mercs, modes] = await Promise.all([
     q("events",      "id,title,event_name_slug,image_url,date,updated_at,seo_description", "date.desc"),
-    q("news",        "id,title,slug,image,image_url,created_at,updated_at,seo_description", "created_at.desc"),
-    q("posts",       "id,title,slug,image,created_at,updated_at,seo_description",          "created_at.desc"),
+    q("news",        "id,title,news_slug,image_url,created_at,updated_at,seo_description", "created_at.desc"),
+    q("posts",       "id,title,post_slug,image_url,created_at,updated_at,seo_description", "created_at.desc"),
     q("tutorials",   "id,title,slug,image,created_at,updated_at",                          "created_at.desc"),
     q("weapons",     "id,name,image_url",                                                   "name"),
     q("mercenaries", "id,name,image_url",                                                   "order_index"),
@@ -148,9 +148,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── News ──────────────────────────────────────────────────────────────
   xml += "  <!-- News -->\n";
   for (const n of news) {
-    const slug = n.slug || n.id;
+    const slug = n.news_slug || n.id;
     if (!slug) continue;
-    const img = n.image || n.image_url;
+    const img = n.image_url;
     xml += entry({
       loc:        `${BASE}/news/${slug}`,
       lastmod:    isoDate(n.updated_at || n.created_at) || today,
@@ -164,9 +164,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Posts ─────────────────────────────────────────────────────────────
   xml += "  <!-- Posts -->\n";
   for (const p of posts) {
-    const slug = p.slug || p.id;
+    const slug = p.post_slug || p.id;
     if (!slug) continue;
-    const img = p.image;
+    const img = p.image_url;
     xml += entry({
       loc:        `${BASE}/posts/${slug}`,
       lastmod:    isoDate(p.updated_at || p.created_at) || today,

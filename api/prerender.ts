@@ -80,12 +80,12 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   const newsM = path.match(/^\/news\/([^/?#]+)/);
   if (newsM) {
     const slug = newsM[1];
-    const item = await fetchOne("news", "slug", slug,
-      "title,seo_title,seo_description,image,image_url,created_at,updated_at,author,category");
+    const item = await fetchOne("news", "news_slug", slug,
+      "title,seo_title,seo_description,image_url,created_at,updated_at,author,category");
     if (item) {
       const title = item.seo_title || item.title || "CrossFire News";
       const desc  = item.seo_description || `CrossFire news: ${item.title}`;
-      const img   = item.image || item.image_url || DEFAULT_IMG;
+      const img   = item.image_url || DEFAULT_IMG;
       return {
         title:         `${title} | CrossFire Wiki`,
         description:   desc.substring(0, 160),
@@ -115,15 +115,15 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   const postM = path.match(/^\/posts\/([^/?#]+)/);
   if (postM) {
     const slug = postM[1];
-    const item = await fetchOne("posts", "slug", slug,
-      "title,seo_title,seo_description,image,created_at,author,category");
+    const item = await fetchOne("posts", "post_slug", slug,
+      "title,seo_title,seo_description,image_url,created_at,author,category");
     if (item) {
       const title = item.seo_title || item.title || "CrossFire";
       const desc  = item.seo_description || `${item.title} — CrossFire Wiki`;
       return {
         title:         `${title} | CrossFire Wiki`,
         description:   desc.substring(0, 160),
-        image:         item.image || DEFAULT_IMG,
+        image:         item.image_url || DEFAULT_IMG,
         url:           `${BASE}/posts/${slug}`,
         type:          "article",
         datePublished: item.created_at,
@@ -133,7 +133,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
           "@type": "Article",
           headline: title,
           description: desc.substring(0, 200),
-          image: item.image || DEFAULT_IMG,
+          image: item.image_url || DEFAULT_IMG,
           datePublished: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
           author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
           publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },

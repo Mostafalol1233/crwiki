@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Target, Globe, Loader2 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
+import ContentImage from "@/components/ContentImage";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useZoomableImages, ImageViewerOverlay } from "@/components/ImageViewer";
 import { useToast } from "@/hooks/use-toast";
@@ -299,7 +300,7 @@ export default function NewsDetail() {
 
                   {newsItem.image && (
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl mb-12">
-                      <img
+                      <ContentImage
                         src={newsItem.image}
                         alt={newsItem.title}
                         className="w-full h-full object-cover cursor-zoom-in"

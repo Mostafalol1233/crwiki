@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
 import { getNews, getPosts, getEvents } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
+import ContentImage from "@/components/ContentImage";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -46,7 +47,7 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
           {/* Image */}
           <div style={{ position: "relative", overflow: "hidden", minHeight: 280 }}>
             {item.image || item.imageUrl ? (
-              <img
+              <ContentImage
                 src={item.image || item.imageUrl}
                 alt={title}
                 className="group-hover:scale-105 transition-transform duration-700"
@@ -108,7 +109,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author }: any) {
         {/* Thumbnail */}
         <div style={{ position: "relative", overflow: "hidden", paddingTop: "55%" }}>
           {item.image || item.imageUrl ? (
-            <img src={item.image || item.imageUrl} alt={title} loading="lazy"
+            <ContentImage src={item.image || item.imageUrl} alt={title} loading="lazy"
               className="group-hover:scale-105 transition-transform duration-500"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />

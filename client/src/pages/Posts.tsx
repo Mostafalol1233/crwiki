@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
 import { getPosts } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
+import ContentImage from "@/components/ContentImage";
 import { Loader2, BookOpen, ChevronRight, User, Clock, Star } from "lucide-react";
 
 interface PostItem {
@@ -34,7 +35,7 @@ function getCatColor(cat?: string): string {
   return CAT_COLORS[key] || "#888";
 }
 
-const FALLBACK = "https://images.z8games.com/crossfire/screenshot/crossfire-screenshot5.jpg";
+const FALLBACK = "/portal/modes.jpg";
 
 export default function Posts() {
   const { t } = useLanguage();
@@ -124,12 +125,11 @@ export default function Posts() {
 
                     <div className="flex flex-col md:flex-row">
                       <div className="md:w-[55%] relative overflow-hidden" style={{ background: "hsl(var(--muted))", minHeight: "260px" }}>
-                        <img
+                        <ContentImage
                           src={featuredPost.image || FALLBACK}
                           alt={featuredPost.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           style={{ minHeight: "260px" }}
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
                         />
                         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent, var(--card))" }} />
                         {featuredPost.featured && (
@@ -184,13 +184,12 @@ export default function Posts() {
                       >
                         {/* Image */}
                         <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "hsl(var(--muted))" }}>
-                          <img
+                          <ContentImage
                             src={post.image || FALLBACK}
                             alt={post.title}
                             loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
-                          />
+                            />
                           <div
                             className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{ background: `linear-gradient(to right, ${getCatColor(post.category)}, transparent)` }}

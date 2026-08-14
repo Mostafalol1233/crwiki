@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { queryClient } from "@/lib/queryClient";
 import { getPostBySlug, getPostById, getPosts } from "@/lib/supabaseApi";
 import { SEOHead } from "@/components/SEOHead";
+import ContentImage from "@/components/ContentImage";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
@@ -235,7 +236,7 @@ export default function Article() {
 
                       {finalArticle?.image && (
                         <div className="relative w-full aspect-video rounded-none border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
-                          <img
+                          <ContentImage
                             src={finalArticle.image}
                             alt={finalArticle.title}
                             className="object-contain w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
@@ -326,7 +327,7 @@ export default function Article() {
                       <div>
                         {(finalArticle.wikiTabs as WikiTab[])[activeTab]?.image && (
                           <div className="mb-8 flex justify-center">
-                            <img
+                            <ContentImage
                               src={(finalArticle.wikiTabs as WikiTab[])[activeTab].image}
                               alt={(finalArticle.wikiTabs as WikiTab[])[activeTab].title}
                               className="max-h-80 object-contain rounded border border-border/50 shadow-lg cursor-zoom-in"

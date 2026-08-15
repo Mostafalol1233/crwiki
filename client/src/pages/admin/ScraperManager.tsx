@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Play, Download, Loader2, Globe, CheckSquare, Square, ArrowLeft, ExternalLink, ChevronRight, Calendar } from 'lucide-react';
-import { supabaseService } from '@/lib/supabaseAdmin';
-import { supabase } from '@/lib/supabase';
-
-const db = supabaseService || supabase;
+import { adminFetch } from '@/lib/supabaseAdmin';
 const FORUM_URL = 'https://forum.z8games.com/categories/crossfire-announcements';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -133,6 +130,20 @@ function cleanForumHtml(html: string): string {
 }
 
 const SITE = 'https://crossfire.wiki';
+const IMAGE_FALLBACK = '/portal/modes.jpg';
+
+function safeImageUrl(value: string | undefined, baseUrl?: string): string {
+  if (!value) return IMAGE_FALLBACK;
+  try {
+    const parsed = new URL(value, baseUrl);
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'image.us.z8games.com' || hostname === 'image.z8games.com') return IMAGE_FALLBACK;
+    if (parsed.protocol === 'http:') parsed.protocol = 'https:';
+    return parsed.protocol === 'https:' ? parsed.toString() : IMAGE_FALLBACK;
+  } catch {
+    return IMAGE_FALLBACK;
+  }
+}
 
 function buildSEO(ev: EventItem, slug: string, dateRange: string) {
   const cleanText = htmlToPlain(ev.description || '');
@@ -306,7 +317,7 @@ function AnnouncementList({
                 background: '#27272a', border: '1px solid #3f3f46', flexShrink: 0,
               }}>
                 {a.image ? (
-                  <img src={a.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={safeImageUrl(a.image, a.url)} alt="" onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Globe size={20} style={{ color: '#52525b' }} />
@@ -459,23 +470,31 @@ function EventList({
         const descriptionAr = ev.descriptionAr
           || (ev.titleAr ? `حدث كروس فاير: ${ev.titleAr}. ${dateRange ? `الفترة: ${dateRange}.` : ''}` : '');
 
-        const { error } = await db.from('events').insert({
-          title:            ev.title,
-          title_ar:         ev.titleAr || '',
-          event_name_slug:  slug,
-          description:      cleanedHtml || ev.title,   // HTML — rendered by RawHtmlPreview on event page
-          description_ar:   descriptionAr,
-          raw_html_content: rawHtml,                   // original unmodified forum HTML
-          image_url:        ev.image || announcement.image || '',
-          type:             'announcement',
-          date:             dateRange,
-          source_url:       ev.sourceUrl || announcement.url,
-          canonical_url:    canonical,
-          created_at:       new Date().toISOString(),
-          seo_title:        seoTitle,
-          seo_description:  seoDesc,
-        });
-        if (error) { console.error(error); fail++; } else ok++;
+        try {
+          await adminFetch('/api/admin/events', {
+            method: 'POST',
+            body: JSON.stringify({
+              title:            ev.title,
+              title_ar:         ev.titleAr || '',
+              event_name_slug:  slug,
+              description:      cleanedHtml || ev.title,
+              description_ar:   descriptionAr,
+              raw_html_content: rawHtml,
+              image_url:        safeImageUrl(ev.image || announcement.image, ev.sourceUrl || announcement.url),
+              type:             'announcement',
+              date:             dateRange,
+              source_url:       ev.sourceUrl || announcement.url,
+              canonical_url:    canonical,
+              created_at:       new Date().toISOString(),
+              seo_title:        seoTitle,
+              seo_description:  seoDesc,
+            }),
+          });
+          ok++;
+        } catch (error) {
+          console.error(error);
+          fail++;
+        }
       } catch (e) { console.error(e); fail++; }
     }
     setProgress(`Done — ${ok} imported${fail > 0 ? `, ${fail} failed` : ''}`);
@@ -605,9 +624,8 @@ function EventList({
                     background: '#27272a', border: '1px solid #3f3f46',
                   }}>
                     <img
-                      src={ev.image} alt=""
+                      src={safeImageUrl(ev.image, ev.sourceUrl || announcement.url)} alt="" onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK; }}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   </div>
                 )}

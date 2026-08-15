@@ -16,6 +16,22 @@ function readAction(req: VercelRequest): string {
   return Array.isArray(value) ? value[0] || "" : value || "";
 }
 
+function normalizeImageUrl(value: unknown, baseUrl?: string): string {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const parsed = new URL(value.trim(), baseUrl);
+    const hostname = parsed.hostname.toLowerCase();
+    // This legacy host presents a certificate for a different name and cannot
+    // be safely embedded from an HTTPS page. The UI will use its local fallback.
+    if (hostname === "image.us.z8games.com" || hostname === "image.z8games.com") return "";
+    if (parsed.protocol === "http:") parsed.protocol = "https:";
+    if (parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 function assertPublicHttpUrl(value: unknown): string {
   if (typeof value !== "string") throw new Error("Valid URL required");
   const parsed = new URL(value);
@@ -56,10 +72,12 @@ async function scrapeSingleUrl(url: string) {
     $("h1").first().text().trim() ||
     $("title").text().replace(/\s*[|\-–].*$/, "").trim() ||
     $("meta[property='og:title']").attr("content") || "";
-  const image =
+  const image = normalizeImageUrl(
     $("meta[property='og:image']").attr("content") ||
     $(".mw-content-text img").first().attr("src") ||
-    $("article img").first().attr("src") || "";
+    $("article img").first().attr("src") || "",
+    url,
+  );
 
   $("nav,script,style,header,footer,.navbox,.toc,.mw-indicators,.mw-editsection,#mw-navigation,#mw-head,#mw-panel,.sidebar,aside,.advertisement").remove();
   const contentEl = $(".mw-parser-output, article, main, #content, .content").first();
@@ -113,7 +131,7 @@ async function scrapeForumList() {
     const date = getTag(block, "pubDate");
     const author = getTag(block, "dc:creator");
     const description = getTag(block, "description");
-    const image = description.match(/src="([^"]+)"/)?.[1] || "";
+    const image = normalizeImageUrl(description.match(/src="([^"]+)"/)?.[1] || "", url);
     let dateISO = "";
     try { dateISO = new Date(date).toISOString(); } catch { /* keep an empty date */ }
     if (title && url) posts.push({ title, url, date, dateISO, image, author });
@@ -136,7 +154,10 @@ async function scrapeForumThread(url: string) {
     $("h1").first().text().trim() ||
     $("title").text().replace(/\s*[|–\-].*$/, "").trim() ||
     "Untitled Event";
-  const threadImage = $("meta[property='og:image']").attr("content") || $("meta[name='twitter:image']").attr("content") || "";
+  const threadImage = normalizeImageUrl(
+    $("meta[property='og:image']").attr("content") || $("meta[name='twitter:image']").attr("content") || "",
+    url,
+  );
   const threadDate = $(".ItemDiscussion time, #Item_0 time, .DateCreated time").first().attr("datetime") || $("time").first().attr("datetime") || "";
   const firstMessage = $(".Message").first();
   const description = firstMessage.html() || "";

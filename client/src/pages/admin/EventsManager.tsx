@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { adminFetch } from '@/lib/supabaseAdmin';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -113,20 +113,23 @@ export default function EventsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Partial<Event>>(EMPTY);
-  const client = supabaseService;
-
   const fetch = useCallback(async () => {
-    if (!client) return;
     setLoading(true);
-    const { data } = await client.from('events').select('*').order('created_at', { ascending: false });
-    setItems(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      const result = await adminFetch<{ data?: Event[] }>('/api/admin/events');
+      setItems(result.data || []);
+    } catch (error: any) {
+      setItems([]);
+      toast.error(error?.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const save = async () => {
-    if (!client || !editing.title) { toast.error('Title required'); return; }
+    if (!editing.title) { toast.error('Title required'); return; }
     setSaving(true);
     try {
       const slug = editing.event_name_slug || slugify(editing.title || '');
@@ -144,11 +147,20 @@ export default function EventsManager() {
       };
       // Try saving; gracefully strip missing columns if DB schema lags behind
       const doSave = async (p: any) => {
-        if (editing.id) {
-          const { error } = await client.from('events').update(p).eq('id', editing.id);
-          return error;
-        } else {
-          const { error } = await client.from('events').insert({ ...p, created_at: new Date().toISOString() });
+        try {
+          if (editing.id) {
+            await adminFetch('/api/admin/events', {
+              method: 'PATCH',
+              body: JSON.stringify({ id: editing.id, values: p }),
+            });
+          } else {
+            await adminFetch('/api/admin/events', {
+              method: 'POST',
+              body: JSON.stringify({ ...p, created_at: new Date().toISOString() }),
+            });
+          }
+          return null;
+        } catch (error: any) {
           return error;
         }
       };
@@ -172,9 +184,14 @@ export default function EventsManager() {
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete event?')) return;
-    await client.from('events').delete().eq('id', id);
-    toast.success('Deleted'); await fetch();
+    if (!confirm('Delete event?')) return;
+    try {
+      await adminFetch('/api/admin/events', { method: 'DELETE', body: JSON.stringify({ id }) });
+      toast.success('Deleted');
+      await fetch();
+    } catch (error: any) {
+      toast.error(error?.message || 'Delete failed');
+    }
   };
 
   const columns = [

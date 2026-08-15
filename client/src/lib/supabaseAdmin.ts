@@ -62,6 +62,20 @@ export function isAdminAuthenticated(): boolean {
   return decodeAdminToken() !== null;
 }
 
+export async function adminFetch<T = unknown>(endpoint: string, init: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("adminToken");
+  const headers = new Headers(init.headers);
+  headers.set("Content-Type", "application/json");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(endpoint, { ...init, headers });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error || `Admin request failed (${response.status})`);
+  }
+  return payload as T;
+}
+
 /**
  * adminLogin — password comparison and token signing happen server-side.
  * Neither the plaintext admin password, bcrypt hash, nor service-role key is

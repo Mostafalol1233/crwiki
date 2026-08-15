@@ -406,10 +406,17 @@ function LocalizedApp() {
   useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
 
-  // Auto-redirect "/" → "/ar" when Arabic is active so the router base matches the URL
+  // Keep Arabic admin URLs canonical. The app uses /ar as the router base, but
+  // old bookmarks and admin links may still point to /admin/* without it.
   React.useEffect(() => {
-    if (language === "ar" && window.location.pathname === "/") {
+    const path = window.location.pathname;
+    if (language === "ar" && path === "/") {
       window.history.replaceState(null, "", "/ar");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      return;
+    }
+    if (language === "ar" && path.startsWith("/admin")) {
+      window.history.replaceState(null, "", `/ar${path}`);
       window.dispatchEvent(new PopStateEvent("popstate"));
     }
   }, [language]);

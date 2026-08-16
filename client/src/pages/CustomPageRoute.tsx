@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
+import WikiPageTemplate from "@/components/WikiPageTemplate";
 import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 
 interface CustomPageRecord {
@@ -146,17 +147,31 @@ export default function CustomPageRoute({ params }: CustomPageRouteProps) {
           isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: canonicalOrigin },
         }}
       />
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="rounded-3xl border border-amber-400/30 bg-slate-900/70 p-8">
-          <p className="text-sm uppercase tracking-[0.35em] text-amber-400">Custom page</p>
-          <h1 className="mt-3 text-4xl font-semibold">{title}</h1>
-          <p className="mt-4 max-w-3xl text-slate-300">{page.seo_description || "Expanded CrossFire content page created from the admin CMS."}</p>
-        </div>
+      {page.template === "wiki" ? (
+        <WikiPageTemplate
+          title={title}
+          content={content}
+          slug={page.slug}
+          isAr={isAr}
+          seoDescription={page.seo_description}
+          updatedAt={(page as any).updated_at || (page as any).created_at}
+          sourceUrl={(page as any).source_url}
+        />
+      ) : (
+        <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
+          <div className="mx-auto max-w-5xl space-y-6">
+            <div className="rounded-3xl border border-amber-400/30 bg-slate-900/70 p-8">
+              <p className="text-sm uppercase tracking-[0.35em] text-amber-400">Custom page</p>
+              <h1 className="mt-3 text-4xl font-semibold">{title}</h1>
+              <p className="mt-4 max-w-3xl text-slate-300">{page.seo_description || "Expanded CrossFire content page created from the admin CMS."}</p>
+            </div>
 
-        <div className={`rounded-3xl border border-slate-800 bg-slate-900/60 p-8 ${page.template === "minimal" ? "max-w-3xl" : ""}`}>
-          <div className="prose prose-invert max-w-none rich-html-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+            <div className={`rounded-3xl border border-slate-800 bg-slate-900/60 p-8 ${page.template === "minimal" ? "max-w-3xl" : ""}`}>
+              <div className="prose prose-invert max-w-none rich-html-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -204,10 +204,14 @@ export default function CustomPages() {
               <div>
                 <label style={lbl}>Template</label>
                 <select value={editing.template || 'default'} onChange={(e) => setEditing({ ...editing, template: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                  <option value="default">Default</option>
-                  <option value="landing">Landing</option>
-                  <option value="minimal">Minimal</option>
+                  <option value="default">Default article</option>
+                  <option value="wiki">CrossFire Wiki reference</option>
+                  <option value="landing">Landing page</option>
+                  <option value="minimal">Minimal page</option>
                 </select>
+                <p style={{ fontSize: 11, lineHeight: 1.5, color: '#71717a', margin: '6px 0 0' }}>
+                  The Wiki reference template adds a sticky table of contents, reference metadata, RTL support, and long-form article styling.
+                </p>
               </div>
               <div>
                 <label style={lbl}>Status</label>

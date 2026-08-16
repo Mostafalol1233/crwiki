@@ -28,14 +28,14 @@ interface SidebarProps {
   recentPosts: RecentPost[];
   popularTags: Tag[];
   mostViewed: PopularPost[];
-  bimoraPicks: RecentPost[];
+  wikiPicks: RecentPost[];
 }
 
 export function Sidebar({
   recentPosts,
   popularTags,
   mostViewed,
-  bimoraPicks,
+  wikiPicks,
 }: SidebarProps) {
   const { t } = useLanguage();
 
@@ -128,11 +128,11 @@ export function Sidebar({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Star className="h-5 w-5 text-primary fill-primary" />
-            {t("bimoraPicks")}
+            {t("wikiPicks")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {bimoraPicks.map((post) => (
+          {wikiPicks.map((post) => (
             <Link
               key={post.id}
               href={`/posts/${(post as any).post_slug || post.id}`}

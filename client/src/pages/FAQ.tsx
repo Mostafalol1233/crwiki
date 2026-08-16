@@ -59,8 +59,8 @@ const STATIC_FAQ_DATA = [
         id: "1",
         title: "CrossFire: IGN and Clan name change - new policy!",
         titleAr: "CrossFire: سياسة جديدة لتغيير اسم اللاعب والكلان!",
-        body: "Attention Mercenaries, With the newest patch we will update our IGN and Clan name change policy, so that you don't need to contact the support team to regain previously used IGNs or clan names.\n\n- If you want to change your IGN or clan name to one you had used in the last 90 days, you will be able to use it again immediately. You will still need to purchase an In-game Change Item in order to do that.\n- If you want to change your IGN or clan name to one somebody else had used recently, you will need to wait 90 days until it is available again.\n- The support team will not accept requests for IGNs that are currently not in use, since all IGNs that were not used within 90 days are available for everybody.\n- In case a player is inactive with an IGN you would like to use, you still need to contact the support team to free the IGN.",
-        bodyAr: "انتبه يا مرتزق! مع آخر تحديث، اتغيرت السياسة بتاعة تغيير الاسم في اللعبة والكلان.\n\n- لو عايز ترجع اسم كنت بتستخدمه في آخر 90 يوم، تقدر تاخده فورًا. بس هتحتاج تشتري أيتم التغيير من الجيم.\n- لو الاسم كان شخص تاني بيستخدمه، هتستنى 90 يوم لحد ما يبقى متاح.\n- الساببورت مش هيقبل طلبات للأسامي اللي مش اتستخدمت، لأنها متاحة للكل أصلًا.\n- لو في لاعب مش بيلعب وعايز اسمه، ابعت للساببورت وهما هيشوفوا الموضوع.",
+        body: "With the newest patch we will update our IGN and Clan name change policy, so that you don't need to contact the support team to regain previously used IGNs or clan names.\n\n- If you want to change your IGN or clan name to one you had used in the last 90 days, you will be able to use it again immediately. You will still need to purchase an In-game Change Item in order to do that.\n- If you want to change your IGN or clan name to one somebody else had used recently, you will need to wait 90 days until it is available again.\n- The support team will not accept requests for IGNs that are currently not in use, since all IGNs that were not used within 90 days are available for everybody.\n- In case a player is inactive with an IGN you would like to use, you still need to contact the support team to free the IGN.",
+        bodyAr: "مع آخر تحديث، اتغيرت السياسة بتاعة تغيير الاسم في اللعبة والكلان.\n\n- لو عايز ترجع اسم كنت بتستخدمه في آخر 90 يوم، تقدر تاخده فورًا. بس هتحتاج تشتري أيتم التغيير من الجيم.\n- لو الاسم كان شخص تاني بيستخدمه، هتستنى 90 يوم لحد ما يبقى متاح.\n- الساببورت مش هيقبل طلبات للأسامي اللي مش اتستخدمت، لأنها متاحة للكل أصلًا.\n- لو في لاعب مش بيلعب وعايز اسمه، ابعت للساببورت وهما هيشوفوا الموضوع.",
       },
     ],
   },
@@ -665,7 +665,7 @@ export default function FAQ() {
               {[
                 { val: totalArticles, label: isAr ? "سؤال" : "Articles", color: "#f5a623" },
                 { val: faqData.length, label: isAr ? "تصنيف" : "Categories", color: "#818cf8" },
-                { val: "24/7", label: isAr ? "متاح" : "Available", color: "#4ade80" },
+                { val: "FAQ", label: isAr ? "مساعدة ذاتية" : "Self-serve", color: "#4ade80" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-6">
                   {i > 0 && <div className="w-px h-8" style={{ background: "rgba(255,255,255,0.08)" }} />}
@@ -828,11 +828,11 @@ export default function FAQ() {
             </h3>
             <p className="text-sm max-w-sm mx-auto mb-6" style={{ color: "#666" }}>
               {isAr
-                ? "فريق الدعم بتاعنا موجود 24/7 عشان يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
-                : "Our support team is available 24/7. Send us a ticket and we'll get back to you soon."}
+                ? "لو الأسئلة الشائعة مش مغطية مشكلتك، ابعتلنا تذكرة وفريق الدعم هيراجعها ويرد عليك في أقرب وقت ممكن."
+                : "If the FAQ does not cover your issue, send us a ticket and our support team will review it as soon as possible."}
             </p>
             <Link
-              href="/support"
+              href={isAr ? "/ar/support" : "/support"}
               className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
               style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
             >

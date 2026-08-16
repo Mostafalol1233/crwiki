@@ -22,7 +22,7 @@ export default function SidebarExample() {
     { id: "3", title: "Building REST APIs with Node.js", views: 16200 },
   ];
 
-  const bimoraPicks = [
+  const wikiPicks = [
     { id: "1", title: "The Future of Web Development", image: tutorialImage, date: "Jan 10" },
     { id: "2", title: "Microservices Architecture Guide", image: tutorialImage, date: "Jan 8" },
   ];
@@ -34,7 +34,7 @@ export default function SidebarExample() {
           recentPosts={recentPosts}
           popularTags={popularTags}
           mostViewed={mostViewed}
-          bimoraPicks={bimoraPicks}
+          wikiPicks={wikiPicks}
         />
       </div>
     </LanguageProvider>

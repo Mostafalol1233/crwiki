@@ -85,7 +85,7 @@ export default function Category() {
       }));
   }, [allPosts]);
 
-  const bimoraPicks = useMemo(() => {
+  const wikiPicks = useMemo(() => {
     return allPosts
       .filter((post: any) => post.featured)
       .slice(0, 2)
@@ -301,7 +301,7 @@ export default function Category() {
                   recentPosts={recentPosts}
                   popularTags={popularTags}
                   mostViewed={mostViewed}
-                  bimoraPicks={bimoraPicks}
+                  wikiPicks={wikiPicks}
                 />
               </div>
             </aside>

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,8 @@ const ticketSchema = z.object({
 type TicketFormData = z.infer<typeof ticketSchema>;
 
 export default function Support() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isArabic = language === "ar";
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -98,8 +99,8 @@ export default function Support() {
   return (
     <>
       <PageSEO
-        title="Support — CrossFire Wiki"
-        description="Need help? Submit a support ticket and our team will assist you."
+        title={`${isArabic ? "الدعم" : "Support"} — CrossFire Wiki`}
+        description={isArabic ? "هل تحتاج إلى مساعدة؟ أرسل تذكرة دعم وسيساعدك فريقنا." : "Need help? Submit a support ticket and our team will assist you."}
         canonicalPath="/support"
       />
       <div className="min-h-screen py-12 md:py-16" style={{ background: "hsl(var(--background))" }}>
@@ -107,7 +108,7 @@ export default function Support() {
 
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
-            <a href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>{t("supportBreadcrumbHome")}</a>
+            <Link href={isArabic ? "/ar" : "/"} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>{t("supportBreadcrumbHome")}</Link>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
             <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>{t("support")}</span>
           </div>

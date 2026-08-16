@@ -26,7 +26,7 @@ const translations: Record<Language, Record<string, string>> = {
     recentPosts: "Recent Posts",
     popularTags: "Popular Tags",
     mostViewed: "Most Viewed",
-    bimoraPicks: "Bimora's Picks",
+    bimoraPicks: "CrossFire Wiki Picks",
     readingTime: "min read",
     views: "views",
     latest: "Latest",
@@ -40,7 +40,7 @@ const translations: Record<Language, Record<string, string>> = {
     logout: "Logout",
     login: "Login",
     signUp: "Sign Up",
-    copyright: "© 2025 Bimora Gaming — All Rights Reserved",
+    copyright: "© 2025 CrossFire Wiki — All Rights Reserved",
     loading: "Loading...",
     newsNotFound: "News Not Found",
     backToNews: "Back to News",
@@ -62,8 +62,8 @@ const translations: Record<Language, Record<string, string>> = {
     eventFeature5: "Compete with other mercenaries on the leaderboard",
     limitedTimeOnly: "Limited Time Only",
     limitedTimeText: "This event runs from October 1st through October 31st. Don't miss your chance to collect these exclusive Halloween items before the web disappears!",
-    aboutBimora: "About Bimora Gaming",
-    aboutWelcome: "Welcome to Bimora Gaming, your premier source for CrossFire news, character guides, weapon reviews, and gaming updates.",
+    aboutBimora: "About CrossFire Wiki",
+    aboutWelcome: "Welcome to CrossFire Wiki, an independent community resource for CrossFire news, character guides, weapon references, and game updates.",
     ourMission: "Our Mission",
     missionText: "We're dedicated to providing comprehensive CrossFire gaming content that helps players stay updated with the latest news, master new characters, and improve their gameplay. From beginner guides to advanced strategies, we cover it all.",
     whatWeCover: "What We Cover",
@@ -413,7 +413,7 @@ const translations: Record<Language, Record<string, string>> = {
     privacyTitle: "Privacy Policy",
     privacyLastUpdated: "Last updated: March 26, 2026",
     privacyIntro: "Your privacy matters to us. This page explains what data we collect, why we collect it, and the controls you have over your information.",
-    privacyCopyrightLine: "© 2026 CrossFire Wiki by Bimora Gaming. All rights reserved.",
+    privacyCopyrightLine: "© 2026 CrossFire Wiki. All rights reserved.",
     privacyQuestionsText: "Questions about this Privacy Policy?",
     privSec1Title: "Information We Collect",
     privSec1Desc: "We collect information you provide directly to us when you:",
@@ -452,7 +452,7 @@ const translations: Record<Language, Record<string, string>> = {
     termsTitle: "Terms of Service",
     termsLastUpdated: "Last updated: March 26, 2026",
     termsIntro: "These terms explain your rights and responsibilities when using CrossFire Wiki. By continuing to browse, register, or submit content, you agree to follow this policy.",
-    termsCopyrightLine: "© 2026 CrossFire Wiki by Bimora Gaming. All rights reserved.",
+    termsCopyrightLine: "© 2026 CrossFire Wiki. All rights reserved.",
     termsQuestionsText: "Questions about these Terms of Service?",
     termsSec1Title: "Acceptance of Terms",
     termsSec1Desc: "By accessing and using CrossFire Wiki (crossfire.wiki), you accept and agree to be bound by the terms of this agreement. If you do not agree, please do not use this service.",
@@ -492,7 +492,7 @@ const translations: Record<Language, Record<string, string>> = {
     recentPosts: "آخر المقالات",
     popularTags: "الوسوم الشائعة",
     mostViewed: "الأكثر مشاهدة",
-    bimoraPicks: "اختيارات بيوميرا",
+    bimoraPicks: "اختيارات CrossFire Wiki",
     readingTime: "دقيقة قراءة",
     views: "مشاهدة",
     latest: "الأحدث",
@@ -506,7 +506,7 @@ const translations: Record<Language, Record<string, string>> = {
     logout: "تسجيل الخروج",
     login: "تسجيل الدخول",
     signUp: "إنشاء حساب",
-    copyright: "© 2025 Bimora Gaming — جميع الحقوق محفوظة",
+    copyright: "© 2025 CrossFire Wiki — جميع الحقوق محفوظة",
     loading: "جاري التحميل...",
     newsNotFound: "الخبر غير موجود",
     backToNews: "العودة للأخبار",
@@ -528,8 +528,8 @@ const translations: Record<Language, Record<string, string>> = {
     eventFeature5: "تنافس مع مرتزقة آخرين على لوحة المتصدرين",
     limitedTimeOnly: "لفترة محدودة فقط",
     limitedTimeText: "يستمر هذا الحدث من 1 أكتوبر حتى 31 أكتوبر. لا تفوت فرصتك لجمع هذه العناصر الحصرية للهالوين قبل اختفاء الشبكة!",
-    aboutBimora: "عن Bimora Gaming",
-    aboutWelcome: "مرحباً بك في Bimora Gaming، مصدرك الأول لأخبار CrossFire، وأدلة الشخصيات، ومراجعات الأسلحة، وتحديثات الألعاب.",
+    aboutBimora: "عن CrossFire Wiki",
+    aboutWelcome: "مرحباً بك في CrossFire Wiki، وهو مرجع مجتمعي مستقل لأخبار CrossFire وأدلة الشخصيات ومراجع الأسلحة وتحديثات اللعبة.",
     ourMission: "مهمتنا",
     missionText: "نحن ملتزمون بتوفير محتوى شامل عن ألعاب CrossFire يساعد اللاعبين على البقاء على اطلاع بأحدث الأخبار، وإتقان الشخصيات الجديدة، وتحسين أسلوب اللعب. من أدلة المبتدئين إلى الاستراتيجيات المتقدمة، نغطي كل شيء.",
     whatWeCover: "ما نغطيه",
@@ -879,7 +879,7 @@ const translations: Record<Language, Record<string, string>> = {
     privacyTitle: "سياسة الخصوصية",
     privacyLastUpdated: "آخر تحديث: 26 مارس 2026",
     privacyIntro: "خصوصيتك تهمنا. هذه الصفحة تشرح البيانات التي نجمعها، وسبب جمعها، والتحكم الذي لديك في معلوماتك.",
-    privacyCopyrightLine: "© 2026 CrossFire Wiki by Bimora Gaming. جميع الحقوق محفوظة.",
+    privacyCopyrightLine: "© 2026 CrossFire Wiki. جميع الحقوق محفوظة.",
     privacyQuestionsText: "أسئلة حول سياسة الخصوصية؟",
     privSec1Title: "المعلومات التي نجمعها",
     privSec1Desc: "نجمع المعلومات التي تقدمها لنا مباشرة عند:",
@@ -918,7 +918,7 @@ const translations: Record<Language, Record<string, string>> = {
     termsTitle: "شروط الخدمة",
     termsLastUpdated: "آخر تحديث: 26 مارس 2026",
     termsIntro: "هذه الشروط تشرح حقوقك ومسؤولياتك عند استخدام CrossFire Wiki. باستمرار التصفح أو التسجيل أو إرسال المحتوى، فأنت توافق على اتباع هذه السياسة.",
-    termsCopyrightLine: "© 2026 CrossFire Wiki by Bimora Gaming. جميع الحقوق محفوظة.",
+    termsCopyrightLine: "© 2026 CrossFire Wiki. جميع الحقوق محفوظة.",
     termsQuestionsText: "أسئلة حول شروط الخدمة؟",
     termsSec1Title: "قبول الشروط",
     termsSec1Desc: "بالوصول إلى CrossFire Wiki واستخدامها، فأنت توافق على الالتزام بشروط هذه الاتفاقية. إذا لم توافق، يرجى عدم استخدام الخدمة.",
@@ -950,10 +950,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 function getInitialLanguage(): Language {
   // 1. Check URL path — /ar prefix takes highest priority
+  let currentPath = "/";
   try {
-    const path = window.location.pathname;
-    if (path === "/ar" || path.startsWith("/ar/")) return "ar";
+    currentPath = window.location.pathname;
+    if (currentPath === "/ar" || currentPath.startsWith("/ar/")) return "ar";
   } catch { }
+  // The root route may honor a saved preference. Every named non-Arabic
+  // route is canonical English and must not inherit stale Arabic state.
+  if (currentPath !== "/" && currentPath !== "") return "en";
   // 2. Check saved preference
   try {
     const saved = localStorage.getItem("language");
@@ -1010,7 +1014,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const handlePopState = () => {
       const path = window.location.pathname;
       const isAr = path === "/ar" || path.startsWith("/ar/");
-      setLanguageState(isAr ? "ar" : (localStorage.getItem("language") as Language) || "en");
+      setLanguageState(isAr ? "ar" : "en");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);

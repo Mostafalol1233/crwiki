@@ -9,7 +9,8 @@ import { Link } from "wouter";
 import { SITE_CONFIG } from "@/lib/siteConfig";
 
 export default function Contact() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const localPath = (path: string) => language === "ar" && path.startsWith("/") && !path.startsWith("/ar") ? `/ar${path}` : path;
 
   const CHANNELS = [
     {
@@ -25,7 +26,7 @@ export default function Contact() {
       value: t("contactTicketValue"),
       desc: t("contactTicketDesc"),
       color: "#818cf8",
-      href: "/support",
+      href: localPath("/support"),
     },
     {
       icon: Send,
@@ -234,7 +235,7 @@ export default function Contact() {
               >
                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: "#f5a623" }}>{t("contactNeedSupport")}</h3>
                 <p className="text-[12px] mb-3" style={{ color: "#666" }}>{t("contactNeedSupportDesc")}</p>
-                <Link href="/support">
+                <Link href={localPath("/support")}>
                   <button
                     className="w-full flex items-center justify-center gap-2 py-2 text-[11px] font-black uppercase tracking-wider transition-all hover:brightness-110"
                     style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}

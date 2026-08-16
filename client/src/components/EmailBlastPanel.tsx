@@ -41,7 +41,7 @@ const WIKI_BACK_TEMPLATE = `<!DOCTYPE html>
             <td style="background:#111;border:1px solid rgba(245,166,35,0.15);border-top:none;border-radius:0 0 4px 4px;padding:48px 40px 40px;">
 
               <!-- Logo / brand -->
-              <p style="margin:0 0 6px;font-size:10px;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:#f5a623;">Bimora Gaming</p>
+              <p style="margin:0 0 6px;font-size:10px;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:#f5a623;">CrossFire Wiki</p>
               <h1 style="margin:0 0 6px;font-size:42px;font-weight:900;text-transform:uppercase;letter-spacing:-1px;color:#fff;line-height:1;">
                 CrossFire
               </h1>
@@ -128,7 +128,7 @@ const WIKI_BACK_TEMPLATE = `<!DOCTYPE html>
               <!-- Footer -->
               <p style="margin:0;font-size:11px;color:#444;line-height:1.6;">
                 You received this because you subscribed to CrossFire Wiki updates.<br />
-                Bimora Gaming · <a href="https://crossfire.wiki" style="color:#f5a623;text-decoration:none;">crossfire.wiki</a>
+                CrossFire Wiki · <a href="https://crossfire.wiki" style="color:#f5a623;text-decoration:none;">crossfire.wiki</a>
               </p>
             </td>
           </tr>
@@ -337,7 +337,7 @@ export default function EmailBlastPanel({ subscribers }: Props) {
         <div>
           <p className="text-[12px] font-bold mb-1" style={{ color: "var(--foreground)" }}>Sent via Resend</p>
           <p className="text-[11px] leading-relaxed" style={{ color: "#666" }}>
-            Emails are sent from <span style={{ color: "#f5a623" }}>noreply@bimora.gg</span> using the Resend API. Make sure your domain is verified in Resend. The API key must be set as <code className="px-1 py-0.5 rounded text-[10px]" style={{ background: "rgba(255,255,255,0.06)" }}>RESEND_API_KEY</code> in Vercel environment variables.
+            Emails are sent from the verified sender configured in Resend using the Resend API. Make sure your domain is verified in Resend. The API key must be set as <code className="px-1 py-0.5 rounded text-[10px]" style={{ background: "rgba(255,255,255,0.06)" }}>RESEND_API_KEY</code> in Vercel environment variables.
           </p>
         </div>
       </div>

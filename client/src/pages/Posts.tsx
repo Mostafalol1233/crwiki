@@ -10,14 +10,18 @@ import { Loader2, BookOpen, ChevronRight, User, Clock, Star } from "lucide-react
 interface PostItem {
   id: string;
   title: string;
+  titleAr?: string;
   date?: string;
   image: string;
   category: string;
   content: string;
   summary?: string;
+  summaryAr?: string;
   author: string;
   featured?: boolean;
   post_slug?: string;
+  ogImage?: string;
+  imageUrl?: string;
 }
 
 const CAT_COLORS: Record<string, string> = {
@@ -35,10 +39,30 @@ function getCatColor(cat?: string): string {
   return CAT_COLORS[key] || "#888";
 }
 
-const FALLBACK = "/portal/modes.jpg";
+const CATEGORY_FALLBACKS: Record<string, string> = {
+  events: "/portal/events.jpg",
+  weapons: "/portal/weapons.jpg",
+  maps: "/portal/maps.jpg",
+  modes: "/portal/modes.jpg",
+  mercenaries: "/portal/mercenaries.jpg",
+  ranks: "/portal/ranks.jpg",
+  news: "/feature-crossfire.jpg",
+  updates: "/feature-crossfire.jpg",
+  guides: "/portal/maps.jpg",
+  tutorials: "/portal/modes.jpg",
+};
+
+function getPostImage(post: PostItem): string {
+  const category = String(post.category || "").toLowerCase();
+  return String(post.image || post.imageUrl || post.ogImage || CATEGORY_FALLBACKS[category] || "/feature-crossfire.jpg");
+}
 
 export default function Posts() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isArabic = language === "ar";
+  const localPath = (path: string) => isArabic ? `/ar${path}` : path;
+  const displayTitle = (post: PostItem) => isArabic ? (post.titleAr || post.title) : post.title;
+  const displaySummary = (post: PostItem) => isArabic ? (post.summaryAr || post.summary) : post.summary;
   const [page, setPage] = useState(1);
   const limit = 12;
   const [allLoadedPosts, setAllLoadedPosts] = useState<any[]>([]);
@@ -82,9 +106,9 @@ export default function Posts() {
   return (
     <>
       <PageSEO
-        title="Posts — CrossFire Wiki"
-        description="Browse CrossFire posts, guides, and tutorials from our community and editors."
-        canonicalPath="/posts"
+        title={isArabic ? "المقالات — CrossFire Wiki" : "Posts — CrossFire Wiki"}
+        description={isArabic ? "تصفح مقالات CrossFire والأدلة والشروحات من فريق الويكي والمجتمع." : "Browse CrossFire posts, guides, and tutorials from our community and editors."}
+        canonicalPath={isArabic ? "/ar/posts" : "/posts"}
       />
 
       <div className="min-h-screen py-10 md:py-14" style={{ background: "var(--background)" }}>
@@ -96,7 +120,7 @@ export default function Posts() {
               <BookOpen className="h-6 w-6" style={{ color: "#f5a623" }} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-0.5" style={{ color: "#f5a623" }}>Community</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-0.5" style={{ color: "#f5a623" }}>{isArabic ? "المجتمع" : "Community"}</p>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight leading-none" style={{ color: "var(--foreground)" }}>
                 {t("posts") || "Posts"}
               </h1>
@@ -110,13 +134,13 @@ export default function Posts() {
           ) : allPosts.length === 0 ? (
             <div className="py-20 text-center" style={{ border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "4px" }}>
               <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-20" style={{ color: "#f5a623" }} />
-              <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "#444" }}>No posts yet — check back soon</p>
+              <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "#444" }}>{isArabic ? "لا توجد مقالات حاليًا — عد قريبًا" : "No posts yet — check back soon"}</p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* ── Featured post (large) ── */}
               {featuredPost && (
-                <Link href={`/posts/${featuredPost.post_slug || featuredPost.id}`} className="group block">
+                <Link href={localPath(`/posts/${featuredPost.post_slug || featuredPost.id}`)} className="group block">
                   <div
                     className="relative overflow-hidden"
                     style={{ background: "var(--card)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: "4px", boxShadow: "0 4px 30px rgba(245,166,35,0.06)" }}
@@ -126,15 +150,15 @@ export default function Posts() {
                     <div className="flex flex-col md:flex-row">
                       <div className="md:w-[55%] relative overflow-hidden" style={{ background: "hsl(var(--muted))", minHeight: "260px" }}>
                         <ContentImage
-                          src={featuredPost.image || FALLBACK}
-                          alt={featuredPost.title}
+                          src={getPostImage(featuredPost)}
+                          alt={displayTitle(featuredPost)}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           style={{ minHeight: "260px" }}
                         />
                         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent, var(--card))" }} />
                         {featuredPost.featured && (
                           <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-[8px] font-black uppercase tracking-widest" style={{ background: "#f5a623", color: "#000" }}>
-                            <Star className="h-2.5 w-2.5" /> Featured
+                            <Star className="h-2.5 w-2.5" /> {isArabic ? "مميز" : "Featured"}
                           </div>
                         )}
                       </div>
@@ -152,10 +176,10 @@ export default function Posts() {
                           )}
                         </div>
                         <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight mb-3 line-clamp-3" style={{ color: "var(--foreground)" }}>
-                          {featuredPost.title}
+                          {displayTitle(featuredPost)}
                         </h2>
-                        {featuredPost.summary && (
-                          <p className="text-sm leading-relaxed line-clamp-2 mb-4" style={{ color: "#666" }}>{featuredPost.summary}</p>
+                        {displaySummary(featuredPost) && (
+                          <p className="text-sm leading-relaxed line-clamp-2 mb-4" style={{ color: "#666" }}>{displaySummary(featuredPost)}</p>
                         )}
                         <div className="flex items-center gap-4">
                           {featuredPost.author && (
@@ -164,7 +188,7 @@ export default function Posts() {
                             </span>
                           )}
                           <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-all group-hover:gap-2.5" style={{ color: "#f5a623" }}>
-                            Read More <ChevronRight className="h-3 w-3" />
+                            {isArabic ? "اقرأ المزيد" : "Read More"} <ChevronRight className="h-3 w-3" />
                           </span>
                         </div>
                       </div>
@@ -177,7 +201,7 @@ export default function Posts() {
               {restPosts.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {restPosts.map((post) => (
-                    <Link key={post.id} href={`/posts/${post.post_slug || post.id}`} className="group block">
+                    <Link key={post.id} href={localPath(`/posts/${post.post_slug || post.id}`)} className="group block">
                       <div
                         className="h-full overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
                         style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "3px", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}
@@ -185,8 +209,8 @@ export default function Posts() {
                         {/* Image */}
                         <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "hsl(var(--muted))" }}>
                           <ContentImage
-                            src={post.image || FALLBACK}
-                            alt={post.title}
+                            src={getPostImage(post)}
+                            alt={displayTitle(post)}
                             loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
@@ -199,7 +223,7 @@ export default function Posts() {
                               className="absolute top-2 left-2 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 flex items-center gap-1"
                               style={{ background: "#f5a623", color: "#000" }}
                             >
-                              <Star className="h-2 w-2" /> Featured
+                              <Star className="h-2 w-2" /> {isArabic ? "مميز" : "Featured"}
                             </div>
                           )}
                         </div>
@@ -216,7 +240,7 @@ export default function Posts() {
                             {post.date && <span className="text-[9px]" style={{ color: "#444" }}>{post.date}</span>}
                           </div>
                           <h3 className="font-black text-sm uppercase tracking-tight leading-snug line-clamp-2 mb-1.5" style={{ color: "var(--foreground)" }}>
-                            {post.title}
+                            {displayTitle(post)}
                           </h3>
                           {post.author && (
                             <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider" style={{ color: "#555" }}>

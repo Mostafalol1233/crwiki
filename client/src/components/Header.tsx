@@ -215,7 +215,7 @@ export function Header() {
             <div style={{ position: "relative" }}>
               <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.25)", pointerEvents: "none" }} />
               <input
-                type="search" placeholder="Search..." value={searchQ}
+                type="search" placeholder={language === "ar" ? "بحث..." : "Search..."} value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
                 style={{
                   height: 32, paddingLeft: 32, paddingRight: 12,
@@ -259,7 +259,7 @@ export function Header() {
                   {[
                     { href: "/profile", icon: User, label: t("navProfile") },
                     { href: "/my-tickets", icon: Ticket, label: t("navMyTickets") },
-                    { href: "/chat", icon: MessageSquare, label: "Chat" },
+                    { href: "/chat", icon: MessageSquare, label: language === "ar" ? "المحادثة" : "Chat" },
                   ].map(({ href, icon: Icon, label }, i, arr) => (
                     <Link key={href} href={href} style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
@@ -273,7 +273,7 @@ export function Header() {
                       <Icon size={13} strokeWidth={1.5} /> {label}
                     </Link>
                   ))}
-                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); window.location.href = "/"; }}
+                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); setLocation(language === "ar" ? "/ar" : "/"); }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
                       fontSize: 13, color: "rgba(239,68,68,0.7)", background: "none", border: "none",
@@ -288,7 +288,7 @@ export function Header() {
             </div>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Link href="/login" style={{
+              <Link href={language === "ar" ? "/ar/login" : "/login"} style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center",
                 fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
                 color: "rgba(255,255,255,0.7)", textDecoration: "none",
@@ -299,7 +299,7 @@ export function Header() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
                 {t("login")}
               </Link>
-              <Link href="/register" style={{
+              <Link href={language === "ar" ? "/ar/register" : "/register"} style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 600, fontFamily: "Inter, system-ui, sans-serif",
                 color: "#000", textDecoration: "none",
@@ -359,7 +359,7 @@ export function Header() {
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BORDER}` }}>
             <form onSubmit={handleSearch} style={{ position: "relative" }}>
               <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", pointerEvents: "none" }} />
-              <input type="search" placeholder="Search..." value={searchQ} onChange={e => setSearchQ(e.target.value)}
+              <input type="search" placeholder={language === "ar" ? "بحث..." : "Search..."} value={searchQ} onChange={e => setSearchQ(e.target.value)}
                 style={{ width: "100%", padding: "9px 12px 9px 32px", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, color: "#fff", fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", outline: "none", boxSizing: "border-box" }} />
             </form>
           </div>
@@ -400,10 +400,10 @@ export function Header() {
             </button>
             {!isLoggedIn ? (
               <div style={{ display: "flex", gap: 8 }}>
-                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href={language === "ar" ? "/ar/login" : "/login"} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("login")}
                 </Link>
-                <Link href="/register" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href={language === "ar" ? "/ar/register" : "/register"} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("signUp")}
                 </Link>
               </div>

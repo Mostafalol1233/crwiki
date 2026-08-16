@@ -8,7 +8,7 @@ export default function HeroSectionExample() {
     summary: "Learn how to create scalable, type-safe applications using the latest features of React 18 and TypeScript 5.",
     category: "Tutorials",
     image: "",
-    author: "Bimora Team",
+    author: "CrossFire Wiki Team",
     date: "Jan 15, 2025",
     readingTime: 8,
     views: 15420

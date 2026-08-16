@@ -99,6 +99,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     q("modes",        "id,name,image_url",                                                   "name", 10000),
   ]);
 
+  // Use the newest real content timestamp for shared/static URLs. This avoids
+  // publishing a stale fixed date while still falling back safely when the DB
+  // is unavailable or contains malformed timestamps.
+  const contentDates = [...events, ...news, ...posts, ...tutorials, ...customPages]
+    .flatMap((row: any) => [row.updated_at, row.created_at, row.date])
+    .map((value) => isoDate(value))
+    .filter(Boolean)
+    .sort()
+    .reverse();
+  const latestContentDate = contentDates[0] || today;
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n`;
   xml += `        xmlns:xhtml="http://www.w3.org/1999/xhtml"\n`;
@@ -108,21 +119,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── Static pages ──────────────────────────────────────────────────────
   const statics: UrlEntry[] = [
-    { loc: `${BASE}/`,           priority: "1.0", changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/global-wiki`,priority: "0.98",changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/events`,     priority: "0.95",changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/weapons`,    priority: "0.9", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/modes`,      priority: "0.9", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/ranks`,      priority: "0.9", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/mercenaries`,priority: "0.9", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/maps`,       priority: "0.8", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/news`,       priority: "0.85",changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/tutorials`,  priority: "0.8", changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/videos`,      priority: "0.8", changefreq: "daily",   lastmod: today },
-    { loc: `${BASE}/pages`,       priority: "0.7", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/content-hub`, priority: "0.7", changefreq: "weekly",  lastmod: today },
-    { loc: `${BASE}/faq`,         priority: "0.6", changefreq: "monthly", lastmod: today },
-    { loc: `${BASE}/grave-games`, priority: "0.5", changefreq: "monthly", lastmod: today },
+    { loc: `${BASE}/`,           priority: "1.0", changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/global-wiki`,priority: "0.98",changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/events`,     priority: "0.95",changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/weapons`,    priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/modes`,      priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/ranks`,      priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/mercenaries`,priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/maps`,       priority: "0.8", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/news`,       priority: "0.85",changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/tutorials`,  priority: "0.8", changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/videos`,      priority: "0.8", changefreq: "daily",   lastmod: latestContentDate },
+    { loc: `${BASE}/pages`,       priority: "0.7", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/content-hub`, priority: "0.7", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/faq`,         priority: "0.6", changefreq: "monthly", lastmod: latestContentDate },
+    { loc: `${BASE}/grave-games`, priority: "0.5", changefreq: "monthly", lastmod: latestContentDate },
     { loc: `${BASE}/category/news`,   priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/events`, priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/guides`, priority: "0.7", changefreq: "weekly"  },
@@ -140,9 +151,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   xml += "  <!-- Regional wiki landing pages -->\n";
   for (const region of REGIONS) {
-    xml += entry({ loc: `${BASE}/${region.slug}`, priority: "0.9", changefreq: "weekly", lastmod: today });
+    xml += entry({ loc: `${BASE}/${region.slug}`, priority: "0.9", changefreq: "weekly", lastmod: latestContentDate });
     for (const weapon of WEAPONS) {
-      xml += entry({ loc: `${BASE}/${region.slug}/weapons/${weapon.slug}`, priority: "0.8", changefreq: "weekly", lastmod: today });
+      xml += entry({ loc: `${BASE}/${region.slug}/weapons/${weapon.slug}`, priority: "0.8", changefreq: "weekly", lastmod: latestContentDate });
     }
   }
   xml += "\n";

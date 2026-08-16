@@ -9,6 +9,7 @@ interface WikiPageTemplateProps {
   slug: string;
   isAr: boolean;
   seoDescription?: string;
+  publishedAt?: string;
   updatedAt?: string;
   sourceUrl?: string;
 }
@@ -36,6 +37,7 @@ export default function WikiPageTemplate({
   slug,
   isAr,
   seoDescription,
+  publishedAt,
   updatedAt,
   sourceUrl,
 }: WikiPageTemplateProps) {
@@ -58,6 +60,7 @@ export default function WikiPageTemplate({
         back: "العودة إلى صفحات الويكي",
         eyebrow: "موسوعة CrossFire World",
         reference: "صفحة مرجعية",
+        published: "تاريخ النشر",
         updated: "آخر تحديث",
         language: "اللغة",
         arabic: "العربية",
@@ -71,6 +74,7 @@ export default function WikiPageTemplate({
         back: "Back to Wiki Pages",
         eyebrow: "CrossFire World Encyclopedia",
         reference: "Reference page",
+        published: "Published",
         updated: "Last updated",
         language: "Language",
         arabic: "Arabic",
@@ -114,7 +118,7 @@ export default function WikiPageTemplate({
               </span>
               <span className="inline-flex items-center gap-2">
                 <Clock3 className="h-3.5 w-3.5" />
-                {copy.updated}: {formatDate(updatedAt, isAr)}
+                {copy.published}: {formatDate(publishedAt || updatedAt, isAr)}
               </span>
             </div>
             <div
@@ -153,11 +157,11 @@ export default function WikiPageTemplate({
                   <dd className="mt-1 font-semibold text-white">{isAr ? copy.arabic : copy.english}</dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{copy.updated}</dt>
-                  <dd className="mt-1 font-semibold text-white">{formatDate(updatedAt, isAr)}</dd>
+                  <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{copy.published}</dt>
+                  <dd className="mt-1 font-semibold text-white">{formatDate(publishedAt || updatedAt, isAr)}</dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Slug</dt>
+                  <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">{isAr ? "المعرّف" : "Slug"}</dt>
                   <dd className="mt-1 break-all font-mono text-xs text-slate-400">/{slug}</dd>
                 </div>
               </dl>

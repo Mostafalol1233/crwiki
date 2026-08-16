@@ -91,11 +91,11 @@ const FACTIONS = [
 ];
 
 const QUICK_STATS = [
-  { value: "53+", label: "Ranks", labelAr: "رتبة" },
-  { value: "50+", label: "Weapons", labelAr: "سلاح" },
-  { value: "20+", label: "Maps", labelAr: "خريطة" },
-  { value: "10+", label: "Game Modes", labelAr: "موود" },
-  { value: "10", label: "Mercenaries", labelAr: "شخصية" },
+  { value: "101", label: "Ranks", labelAr: "رتبة" },
+  { value: "3,599", label: "Weapons", labelAr: "سلاح" },
+  { value: "312", label: "Maps", labelAr: "خريطة" },
+  { value: "60", label: "Game Modes", labelAr: "طور لعب" },
+  { value: "41", label: "Mercenaries", labelAr: "شخصية" },
   { value: "Free", label: "To Play", labelAr: "مجاناً" },
 ];
 
@@ -109,6 +109,7 @@ const SOCIALS = [
 export default function About() {
   const { t, language } = useLanguage();
   const isAr = language === "ar";
+  const localPath = (path: string) => isAr && path.startsWith("/") && !path.startsWith("/ar") ? `/ar${path}` : path;
 
   const { data: dbModes } = useQuery({ queryKey: ["about-modes"], queryFn: getModes, staleTime: 10 * 60 * 1000 });
   const { data: dbMaps }  = useQuery({ queryKey: ["about-maps"],  queryFn: getMaps,  staleTime: 10 * 60 * 1000 });
@@ -146,7 +147,7 @@ export default function About() {
   return (
     <>
       <PageSEO
-        title="CrossFire Game Overview — Wiki | Bimora Gaming"
+        title="CrossFire Game Overview — CrossFire Wiki"
         description="Complete CrossFire game overview: factions, modes, weapons, mercenaries, rank system, and more. نظرة شاملة على لعبة CrossFire."
         canonicalPath="/about"
       />
@@ -205,12 +206,12 @@ export default function About() {
               fontFamily: "Inter, system-ui, sans-serif",
             }}>
               {isAr
-                ? "CrossFire هي لعبة FPS مجانية متعددة اللاعبين من تطوير Smilegate. واحدة من أكثر ألعاب الإطلاق النار انتشاراً في العالم."
-                : "CrossFire is a free-to-play online FPS developed by Smilegate — one of the most-played shooters in the world with over 1 billion registered players."}
+                ? "CrossFire هي لعبة FPS مجانية متعددة اللاعبين من تطوير Smilegate، وتضم عالمًا تنافسيًا واسعًا ومجموعة كبيرة من الأطوار والخرائط."
+                : "CrossFire is a free-to-play online FPS developed by Smilegate, with a broad competitive ecosystem and a large catalog of modes, maps, and weapons."}
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link href="/download">
+              <Link href={localPath("/download")}>
                 <button style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "12px 24px", background: ACCENT,
@@ -221,7 +222,7 @@ export default function About() {
                   <Download size={16} /> {isAr ? "تنزيل اللعبة" : "Download CrossFire"}
                 </button>
               </Link>
-              <Link href="/ranks">
+              <Link href={localPath("/ranks")}>
                 <button style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "12px 24px",
@@ -264,10 +265,10 @@ export default function About() {
                 </p>
                 <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, margin: "0 0 24px", fontFamily: "Inter, system-ui, sans-serif" }}>
                   {isAr
-                    ? "بدأت اللعبة في 2007 وما زالت تحظى بملايين اللاعبين النشطين حول العالم، مع تحديثات وإيفنتات منتظمة."
-                    : "First launched in 2007, CrossFire has grown into one of the most played games worldwide, with regular seasonal updates, events, and competitive seasons."}
+                    ? "بدأت اللعبة في 2007، وما زالت تحصل على تحديثات ومحتوى موسمي وفعاليات في المناطق التي تتوفر فيها الخدمة."
+                    : "First launched in 2007, CrossFire continues to receive seasonal content, events, and competitive updates across its supported regions."}
                 </p>
-                <Link href="/weapons">
+                <Link href={localPath("/weapons")}>
                   <button style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "10px 20px",
@@ -349,7 +350,7 @@ export default function About() {
                       marginBottom: 16,
                     }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: faction.color, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        {faction.side}
+                        {isAr ? (faction.side === "Attackers" ? "المهاجمون" : "المدافعون") : faction.side}
                       </span>
                     </div>
                     <h3 style={{
@@ -380,7 +381,7 @@ export default function About() {
               }}>
                 {isAr ? "أوضاع لعب متنوعة لكل أسلوب" : "A Mode for Every Playstyle"}
               </h2>
-              <Link href="/modes">
+              <Link href={localPath("/modes")}>
                 <button style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   padding: "8px 16px",
@@ -477,7 +478,7 @@ export default function About() {
                 }}>
                   {isAr ? "ساحات المعارك" : "Battle Arenas"}
                 </h2>
-                <Link href="/maps">
+                <Link href={localPath("/maps")}>
                   <button style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "8px 16px",
@@ -496,7 +497,7 @@ export default function About() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <div style={{ width: 3, height: 14, background: "#ef4444", borderRadius: 2 }} />
                     <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      Team Deathmatch
+                      {isAr ? "تصفية الفريق" : "Team Deathmatch"}
                     </span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
@@ -520,7 +521,7 @@ export default function About() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <div style={{ width: 3, height: 14, background: "#f5a623", borderRadius: 2 }} />
                     <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      Search & Destroy
+                      {isAr ? "البحث والتدمير" : "Search & Destroy"}
                     </span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
@@ -722,8 +723,8 @@ export default function About() {
                 </h2>
                 <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", margin: 0, maxWidth: 480, lineHeight: 1.7, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {isAr
-                    ? "تواصل مع آلاف لاعبي CrossFire على منصاتنا الرسمية واحصل على آخر الأخبار والإيفنتات."
-                    : "Connect with thousands of CrossFire players across our official channels. Get the latest news, events, and community updates."}
+                    ? "تواصل مع مجتمع لاعبي CrossFire عبر منصاتنا الاجتماعية، وتابع الأخبار والفعاليات والتحديثات الجديدة."
+                    : "Connect with the CrossFire community through our social channels and follow news, events, and community updates."}
                 </p>
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>

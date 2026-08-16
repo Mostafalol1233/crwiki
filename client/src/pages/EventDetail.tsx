@@ -14,6 +14,7 @@ import { getEventBySlug, getComments, addComment, getEvents, getMercenaries } fr
 import GallerySection from "@/components/GallerySection";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
+import ContentImage from "@/components/ContentImage";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -341,10 +342,10 @@ export default function EventDetail() {
 
   useEffect(() => {
     if (legacyId && event?.event_name_slug) {
-      const slugUrl = `/events/${event.event_name_slug}`;
+      const slugUrl = `${language === "ar" ? "/ar" : ""}/events/${event.event_name_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== slugUrl) setLocation(slugUrl);
     }
-  }, [legacyId, event?.event_name_slug, setLocation]);
+  }, [legacyId, event?.event_name_slug, language, setLocation]);
 
   const hasArabicVersion = Boolean((event?.titleAr && event.titleAr.trim()) || (event?.descriptionAr && event.descriptionAr.trim()));
   const resolvedLang = contentLanguage || (language === "ar" && hasArabicVersion ? "ar" : "en");
@@ -396,9 +397,9 @@ export default function EventDetail() {
     return (
       <div style={{ minHeight: "100vh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Event not found.</p>
-          <Link href="/events">
-            <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, cursor: "pointer" }}>← Back to Events</span>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>{language === "ar" ? "الفعالية غير موجودة" : "Event not found."}</p>
+          <Link href={language === "ar" ? "/ar/events" : "/events"}>
+            <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, cursor: "pointer" }}>← {language === "ar" ? "العودة إلى الفعاليات" : "Back to Events"}</span>
           </Link>
         </div>
       </div>
@@ -524,7 +525,7 @@ export default function EventDetail() {
           {/* Background image */}
           {event.image && (
             <>
-              <img
+              <ContentImage
                 src={event.image}
                 alt=""
                 aria-hidden
@@ -535,7 +536,7 @@ export default function EventDetail() {
                   transform: "scale(1.08)",
                 }}
               />
-              <img
+              <ContentImage
                 src={event.image}
                 alt={title}
                 onLoad={() => setHeroLoaded(true)}
@@ -561,15 +562,15 @@ export default function EventDetail() {
 
           {/* Breadcrumb — top left */}
           <div style={{ position: "absolute", top: 20, left: 24, display: "flex", alignItems: "center", gap: 6, zIndex: 4 }}>
-            <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
+            <Link href={language === "ar" ? "/ar" : "/"}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الرئيسية" : "Home"}</span></Link>
             <ChevronRight size={11} color="rgba(255,255,255,0.25)" />
-            <Link href="/events"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>Events</span></Link>
+            <Link href={language === "ar" ? "/ar/events" : "/events"}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الفعاليات" : "Events"}</span></Link>
             <ChevronRight size={11} color="rgba(255,255,255,0.25)" />
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
           </div>
 
           {/* Back button — top left below breadcrumb */}
-          <Link href="/events">
+          <Link href={language === "ar" ? "/ar/events" : "/events"}>
             <div style={{
               position: "absolute", top: 50, left: 24, zIndex: 4,
               display: "flex", alignItems: "center", gap: 5,
@@ -578,7 +579,7 @@ export default function EventDetail() {
               color: "rgba(255,255,255,0.6)", borderRadius: 3, cursor: "pointer",
               backdropFilter: "blur(8px)",
             }}>
-              <ArrowLeft size={11} /> Back to Events
+              <ArrowLeft size={11} /> {language === "ar" ? "العودة إلى الفعاليات" : "Back to Events"}
             </div>
           </Link>
 
@@ -716,7 +717,7 @@ export default function EventDetail() {
                           }} className="related-card">
                             {(ev.image || ev.imageUrl) && (
                               <div style={{ width: 56, height: 40, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                                <img src={ev.image || ev.imageUrl} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <ContentImage src={ev.image || ev.imageUrl} alt={ev.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               </div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -842,7 +843,7 @@ export default function EventDetail() {
                   {/* Hero image thumbnail */}
                   {event.image && (
                     <div style={{ position: "relative", cursor: "zoom-in" }} onClick={() => setViewer({ open: true, src: event.image, alt: title })}>
-                      <img src={event.image} alt={title} style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }} />
+                      <ContentImage src={event.image} alt={title} loading="lazy" style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
                     </div>
                   )}
@@ -881,7 +882,7 @@ export default function EventDetail() {
 
                   {/* View on events page */}
                   <div style={{ padding: "10px 14px" }}>
-                    <Link href="/events">
+                    <Link href={language === "ar" ? "/ar/events" : "/events"}>
                       <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         padding: "7px", background: "rgba(245,166,35,0.08)", border: `1px solid rgba(245,166,35,0.2)`,

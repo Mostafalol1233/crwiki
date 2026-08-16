@@ -94,19 +94,19 @@ export default function NewsDetail() {
 
   useEffect(() => {
     if (fallbackPost && (fallbackPost.id || fallbackPost.post_slug)) {
-      const target = `/posts/${fallbackPost.post_slug || fallbackPost.id}`;
+      const target = `${language === "ar" ? "/ar" : ""}/posts/${fallbackPost.post_slug || fallbackPost.id}`;
       setLocation(target);
     }
-  }, [fallbackPost, setLocation]);
+  }, [fallbackPost, language, setLocation]);
 
   useEffect(() => {
     if (legacyId && newsItem?.news_slug) {
-      const slugUrl = `/news/${newsItem.news_slug}`;
+      const slugUrl = `${language === "ar" ? "/ar" : ""}/news/${newsItem.news_slug}`;
       if (typeof window !== "undefined" && window.location.pathname !== slugUrl) {
         setLocation(slugUrl);
       }
     }
-  }, [legacyId, newsItem?.news_slug, setLocation]);
+  }, [legacyId, newsItem?.news_slug, language, setLocation]);
 
   if (isLoading) {
     return (
@@ -119,7 +119,7 @@ export default function NewsDetail() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-destructive">Error loading</div>
+        <div className="text-lg text-destructive">{language === "ar" ? "تعذر تحميل الخبر" : "Error loading"}</div>
       </div>
     );
   }
@@ -128,7 +128,7 @@ export default function NewsDetail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-4xl font-bold mb-4">{t("newsNotFound")}</h1>
-        <Link href="/news">
+        <Link href={language === "ar" ? "/ar/news" : "/news"}>
           <Button variant="outline" data-testid="button-back-to-news">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("backToNews")}
@@ -140,14 +140,17 @@ export default function NewsDetail() {
 
   const canonicalOrigin = "https://crossfire.wiki";
   const newsSlug = newsItem.news_slug || slug || legacyId;
-  const newsUrl = `${canonicalOrigin}/news/${newsSlug}`;
-  const newsBreadcrumbs = [
-    { name: "Home", url: canonicalOrigin + "/" },
-    { name: "News", url: canonicalOrigin + "/news" },
-    { name: newsItem.title, url: newsUrl },
-  ];
-
+  const localizedRootPath = language === "ar" ? "/ar" : "/";
+  const localizedNewsPath = language === "ar" ? "/ar/news" : "/news";
+  const englishNewsUrl = `${canonicalOrigin}/news/${newsSlug}`;
+  const arabicNewsUrl = `${canonicalOrigin}/ar/news/${newsSlug}`;
+  const newsUrl = language === "ar" ? arabicNewsUrl : englishNewsUrl;
   const selectedTitle = language === 'ar' && newsItem.titleAr ? newsItem.titleAr : newsItem.title;
+  const newsBreadcrumbs = [
+    { name: language === "ar" ? "الرئيسية" : "Home", url: localizedRootPath },
+    { name: language === "ar" ? "الأخبار" : "News", url: localizedNewsPath },
+    { name: selectedTitle, url: newsUrl },
+  ];
   const selectedContentRaw = (() => {
     if (language === 'ar' && newsItem.contentAr) return newsItem.contentAr;
     const html = newsItem.htmlContent && newsItem.htmlContent.trim().length > 0 ? newsItem.htmlContent : newsItem.content;
@@ -186,7 +189,7 @@ export default function NewsDetail() {
         title={newsItem.seoTitle || `${selectedTitle} | CrossFire Wiki`}
         description={seoDesc}
         keywords={newsKeywords}
-        canonicalUrl={newsItem.canonicalUrl || newsUrl}
+        canonicalUrl={newsUrl}
         ogImage={seoImage}
         ogImageAlt={`${selectedTitle} — CrossFire News`}
         ogImageWidth={1200}
@@ -203,8 +206,8 @@ export default function NewsDetail() {
         articleSection={newsItem.category || "News"}
         articleTags={newsKeywords}
         hreflangAlternates={[
-          { lang: "en", url: newsUrl },
-          { lang: "ar", url: newsUrl.replace("https://crossfire.wiki", "https://crossfire.wiki/ar") },
+          { lang: "en", url: englishNewsUrl },
+          { lang: "ar", url: arabicNewsUrl },
         ]}
         breadcrumbs={newsBreadcrumbs}
         publisher={{ name: "CrossFire Wiki", logoUrl: `${canonicalOrigin}/logo-new.png` }}
@@ -258,7 +261,7 @@ export default function NewsDetail() {
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!(newsItem as any).fullLayout && <Breadcrumbs items={newsBreadcrumbs} />}
           <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">
-            <Link href="/news">
+            <Link href={localizedNewsPath}>
               <a className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}>
                 <ArrowLeft className="h-3 w-3" />
                 {t("backToNews")}
@@ -295,7 +298,7 @@ export default function NewsDetail() {
                   </h1>
 
                   <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-12">
-                    <span>BY {newsItem.author || 'Bimora Team'}</span>
+                    <span>{language === "ar" ? "بواسطة" : "By"} {newsItem.author || "CrossFire Wiki Editorial Team"}</span>
                   </div>
 
                   {newsItem.image && (
@@ -330,7 +333,7 @@ export default function NewsDetail() {
               />
 
               <div className="mt-12">
-                <Link href="/news">
+                <Link href={localizedNewsPath}>
                   <Button size="lg" className="rounded-none font-black uppercase italic tracking-widest px-12 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
                     {t("readMore")}
                   </Button>

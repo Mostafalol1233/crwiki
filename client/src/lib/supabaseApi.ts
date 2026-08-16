@@ -8,6 +8,18 @@ function isMissingTableError(error: any) {
   return TABLE_MISSING_RE.test(msg) || error?.code === '42P01';
 }
 
+const PUBLIC_QUERY_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = PUBLIC_QUERY_TIMEOUT_MS): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("The request timed out. Please retry.")), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
 async function runSafeQuery<T>(fallback: T, executor: () => Promise<any>): Promise<{ data: T; count?: number }> {
   if (!isSupabaseConfigured) {
     return { data: fallback, count: Array.isArray(fallback) ? fallback.length : undefined };
@@ -107,7 +119,7 @@ export async function getWeapons(opts: {
   pageSize?: number;
 } = {}) {
   try {
-    const response = await fetch('/api/content?type=weapons');
+    const response = await withTimeout(fetch('/api/content?type=weapons'));
     if (response.ok) {
       const json = await response.json();
       const weapons = Array.isArray(json.weapons) ? json.weapons : [];
@@ -131,21 +143,32 @@ export async function getWeapons(opts: {
   }
 
   const { q, letter, category, sort = 'name', order = 'asc', page = 1, pageSize = 50 } = opts;
-  const result = await runSafeQuery(fallbackWeapons, async () => {
-    let query = supabase.from('weapons').select('*', { count: 'exact' });
+  try {
+    const result = await runSafeQuery(fallbackWeapons, async () => {
+      let query = supabase.from('weapons').select('*', { count: 'exact' });
 
-    if (q) query = query.ilike('name', `%${q}%`);
-    if (letter) query = query.ilike('name', `${letter}%`);
-    if (category) query = query.eq('category', category);
+      if (q) query = query.ilike('name', `%${q}%`);
+      if (letter) query = query.ilike('name', `${letter}%`);
+      if (category) query = query.eq('category', category);
 
-    const from = (page - 1) * pageSize;
-    query = query.range(from, from + pageSize - 1);
-    query = query.order(sort === 'name' ? 'name' : 'created_at', { ascending: order === 'asc' });
+      const from = (page - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+      query = query.order(sort === 'name' ? 'name' : 'created_at', { ascending: order === 'asc' });
 
-    return await query;
-  });
-  const data = Array.isArray(result.data) ? result.data : [];
-  return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize };
+      return await withTimeout(query);
+    });
+    const data = Array.isArray(result.data) ? result.data : [];
+    return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize };
+  } catch {
+    const start = (page - 1) * pageSize;
+    const items = fallbackWeapons
+      .filter((weapon: any) => !q || String(weapon.name).toLowerCase().includes(q.toLowerCase()))
+      .filter((weapon: any) => !letter || String(weapon.name).toLowerCase().startsWith(letter.toLowerCase()))
+      .filter((weapon: any) => !category || weapon.category === category)
+      .slice(start, start + pageSize)
+      .map(normalizeWeapon);
+    return { items, total: fallbackWeapons.length, page, pageSize };
+  }
 }
 
 export async function getWeaponById(id: string) {
@@ -259,7 +282,7 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
           tags: p.tags || [],
           author: p.author || 'CrossFire Wiki',
           views: p.views || 0,
-          reading_time: p.reading_time || 2,
+          reading_time: p.reading_time,
           featured: p.featured,
           language: p.language,
           seo_title: p.seo_title,
@@ -326,6 +349,21 @@ function normalizePost(p: any) {
       return [];
     }
   };
+  const wordCount = (value: unknown) => String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(?:nbsp|amp|lt|gt|quot|#39);/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+  const contentWordCount = Math.max(wordCount(p.content), wordCount(p.content_ar || p.contentAr));
+  const computedReadingTime = Math.max(1, Math.ceil(contentWordCount / 200));
+  const suppliedReadingTime = Number(p.reading_time ?? p.readingTime);
+  const readingTime = Number.isFinite(suppliedReadingTime) && suppliedReadingTime > 1
+    ? suppliedReadingTime
+    : computedReadingTime;
+  const createdAt = p.created_at || p.createdAt || p.date || p.published_at || null;
+  const updatedAt = p.updated_at || p.updatedAt || createdAt;
 
   return {
     id: String(p.id || ''),
@@ -342,11 +380,11 @@ function normalizePost(p: any) {
     tags: p.tags || [],
     author: String(p.author || ''),
     views: p.views || 0,
-    readingTime: p.reading_time || 1,
+    readingTime,
     featured: p.featured || false,
     previewOnHome: p.preview_on_home !== false,
-    createdAt: p.created_at,
-    updatedAt: p.updated_at || p.updatedAt || p.created_at,
+    createdAt,
+    updatedAt,
     language: p.language || 'en',
     seoTitle: p.seo_title || '',
     seoDescription: p.seo_description || '',
@@ -406,15 +444,22 @@ function normalizeNews(n: any) {
 // ─── Events ──────────────────────────────────────────────────────────────────
 export async function getEvents(opts: { limit?: number; offset?: number } = {}) {
   const { limit = 20, offset = 0 } = opts;
-  const result = await runSafeQuery(fallbackEvents, async () => {
-    return await supabase
-      .from('events')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-  });
-  const data = Array.isArray(result.data) ? result.data : [];
-  return { items: data.map(normalizeEvent), total: result.count || data.length || 0 };
+  try {
+    const result = await runSafeQuery(fallbackEvents, async () => {
+      return await withTimeout(
+        supabase
+          .from('events')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
+    });
+    const data = Array.isArray(result.data) ? result.data : [];
+    return { items: data.map(normalizeEvent), total: result.count || data.length || 0 };
+  } catch {
+    const items = fallbackEvents.slice(offset, offset + limit).map(normalizeEvent);
+    return { items, total: fallbackEvents.length };
+  }
 }
 
 export async function getEventBySlug(slug: string) {

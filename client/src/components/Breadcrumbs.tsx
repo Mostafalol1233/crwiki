@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { ChevronRight, Home } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface BreadcrumbItem {
   name: string;
@@ -11,6 +12,11 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const { language } = useLanguage();
+  const localizePath = (url: string) => {
+    if (language !== "ar" || !url.startsWith("/") || url === "/ar" || url.startsWith("/ar/")) return url;
+    return `/ar${url === "/" ? "" : url}`;
+  };
   const allItems = [
     { name: "Home", url: "/" },
     ...items,
@@ -25,7 +31,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
             <span className="text-foreground font-medium">{item.name}</span>
           ) : (
             <Link
-              href={item.url}
+              href={localizePath(item.url)}
               className="hover:text-foreground transition-colors flex items-center gap-1"
             >
               {index === 0 && <Home className="h-3 w-3" />}

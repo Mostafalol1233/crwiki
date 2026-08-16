@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { SEOHead } from "@/components/SEOHead";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,9 @@ export default function TutorialDetailPage() {
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const isAr = language === "ar";
+  const localPath = (path: string) => isAr && path.startsWith("/") && !path.startsWith("/ar") ? `/ar${path}` : path;
 
   const [showLikeDialog, setShowLikeDialog] = useState(false);
 
@@ -71,7 +75,7 @@ export default function TutorialDetailPage() {
 
   useEffect(() => {
     if (legacyId && (tutorial as any)?.tutorial_slug) {
-      const target = `/tutorials/${(tutorial as any).tutorial_slug}`;
+      const target = localPath(`/tutorials/${(tutorial as any).tutorial_slug}`);
       if (typeof window !== "undefined" && window.location.pathname !== target) {
         setLocation(target);
       }
@@ -98,7 +102,7 @@ export default function TutorialDetailPage() {
   if (tutorialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-lg text-muted-foreground">Loading tutorial...</div>
+        <div className="text-lg text-muted-foreground">{isAr ? "جارٍ تحميل الدليل..." : "Loading tutorial..."}</div>
       </div>
     );
   }
@@ -107,10 +111,10 @@ export default function TutorialDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold">Failed to load tutorial</h2>
-          <Button onClick={() => setLocation("/videos")} data-testid="button-back-tutorials-error">
+          <h2 className="text-2xl font-semibold">{isAr ? "تعذر تحميل الدليل" : "Failed to load tutorial"}</h2>
+          <Button onClick={() => setLocation(localPath("/videos"))} data-testid="button-back-tutorials-error">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tutorials
+            {isAr ? "العودة إلى الأدلة" : "Back to Tutorials"}
           </Button>
         </div>
       </div>
@@ -121,11 +125,11 @@ export default function TutorialDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold">Tutorial Not Found</h2>
-          <p className="text-muted-foreground">The tutorial you're looking for doesn't exist.</p>
-          <Button onClick={() => setLocation("/videos")} data-testid="button-back-tutorials">
+          <h2 className="text-2xl font-semibold">{isAr ? "الدليل غير موجود" : "Tutorial Not Found"}</h2>
+          <p className="text-muted-foreground">{isAr ? "الدليل الذي تبحث عنه غير موجود." : "The tutorial you're looking for doesn't exist."}</p>
+          <Button onClick={() => setLocation(localPath("/videos"))} data-testid="button-back-tutorials">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tutorials
+            {isAr ? "العودة إلى الأدلة" : "Back to Tutorials"}
           </Button>
         </div>
       </div>
@@ -134,7 +138,7 @@ export default function TutorialDetailPage() {
 
   const tutorialSlug = tutorial?.tutorial_slug || tutorial?.slug || slug || legacyId || tutorial?.id;
   const canonicalOrigin = "https://crossfire.wiki";
-  const canonicalUrl = `${canonicalOrigin}/tutorials/${tutorialSlug}`;
+  const canonicalUrl = `${canonicalOrigin}${localPath(`/tutorials/${tutorialSlug}`)}`;
   const videoId = tutorial?.youtube_id || tutorial?.youtubeId || (() => {
     const raw = tutorial?.youtube_url || tutorial?.youtubeUrl || "";
     const match = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&/]+)/i);
@@ -143,17 +147,18 @@ export default function TutorialDetailPage() {
   const image = tutorial?.image_url || tutorial?.image || tutorial?.thumbnailUrl || tutorial?.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : `${canonicalOrigin}/logo-new.png`);
   const publishedIso = tutorial?.created_at || tutorial?.createdAt ? new Date(tutorial.created_at || tutorial.createdAt).toISOString() : undefined;
   const modifiedIso = tutorial?.updated_at || tutorial?.updatedAt ? new Date(tutorial.updated_at || tutorial.updatedAt).toISOString() : publishedIso;
-  const description = tutorial?.seo_description || tutorial?.description || `Complete CrossFire tutorial for ${tutorial?.title || "players"}, including practical steps, strategy and gameplay advice.`;
+  const displayTitle = isAr ? (tutorial?.title_ar || tutorial?.title) : tutorial?.title;
+  const description = (isAr ? (tutorial?.description_ar || tutorial?.seo_description_ar) : tutorial?.seo_description) || tutorial?.description || `${isAr ? "دليل CrossFire كامل لـ" : "Complete CrossFire tutorial for "}${displayTitle || "players"}${isAr ? "، مع خطوات عملية ونصائح للعب." : ", including practical steps, strategy and gameplay advice."}`;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--background)" }}>
       <SEOHead
-        title={tutorial?.seo_title || (tutorial?.title ? `${tutorial.title} — CrossFire Wiki` : "Tutorial — CrossFire Wiki")}
+        title={tutorial?.seo_title || (displayTitle ? `${displayTitle} — CrossFire Wiki` : (isAr ? "دليل — CrossFire Wiki" : "Tutorial — CrossFire Wiki"))}
         description={description}
         keywords={["CrossFire tutorial", tutorial?.category || "CrossFire guide", "CrossFire video", "Z8Games"]}
         canonicalUrl={canonicalUrl}
         ogImage={image}
-        ogImageAlt={`${tutorial?.title || "CrossFire tutorial"} — CrossFire Wiki`}
+        ogImageAlt={`${displayTitle || (isAr ? "دليل CrossFire" : "CrossFire tutorial")} — CrossFire Wiki`}
         ogImageWidth={1200}
         ogImageHeight={675}
         twitterImage={image}
@@ -164,14 +169,14 @@ export default function TutorialDetailPage() {
         articleAuthor="CrossFire Wiki"
         articleSection="Tutorials & Videos"
         breadcrumbs={[
-          { name: "Home", url: `${canonicalOrigin}/` },
-          { name: "Videos", url: `${canonicalOrigin}/videos` },
-          { name: tutorial?.title || "Tutorial", url: canonicalUrl },
+          { name: isAr ? "الرئيسية" : "Home", url: `${canonicalOrigin}${localPath("/")}` },
+          { name: isAr ? "الأدلة" : "Videos", url: `${canonicalOrigin}${localPath("/videos")}` },
+          { name: displayTitle || (isAr ? "دليل" : "Tutorial"), url: canonicalUrl },
         ]}
         schemaType="VideoObject"
         schemaData={{
           "@id": `${canonicalUrl}#video`,
-          name: tutorial?.title || "CrossFire Tutorial",
+          name: displayTitle || (isAr ? "دليل CrossFire" : "CrossFire Tutorial"),
           description: description.substring(0, 500),
           thumbnailUrl: [image],
           uploadDate: publishedIso,
@@ -181,11 +186,11 @@ export default function TutorialDetailPage() {
           contentUrl: tutorial?.video_url || tutorial?.videoUrl || tutorial?.youtube_url || tutorial?.youtubeUrl || undefined,
           publisher: { "@type": "Organization", name: "CrossFire Wiki", url: canonicalOrigin, logo: { "@type": "ImageObject", url: `${canonicalOrigin}/logo-new.png` } },
           isFamilyFriendly: true,
-          inLanguage: "en",
+          inLanguage: isAr ? "ar" : "en",
         }}
         extraSchemas={[{
           "@type": "HowTo",
-          name: tutorial?.title || "CrossFire Tutorial",
+          name: displayTitle || (isAr ? "دليل CrossFire" : "CrossFire Tutorial"),
           description: description.substring(0, 500),
           image,
           step: [],
@@ -193,12 +198,12 @@ export default function TutorialDetailPage() {
       />
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
         <button
-          onClick={() => setLocation("/videos")}
+          onClick={() => setLocation(localPath("/videos"))}
           className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider mb-6 hover:opacity-80 transition-opacity"
           style={{ color: "#555" }}
           data-testid="button-back"
         >
-          <ArrowLeft className="h-3 w-3" /> Back to Videos
+          <ArrowLeft className="h-3 w-3" /> {isAr ? "العودة إلى الأدلة" : "Back to Videos"}
         </button>
 
         <div className="overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>

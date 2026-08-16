@@ -8,6 +8,7 @@ import {
 import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 const CATEGORY_CONFIG: Record<string, { icon: any; color: string; gradient: string; bg: string }> = {
   Announcements: {
@@ -830,14 +831,14 @@ export default function FAQ() {
                 ? "فريق الدعم بتاعنا موجود 24/7 عشان يساعدك. ابعتلنا تذكرة وهنرد عليك في أسرع وقت."
                 : "Our support team is available 24/7. Send us a ticket and we'll get back to you soon."}
             </p>
-            <a
+            <Link
               href="/support"
               className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
               style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
             >
               {isAr ? "ابعت تذكرة ساببورت" : "Submit a Support Ticket"}
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

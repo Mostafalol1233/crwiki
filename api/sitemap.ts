@@ -35,6 +35,11 @@ function isoDate(s?: string) {
   try { return new Date(s).toISOString().split("T")[0]; } catch { return ""; }
 }
 
+function dateAtOrBefore(value: unknown, maxDate: string) {
+  const date = isoDate(value == null ? "" : String(value));
+  return date && date <= maxDate ? date : "";
+}
+
 interface UrlEntry {
   loc: string;
   lastmod?: string;
@@ -104,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // is unavailable or contains malformed timestamps.
   const contentDates = [...events, ...news, ...posts, ...tutorials, ...customPages]
     .flatMap((row: any) => [row.updated_at, row.created_at, row.date])
-    .map((value) => isoDate(value))
+    .map((value) => dateAtOrBefore(value, today))
     .filter(Boolean)
     .sort()
     .reverse();
@@ -166,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = ev.image_url;
     xml += entry({
       loc:        `${BASE}/events/${slug}`,
-      lastmod:    isoDate(ev.updated_at || ev.date) || today,
+      lastmod:    dateAtOrBefore(ev.updated_at || ev.date, today) || today,
       changefreq: "weekly",
       priority:   "0.85",
       images:     img ? [{ url: img, title: ev.title, caption: `CrossFire event: ${ev.title}` }] : [],
@@ -182,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = n.image_url;
     xml += entry({
       loc:        `${BASE}/news/${slug}`,
-      lastmod:    isoDate(n.updated_at || n.created_at) || today,
+      lastmod:    dateAtOrBefore(n.updated_at || n.created_at, today) || today,
       changefreq: "weekly",
       priority:   "0.75",
       images:     img ? [{ url: img, title: n.title, caption: `CrossFire news: ${n.title}` }] : [],
@@ -198,7 +203,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = p.image_url;
     xml += entry({
       loc:        `${BASE}/posts/${slug}`,
-      lastmod:    isoDate(p.updated_at || p.created_at) || today,
+      lastmod:    dateAtOrBefore(p.updated_at || p.created_at, today) || today,
       changefreq: "weekly",
       priority:   "0.65",
       images:     img ? [{ url: img, title: p.title }] : [],
@@ -214,7 +219,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = t.image_url;
     xml += entry({
       loc:        `${BASE}/tutorials/${slug}`,
-      lastmod:    isoDate(t.updated_at || t.created_at) || today,
+      lastmod:    dateAtOrBefore(t.updated_at || t.created_at, today) || today,
       changefreq: "monthly",
       priority:   "0.65",
       images:     img ? [{ url: img, title: t.title }] : [],
@@ -224,7 +229,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         description: t.seo_description || `CrossFire tutorial: ${t.title}`,
         playerLoc: t.youtube_id ? `https://www.youtube.com/embed/${t.youtube_id}` : undefined,
         contentLoc: t.video_url || undefined,
-        publicationDate: t.created_at ? new Date(t.created_at).toISOString() : undefined,
+        publicationDate: dateAtOrBefore(t.created_at, today) ? new Date(t.created_at).toISOString() : undefined,
       }] : [],
     });
   }
@@ -238,7 +243,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!slug) continue;
     xml += entry({
       loc: `${BASE}/pages/${slug}`,
-      lastmod: isoDate(page.updated_at) || today,
+      lastmod: dateAtOrBefore(page.updated_at, today) || today,
       changefreq: "weekly",
       priority: "0.65",
     });

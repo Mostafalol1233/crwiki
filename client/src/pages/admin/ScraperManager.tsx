@@ -22,27 +22,100 @@ interface EventItem {
   startDate: string;
   endDate: string;
   description: string;   // full HTML from OP body
-  descriptionText: string; // plain-text excerpt (≤500 chars)
+  descriptionText: string; // complete cleaned plain text used for search/translation
   sourceUrl: string;
   selected: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-async function translateText(text: string, maxLen = 450): Promise<string> {
-  if (!text.trim()) return '';
-  try {
-    const clean = text
-      .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
-      .replace(/&[a-z]{2,8};/gi, '').replace(/\s+/g, ' ').trim().slice(0, maxLen);
-    // Google Translate unofficial endpoint — better Arabic quality than MyMemory
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(clean)}`;
-    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    const result = (d?.[0] || []).map((s: any) => s?.[0] || '').join('').trim();
-    return result || text;
-  } catch { return text; }
+const TRANSLATION_CHUNK_SIZE = 4200;
+
+function decodeForTranslation(text: string): string {
+  return text
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&[a-z]{2,8};/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitTranslationChunks(text: string, maxSize = TRANSLATION_CHUNK_SIZE): string[] {
+  const source = decodeForTranslation(text);
+  if (!source) return [];
+  const chunks: string[] = [];
+  let current = '';
+  const pieces = source.split(/(?<=[.!?؟。])\s+|\n{2,}/g);
+  for (const piece of pieces) {
+    const value = piece.trim();
+    if (!value) continue;
+    if (value.length > maxSize) {
+      const words = value.split(/\s+/);
+      for (const word of words) {
+        if (!current) current = word;
+        else if ((current.length + word.length + 1) <= maxSize) current += ` ${word}`;
+        else { chunks.push(current); current = word; }
+      }
+      continue;
+    }
+    if (!current) current = value;
+    else if ((current.length + value.length + 1) <= maxSize) current += ` ${value}`;
+    else { chunks.push(current); current = value; }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+async function translateChunk(chunk: string): Promise<string> {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(chunk)}`;
+  const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!r.ok) throw new Error(`Translation HTTP ${r.status}`);
+  const d = await r.json();
+  const result = (d?.[0] || []).map((s: any) => s?.[0] || '').join('').trim();
+  if (!result) throw new Error('Translation returned empty content');
+  return result;
+}
+
+async function translateText(text: string): Promise<string> {
+  const chunks = splitTranslationChunks(text);
+  if (!chunks.length) return '';
+  const translated: string[] = [];
+  for (const chunk of chunks) {
+    try {
+      translated.push(await translateChunk(chunk));
+    } catch {
+      // Retry once with the same complete chunk; never silently truncate it.
+      try { translated.push(await translateChunk(chunk)); }
+      catch { translated.push(chunk); }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+  return translated.join('\n\n').trim();
+}
+
+async function translateHtmlToArabic(html: string): Promise<string> {
+  if (!html.trim() || typeof DOMParser === 'undefined') return translateText(htmlToPlain(html));
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const nodes: Text[] = [];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    const parent = node.parentElement;
+    if (!parent || /^(SCRIPT|STYLE|NOSCRIPT)$/i.test(parent.tagName)) continue;
+    if (decodeForTranslation(node.nodeValue || '').length > 0) nodes.push(node as Text);
+  }
+  for (const textNode of nodes) {
+    const source = textNode.nodeValue || '';
+    const leading = source.match(/^\s*/)?.[0] || '';
+    const trailing = source.match(/\s*$/)?.[0] || '';
+    const translated = await translateText(source);
+    textNode.nodeValue = `${leading}${translated}${trailing}`;
+  }
+  return doc.body.innerHTML.trim();
 }
 
 // Strip HTML entities + tags → clean plain text
@@ -62,7 +135,7 @@ function htmlToPlain(html: string): string {
     .trim();
 }
 
-// Promo phrases common in Z8Games CF forum posts — strip from opening paragraph only
+// Promotional greetings and legacy copy that should never reach published bilingual content.
 const PROMO_PATTERNS = [
   /hey\s*[,!]?\s*(?:mercenaries|mercs|players|champs|commanders|soldiers|warriors|agents)[!,]?/gi,
   /greetings[,!]?\s*(?:mercenaries|mercs|players|champs|commanders|soldiers|warriors|agents)[!,]?/gi,
@@ -76,6 +149,9 @@ const PROMO_PATTERNS = [
   /(?:no\s+password|this\s+game\s+is\s+free|crossfire\s+is\s+free|you\s+do\s+not\s+need\s+to\s+pay)[^.!?<]*[.!?]*/gi,
   /\*+\s*note\s*\*+[^<]*/gi,
   /please\s+note\s+that\s+crossfire[^.!?<]*[.!?]*/gi,
+  /(?:attention|dear|hey|hello|hi|greetings)\s*(?:all\s*)?(?:mercenaries|mercs|players|champs|commanders|soldiers|warriors|agents)[!,.،:;\-–—]?\s*/giu,
+  /(?:يا\s*)?(?:أيها|أيتها)\s*المرتزقة[!،,:;\.\-–—]?\s*/giu,
+  /يا\s*مرتزقة[!،,:;\.\-–—]?\s*/giu,
 ];
 
 // Clean promotional opening text from plain text (for descriptionText + Arabic translation)
@@ -110,7 +186,7 @@ function cleanPromoHtml(html: string): string {
 // • decodes entities
 // • preserves colors, bold, lists, line breaks
 // • strips promotional intro text and free-to-play disclaimers
-function cleanForumHtml(html: string): string {
+function cleanForumHtml(html: string, baseUrl?: string): string {
   return cleanPromoHtml(html
     // Remove the large header/embed banner image at the top
     .replace(/<img[^>]*class="[^"]*(?:embedImage|importedEmbed)[^"]*"[^>]*\/?>/gi, '')
@@ -125,6 +201,7 @@ function cleanForumHtml(html: string): string {
     .replace(/&#39;/g, "'")
     // Remove empty paragraphs / excessive whitespace between tags
     .replace(/(<br\s*\/?>(\s*<br\s*\/?>){3,})/gi, '<br><br>')
+    .replace(/(<img\b[^>]*\bsrc=["'])([^"']+)(["'])/gi, (_match, prefix, src, suffix) => `${prefix}${safeImageUrl(src, baseUrl)}${suffix}`)
     .trim()
   );
 }
@@ -397,12 +474,15 @@ function EventList({
         toast.success(`${raw.length} events found`);
       }
       setEvents(raw.map((e: any) => {
-        const rawText = e.descriptionText || htmlToPlain(e.description || '').slice(0, 500);
+        const rawHtml = e.description || '';
+        const rawText = htmlToPlain(rawHtml || e.descriptionText || '');
+        const cleanedText = cleanPromoText(rawText);
         return {
           ...e,
+          title: cleanPromoText(e.title || ''),
           titleAr: '',
           descriptionAr: '',
-          descriptionText: cleanPromoText(rawText),
+          descriptionText: cleanedText,
           startDate: e.startDate || '',
           endDate: e.endDate || '',
           sourceUrl: e.sourceUrl || announcement.url,
@@ -423,15 +503,16 @@ function EventList({
     for (let i = 0; i < updated.length; i++) {
       const label = updated[i].title.slice(0, 40);
       setProgress(`Translating ${i + 1}/${updated.length}: ${label}… (title)`);
-      updated[i].titleAr = await translateText(updated[i].title, 450);
+      updated[i].titleAr = cleanPromoText(await translateText(cleanPromoText(updated[i].title)));
       setEvents([...updated]);
 
       // Short pause to avoid rate-limiting
       await new Promise(r => setTimeout(r, 250));
 
       setProgress(`Translating ${i + 1}/${updated.length}: ${label}… (description)`);
-      const plainDesc = cleanPromoText(updated[i].descriptionText || htmlToPlain(updated[i].description || '').slice(0, 450));
-      updated[i].descriptionAr = plainDesc ? await translateText(plainDesc, 450) : '';
+      const sourceHtml = cleanForumHtml(updated[i].description || '', updated[i].sourceUrl || announcement.url);
+      const translatedDescription = sourceHtml ? await translateHtmlToArabic(sourceHtml) : await translateText(updated[i].descriptionText);
+      updated[i].descriptionAr = sourceHtml ? cleanPromoHtml(translatedDescription) : cleanPromoText(translatedDescription);
       setEvents([...updated]);
 
       if (i < updated.length - 1) await new Promise(r => setTimeout(r, 250));
@@ -464,11 +545,10 @@ function EventList({
 
         // Store raw original HTML, and cleaned HTML in description (renders with colors/br/lists)
         const rawHtml = ev.description || '';
-        const cleanedHtml = cleanForumHtml(rawHtml);
+        const cleanedHtml = cleanForumHtml(rawHtml, ev.sourceUrl || announcement.url);
 
         // description_ar: full translated description if available, else construct from title
-        const descriptionAr = ev.descriptionAr
-          || (ev.titleAr ? `حدث كروس فاير: ${ev.titleAr}. ${dateRange ? `الفترة: ${dateRange}.` : ''}` : '');
+        const descriptionAr = ev.descriptionAr || '';
 
         try {
           await adminFetch('/api/admin/events', {
@@ -479,7 +559,7 @@ function EventList({
               event_name_slug:  slug,
               description:      cleanedHtml || ev.title,
               description_ar:   descriptionAr,
-              raw_html_content: rawHtml,
+              raw_html_content: cleanedHtml || rawHtml,
               image_url:        safeImageUrl(ev.image || announcement.image, ev.sourceUrl || announcement.url),
               type:             'announcement',
               date:             dateRange,
@@ -658,7 +738,7 @@ function EventList({
                   {/* Arabic description after translation */}
                   {ev.descriptionAr && (
                     <p style={{ margin: '4px 0 0', fontSize: 12, color: '#78716c', direction: 'rtl', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                      {ev.descriptionAr}
+                      {htmlToPlain(ev.descriptionAr)}
                     </p>
                   )}
                 </div>

@@ -161,7 +161,7 @@ async function scrapeForumThread(url: string) {
   const threadDate = $(".ItemDiscussion time, #Item_0 time, .DateCreated time").first().attr("datetime") || $("time").first().attr("datetime") || "";
   const firstMessage = $(".Message").first();
   const description = firstMessage.html() || "";
-  const descriptionText = firstMessage.text().replace(/\s+/g, " ").trim().slice(0, 500);
+  const descriptionText = firstMessage.text().replace(/\s+/g, " ").trim();
   const dateParts = threadTitle.match(/(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?/gi) || [];
   const startDate = dateParts[0] || (threadDate ? threadDate.slice(0, 10) : "");
   const endDate = dateParts[1] || dateParts[0] || "";

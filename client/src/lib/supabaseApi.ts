@@ -248,16 +248,32 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
         items: posts.map((p: any) => normalizePost({
           id: p.id,
           title: p.title,
+          title_ar: p.title_ar,
           post_slug: p.post_slug || p.slug,
           content: p.content || p.excerpt || '',
+          content_ar: p.content_ar,
           summary: p.summary || p.excerpt || '',
+          summary_ar: p.summary_ar,
           image_url: p.image_url || '',
           category: p.category || 'community',
           tags: p.tags || [],
           author: p.author || 'CrossFire Wiki',
-          views: 0,
-          reading_time: 2,
+          views: p.views || 0,
+          reading_time: p.reading_time || 2,
+          featured: p.featured,
+          language: p.language,
+          seo_title: p.seo_title,
+          seo_description: p.seo_description,
+          og_image: p.og_image,
+          canonical_url: p.canonical_url,
+          full_layout: p.full_layout ?? p.fullLayout,
+          template: p.template,
+          wiki_tabs: p.wiki_tabs ?? p.wikiTabs,
+          external_links: p.external_links ?? p.externalLinks,
+          source_url: p.source_url ?? p.sourceUrl,
+          gallery: p.gallery,
           created_at: p.created_at || p.date,
+          updated_at: p.updated_at,
         })),
         total: posts.length,
       };
@@ -300,13 +316,26 @@ function normalizePost(p: any) {
   } else if (typeof p.gallery === 'string') {
     try { gallery = JSON.parse(p.gallery) || []; } catch { gallery = []; }
   }
+  const parseArray = (value: unknown) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value !== 'string' || !value.trim()) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
 
   return {
     id: String(p.id || ''),
     title: String(p.title || ''),
-    post_slug: String(p.post_slug || ''),
+    titleAr: String(p.title_ar || p.titleAr || ''),
+    post_slug: String(p.post_slug || p.slug || ''),
     content: String(p.content || ''),
+    contentAr: String(p.content_ar || p.contentAr || ''),
     summary: String(p.summary || ''),
+    summaryAr: String(p.summary_ar || p.summaryAr || ''),
     image: String(p.image_url || ''),
     imageUrl: String(p.image_url || ''),
     category: String(p.category || ''),
@@ -317,9 +346,17 @@ function normalizePost(p: any) {
     featured: p.featured || false,
     previewOnHome: p.preview_on_home !== false,
     createdAt: p.created_at,
+    updatedAt: p.updated_at || p.updatedAt || p.created_at,
     language: p.language || 'en',
     seoTitle: p.seo_title || '',
     seoDescription: p.seo_description || '',
+    ogImage: p.og_image || '',
+    canonicalUrl: p.canonical_url || '',
+    fullLayout: Boolean(p.full_layout ?? p.fullLayout ?? p.template === 'wiki'),
+    template: String(p.template || (p.full_layout || p.fullLayout ? 'wiki' : 'standard')),
+    wikiTabs: parseArray(p.wiki_tabs ?? p.wikiTabs),
+    externalLinks: parseArray(p.external_links ?? p.externalLinks),
+    sourceUrl: String(p.source_url || p.sourceUrl || ''),
     gallery,
   };
 }

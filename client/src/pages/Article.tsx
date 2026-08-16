@@ -14,6 +14,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
+import WikiPageTemplate from "@/components/WikiPageTemplate";
 
 interface WikiTab {
   title: string;
@@ -106,6 +107,19 @@ export default function Article() {
       .slice(0, 3);
   }, [finalArticle, allPosts]);
 
+  const useWikiTemplate = useMemo(() => {
+    const tags = Array.isArray(finalArticle?.tags)
+      ? finalArticle.tags.map((tag: unknown) => String(tag).toLowerCase())
+      : [];
+    return Boolean(
+      finalArticle?.fullLayout ||
+      finalArticle?.template === "wiki" ||
+      String(finalArticle?.category || "").toLowerCase() === "wiki" ||
+      tags.includes("wiki") ||
+      tags.includes("wiki-reference")
+    );
+  }, [finalArticle]);
+
   const rawContent = useMemo(() => {
     if (!finalArticle?.content) return "";
     const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
@@ -140,6 +154,36 @@ export default function Article() {
           </Button>
         </div>
       </div>
+    );
+  }
+
+  if (useWikiTemplate) {
+    const title = isRTL && finalArticle.titleAr ? finalArticle.titleAr : finalArticle.title;
+    const content = isRTL && finalArticle.contentAr ? finalArticle.contentAr : finalArticle.content;
+    return (
+      <>
+        <SEOHead
+          title={finalArticle.seo_title || title}
+          description={finalArticle.seo_description || finalArticle.summary || title}
+          keywords={finalArticle.tags || []}
+          ogImage={finalArticle.og_image || finalArticle.image}
+          canonicalUrl={finalArticle.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : undefined)}
+          articlePublishedTime={finalArticle.created_at || finalArticle.createdAt}
+          articleModifiedTime={finalArticle.updated_at || finalArticle.updatedAt || finalArticle.created_at || finalArticle.createdAt}
+          articleAuthor={finalArticle.author || "CrossFire Wiki"}
+          articleSection={finalArticle.category || "Wiki"}
+          schemaType="Article"
+        />
+        <WikiPageTemplate
+          title={title || "CrossFire Wiki"}
+          content={content || ""}
+          slug={finalArticle.post_slug || slug || String(finalArticle.id)}
+          isAr={isRTL}
+          seoDescription={finalArticle.seo_description || finalArticle.summary}
+          updatedAt={finalArticle.updated_at || finalArticle.updatedAt || finalArticle.created_at || finalArticle.createdAt}
+          sourceUrl={finalArticle.source_url || finalArticle.sourceUrl}
+        />
+      </>
     );
   }
 

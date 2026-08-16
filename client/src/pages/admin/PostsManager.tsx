@@ -32,6 +32,9 @@ interface Post {
   focus_keyword: string;
   created_at: string;
   gallery: GalleryItem[];
+  template: 'standard' | 'wiki';
+  full_layout: boolean;
+  source_url: string;
 }
 
 function slugify(str: string) {
@@ -43,6 +46,7 @@ const EMPTY_POST: Partial<Post> = {
   summary: '', image_url: '', category: '', tags: [], author: '',
   featured: false, language: 'en', seo_title: '', seo_description: '',
   og_image: '', canonical_url: '', focus_keyword: '', gallery: [],
+  template: 'standard', full_layout: false, source_url: '',
 };
 
 const col = createColumnHelper<Post>();
@@ -90,6 +94,9 @@ export default function PostsManager() {
         canonical_url:  editing.canonical_url || '',
         focus_keyword:  editing.focus_keyword || '',
         gallery:        Array.isArray(editing.gallery) ? editing.gallery : [],
+        template:       editing.template || 'standard',
+        full_layout:    Boolean(editing.full_layout || editing.template === 'wiki'),
+        source_url:     editing.source_url || '',
         updated_at:     new Date().toISOString(),
       };
 
@@ -185,6 +192,11 @@ export default function PostsManager() {
             Back
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 600, color: '#fafafa', margin: 0 }}>{editing.id ? 'Edit Post' : 'New Post'}</h1>
+          {editing.id && editing.post_slug && (
+            <button type="button" onClick={() => window.open(`/posts/${editing.post_slug}`, '_blank', 'noopener,noreferrer')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#d4a017', cursor: 'pointer', fontSize: 12 }}>
+              <Eye size={12} /> Preview
+            </button>
+          )}
           {lastSaved && <span style={{ fontSize: 12, color: '#52525b' }}>Draft saved {lastSaved.toLocaleTimeString()}</span>}
         </div>
 
@@ -237,6 +249,18 @@ export default function PostsManager() {
                 <div>
                   <label style={labelStyle}>Category</label>
                   <input type="text" value={editing.category || ''} onChange={(e) => setEditing({ ...editing, category: e.target.value })} style={inputStyle} placeholder="Category" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Page template</label>
+                  <select value={editing.template || 'standard'} onChange={(e) => setEditing({ ...editing, template: e.target.value as 'standard' | 'wiki', full_layout: e.target.value === 'wiki' })} style={inputStyle}>
+                    <option value="standard">Standard article</option>
+                    <option value="wiki">CrossFire Wiki reference</option>
+                  </select>
+                  <p style={{ margin: '6px 0 0', fontSize: 11, lineHeight: 1.5, color: '#71717a' }}>Wiki reference pages use a table of contents, metadata sidebar and reading-focused layout.</p>
+                </div>
+                <div>
+                  <label style={labelStyle}>Source URL</label>
+                  <input type="url" value={editing.source_url || ''} onChange={(e) => setEditing({ ...editing, source_url: e.target.value })} style={inputStyle} placeholder="https://..." />
                 </div>
                 <div>
                   <label style={labelStyle}>Tags (comma-separated)</label>

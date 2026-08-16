@@ -144,7 +144,7 @@ const CAT_META: Record<ModeCategoryTab, { label: string; icon: any; color: strin
 
 export default function Modes() {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
   const [activeTab, setActiveTab] = useState<ModeCategoryTab>("competitive");
   const [selectedModeId, setSelectedModeId] = useState<string>("");
 

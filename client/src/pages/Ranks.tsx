@@ -146,7 +146,7 @@ function getTierStyle(idx: number, total: number) {
 
 export default function Ranks() {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [view, setView] = useState<"grid" | "table">("grid");
 

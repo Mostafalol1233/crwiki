@@ -66,32 +66,66 @@ export default function SearchPage() {
   const maps       = normalizeToArray(rawMaps);
   const mercs      = normalizeToArray(rawMercs);
 
+  const normalizeSearchText = (value: unknown) => String(value || "")
+    .toLocaleLowerCase()
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/ـ/g, "")
+    .trim();
+
+  const scoreMatch = (item: any, fields: string[]) => {
+    const needle = normalizeSearchText(debouncedQuery);
+    if (!needle) return 0;
+    const titleFields = new Set(["title", "title_ar", "titleAr", "name", "name_ar", "nameAr"]);
+    let score = 0;
+    for (const field of fields) {
+      const value = normalizeSearchText(item[field]);
+      if (!value || !value.includes(needle)) continue;
+      const titleWeight = titleFields.has(field) ? 3 : 1;
+      score = Math.max(score, value === needle ? 120 * titleWeight : value.startsWith(needle) ? 90 * titleWeight : 55 * titleWeight);
+    }
+    const tokens = needle.split(/\s+/).filter(Boolean);
+    if (tokens.length > 1) {
+      const haystack = fields.map((field) => normalizeSearchText(item[field])).join(" ");
+      score += tokens.filter((token) => haystack.includes(token)).length * 4;
+    }
+    return score;
+  };
+
   const filterData = (data: any[], fields: string[]) => {
     if (!data.length || !debouncedQuery) return [];
-    const lowerQ = debouncedQuery.toLowerCase();
-    return data.filter(item => fields.some(field => String(item[field] || "").toLowerCase().includes(lowerQ)));
+    return data
+      .map((item) => ({ item, score: scoreMatch(item, fields) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ item, score }) => ({ ...item, _searchScore: score }));
+  };
+
+  const entityUrl = (path: string, item: any) => {
+    const value = item.id || item.slug || item.name || item.title;
+    return value ? `${path}?q=${encodeURIComponent(String(value))}` : path;
   };
 
   const results = {
-    posts:       filterData(posts,   ["title", "summary", "content"]),
-    news:        filterData(news,    ["title", "content", "summary"]),
-    events:      filterData(events,  ["title", "description"]),
-    weapons:     filterData(weapons, ["name", "description", "category"]),
-    modes:       filterData(modes,   ["name", "description"]),
-    ranks:       filterData(ranks,   ["name", "description", "tier"]),
-    maps:        filterData(maps,    ["name", "description", "mode", "category"]),
-    mercenaries: filterData(mercs,   ["name", "role"]),
+    posts:       filterData(posts,   ["title", "title_ar", "summary", "summary_ar", "content", "content_ar"]),
+    news:        filterData(news,    ["title", "title_ar", "titleAr", "content", "content_ar", "contentAr", "summary", "summary_ar"]),
+    events:      filterData(events,  ["title", "title_ar", "description", "description_ar"]),
+    weapons:     filterData(weapons, ["name", "name_ar", "nameAr", "description", "description_ar", "category", "category_ar"]),
+    modes:       filterData(modes,   ["name", "name_ar", "nameAr", "description", "description_ar", "type", "category"]),
+    ranks:       filterData(ranks,   ["name", "name_ar", "nameAr", "description", "description_ar", "tier"]),
+    maps:        filterData(maps,    ["name", "name_ar", "nameAr", "description", "description_ar", "mode", "category"]),
+    mercenaries: filterData(mercs,   ["name", "name_ar", "nameAr", "role", "role_ar", "description", "description_ar"]),
   };
 
   const allResults = [
     ...results.posts.map(i       => ({ ...i, _type: "post",       url: `/posts/${i.post_slug || i.id}` })),
     ...results.news.map(i        => ({ ...i, _type: "news",       url: `/news/${i.news_slug || i.id}` })),
     ...results.events.map(i      => ({ ...i, _type: "event",      url: `/events/${i.event_name_slug || i.id}` })),
-    ...results.weapons.map(i     => ({ ...i, _type: "weapon",     url: `/weapons` })),
-    ...results.modes.map(i       => ({ ...i, _type: "mode",       url: `/modes` })),
-    ...results.ranks.map(i       => ({ ...i, _type: "rank",       url: `/ranks` })),
-    ...results.maps.map(i        => ({ ...i, _type: "map",        url: `/maps` })),
-    ...results.mercenaries.map(i => ({ ...i, _type: "mercenary",  url: `/mercenaries` })),
+    ...results.weapons.map(i     => ({ ...i, _type: "weapon",     url: entityUrl("/weapons", i) })),
+    ...results.modes.map(i       => ({ ...i, _type: "mode",       url: entityUrl("/modes", i) })),
+    ...results.ranks.map(i       => ({ ...i, _type: "rank",       url: entityUrl("/ranks", i) })),
+    ...results.maps.map(i        => ({ ...i, _type: "map",        url: entityUrl("/maps", i) })),
+    ...results.mercenaries.map(i => ({ ...i, _type: "mercenary",  url: entityUrl("/mercenaries", i) })),
   ];
 
   const typeColors: Record<string, string> = {

@@ -103,6 +103,8 @@ function buildFullRankList(): Rank[] {
 const STATIC_RANKS: Rank[] = buildFullRankList(); // 104 complete ranks
 
 const extractExpRequired = (rank: Rank) => {
+  // Static verified threshold wins first — matches the calculator's own policy
+  if (rank.tier && rank.tier in CF_EXP) return CF_EXP[rank.tier];
   const fromDb = (rank as any).exp_required;
   if (typeof fromDb === "number" && fromDb > 0) return fromDb;
   if (typeof rank.expRequired === "number" && rank.expRequired > 0) return rank.expRequired;
@@ -168,8 +170,12 @@ export default function Ranks() {
       return {
         ...fallback,
         ...db,
-        // ensure EXP is filled in from formula when DB has 0
-        expRequired: ((db as any).exp_required > 0 ? (db as any).exp_required : db.expRequired ?? 0) || fallback.expRequired,
+        // Static verified thresholds ALWAYS win. CF_EXP below is the exact table
+        // scraped from https://crossfire.z8games.com/ranks.html and verified
+        // 2026-08-16. DB exp_required is only a last-resort gap filler so a
+        // wrong admin edit can never corrupt the displayed EXP values.
+        expRequired: CF_EXP[fallback.tier!] ??
+          ((((db as any).exp_required > 0 ? (db as any).exp_required : (db.expRequired ?? 0)) || fallback.expRequired) ?? 0),
         imageUrl: (db as any).image_url || db.imageUrl || fallback.imageUrl,
         bonus: db.bonus || fallback.bonus,
       };

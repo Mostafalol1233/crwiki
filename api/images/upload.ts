@@ -24,6 +24,14 @@ const upload = multer({
   },
 }).single("file");
 
+type UploadMiddleware = (
+  req: unknown,
+  res: unknown,
+  next: (error?: unknown) => void,
+) => void;
+
+const uploadMiddleware = upload as unknown as UploadMiddleware;
+
 function cors(res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -33,7 +41,7 @@ function cors(res: VercelResponse) {
 
 function runUpload(req: VercelRequest, res: VercelResponse): Promise<void> {
   return new Promise((resolve, reject) => {
-    upload(req as any, res as any, (error: any) => {
+    uploadMiddleware(req, res, (error?: unknown) => {
       if (error) reject(error);
       else resolve();
     });

@@ -13,12 +13,15 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
   const { language } = useLanguage();
-  const localizePath = (url: string) => {
-    if (language !== "ar" || !url.startsWith("/") || url === "/ar" || url.startsWith("/ar/")) return url;
-    return `/ar${url === "/" ? "" : url}`;
+  // WouterRouter already mounts Arabic pages under `/ar`; breadcrumb inputs
+  // must therefore remain base-relative to avoid generating `/ar/ar/...`.
+  const routePath = (url: string) => {
+    if (!url.startsWith("/")) return url;
+    const withoutLanguagePrefix = url.replace(/^\/ar(?=\/|$)/, "");
+    return withoutLanguagePrefix || "/";
   };
   const allItems = [
-    { name: "Home", url: "/" },
+    { name: language === "ar" ? "الرئيسية" : "Home", url: "/" },
     ...items,
   ];
 
@@ -31,7 +34,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
             <span className="text-foreground font-medium">{item.name}</span>
           ) : (
             <Link
-              href={localizePath(item.url)}
+              href={routePath(item.url)}
               className="hover:text-foreground transition-colors flex items-center gap-1"
             >
               {index === 0 && <Home className="h-3 w-3" />}

@@ -24,6 +24,15 @@ async function readContentRows(
   opts: { limit?: number; offset?: number; category?: string } = {}
 ): Promise<{ rows: any[]; total: number }> {
   if (type === 'weapons') {
+    // Keep the catalogue compatible with older Supabase schemas: try the richer
+    // acquisition fields first, then fall back to the stable public projection.
+    const enrichedRows = await q(
+      'weapons',
+      'id,name,category,description,stats,image_url,background_url,created_at,acquisition_type,acquisition_method,acquisition_verified,acquisition,shop_type,currency,source_url',
+      'name',
+    );
+    if (enrichedRows.length > 0) return { rows: enrichedRows, total: enrichedRows.length };
+
     const rows = await q('weapons', 'id,name,category,description,stats,image_url,created_at', 'name');
     return { rows, total: rows.length };
   }

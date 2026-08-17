@@ -13,12 +13,13 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
   const { language } = useLanguage();
+  const isAr = language === "ar";
   const localizePath = (url: string) => {
     if (language !== "ar" || !url.startsWith("/") || url === "/ar" || url.startsWith("/ar/")) return url;
     return `/ar${url === "/" ? "" : url}`;
   };
   const allItems = [
-    { name: "Home", url: "/" },
+    { name: isAr ? "الرئيسية" : "Home", url: "/" },
     ...items,
   ];
 

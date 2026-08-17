@@ -6,6 +6,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { LATEST_CROSSFIRE_WEST_WEAPONS } from "../../../shared/crossfire-west-latest-weapons";
 
 interface Weapon {
   id: string;
@@ -17,6 +18,7 @@ interface Weapon {
   description?: string;
   stats?: Record<string, any>;
   highlightedName?: string;
+  createdAt?: string;
 }
 
 const normalizeWeapon = (weapon: Partial<Weapon> & Record<string, any>): Weapon => ({
@@ -54,6 +56,23 @@ function getCatStyle(cat: string) {
   return (normalised ? CATEGORY_COLORS[normalised] : null) || { color: "#f5a623", icon: Zap };
 }
 
+const CATEGORY_LABELS_AR: Record<string, string> = {
+  "Assault Rifle": "بندقية هجومية",
+  "Sniper Rifle": "بندقية قنص",
+  "SMG": "رشاش خفيف",
+  "Shotgun": "بندقية خرطوش",
+  "Machine Gun": "رشاش",
+  "Pistol": "مسدس",
+  "Melee": "قتال قريب",
+  "Uncategorized": "غير مصنف",
+};
+
+function localizeCategory(category: string, isAr: boolean) {
+  if (!isAr) return category;
+  const key = Object.keys(CATEGORY_LABELS_AR).find((candidate) => candidate.toLowerCase() === category.toLowerCase());
+  return key ? CATEGORY_LABELS_AR[key] : category;
+}
+
 function StatBar({ label, value, color = "#f5a623" }: { label: string; value: any; color?: string }) {
   const num = Math.min(Math.max(parseFloat(String(value)) || 0, 0), 100);
   return (
@@ -74,8 +93,20 @@ function StatBar({ label, value, color = "#f5a623" }: { label: string; value: an
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
+function formatReleaseDate(date: string, isAr: boolean) {
+  return new Intl.DateTimeFormat(isAr ? "ar-EG" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
 export default function Weapons() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
+  const latestWestWeapons = LATEST_CROSSFIRE_WEST_WEAPONS;
+  const newestWestRelease = latestWestWeapons[0];
   const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [letter, setLetter] = useState<string>("");
@@ -161,7 +192,7 @@ export default function Weapons() {
     });
   }, [results, sort, order]);
 
-  const breadcrumbs = [{ name: "Weapons", url: "/weapons" }];
+  const breadcrumbs = [{ name: isAr ? "الأسلحة" : "Weapons", url: isAr ? "/ar/weapons" : "/weapons" }];
 
   return (
     <>
@@ -184,6 +215,131 @@ export default function Weapons() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <Breadcrumbs items={breadcrumbs} />
 
+          {/* ── Newest CrossFire West releases ── */}
+          {newestWestRelease && (
+            <section
+              className="relative mt-6 mb-10 overflow-hidden rounded-2xl"
+              style={{
+                background: "linear-gradient(135deg, rgba(245,166,35,0.14), rgba(20,20,24,0.96) 52%, rgba(10,10,12,0.98))",
+                border: "1px solid rgba(245,166,35,0.26)",
+                boxShadow: "0 20px 70px rgba(0,0,0,0.24)",
+              }}
+            >
+              <div className="grid min-h-[280px] lg:grid-cols-[1.08fr_0.92fr]">
+                <div className="relative flex flex-col justify-center p-6 md:p-9">
+                  <div className="absolute -left-20 -top-24 h-64 w-64 rounded-full" style={{ background: "rgba(245,166,35,0.12)", filter: "blur(12px)" }} />
+                  <div className="relative z-10">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <Badge className="rounded-full border border-[#f5a623]/40 bg-[#f5a623]/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#f5c66b]">
+                        {isAr ? "الأحدث في CrossFire West" : "Latest in CrossFire West"}
+                      </Badge>
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#8f8f98" }}>
+                        {formatReleaseDate(newestWestRelease.releaseDate, isAr)}
+                      </span>
+                    </div>
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.28em]" style={{ color: "#f5a623" }}>
+                      {isAr ? "إصدار مؤكد من الناشر" : "Publisher-confirmed release"}
+                    </p>
+                    <h2 className="max-w-xl text-3xl font-black tracking-tight md:text-5xl" style={{ color: "var(--foreground)" }}>
+                      {isAr ? newestWestRelease.titleAr : newestWestRelease.titleEn}
+                    </h2>
+                    <p className="mt-4 max-w-2xl text-sm leading-7 md:text-[15px]" style={{ color: "#b9b9c2" }}>
+                      {isAr ? newestWestRelease.summaryAr : newestWestRelease.summaryEn}
+                    </p>
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <span className="rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em]" style={{ background: "rgba(255,255,255,0.08)", color: "#d7d7dc" }}>
+                        {isAr ? newestWestRelease.categoryAr : newestWestRelease.categoryEn}
+                      </span>
+                      <a
+                        href={newestWestRelease.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold underline decoration-[#f5a623]/50 underline-offset-4 transition-colors hover:text-[#f5a623]"
+                        style={{ color: "#c8c8cf" }}
+                      >
+                        {isAr ? newestWestRelease.sourceLabelAr : newestWestRelease.sourceLabelEn}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative min-h-[240px] overflow-hidden border-t border-white/10 lg:min-h-0 lg:border-l lg:border-t-0" style={{ background: "rgba(0,0,0,0.28)" }}>
+                  <div className="absolute inset-0" style={{ background: "radial-gradient(circle at center, rgba(245,166,35,0.16), transparent 62%)" }} />
+                  <img
+                    src={newestWestRelease.imageUrl}
+                    alt={isAr ? newestWestRelease.titleAr : newestWestRelease.titleEn}
+                    className="relative h-full w-full object-contain p-5 md:p-8"
+                    loading="eager"
+                  />
+                  <span className="absolute bottom-4 left-4 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70 backdrop-blur-sm">
+                    Z8Games · {isAr ? "خارطة طريق 2026" : "2026 Roadmap"}
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="mb-10">
+            <div className="mb-4 flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em]" style={{ color: "#f5a623" }}>
+                  {isAr ? "تحديثات موثقة" : "Verified updates"}
+                </p>
+                <h2 className="mt-1 text-2xl font-black tracking-tight" style={{ color: "var(--foreground)" }}>
+                  {isAr ? "أحدث أسلحة نسخة الغرب" : "Newest CrossFire West weapons"}
+                </h2>
+              </div>
+              <p className="max-w-md text-xs leading-5 sm:text-right" style={{ color: "#777" }}>
+                {isAr
+                  ? "ترتيب زمني يبدأ بأحدث بطاقات الأسلحة في خارطة طريق Z8Games. لا نضيف إحصاءات غير منشورة."
+                  : "A time-ordered view of the newest weapon cards in the Z8Games roadmap. Unpublished stats are not invented."}
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {latestWestWeapons.slice(1).map((release) => (
+                <article
+                  key={release.id}
+                  className="group overflow-hidden rounded-xl transition-transform duration-200 hover:-translate-y-1"
+                  style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(245,166,35,0.1), rgba(0,0,0,0.42))" }}>
+                    <img
+                      src={release.imageUrl}
+                      alt={isAr ? release.titleAr : release.titleEn}
+                      className="h-full w-full object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
+                      loading="lazy"
+                    />
+                    <span className="absolute left-3 top-3 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-[#f5c66b] backdrop-blur-sm">
+                      {formatReleaseDate(release.releaseDate, isAr)}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-[0.14em]" style={{ color: "#f5a623" }}>
+                        {isAr ? release.categoryAr : release.categoryEn}
+                      </span>
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#666" }}>WEST</span>
+                    </div>
+                    <h3 className="text-base font-black leading-tight" style={{ color: "var(--foreground)" }}>
+                      {isAr ? release.titleAr : release.titleEn}
+                    </h3>
+                    <p className="mt-2 line-clamp-4 text-xs leading-5" style={{ color: "#888" }}>
+                      {isAr ? release.summaryAr : release.summaryEn}
+                    </p>
+                    <a
+                      href={release.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex text-[10px] font-bold uppercase tracking-[0.14em] underline decoration-[#f5a623]/40 underline-offset-4 transition-colors hover:text-[#f5a623]"
+                      style={{ color: "#aaa" }}
+                    >
+                      {isAr ? "فتح المصدر الرسمي" : "Open official source"}
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
           {/* ── Header ── */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
@@ -191,14 +347,16 @@ export default function Weapons() {
                 <Crosshair className="h-6 w-6" style={{ color: "#f5a623" }} />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-0.5" style={{ color: "#f5a623" }}>Full Arsenal</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-0.5" style={{ color: "#f5a623" }}>{isAr ? "الترسانة الكاملة" : "Full Arsenal"}</p>
                 <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight leading-none" style={{ color: "var(--foreground)" }}>
                   {t("weapons") || "Weapons"}
                 </h1>
               </div>
             </div>
             <p className="text-sm mt-2" style={{ color: "#666" }}>
-              {total > 0 ? `${total} weapons` : "Loading..."} — explore stats, categories and details
+              {total > 0
+                ? `${total.toLocaleString(isAr ? "ar-EG" : "en-US")} ${isAr ? "سلاح" : total === 1 ? "weapon" : "weapons"}`
+                : isAr ? "جارٍ التحميل..." : "Loading..."} {isAr ? "— استعرض الإحصاءات والفئات والتفاصيل" : "— explore stats, categories and details"}
             </p>
           </div>
 
@@ -208,7 +366,7 @@ export default function Weapons() {
             <div className="relative max-w-lg">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#555" }} />
               <Input
-                placeholder="Search weapons..."
+                placeholder={isAr ? "ابحث في الأسلحة..." : "Search weapons..."}
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setLetter(""); }}
                 className="pl-10 pr-10"
@@ -246,7 +404,7 @@ export default function Weapons() {
                   className="h-7 px-2 flex items-center gap-1 text-[10px] font-bold rounded-sm"
                   style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}
                 >
-                  <X className="h-3 w-3" /> Clear
+                  <X className="h-3 w-3" /> {isAr ? "مسح" : "Clear"}
                 </button>
               )}
             </div>
@@ -267,7 +425,7 @@ export default function Weapons() {
                         border: `1px solid ${selectedCategory === cat ? style.color : "rgba(255,255,255,0.06)"}`,
                       }}
                     >
-                      {cat === "all" ? "All" : cat}
+                      {cat === "all" ? (isAr ? "الكل" : "All") : localizeCategory(cat, isAr)}
                     </button>
                   );
                 })}
@@ -287,7 +445,7 @@ export default function Weapons() {
                     border: `1px solid ${sort === s ? "rgba(245,166,35,0.3)" : "rgba(255,255,255,0.06)"}`,
                   }}
                 >
-                  {s === "alpha" ? "Name" : "Date"}
+                  {s === "alpha" ? (isAr ? "الاسم" : "Name") : (isAr ? "التاريخ" : "Date")}
                 </button>
               ))}
               <button
@@ -296,7 +454,7 @@ export default function Weapons() {
                 style={{ background: "var(--card)", color: "#666", border: "1px solid rgba(255,255,255,0.06)" }}
               >
                 <ChevronUp className={`h-3 w-3 transition-transform duration-200 ${order === "desc" ? "rotate-180" : ""}`} />
-                {order === "asc" ? "Asc" : "Desc"}
+                {order === "asc" ? (isAr ? "تصاعدي" : "Asc") : (isAr ? "تنازلي" : "Desc")}
               </button>
             </div>
           </div>
@@ -308,20 +466,22 @@ export default function Weapons() {
             </div>
           ) : isError ? (
             <div className="py-20 text-center" style={{ border: "1px dashed rgba(239,68,68,0.2)", borderRadius: "4px" }}>
-              <p className="text-sm mb-3" style={{ color: "#f87171" }}>{(error as Error)?.message || "Failed to load weapons."}</p>
+              <p className="text-sm mb-3" style={{ color: "#f87171" }}>{(error as Error)?.message || (isAr ? "تعذر تحميل الأسلحة." : "Failed to load weapons")}</p>
               <button
                 onClick={() => fetchWeapons({ reset: true, pageOverride: 1 })}
                 className="px-5 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:bg-[#f5a623] hover:text-black"
                 style={{ border: "1px solid rgba(255,255,255,0.1)", color: "#888", borderRadius: "2px" }}
               >
-                Retry
+                  {isAr ? "إعادة المحاولة" : "Retry"}
               </button>
             </div>
           ) : sortedWeapons.length === 0 ? (
             <div className="py-20 text-center" style={{ border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "4px" }}>
               <Crosshair className="h-12 w-12 mx-auto mb-3 opacity-20" style={{ color: "#f5a623" }} />
               <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "#444" }}>
-                {searchQuery ? "No weapons match your search" : "No weapons available"}
+                {searchQuery
+                  ? (isAr ? "لا توجد أسلحة تطابق بحثك" : "No weapons match your search")
+                  : (isAr ? "لا توجد أسلحة متاحة" : "No weapons available")}
               </p>
             </div>
           ) : (
@@ -374,7 +534,7 @@ export default function Weapons() {
                                 className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5"
                                 style={{ background: `${catStyle.color}20`, color: catStyle.color, borderRadius: "2px", border: `1px solid ${catStyle.color}30` }}
                               >
-                                {weapon.category}
+                                {localizeCategory(weapon.category, isAr)}
                               </span>
                             </div>
                           )}
@@ -438,7 +598,7 @@ export default function Weapons() {
                               className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1"
                               style={{ background: `${catStyle.color}18`, color: catStyle.color, borderRadius: "2px" }}
                             >
-                              {weapon.category}
+                              {localizeCategory(weapon.category, isAr)}
                             </span>
                           )}
                         </div>

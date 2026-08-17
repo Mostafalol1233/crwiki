@@ -18,6 +18,8 @@ interface NewsItem {
   dateRange: string;
   image: string;
   category: string;
+  categoryAr?: string;
+  category_ar?: string;
   content: string;
   htmlContent?: string;
   author: string;
@@ -45,7 +47,7 @@ export default function NewsDetail() {
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
-  const [isRTL, setIsRTL] = useState(false);
+  const isRTL = language === "ar";
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<{ open: boolean; src: string; alt?: string }>({ open: false, src: "" });
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
@@ -56,29 +58,24 @@ export default function NewsDetail() {
     queryKey: ["news", slug || legacyId],
     enabled: !!(slug || legacyId),
     queryFn: async () => {
-      const { getNewsBySlug, getNews } = await import("@/lib/supabaseApi");
+      const { getNewsBySlug, getNewsById, getNews } = await import("@/lib/supabaseApi");
       if (slug) {
         try { return await getNewsBySlug(slug); }
         catch {
-          const { items } = await getNews({ limit: 200 });
+          const { items } = await getNews({ limit: 24, offset: 0 });
           const found = items.find((n: any) => n.news_slug === slug || n.id === slug);
           if (found) return found;
           throw new Error("News not found");
         }
       }
       if (!legacyId) throw new Error("No news ID or slug provided");
-      const { items } = await getNews({ limit: 200 });
-      const found = items.find((n: any) => n.id === legacyId);
-      if (found) return found;
+      const foundById = await getNewsById(legacyId);
+      if (foundById) return foundById;
       throw new Error("News not found");
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
-
-  useEffect(() => {
-    setIsRTL(language === 'ar');
-  }, [language]);
 
   const { data: fallbackPost } = useQuery<any>({
     queryKey: ["/api/posts/" + (slug || legacyId)],
@@ -268,12 +265,12 @@ export default function NewsDetail() {
               </a>
             </Link>
             <button
-              onClick={() => setIsRTL(!isRTL)}
+              onClick={toggleLanguage}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80"
               style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}
             >
               <Globe className="h-3 w-3" />
-              {isRTL ? "LTR" : "Translate"}
+              {language === "ar" ? "EN" : "AR"}
             </button>
           </div>
 
@@ -283,7 +280,7 @@ export default function NewsDetail() {
                 <header className="mb-12">
                   <div className="flex flex-wrap items-center gap-4 mb-6">
                     <Badge className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1">
-                      {newsItem.category}
+                      {language === "ar" ? (newsItem.categoryAr || newsItem.category_ar || newsItem.category) : newsItem.category}
                     </Badge>
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                       <Target className="h-4 w-4" />
@@ -305,10 +302,10 @@ export default function NewsDetail() {
                     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl mb-12">
                       <ContentImage
                         src={newsItem.image}
-                        alt={newsItem.title}
-                        className="w-full h-full object-cover cursor-zoom-in"
+                        alt={selectedTitle}
+                        className="w-full h-full object-contain p-4 cursor-zoom-in"
                         onLoad={() => setImgLoaded(true)}
-                        onClick={() => setViewer({ open: true, src: newsItem.image, alt: newsItem.title })}
+                        onClick={() => setViewer({ open: true, src: newsItem.image, alt: selectedTitle })}
                       />
                     </div>
                   )}
@@ -316,7 +313,7 @@ export default function NewsDetail() {
               )}
 
               <div
-                className={`prose prose-xl dark:prose-invert max-w-none mb-16 ${isRTL ? "text-right" : ""}`}
+                className={`prose prose-xl dark:prose-invert max-w-none mb-16 news-rich-content ${isRTL ? "text-right" : ""}`}
                 dir={isRTL ? "rtl" : undefined}
                 ref={contentRef}
                 dangerouslySetInnerHTML={{
@@ -331,6 +328,19 @@ export default function NewsDetail() {
                   })()
                 }}
               />
+              <style>{`
+                .news-rich-content img { max-width: 100%; height: auto; object-fit: contain; margin: 1.5rem auto; display: block; }
+                .news-rich-content table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+                .news-rich-content .post-color-orange { color: #ff9900 !important; }
+                .news-rich-content .post-color-yellow { color: #f5d020 !important; }
+                .news-rich-content .post-color-green { color: #4ade80 !important; }
+                .news-rich-content .post-color-blue { color: #60a5fa !important; }
+                .news-rich-content .post-color-red { color: #f87171 !important; }
+                .news-rich-content .post-color-purple { color: #c084fc !important; }
+                .news-rich-content .post-color-white { color: #f4f4f5 !important; }
+                .news-rich-content .post-color-cyan { color: #22d3ee !important; }
+                .news-rich-content strong, .news-rich-content b { color: inherit; }
+              `}</style>
 
               <div className="mt-12">
                 <Link href={localizedNewsPath}>

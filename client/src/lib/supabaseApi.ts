@@ -263,8 +263,15 @@ export async function getMercenaries() {
 
 // ─── Posts ───────────────────────────────────────────────────────────────────
 export async function getPosts(opts: { limit?: number; offset?: number; category?: string } = {}) {
+  const { limit = 20, offset = 0, category } = opts;
   try {
-    const response = await fetch('/api/content?type=posts');
+    const params = new URLSearchParams({
+      type: 'posts',
+      limit: String(Math.min(50, Math.max(1, limit))),
+      offset: String(Math.max(0, offset)),
+    });
+    if (category) params.set('category', category);
+    const response = await fetch(`/api/content?${params.toString()}`);
     if (response.ok) {
       const json = await response.json();
       const posts = Array.isArray(json.posts) ? json.posts : [];
@@ -299,14 +306,13 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
           created_at: p.created_at || p.date,
           updated_at: p.updated_at,
         })),
-        total: posts.length,
+        total: Number.isFinite(Number(json.total)) ? Number(json.total) : posts.length,
       };
     }
   } catch {
     // fall back to Supabase below
   }
 
-  const { limit = 20, offset = 0, category } = opts;
   const result = await runSafeQuery(fallbackPosts, async () => {
     let query = supabase.from('posts').select('*', { count: 'exact' }).order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
@@ -421,6 +427,14 @@ export async function getNewsBySlug(slug: string) {
   return normalizeNews(data || fallbackNews[0]);
 }
 
+export async function getNewsById(id: string) {
+  const result = await runSafeQuery<any>(null, async () => {
+    return await supabase.from('news').select('*').eq('id', id).maybeSingle();
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  return data ? normalizeNews(data) : null;
+}
+
 function normalizeNews(n: any) {
   return {
     id: String(n.id || ''),
@@ -460,6 +474,18 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
   } catch {
     const items = fallbackEvents.slice(offset, offset + limit).map(normalizeEvent);
     return { items, total: fallbackEvents.length };
+  }
+}
+
+export async function getEventById(id: string) {
+  try {
+    const result = await runSafeQuery<any>(null, async () => {
+      return await supabase.from('events').select('*').eq('id', id).maybeSingle();
+    });
+    const data = Array.isArray(result.data) ? result.data[0] : result.data;
+    return data ? normalizeEvent(data) : null;
+  } catch {
+    return null;
   }
 }
 

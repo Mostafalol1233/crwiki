@@ -50,8 +50,8 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat, isArab
               <ContentImage
                 src={item.image || item.imageUrl}
                 alt={title}
-                className="group-hover:scale-105 transition-transform duration-700"
-                style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 280 }}
+                className="transition-opacity duration-500 group-hover:opacity-90"
+                style={{ width: "100%", height: "100%", objectFit: "contain", padding: 16, minHeight: 280 }}
               />
             ) : (
               <div style={{ width: "100%", minHeight: 280, background: "#0d1117", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -110,8 +110,8 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }
         <div style={{ position: "relative", overflow: "hidden", paddingTop: "55%" }}>
           {item.image || item.imageUrl ? (
             <ContentImage src={item.image || item.imageUrl} alt={title} loading="lazy"
-              className="group-hover:scale-105 transition-transform duration-500"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              className="transition-opacity duration-500 group-hover:opacity-90"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 8 }}
             />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "#0d1117", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -202,13 +202,13 @@ export default function News() {
 
   const { data: postsData, isLoading: postsLoading } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/posts", "news-page"],
-    queryFn: () => getPosts({ limit: 50, offset: 0 }),
+    queryFn: () => getPosts({ limit: 12, offset: 0 }),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 20 }],
-    queryFn: () => getEvents({ limit: 20 }),
+    queryFn: () => getEvents({ limit: 8 }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -284,7 +284,7 @@ export default function News() {
 
   const total = newsData?.total || 0;
   const hasMore = allLoadedNews.length < total;
-  const isLoading = newsLoading && postsLoading;
+  const isLoading = newsLoading || postsLoading;
 
   const localPath = (path: string) => language === "ar" ? `/ar${path}` : path;
 
@@ -483,7 +483,7 @@ export default function News() {
                             color: GOLD, borderRadius: 3, cursor: "pointer",
                           }}
                         >
-                          Load More Articles
+                          {language === "ar" ? "تحميل المزيد" : "Load More Articles"}
                         </button>
                       </div>
                     )}

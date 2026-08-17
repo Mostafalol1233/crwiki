@@ -18,7 +18,11 @@ import WikiPageTemplate from "@/components/WikiPageTemplate";
 
 interface WikiTab {
   title: string;
+  titleAr?: string;
+  title_ar?: string;
   content: string;
+  contentAr?: string;
+  content_ar?: string;
   image?: string;
 }
 
@@ -27,7 +31,11 @@ export default function Article() {
   const slug = (params as any)?.slug as string | undefined;
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
+  const localizePath = (path: string) => {
+    if (language !== "ar" || !path.startsWith("/") || path === "/ar" || path.startsWith("/ar/")) return path;
+    return `/ar${path === "/" ? "" : path}`;
+  };
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { data: article, isLoading } = useQuery<any>({
@@ -52,7 +60,7 @@ export default function Article() {
 
   const { data: postsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/posts"],
-    queryFn: () => getPosts({ limit: 50 }) as any,
+    queryFn: () => getPosts({ limit: 12 }) as any,
   });
   const allPosts: Article[] = (postsData?.items || []) as any[];
 
@@ -64,9 +72,17 @@ export default function Article() {
     ) || null;
   }, [article, allPosts, slug, legacyId]);
 
+  const localizedTitle = language === "ar" ? (finalArticle?.titleAr || finalArticle?.title) : finalArticle?.title;
+  const localizedSummary = language === "ar"
+    ? (finalArticle?.summaryAr || finalArticle?.summary_ar || finalArticle?.summary)
+    : finalArticle?.summary;
+  const localizedContent = language === "ar"
+    ? (finalArticle?.contentAr || finalArticle?.content_ar || finalArticle?.content)
+    : finalArticle?.content;
+
   useEffect(() => {
-    if (finalArticle?.content) {
-      const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
+    if (localizedContent) {
+      const doc = new DOMParser().parseFromString(localizedContent, "text/html");
       const hTags = doc.querySelectorAll("h2, h3, h4");
       const hData = Array.from(hTags).map((h, i) => {
         const id = `heading-${i}`;
@@ -75,7 +91,7 @@ export default function Article() {
       });
       setHeadings(hData);
     }
-  }, [finalArticle?.content]);
+  }, [localizedContent]);
 
   useEffect(() => {
     if (legacyId && finalArticle?.post_slug) {
@@ -87,8 +103,8 @@ export default function Article() {
   }, [legacyId, finalArticle?.post_slug, setLocation]);
 
   useEffect(() => {
-    setIsRTL(finalArticle?.language === 'ar');
-  }, [finalArticle?.language]);
+    setIsRTL(language === "ar");
+  }, [language]);
 
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
 
@@ -96,9 +112,9 @@ export default function Article() {
 
   const breadcrumbs = useMemo(() => [
     { name: t("home"), url: "/" },
-    { name: finalArticle?.category || "News", url: `/category/${finalArticle?.category?.toLowerCase() || "news"}` },
-    { name: finalArticle?.title || "Article", url: "" }
-  ], [t, finalArticle]);
+    { name: finalArticle?.category || "News", url: localizePath(`/category/${finalArticle?.category?.toLowerCase() || "news"}`) },
+    { name: localizedTitle || "Article", url: "" }
+  ], [t, finalArticle, language]);
 
   const relatedArticles = useMemo(() => {
     if (!finalArticle || !allPosts) return [];
@@ -121,14 +137,14 @@ export default function Article() {
   }, [finalArticle]);
 
   const rawContent = useMemo(() => {
-    if (!finalArticle?.content) return "";
-    const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
+    if (!localizedContent) return "";
+    const doc = new DOMParser().parseFromString(localizedContent, "text/html");
     const hTags = doc.querySelectorAll("h2, h3, h4");
     hTags.forEach((h, i) => {
       h.id = `heading-${i}`;
     });
     return doc.body.innerHTML;
-  }, [finalArticle?.content]);
+  }, [localizedContent]);
 
   const firstImageMatch = useMemo(() => /<img[^>]+src=["']([^"']+)["']/i.exec(rawContent || ""), [rawContent]);
   const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
@@ -257,12 +273,12 @@ export default function Article() {
               </a>
             </Link>
             <button
-              onClick={() => setIsRTL(!isRTL)}
+              onClick={toggleLanguage}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80"
               style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}
             >
               <Languages className="h-3 w-3" />
-              {isRTL ? "LTR" : "Translate"}
+              {language === "ar" ? "EN" : "AR"}
             </button>
           </div>
 
@@ -273,13 +289,13 @@ export default function Article() {
                   <>
                     <header className="mb-12">
                       <div className="flex flex-wrap items-center gap-2 mb-6 no-print">
-                        <Link href={`/category/${finalArticle?.category?.toLowerCase() || "news"}`}>
+                        <Link href={localizePath(`/category/${finalArticle?.category?.toLowerCase() || "news"}`)}>
                           <Badge variant="default" className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1">
                             {finalArticle?.category || "NEWS"}
                           </Badge>
                         </Link>
                         {finalArticle?.tags && Array.isArray(finalArticle.tags) && finalArticle.tags.map((tag: string) => (
-                          <Link key={tag} href={`/search?q=${encodeURIComponent(tag)}`}>
+                          <Link key={tag} href={localizePath(`/search?q=${encodeURIComponent(tag)}`)}>
                             <Badge variant="secondary" className="rounded-none uppercase font-bold text-[10px] px-3 py-1">
                               #{tag}
                             </Badge>
@@ -288,7 +304,7 @@ export default function Article() {
                       </div>
 
                       <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}>
-                        {finalArticle?.title}
+                        {localizedTitle}
                       </h1>
 
                       <div className="flex flex-wrap items-center gap-6 text-xs font-bold uppercase tracking-widest text-muted-foreground border-y py-6 mb-12 border-border/50 no-print">
@@ -298,16 +314,16 @@ export default function Article() {
                               {finalArticle?.author?.[0]?.toUpperCase() || "B"}
                             </AvatarFallback>
                           </Avatar>
-                          <span>BY {finalArticle?.author}</span>
+                          <span>{language === "ar" ? "بواسطة" : "BY"} {finalArticle?.author}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>{finalArticle?.readingTime} MIN READ</span>
+                          <span>{finalArticle?.readingTime} {language === "ar" ? "دقيقة قراءة" : "MIN READ"}</span>
                         </div>
                         {isAdmin && typeof finalArticle?.views !== 'undefined' && (
                           <div className="flex items-center gap-2">
                             <Eye className="h-4 w-4" />
-                            <span>{finalArticle.views} VIEWS</span>
+                            <span>{finalArticle.views} {language === "ar" ? "مشاهدة" : "VIEWS"}</span>
                           </div>
                         )}
                         <span>{language === "ar" ? "نُشر: " : "PUBLISHED: "}{publishedLabel}</span>
@@ -317,10 +333,10 @@ export default function Article() {
                         <div className="relative w-full aspect-video rounded-none border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
                           <ContentImage
                             src={finalArticle.image}
-                            alt={finalArticle.title}
+                            alt={localizedTitle || "Article"}
                             className="object-contain w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
                             onLoad={() => setImgLoaded(true)}
-                            onClick={() => setViewer({ open: true, src: finalArticle.image, alt: finalArticle.title })}
+                            onClick={() => setViewer({ open: true, src: finalArticle.image, alt: localizedTitle || "Article" })}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -331,14 +347,14 @@ export default function Article() {
                       {finalArticle?.isVerified && (
                         <Badge variant="outline" className="rounded-none border-green-500 text-green-500 font-black uppercase italic px-3 py-1 bg-green-500/5">
                           <CheckCircle className="h-3 w-3 mr-2" />
-                          Verified Content
+                          {language === "ar" ? "محتوى موثق" : "Verified Content"}
                         </Badge>
                       )}
                       {finalArticle?.sourceUrl && (
                         <Button variant="ghost" size="sm" asChild className="p-0 h-auto text-[10px] font-black uppercase tracking-tight italic hover:text-primary transition-colors">
                           <a href={finalArticle.sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center">
                             <ExternalLink className="h-3 w-3 mr-2" />
-                            Original Source
+                            {language === "ar" ? "المصدر الأصلي" : "Original Source"}
                           </a>
                         </Button>
                       )}
@@ -348,7 +364,7 @@ export default function Article() {
                       <div className="mb-12 p-8 border border-border/50 bg-muted/5 rounded-none no-print wiki-toc">
                         <div className="flex items-center gap-2 mb-6">
                           <List className="h-5 w-5 text-primary" />
-                          <h2 className="text-xl font-black uppercase italic tracking-tight">Table of Contents</h2>
+                          <h2 className="text-xl font-black uppercase italic tracking-tight">{language === "ar" ? "المحتويات" : "Table of Contents"}</h2>
                         </div>
                         <nav className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
                           {headings.map((h) => (
@@ -371,9 +387,9 @@ export default function Article() {
                   </>
                 )}
 
-                {!finalArticle.fullLayout && finalArticle?.summary && (
+                {!finalArticle.fullLayout && localizedSummary && (
                   <div className="mb-12 p-8 border-l-4 border-primary bg-primary/5 italic text-lg leading-relaxed rounded-none">
-                    {finalArticle.summary}
+                    {localizedSummary}
                   </div>
                 )}
 
@@ -384,7 +400,7 @@ export default function Article() {
                         onClick={() => setActiveTab(-1)}
                         className={`px-5 py-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === -1 ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
                       >
-                        Overview
+                        {language === "ar" ? "نظرة عامة" : "Overview"}
                       </button>
                       {(finalArticle.wikiTabs as WikiTab[]).map((tab, i) => (
                         <button
@@ -392,14 +408,14 @@ export default function Article() {
                           onClick={() => setActiveTab(i)}
                           className={`px-5 py-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeTab === i ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"}`}
                         >
-                          {tab.title}
+                          {language === "ar" ? (tab.titleAr || tab.title_ar || tab.title) : tab.title}
                         </button>
                       ))}
                     </div>
                     {activeTab === -1 ? (
                       <div
                         ref={contentRef}
-                        className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
+                        className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""} article-rich-content`}
                         dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(rawContent) }}
                       />
                     ) : (
@@ -408,16 +424,16 @@ export default function Article() {
                           <div className="mb-8 flex justify-center">
                             <ContentImage
                               src={(finalArticle.wikiTabs as WikiTab[])[activeTab].image}
-                              alt={(finalArticle.wikiTabs as WikiTab[])[activeTab].title}
+                              alt={language === "ar" ? ((finalArticle.wikiTabs as WikiTab[])[activeTab].titleAr || (finalArticle.wikiTabs as WikiTab[])[activeTab].title_ar || (finalArticle.wikiTabs as WikiTab[])[activeTab].title) : (finalArticle.wikiTabs as WikiTab[])[activeTab].title}
                               className="max-h-80 object-contain rounded border border-border/50 shadow-lg cursor-zoom-in"
-                              onClick={() => setViewer({ open: true, src: (finalArticle.wikiTabs as WikiTab[])[activeTab].image || "", alt: (finalArticle.wikiTabs as WikiTab[])[activeTab].title })}
+                              onClick={() => setViewer({ open: true, src: (finalArticle.wikiTabs as WikiTab[])[activeTab].image || "", alt: language === "ar" ? ((finalArticle.wikiTabs as WikiTab[])[activeTab].titleAr || (finalArticle.wikiTabs as WikiTab[])[activeTab].title_ar || (finalArticle.wikiTabs as WikiTab[])[activeTab].title) : (finalArticle.wikiTabs as WikiTab[])[activeTab].title })}
                             />
                           </div>
                         )}
                         <div
                           ref={contentRef}
-                          className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""}`}
-                          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml((finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") }}
+                          className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""} article-rich-content`}
+                          dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(language === "ar" ? ((finalArticle.wikiTabs as WikiTab[])[activeTab]?.contentAr || (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content_ar || (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") : (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") }}
                         />
                       </div>
                     )}
@@ -431,7 +447,7 @@ export default function Article() {
                       prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium
                       prose-a:text-primary prose-a:no-underline hover:prose-a:underline
                       prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50
-                      ${isRTL ? "rtl" : ""}`}
+                      ${isRTL ? "rtl" : ""} article-rich-content`}
                     dangerouslySetInnerHTML={{
                       __html: sanitizeRichHtml(rawContent)
                     }}
@@ -443,7 +459,7 @@ export default function Article() {
                   <div className="mt-16 p-8 border border-border/50 bg-muted/5 rounded-none no-print">
                     <h2 className="text-xl font-black uppercase italic tracking-tight mb-6 flex items-center gap-2">
                       <LinkIcon className="h-5 w-5 text-primary" />
-                      External Links
+                      {language === "ar" ? "روابط خارجية" : "External Links"}
                     </h2>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {finalArticle.externalLinks.map((link: any, i: number) => (
@@ -465,9 +481,9 @@ export default function Article() {
 
                 <div className="flex justify-end mt-4 mb-8 no-print">
                   <Button variant="outline" size="sm" asChild className="rounded-none font-bold uppercase tracking-tight">
-                    <Link href={`/support?category=content&title=Issue with article: ${encodeURIComponent(finalArticle?.title || "")}`}>
+                    <Link href={localizePath(`/support?category=content&title=Issue with article: ${encodeURIComponent(finalArticle?.title || "")}`)}>
                       <Flag className="mr-2 h-4 w-4" />
-                      Report Issue
+                      {language === "ar" ? "الإبلاغ عن مشكلة" : "Report Issue"}
                     </Link>
                   </Button>
                 </div>
@@ -487,6 +503,19 @@ export default function Article() {
                     </div>
                   </div>
                 )}
+              <style>{`
+                .article-rich-content img { max-width: 100%; height: auto; object-fit: contain; margin: 1.5rem auto; }
+                .article-rich-content table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+                .article-rich-content .post-color-orange { color: #ff9900 !important; }
+                .article-rich-content .post-color-yellow { color: #f5d020 !important; }
+                .article-rich-content .post-color-green { color: #4ade80 !important; }
+                .article-rich-content .post-color-blue { color: #60a5fa !important; }
+                .article-rich-content .post-color-red { color: #f87171 !important; }
+                .article-rich-content .post-color-purple { color: #c084fc !important; }
+                .article-rich-content .post-color-white { color: #f4f4f5 !important; }
+                .article-rich-content .post-color-cyan { color: #22d3ee !important; }
+                .article-rich-content strong, .article-rich-content b { color: inherit; }
+              `}</style>
               </article>
             </div>
 
@@ -495,7 +524,7 @@ export default function Article() {
                 <div className="wiki-sidebar-card p-8 border border-border/50 bg-muted/5 rounded-none sticky top-24 shadow-sm">
                   <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-3 border-b border-primary/20 pb-4">
                     <Info className="h-5 w-5 text-primary" />
-                    Article Metadata
+                    {language === "ar" ? "بيانات المقال" : "Article Metadata"}
                   </h3>
 
                   <div className="space-y-8">

@@ -10,7 +10,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { queryClient } from "@/lib/queryClient";
-import { getEventBySlug, getComments, addComment, getEvents, getMercenaries } from "@/lib/supabaseApi";
+import { getEventById, getEventBySlug, getComments, addComment, getEvents, getMercenaries } from "@/lib/supabaseApi";
 import GallerySection from "@/components/GallerySection";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
@@ -99,19 +99,19 @@ function getStatusStyle(s: string) {
   return                       { bg: "rgba(255,255,255,0.05)", color: "#555",    border: "rgba(255,255,255,0.1)",   label: "Ended" };
 }
 
-function fmtDate(d: string) {
+function fmtDate(d: string, language: "en" | "ar" = "en") {
   if (!d) return "";
   try {
     const parsed = new Date(d);
     if (!isNaN(parsed.getTime())) {
-      return parsed.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      return parsed.toLocaleDateString(language === "ar" ? "ar-EG" : "en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     }
     return d; // return raw string if unparseable (e.g. "July 20th")
   } catch { return d; }
 }
 
 // ─── Countdown ────────────────────────────────────────────────────────────────
-function Countdown({ dateStr }: { dateStr: string }) {
+function Countdown({ dateStr, language = "en" }: { dateStr: string; language?: "en" | "ar" }) {
   const [p, setP] = useState({ d: 0, h: 0, m: 0, s: 0 });
   useEffect(() => {
     const calc = () => {
@@ -126,7 +126,9 @@ function Countdown({ dateStr }: { dateStr: string }) {
     };
     calc(); const id = setInterval(calc, 1000); return () => clearInterval(id);
   }, [dateStr]);
-  const cells = [{ v: p.d, l: "Days" }, { v: p.h, l: "Hrs" }, { v: p.m, l: "Min" }, { v: p.s, l: "Sec" }];
+  const cells = language === "ar"
+    ? [{ v: p.d, l: "يوم" }, { v: p.h, l: "س" }, { v: p.m, l: "د" }, { v: p.s, l: "ث" }]
+    : [{ v: p.d, l: "Days" }, { v: p.h, l: "Hrs" }, { v: p.m, l: "Min" }, { v: p.s, l: "Sec" }];
   return (
     <div style={{ display: "flex", gap: 6 }}>
       {cells.map(({ v, l }) => (
@@ -142,7 +144,7 @@ function Countdown({ dateStr }: { dateStr: string }) {
 }
 
 // ─── Table of Contents ────────────────────────────────────────────────────────
-function TableOfContents({ html }: { html: string }) {
+function TableOfContents({ html, language = "en" }: { html: string; language?: "en" | "ar" }) {
   const headings = useMemo(() => {
     if (!html) return [];
     const doc = new DOMParser().parseFromString(html, "text/html");
@@ -159,7 +161,7 @@ function TableOfContents({ html }: { html: string }) {
     <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 5, overflow: "hidden", marginBottom: 16 }}>
       <div style={{ padding: "9px 14px", borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 6 }}>
         <List size={12} color={GOLD} />
-        <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>Contents</span>
+        <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>{language === "ar" ? "المحتويات" : "Contents"}</span>
       </div>
       <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 2 }}>
         {headings.map((h, i) => (
@@ -269,8 +271,7 @@ export default function EventDetail() {
     queryFn: async () => {
       if (slug) return getEventBySlug(slug);
       if (!legacyId) throw new Error("No event ID or slug provided");
-      const { items } = await getEvents({ limit: 200 });
-      const found = items.find((e: any) => e.id === legacyId);
+      const found = await getEventById(legacyId);
       if (!found) throw new Error("Event not found");
       return found;
     },
@@ -364,6 +365,9 @@ export default function EventDetail() {
   // Compute status using stored ISO date fields (start_date + end_date), falling back to date string
   const parsedFromDate = useMemo(() => parseDateStr(event?.date || ""), [event?.date]);
   const status = classifyStatus(event ?? null);
+  const statusLabel = (value: string) => language === "ar"
+    ? (value === "active" ? "نشطة الآن" : value === "upcoming" ? "قادمة" : "منتهية")
+    : (value === "active" ? "Active Now" : value === "upcoming" ? "Upcoming" : "Ended");
   // Countdown target: count to start for upcoming, count to end for active
   const countdownDateStr: string = (() => {
     if (status === "upcoming") {
@@ -595,7 +599,7 @@ export default function EventDetail() {
                 )}
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", background: statusStyle.bg, border: `1px solid ${statusStyle.border}`, color: statusStyle.color, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", borderRadius: 2, backdropFilter: "blur(8px)" }}>
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusStyle.color, boxShadow: status === "active" ? `0 0 6px ${statusStyle.color}` : "none" }} />
-                  {statusStyle.label}
+                  {statusLabel(status)}
                 </span>
                 {hasArabicVersion && (
                   <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
@@ -629,7 +633,7 @@ export default function EventDetail() {
                 {event.date && (
                   <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>
                     <Calendar size={12} color={GOLD} />
-                    {fmtDate(event.date)}
+                    {fmtDate(event.date, language)}
                   </span>
                 )}
                 {event.location && (
@@ -644,9 +648,9 @@ export default function EventDetail() {
               {isCountdownActive && (
                 <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.12em" }}>
-                    {status === "upcoming" ? "Starts In" : "Ends In"}
+                    {language === "ar" ? (status === "upcoming" ? "يبدأ خلال" : "ينتهي خلال") : (status === "upcoming" ? "Starts In" : "Ends In")}
                   </span>
-                  <Countdown dateStr={countdownDateStr} />
+                  <Countdown dateStr={countdownDateStr} language={language} />
                 </div>
               )}
             </div>
@@ -689,7 +693,7 @@ export default function EventDetail() {
               {/* Gallery */}
               {Array.isArray(event.gallery) && event.gallery.length > 0 && (
                 <div style={{ marginTop: 40 }}>
-                  <GallerySection items={event.gallery} title="Event Gallery" />
+                  <GallerySection items={event.gallery} title={language === "ar" ? "معرض الفعالية" : "Event Gallery"} />
                 </div>
               )}
 
@@ -702,14 +706,14 @@ export default function EventDetail() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
                     <div style={{ width: 3, height: 18, background: GOLD, borderRadius: 1 }} />
                     <h2 style={{ fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.7)", margin: 0 }}>
-                      Related Events
+                      {language === "ar" ? "فعاليات ذات صلة" : "Related Events"}
                     </h2>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }} className="related-grid">
                     {relatedEvents.map((ev: any) => {
                       const evStatus = getStatusStyle(classifyStatus(ev));
                       return (
-                        <Link key={ev.id} href={`/events/${ev.event_name_slug || ev.id}`}>
+                        <Link key={ev.id} href={`${resolvedLang === "ar" ? "/ar" : ""}/events/${ev.event_name_slug || ev.id}`}>
                           <div style={{
                             display: "flex", gap: 10, padding: "10px 12px",
                             background: CARD, border: `1px solid ${BORDER}`, borderRadius: 5,
@@ -717,15 +721,15 @@ export default function EventDetail() {
                           }} className="related-card">
                             {(ev.image || ev.imageUrl) && (
                               <div style={{ width: 56, height: 40, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                                <ContentImage src={ev.image || ev.imageUrl} alt={ev.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <ContentImage src={ev.image || ev.imageUrl} alt={useAr ? (ev.titleAr || ev.title) : ev.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} />
                               </div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
                                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: evStatus.color, flexShrink: 0 }} />
-                                <span style={{ fontSize: 9, color: evStatus.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{evStatus.label}</span>
+                                <span style={{ fontSize: 9, color: evStatus.color, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>{statusLabel(classifyStatus(ev))}</span>
                               </div>
-                              <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "-0.01em" }}>{ev.title}</p>
+                              <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "-0.01em" }}>{useAr ? (ev.titleAr || ev.title) : ev.title}</p>
                             </div>
                           </div>
                         </Link>
@@ -743,9 +747,9 @@ export default function EventDetail() {
                 display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
               }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <p style={{ fontSize: 10, fontWeight: 800, color: "#5865f2", textTransform: "uppercase", letterSpacing: "0.15em", margin: "0 0 4px" }}>Community</p>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: "0 0 4px" }}>Join the CrossFire Discord</h3>
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0 }}>2,594 members online · Stay up to date on events and updates</p>
+                  <p style={{ fontSize: 10, fontWeight: 800, color: "#5865f2", textTransform: "uppercase", letterSpacing: "0.15em", margin: "0 0 4px" }}>{language === "ar" ? "المجتمع" : "Community"}</p>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: "0 0 4px" }}>{language === "ar" ? "انضم إلى ديسكورد CrossFire" : "Join the CrossFire Discord"}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0 }}>{language === "ar" ? "تابع آخر الفعاليات والتحديثات مع مجتمع CrossFire" : "Stay up to date on events and updates with the CrossFire community"}</p>
                 </div>
                 <a href="https://discord.gg/7AbuDrNNJM" target="_blank" rel="noopener noreferrer" style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
@@ -753,7 +757,7 @@ export default function EventDetail() {
                   color: "#fff", fontSize: 12, fontWeight: 700, textDecoration: "none",
                   flexShrink: 0,
                 }}>
-                  <ExternalLink size={13} /> Join Discord
+                  <ExternalLink size={13} /> {language === "ar" ? "انضم إلى ديسكورد" : "Join Discord"}
                 </a>
               </div>
 
@@ -762,14 +766,15 @@ export default function EventDetail() {
                 <div style={{ padding: "12px 20px", borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 8 }}>
                   <MessageSquare size={14} color={GOLD} />
                   <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(255,255,255,0.7)" }}>
-                    Discussion ({comments.length})
+                    {language === "ar" ? `النقاش (${comments.length})` : `Discussion (${comments.length})`}
+
                   </span>
                 </div>
 
                 {/* Comment list */}
                 {comments.length === 0 ? (
                   <div style={{ padding: "32px 20px", textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
-                    Be the first to comment on this event.
+                    {language === "ar" ? "كن أول من يعلّق على هذه الفعالية." : "Be the first to comment on this event."}
                   </div>
                 ) : (
                   <div>
@@ -792,7 +797,7 @@ export default function EventDetail() {
                             )}
                             {isAdminUser && (
                               <button onClick={() => deleteCommentMutation.mutate(c.id)} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
-                                <Trash2 size={11} /> Delete
+                                <Trash2 size={11} /> {language === "ar" ? "حذف" : "Delete"}
                               </button>
                             )}
                           </div>
@@ -806,13 +811,13 @@ export default function EventDetail() {
 
                 {/* Post comment */}
                 <div style={{ padding: "16px 20px", borderTop: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.01)" }}>
-                  <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Leave a Comment</p>
+                  <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>{language === "ar" ? "اكتب تعليقًا" : "Leave a Comment"}</p>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }} className="comment-grid">
-                    <input type="text" placeholder="Your name" value={newCommentAuthor} onChange={(e) => setNewCommentAuthor(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
-                    <input type="email" placeholder="Email (optional)" value={newCommentEmail} onChange={(e) => setNewCommentEmail(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
+                    <input type="text" placeholder={language === "ar" ? "اسمك" : "Your name"} value={newCommentAuthor} onChange={(e) => setNewCommentAuthor(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
+                    <input type="email" placeholder={language === "ar" ? "البريد الإلكتروني (اختياري)" : "Email (optional)"} value={newCommentEmail} onChange={(e) => setNewCommentEmail(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <input type="text" placeholder="Write your comment…" value={newComment} onChange={(e) => setNewComment(e.target.value)}
+                    <input type="text" placeholder={language === "ar" ? "اكتب تعليقك…" : "Write your comment…"} value={newComment} onChange={(e) => setNewComment(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && newComment.trim() && newCommentAuthor.trim()) addCommentMutation.mutate({ author: newCommentAuthor, email: newCommentEmail, content: newComment }); }}
                       style={{ flex: 1, padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3 }}
                     />
@@ -821,7 +826,7 @@ export default function EventDetail() {
                       disabled={!newComment.trim() || !newCommentAuthor.trim() || addCommentMutation.isPending}
                       style={{ padding: "9px 16px", background: GOLD, border: "none", borderRadius: 3, color: "#000", fontWeight: 800, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (!newComment.trim() || !newCommentAuthor.trim()) ? 0.4 : 1 }}
                     >
-                      <Send size={13} /> Post
+                      <Send size={13} /> {language === "ar" ? "نشر" : "Post"}
                     </button>
                   </div>
                 </div>
@@ -837,46 +842,46 @@ export default function EventDetail() {
                   {/* Header */}
                   <div style={{ padding: "10px 14px", background: `linear-gradient(to right, rgba(245,166,35,0.1), transparent)`, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 6 }}>
                     <BookOpen size={12} color={GOLD} />
-                    <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>Event Information</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>{language === "ar" ? "بيانات الفعالية" : "Event Information"}</span>
                   </div>
 
                   {/* Hero image thumbnail */}
                   {event.image && (
                     <div style={{ position: "relative", cursor: "zoom-in" }} onClick={() => setViewer({ open: true, src: event.image, alt: title })}>
-                      <ContentImage src={event.image} alt={title} loading="lazy" style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }} />
+                      <ContentImage src={event.image} alt={title} loading="lazy" style={{ width: "100%", maxHeight: 220, objectFit: "contain", padding: 12, background: "rgba(0,0,0,0.16)", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
                     </div>
                   )}
 
                   {/* Info rows */}
-                  <InfoRow label="Status" icon={Zap}>
+                  <InfoRow label={language === "ar" ? "الحالة" : "Status"} icon={Zap}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: statusStyle.color, fontWeight: 700 }}>
                       <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusStyle.color, boxShadow: status === "active" ? `0 0 6px ${statusStyle.color}` : "none" }} />
-                      {statusStyle.label}
+                      {statusLabel(status)}
                     </span>
                   </InfoRow>
 
                   {event.type && (
-                    <InfoRow label="Type" icon={Tag} value={event.type} />
+                    <InfoRow label={language === "ar" ? "النوع" : "Type"} icon={Tag} value={event.type} />
                   )}
 
                   {event.date && (
-                    <InfoRow label="Date" icon={Calendar}>
-                      <span style={{ fontSize: 11 }}>{fmtDate(event.date)}</span>
+                    <InfoRow label={language === "ar" ? "التاريخ" : "Date"} icon={Calendar}>
+                      <span style={{ fontSize: 11 }}>{fmtDate(event.date, language)}</span>
                     </InfoRow>
                   )}
 
                   {event.location && (
-                    <InfoRow label="Location" icon={MapPin} value={event.location} />
+                    <InfoRow label={language === "ar" ? "المكان" : "Location"} icon={MapPin} value={event.location} />
                   )}
 
                   {/* Countdown for upcoming events */}
                   {isCountdownActive && (
                     <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}` }}>
                       <p style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 8px" }}>
-                        {status === "upcoming" ? "Starts In" : "Time Remaining"}
+                        {language === "ar" ? (status === "upcoming" ? "يبدأ خلال" : "الوقت المتبقي") : (status === "upcoming" ? "Starts In" : "Time Remaining")}
                       </p>
-                      <Countdown dateStr={countdownDateStr} />
+                      <Countdown dateStr={countdownDateStr} language={language} />
                     </div>
                   )}
 
@@ -888,7 +893,7 @@ export default function EventDetail() {
                         padding: "7px", background: "rgba(245,166,35,0.08)", border: `1px solid rgba(245,166,35,0.2)`,
                         borderRadius: 3, cursor: "pointer", transition: "all 0.2s",
                       }} className="view-all-btn">
-                        <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.08em" }}>All Events</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.08em" }}>{language === "ar" ? "كل الفعاليات" : "All Events"}</span>
                         <ChevronRight size={12} color={GOLD} />
                       </div>
                     </Link>
@@ -897,24 +902,24 @@ export default function EventDetail() {
                 </div>
 
                 {/* Table of Contents */}
-                <TableOfContents html={rawDescription} />
+                <TableOfContents html={rawDescription} language={useAr ? "ar" : "en"} />
 
                 {/* Quick Links */}
                 <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 5, overflow: "hidden" }}>
                   <div style={{ padding: "9px 14px", borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 6 }}>
                     <Hash size={12} color={GOLD} />
-                    <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>Explore Wiki</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em" }}>{language === "ar" ? "استكشف الويكي" : "Explore Wiki"}</span>
                   </div>
                   <div style={{ padding: "6px" }}>
                     {[
-                      { label: "All Events",       href: "/events" },
-                      { label: "Latest News",       href: "/news" },
-                      { label: "Weapons Database",  href: "/weapons" },
-                      { label: "Rank Progression",  href: "/ranks" },
-                      { label: "Game Modes",        href: "/modes" },
-                      { label: "Mercenaries",       href: "/mercenaries" },
+                      { label: language === "ar" ? "كل الفعاليات" : "All Events", href: "/events" },
+                      { label: language === "ar" ? "آخر الأخبار" : "Latest News", href: "/news" },
+                      { label: language === "ar" ? "قاعدة الأسلحة" : "Weapons Database", href: "/weapons" },
+                      { label: language === "ar" ? "تطور الرتب" : "Rank Progression", href: "/ranks" },
+                      { label: language === "ar" ? "أوضاع اللعب" : "Game Modes", href: "/modes" },
+                      { label: language === "ar" ? "المرتزقة" : "Mercenaries", href: "/mercenaries" },
                     ].map(({ label, href }) => (
-                      <Link key={href} href={href}>
+                      <Link key={href} href={`${language === "ar" ? "/ar" : ""}${href}`}>
                         <div style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
                           padding: "7px 10px", borderRadius: 3, cursor: "pointer", transition: "background 0.15s",

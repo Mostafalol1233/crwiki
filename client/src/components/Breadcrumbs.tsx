@@ -15,7 +15,8 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const localizePath = (url: string) => {
-    if (language !== "ar" || !url.startsWith("/") || url === "/ar" || url.startsWith("/ar/")) return url;
+    if (!url.startsWith("/")) return url;
+    if (language !== "ar" || url === "/ar" || url.startsWith("/ar/")) return url;
     return `/ar${url === "/" ? "" : url}`;
   };
   const allItems = [
@@ -24,7 +25,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
   ];
 
   return (
-    <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6" aria-label="Breadcrumb">
+    <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6" aria-label={language === "ar" ? "مسار التنقل" : "Breadcrumb"} dir={language === "ar" ? "rtl" : "ltr"}>
       {allItems.map((item, index) => (
         <div key={item.url} className="flex items-center">
           {index > 0 && <ChevronRight className="h-4 w-4 mx-2" />}

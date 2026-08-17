@@ -124,20 +124,25 @@ export async function getWeapons(opts: {
     if (response.ok) {
       const json = await response.json();
       const weapons = Array.isArray(json.weapons) ? json.weapons : [];
-      return {
-        items: weapons.map((w: any) => normalizeWeapon({
-          id: w.id,
-          name: w.name,
-          image_url: w.image_url || w.image || '',
-          background_url: w.background_url || '',
-          category: w.category || 'Uncategorized',
-          description: w.description || '',
-          stats: w.stats || {},
-        })),
-        total: weapons.length,
-        page: opts.page || 1,
-        pageSize: opts.pageSize || 50,
-      };
+      // Do not treat a transient empty API response as a valid empty catalog.
+      // Falling through keeps the public page useful during cold starts or brief
+      // content-service misses, while still preferring the API when records exist.
+      if (weapons.length > 0) {
+        return {
+          items: weapons.map((w: any) => normalizeWeapon({
+            id: w.id,
+            name: w.name,
+            image_url: w.image_url || w.image || '',
+            background_url: w.background_url || '',
+            category: w.category || 'Uncategorized',
+            description: w.description || '',
+            stats: w.stats || {},
+          })),
+          total: Number(json.total) || weapons.length,
+          page: opts.page || 1,
+          pageSize: opts.pageSize || 50,
+        };
+      }
     }
   } catch {
     // fall back to Supabase below

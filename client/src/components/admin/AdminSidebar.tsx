@@ -3,7 +3,7 @@ import { useAdminStore } from '@/store/adminStore';
 import { decodeAdminToken } from '@/lib/supabaseAdmin';
 import {
   LayoutDashboard, BarChart2, FileText, Calendar, Newspaper,
-  BookOpen, Megaphone, Swords, RefreshCw, Store, Star,
+  BookOpen, Megaphone, Swords, RefreshCw, Store, Star, BriefcaseBusiness,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
   ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
   Zap, Film, LayoutGrid, Code2,
@@ -55,6 +55,7 @@ const NAV: NavSection[] = [
     title: 'Commerce',
     items: [
       { label: 'Sellers', path: '/admin/sellers', icon: <Store size={16} /> },
+      { label: 'Service Listings', path: '/admin/services', icon: <BriefcaseBusiness size={16} /> },
       { label: 'Seller Reviews', path: '/admin/seller-reviews', icon: <Star size={16} />, roles: ['super_admin'] },
     ],
   },

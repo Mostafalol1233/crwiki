@@ -20,6 +20,7 @@ const MercenariesManager = lazy(() => import('./MercenariesManager'));
 const ScraperManager = lazy(() => import('./ScraperManager'));
 const WikiRescraper = lazy(() => import('./WikiRescraper'));
 const SellersManager = lazy(() => import('./SellersManager'));
+const ServicesManager = lazy(() => import('./ServicesManager'));
 const SellerReviews = lazy(() => import('./SellerReviews'));
 const MediaManager = lazy(() => import('./MediaManager'));
 const UsersManager = lazy(() => import('./UsersManager'));
@@ -63,6 +64,7 @@ function SectionContent({ section }: { section: string }) {
     case 'scraper': return <ScraperManager />;
     case 'wiki-rescraper': return <WikiRescraper />;
     case 'sellers': return <SellersManager />;
+    case 'services': return <ServicesManager />;
     case 'seller-reviews': return <SellerReviews />;
     case 'media': return <MediaManager />;
     case 'users': return <UsersManager />;

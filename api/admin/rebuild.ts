@@ -49,10 +49,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
   }
 
-  const { action, type, id, url } = req.body || {};
+  const { action, type, id, url, operation, row, rows } = req.body || {};
 
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
+
+  // ── action: service-listings ───────────────────────────────────────────────
+  if (action === "service-listings") {
+    if (!SUPABASE_URL || !SERVICE_KEY)
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_KEY,
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "Prefer": "return=representation",
+    };
+    const baseUrl = `${SUPABASE_URL}/rest/v1/service_listings`;
+
+    try {
+      if (operation === "list") {
+        const listRes = await fetch(`${baseUrl}?select=*&order=sort_order.asc,created_at.desc`, { headers });
+        if (!listRes.ok) throw new Error(`Supabase service-listings read failed: ${await listRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await listRes.json() });
+      }
+
+      if (operation === "create") {
+        if (!row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "row required" });
+        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(row) });
+        if (!createRes.ok) throw new Error(`Supabase service-listing create failed: ${await createRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await createRes.json() });
+      }
+
+      if (operation === "bulk-import") {
+        if (!Array.isArray(rows) || rows.length === 0) return addCorsHeaders(res).status(400).json({ error: "rows required" });
+        const importRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(rows) });
+        if (!importRes.ok) throw new Error(`Supabase service-listings import failed: ${await importRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await importRes.json() });
+      }
+
+      if (operation === "update") {
+        if (!id || !row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "id and row required" });
+        const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers, body: JSON.stringify(row) });
+        if (!updateRes.ok) throw new Error(`Supabase service-listing update failed: ${await updateRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await updateRes.json() });
+      }
+
+      if (operation === "delete") {
+        if (!id) return addCorsHeaders(res).status(400).json({ error: "id required" });
+        const deleteRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers });
+        if (!deleteRes.ok) throw new Error(`Supabase service-listing delete failed: ${await deleteRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ success: true });
+      }
+
+      return addCorsHeaders(res).status(400).json({ error: "Unknown service-listings operation" });
+    } catch (e: any) {
+      return addCorsHeaders(res).status(500).json({ error: e.message || "Service-listings operation failed" });
+    }
+  }
 
   // ── action: rescrape-item ─────────────────────────────────────────────────
   if (action === "rescrape-item") {
@@ -204,5 +258,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  return addCorsHeaders(res).status(400).json({ error: "Unknown action. Use: rescrape-item, rebuild-mercenary-posts, rebuild-wiki-posts" });
+  return addCorsHeaders(res).status(400).json({ error: "Unknown action. Use: service-listings, rescrape-item, rebuild-mercenary-posts, rebuild-wiki-posts" });
 }

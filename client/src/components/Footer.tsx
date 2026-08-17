@@ -97,6 +97,7 @@ export function Footer() {
   ];
   const shopLinks = [
     { label: t("footerSellersMarket"), path: "/sellers" },
+    { label: t("navServices"), path: "/services" },
     { label: t("footerCommunityReviews"), path: "/reviews" },
   ];
   const supportLinks = [

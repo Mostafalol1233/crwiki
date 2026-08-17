@@ -117,3 +117,15 @@ The main professional risk is trust-language. The home content claims “Officia
 The download page is commercially and editorially strong: it links directly to the official Z8Games CrossFire West client, offers patch notes, explains installation, lists requirements, and explicitly states that the wiki is independent and does not distribute game files or modifications. This disclaimer should be promoted to the About and homepage surfaces as well.
 
 At the current desktop viewport, the document has no horizontal overflow (`innerWidth=1280`, document width `1265`), which is a positive desktop baseline. This is not a substitute for a real mobile-width visual pass; the next review should test 390px and 768px breakpoints, especially the hero, data tables, search controls, cards, admin forms, and long articles.
+
+## Follow-up live check — 2026-08-16
+
+The real custom-domain URL `https://crossfire.wiki/ar/weapons` was checked after the new preview deployment became READY. The page responds with application content, but after waiting it still shows `No weapons available`; it also shows the old footer `© 2025 Bimora Gaming — جميع الحقوق محفوظة`. This confirms that the custom domain is still serving an older deployment/code version rather than commit `8179fff`; the fixed preview cannot be validated through the public custom domain until the domain is assigned/promoted to the current Vercel deployment and the required environment variables are present.
+
+## Follow-up events check — 2026-08-16
+
+The live URL `https://crossfire.wiki/ar/events` returns a populated HTML catalogue with 17 events, 4 active, 2 upcoming, and 11 ended. However, the visible interface still shows an indefinite loading spinner in the main event area despite the extracted HTML containing event cards. The Arabic route is also largely English (`Events`, `Tournaments`, `ALL EVENTS`, `ACTIVE`, `UPCOMING`, `ENDED`, `JOIN NOW!`, and quick-link labels), and the old Bimora footer remains. Several scraped event bodies still contain the legacy “Attention Mercenaries” phrasing and at least one malformed date (“Jul 31, 2001”), so the scraper/content cleanup needs a data-quality pass even after deployment is corrected.
+
+## Follow-up English events check — 2026-08-16
+
+Opening `https://crossfire.wiki/events` on the same live custom domain produces a nearly empty page: the main events content is absent, while the header, newsletter, footer, and all navigation remain Arabic with `/ar/...` links. The footer still identifies Bimora Gaming. This is a reproducible production defect showing that the public domain is serving old code with persisted Arabic locale leakage; it is not a failure of the new source branch because the READY preview contains a newer build.

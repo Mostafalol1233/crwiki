@@ -97,6 +97,7 @@ const EventsList     = lazy(() => import("@/pages/EventsList"));
 const Profile        = lazy(() => import("@/pages/Profile"));
 const Reviews        = lazy(() => import("@/pages/Reviews"));
 const Sellers        = lazy(() => import("@/pages/Sellers"));
+const Services       = lazy(() => import("@/pages/Services"));
 const Support        = lazy(() => import("@/pages/Support"));
 const FAQ            = lazy(() => import("@/pages/FAQ"));
 const MyTickets      = lazy(() => import("@/pages/MyTickets"));
@@ -186,6 +187,10 @@ function Router() {
       <Route path="/reviews/seller/slug/:slug" component={() => <L C={Reviews} />} />
       <Route path="/sellers"                   component={() => <L C={Sellers} />} />
       <Route path="/seller/:slug"              component={() => <L C={Sellers} />} />
+      <Route path="/services"                 component={() => <L C={Services} />} />
+      <Route path="/ar/sellers"               component={() => <L C={Sellers} />} />
+      <Route path="/ar/seller/:slug"          component={() => <L C={Sellers} />} />
+      <Route path="/ar/services"              component={() => <L C={Services} />} />
       <Route path="/news"                      component={() => <L C={News} />} />
       <Route path="/news/:slug"                component={() => <L C={NewsDetail} />} />
       <Route path="/news/id/:legacyId"         component={() => <L C={NewsDetail} />} />

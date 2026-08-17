@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink, Search, Filter, CheckCircle, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
-import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok } from "react-icons/si";
+import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok, SiTelegram } from "react-icons/si";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
@@ -33,6 +33,7 @@ interface Seller {
   instagram?: string;
   youtube?: string;
   tiktok?: string;
+  telegram?: string;
   featured: boolean;
   promotionText: string;
   averageRating: number;
@@ -146,8 +147,10 @@ function GalleryLightbox({ images, initialIndex, onClose }: { images: string[]; 
 }
 
 export default function Sellers() {
-  const [slugMatch, slugParams] = useRoute("/seller/:slug");
-  const slug = slugMatch ? (slugParams?.slug as string) : "";
+  const [slugMatchEn, slugParamsEn] = useRoute("/seller/:slug");
+  const [slugMatchAr, slugParamsAr] = useRoute("/ar/seller/:slug");
+  const slugMatch = slugMatchEn || slugMatchAr;
+  const slug = slugMatchAr ? String(slugParamsAr?.slug || "") : slugMatchEn ? String(slugParamsEn?.slug || "") : "";
   const { data: sellersData = [], isLoading, isError: sellersIsError, error: sellersError, refetch: refetchSellers } = useQuery<Seller[]>({
     queryKey: ["/api/sellers"],
     queryFn: getSellers as any,
@@ -291,7 +294,7 @@ export default function Sellers() {
               <span className="truncate">{seller.name}</span>
               {seller.rank && seller.rank <= 5 && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 flex items-center gap-1 shrink-0 text-[10px] px-1.5 py-0">
-                  <CheckCircle className="h-3 w-3" /> Trusted
+                  <CheckCircle className="h-3 w-3" /> Listed
                 </Badge>
               )}
             </CardTitle>
@@ -394,7 +397,7 @@ export default function Sellers() {
                     )}
                     {s.rank && s.rank <= 5 && (
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 flex items-center gap-1 text-xs">
-                        <CheckCircle className="h-3 w-3" /> Trusted
+                        <CheckCircle className="h-3 w-3" /> Listed
                       </Badge>
                     )}
                   </h1>
@@ -473,12 +476,14 @@ export default function Sellers() {
                   <CardContent className="space-y-2 pt-3">
                     {s.website && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(normalizeUrl(s.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
                     {s.email && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`mailto:${s.email}`, '_blank')}><Mail className="h-4 w-4" /> Email</Button>}
+                    {s.phone && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`tel:${s.phone}`, '_self')}><Phone className="h-4 w-4" /> Phone</Button>}
                     {s.whatsapp && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-green-600 hover:text-green-700 hover:border-green-300" onClick={() => window.open(normalizeUrl(s.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
                     {s.discord && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-indigo-600 hover:text-indigo-700 hover:border-indigo-300" onClick={() => window.open(normalizeUrl(s.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
+                    {s.telegram && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-sky-600 hover:text-sky-700 hover:border-sky-300" onClick={() => window.open(normalizeUrl(s.telegram), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
                   </CardContent>
                 </Card>
 
-                {(s.facebook || s.twitter || s.instagram || s.youtube || s.tiktok) && (
+                {(s.facebook || s.twitter || s.instagram || s.youtube || s.tiktok || s.telegram) && (
                   <Card className="shadow-md border-0">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg">🌐 Social Media</CardTitle>
@@ -489,6 +494,7 @@ export default function Sellers() {
                       {s.instagram && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.instagram!), '_blank')}><SiInstagram className="mr-2 h-4 w-4" /> Instagram</Button>}
                       {s.youtube && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.youtube!), '_blank')}><SiYoutube className="mr-2 h-4 w-4" /> YouTube</Button>}
                       {s.tiktok && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.tiktok!), '_blank')}><SiTiktok className="mr-2 h-4 w-4" /> TikTok</Button>}
+                      {s.telegram && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.telegram!), '_blank')}><SiTelegram className="mr-2 h-4 w-4" /> Telegram</Button>}
                     </CardContent>
                   </Card>
                 )}
@@ -679,7 +685,7 @@ export default function Sellers() {
               <div className="max-w-3xl mx-auto text-center">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
                   <CheckCircle className="h-3.5 w-3.5" />
-                  Verified & Trusted
+                  Marketplace listing
                 </div>
                 <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
                   Sellers Market

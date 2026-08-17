@@ -1,0 +1,190 @@
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
+import { ExternalLink, Search, ShieldAlert, Tag, Clock3, UserRound, ArrowRight } from "lucide-react";
+import PageSEO from "@/components/PageSEO";
+import { useLanguage } from "@/components/LanguageProvider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+interface ServiceListing {
+  seller: string;
+  profileUrl: string;
+  offerUrl: string;
+  service: string;
+  serviceAr: string;
+  price: string;
+  age: string;
+  confidence: "higher" | "limited" | "unverified";
+  note: string;
+  noteAr: string;
+}
+
+const listings: ServiceListing[] = [
+  {
+    seller: "GamesCF",
+    profileUrl: "https://funpay.com/en/users/10548313/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=37724800",
+    service: "ZM4 stages 0–6 / stage progression",
+    serviceAr: "مراحل ZM4 من 0 إلى 6 وتطوير التقدم",
+    price: "Snapshot: 0–6 €45.50; 0–9 €262.13",
+    age: "Offer snapshot observed about 2 years old",
+    confidence: "higher",
+    note: "Large review history and several positive CrossFire comments; reviews are not all ZM4-specific.",
+    noteAr: "سجل مراجعات كبير وتعليقات إيجابية متعددة عن CrossFire، لكن ليست كل المراجعات خاصة بـ ZM4.",
+  },
+  {
+    seller: "MOIRA20",
+    profileUrl: "https://funpay.com/en/users/8286674/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=33814768",
+    service: "General ZM4 progress, cards, stages and weapons",
+    serviceAr: "تقدم ZM4 والكروت والمراحل والأسلحة",
+    price: "Snapshot: combined service €50.56",
+    age: "Offer snapshot observed about 3 years old",
+    confidence: "higher",
+    note: "Strong general marketplace history, but confirm the exact current ZM4 deliverables before payment.",
+    noteAr: "سجل قوي عموماً على المنصة، لكن يجب تأكيد تفاصيل خدمة ZM4 الحالية قبل الدفع.",
+  },
+  {
+    seller: "PlayGamesMarket",
+    profileUrl: "https://funpay.com/en/users/12993317/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=47452498",
+    service: "ZM4 stage progression",
+    serviceAr: "تطوير مراحل ZM4",
+    price: "Snapshot: stage 2–6 offers around €25–€35",
+    age: "Offer snapshot observed about 2 years old",
+    confidence: "limited",
+    note: "Positive CrossFire comments were visible, but the listing is not a current price guarantee.",
+    noteAr: "ظهرت تعليقات إيجابية عن CrossFire، لكن السعر الظاهر ليس ضماناً للسعر الحالي.",
+  },
+  {
+    seller: "Xiaoda1",
+    profileUrl: "https://funpay.com/en/users/11484926/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=64383936",
+    service: "ZM4 stages and card bundles",
+    serviceAr: "مراحل ZM4 وحزم الكروت",
+    price: "Snapshot: stage 1–5 $36.28; ZM cards $4.68",
+    age: "Offer snapshot observed about 2 years old",
+    confidence: "limited",
+    note: "Small but positive review sample in the research snapshot; verify availability and currency.",
+    noteAr: "عينة المراجعات صغيرة وإيجابية في لقطة البحث؛ تحقق من التوفر والعملة.",
+  },
+  {
+    seller: "Antifarming",
+    profileUrl: "https://funpay.com/en/users/20387228/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=71794515",
+    service: "ZM4 stages, Arena assistance and gems",
+    serviceAr: "مراحل ZM4 ومساعدة Arena والجواهر",
+    price: "Snapshot: stages 1–6 €64.36; stage 6 €31.60",
+    age: "Offer snapshot observed about 2 months old",
+    confidence: "limited",
+    note: "Relatively recent listing, but the public review sample is very small. No endorsement is implied.",
+    noteAr: "العرض أحدث نسبياً، لكن عينة المراجعات العامة صغيرة جداً. الإدراج لا يعني تزكية.",
+  },
+  {
+    seller: "DrAllspark",
+    profileUrl: "https://funpay.com/en/users/20710675/",
+    offerUrl: "https://funpay.com/en/lots/offer?id=73183444",
+    service: "ZM4 stages and Arena assistance",
+    serviceAr: "مراحل ZM4 ومساعدة Arena",
+    price: "Snapshot: stages 1–6 €55.61; stage 6 €27.30",
+    age: "Offer snapshot observed about 1 month old",
+    confidence: "unverified",
+    note: "Recent-looking offer with no public reviews in the snapshot; verify identity and terms carefully.",
+    noteAr: "عرض يبدو حديثاً دون مراجعات عامة في اللقطة؛ تحقق من الهوية والشروط بعناية.",
+  },
+];
+
+const localPath = (path: string, language: "en" | "ar") => language === "ar" ? `/ar${path}` : path;
+
+export default function Services() {
+  const { language } = useLanguage();
+  const [query, setQuery] = useState("");
+  const isArabic = language === "ar";
+  const filteredListings = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return listings;
+    return listings.filter((listing) => [listing.seller, listing.service, listing.serviceAr, listing.price].join(" ").toLowerCase().includes(q));
+  }, [query]);
+
+  const confidenceLabel = (confidence: ServiceListing["confidence"]) => {
+    if (isArabic) return confidence === "higher" ? "إشارة أقوى نسبياً" : confidence === "limited" ? "دليل محدود" : "غير مثبت حالياً";
+    return confidence === "higher" ? "Stronger market signal" : confidence === "limited" ? "Limited evidence" : "Not verified currently";
+  };
+
+  return (
+    <>
+      <PageSEO
+        title={isArabic ? "خدمات CrossFire وZM4 | CrossFire Wiki" : "CrossFire & ZM4 Services | CrossFire Wiki"}
+        description={isArabic ? "دليل معلوماتي لخدمات CrossFire وZM4 مع روابط المصدر والأسعار الظاهرة كلقطة زمنية." : "An informational directory of CrossFire and ZM4 services with source links and clearly dated snapshot prices."}
+        canonicalPath="/services"
+      />
+      <main className="min-h-screen bg-background">
+        <section className="relative overflow-hidden border-b bg-gradient-to-br from-primary/15 via-background to-amber-500/10">
+          <div className="mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-20">
+            <div className="max-w-3xl">
+              <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
+                <Tag className="mr-2 h-3.5 w-3.5" /> {isArabic ? "دليل الخدمات" : "SERVICE DIRECTORY"}
+              </Badge>
+              <h1 className="text-4xl font-black tracking-tight md:text-6xl">
+                {isArabic ? "خدمات CrossFire وZM4" : "CrossFire & ZM4 Services"}
+              </h1>
+              <p className="mt-5 text-base leading-8 text-muted-foreground md:text-lg">
+                {isArabic
+                  ? "قائمة بحثية تساعدك على مقارنة خدمات المراحل والكروت والتقدم. الأسعار أدناه لقطات من مصادر عامة وليست أسعاراً لحظية أو تزكية من CrossFire Wiki."
+                  : "A research-based directory for comparing stage, card and progression services. Prices below are public-source snapshots, not live quotes or endorsements by CrossFire Wiki."}
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button asChild><Link href={localPath("/sellers", language)}>{isArabic ? "تصفح بائعي الكروت" : "Browse top-up sellers"}<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+                <Button asChild variant="outline"><a href="https://funpay.com/en/lots/257/" target="_blank" rel="noreferrer">{isArabic ? "فتح مصدر FunPay" : "Open FunPay source"}<ExternalLink className="ml-2 h-4 w-4" /></a></Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
+          <div className="mb-7 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <h2 className="text-2xl font-bold">{isArabic ? "العروض المرصودة" : "Observed listings"}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{isArabic ? "تحقق من العرض الأصلي قبل أي تواصل أو دفع." : "Always confirm the original listing before contacting or paying."}</p>
+            </div>
+            <div className="relative w-full md:w-80">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={isArabic ? "ابحث عن بائع أو خدمة..." : "Search seller or service..."} className="pl-9" />
+            </div>
+          </div>
+
+          {filteredListings.length === 0 ? (
+            <Card><CardContent className="py-12 text-center text-muted-foreground">{isArabic ? "لا توجد نتائج مطابقة." : "No matching listings found."}</CardContent></Card>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {filteredListings.map((listing) => (
+                <Card key={`${listing.seller}-${listing.offerUrl}`} className="flex h-full flex-col overflow-hidden border-0 shadow-md transition-shadow hover:shadow-xl">
+                  <div className="flex h-28 items-center gap-4 bg-gradient-to-br from-slate-950 via-slate-800 to-primary/70 px-5 text-white">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-xl font-black backdrop-blur">{listing.seller.slice(0, 2).toUpperCase()}</div>
+                    <div className="min-w-0"><p className="text-xs uppercase tracking-wider text-white/70">{isArabic ? "بائع خدمة" : "Service seller"}</p><h3 className="truncate text-xl font-bold">{listing.seller}</h3></div>
+                  </div>
+                  <CardHeader className="pb-3"><div className="flex items-start justify-between gap-3"><CardTitle className="text-lg">{isArabic ? listing.serviceAr : listing.service}</CardTitle><Badge variant="secondary" className="shrink-0 text-[10px]">{confidenceLabel(listing.confidence)}</Badge></div><CardDescription>{isArabic ? listing.noteAr : listing.note}</CardDescription></CardHeader>
+                  <CardContent className="flex-grow space-y-3 text-sm">
+                    <div className="flex gap-2 rounded-lg bg-muted/60 p-3"><Tag className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{listing.price}</span></div>
+                    <div className="flex gap-2 text-xs text-muted-foreground"><Clock3 className="h-4 w-4 shrink-0" /><span>{listing.age}</span></div>
+                  </CardContent>
+                  <CardFooter className="grid grid-cols-2 gap-2 border-t bg-muted/20 p-4">
+                    <Button asChild variant="outline" size="sm"><a href={listing.profileUrl} target="_blank" rel="noreferrer"><UserRound className="mr-2 h-4 w-4" />{isArabic ? "الملف" : "Profile"}</a></Button>
+                    <Button asChild size="sm"><a href={listing.offerUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />{isArabic ? "العرض" : "Offer"}</a></Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-14 md:px-8">
+          <Card className="border-amber-500/30 bg-amber-500/5"><CardContent className="flex gap-4 p-5 md:p-6"><ShieldAlert className="mt-1 h-6 w-6 shrink-0 text-amber-600" /><div><h2 className="font-bold">{isArabic ? "تنبيه قبل الشراء" : "Before you buy"}</h2><p className="mt-1 text-sm leading-7 text-muted-foreground">{isArabic ? "CrossFire Wiki لا يستلم الأموال ولا يضمن البائعين أو النتائج. افحص الرابط الأصلي، العملة، تفاصيل التسليم، سياسة الاسترجاع، وأمان الحساب. لا تشارك كلمة المرور أو رموز التحقق، ولا تعتمد على سعر قديم." : "CrossFire Wiki does not take payment and does not guarantee sellers or outcomes. Check the original listing, currency, delivery terms, refund policy and account safety. Never share your password or verification codes, and do not rely on an old snapshot price."}</p></div></CardContent></Card>
+        </section>
+      </main>
+    </>
+  );
+}
+

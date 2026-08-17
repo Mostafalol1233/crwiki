@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink, Search, Filter, CheckCircle, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import { Star, Mail, Phone, MessageCircle, Globe, ExternalLink, Search, Filter, CheckCircle, ChevronLeft, ChevronRight, X, ZoomIn, Store } from "lucide-react";
 import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTiktok, SiTelegram } from "react-icons/si";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
 import DOMPurify from "isomorphic-dompurify";
 import { useQuery as useRQ } from "@tanstack/react-query";
+import { mergeSellerBrandAssets, type SellerBrandAsset } from "@/lib/sellerBrandAssets";
 
 interface Seller {
   id: string;
@@ -46,6 +47,11 @@ interface Seller {
   schemaType?: string;
 }
 
+type SellerWithBrand = Seller & {
+  brand: SellerBrandAsset;
+  displayLogo?: string;
+  displayImages: string[];
+};
 
 function normalizeSellerList(value: unknown): Seller[] {
   if (!Array.isArray(value)) return [];
@@ -157,7 +163,7 @@ export default function Sellers() {
     enabled: !slugMatch,
   });
 
-  const sellers = useMemo(() => normalizeSellerList(sellersData), [sellersData]);
+  const sellers = useMemo<SellerWithBrand[]>(() => normalizeSellerList(sellersData).map(mergeSellerBrandAssets), [sellersData]);
 
   const { data: sellerBySlugData, isLoading: slugLoading, isError: slugIsError, error: slugError } = useQuery<Seller>({
     queryKey: ["/api/sellers/slug", slug],
@@ -170,14 +176,17 @@ export default function Sellers() {
     }
   });
 
-  const sellerBySlug = useMemo(() => normalizeSellerList(sellerBySlugData ? [sellerBySlugData] : [])[0], [sellerBySlugData]);
+  const sellerBySlug = useMemo<SellerWithBrand | undefined>(() => {
+    const normalized = normalizeSellerList(sellerBySlugData ? [sellerBySlugData] : [])[0];
+    return normalized ? mergeSellerBrandAssets(normalized) : undefined;
+  }, [sellerBySlugData]);
   const pageSlug = useMemo(() => sellerBySlug?.seller_name_slug || slug, [sellerBySlug?.seller_name_slug, slug]);
   const { data: sellerPage } = useRQ<{ sellerSlug: string; images: string[]; descriptionHtml: string; blocks?: { image: string; contentHtml: string; description: string }[] }>({
     queryKey: ["/api/seller-pages", pageSlug],
     enabled: false,
   });
 
-  const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
+  const [selectedSeller, setSelectedSeller] = useState<SellerWithBrand | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("rank");
@@ -192,8 +201,8 @@ export default function Sellers() {
   const isFiniteNumber = (n: any): n is number => typeof n === 'number' && Number.isFinite(n);
   const formatRating = (n: any) => isFiniteNumber(n) ? n.toFixed(1) : '0.0';
 
-  const filteredSellers = useMemo(() => {
-    let result = normalizeSellerList(sellers);
+  const filteredSellers = useMemo<SellerWithBrand[]>(() => {
+    let result = [...sellers];
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(s =>
@@ -228,7 +237,7 @@ export default function Sellers() {
     return s.startsWith('http') ? s : `https://${s}`;
   };
 
-  const openSellerDialog = (seller: Seller) => {
+  const openSellerDialog = (seller: SellerWithBrand) => {
     setSelectedSeller(seller);
     setIsDialogOpen(true);
     try {
@@ -253,101 +262,91 @@ export default function Sellers() {
     );
   };
 
-  /* ─── Seller Card ─── */
-  const SellerCard = ({ seller, isFeatured }: { seller: Seller; isFeatured?: boolean }) => (
-    <Card
-      className={`group cursor-pointer flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-md overflow-hidden ${isFeatured
-        ? 'bg-gradient-to-br from-yellow-50/80 via-background to-amber-50/50 dark:from-yellow-950/20 dark:via-background dark:to-amber-950/10 ring-1 ring-yellow-200/50 dark:ring-yellow-800/30'
-        : 'bg-card'
-        }`}
-      data-testid={`card-seller-${seller.id}`}
-      onClick={() => openSellerDialog(seller)}
-    >
-      {/* Image Header — logo takes priority, gallery images as fallback */}
-      {(seller.logo_url || (Array.isArray(seller.images) && seller.images.length > 0)) && (
-        <div className="relative w-full overflow-hidden bg-muted">
-          <img
-            src={seller.logo_url || seller.images[0]}
-            alt={seller.name}
-            className="w-full h-48 object-contain bg-transparent transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-          {!seller.logo_url && seller.images.length > 1 && (
-            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-              +{seller.images.length - 1} more
-            </div>
-          )}
-          {isFeatured && (
-            <div className="absolute top-3 left-3">
-              <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-lg text-xs font-semibold px-3 py-1">
-                ⭐ Featured
-              </Badge>
-            </div>
-          )}
-        </div>
-      )}
-
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="flex items-center gap-2 text-lg leading-tight">
-              <span className="truncate">{seller.name}</span>
-              {seller.rank && seller.rank <= 5 && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 flex items-center gap-1 shrink-0 text-[10px] px-1.5 py-0">
-                  <CheckCircle className="h-3 w-3" /> Listed
-                </Badge>
+  /* ─── Premium storefront card ─── */
+  const SellerCard = ({ seller, isFeatured }: { seller: SellerWithBrand; isFeatured?: boolean }) => {
+    const initials = seller.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+    return (
+      <Card
+        className={`group cursor-pointer flex flex-col h-full overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${isFeatured
+          ? 'border-amber-400/50 bg-gradient-to-br from-amber-50/80 via-background to-yellow-50/40 dark:from-amber-950/20 dark:via-background dark:to-yellow-950/10'
+          : 'border-border/60 bg-card'
+          }`}
+        data-testid={`card-seller-${seller.id}`}
+        onClick={() => openSellerDialog(seller)}
+      >
+        <div className={`relative overflow-hidden bg-gradient-to-br ${seller.brand.accent} px-5 pb-5 pt-4`}>
+          <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-2 shadow-lg dark:bg-slate-950/80">
+              {seller.displayLogo ? (
+                <img src={seller.displayLogo} alt={`${seller.name} logo`} className="h-full w-full object-contain" loading="lazy" />
+              ) : (
+                <span className="text-2xl font-black tracking-tight text-primary">{initials}</span>
               )}
-            </CardTitle>
-            <CardDescription className="mt-1.5 line-clamp-2 text-xs">{seller.description}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-3 flex-grow pt-0">
-        {seller.promotionText && (
-          <div className="rounded-lg border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-2.5">
-            <p className="text-xs font-medium text-primary leading-snug">{seller.promotionText}</p>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-base tabular-nums">{formatRating(seller.averageRating)}</span>
-          {renderStars(Math.round(isFiniteNumber(seller.averageRating) ? seller.averageRating : 0))}
-          <span className="text-[10px] text-muted-foreground">({seller.totalReviews || 0})</span>
-        </div>
-
-        {Array.isArray(seller.prices) && seller.prices.length > 0 && (
-          <div className="space-y-1.5 pt-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Top Deals</p>
-            {seller.prices.slice(0, 3).map((price, idx) => (
-              <div key={idx} className="flex justify-between items-center text-sm py-0.5">
-                <span className="text-muted-foreground truncate max-w-[65%] text-xs">{price.item}</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">{price.price}</span>
+            </div>
+            <div className="min-w-0 flex-1 text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">CrossFire store</p>
+              <h3 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{seller.name}</h3>
+              <div className="mt-2 flex flex-wrap justify-end gap-1.5">
+                {isFeatured && <Badge className="border-0 bg-amber-500 text-white shadow-sm">Featured</Badge>}
+                {seller.brand.sourceUrl && <Badge variant="outline" className="border-foreground/15 bg-background/60 text-[10px]">Brand source</Badge>}
               </div>
-            ))}
+            </div>
           </div>
-        )}
-      </CardContent>
+          {seller.displayImages.length > 0 && (
+            <div className="relative mt-4 grid grid-cols-3 gap-2">
+              {seller.displayImages.slice(0, 3).map((image, idx) => (
+                <div key={`${image}-${idx}`} className="h-16 overflow-hidden rounded-lg border border-white/40 bg-black/10">
+                  <img src={image} alt={`${seller.name} gallery ${idx + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      <CardFooter className="border-t pt-3 pb-3 flex justify-between items-center bg-muted/30">
-        <div className="flex gap-2 text-muted-foreground">
-          {seller.whatsapp && <SiWhatsapp className="h-3.5 w-3.5 hover:text-green-500 transition-colors" />}
-          {seller.discord && <SiDiscord className="h-3.5 w-3.5 hover:text-indigo-500 transition-colors" />}
-          {seller.facebook && <SiFacebook className="h-3.5 w-3.5 hover:text-blue-600 transition-colors" />}
-        </div>
-        <div className="flex items-center text-xs text-primary font-medium group-hover:gap-2 transition-all">
-          View Details <ExternalLink className="ml-1 h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-        </div>
-      </CardFooter>
-    </Card>
-  );
+        <CardHeader className="space-y-2 pb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {renderStars(Math.round(isFiniteNumber(seller.averageRating) ? seller.averageRating : 0))}
+              <span className="text-sm font-bold tabular-nums">{formatRating(seller.averageRating)}</span>
+              <span className="text-[11px] text-muted-foreground">({seller.totalReviews || 0})</span>
+            </div>
+            {seller.rank && seller.rank <= 5 && <Badge variant="secondary" className="shrink-0 text-[10px]"><CheckCircle className="mr-1 h-3 w-3" />Listed</Badge>}
+          </div>
+          <CardDescription className="line-clamp-2 text-xs leading-5">{seller.description}</CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex-grow space-y-3 pt-0">
+          {seller.promotionText && <div className="rounded-xl border border-primary/15 bg-primary/[0.06] p-3 text-xs font-medium leading-5 text-primary">{seller.promotionText}</div>}
+          {seller.prices.length > 0 && (
+            <div className="rounded-xl border bg-muted/20 p-3">
+              <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Top deals</p><span className="text-[10px] text-muted-foreground">{seller.prices.length} items</span></div>
+              <div className="space-y-2">
+                {seller.prices.slice(0, 3).map((price, idx) => <div key={idx} className="flex items-center justify-between gap-3 text-xs"><span className="truncate text-muted-foreground">{price.item}</span><span className="shrink-0 font-black text-emerald-600 dark:text-emerald-400">{price.price}</span></div>)}
+              </div>
+            </div>
+          )}
+        </CardContent>
+
+        <CardFooter className="flex items-center justify-between border-t bg-muted/20 px-5 py-3">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            {seller.whatsapp && <SiWhatsapp className="h-4 w-4 text-green-600" />}
+            {seller.discord && <SiDiscord className="h-4 w-4 text-indigo-600" />}
+            {seller.telegram && <SiTelegram className="h-4 w-4 text-sky-600" />}
+            {seller.facebook && <SiFacebook className="h-4 w-4 text-blue-600" />}
+          </div>
+          <div className="flex items-center text-xs font-bold text-primary transition-all group-hover:gap-2">Open storefront <ExternalLink className="ml-1 h-3 w-3" /></div>
+        </CardFooter>
+      </Card>
+    );
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background py-12 md:py-20 flex justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Loading trusted sellers...</p>
+          <p className="text-muted-foreground">Loading marketplace listings...</p>
         </div>
       </div>
     );
@@ -371,7 +370,7 @@ export default function Sellers() {
           title={s.seoTitle || `${s.name} — Seller | CrossFire Wiki`}
           description={s.seoDescription || s.description || `Seller ${s.name} page.`}
           canonicalPath={s.canonicalUrl || `/seller/${s.seller_name_slug || slug}`}
-          image={s.ogImage || s.images?.[0]}
+          image={s.ogImage || s.displayLogo || s.displayImages?.[0]}
           schemaType={s.schemaType || 'Organization'}
         />
         <div className="min-h-screen bg-background">
@@ -384,9 +383,13 @@ export default function Sellers() {
 
               <div className="flex flex-col md:flex-row items-start gap-6">
                 {/* Seller Logo */}
-                {(s.logo_url || s.images?.length > 0) && (
-                  <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-lg bg-muted shrink-0">
-                    <img src={s.logo_url || s.images[0]} alt={s.name} className="w-full h-full object-contain bg-transparent" />
+                {(s.displayLogo || s.displayImages.length > 0) ? (
+                  <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-lg bg-white dark:bg-slate-950 shrink-0 p-2">
+                    <img src={s.displayLogo || s.displayImages[0]} alt={`${s.name} logo`} className="w-full h-full object-contain bg-transparent" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl border-2 border-primary/20 shadow-lg bg-primary/10 shrink-0 flex items-center justify-center text-2xl font-black text-primary">
+                    {s.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1">
@@ -407,6 +410,7 @@ export default function Sellers() {
                     <span className="text-muted-foreground text-sm">({s.totalReviews || 0} reviews)</span>
                   </div>
                   <p className="text-muted-foreground max-w-2xl leading-relaxed">{s.description}</p>
+                  {s.brand.sourceUrl && <a href={s.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"><Globe className="h-3.5 w-3.5" /> {s.brand.sourceLabel || "Brand source"} <ExternalLink className="h-3 w-3" /></a>}
                 </div>
               </div>
             </div>
@@ -416,18 +420,18 @@ export default function Sellers() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column: Gallery + Price List */}
               <div className="lg:col-span-2 space-y-8">
-                {s.images?.length > 0 && (
+                {s.displayImages.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold flex items-center gap-2">
                       <ZoomIn className="h-5 w-5 text-muted-foreground" />
                       Gallery
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {s.images.map((image, idx) => (
+                      {s.displayImages.map((image, idx) => (
                         <div
                           key={idx}
                           className="group/img relative rounded-xl overflow-hidden border bg-muted cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => setLightbox({ images: s.images, index: idx })}
+                          onClick={() => setLightbox({ images: s.displayImages, index: idx })}
                         >
                           <img
                             src={image}
@@ -551,7 +555,7 @@ export default function Sellers() {
       );
     }
 
-    const images = (sellerPage?.images && sellerPage.images.length > 0) ? sellerPage.images : (sellerBySlug.images || []);
+    const images = (sellerPage?.images && sellerPage.images.length > 0) ? sellerPage.images : sellerBySlug.displayImages;
     const mainImage = images?.[0] || "";
     const descriptionHtml = sellerPage?.descriptionHtml || "";
 
@@ -562,7 +566,7 @@ export default function Sellers() {
             title={sellerBySlug.seoTitle || `${sellerBySlug.name} — Game Card Seller`}
             description={sellerBySlug.seoDescription || sellerBySlug.promotionText || sellerBySlug.description}
             canonicalPath={`/seller/${pageSlug}`}
-            image={sellerBySlug.ogImage || mainImage || ""}
+            image={sellerBySlug.ogImage || sellerBySlug.displayLogo || mainImage || ""}
           />
           <div className="min-h-screen bg-background py-12 md:py-20">
             <div className="max-w-5xl mx-auto px-4 md:px-8">
@@ -581,7 +585,9 @@ export default function Sellers() {
                 <div className="space-y-2">
                   {sellerBySlug.website && <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => window.open(normalizeUrl(sellerBySlug.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
                   {sellerBySlug.whatsapp && <Button variant="outline" size="sm" className="justify-start gap-2 text-green-600" onClick={() => window.open(normalizeUrl(sellerBySlug.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
-                  {sellerBySlug.discord && <Button variant="outline" size="sm" className="justify-start gap-2 text-indigo-600" onClick={() => window.open(normalizeUrl(sellerBySlug.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
+                                      {sellerBySlug.discord && <Button variant="outline" size="sm" className="justify-start gap-2 text-indigo-600" onClick={() => window.open(normalizeUrl(sellerBySlug.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
+                  {sellerBySlug.telegram && <Button variant="outline" size="sm" className="justify-start gap-2 text-sky-600" onClick={() => window.open(normalizeUrl(sellerBySlug.telegram), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
+
                 </div>
               </div>
 
@@ -673,7 +679,7 @@ export default function Sellers() {
       <>
         <PageSEO
           title={"Game Card Sellers — CrossFire Wiki"}
-          description={"Find trusted CrossFire card sellers with ratings and contact info."}
+          description={"Explore community-listed CrossFire card stores with brand identity, public contact channels, prices, and review signals."}
           canonicalPath="/sellers"
         />
         <div className="min-h-screen bg-background">
@@ -684,20 +690,20 @@ export default function Sellers() {
             <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
               <div className="max-w-3xl mx-auto text-center">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  Marketplace listing
+                  <Store className="h-3.5 w-3.5" />
+                  CURATED STORE DIRECTORY
                 </div>
                 <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
-                  Sellers Market
+                  CrossFire Sellers Market
                 </h1>
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
-                  Find the best CrossFire accounts, game cards, and items. All sellers are verified by our community with real reviews and ratings.
+                  Discover community-listed CrossFire card stores with real storefront identity, public contact channels, and visible price signals. Compare the details yourself before you buy.
                 </p>
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
                   {[
-                    { label: "Verified Sellers", value: String(filteredSellers.length || sellers.length) },
-                    { label: "Featured Partners", value: String(sellers.filter(s => s.featured).length) },
+                    { label: "Listed Stores", value: String(filteredSellers.length || sellers.length) },
+                    { label: "Featured Stores", value: String(sellers.filter(s => s.featured).length) },
                     { label: "Community Reviews", value: String(sellers.reduce((acc, s) => acc + (s.totalReviews || 0), 0)) },
                   ].map(stat => (
                     <div key={stat.label} className="text-center p-3 rounded-xl bg-card/60 border border-border/50 backdrop-blur-sm">
@@ -745,7 +751,7 @@ export default function Sellers() {
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Star className="fill-yellow-400 text-yellow-400 h-6 w-6" />
-                  Featured Partners
+                  Featured Stores
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {featuredSellers.map((seller) => (
@@ -758,7 +764,7 @@ export default function Sellers() {
             {/* All Sellers */}
             <div>
               <h2 className="text-2xl font-semibold mb-6">
-                {featuredSellers.length > 0 ? "All Verified Sellers" : "Verified Sellers"}
+                {featuredSellers.length > 0 ? "All Listed Stores" : "Listed Stores"}
               </h2>
               {regularSellers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -781,6 +787,14 @@ export default function Sellers() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left: Main Content */}
                   <div className="lg:col-span-2 space-y-5">
+                    <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${selectedSeller.brand.accent} p-4`}>
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-2 shadow-lg dark:bg-slate-950/80">
+                          {selectedSeller.displayLogo ? <img src={selectedSeller.displayLogo} alt={`${selectedSeller.name} logo`} className="h-full w-full object-contain" /> : <span className="text-2xl font-black text-primary">{selectedSeller.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>}
+                        </div>
+                        <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">Community-listed storefront</p><p className="mt-1 text-xl font-black tracking-tight">{selectedSeller.name}</p>{selectedSeller.brand.sourceUrl && <a href={selectedSeller.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Brand source <ExternalLink className="h-3 w-3" /></a>}</div>
+                      </div>
+                    </div>
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2 text-2xl">
                         {selectedSeller.name}
@@ -799,15 +813,15 @@ export default function Sellers() {
                       <p>{selectedSeller.description}</p>
                     </div>
 
-                    {Array.isArray(selectedSeller.images) && selectedSeller.images.length > 0 && (
+                    {selectedSeller.displayImages.length > 0 && (
                       <div className="space-y-2">
                         <h3 className="font-semibold">Gallery</h3>
                         <div className="grid grid-cols-2 gap-2">
-                          {selectedSeller.images.slice(0, 4).map((img, idx) => (
+                          {selectedSeller.displayImages.slice(0, 4).map((img, idx) => (
                             <div
                               key={idx}
                               className="group/gimg relative rounded-lg border bg-muted overflow-hidden cursor-pointer"
-                              onClick={() => setLightbox({ images: selectedSeller.images, index: idx })}
+                              onClick={() => setLightbox({ images: selectedSeller.displayImages, index: idx })}
                             >
                               <img src={img} className="w-full h-36 object-contain bg-transparent" alt={`${selectedSeller.name} ${idx + 1}`} />
                               <div className="absolute inset-0 bg-black/0 group-hover/gimg:bg-black/20 transition-colors flex items-center justify-center">
@@ -816,8 +830,8 @@ export default function Sellers() {
                             </div>
                           ))}
                         </div>
-                        {selectedSeller.images.length > 4 && (
-                          <p className="text-xs text-muted-foreground">+{selectedSeller.images.length - 4} more images on full profile</p>
+                        {selectedSeller.displayImages.length > 4 && (
+                          <p className="text-xs text-muted-foreground">+{selectedSeller.displayImages.length - 4} more images on full profile</p>
                         )}
                       </div>
                     )}
@@ -839,12 +853,13 @@ export default function Sellers() {
 
                   {/* Right: Contact & Sidebar */}
                   <div className="space-y-4">
-                    <div className="rounded-lg border bg-card p-4 space-y-3">
+                    <div className="rounded-2xl border bg-card p-4 space-y-3 shadow-sm">
                       <h3 className="font-semibold">Contact Seller</h3>
                       <div className="grid gap-2">
                         {selectedSeller.website && <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => window.open(normalizeUrl(selectedSeller.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
                         {selectedSeller.whatsapp && <Button variant="outline" size="sm" className="justify-start gap-2 text-green-600" onClick={() => window.open(normalizeUrl(selectedSeller.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
                         {selectedSeller.discord && <Button variant="outline" size="sm" className="justify-start gap-2 text-indigo-600" onClick={() => window.open(normalizeUrl(selectedSeller.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
+                        {selectedSeller.telegram && <Button variant="outline" size="sm" className="justify-start gap-2 text-sky-600" onClick={() => window.open(normalizeUrl(selectedSeller.telegram!), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
                       </div>
                     </div>
 

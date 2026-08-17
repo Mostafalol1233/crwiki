@@ -58,8 +58,14 @@ const BRAND_ASSETS: Record<string, SellerBrandAsset> = {
     },
   },
   "eren store": {
-    gallery: [],
-    accent: "from-slate-500/20 via-background to-slate-900/10",
+    logoUrl: "/assets/sellers/eren-logo.jpeg",
+    gallery: [
+      "/assets/sellers/eren-crossfire.jpg",
+      "/assets/sellers/eren-cover.png",
+    ],
+    sourceUrl: "https://eren-shop.vercel.app/",
+    sourceLabel: "Eren Store official website",
+    accent: "from-violet-500/20 via-background to-fuchsia-500/10",
   },
 };
 
@@ -74,13 +80,14 @@ export function getSellerBrandAsset(name: string): SellerBrandAsset {
   };
 }
 
-export function mergeSellerBrandAssets<T extends { name: string; logo_url?: string; images?: string[] }>(seller: T): T & { brand: SellerBrandAsset; displayLogo?: string; displayImages: string[] } {
+export function mergeSellerBrandAssets<T extends { name: string; logo_url?: string; images?: string[]; website?: string }>(seller: T): T & { brand: SellerBrandAsset; displayLogo?: string; displayImages: string[] } {
   const brand = getSellerBrandAsset(seller.name);
   const officialContacts = brand.contacts || {};
   const enrichedSeller = { ...seller } as T & Partial<typeof officialContacts>;
   (Object.keys(officialContacts) as Array<keyof typeof officialContacts>).forEach((key) => {
     if (!enrichedSeller[key] && officialContacts[key]) enrichedSeller[key] = officialContacts[key];
   });
+  if (!enrichedSeller.website && brand.sourceUrl) enrichedSeller.website = brand.sourceUrl;
   const displayLogo = seller.logo_url || brand.logoUrl;
   const databaseImages = Array.isArray(seller.images) ? seller.images : [];
   const displayImages = Array.from(new Set([...databaseImages, ...brand.gallery].filter(Boolean)));

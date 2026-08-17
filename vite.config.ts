@@ -1441,19 +1441,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     // Disable source maps for production to reduce bundle size
     sourcemap: false,
-    // Minify for better performance
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        passes: 3,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
-      },
-      mangle: {
-        safari10: true,
-      },
-    },
+    // Use Vite's esbuild minifier so production builds complete reliably.
+    // Terser with three compression passes stalled this project during chunk rendering.
+    minify: 'esbuild',
     // Enable CSS minification
     cssMinify: true,
     // Report compressed size

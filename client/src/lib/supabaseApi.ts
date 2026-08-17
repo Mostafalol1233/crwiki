@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
+import { getWeaponDescription } from '../../../shared/weapon-descriptions';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -186,14 +187,33 @@ export async function getWeaponById(id: string) {
 }
 
 function normalizeWeapon(w: any) {
+  const name = String(w.name || '');
+  const enrichment = getWeaponDescription(name);
+  const sourceDescription = String(w.description || '');
+  const isGenericDescription = /^CrossFire weapon\s*[-:]/i.test(sourceDescription) || /^Weapon\s*[-:]/i.test(sourceDescription);
   return {
     id: String(w.id || ''),
-    name: String(w.name || ''),
+    name,
     image: String(w.image_url || w.image || ''),
     imageUrl: String(w.image_url || w.image || ''),
-    backgroundUrl: String(w.background_url || ''),
-    category: String(w.category || 'Uncategorized'),
-    description: String(w.description || ''),
+    backgroundUrl: String(w.background_url || w.background || ''),
+    category: String(w.category || enrichment?.category || 'Uncategorized'),
+    description: String(enrichment?.descriptionEn || (!isGenericDescription ? sourceDescription : '')),
+    descriptionAr: String(enrichment?.descriptionAr || ''),
+    descriptionStatus: enrichment?.descriptionStatus || 'unverified',
+    availabilityEn: String(enrichment?.availabilityEn || ''),
+    availabilityAr: String(enrichment?.availabilityAr || ''),
+    acquisitionKind: enrichment?.acquisitionKind || 'unverified',
+    acquisitionLabelEn: enrichment?.acquisitionLabelEn || 'Unverified',
+    acquisitionLabelAr: enrichment?.acquisitionLabelAr || 'غير متحقق منه',
+    acquisitionDetailsEn: enrichment?.acquisitionDetailsEn || 'No verified acquisition method is recorded.',
+    acquisitionDetailsAr: enrichment?.acquisitionDetailsAr || 'لا توجد طريقة اقتناء موثقة في السجل الحالي.',
+    acquisitionSources: enrichment?.acquisitionSources || [],
+    acquisitionVerified: enrichment?.acquisitionVerified || false,
+    sourceUrl: enrichment?.sourceUrl || '',
+    officialCatalogueUrl: enrichment?.officialCatalogueUrl || 'https://crossfire.z8games.com/weapons.html',
+    sourceKind: enrichment?.sourceKind || 'unverified',
+    matchMode: enrichment?.matchMode || 'not-found',
     stats: w.stats || {},
   };
 }

@@ -1,7 +1,6 @@
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Image as ImageIcon, Loader2, X, ChevronUp, Crosshair, Zap, Shield } from "lucide-react";
+import { Search, Image as ImageIcon, Loader2, X, ChevronUp } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -17,6 +16,20 @@ interface Weapon {
   backgroundUrl?: string;
   category?: string;
   description?: string;
+  descriptionAr?: string;
+  descriptionStatus?: "reference-described" | "unverified";
+  availabilityEn?: string;
+  availabilityAr?: string;
+  acquisitionKind?: string;
+  acquisitionLabelEn?: string;
+  acquisitionLabelAr?: string;
+  acquisitionDetailsEn?: string;
+  acquisitionDetailsAr?: string;
+  acquisitionVerified?: boolean;
+  acquisitionSources?: string[];
+  sourceUrl?: string;
+  officialCatalogueUrl?: string;
+  sourceKind?: string;
   stats?: Record<string, any>;
   highlightedName?: string;
 }
@@ -29,18 +42,32 @@ const normalizeWeapon = (weapon: Partial<Weapon> & Record<string, any>): Weapon 
   backgroundUrl: String(weapon.backgroundUrl || weapon.background || ""),
   category: String(weapon.category || "Uncategorized"),
   description: String(weapon.description || ""),
+  descriptionAr: String(weapon.descriptionAr || ""),
+  descriptionStatus: weapon.descriptionStatus,
+  availabilityEn: String(weapon.availabilityEn || ""),
+  availabilityAr: String(weapon.availabilityAr || ""),
+  acquisitionKind: String(weapon.acquisitionKind || "unverified"),
+  acquisitionLabelEn: String(weapon.acquisitionLabelEn || "Unverified"),
+  acquisitionLabelAr: String(weapon.acquisitionLabelAr || "غير متحقق منه"),
+  acquisitionDetailsEn: String(weapon.acquisitionDetailsEn || ""),
+  acquisitionDetailsAr: String(weapon.acquisitionDetailsAr || ""),
+  acquisitionVerified: Boolean(weapon.acquisitionVerified),
+  acquisitionSources: Array.isArray(weapon.acquisitionSources) ? weapon.acquisitionSources : [],
+  sourceUrl: String(weapon.sourceUrl || ""),
+  officialCatalogueUrl: String(weapon.officialCatalogueUrl || "https://crossfire.z8games.com/weapons.html"),
+  sourceKind: String(weapon.sourceKind || "unverified"),
   stats: weapon.stats || {},
   highlightedName: weapon.highlightedName,
 });
 
-const CATEGORY_COLORS: Record<string, { color: string; icon: any }> = {
-  "Assault Rifle": { color: "#f87171", icon: Zap },
-  "Sniper Rifle": { color: "#60a5fa", icon: Crosshair },
-  "SMG": { color: "#4ade80", icon: Zap },
-  "Shotgun": { color: "#fbbf24", icon: Shield },
-  "Machine Gun": { color: "#a78bfa", icon: Zap },
-  "Pistol": { color: "#f472b6", icon: Shield },
-  "Melee": { color: "#2dd4bf", icon: Shield },
+const CATEGORY_COLORS: Record<string, { color: string }> = {
+  "Assault Rifle": { color: "#f87171" },
+  "Sniper Rifle": { color: "#60a5fa" },
+  "SMG": { color: "#4ade80" },
+  "Shotgun": { color: "#fbbf24" },
+  "Machine Gun": { color: "#a78bfa" },
+  "Pistol": { color: "#f472b6" },
+  "Melee": { color: "#2dd4bf" },
 };
 
 // Known CF categories used as instant fallback while API loads
@@ -53,7 +80,7 @@ function getCatStyle(cat: string) {
   const normalised = Object.keys(CATEGORY_COLORS).find(
     k => k.toLowerCase() === cat.toLowerCase()
   );
-  return (normalised ? CATEGORY_COLORS[normalised] : null) || { color: "#f5a623", icon: Zap };
+  return (normalised ? CATEGORY_COLORS[normalised] : null) || { color: "#f5a623" };
 }
 
 function getCategoryLabel(category: string, isArabic: boolean) {
@@ -71,22 +98,58 @@ function getCategoryLabel(category: string, isArabic: boolean) {
   return labels[category] || category;
 }
 
-function StatBar({ label, value, color = "#f5a623" }: { label: string; value: any; color?: string }) {
-  const num = Math.min(Math.max(parseFloat(String(value)) || 0, 0), 100);
+function WeaponSilhouette({ category, color = "#f5a623", className = "h-6 w-6" }: { category?: string; color?: string; className?: string }) {
+  const normalized = (category || "").toLowerCase();
+  const isMelee = normalized.includes("melee");
+  const isPistol = normalized.includes("pistol");
+  const isSniper = normalized.includes("sniper");
+  const isShotgun = normalized.includes("shotgun");
+  const isMachine = normalized.includes("machine");
+  const isSmg = normalized.includes("smg");
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between items-center">
-        <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "#666" }}>{label}</span>
-        <span className="text-[10px] font-black tabular-nums" style={{ color }}>{value ?? "—"}</span>
-      </div>
-      <div className="h-1 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${num}%`, background: `linear-gradient(to right, ${color}88, ${color})` }}
-        />
-      </div>
-    </div>
+    <svg className={className} viewBox="0 0 64 40" fill="none" aria-hidden="true" focusable="false">
+      <path d={isMelee ? "M9 31 48 7l5 5-39 24-5-5Z" : isPistol ? "M8 13h27l8 5-4 5H27l-3 11h-8l2-11H8v-10Z" : isSniper ? "M4 15h42l13-5v6l-9 3 9 3v5H45l-13-4H4v-8Z" : "M4 13h41l11 5v5H43l-12 4H20l-3-4H4v-10Z"} fill={`${color}30`} stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      {!isMelee && <path d={isShotgun ? "M44 18h16M46 23h14" : isMachine ? "M40 18h18M39 23h13M35 28h18" : isSmg ? "M42 18h15M39 23h12" : "M43 18h15"} stroke={color} strokeWidth="2" strokeLinecap="round" />}
+      {!isMelee && !isSniper && <path d="M18 23v8M25 24v6" stroke={color} strokeWidth="2" strokeLinecap="round" />}
+      {isSniper && <circle cx="14" cy="19" r="3" stroke={color} strokeWidth="2" />}
+    </svg>
   );
+}
+
+const ACQUISITION_COLORS: Record<string, string> = {
+  black_market: "#c084fc",
+  item_shop: "#4ade80",
+  mileage_shop: "#60a5fa",
+  battle_pass: "#fbbf24",
+  vvip: "#f472b6",
+  coupon_exchange: "#2dd4bf",
+  event: "#fb7185",
+  ranked_reward: "#a78bfa",
+  mode_reward: "#38bdf8",
+  reward: "#f97316",
+  other: "#94a3b8",
+  unverified: "#737373",
+};
+
+function acquisitionColor(kind?: string) {
+  return ACQUISITION_COLORS[kind || "unverified"] || ACQUISITION_COLORS.unverified;
+}
+
+function localizeAvailability(value: string | undefined, isArabic: boolean) {
+  if (!value) return isArabic ? "لم تُسجل إتاحة إقليمية محددة." : "No regional availability is recorded.";
+  if (!isArabic) return value;
+  return value
+    .replace(/Available in all CrossFire versions/gi, "متاح في جميع إصدارات CrossFire")
+    .replace(/\*?CF West/gi, "CrossFire West")
+    .replace(/\*?CF China/gi, "CrossFire China")
+    .replace(/\*?CF Vietnam/gi, "CrossFire Vietnam")
+    .replace(/\*?CF Philippines/gi, "CrossFire Philippines")
+    .replace(/\*?CF Brazil/gi, "CrossFire Brazil")
+    .replace(/\*?CF Indonesia/gi, "CrossFire Indonesia")
+    .replace(/\*?CF Japan/gi, "CrossFire Japan")
+    .replace(/\s*\*\s*/g, "، ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -293,7 +356,7 @@ export default function Weapons() {
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 rounded" style={{ background: "rgba(245,166,35,0.12)", border: "1px solid rgba(245,166,35,0.25)" }}>
-                <Crosshair className="h-6 w-6" style={{ color: "#f5a623" }} />
+                <WeaponSilhouette category="Assault Rifle" color="#f5a623" className="h-7 w-7" />
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-0.5" style={{ color: "#f5a623" }}>{isArabic ? "الترسانة الكاملة" : "Full Arsenal"}</p>
@@ -303,7 +366,7 @@ export default function Weapons() {
               </div>
             </div>
             <p className="text-sm mt-2" style={{ color: "#666" }}>
-              {total > 0 ? (isArabic ? `${total} سلاحًا` : `${total} weapons`) : (isArabic ? "جارٍ التحميل..." : "Loading...")} — {isArabic ? "استكشف الإحصاءات والفئات والتفاصيل" : "explore stats, categories and details"}
+              {total > 0 ? (isArabic ? `${total} سلاحًا` : `${total} weapons`) : (isArabic ? "جارٍ التحميل..." : "Loading...")} — {isArabic ? "استكشف الأوصاف والفئات وملاحظات الاقتناء" : "explore descriptions, categories and acquisition notes"}
             </p>
           </div>
 
@@ -389,7 +452,7 @@ export default function Weapons() {
             {categories.length > 1 && (
               <div className="flex flex-wrap gap-1.5">
                 {categories.map((cat) => {
-                  const style = cat !== "all" ? getCatStyle(cat) : { color: "#f5a623", icon: Zap };
+                  const style = cat !== "all" ? getCatStyle(cat) : { color: "#f5a623" };
                   return (
                     <button
                       key={cat}
@@ -453,7 +516,7 @@ export default function Weapons() {
             </div>
           ) : sortedWeapons.length === 0 ? (
             <div className="py-20 text-center" style={{ border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-              <Crosshair className="h-12 w-12 mx-auto mb-3 opacity-20" style={{ color: "#f5a623" }} />
+              <WeaponSilhouette category={selectedCategory === "all" ? "Assault Rifle" : selectedCategory} color="#f5a623" className="h-14 w-14 mx-auto mb-3 opacity-20" />
               <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "#444" }}>
                 {searchQuery ? (isArabic ? "لا توجد أسلحة تطابق بحثك" : "No weapons match your search") : (isArabic ? "لا توجد أسلحة متاحة" : "No weapons available")}
               </p>
@@ -462,7 +525,11 @@ export default function Weapons() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {sortedWeapons.map((weapon) => {
                 const catStyle = getCatStyle(weapon.category || "");
-                const statEntries = Object.entries(weapon.stats || {}).slice(0, 3);
+                const cardDescription = isArabic
+                  ? (weapon.descriptionAr || "لا يوجد وصف عربي موثق لهذا السجل بعد.")
+                  : (weapon.description || "No verified description is recorded for this entry yet.");
+                const acquisitionLabel = isArabic ? (weapon.acquisitionLabelAr || "غير متحقق منه") : (weapon.acquisitionLabelEn || "Unverified");
+                const acquisitionColorValue = acquisitionColor(weapon.acquisitionKind);
                 return (
                   <Dialog key={weapon.id}>
                     <DialogTrigger asChild>
@@ -514,22 +581,27 @@ export default function Weapons() {
                           )}
                         </div>
 
-                        {/* Info */}
-                        <div className="px-2.5 pt-2.5 pb-3 space-y-2">
-                          <h3 className="font-black text-[11px] uppercase tracking-tight leading-tight line-clamp-2" style={{ color: "var(--foreground)" }}>
-                            {weapon.highlightedName ? (
-                              <span dangerouslySetInnerHTML={{ __html: weapon.highlightedName }} />
-                            ) : weapon.name}
-                          </h3>
-
-                          {/* Stats mini bars */}
-                          {statEntries.length > 0 && (
-                            <div className="space-y-1.5">
-                              {statEntries.map(([key, val]) => (
-                                <StatBar key={key} label={key} value={val} color={catStyle.color} />
-                              ))}
-                            </div>
-                          )}
+                        {/* Wiki metadata */}
+                        <div className="px-2.5 pt-2.5 pb-3 space-y-2.5">
+                          <div className="flex items-start gap-2">
+                            <WeaponSilhouette category={weapon.category} color={catStyle.color} className="mt-0.5 h-7 w-10 shrink-0" />
+                            <h3 className="font-black text-[11px] uppercase tracking-tight leading-tight line-clamp-2" style={{ color: "var(--foreground)" }}>
+                              {weapon.highlightedName ? (
+                                <span dangerouslySetInnerHTML={{ __html: weapon.highlightedName }} />
+                              ) : weapon.name}
+                            </h3>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider" style={{ color: acquisitionColorValue, background: `${acquisitionColorValue}18`, border: `1px solid ${acquisitionColorValue}35`, borderRadius: "2px" }}>
+                              {acquisitionLabel}
+                            </span>
+                            <span className="px-1.5 py-0.5 text-[8px] font-bold" style={{ color: "#777", background: "rgba(255,255,255,0.04)", borderRadius: "2px" }}>
+                              {weapon.acquisitionVerified ? (isArabic ? "مؤكد رسميًا" : "Officially verified") : (isArabic ? "ملاحظة مرجعية" : "Reference note")}
+                            </span>
+                          </div>
+                          <p className="line-clamp-2 text-[10px] leading-relaxed" style={{ color: cardDescription ? "#888" : "#666" }}>
+                            {cardDescription || (isArabic ? "لا يوجد وصف موثق لهذا السجل بعد." : "No verified description is recorded for this entry yet.")}
+                          </p>
                         </div>
                       </div>
                     </DialogTrigger>
@@ -565,35 +637,46 @@ export default function Weapons() {
                           )}
                         </div>
 
-                        {/* Category + description */}
-                        <div className="flex items-center gap-3">
+                        {/* Classification and sourced description */}
+                        <div className="flex flex-wrap items-center gap-2">
                           {weapon.category && (
-                            <span
-                              className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1"
-                              style={{ background: `${catStyle.color}18`, color: catStyle.color, borderRadius: "2px" }}
-                            >
-                              {weapon.category}
+                            <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1" style={{ background: `${catStyle.color}18`, color: catStyle.color, borderRadius: "2px" }}>
+                              <WeaponSilhouette category={weapon.category} color={catStyle.color} className="h-4 w-5" />
+                              {getCategoryLabel(weapon.category, isArabic)}
                             </span>
                           )}
+                          <span className="text-[9px] font-bold" style={{ color: weapon.acquisitionVerified ? "#4ade80" : "#fbbf24" }}>
+                            {weapon.acquisitionVerified ? (isArabic ? "اقتناء مؤكد" : "Acquisition verified") : (isArabic ? "يحتاج تأكيد المنطقة" : "Regional confirmation needed")}
+                          </span>
                         </div>
 
-                        {weapon.description && (
-                          <p className="text-[12px] leading-relaxed" style={{ color: "#777" }}>
-                            {weapon.description}
+                        <div className="space-y-2">
+                          <h4 className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>{isArabic ? "الوصف" : "Description"}</h4>
+                          <p className="text-[12px] leading-relaxed" style={{ color: "#999" }}>
+                            {isArabic ? (weapon.descriptionAr || "لا يوجد وصف عربي موثق لهذا السجل بعد.") : (weapon.description || "No verified description is recorded for this entry yet.")}
                           </p>
-                        )}
+                        </div>
 
-                        {/* Full stats */}
-                        {weapon.stats && Object.keys(weapon.stats).length > 0 && (
-                          <div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3" style={{ color: "#f5a623" }}>Weapon Stats</p>
-                            <div className="space-y-2.5">
-                              {Object.entries(weapon.stats).map(([key, val]) => (
-                                <StatBar key={key} label={key.replace(/([A-Z])/g, " $1").trim()} value={val} color={catStyle.color} />
-                              ))}
-                            </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <h4 className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>{isArabic ? "طريقة الاقتناء" : "Acquisition"}</h4>
+                            <p className="text-[12px] leading-relaxed" style={{ color: "#999" }}>{isArabic ? (weapon.acquisitionDetailsAr || "لا توجد طريقة اقتناء موثقة.") : (weapon.acquisitionDetailsEn || "No verified acquisition method is recorded.")}</p>
                           </div>
-                        )}
+                          <div className="space-y-2">
+                            <h4 className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>{isArabic ? "الإتاحة الإقليمية" : "Regional availability"}</h4>
+                            <p className="text-[12px] leading-relaxed" style={{ color: "#999" }}>{localizeAvailability(isArabic ? weapon.availabilityAr || weapon.availabilityEn : weapon.availabilityEn, isArabic)}</p>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                          <p className="text-[11px] leading-relaxed" style={{ color: "#777" }}>
+                            {isArabic ? "هذا السجل مرتبط بصفحة مرجعية، بينما يظل تأكيد المتجر أو الصندوق الخاص بمنطقتك مطلوبًا قبل اعتباره حقيقة إقليمية." : "This entry is linked to a reference page. Confirm the region-specific shop or crate before treating availability as an official regional fact."}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-4">
+                            {weapon.sourceUrl && <a href={weapon.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest hover:text-white" style={{ color: "#f5a623" }}>{isArabic ? "صفحة المرجع" : "Reference page"} ↗</a>}
+                            {weapon.officialCatalogueUrl && <a href={weapon.officialCatalogueUrl} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest hover:text-white" style={{ color: "#999" }}>{isArabic ? "كتالوج Z8Games" : "Z8Games catalogue"} ↗</a>}
+                          </div>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>

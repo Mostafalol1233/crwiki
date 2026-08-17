@@ -164,7 +164,7 @@ export default function GalleryManager({ value, onChange }: GalleryManagerProps)
 
       {value.length > 1 && (
         <p style={{ fontSize: 11, color: '#52525b', margin: 0 }}>
-          💡 Drag rows to reorder. Images appear as a grid on the page; clicking opens a zoom viewer with description.
+          Tip: drag rows to reorder. Images appear as a grid on the page; clicking opens a zoom viewer with description.
         </p>
       )}
     </div>

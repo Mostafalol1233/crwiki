@@ -45,11 +45,11 @@ export default function SellerReviews() {
     toast.success('Deleted'); await fetch();
   };
 
-  const stars = (n: number) => '★'.repeat(Math.max(0, Math.min(5, n))) + '☆'.repeat(5 - Math.max(0, Math.min(5, n)));
+  const stars = (n: number) => `${Math.max(0, Math.min(5, n))}/5`;
 
   const columns = [
     col.accessor('reviewer_name', { header: 'Reviewer', cell: (i) => <span style={{ color: '#fafafa', fontWeight: 500 }}>{i.getValue() || 'Anonymous'}</span> }),
-    col.accessor('rating', { header: 'Rating', cell: (i) => <span style={{ color: '#d4a017', fontSize: 13, letterSpacing: 1 }}>{stars(i.getValue())}</span> }),
+    col.accessor('rating', { header: 'Rating', cell: (i) => <span style={{ color: '#d4a017', fontSize: 13 }}>{stars(i.getValue())}</span> }),
     col.accessor('comment', { header: 'Comment', cell: (i) => <span style={{ fontSize: 13, color: '#a1a1aa', maxWidth: 300, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.getValue()}</span> }),
     col.accessor('approved', { header: 'Status', cell: (i) => <span style={{ fontSize: 12, color: i.getValue() ? '#22c55e' : '#f59e0b', fontWeight: 500 }}>{i.getValue() ? 'Approved' : 'Pending'}</span> }),
     col.accessor('created_at', { header: 'Date', cell: (i) => <span style={{ fontSize: 12, color: '#52525b' }}>{i.getValue() ? new Date(i.getValue()).toLocaleDateString() : '—'}</span> }),

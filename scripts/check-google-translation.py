@@ -1,10 +1,19 @@
 import json
 import re
+import sys
 from pathlib import Path
 
-path = Path('/home/ubuntu/crwiki/shared/weapon-description-arabic-google.json')
-cache = json.loads(path.read_text())
-items = list(cache.items())
+path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/home/ubuntu/crwiki/shared/weapon-descriptions.ts')
+if path.suffix == '.ts':
+    # Read only the generated Arabic fields; this keeps the check independent
+    # from the ignored translation cache used during generation.
+    text = path.read_text(encoding='utf-8')
+    encoded_values = re.findall(r'"descriptionAr":\s*("(?:\\.|[^"\\])*")', text)
+    values = [json.loads(value) for value in encoded_values]
+    items = [(str(index), value) for index, value in enumerate(values)]
+else:
+    cache = json.loads(path.read_text(encoding='utf-8'))
+    items = list(cache.items())
 for index, (english, arabic) in enumerate(items[:12]):
     print(f'[{index}] EN: {english[:180]}')
     print(f'[{index}] AR: {arabic[:260]}')

@@ -1067,7 +1067,7 @@ export async function getForumCategories() {
     slug: String(c.slug),
     description: String(c.description || ''),
     descriptionAr: String(c.description_ar || ''),
-    icon: String(c.icon || '💬'),
+    icon: String(c.icon || 'comment'),
     color: String(c.color || '#f5a623'),
     threadCount: c.thread_count || 0,
     postCount: c.post_count || 0,

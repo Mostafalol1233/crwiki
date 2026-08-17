@@ -76,7 +76,7 @@ import AnnouncementModal from "@/components/AnnouncementModal";
 import TargetCursor from "@/components/TargetCursor";
 
 // ══════════════════════════════════════════════
-// 🔧 MAINTENANCE MODE — غير true لـ false لفتح الموقع
+// MAINTENANCE MODE — غير true لـ false لفتح الموقع
 const MAINTENANCE_MODE = false;
 // ══════════════════════════════════════════════
 
@@ -347,7 +347,7 @@ function Layout() {
     );
   }
 
-  // 🔧 Maintenance mode — admin يقدر يدخل على /admin عادي
+  // Maintenance mode — admin يقدر يدخل على /admin عادي
   if (MAINTENANCE_MODE) {
     return (
       <ErrorBoundary>

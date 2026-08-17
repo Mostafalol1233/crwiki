@@ -163,12 +163,12 @@ export default function SellersManager() {
         const src = logo || fallback;
         return src
           ? <img src={src} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid #27272a' }} />
-          : <div style={{ width: 40, height: 40, background: '#27272a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏪</div>;
+          : <div style={{ width: 40, height: 40, background: '#27272a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#71717a' }}>No image</div>;
       }
     }),
     col.accessor('name', { header: 'Name', cell: (i) => <span style={{ color: '#fafafa', fontWeight: 500 }}>{i.getValue()}</span> }),
     col.accessor('seller_name_slug', { header: 'Slug', cell: (i) => <span style={{ fontSize: 12, color: '#71717a' }}>{i.getValue()}</span> }),
-    col.accessor('featured', { header: 'Featured', cell: (i) => <span style={{ fontSize: 12, color: i.getValue() ? '#d4a017' : '#52525b' }}>{i.getValue() ? '⭐ Yes' : 'No'}</span> }),
+    col.accessor('featured', { header: 'Featured', cell: (i) => <span style={{ fontSize: 12, color: i.getValue() ? '#d4a017' : '#52525b' }}>{i.getValue() ? 'Yes' : 'No'}</span> }),
     col.accessor('rank', { header: 'Rank', cell: (i) => <span style={{ fontSize: 12, color: '#71717a' }}>{i.getValue() || '—'}</span> }),
     col.accessor('average_rating', { header: 'Rating', cell: (i) => <span style={{ fontSize: 12, color: '#d4a017' }}>{i.getValue() ? Number(i.getValue()).toFixed(1) : '—'}</span> }),
     col.display({
@@ -213,13 +213,13 @@ export default function SellersManager() {
               </div>
               <div>
                 <label style={lbl}>Promotion Text</label>
-                <input type="text" value={editing.promotion_text || ''} onChange={(e) => setEditing({ ...editing, promotion_text: e.target.value })} style={inp} placeholder="🔥 Special offer text..." />
+                <input type="text" value={editing.promotion_text || ''} onChange={(e) => setEditing({ ...editing, promotion_text: e.target.value })} style={inp} placeholder="Special offer text..." />
               </div>
             </div>
 
             {/* Prices */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 Price List</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price List</div>
               <p style={{ fontSize: 12, color: '#52525b', margin: 0 }}>One per line — format: <code style={{ color: '#a1a1aa' }}>Item Name: Price</code></p>
               <textarea
                 value={pricesText}
@@ -231,7 +231,7 @@ export default function SellersManager() {
 
             {/* Contact */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>📞 Contact Info</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Contact Info</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={lbl}>WhatsApp</label><input type="text" value={editing.whatsapp || ''} onChange={(e) => setEditing({ ...editing, whatsapp: e.target.value })} style={inp} placeholder="https://wa.me/..." /></div>
                 <div><label style={lbl}>Discord</label><input type="text" value={editing.discord || ''} onChange={(e) => setEditing({ ...editing, discord: e.target.value })} style={inp} placeholder="https://discord.gg/..." /></div>
@@ -244,7 +244,7 @@ export default function SellersManager() {
 
             {/* Social Media */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>🌐 Social Media</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Social Media</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={lbl}>Facebook</label><input type="text" value={editing.facebook || ''} onChange={(e) => setEditing({ ...editing, facebook: e.target.value })} style={inp} /></div>
                 <div><label style={lbl}>Instagram</label><input type="text" value={editing.instagram || ''} onChange={(e) => setEditing({ ...editing, instagram: e.target.value })} style={inp} /></div>
@@ -260,7 +260,7 @@ export default function SellersManager() {
 
             {/* Logo / Avatar — stored as images[0] */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏷️ Logo / Avatar</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Logo / Avatar</div>
               <p style={{ fontSize: 12, color: '#52525b', margin: 0 }}>Shown as the seller's profile picture on cards and listings. Square image recommended.</p>
               <ImageUpload
                 label=""
@@ -273,7 +273,7 @@ export default function SellersManager() {
 
             {/* Gallery Images — stored as images[1+] */}
             <div style={{ background: '#18181b', border: '1px solid #27272a', borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🖼️ Gallery Images</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gallery Images</div>
               <p style={{ fontSize: 12, color: '#52525b', margin: 0 }}>Product shots, screenshots, or promo images shown in the seller gallery.</p>
               <ImageUpload label="" value="" onChange={addGalleryImage} hint="Click to upload, then it's added below" />
               {galleryText.split('\n').filter(Boolean).map((url, i) => (
@@ -318,7 +318,7 @@ export default function SellersManager() {
               disabled={saving}
               style={{ padding: 12, background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}
             >
-              {saving ? 'Saving...' : editing.id ? '✓ Update Seller' : '+ Create Seller'}
+              {saving ? 'Saving...' : editing.id ? 'Update Seller' : '+ Create Seller'}
             </button>
           </div>
         </div>

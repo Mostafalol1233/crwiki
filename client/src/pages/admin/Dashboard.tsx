@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS faq_articles (
 CREATE TABLE IF NOT EXISTS forum_categories (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL, name TEXT NOT NULL, name_ar TEXT,
-  description TEXT, description_ar TEXT, icon TEXT DEFAULT '💬',
+  description TEXT, description_ar TEXT, icon TEXT DEFAULT 'comment',
   color TEXT DEFAULT '#f5a623', thread_count INTEGER DEFAULT 0,
   post_count INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now()

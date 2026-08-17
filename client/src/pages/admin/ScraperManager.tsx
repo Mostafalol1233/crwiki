@@ -517,7 +517,7 @@ function EventList({
 
       if (i < updated.length - 1) await new Promise(r => setTimeout(r, 250));
     }
-    setProgress('Translation complete ✓');
+    setProgress('Translation complete');
     setTranslating(false);
     toast.success('All content translated to Arabic!');
   };

@@ -2,8 +2,10 @@ import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/components/LanguageProvider";
 import { getRegionBreadcrumbs, getRegionBySlug, getRegionLanding, getWeaponBreadcrumbs, getWeaponBySlug, REGIONS } from "../../../shared/crossfire-regions.js";
 import {
+  REGIONAL_CHARACTER_RECORDS,
   REGIONAL_EDITION_RECORDS,
   REGIONAL_EVENT_RECORDS,
+  REGIONAL_LEAGUE_RECORDS,
   REGIONAL_MAP_RECORDS,
   REGIONAL_MODE_RECORDS,
   REGIONAL_POSTS,
@@ -19,6 +21,8 @@ interface GlobalWikiProps {
 }
 
 const editionBySlug = (slug: string) => REGIONAL_EDITION_RECORDS.find((edition) => edition.slug === slug);
+const featuredCharacterRecords = REGIONAL_CHARACTER_RECORDS.slice(0, 4);
+const featuredMapRecords = REGIONAL_MAP_RECORDS.filter((map) => map.imageUrl).slice(0, 4);
 const languageText = (language: string, english: string, arabic: string) => language === "ar" ? arabic : english;
 
 export default function GlobalWiki({ params }: GlobalWikiProps) {
@@ -29,6 +33,20 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
   const pathFor = (path: string) => isArabic ? (path === "/" ? "/ar" : `/ar${path}`) : path;
   const copy = (english: string, arabic: string) => languageText(language, english, arabic);
   const listFor = (english: string[], arabic: string[]) => isArabic ? arabic : english;
+  const statLabel = (label: string) => {
+    const labels: Record<string, [string, string]> = {
+      damage: ["Damage", "الضرر"], lightness: ["Lightness", "الخفة"], accuracy: ["Accuracy", "الدقة"], speed: ["Speed", "السرعة"], reload: ["Reload", "إعادة التعبئة"], penetration: ["Penetration", "الاختراق"], magazine: ["Magazine", "المخزن"], range: ["Range", "المدى"],
+    };
+    const value = labels[label];
+    return value ? copy(value[0], value[1]) : label;
+  };
+  const categoryLabel = (category: string) => {
+    const labels: Record<string, [string, string]> = {
+      "Assault Rifle": ["Assault Rifle", "بندقية هجومية"], "Submachine Gun": ["Submachine Gun", "مدفع رشاش"], "Sniper Rifle": ["Sniper Rifle", "بندقية قنص"], Pistol: ["Pistol", "مسدس"], Melee: ["Melee", "قتال قريب"],
+    };
+    const value = labels[category];
+    return value ? copy(value[0], value[1]) : category;
+  };
 
   if (regionSlug && weaponSlug) {
     const region = getRegionBySlug(regionSlug);
@@ -103,6 +121,9 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
     const breadcrumbs = getRegionBreadcrumbs(regionSlug);
     const regionalWeapons = REGIONAL_WEAPON_RECORDS.filter((weapon) => weapon.region === regionSlug);
     const regionalEvents = REGIONAL_EVENT_RECORDS.filter((event) => event.region === regionSlug);
+    const regionalCharacters = REGIONAL_CHARACTER_RECORDS.filter((character) => editionBySlug(character.edition)?.region === regionSlug);
+    const regionalMaps = REGIONAL_MAP_RECORDS.filter((map) => editionBySlug(map.edition)?.region === regionSlug);
+    const regionalLeagues = REGIONAL_LEAGUE_RECORDS.filter((league) => league.region === regionSlug);
 
     return (
       <div className="min-h-screen bg-slate-950 px-6 py-20 text-slate-100">
@@ -142,10 +163,19 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
                       {weapon.imageUrl ? <img src={weapon.imageUrl} alt={weapon.name} className="h-full w-full object-contain" loading="lazy" /> : <span className="text-sm text-slate-500">{copy("Official image not imported", "لم يتم استيراد الصورة الرسمية")}</span>}
                     </div>
                     <div className="p-5">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{weapon.category}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{categoryLabel(weapon.category)}</p>
                       <h3 className="mt-2 text-lg font-semibold">{weapon.name}</h3>
                       {weapon.englishName ? <p className="mt-1 text-xs text-slate-500">{weapon.englishName}</p> : null}
                       <p className="mt-3 text-sm leading-6 text-slate-300">{copy(weapon.notesEn, weapon.notesAr)}</p>
+                      {weapon.stats ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {Object.entries(weapon.stats).map(([label, value]) => (
+                            <span key={label} className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-300">
+                              <span className="text-slate-500">{statLabel(label)}</span>: {String(value)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                       <a href={weapon.sourceUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-sm font-medium text-amber-400 underline underline-offset-4">{copy("View official source", "عرض المصدر الرسمي")}</a>
                     </div>
                   </article>
@@ -178,6 +208,48 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
             </section>
           ) : null}
 
+          {regionalCharacters.length ? (
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-amber-400">{copy("Characters", "الشخصيات")}</p>
+                  <h2 className="mt-2 text-2xl font-semibold">{copy("Official Vietnam Legends roster", "قائمة شخصيات Legends الرسمية في فيتنام")}</h2>
+                </div>
+                <p className="text-sm text-slate-400">{regionalCharacters.length} {copy("source records", "سجلات مصدر")}</p>
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {regionalCharacters.map((character) => (
+                  <article key={character.slug} className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70">
+                    <div className="h-48 bg-slate-900">
+                      <img src={character.imageUrl} alt={copy(character.nameEn, character.nameAr)} className="h-full w-full object-contain" loading="lazy" />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold">{copy(character.nameEn, character.nameAr)}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-400">{copy(character.notesEn, character.notesAr)}</p>
+                      <a href={character.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-medium text-amber-400 underline underline-offset-4">{copy("Official profile", "الملف الرسمي")}</a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {regionalLeagues.length ? (
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+              <p className="text-xs uppercase tracking-[0.25em] text-amber-400">{copy("Competition structure", "هيكل المنافسات")}</p>
+              <h2 className="mt-2 text-2xl font-semibold">{copy("Regional league records", "سجلات الدوريات الإقليمية")}</h2>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {regionalLeagues.map((league) => (
+                  <article key={league.slug} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                    <h3 className="text-lg font-semibold">{copy(league.nameEn, league.nameAr)}</h3>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">{copy(league.summaryEn, league.summaryAr)}</p>
+                    <a href={league.sourceUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-sm font-medium text-amber-400 underline underline-offset-4">{copy("View CFS source", "عرض مصدر CFS")}</a>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <div className="grid gap-5 lg:grid-cols-2">
             <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
               <p className="text-xs uppercase tracking-[0.25em] text-amber-400">{copy("Modes", "الأنماط")}</p>
@@ -191,9 +263,15 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
             <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
               <p className="text-xs uppercase tracking-[0.25em] text-amber-400">{copy("Maps", "الخرائط")}</p>
               <h2 className="mt-2 text-2xl font-semibold">{copy("Verified map records", "سجلات الخرائط الموثقة")}</h2>
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                {REGIONAL_MAP_RECORDS.filter((map) => editionBySlug(map.edition)?.region === regionSlug).map((map) => (
-                  <a key={map.slug} href={map.sourceUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-3 text-sm text-slate-200 transition hover:border-amber-400/50">{copy(map.nameEn, map.nameAr)}</a>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {regionalMaps.map((map) => (
+                  <a key={map.slug} href={map.sourceUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 transition hover:border-amber-400/50">
+                    {map.imageUrl ? <img src={map.imageUrl} alt={copy(map.nameEn, map.nameAr)} className="h-28 w-full object-cover" loading="lazy" /> : null}
+                    <div className="p-3">
+                      <p className="text-sm font-medium text-slate-200">{copy(map.nameEn, map.nameAr)}</p>
+                      {map.descriptionEn ? <p className="mt-2 text-xs leading-5 text-slate-400">{copy(map.descriptionEn, map.descriptionAr)}</p> : null}
+                    </div>
+                  </a>
                 ))}
               </div>
             </section>
@@ -316,6 +394,41 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
             ))}
           </section>
         </div>
+
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-amber-400">{copy("Recent official records", "أحدث السجلات الرسمية")}</p>
+              <h2 className="mt-2 text-2xl font-semibold">{copy("Regional events and visual references", "الفعاليات الإقليمية والمراجع المرئية")}</h2>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-slate-400">{copy("The cards below are discovery links into the regional pages; each image remains hosted by its official publisher.", "البطاقات التالية روابط استكشاف للصفحات الإقليمية، وتبقى كل صورة مستضافة لدى ناشرها الرسمي.")}</p>
+          </div>
+          <div className="mt-6 grid gap-5 lg:grid-cols-2">
+            <div className="space-y-3">
+              {REGIONAL_EVENT_RECORDS.map((event) => (
+                <article key={event.slug} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{event.kind}</p>
+                      <h3 className="mt-2 text-lg font-semibold">{copy(event.titleEn, event.titleAr)}</h3>
+                    </div>
+                    <span className="text-xs text-slate-500">{event.startDate}</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{copy(event.summaryEn, event.summaryAr)}</p>
+                  <a href={event.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-medium text-amber-400 underline underline-offset-4">{copy("Official event source", "مصدر الفعالية الرسمي")}</a>
+                </article>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[...featuredCharacterRecords, ...featuredMapRecords].map((record) => (
+                <a key={record.slug} href={record.sourceUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 transition hover:border-amber-400/50">
+                  {record.imageUrl ? <img src={record.imageUrl} alt={copy(record.nameEn, record.nameAr)} className="h-32 w-full object-cover" loading="lazy" /> : null}
+                  <div className="p-3"><p className="text-sm font-medium text-slate-200">{copy(record.nameEn, record.nameAr)}</p><p className="mt-1 text-xs text-slate-500">{copy("Official visual reference", "مرجع مرئي رسمي")}</p></div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

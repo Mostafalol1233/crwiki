@@ -287,7 +287,7 @@ export default function EventsManager() {
                         const p = autoParseEventDates(editing.date || '');
                         if (p.start || p.end) setEditing(prev => ({ ...prev, start_date: p.start, end_date: p.end }));
                       }}>
-                      ⚡ Auto-fill countdown dates
+                      Auto-fill countdown dates
                     </span>
                   )}
                 </label>

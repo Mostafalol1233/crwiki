@@ -61,6 +61,17 @@ const OFFICIAL_CATALOG_HEADER = "/attached_assets/weapons/csp-bg-header2.jpg.jpe
 const OFFICIAL_CARD_BACKGROUND = "/attached_assets/weapons/cfw-weaponbg-vip.png";
 const WEAPON_PLACEHOLDER = "/attached_assets/weapons/placeholder-weapons.png";
 
+// Weapon cards may receive legacy media URLs from imported content. Never allow
+// roadmap/poster/collage assets or images from non-weapon content sections to
+// render as an individual weapon image.
+const REJECTED_WEAPON_MEDIA = /(?:roadmap|road[-_ ]?map|collage|sprite(?:sheet)?|poster|banner|placeholder|(?:^|[\\/_.-])(?:crossfire_images|modes|events?|posts?)(?:[\\/]|$))/i;
+
+function isSafeWeaponMediaSource(value?: string) {
+  const source = String(value || "").trim();
+  if (!source) return false;
+  return !REJECTED_WEAPON_MEDIA.test(source);
+}
+
 function normaliseCategory(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -114,10 +125,14 @@ function WeaponGlyph({ category, color, size = 24 }: { category?: string; color:
 }
 
 function WeaponImage({ weapon, className, alt }: { weapon: Weapon; className?: string; alt: string }) {
-  const sources = useMemo(() => Array.from(new Set([weapon.image, weapon.imageUrl, ...localWeaponImageCandidates(weapon.name)].filter(Boolean))), [weapon.id, weapon.name, weapon.image, weapon.imageUrl]);
+  const sources = useMemo(() => Array.from(new Set([
+    weapon.image,
+    weapon.imageUrl,
+    ...localWeaponImageCandidates(weapon.name),
+  ].filter((source) => source === WEAPON_PLACEHOLDER || isSafeWeaponMediaSource(source)))), [weapon.id, weapon.name, weapon.image, weapon.imageUrl]);
   const [sourceIndex, setSourceIndex] = useState(0);
   useEffect(() => setSourceIndex(0), [weapon.id, weapon.image, weapon.imageUrl]);
-  const src = sources[Math.min(sourceIndex, sources.length - 1)];
+  const src = sources[Math.min(sourceIndex, sources.length - 1)] || WEAPON_PLACEHOLDER;
   return (
     <div className={`relative flex items-center justify-center ${className || ""}`}>
       <img src={src} alt={alt} className="relative z-10 h-full w-full object-contain" loading="lazy" onError={() => setSourceIndex((current) => Math.min(current + 1, sources.length - 1))} />
@@ -369,7 +384,7 @@ export default function Weapons() {
                   <DialogTrigger asChild>
                     <button className="group text-left relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 focus:outline-none" style={{ background: "#e8ebef", color: "#10151c", border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 8px 25px rgba(0,0,0,.22)" }}>
                       <div className="absolute top-0 left-0 right-0 h-1" style={{ background: color }} />
-                      <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: weapon.backgroundUrl ? `url('${weapon.backgroundUrl}') center/cover` : `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
+                      <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
                         <div className="absolute inset-0 opacity-40" style={{ background: "linear-gradient(135deg, transparent 0 45%, rgba(255,255,255,.12) 46%, transparent 47%), radial-gradient(circle at 20% 20%, rgba(245,166,35,.22), transparent 35%)" }} />
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-105" />
                         <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: meta.color, border: `1px solid ${meta.color}66` }}>{acquisition.key === "unverified" ? (arabic ? "غير متحقق" : "Unverified") : (arabic ? meta.ar : meta.en)}</span>
@@ -384,7 +399,7 @@ export default function Weapons() {
                     <div className="h-1" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                     <DialogHeader className="px-6 pt-5"><DialogTitle className="text-xl font-black uppercase">{title}</DialogTitle></DialogHeader>
                     <div className="px-6 pb-6 space-y-5 mt-3">
-                      <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: weapon.backgroundUrl ? `url('${weapon.backgroundUrl}') center/cover` : `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
+                      <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-7" />
                       </div>
                       <div className="flex flex-wrap items-center gap-2"><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: `${color}1b`, color, border: `1px solid ${color}55` }}>{categoryLabel(weapon.category, arabic)}</span><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: `${meta.color}16`, color: meta.color, border: `1px solid ${meta.color}55` }}>{arabic ? meta.ar : meta.en}</span></div>

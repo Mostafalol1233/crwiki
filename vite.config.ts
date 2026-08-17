@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import fs from "node:fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
 import { createRequire } from "module";
@@ -1386,6 +1387,60 @@ function cfPortalImagesPlugin(): Plugin {
   };
 }
 
+function attachedAssetsPlugin(): Plugin {
+  const assetsRoot = path.resolve(import.meta.dirname, "attached_assets");
+  const assetFolders = ["weapons", "scraped_weapons"];
+  const contentTypes: Record<string, string> = {
+    ".avif": "image/avif",
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+  };
+
+  function filesIn(folder: string): Array<{ absolute: string; relative: string }> {
+    const root = path.join(assetsRoot, folder);
+    if (!fs.existsSync(root)) return [];
+    const output: Array<{ absolute: string; relative: string }> = [];
+    const visit = (directory: string) => {
+      for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+        const absolute = path.join(directory, entry.name);
+        if (entry.isDirectory()) visit(absolute);
+        else if (entry.isFile()) output.push({ absolute, relative: path.relative(assetsRoot, absolute) });
+      }
+    };
+    visit(root);
+    return output;
+  }
+
+  return {
+    name: "cf-attached-assets",
+    configureServer(server) {
+      server.middlewares.use("/attached_assets", (req, res, next) => {
+        const requestPath = decodeURIComponent((req.url || "").split("?")[0]).replace(/^\/+/, "");
+        const absolute = path.resolve(assetsRoot, requestPath);
+        if (!absolute.startsWith(`${assetsRoot}${path.sep}`)) return next();
+        fs.stat(absolute, (error, stats) => {
+          if (error || !stats.isFile()) return next();
+          res.statusCode = 200;
+          res.setHeader("Cache-Control", "public, max-age=3600");
+          res.setHeader("Content-Type", contentTypes[path.extname(absolute).toLowerCase()] || "application/octet-stream");
+          fs.createReadStream(absolute).pipe(res);
+        });
+      });
+    },
+    generateBundle() {
+      for (const folder of assetFolders) {
+        for (const file of filesIn(folder)) {
+          this.emitFile({ type: "asset", fileName: `attached_assets/${file.relative.replace(/\\\\/g, "/")}`, source: fs.readFileSync(file.absolute) });
+        }
+      }
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     cfRegisterPlugin(),
@@ -1397,6 +1452,7 @@ export default defineConfig({
     cfPortalImagesPlugin(),
     react(),
     runtimeErrorOverlay(),
+    attachedAssetsPlugin(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

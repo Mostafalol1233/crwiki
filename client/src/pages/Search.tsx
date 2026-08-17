@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search as SearchIcon, FileText, Calendar, Newspaper, Trophy, Crosshair, Shield, Loader2, MapPin, Users } from "lucide-react";
 import { getEvents, getWeapons, getModes, getRanks, getPosts, getNews, getMaps, getMercenaries } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
+import { PageSEO } from "@/components/PageSEO";
 
 function useDebounceValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -170,7 +171,14 @@ export default function SearchPage() {
   const BORDER = "rgba(255,255,255,0.06)";
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, paddingTop: 48, paddingBottom: 80 }}>
+    <>
+      <PageSEO
+        title={t("searchWikiTitle") + " — CrossFire Wiki"}
+        description={t("searchInputPlaceholder")}
+        canonicalPath="/search"
+        noindex
+      />
+      <div style={{ minHeight: "100vh", background: BG, paddingTop: 48, paddingBottom: 80 }}>
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 24px" }}>
 
         {/* Header */}
@@ -334,6 +342,7 @@ export default function SearchPage() {
 
         <style>{`.search-result-card:hover{border-color:rgba(245,166,35,0.2)!important;}`}</style>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -342,9 +342,7 @@ export default function Reviews() {
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
                 {sellerByName.seller.name}
               </h1>
-              {sellerByName.seller.verified && (
-                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-1" style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)", borderRadius: "2px" }}>✓ Verified</span>
-              )}
+
             </div>
             <div className="flex items-center gap-2 mt-1">
               {renderStars(Math.round(sellerByName.seller.averageRating || 0))}

@@ -105,9 +105,9 @@ export function SEOHead({
   const normalizeTitle = (s?: string) =>
     s ? s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ") : s;
 
-  const defaultTitle = "CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF";
+  const defaultTitle = "CrossFire Wiki | Weapons, Maps, Ranks, Events & Guides";
   const defaultDescription =
-    "The #1 CrossFire fan wiki. Explore weapons, mercenaries, modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic.";
+    "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides in English and Arabic.";
 
   const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;

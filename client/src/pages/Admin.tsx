@@ -2272,7 +2272,6 @@ export default function Admin() {
 
                 <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span style={{ fontSize: "14px" }}>🔫</span>
                     <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Featured Weapons (Homepage)</h3>
                   </div>
                   <p className="text-xs mb-4" style={{ color: "#555" }}>
@@ -2349,7 +2348,7 @@ export default function Admin() {
                                   <p className="text-sm font-medium truncate">{w.name}</p>
                                   <p className="text-xs text-muted-foreground">{w.category}</p>
                                 </div>
-                                {isSelected && <span className="text-primary text-xs font-bold">✓ Featured</span>}
+                                {isSelected && <span className="text-primary text-xs font-bold">Featured</span>}
                                 {!isSelected && siteSettingsForm.featuredWeapons.length >= 4 && (
                                   <span className="text-xs text-muted-foreground">Max 4</span>
                                 )}
@@ -2384,7 +2383,6 @@ export default function Admin() {
                 {/* ── Hero Image ── */}
                 <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span style={{ fontSize: "14px" }}>🖼️</span>
                     <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Hero Image (Homepage)</h3>
                   </div>
                   <p className="text-xs mb-3" style={{ color: "#555" }}>
@@ -2411,7 +2409,6 @@ export default function Admin() {
                 {/* ── Featured Event (Main Card) ── */}
                 <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span style={{ fontSize: "14px" }}>📌</span>
                     <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Featured Event (Large Card)</h3>
                   </div>
                   <p className="text-xs mb-3" style={{ color: "#555" }}>
@@ -2439,7 +2436,6 @@ export default function Admin() {
                 {/* ── Secondary Events (2 small cards) ── */}
                 <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span style={{ fontSize: "14px" }}>📋</span>
                     <h3 className="font-black text-sm uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Secondary Events (2 Small Cards)</h3>
                   </div>
                   <p className="text-xs mb-3" style={{ color: "#555" }}>
@@ -2682,8 +2678,8 @@ export default function Admin() {
                               <TableCell>{u.phone || "—"}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2 text-xs">
-                                  <Badge variant={u.verifiedEmail ? "default" : "secondary"}>Email {u.verifiedEmail ? "✔" : "✖"}</Badge>
-                                  <Badge variant={u.verifiedPhone ? "default" : "secondary"}>Phone {u.verifiedPhone ? "✔" : "✖"}</Badge>
+                                  <Badge variant={u.verifiedEmail ? "default" : "secondary"}>Email {u.verifiedEmail ? "Verified" : "Not verified"}</Badge>
+                                  <Badge variant={u.verifiedPhone ? "default" : "secondary"}>Phone {u.verifiedPhone ? "Verified" : "Not verified"}</Badge>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -3931,7 +3927,7 @@ export default function Admin() {
                                     }}
                                     className="text-xs"
                                   >
-                                    📋 Smart Paste
+                                    Smart Paste
                                   </Button>
                                 </div>
                                 <div data-testid="input-news-content">
@@ -3959,7 +3955,7 @@ export default function Admin() {
                                       }}
                                       className="text-xs"
                                     >
-                                      📋 Smart Paste
+                                      Smart Paste
                                     </Button>
                                   </div>
                                   <div data-testid="input-news-content-ar">
@@ -5181,7 +5177,7 @@ export default function Admin() {
                                   {rank.requirements && <p className="text-xs text-muted-foreground">{rank.requirements}</p>}
                                   {rank.bonus && (
                                     <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs">
-                                      <p className="font-semibold text-yellow-700 dark:text-yellow-300">🎁 Bonus:</p>
+                                      <p className="font-semibold text-yellow-700 dark:text-yellow-300">Bonus:</p>
                                       <p className="text-yellow-800 dark:text-yellow-200">{rank.bonus}</p>
                                     </div>
                                   )}
@@ -5934,10 +5930,10 @@ export default function Admin() {
                                 <p className="font-medium text-sm truncate">{event.title}</p>
                                 <div className="flex gap-2 mt-1">
                                   <Badge variant={event.titleAr ? "default" : "secondary"} className="text-xs">
-                                    {event.titleAr ? "Title ✓" : "Title ✗"}
+                                    {event.titleAr ? "Title present" : "Title missing"}
                                   </Badge>
                                   <Badge variant={event.descriptionAr ? "default" : "secondary"} className="text-xs">
-                                    {event.descriptionAr ? "Description ✓" : "Description ✗"}
+                                    {event.descriptionAr ? "Description present" : "Description missing"}
                                   </Badge>
                                 </div>
                               </div>
@@ -5993,10 +5989,10 @@ export default function Admin() {
                                 <p className="font-medium text-sm truncate">{news.title}</p>
                                 <div className="flex gap-2 mt-1">
                                   <Badge variant={news.titleAr ? "default" : "secondary"} className="text-xs">
-                                    {news.titleAr ? "Title ✓" : "Title ✗"}
+                                    {news.titleAr ? "Title present" : "Title missing"}
                                   </Badge>
                                   <Badge variant={news.contentAr ? "default" : "secondary"} className="text-xs">
-                                    {news.contentAr ? "Content ✓" : "Content ✗"}
+                                    {news.contentAr ? "Content present" : "Content missing"}
                                   </Badge>
                                 </div>
                               </div>

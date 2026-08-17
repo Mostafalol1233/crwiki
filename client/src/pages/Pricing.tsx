@@ -57,11 +57,11 @@ const TOP_UP_METHODS = [
 ];
 
 const ZP_USES = [
-  { item: "Permanent Weapons",  cost: "From 6,900 ZP",  Icon: Sword,     desc: "Unlock powerful weapons permanently." },
+  { item: "Permanent Weapons",  cost: "From 6,900 ZP",  Icon: Sword,     desc: "Weapons that remain in the account after purchase." },
   { item: "Character Skins",    cost: "From 2,900 ZP",  Icon: Shirt,     desc: "Exclusive appearance customization." },
   { item: "VVIP Weapons",       cost: "From 29,000 ZP", Icon: Star,      desc: "Permanent weapons with special effects." },
-  { item: "Crate Keys",         cost: "From 99 ZP/key", Icon: Package,   desc: "Unlock mystery crates for rare items." },
-  { item: "GP Boosts",          cost: "From 500 ZP",    Icon: Rocket,    desc: "Earn GP faster, unlock free rewards." },
+  { item: "Crate Keys",         cost: "From 99 ZP/key", Icon: Package,   desc: "Keys used to open the game's item crates." },
+  { item: "GP Boosts",          cost: "From 500 ZP",    Icon: Rocket,    desc: "Items that can affect GP earnings under the game's rules." },
   { item: "Special Ammo",       cost: "From 200 ZP",    Icon: Flame,     desc: "Explosive, incendiary and special ammo." },
   { item: "Black Market",       cost: "Varies",         Icon: TrendingUp, desc: "Limited-time exclusive spinning items." },
   { item: "Mercenary Rentals",  cost: "From 1,000 ZP",  Icon: ShoppingBag, desc: "Rent premium mercenaries for 7–30 days." },

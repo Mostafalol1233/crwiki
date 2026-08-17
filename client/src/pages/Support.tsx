@@ -165,7 +165,6 @@ export default function Support() {
 
           {isSubmitted && (
             <div className="mb-6 flex items-center gap-3 p-4" style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: "3px" }}>
-              <span style={{ color: "#4ade80", fontSize: "18px" }}>✓</span>
               <p className="text-sm font-bold" style={{ color: "#4ade80" }}>
                 {t("supportTicketSuccess")}
               </p>

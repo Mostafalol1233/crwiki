@@ -101,8 +101,9 @@ export default function NewThread({ params }: { params: { categorySlug: string }
     <>
       <PageSEO
         title={isAr ? `موضوع جديد في ${catName}` : `New Thread in ${catName}`}
-        description=""
+        description={isAr ? `اكتب موضوعاً جديداً في قسم ${catName}.` : `Start a new discussion in the ${catName} forum.`}
         canonicalPath={`/forum/${categorySlug}/new`}
+        noindex
       />
 
       <div className="min-h-screen" style={{ background: "var(--background)" }}>

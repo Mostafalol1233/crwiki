@@ -269,7 +269,7 @@ export default function ForumThread({ params }: { params: { categorySlug: string
           {/* ── Reply form ────────────────────────────────────────── */}
           {thread.isLocked ? (
             <div style={{ marginTop: 24, padding: "14px 18px", borderRadius: 6, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", color: "#444", fontSize: 12, textAlign: "center" }}>
-              🔒 {isAr ? "هذا الموضوع مغلق ولا يمكن الرد عليه." : "This thread is locked. No new replies."}
+              {isAr ? "هذا الموضوع مغلق ولا يمكن الرد عليه." : "This thread is locked. No new replies."}
             </div>
           ) : (
             <div style={{ marginTop: 24, padding: "20px 22px", borderRadius: 6, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -304,7 +304,7 @@ export default function ForumThread({ params }: { params: { categorySlug: string
               />
 
               {error && <p style={{ fontSize: 12, color: "#ef4444", marginBottom: 10 }}>{error}</p>}
-              {success && <p style={{ fontSize: 12, color: "#22c55e", marginBottom: 10 }}>{isAr ? "✓ تم إرسال ردك!" : "✓ Reply posted!"}</p>}
+              {success && <p style={{ fontSize: 12, color: "#22c55e", marginBottom: 10 }}>{isAr ? "تم إرسال ردك." : "Reply posted."}</p>}
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <p style={{ fontSize: 11, color: "#3a3a3a" }}>

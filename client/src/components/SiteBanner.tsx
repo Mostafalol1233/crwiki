@@ -45,12 +45,12 @@ export default function SiteBanner() {
       <Wrench size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
       <span style={{ textAlign: "center", lineHeight: 1.5 }}>
         {isAr
-          ? "🚧 الموقع لا يزال يعاني من بعض المشكلات — فريقنا يعمل على إصلاحها. شكرًا لصبركم."
-          : "🚧 The site is still experiencing some issues — our team is actively working on fixes. Thank you for your patience."}
+          ? "تنبيه صيانة: قد يجري تحديث بعض أقسام الويكي. إذا وجدت معلومة قديمة، أرسل لنا تصحيحاً."
+          : "Maintenance notice: Some wiki sections may be updated. Send us a correction if you find outdated information."}
       </span>
       <button
         onClick={dismiss}
-        aria-label="Dismiss"
+        aria-label={isAr ? "إغلاق التنبيه" : "Dismiss notice"}
         style={{
           position: "absolute",
           [isAr ? "left" : "right"]: 12,

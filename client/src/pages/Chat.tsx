@@ -379,10 +379,10 @@ CREATE POLICY msg_all ON messages FOR ALL USING (true) WITH CHECK (true);`;
   if (needsMigration) {
     return (
       <div className="container mx-auto px-4 py-10 max-w-2xl">
-        <PageSEO title="Chat — Setup Required" description="Database setup needed" />
+        <PageSEO title="Chat — Setup Required" description="Database setup needed" noindex />
         <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/5 p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">⚙️</span>
+            <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Setup</span>
             <div>
               <h2 className="font-black text-lg">One-time database setup needed</h2>
               <p className="text-sm text-muted-foreground">The chat tables don't exist yet in your Supabase project. Run the SQL below — it takes 5 seconds.</p>
@@ -415,7 +415,7 @@ CREATE POLICY msg_all ON messages FOR ALL USING (true) WITH CHECK (true);`;
 
   return (
     <div className="container mx-auto px-4 py-6 h-[calc(100vh-4rem)]">
-      <PageSEO title="Live Chat" description="Real-time communication" />
+      <PageSEO title="Live Chat" description="Private community messaging for signed-in CrossFire Wiki users." noindex />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}

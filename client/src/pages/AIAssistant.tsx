@@ -13,20 +13,20 @@ interface Message {
 const SESSION_KEY = "cf-ai-session-v2";
 
 const SUGGESTED_EN = [
-  "Best weapons for beginners?",
+  "Which weapons suit a beginner?",
   "How do I rank up fast?",
   "ZP vs GP — what's the difference?",
   "Compare AK-47 vs M4A1",
-  "Which mercenary is best?",
+  "Which mercenary fits my playstyle?",
   "How does Black Market work?",
 ];
 
 const SUGGESTED_AR = [
-  "أحسن أسلحة للمبتدئين؟",
+  "إيه الأسلحة المناسبة للمبتدئين؟",
   "إزاي أرفع رتبتي بسرعة؟",
   "الفرق بين ZP وGP؟",
   "قارن AK-47 مع M4A1",
-  "أحسن مرتزق في اللعبة؟",
+  "أي مرتزق يناسب أسلوب لعبي؟",
   "إزاي بيشتغل الـ Black Market؟",
 ];
 
@@ -276,8 +276,9 @@ export default function AIAssistant() {
 
       <PageSEO
         title={isAr ? "مساعد الذكاء الاصطناعي — CrossFire Wiki" : "AI Assistant — CrossFire Wiki"}
-        description={isAr ? "اسأل مساعد الذكاء الاصطناعي عن CrossFire." : "Ask our AI assistant anything about CrossFire."}
+        description={isAr ? "مساعد تفاعلي يساعدك في العثور على معلومات CrossFire وشرح صفحات الويكي." : "An interactive helper for finding and explaining CrossFire Wiki information."}
         canonicalPath="/ai"
+        noindex
       />
 
       <div style={{ background: "var(--background)", minHeight: "100%" }}>
@@ -416,7 +417,7 @@ export default function AIAssistant() {
               {error && (
                 <div style={{ textAlign: "center", padding: "8px 0 16px" }} className="ai-msg-enter">
                   <span style={{ fontSize: 12, padding: "6px 16px", borderRadius: 20, background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)" }}>
-                    ⚠ {error}
+                    Error: {error}
                   </span>
                 </div>
               )}

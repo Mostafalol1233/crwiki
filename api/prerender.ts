@@ -252,17 +252,17 @@ async function resolveMeta(path: string): Promise<PageMeta> {
 
   // ── static section pages ─────────────────────────────────────────────
   const sectionMeta: Record<string, Partial<PageMeta>> = {
-    "/events":      { title: "CrossFire Events 2025–2026 | Calendar & Rewards | CrossFire Wiki",           description: "All CrossFire West events, tournaments and limited-time updates. Dates, rewards and full details." },
+    "/events":      { title: "CrossFire Events | Calendar, Dates & Rewards | CrossFire Wiki",           description: "CrossFire events, tournaments, and limited-time updates with dates, reward details, and archived information." },
     "/weapons":     { title: "CrossFire Weapons Database — Stats, Variants & Guides | CrossFire Wiki",    description: "Complete CrossFire weapon stats, damage values, variants and unlock methods." },
     "/modes":       { title: "CrossFire Game Modes — Team Match, Mutation, Ghost & More | CrossFire Wiki", description: "Every CrossFire game mode explained: rules, strategies, and tips for Team Match, Mutation Mode, Ghost Mode and more." },
     "/ranks":       { title: "CrossFire Rank System — All 104 Tiers & EXP Required | CrossFire Wiki",    description: "Full CrossFire ranking system from Private to National Soldier. EXP requirements, badges and promotion tips." },
     "/mercenaries": { title: "CrossFire Mercenaries — Characters, Stats & Abilities | CrossFire Wiki",   description: "Every CrossFire mercenary with abilities, teams, and how to get them." },
     "/maps":        { title: "CrossFire Maps — Black Widow, Egypt, Cabin & More | CrossFire Wiki",       description: "All CrossFire maps with layout overviews, strategies and callouts." },
     "/news":        { title: "CrossFire News — Updates, Patches & Announcements | CrossFire Wiki",       description: "Latest CrossFire West news, patch notes, updates and game announcements." },
-    "/tutorials":   { title: "CrossFire Tutorials — Beginner to Pro Guides | CrossFire Wiki",           description: "Expert CrossFire tutorials: aim training, movement, weapons, and competitive strategies." },
+    "/tutorials":   { title: "CrossFire Tutorials | Beginner Guides & Game Systems | CrossFire Wiki",           description: "CrossFire tutorials covering installation, movement, weapons, game systems, and practical gameplay questions." },
     "/videos":       { title: "CrossFire Videos — Tutorials, Gameplay & Highlights | CrossFire Wiki", description: "Watch CrossFire tutorials, gameplay, weapon guides, creator videos and highlights with useful explanations." },
     "/pages":        { title: "CrossFire Wiki Pages — Guides, Updates & Reference | CrossFire Wiki", description: "Browse detailed CrossFire Wiki pages covering updates, modes, weapons, events, systems and community guides." },
-    "/content-hub":  { title: "CrossFire Content Hub — Guides, News & Media | CrossFire Wiki", description: "Explore the CrossFire Wiki content hub for long-form guides, official updates, videos, events and community resources." },
+    "/content-hub":  { title: "CrossFire Content Hub | Guides, Updates & Reference | CrossFire Wiki", description: "Browse organized CrossFire guides, updates, videos, events, and reference pages in the wiki content hub." },
     "/faq":          { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
   };
   const sp = sectionMeta[path];
@@ -279,7 +279,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   // ── Default fallback ─────────────────────────────────────────────────
   return {
     title:       "CrossFire Wiki | Weapons, Modes, Mercenaries & Community",
-    description: "The definitive CrossFire encyclopedia: weapons, maps, mercenaries, game modes, ranks, and community resources.",
+    description: "An independent CrossFire reference for weapons, maps, characters, game modes, ranks, events, and community resources.",
     image:       DEFAULT_IMG,
     url:         `${BASE}${path}`,
     type:        "website",

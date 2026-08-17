@@ -446,7 +446,7 @@ export default function Home() {
     <>
       <PageSEO
         title="CrossFire Wiki — Weapons, Ranks, Events, Maps & Guides"
-        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, competitive events and tutorials for Z8Games CrossFire — in English and Arabic."
+        description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, and tutorials in English and Arabic."
         image="https://crossfire.wiki/feature-crossfire.jpg"
         canonicalPath="/"
       />
@@ -455,7 +455,7 @@ export default function Home() {
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <div style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
           {heroImage && (
-            <img src={heroImage} alt="CrossFire Wiki hero background — elite mercenaries in action" style={{
+            <img src={heroImage} alt="CrossFire gameplay artwork used for the CrossFire Wiki header" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.15,
             }} />

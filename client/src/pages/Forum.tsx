@@ -242,10 +242,10 @@ export default function Forum() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", marginBottom: 3 }}>
-                {isAr ? "مش لاقي إجابة؟ اسأل الذكاء الاصطناعي!" : "Can't find an answer? Ask the AI!"}
+                {isAr ? "لم تجد الإجابة؟ جرّب المساعد" : "Need help finding an answer? Try the assistant"}
               </div>
               <div style={{ fontSize: 11, color: "#555" }}>
-                {isAr ? "المساعد الذكي يعرف كل حاجة عن CrossFire — أسلحة، رتب، مرتزقة، وأكتر." : "Our AI knows everything about CrossFire — weapons, ranks, mercenaries and more."}
+                {isAr ? "يمكن للمساعد تلخيص المعلومات المتاحة واقتراح صفحات مرتبطة، لكن راجع المصادر قبل اعتماد أي إجابة." : "The assistant can summarize available information and suggest related pages. Check the source pages before relying on an answer."}
               </div>
             </div>
             <Link href="/ai" style={{ textDecoration: "none", flexShrink: 0 }}>
@@ -256,7 +256,7 @@ export default function Forum() {
                 cursor: "pointer", whiteSpace: "nowrap",
               }}>
                 <Sparkles style={{ width: 12, height: 12 }} />
-                {isAr ? "اسأل الذكاء الاصطناعي" : "Ask AI"}
+                {isAr ? "فتح المساعد" : "Open assistant"}
               </button>
             </Link>
           </div>

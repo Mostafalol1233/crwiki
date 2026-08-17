@@ -51,10 +51,10 @@ const WIKI_BACK_TEMPLATE = `<!DOCTYPE html>
 
               <!-- Body text -->
               <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#aaa;">
-                The CrossFire community reference site is back — rebuilt, faster, and more complete than ever.
+                CrossFire Wiki is an independent reference site for game data, guides, events, and community updates.
               </p>
               <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#aaa;">
-                Weapon stats, mercenary profiles, event logs, rank progression, and a verified ZP seller marketplace — everything in one place, maintained by players.
+                Browse weapon stats, mercenary profiles, event records, rank progression, and community seller listings in one organized reference, maintained by players.
               </p>
 
               <!-- What's new list -->

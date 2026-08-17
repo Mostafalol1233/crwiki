@@ -522,8 +522,9 @@ export default function Mercenaries() {
               onClick={() => setSelectedMerc(null)}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded transition-colors hover:text-[#f5a623]"
               style={{ color: "#666", background: "rgba(0,0,0,0.5)" }}
+              aria-label="Close"
             >
-              ✕
+              Close
             </button>
             <div className="relative h-72 overflow-hidden">
               <img src={resolveMercImage(selectedMerc)} alt={selectedMerc.name} className="w-full h-full object-cover object-top" />

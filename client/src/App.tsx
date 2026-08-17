@@ -431,11 +431,11 @@ function LocalizedApp() {
     <WouterRouter base={base}>
       <SEOHead
         title="CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF"
-        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
+        description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, tutorials, and community guides in English and Arabic. كروس فاير ويكي: مراجع للأسلحة والشخصيات والخرائط والفعاليات وأنظمة اللعب."
         keywords={["CrossFire", "Crossfire", "CF", "Cross Fire", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "CrossFire events", "CrossFire weapons", "CrossFire ranks", "CrossFire mercenaries", "CrossFire news", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
         ogType="website"
         ogImage="https://crossfire.wiki/feature-crossfire.jpg"
-        ogImageAlt="CrossFire Wiki — The #1 CrossFire Gaming Guide"
+        ogImageAlt="CrossFire Wiki — CrossFire weapons, maps, characters, and events reference"
         ogImageWidth={1200}
         ogImageHeight={630}
         hreflangAlternates={[
@@ -462,7 +462,7 @@ function LocalizedApp() {
             height: 512,
             caption: "CrossFire Wiki",
           },
-          description: "The #1 CrossFire fan wiki — comprehensive resource for weapons, mercenaries, modes, ranks, events, tutorials and community guides.",
+          description: "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides.",
           sameAs: ["https://twitter.com/crossfirewiki"],
           contactPoint: {
             "@type": "ContactPoint",

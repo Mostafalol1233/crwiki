@@ -116,7 +116,7 @@ export default function Register() {
 
   return (
     <>
-      <PageSEO title={isAr ? "إنشاء حساب — CrossFire Wiki" : "Create Account — CrossFire Wiki"} description={isAr ? "سجّل للانضمام إلى مجتمع CrossFire Wiki." : "Register to join CrossFire Wiki."} />
+      <PageSEO title={isAr ? "إنشاء حساب — CrossFire Wiki" : "Create Account — CrossFire Wiki"} description={isAr ? "سجّل للانضمام إلى مجتمع CrossFire Wiki." : "Register to join CrossFire Wiki."} noindex />
       <div className="min-h-screen flex" style={{ background: "var(--background)" }}>
 
         {/* ── Left decorative panel ── */}
@@ -173,7 +173,7 @@ export default function Register() {
               {isAr ? <>انضم إلى<br /><span style={{ color: "#f5a623" }}>المجتمع</span></> : <>Join the<br /><span style={{ color: "#f5a623" }}>Community</span></>}
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: "#555" }}>
-              {isAr ? "أنشئ حسابًا لفتح جميع الميزات والانضمام إلى مجتمع CrossFire Wiki." : "Create an account to unlock all features and become part of the CrossFire Wiki community."}
+              {isAr ? "أنشئ حساباً للمشاركة في المنتدى وحفظ تقدمك والتواصل مع مجتمع CrossFire Wiki." : "Create an account to join discussions, save your progress, and take part in the CrossFire Wiki community."}
             </p>
           </div>
 

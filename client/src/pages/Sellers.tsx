@@ -466,7 +466,7 @@ export default function Sellers() {
 
                 {Array.isArray(s.prices) && s.prices.length > 0 && (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">💰 Price List</h3>
+                    <h3 className="text-xl font-semibold">Price List</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {s.prices.map((price, idx) => (
                         <div key={idx} className="flex justify-between items-center p-4 rounded-xl border bg-card hover:shadow-md transition-all hover:border-primary/30 group">
@@ -482,7 +482,7 @@ export default function Sellers() {
 
                 {s.promotionText && (
                   <div className="rounded-xl border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 p-5">
-                    <p className="text-sm font-medium text-primary">🔥 {s.promotionText}</p>
+                    <p className="text-sm font-medium text-primary">{s.promotionText}</p>
                   </div>
                 )}
               </div>
@@ -491,7 +491,7 @@ export default function Sellers() {
               <div className="space-y-5">
                 <Card className="shadow-md border-0 overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent pb-3">
-                    <CardTitle className="text-lg">📞 Contact Seller</CardTitle>
+                    <CardTitle className="text-lg">Contact Seller</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pt-3">
                     {s.website && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(normalizeUrl(s.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
@@ -506,7 +506,7 @@ export default function Sellers() {
                 {(s.facebook || s.twitter || s.instagram || s.youtube || s.tiktok || s.telegram) && (
                   <Card className="shadow-md border-0">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">🌐 Social Media</CardTitle>
+                      <CardTitle className="text-lg">Social Media</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-2 pt-0">
                       {s.facebook && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.facebook!), '_blank')}><SiFacebook className="mr-2 h-4 w-4" /> Facebook</Button>}

@@ -193,7 +193,7 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
                 {compareRows.map((row) => (
                   <tr key={row.region} className="border-b border-slate-800/70">
                     <td className="py-3 pr-4 font-medium text-slate-100">{row.name}</td>
-                    <td className="py-3 pr-4">{row.available ? "✅" : "❌"}</td>
+                    <td className={`py-3 pr-4 font-semibold ${row.available ? "text-emerald-400" : "text-slate-500"}`}>{row.available ? "Yes" : "No"}</td>
                     <td className="py-3 pr-4">{row.damage}</td>
                     <td className="py-3 text-slate-300">{row.notes}</td>
                   </tr>

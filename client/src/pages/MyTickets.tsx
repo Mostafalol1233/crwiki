@@ -105,6 +105,7 @@ export default function MyTickets() {
         title={`${isArabic ? "تذاكري للدعم" : "My Support Tickets"} — CrossFire Wiki`}
         description={isArabic ? "اعرض تذاكر الدعم التي أرسلتها وأضف ردودًا جديدة." : "View your submitted support tickets and add replies."}
         canonicalPath="/my-tickets"
+        noindex
       />
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
 

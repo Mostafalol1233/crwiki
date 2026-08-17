@@ -274,7 +274,7 @@ export function Header() {
                       <Icon size={13} strokeWidth={1.5} /> {label}
                     </Link>
                   ))}
-                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); setLocation(language === "ar" ? "/ar" : "/"); }}
+                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); setLocation("/"); }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
                       fontSize: 13, color: "rgba(239,68,68,0.7)", background: "none", border: "none",
@@ -289,7 +289,7 @@ export function Header() {
             </div>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Link href={language === "ar" ? "/ar/login" : "/login"} style={{
+              <Link href="/login" style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center",
                 fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
                 color: "rgba(255,255,255,0.7)", textDecoration: "none",
@@ -300,7 +300,7 @@ export function Header() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
                 {t("login")}
               </Link>
-              <Link href={language === "ar" ? "/ar/register" : "/register"} style={{
+              <Link href="/register" style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 600, fontFamily: "Inter, system-ui, sans-serif",
                 color: "#000", textDecoration: "none",
@@ -401,10 +401,10 @@ export function Header() {
             </button>
             {!isLoggedIn ? (
               <div style={{ display: "flex", gap: 8 }}>
-                <Link href={language === "ar" ? "/ar/login" : "/login"} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("login")}
                 </Link>
-                <Link href={language === "ar" ? "/ar/register" : "/register"} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href="/register" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("signUp")}
                 </Link>
               </div>

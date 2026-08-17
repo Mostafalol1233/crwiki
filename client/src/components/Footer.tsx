@@ -40,8 +40,7 @@ function SectionTitle({ label }: { label: string }) {
 
 function FooterLink({ label, path }: { label: string; path: string }) {
   const [hovered, setHovered] = useState(false);
-  const { language } = useLanguage();
-  const localizedPath = language === "ar" && !path.startsWith("/ar") ? `/ar${path}` : path;
+  const localizedPath = path;
   return (
     <li>
       <Link href={localizedPath}>
@@ -67,8 +66,7 @@ function FooterLink({ label, path }: { label: string; path: string }) {
 }
 
 export function Footer() {
-  const { t, language } = useLanguage();
-  const prefix = language === "ar" ? "/ar" : "";
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState<"idle" | "ok" | "err">("idle");
 
@@ -319,7 +317,7 @@ export function Footer() {
                 <p style={{ fontFamily: "'Cinzel', serif", fontSize: "14px", fontWeight: 900, letterSpacing: "0.12em", color: "#128c4a" }}>{t("footerWhatsappChannel")}</p>
               </div>
             </a>
-            <Link href={`${prefix}/download`}>
+            <Link href="/download">
               <div
                 style={{
                   padding: "10px 12px",
@@ -359,7 +357,7 @@ export function Footer() {
               { href: "/terms", label: t("footerTerms") },
               { href: "/about", label: t("about") },
             ].map(({ href, label }) => (
-              <Link key={href} href={`${prefix}${href}`}>
+              <Link key={href} href={href}>
                 <span
                   style={{
                     fontFamily: "'EB Garamond', serif",

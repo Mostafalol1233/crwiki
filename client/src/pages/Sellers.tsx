@@ -53,12 +53,25 @@ type SellerWithBrand = Seller & {
   displayImages: string[];
 };
 
+function slugifySellerName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function normalizeSellerList(value: unknown): Seller[] {
   if (!Array.isArray(value)) return [];
-  return value.map((seller: any) => ({
+  return value.map((seller: any) => {
+    const name = String(seller?.name || '');
+    return {
     ...seller,
     id: String(seller?.id || ''),
-    name: String(seller?.name || ''),
+    name,
+    seller_name_slug: String(seller?.seller_name_slug || slugifySellerName(name)),
     description: String(seller?.description || ''),
     logo_url: String(seller?.logo_url || ''),
     images: Array.isArray(seller?.images) ? seller.images : [],
@@ -66,7 +79,8 @@ function normalizeSellerList(value: unknown): Seller[] {
     featured: Boolean(seller?.featured),
     averageRating: typeof seller?.averageRating === 'number' ? seller.averageRating : Number(seller?.averageRating) || 0,
     totalReviews: typeof seller?.totalReviews === 'number' ? seller.totalReviews : Number(seller?.totalReviews) || 0,
-  }));
+    };
+  });
 }
 
 class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
@@ -170,7 +184,8 @@ export default function Sellers() {
     enabled: !!slugMatch && !!slug,
     queryFn: async () => {
       const all = normalizeSellerList(await getSellers());
-      const found = all.find((s: any) => s.seller_name_slug === slug || s.id === slug);
+      const normalizedSlug = slugifySellerName(slug);
+      const found = all.find((s: any) => slugifySellerName(String(s.seller_name_slug || '')) === normalizedSlug || s.id === slug);
       if (!found) throw new Error('Seller not found');
       return found;
     }
@@ -297,7 +312,7 @@ export default function Sellers() {
             <div className="relative mt-4 grid grid-cols-3 gap-2">
               {seller.displayImages.slice(0, 3).map((image, idx) => (
                 <div key={`${image}-${idx}`} className="h-16 overflow-hidden rounded-lg border border-white/40 bg-black/10">
-                  <img src={image} alt={`${seller.name} gallery ${idx + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                  <img src={image} alt={`${seller.name} gallery ${idx + 1}`} className="h-full w-full object-contain p-1" loading="lazy" />
                 </div>
               ))}
             </div>
@@ -364,13 +379,14 @@ export default function Sellers() {
   // ─── Slug View (Single Seller Page) ───
   if (slugMatch && sellerBySlug) {
     const s = sellerBySlug;
+    const profileImages = s.displayImages.length > 0 ? s.displayImages : (s.displayLogo ? [s.displayLogo] : []);
     return (
       <>
         <PageSEO
           title={s.seoTitle || `${s.name} — Seller | CrossFire Wiki`}
           description={s.seoDescription || s.description || `Seller ${s.name} page.`}
           canonicalPath={s.canonicalUrl || `/seller/${s.seller_name_slug || slug}`}
-          image={s.ogImage || s.displayLogo || s.displayImages?.[0]}
+          image={s.ogImage || s.displayLogo || profileImages?.[0]}
           schemaType={s.schemaType || 'Organization'}
         />
         <div className="min-h-screen bg-background">
@@ -383,9 +399,9 @@ export default function Sellers() {
 
               <div className="flex flex-col md:flex-row items-start gap-6">
                 {/* Seller Logo */}
-                {(s.displayLogo || s.displayImages.length > 0) ? (
+                {(s.displayLogo || profileImages.length > 0) ? (
                   <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-lg bg-white dark:bg-slate-950 shrink-0 p-2">
-                    <img src={s.displayLogo || s.displayImages[0]} alt={`${s.name} logo`} className="w-full h-full object-contain bg-transparent" />
+                    <img src={s.displayLogo || profileImages[0]} alt={`${s.name} logo`} className="w-full h-full object-contain bg-transparent" />
                   </div>
                 ) : (
                   <div className="w-20 h-20 md:w-28 md:h-28 rounded-2xl border-2 border-primary/20 shadow-lg bg-primary/10 shrink-0 flex items-center justify-center text-2xl font-black text-primary">
@@ -420,23 +436,23 @@ export default function Sellers() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column: Gallery + Price List */}
               <div className="lg:col-span-2 space-y-8">
-                {s.displayImages.length > 0 && (
-                  <div className="space-y-4">
+                {profileImages.length > 0 && (
+                  <div className="space-y-4 rounded-2xl border bg-card/60 p-4 md:p-5">
                     <h3 className="text-xl font-semibold flex items-center gap-2">
                       <ZoomIn className="h-5 w-5 text-muted-foreground" />
                       Gallery
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {s.displayImages.map((image, idx) => (
+                      {profileImages.map((image, idx) => (
                         <div
                           key={idx}
                           className="group/img relative rounded-xl overflow-hidden border bg-muted cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => setLightbox({ images: s.displayImages, index: idx })}
+                          onClick={() => setLightbox({ images: profileImages, index: idx })}
                         >
                           <img
                             src={image}
                             alt={`${s.name} ${idx + 1}`}
-                            className="w-full h-auto min-h-[160px] max-h-[360px] object-contain bg-transparent"
+                            className="block h-auto max-h-[420px] min-h-[180px] w-full object-contain bg-transparent p-2"
                             loading="lazy"
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center">
@@ -555,7 +571,7 @@ export default function Sellers() {
       );
     }
 
-    const images = (sellerPage?.images && sellerPage.images.length > 0) ? sellerPage.images : sellerBySlug.displayImages;
+    const images = Array.from(new Set([...(Array.isArray(sellerPage?.images) ? sellerPage.images : []), ...sellerBySlug.displayImages, ...(sellerBySlug.displayImages.length === 0 && sellerBySlug.displayLogo ? [sellerBySlug.displayLogo] : [])].filter(Boolean)));
     const mainImage = images?.[0] || "";
     const descriptionHtml = sellerPage?.descriptionHtml || "";
 
@@ -635,7 +651,7 @@ export default function Sellers() {
                         className="group relative rounded-lg border bg-muted overflow-hidden cursor-pointer"
                         onClick={() => setLightbox({ images, index: idx + 1 })}
                       >
-                        <img src={img} className="w-full h-40 object-contain bg-transparent" alt={`${sellerBySlug.name} ${idx + 2}`} />
+                        <img src={img} className="block h-auto min-h-40 max-h-60 w-full object-contain bg-transparent p-2" alt={`${sellerBySlug.name} ${idx + 2}`} />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                           <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -823,7 +839,7 @@ export default function Sellers() {
                               className="group/gimg relative rounded-lg border bg-muted overflow-hidden cursor-pointer"
                               onClick={() => setLightbox({ images: selectedSeller.displayImages, index: idx })}
                             >
-                              <img src={img} className="w-full h-36 object-contain bg-transparent" alt={`${selectedSeller.name} ${idx + 1}`} />
+                              <img src={img} className="block h-auto min-h-36 max-h-56 w-full object-contain bg-transparent p-2" alt={`${selectedSeller.name} ${idx + 1}`} />
                               <div className="absolute inset-0 bg-black/0 group-hover/gimg:bg-black/20 transition-colors flex items-center justify-center">
                                 <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover/gimg:opacity-100 transition-opacity" />
                               </div>

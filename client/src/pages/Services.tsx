@@ -19,6 +19,9 @@ interface ServiceListing {
   confidence: "higher" | "limited" | "unverified";
   note: string;
   noteAr: string;
+  mediaUrl: string;
+  gallery: string[];
+  mediaSource: string;
 }
 
 const listings: ServiceListing[] = [
@@ -32,6 +35,9 @@ const listings: ServiceListing[] = [
     confidence: "higher",
     note: "Large review history and several positive CrossFire comments; reviews are not all ZM4-specific.",
     noteAr: "سجل مراجعات كبير وتعليقات إيجابية متعددة عن CrossFire، لكن ليست كل المراجعات خاصة بـ ZM4.",
+    mediaUrl: "/portal/modes.webp",
+    gallery: ["/portal/maps.webp", "/portal/events.jpg"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
   {
     seller: "MOIRA20",
@@ -43,6 +49,9 @@ const listings: ServiceListing[] = [
     confidence: "higher",
     note: "Strong general marketplace history, but confirm the exact current ZM4 deliverables before payment.",
     noteAr: "سجل قوي عموماً على المنصة، لكن يجب تأكيد تفاصيل خدمة ZM4 الحالية قبل الدفع.",
+    mediaUrl: "/portal/weapons.png",
+    gallery: ["/portal/ranks.webp", "/portal/maps.webp"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
   {
     seller: "PlayGamesMarket",
@@ -54,6 +63,9 @@ const listings: ServiceListing[] = [
     confidence: "limited",
     note: "Positive CrossFire comments were visible, but the listing is not a current price guarantee.",
     noteAr: "ظهرت تعليقات إيجابية عن CrossFire، لكن السعر الظاهر ليس ضماناً للسعر الحالي.",
+    mediaUrl: "/portal/mercenaries.webp",
+    gallery: ["/portal/modes.webp", "/portal/events.jpg"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
   {
     seller: "Xiaoda1",
@@ -65,6 +77,9 @@ const listings: ServiceListing[] = [
     confidence: "limited",
     note: "Small but positive review sample in the research snapshot; verify availability and currency.",
     noteAr: "عينة المراجعات صغيرة وإيجابية في لقطة البحث؛ تحقق من التوفر والعملة.",
+    mediaUrl: "/portal/weapons.jpg",
+    gallery: ["/portal/maps.jpg", "/portal/ranks.jpg"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
   {
     seller: "Antifarming",
@@ -76,6 +91,9 @@ const listings: ServiceListing[] = [
     confidence: "limited",
     note: "Relatively recent listing, but the public review sample is very small. No endorsement is implied.",
     noteAr: "العرض أحدث نسبياً، لكن عينة المراجعات العامة صغيرة جداً. الإدراج لا يعني تزكية.",
+    mediaUrl: "/portal/modes.jpg",
+    gallery: ["/portal/events.jpg", "/portal/maps.webp"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
   {
     seller: "DrAllspark",
@@ -87,6 +105,9 @@ const listings: ServiceListing[] = [
     confidence: "unverified",
     note: "Recent-looking offer with no public reviews in the snapshot; verify identity and terms carefully.",
     noteAr: "عرض يبدو حديثاً دون مراجعات عامة في اللقطة؛ تحقق من الهوية والشروط بعناية.",
+    mediaUrl: "/portal/events.jpg",
+    gallery: ["/portal/modes.webp", "/portal/mercenaries.webp"],
+    mediaSource: "CrossFire category artwork; seller profile linked separately",
   },
 ];
 
@@ -170,23 +191,27 @@ export default function Services() {
               {filteredListings.map((listing) => {
                 const brand = getSellerBrandAsset(listing.seller);
                 const initials = listing.seller.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+                const mediaGallery = brand.gallery.length > 0 ? brand.gallery : listing.gallery;
+                const mediaLogo = brand.logoUrl;
+                const mediaHero = mediaGallery[0] || listing.mediaUrl;
                 return (
                   <Card key={`${listing.seller}-${listing.profileUrl}`} className="group flex h-full flex-col overflow-hidden border-border/60 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
                     <div className={`relative overflow-hidden bg-gradient-to-br ${brand.accent} px-5 pb-5 pt-4`}>
                       <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/25 blur-2xl" />
+                      {mediaHero && <div className="relative mb-4 flex min-h-40 items-center justify-center overflow-hidden rounded-2xl border border-white/50 bg-slate-950/10 p-3 shadow-inner"><img src={mediaHero} alt={`${listing.seller} CrossFire service`} className="max-h-44 w-full object-contain" loading="lazy" /></div>}
                       <div className="relative flex items-center gap-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-2 shadow-lg dark:bg-slate-950/80">
-                          {brand.logoUrl ? <img src={brand.logoUrl} alt={`${listing.seller} logo`} className="h-full w-full object-contain" loading="lazy" /> : <span className="text-xl font-black text-primary">{initials}</span>}
+                          {mediaLogo ? <img src={mediaLogo} alt={`${listing.seller} logo`} className="h-full w-full object-contain" loading="lazy" /> : <span className="text-xl font-black text-primary">{initials}</span>}
                         </div>
                         <div className="min-w-0 flex-1"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/60">{isArabic ? "متجر الخدمة" : "Service storefront"}</p><h3 className="truncate text-xl font-black tracking-tight">{listing.seller}</h3><Badge variant="outline" className="mt-2 border-foreground/15 bg-background/60 text-[10px]">{isArabic ? "الملف متاح" : "Profile available"}</Badge></div>
                       </div>
-                      {brand.gallery.length > 0 && <div className="relative mt-4 grid grid-cols-3 gap-2">{brand.gallery.slice(0, 3).map((image, idx) => <div key={`${image}-${idx}`} className="h-14 overflow-hidden rounded-lg border border-white/40 bg-black/10"><img src={image} alt={`${listing.seller} gallery ${idx + 1}`} className="h-full w-full object-cover" loading="lazy" /></div>)}</div>}
+                      {mediaGallery.length > 1 && <div className="relative mt-4 grid grid-cols-3 gap-2">{mediaGallery.slice(1, 4).map((image, idx) => <div key={`${image}-${idx}`} className="aspect-[4/3] overflow-hidden rounded-lg border border-white/40 bg-black/10 p-1"><img src={image} alt={`${listing.seller} CrossFire service artwork ${idx + 2}`} className="h-full w-full object-contain" loading="lazy" /></div>)}</div>}
                     </div>
                     <CardHeader className="space-y-2 pb-3"><div className="flex items-start justify-between gap-3"><CardTitle className="text-lg leading-6">{isArabic ? listing.serviceAr : listing.service}</CardTitle><Badge variant="secondary" className="shrink-0 text-[10px]">{confidenceLabel(listing.confidence)}</Badge></div><CardDescription className="leading-5">{isArabic ? listing.noteAr : listing.note}</CardDescription></CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm">
                       <div className="flex gap-2 rounded-xl border bg-muted/40 p-3"><Tag className="mt-0.5 h-4 w-4 shrink-0 text-primary" /><span>{listing.price}</span></div>
                       <div className="flex gap-2 text-xs text-muted-foreground"><Clock3 className="h-4 w-4 shrink-0" /><span>{listing.age}</span></div>
-                      <p className="text-xs leading-5 text-muted-foreground">{isArabic ? "هذا دليل تعريفي؛ يتم فتح الملف الشخصي فقط لأن رابط العرض المباشر لم يعد مؤكداً." : "Directory entry only: the profile is shown, while no direct offer is published unless its live status is confirmed."}</p>
+                      <p className="text-xs leading-5 text-muted-foreground">{isArabic ? `هذه صور توضيحية من CrossFire لأن الملف العام لا يوفر معرضاً موثوقاً؛ افتح ملف البائع لمراجعة هويته الحالية. ${listing.mediaSource}` : `CrossFire category artwork is shown because the public profile does not expose a reliable gallery; open the seller profile to review the current identity. ${listing.mediaSource}`}</p>
                     </CardContent>
                     <CardFooter className="border-t bg-muted/20 p-4"><Button asChild className="w-full" size="sm"><a href={listing.profileUrl} target="_blank" rel="noreferrer"><UserRound className="mr-2 h-4 w-4" />{isArabic ? "فتح الملف الشخصي" : "Open seller profile"}<ExternalLink className="ml-auto h-3.5 w-3.5" /></a></Button></CardFooter>
                   </Card>

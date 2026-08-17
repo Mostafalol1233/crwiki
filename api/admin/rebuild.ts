@@ -108,6 +108,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // ── action: legacy-content ─────────────────────────────────────────────────
+  if (action === "legacy-content") {
+    if (!SUPABASE_URL || !SERVICE_KEY)
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+    if (!Array.isArray(rows) || rows.length === 0)
+      return addCorsHeaders(res).status(400).json({ error: "rows required" });
+
+    const tableByType: Record<string, string> = { posts: "posts", news: "news", events: "events" };
+    const headers = {
+      "Content-Type": "application/json",
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      Prefer: "return=minimal",
+    };
+    const counts = { updated: 0, failed: 0 };
+    const failures: Array<{ type: string; id: string; error: string }> = [];
+
+    for (const item of rows) {
+      const itemType = typeof item?.type === "string" ? item.type : "";
+      const itemId = typeof item?.id === "string" ? item.id : "";
+      const draft = item?.draft && typeof item.draft === "object" ? item.draft : null;
+      const table = tableByType[itemType];
+      if (!table || !itemId || !draft) {
+        counts.failed += 1;
+        failures.push({ type: itemType, id: itemId, error: "type, id, and draft are required" });
+        continue;
+      }
+
+      const common = {
+        title: typeof draft.title_en === "string" ? draft.title_en : undefined,
+        title_ar: typeof draft.title_ar === "string" ? draft.title_ar : undefined,
+        seo_title: typeof draft.seo_title_en === "string" ? draft.seo_title_en : undefined,
+        seo_description: typeof draft.seo_description_en === "string" ? draft.seo_description_en : undefined,
+        updated_at: new Date().toISOString(),
+      };
+      const updateBody = itemType === "events"
+        ? {
+            ...common,
+            description: typeof draft.content_en === "string" ? draft.content_en : undefined,
+            description_ar: typeof draft.content_ar === "string" ? draft.content_ar : undefined,
+          }
+        : itemType === "news"
+          ? {
+              ...common,
+              content: typeof draft.content_en === "string" ? draft.content_en : undefined,
+              content_ar: typeof draft.content_ar === "string" ? draft.content_ar : undefined,
+              html_content: typeof draft.content_en === "string" ? draft.content_en : undefined,
+            }
+          : {
+              ...common,
+              summary: typeof draft.summary_en === "string" ? draft.summary_en : undefined,
+              content: typeof draft.content_en === "string" ? draft.content_en : undefined,
+              content_ar: typeof draft.content_ar === "string" ? draft.content_ar : undefined,
+              focus_keyword: typeof draft.focus_keyword_en === "string" ? draft.focus_keyword_en : undefined,
+              reading_time: Number.isInteger(draft.reading_time) ? draft.reading_time : undefined,
+            };
+
+      const cleanBody = Object.fromEntries(Object.entries(updateBody).filter(([, value]) => value !== undefined));
+      try {
+        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(itemId)}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(cleanBody),
+        });
+        if (!updateResponse.ok) {
+          throw new Error(await updateResponse.text());
+        }
+        counts.updated += 1;
+      } catch (error: any) {
+        counts.failed += 1;
+        failures.push({ type: itemType, id: itemId, error: error?.message || "update failed" });
+      }
+    }
+
+    return addCorsHeaders(res).status(counts.failed ? 207 : 200).json({ ...counts, failures });
+  }
+
   // ── action: rescrape-item ─────────────────────────────────────────────────
   if (action === "rescrape-item") {
     if (!type || !id || !url || !String(url).startsWith("http"))

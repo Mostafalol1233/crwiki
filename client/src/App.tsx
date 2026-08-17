@@ -97,6 +97,7 @@ const EventsList     = lazy(() => import("@/pages/EventsList"));
 const Profile        = lazy(() => import("@/pages/Profile"));
 const Reviews        = lazy(() => import("@/pages/Reviews"));
 const Sellers        = lazy(() => import("@/pages/Sellers"));
+const Services       = lazy(() => import("@/pages/Services"));
 const Support        = lazy(() => import("@/pages/Support"));
 const FAQ            = lazy(() => import("@/pages/FAQ"));
 const MyTickets      = lazy(() => import("@/pages/MyTickets"));
@@ -186,6 +187,10 @@ function Router() {
       <Route path="/reviews/seller/slug/:slug" component={() => <L C={Reviews} />} />
       <Route path="/sellers"                   component={() => <L C={Sellers} />} />
       <Route path="/seller/:slug"              component={() => <L C={Sellers} />} />
+      <Route path="/services"                 component={() => <L C={Services} />} />
+      <Route path="/ar/sellers"               component={() => <L C={Sellers} />} />
+      <Route path="/ar/seller/:slug"          component={() => <L C={Sellers} />} />
+      <Route path="/ar/services"              component={() => <L C={Services} />} />
       <Route path="/news"                      component={() => <L C={News} />} />
       <Route path="/news/:slug"                component={() => <L C={NewsDetail} />} />
       <Route path="/news/id/:legacyId"         component={() => <L C={NewsDetail} />} />
@@ -205,8 +210,6 @@ function Router() {
       <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
       <Route path="/pages/:slug"              component={(p: any) => <L C={CustomPageRoute} params={p.params} />} />
       <Route path="/compare/:slug"            component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
-      <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
-      <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
 
       {/* Support */}
       <Route path="/support"                   component={() => <L C={Support} />} />
@@ -243,8 +246,9 @@ function Router() {
       <Route path="/chat"                      component={() => <L C={Chat} />} />
       <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
 
-      {/* Admin */}
-      <Route path="/pages"                    component={() => <L C={CustomPagesIndex} />} />
+      {/* Regional wiki fallbacks must follow every fixed public route. */}
+      <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
+      <Route path="/:region"                  component={(p: any) => <L C={GlobalWiki} params={p.params} />} />
 
       <Route component={() => <L C={NotFound} />} />
     </Switch>
@@ -407,10 +411,17 @@ function LocalizedApp() {
   useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
 
-  // Auto-redirect "/" → "/ar" when Arabic is active so the router base matches the URL
+  // Keep Arabic admin URLs canonical. The app uses /ar as the router base, but
+  // old bookmarks and admin links may still point to /admin/* without it.
   React.useEffect(() => {
-    if (language === "ar" && window.location.pathname === "/") {
+    const path = window.location.pathname;
+    if (language === "ar" && path === "/") {
       window.history.replaceState(null, "", "/ar");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+      return;
+    }
+    if (language === "ar" && path.startsWith("/admin")) {
+      window.history.replaceState(null, "", `/ar${path}`);
       window.dispatchEvent(new PopStateEvent("popstate"));
     }
   }, [language]);
@@ -420,11 +431,11 @@ function LocalizedApp() {
     <WouterRouter base={base}>
       <SEOHead
         title="CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF"
-        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic. كروس فاير ويكي: شرح ايفنتات واسلحة وخرائط ومودات كروس فاير."
+        description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, tutorials, and community guides in English and Arabic. كروس فاير ويكي: مراجع للأسلحة والشخصيات والخرائط والفعاليات وأنظمة اللعب."
         keywords={["CrossFire", "Crossfire", "CF", "Cross Fire", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "CrossFire events", "CrossFire weapons", "CrossFire ranks", "CrossFire mercenaries", "CrossFire news", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
         ogType="website"
         ogImage="https://crossfire.wiki/feature-crossfire.jpg"
-        ogImageAlt="CrossFire Wiki — The #1 CrossFire Gaming Guide"
+        ogImageAlt="CrossFire Wiki — CrossFire weapons, maps, characters, and events reference"
         ogImageWidth={1200}
         ogImageHeight={630}
         hreflangAlternates={[
@@ -451,7 +462,7 @@ function LocalizedApp() {
             height: 512,
             caption: "CrossFire Wiki",
           },
-          description: "The #1 CrossFire fan wiki — comprehensive resource for weapons, mercenaries, modes, ranks, events, tutorials and community guides.",
+          description: "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides.",
           sameAs: ["https://twitter.com/crossfirewiki"],
           contactPoint: {
             "@type": "ContactPoint",

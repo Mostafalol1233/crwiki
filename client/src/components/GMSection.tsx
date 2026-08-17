@@ -52,13 +52,16 @@ export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
             fontSize: "clamp(1.3rem, 3vw, 1.9rem)", letterSpacing: "0.15em",
             color: "hsl(var(--foreground))", margin: 0,
           }}>
-            GAME MASTERS
+            COMMUNITY STAFF
           </h2>
           <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.85rem", color: "#9a7c3f" }}>
-            Official CF Staff
+            Community Wiki Staff
           </span>
         </div>
       )}
+      <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", margin: hideHeader ? "0 0 14px" : "-12px 0 14px", opacity: 0.7 }}>
+        Community-maintained profiles. CrossFire Wiki is an independent fan project and is not affiliated with or endorsed by the game publisher.
+      </p>
 
       <div style={{
         display: "grid",
@@ -129,7 +132,7 @@ export function GMSection({ hideHeader }: { hideHeader?: boolean } = {}) {
                 </p>
                 <p style={{ fontSize: "0.72rem", color: "#22c55e", margin: 0, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 6px #22c55e" }} />
-                  Official CF Staff
+                  Community Wiki Staff
                 </p>
               </div>
             </div>

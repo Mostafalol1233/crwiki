@@ -31,7 +31,7 @@ export default function TutorialsPage() {
   return (
     <>
       <PageSEO
-        title="CrossFire Tutorials & Highlights — Wiki | Bimora Gaming"
+        title="CrossFire Tutorials & Highlights — CrossFire Wiki"
         description="Watch CrossFire tutorials, gameplay highlights, esports coverage and community clips. Improve your skills and stay up to date."
         canonicalPath="/tutorials"
       />

@@ -1,13 +1,13 @@
 /**
  * supabaseShim.ts
- * Intercepts all /api/... calls from Admin and routes them to Supabase directly.
- * No backend server needed — everything runs via the Supabase service-role client.
+ * Compatibility shim for public reads while the application migrates its
+ * administrative mutations to authenticated server endpoints.
  */
-import { supabaseService } from './supabaseAdmin';
 import { supabase } from './supabase';
 
-// Use service-role client for writes (bypasses RLS), anon client for reads
-const db = () => supabaseService || supabase;
+// Never use a service-role credential in browser code. Supabase RLS remains the
+// final authority for any direct client-side operation.
+const db = () => supabase;
 
 function slugify(text: string) {
   return String(text || '')
@@ -122,7 +122,7 @@ function denormalizePost(d: any) {
     images: d.images || [],
     category: d.category || 'General',
     tags,
-    author: d.author || 'Bimora Team',
+    author: d.author || 'CrossFire Wiki Team',
     reading_time: d.readingTime || 1,
     featured: d.featured || false,
     preview_on_home: d.previewOnHome !== false,
@@ -215,7 +215,7 @@ function denormalizeNews(d: any) {
     category: d.category || 'News',
     content: d.content || '',
     content_ar: d.contentAr || '',
-    author: d.author || 'Bimora Team',
+    author: d.author || 'CrossFire Wiki Team',
     featured: d.featured || false,
     preview_on_home: d.previewOnHome !== false,
     seo_title: d.seoTitle || '',
@@ -772,7 +772,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   if (path === '/public/settings/seo') {
-    const { data } = await client.from('site_settings').select('*').limit(1).single();
+    const { data } = await client.from('site_settings').select('*').limit(1).maybeSingle();
     return {
       seoTitle: data?.seo_title || 'CrossFire Wiki',
       seoDescription: data?.seo_description || '',
@@ -783,7 +783,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   if (path === '/public/settings/announcements') {
-    const { data } = await client.from('site_settings').select('announcements_enabled').limit(1).single();
+    const { data } = await client.from('site_settings').select('announcements_enabled').limit(1).maybeSingle();
     return { enabled: data?.announcements_enabled ?? true };
   }
 
@@ -791,7 +791,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   if (path === '/announcements/global') {
     if (M === 'GET') {
       const { data } = await client.from('posts').select('*')
-        .eq('category', ANN_CATEGORY).contains('tags', ['global']).eq('featured', true).order('created_at', { ascending: false }).limit(1).single();
+        .eq('category', ANN_CATEGORY).contains('tags', ['global']).eq('featured', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (!data) return null;
       return postToAnn(data);
     }
@@ -853,7 +853,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     return (data || []).map(postToAnn);
   }
 
-  // ── Admin users (stub — use VITE_ADMIN_PASSWORD for auth) ─────────────────
+  // ── Admin users (stub — use the authenticated server admin flow) ────────
   if (path === '/admin/users' || path === '/admin/admins') {
     return M === 'GET' ? [] : { success: true };
   }

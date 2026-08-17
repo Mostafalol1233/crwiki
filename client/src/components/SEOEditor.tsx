@@ -43,7 +43,7 @@ export function SEOEditor({ data, onChange, autoFill }: SEOEditorProps) {
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="font-medium text-sm flex items-center gap-2">
-          <span>🔍 SEO Settings</span>
+          <span>SEO Settings</span>
           {data.seoTitle && <span className="text-xs text-green-600 font-normal">(Configured)</span>}
         </div>
         {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

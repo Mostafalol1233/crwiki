@@ -9,6 +9,7 @@ import FormData from "form-data";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 dotenv.config();
 
@@ -20,11 +21,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
+const CORS_ORIGINS = CORS_ORIGIN.split(",").map((value) => value.trim()).filter(Boolean);
 app.use(
   cors({
-    origin: (origin, cb) => cb(null, true),
+    origin: (origin, cb) => {
+      if (!origin || CORS_ORIGIN === "*" || CORS_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error("Origin not allowed"));
+    },
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -35,6 +40,33 @@ const limiter = rateLimit({
 });
 app.use("/images/upload", limiter);
 app.use("/cdn/fetch", limiter);
+
+function verifyAdminToken(req) {
+  const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  const secret = String(
+    process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_PASSWORD || process.env.SUPABASE_SERVICE_KEY || "",
+  ).trim();
+  if (!token || !secret) return false;
+
+  const [payloadPart, signature, ...extra] = token.split(".");
+  if (!payloadPart || !signature || extra.length) return false;
+  const expected = createHmac("sha256", secret).update(payloadPart).digest("base64url");
+  const actualBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer)) return false;
+
+  try {
+    const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8"));
+    return typeof payload.exp === "number" && payload.exp > Date.now() && typeof payload.role === "string";
+  } catch {
+    return false;
+  }
+}
+
+function requireAdmin(req, res, next) {
+  if (!verifyAdminToken(req)) return res.status(401).json({ ok: false, error: "Unauthorized" });
+  return next();
+}
 
 // Optional DB connection (supports both legacy MONGO_URL and MONGODB_URI)
 const MONGO_URL = process.env.MONGODB_URI || process.env.MONGO_URL || "";
@@ -78,7 +110,7 @@ const CLOUDINARY_UPLOAD_PRESET = process.env.CLOUDINARY_UPLOAD_PRESET || "crossf
 const CLOUDINARY_RESOURCE_TYPE = process.env.CLOUDINARY_RESOURCE_TYPE || "auto";
 const PRESERVE_ORIGINAL_UPLOADS = String(process.env.PRESERVE_ORIGINAL_UPLOADS || "true").toLowerCase() !== "false";
 
-app.post("/images/upload", upload.single("file"), async (req, res, next) => {
+app.post("/images/upload", requireAdmin, upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: "No file provided" });
     let { buffer, mimetype, originalname } = req.file;

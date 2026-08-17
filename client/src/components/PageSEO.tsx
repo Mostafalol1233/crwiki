@@ -28,7 +28,15 @@ export function PageSEO({
 }: PageSEOProps) {
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
   const base = envBase || "https://crossfire.wiki";
-  const canonicalUrl = canonicalPath ? `${base.replace(/\/$/, "")}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}` : base;
+  const normalizedPath = canonicalPath
+    ? `${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`
+    : "/";
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
+  const isArabicRoute = pathname === "/ar" || pathname.startsWith("/ar/");
+  const localizedPath = isArabicRoute && normalizedPath !== "/ar" && !normalizedPath.startsWith("/ar/")
+    ? `/ar${normalizedPath === "/" ? "" : normalizedPath}`
+    : normalizedPath;
+  const canonicalUrl = `${base.replace(/\/$/, "")}${localizedPath}`;
 
   return (
     <SEOHead

@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
 import { getNews, getPosts, getEvents } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
+import ContentImage from "@/components/ContentImage";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -31,7 +32,7 @@ function getCatStyle(cat: string) {
 }
 
 // ─── Featured Article ─────────────────────────────────────────────────────────
-function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any) {
+function FeaturedArticle({ item, href, title, excerpt, date, author, cat, isArabic }: any) {
   const cs = getCatStyle(cat);
   return (
     <Link href={href} className="group block">
@@ -46,7 +47,7 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
           {/* Image */}
           <div style={{ position: "relative", overflow: "hidden", minHeight: 280 }}>
             {item.image || item.imageUrl ? (
-              <img
+              <ContentImage
                 src={item.image || item.imageUrl}
                 alt={title}
                 className="group-hover:scale-105 transition-transform duration-700"
@@ -60,7 +61,7 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 50%, var(--card) 100%)" }} />
             <div style={{ position: "absolute", top: 12, left: 12 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", background: GOLD, color: "#000", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderRadius: 2 }}>
-                <Flame size={9} /> Featured
+                <Flame size={9} /> {isArabic ? "مميز" : "Featured"}
               </span>
             </div>
           </div>
@@ -69,21 +70,21 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
           <div style={{ padding: "28px 28px", display: "flex", flexDirection: "column", justifyContent: "center", borderLeft: `1px solid ${BORDER}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", padding: "3px 8px", background: cs.bg, color: cs.color, borderRadius: 2 }}>
-                {cat || "Article"}
+                {cat || (isArabic ? "مقال" : "Article")}
               </span>
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--foreground)", margin: "0 0 10px", lineHeight: 1.25 }}>
               {title}
             </h2>
             <p style={{ fontSize: 13, color: "#666", margin: "0 0 16px", lineHeight: 1.65, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-              {excerpt || "Read the full article for details."}
+              {excerpt || (isArabic ? "اقرأ المقال الكامل لمعرفة التفاصيل." : "Read the full article for details.")}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
               {author && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><User size={11} />{normalizeAuthor(author)}</span>}
               {date && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={11} />{date}</span>}
             </div>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Read More <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              {isArabic ? "اقرأ المزيد" : "Read More"} <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </div>
@@ -97,7 +98,7 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat }: any)
 }
 
 // ─── Article Card ─────────────────────────────────────────────────────────────
-function ArticleCard({ item, href, title, excerpt, date, cat, author }: any) {
+function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }: any) {
   const cs = getCatStyle(cat);
   return (
     <Link href={href} className="group block h-full">
@@ -108,7 +109,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author }: any) {
         {/* Thumbnail */}
         <div style={{ position: "relative", overflow: "hidden", paddingTop: "55%" }}>
           {item.image || item.imageUrl ? (
-            <img src={item.image || item.imageUrl} alt={title} loading="lazy"
+            <ContentImage src={item.image || item.imageUrl} alt={title} loading="lazy"
               className="group-hover:scale-105 transition-transform duration-500"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />
@@ -121,7 +122,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author }: any) {
           {item.featured && (
             <div style={{ position: "absolute", top: 8, left: 8 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 8, fontWeight: 800, padding: "2px 7px", background: GOLD, color: "#000", textTransform: "uppercase", letterSpacing: "0.1em", borderRadius: 2 }}>
-                <TrendingUp size={8} /> Hot
+                <TrendingUp size={8} /> {isArabic ? "رائج" : "Hot"}
               </span>
             </div>
           )}
@@ -131,7 +132,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author }: any) {
         <div style={{ padding: "12px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
             <span style={{ fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", padding: "2px 6px", background: cs.bg, color: cs.color, borderRadius: 2 }}>
-              {cat || "Article"}
+              {cat || (isArabic ? "مقال" : "Article")}
             </span>
             {date && <span style={{ fontSize: 10, color: "#444" }}>{date}</span>}
           </div>
@@ -236,16 +237,16 @@ export default function News() {
   const allItems = useMemo(() => {
     const newsWithType = allLoadedNews.map((item) => ({ ...item, _type: "news" }));
     const postsWithType = allLoadedPosts.map((p) => ({
-      id: p.id, title: p.title, dateRange: p.date || "Recent",
+      id: p.id, title: p.title, titleAr: p.titleAr, dateRange: p.date || "Recent",
       image: p.image || p.image_url, imageUrl: p.image_url, category: p.category || "Article",
-      content: p.content, summary: p.summary, author: p.author, featured: p.featured,
+      content: p.content, contentAr: p.contentAr, summary: p.summary, summaryAr: p.summaryAr, author: p.author, featured: p.featured,
       post_slug: p.post_slug, createdAt: p.createdAt, _type: "post",
     }));
     const eventsAsNews = (eventsData?.items || []).map((e: any) => ({
-      id: `ev-${e.id}`, title: e.title,
+      id: `ev-${e.id}`, title: e.title, titleAr: e.titleAr,
       image: e.image || e.image_url || e.imageUrl, imageUrl: e.image_url || e.imageUrl,
-      category: "Events", content: e.description, summary: e.description,
-      author: "CrossFire", featured: e.featured || false,
+      category: "Events", content: e.description, contentAr: e.descriptionAr, summary: e.description, summaryAr: e.descriptionAr,
+      author: "CrossFire Wiki", featured: e.featured || false,
       createdAt: e.date, _type: "event",
       _eventSlug: e.event_name_slug || e.id,
     }));
@@ -285,10 +286,12 @@ export default function News() {
   const hasMore = allLoadedNews.length < total;
   const isLoading = newsLoading && postsLoading;
 
+  const localPath = (path: string) => language === "ar" ? `/ar${path}` : path;
+
   const getItemHref = (item: any) => {
-    if (item._type === "event") return `/events/${item._eventSlug}`;
-    if (item._type === "post") return `/posts/${item.post_slug || item.id}`;
-    return `/news/${item.news_slug || item.id}`;
+    if (item._type === "event") return localPath(`/events/${item._eventSlug}`);
+    if (item._type === "post") return localPath(`/posts/${item.post_slug || item.id}`);
+    return localPath(`/news/${item.news_slug || item.id}`);
   };
 
   const getTitle = (item: any) =>
@@ -317,10 +320,10 @@ export default function News() {
   return (
     <>
       <PageSEO
-        title="CrossFire Events & News — Tournaments, Patches & Community | CrossFire Wiki"
-        description="Latest CrossFire esports events, patch notes, news, community posts and game updates. Stay up-to-date with everything happening in CrossFire Z8Games."
+        title={language === "ar" ? "أخبار وفعاليات CrossFire | CrossFire Wiki" : "CrossFire Events & News — Tournaments, Patches & Community | CrossFire Wiki"}
+        description={language === "ar" ? "آخر أخبار CrossFire والفعاليات والتحديثات والأدلة من مجتمع الويكي." : "Latest CrossFire esports events, patch notes, news, community posts and game updates."}
         image="https://z8games.akamaized.net/cfna/web/main/carousel/CFNA_NewsUpdate_Carousel.jpg"
-        canonicalPath="/news"
+        canonicalPath={language === "ar" ? "/ar/news" : "/news"}
       />
 
       <div style={{ minHeight: "100vh", background: "var(--background)" }}>
@@ -337,16 +340,16 @@ export default function News() {
           <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
             {/* Breadcrumb */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-              <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
+              <Link href={localPath("/")}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الرئيسية" : "Home"}</span></Link>
               <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
-              <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>Events & News</span>
+              <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>{language === "ar" ? "الأخبار والفعاليات" : "Events & News"}</span>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
-                <p style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 4px" }}>Events & Community</p>
+                <p style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 4px" }}>{language === "ar" ? "الفعاليات والمجتمع" : "Events & Community"}</p>
                 <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.03em", color: "var(--foreground)", margin: 0 }}>
-                  Events & News
+                  {language === "ar" ? "الأخبار والفعاليات" : "Events & News"}
                 </h1>
               </div>
               <button
@@ -371,7 +374,7 @@ export default function News() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search articles..."
+                  placeholder={language === "ar" ? "ابحث في المقالات..." : "Search articles..."}
                   style={{
                     width: "100%", height: 34, paddingLeft: 30, paddingRight: search ? 28 : 10,
                     fontSize: 12, background: CARD, border: `1px solid ${BORDER}`,
@@ -425,10 +428,10 @@ export default function News() {
                   <div style={{ padding: "60px 24px", textAlign: "center", border: `1px dashed rgba(245,166,35,0.1)`, borderRadius: 6 }}>
                     <Flame size={36} color="rgba(255,255,255,0.1)" style={{ marginBottom: 12 }} />
                     <p style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#444" }}>
-                      No articles found
+                      {language === "ar" ? "لم يتم العثور على مقالات" : "No articles found"}
                     </p>
                     <p style={{ fontSize: 12, color: "#333", marginTop: 4 }}>
-                      {search ? "Try a different search term" : "Check back soon for updates"}
+                      {search ? (language === "ar" ? "جرّب كلمة بحث مختلفة" : "Try a different search term") : (language === "ar" ? "عد قريبًا للاطلاع على التحديثات" : "Check back soon for updates")}
                     </p>
                   </div>
                 ) : (
@@ -443,7 +446,8 @@ export default function News() {
                           excerpt={buildExcerpt(featuredItem)}
                           date={formatDate(featuredItem)}
                           author={featuredItem.author}
-                          cat={featuredItem.category || (featuredItem._type === "post" ? "Article" : "News")}
+                          cat={featuredItem.category || (featuredItem._type === "post" ? (language === "ar" ? "مقال" : "Article") : (language === "ar" ? "خبر" : "News"))}
+                          isArabic={language === "ar"}
                         />
                       </div>
                     )}
@@ -459,8 +463,9 @@ export default function News() {
                             title={getTitle(item)}
                             excerpt={buildExcerpt(item)}
                             date={formatDate(item)}
-                            cat={item.category || (item._type === "post" ? "Article" : "News")}
+                            cat={item.category || (item._type === "post" ? (language === "ar" ? "مقال" : "Article") : (language === "ar" ? "خبر" : "News"))}
                             author={item.author}
+                            isArabic={language === "ar"}
                           />
                         ))}
                       </div>
@@ -491,7 +496,7 @@ export default function News() {
                 <div style={{ position: "sticky", top: 76 }}>
 
                   {/* Categories */}
-                  <SideSection title="Categories">
+                  <SideSection title={language === "ar" ? "التصنيفات" : "Categories"}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                       {CATEGORIES.filter(cat => cat === "All" || (catCounts[cat] ?? 0) > 0).map((cat) => (
                         <button
@@ -513,14 +518,14 @@ export default function News() {
                   </SideSection>
 
                   {/* Popular topics */}
-                  <SideSection title="Quick Access">
+                  <SideSection title={language === "ar" ? "وصول سريع" : "Quick Access"}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       {[
-                        { label: "All Events",      href: "/events" },
-                        { label: "Weapons DB",      href: "/weapons" },
-                        { label: "Rank Calculator", href: "/ranks" },
-                        { label: "Game Modes",      href: "/modes" },
-                        { label: "Mercenaries",     href: "/mercenaries" },
+                        { label: language === "ar" ? "كل الفعاليات" : "All Events", href: localPath("/events") },
+                        { label: language === "ar" ? "قاعدة الأسلحة" : "Weapons DB", href: localPath("/weapons") },
+                        { label: language === "ar" ? "حاسبة الرتب" : "Rank Calculator", href: localPath("/ranks") },
+                        { label: language === "ar" ? "أوضاع اللعب" : "Game Modes", href: localPath("/modes") },
+                        { label: language === "ar" ? "المرتزقة" : "Mercenaries", href: localPath("/mercenaries") },
                       ].map(({ label, href }) => (
                         <Link key={href} href={href}>
                           <div style={{
@@ -537,13 +542,13 @@ export default function News() {
                   </SideSection>
 
                   {/* Stats */}
-                  <SideSection title="Wiki Stats">
+                  <SideSection title={language === "ar" ? "إحصائيات الويكي" : "Wiki Stats"}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                       {[
-                        { label: "Articles", value: String(allItems.length) },
-                        { label: "Weapons",  value: "3,589" },
-                        { label: "Maps",     value: "312" },
-                        { label: "Events",   value: String(eventsData?.total || 0) },
+                        { label: language === "ar" ? "المقالات" : "Articles", value: String(allItems.length) },
+                        { label: language === "ar" ? "الأسلحة" : "Weapons", value: "3,599" },
+                        { label: language === "ar" ? "الخرائط" : "Maps", value: "312" },
+                        { label: language === "ar" ? "الفعاليات" : "Events", value: String(eventsData?.total || 0) },
                       ].map(({ label, value }) => (
                         <div key={label} style={{ padding: "8px 10px", background: CARD2, border: `1px solid ${BORDER}`, borderRadius: 4 }}>
                           <p style={{ fontSize: 15, fontWeight: 800, color: GOLD, margin: 0, letterSpacing: "-0.02em" }}>{value}</p>
@@ -554,13 +559,13 @@ export default function News() {
                   </SideSection>
 
                   {/* About */}
-                  <SideSection title="About This Wiki">
+                  <SideSection title={language === "ar" ? "عن هذا الويكي" : "About This Wiki"}>
                     <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "0 0 10px", lineHeight: 1.7 }}>
-                      CrossFire Wiki is the most complete community resource for CrossFire players worldwide.
+                      {language === "ar" ? "CrossFire Wiki هو مرجع مجتمعي منظم للاعبي CrossFire حول العالم." : "CrossFire Wiki is a community-maintained reference for CrossFire players worldwide."}
                     </p>
-                    <Link href="/about">
+                    <Link href={localPath("/about")}>
                       <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                        Learn More <ChevronRight size={12} />
+                        {language === "ar" ? "اعرف المزيد" : "Learn More"} <ChevronRight size={12} />
                       </span>
                     </Link>
                   </SideSection>

@@ -363,7 +363,7 @@ export function AdvancedContentManager() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <Button onClick={() => setIsOpen(true)} variant="outline">
-        📋 Advanced Content Manager
+        Advanced Content Manager
       </Button>
 
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -676,7 +676,7 @@ export function AdvancedContentManager() {
                             exportItem(item);
                           }}
                         >
-                          📥
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -892,7 +892,7 @@ export function AdvancedContentManager() {
                             exportItem(item);
                           }}
                         >
-                          📥
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -994,7 +994,7 @@ export function AdvancedContentManager() {
                             exportItem(item);
                           }}
                         >
-                          📥
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -1100,7 +1100,7 @@ export function AdvancedContentManager() {
                             exportItem(item);
                           }}
                         >
-                          📥
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -1199,7 +1199,7 @@ export function AdvancedContentManager() {
                             exportItem(item);
                           }}
                         >
-                          📥
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -1255,7 +1255,7 @@ export function AdvancedContentManager() {
                   className="flex-1"
                   variant="outline"
                 >
-                  📥 Export
+                   Export
                 </Button>
               </div>
             </CardContent>

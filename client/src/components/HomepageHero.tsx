@@ -20,7 +20,7 @@ export function HomepageHero({ heroImage }: HomepageHeroProps) {
       {heroImage && (
         <img
           src={heroImage}
-          alt="CrossFire"
+          alt="CrossFire gameplay artwork"
           className="absolute inset-0 w-full h-full"
           style={{ objectFit: "cover", objectPosition: "center" }}
         />
@@ -43,7 +43,7 @@ export function HomepageHero({ heroImage }: HomepageHeroProps) {
             marginBottom: "16px",
           }}
         >
-          The definitive CrossFire resource
+          An independent CrossFire reference
         </p>
 
         <h1
@@ -70,7 +70,7 @@ export function HomepageHero({ heroImage }: HomepageHeroProps) {
             letterSpacing: "0.04em",
           }}
         >
-          Weapons, mercenaries, ranks, maps and everything in between.
+          Weapons, characters, ranks, maps, events, and game systems.
         </p>
 
         <form onSubmit={handleSearch} className="relative max-w-lg mx-auto">

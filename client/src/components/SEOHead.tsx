@@ -99,14 +99,15 @@ export function SEOHead({
       .replace("https://www.crossfire.wiki", canonicalOrigin);
 
   const finalCanonical = normalizeUrl(canonicalUrl || currentUrl);
-  const finalOgUrl = ogUrl || currentUrl;
+  const finalOgUrl = normalizeUrl(ogUrl || finalCanonical);
+  const isArabicPage = location === "/ar" || location.startsWith("/ar/");
 
   const normalizeTitle = (s?: string) =>
     s ? s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ") : s;
 
-  const defaultTitle = "CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF";
+  const defaultTitle = "CrossFire Wiki | Weapons, Maps, Ranks, Events & Guides";
   const defaultDescription =
-    "The #1 CrossFire fan wiki. Explore weapons, mercenaries, modes, ranks, events, tutorials and community guides for Z8Games CrossFire — in English and Arabic.";
+    "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides in English and Arabic.";
 
   const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
@@ -181,8 +182,8 @@ export function SEOHead({
           { name: "googlebot", content: robotsValue },
           // Open Graph
           { property: "og:site_name", content: "CrossFire Wiki" },
-          { property: "og:locale", content: "en_US" },
-          { property: "og:locale:alternate", content: "ar_AR" },
+          { property: "og:locale", content: isArabicPage ? "ar_AR" : "en_US" },
+          { property: "og:locale:alternate", content: isArabicPage ? "en_US" : "ar_AR" },
           { property: "og:title", content: finalOgTitle },
           { property: "og:description", content: finalOgDescription },
           { property: "og:image", content: finalOgImage },

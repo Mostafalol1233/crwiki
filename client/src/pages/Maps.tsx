@@ -40,7 +40,7 @@ function getModeColor(mode?: string, cat?: string): string {
 
 export default function Maps() {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get("q") || "");
   const [activeCategory, setActiveCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 

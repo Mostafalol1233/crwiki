@@ -20,15 +20,14 @@
 |---|---|---|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://xxxx.supabase.co` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon/public key | `eyJ...` |
-| `VITE_SUPABASE_SERVICE_KEY` | Supabase service role key (**server-side only** — prefix without VITE_ is also read by functions) | `eyJ...` |
-| `SUPABASE_SERVICE_KEY` | Same service key — set this too so API functions read it without the VITE_ prefix | `eyJ...` |
+| `SUPABASE_SERVICE_KEY` | Supabase service-role key for server-side administrative operations | `eyJ...` |
+| `ADMIN_TOKEN_SECRET` | Dedicated HMAC secret for signing admin sessions | `long-random-secret` |
 | `ADMIN_PASSWORD` | Super-admin login password | `your-secret` |
 | `OPENROUTER_API_KEY` | OpenRouter key for AI chat | `sk-or-...` |
 | `FIRECRAWL_API_KEY` | Firecrawl key for player profile scraping | `fc-...` |
 | `RESEND_API_KEY` | Resend key for transactional email | `re_...` |
 
-> **Important**: Set `VITE_*` variables for the **Production** environment so Vite bakes them into the client bundle at build time.
-> Set `SUPABASE_SERVICE_KEY` and `ADMIN_PASSWORD` (without `VITE_` prefix) as well — Vercel serverless functions read them from `process.env` at runtime.
+> **Important**: Only publishable values such as `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` may use the `VITE_` prefix. Never set a service-role or other privileged secret with `VITE_`, because Vite embeds it in browser JavaScript. Set `SUPABASE_SERVICE_KEY`, `ADMIN_TOKEN_SECRET`, and `ADMIN_PASSWORD` without the `VITE_` prefix so serverless functions read them from `process.env` at runtime.
 
 ## 4. API functions
 
@@ -47,6 +46,7 @@ All Vite dev-server middleware has been ported to Vercel serverless functions in
 | `POST /api/admin/rescrape-item` | `api/admin/rescrape-item.ts` |
 | `POST /api/admin/rebuild-mercenary-posts` | `api/admin/rebuild-mercenary-posts.ts` |
 | `POST /api/admin/rebuild-wiki-posts` | `api/admin/rebuild-wiki-posts.ts` |
+| `POST /api/images/upload` | `api/images/upload.ts` |
 | `POST /api/send-email` | `api/send-email.ts` |
 
 ## 5. Vercel plan notes

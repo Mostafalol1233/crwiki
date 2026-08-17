@@ -52,7 +52,7 @@ export default function ResetPassword() {
 
   return (
     <>
-      <PageSEO title="Reset Password — CrossFire Wiki" description="Reset your account password" />
+      <PageSEO title="Reset Password — CrossFire Wiki" description="Reset your account password" noindex />
       <div className="min-h-screen flex items-center justify-center px-4 py-16" style={{ background: "var(--background)" }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 20%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
 

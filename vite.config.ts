@@ -4,6 +4,7 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
 import { createRequire } from "module";
+import { makeAdminToken, verifyAdminRequest } from "./server/adminAuth";
 // Pre-import undici at module level to avoid async gap inside SSE handler
 const _require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +35,7 @@ function cfRegisterPlugin(): Plugin {
           }
 
           const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
           if (!SUPABASE_URL || !SERVICE_KEY) {
             res.writeHead(500, { "Content-Type": "application/json" });
@@ -311,9 +312,6 @@ function cfAdminAuthPlugin(): Plugin {
         res.writeHead(status, { "Content-Type": "application/json" });
         res.end(JSON.stringify(data));
       }
-      function makeToken(payload: object): string {
-        return Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 86_400_000 * 7 })).toString("base64");
-      }
 
       server.middlewares.use("/api/admin/login", async (req: any, res: any) => {
         if (req.method !== "POST") return sendJson(res, 405, { error: "POST only" });
@@ -321,14 +319,14 @@ function cfAdminAuthPlugin(): Plugin {
           const { username, password } = await readBody(req);
           if (!password) return sendJson(res, 400, { error: "Password required" });
 
-          const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "";
+          const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
           const SUPABASE_URL   = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-          const SERVICE_KEY    = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          const SERVICE_KEY    = process.env.SUPABASE_SERVICE_KEY || "";
 
           // ── Super-admin: password-only ──────────────────────────────────
           if (!username) {
             if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
-              const token = makeToken({ role: "super_admin", username: "super_admin", permissions: {} });
+              const token = makeAdminToken({ role: "super_admin", username: "super_admin", permissions: {} });
               return sendJson(res, 200, {
                 token,
                 admin: { roles: ["super_admin"], role: "super_admin", username: "super_admin", permissions: {} },
@@ -346,7 +344,7 @@ function cfAdminAuthPlugin(): Plugin {
                 const bcrypt = await import("bcryptjs");
                 for (const row of rows) {
                   if (await bcrypt.compare(password, row.password_hash || "")) {
-                    const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+                    const token = makeAdminToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
                     return sendJson(res, 200, {
                       token,
                       admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },
@@ -372,7 +370,7 @@ function cfAdminAuthPlugin(): Plugin {
           const bcrypt = await import("bcryptjs");
           if (!await bcrypt.compare(password, row.password_hash || "")) return sendJson(res, 401, { error: "Invalid credentials" });
 
-          const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+          const token = makeAdminToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
           return sendJson(res, 200, {
             token,
             admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },
@@ -446,6 +444,12 @@ function cfScrapePlugin(): Plugin {
       function json(res: any, status: number, data: any) {
         res.writeHead(status, { "Content-Type": "application/json" });
         res.end(JSON.stringify(data));
+      }
+
+      function requireAdmin(req: any, res: any): boolean {
+        if (verifyAdminRequest(req.headers)) return true;
+        json(res, 401, { error: "Unauthorized" });
+        return false;
       }
 
       // POST /api/scrape/forum-list — fetches CrossFire announcements via RSS feed
@@ -627,15 +631,20 @@ function cfScrapePlugin(): Plugin {
       // POST /api/admin/scraper — re-scrapes a content item by source_url (called by WikiRescraper)
       server.middlewares.use("/api/admin/scraper", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        if (!requireAdmin(req, res)) return;
         try {
-          const { url, type } = await readBody(req);
+          const { url, type, preview } = await readBody(req);
           if (!url || !String(url).startsWith("http")) return json(res, 400, { error: "Valid URL required" });
 
-          const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
-          if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
+          const SUPABASE_URL = process.env.SUPABASE_URL || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
+          if (!preview && (!SUPABASE_URL || !SERVICE_KEY)) return json(res, 500, { error: "Supabase not configured" });
 
           const scraped = await scrapePage(url);
+          if (preview) {
+            const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+            return json(res, 200, { success: true, preview: true, scraped: { title: scraped.title, content: scraped.content, summary: scraped.summary, image: scraped.image, contentLength: plain.length } });
+          }
           const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
           const seoTitle = (scraped.title || "").slice(0, 60);
           const seoDesc = (scraped.summary || "").slice(0, 160);
@@ -677,12 +686,13 @@ function cfScrapePlugin(): Plugin {
       // POST /api/admin/rescrape-item
       server.middlewares.use("/api/admin/rescrape-item", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        if (!requireAdmin(req, res)) return;
         try {
           const { type, id, url } = await readBody(req);
           if (!type || !id || !url || !String(url).startsWith("http")) return json(res, 400, { error: "type, id, and valid url required" });
 
           const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
           if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
 
           const scraped = await scrapePage(url);
@@ -719,9 +729,10 @@ function cfScrapePlugin(): Plugin {
       // POST /api/admin/rebuild-mercenary-posts
       server.middlewares.use("/api/admin/rebuild-mercenary-posts", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        if (!requireAdmin(req, res)) return;
         try {
           const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
           if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
           const { fetch: undFetch } = await import("undici");
           const headers = { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}` };
@@ -767,9 +778,10 @@ function cfScrapePlugin(): Plugin {
       // POST /api/admin/rebuild-wiki-posts
       server.middlewares.use("/api/admin/rebuild-wiki-posts", async (req: any, res: any) => {
         if (req.method !== "POST") return json(res, 405, { error: "POST only" });
+        if (!requireAdmin(req, res)) return;
         try {
           const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+          const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
           if (!SUPABASE_URL || !SERVICE_KEY) return json(res, 500, { error: "Supabase not configured" });
           const { fetch: undFetch } = await import("undici");
           const headers = { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}` };

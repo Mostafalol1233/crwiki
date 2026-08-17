@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/components/LanguageProvider";
 import { getTicketsByEmail, getTicketReplies, addTicketReply } from "@/lib/supabaseApi";
 import { Ticket, MessageSquare, Clock, Mail, ArrowLeft, Send } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
@@ -50,6 +51,8 @@ function StatusBadge({ label, styles }: { label: string; styles: { bg: string; c
 
 export default function MyTickets() {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [searchedEmail, setSearchedEmail] = useState("");
@@ -99,9 +102,10 @@ export default function MyTickets() {
   return (
     <>
       <PageSEO
-        title="My Support Tickets — CrossFire Wiki"
-        description="View your submitted support tickets and add replies."
+        title={`${isArabic ? "تذاكري للدعم" : "My Support Tickets"} — CrossFire Wiki`}
+        description={isArabic ? "اعرض تذاكر الدعم التي أرسلتها وأضف ردودًا جديدة." : "View your submitted support tickets and add replies."}
         canonicalPath="/my-tickets"
+        noindex
       />
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
 
@@ -111,12 +115,12 @@ export default function MyTickets() {
           <div className="relative max-w-5xl mx-auto px-6">
             <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
               <Ticket className="h-3 w-3" style={{ color: "#f5a623" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Support</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>{isArabic ? "الدعم" : "Support"}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>
-              My <span style={{ color: "#f5a623" }}>Tickets</span>
+              {isArabic ? "تذاكر" : "My"} <span style={{ color: "#f5a623" }}>{isArabic ? "الدعم" : "Tickets"}</span>
             </h1>
-            <p className="text-sm mt-1" style={{ color: "#555" }}>View and manage your support tickets</p>
+            <p className="text-sm mt-1" style={{ color: "#555" }}>{isArabic ? "اعرض تذاكر الدعم وتابعها." : "View and manage your support tickets"}</p>
           </div>
         </div>
 
@@ -125,8 +129,8 @@ export default function MyTickets() {
           {!searchedEmail ? (
             <div className="max-w-md mx-auto">
               <div className="p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
-                <h2 className="font-black text-sm uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>Enter Your Email</h2>
-                <p className="text-xs mb-4" style={{ color: "#555" }}>Enter the email you used to submit tickets</p>
+                <h2 className="font-black text-sm uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>{isArabic ? "أدخل بريدك الإلكتروني" : "Enter Your Email"}</h2>
+                <p className="text-xs mb-4" style={{ color: "#555" }}>{isArabic ? "أدخل البريد المستخدم عند إرسال التذاكر" : "Enter the email you used to submit tickets"}</p>
                 <div className="space-y-3">
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
@@ -147,7 +151,7 @@ export default function MyTickets() {
                     style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
                     data-testid="button-search-tickets"
                   >
-                    View My Tickets
+                    {isArabic ? "عرض تذاكري" : "View My Tickets"}
                   </button>
                 </div>
               </div>
@@ -158,7 +162,7 @@ export default function MyTickets() {
               <div className="lg:col-span-1 space-y-3">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
-                    Tickets <span style={{ color: "#f5a623" }}>({tickets.length})</span>
+                    {isArabic ? "التذاكر" : "Tickets"} <span style={{ color: "#f5a623" }}>({tickets.length})</span>
                   </h2>
                   <button
                     onClick={() => { setSearchedEmail(""); setEmail(""); setSelectedTicket(null); }}
@@ -166,15 +170,15 @@ export default function MyTickets() {
                     style={{ color: "#555" }}
                     data-testid="button-change-email"
                   >
-                    <ArrowLeft className="h-3 w-3" /> Change
+                    <ArrowLeft className="h-3 w-3" /> {isArabic ? "تغيير" : "Change"}
                   </button>
                 </div>
 
                 {isLoading ? (
-                  <div className="py-8 text-center text-xs" style={{ color: "#555" }}>Loading...</div>
+                  <div className="py-8 text-center text-xs" style={{ color: "#555" }}>{isArabic ? "جارٍ التحميل..." : "Loading..."}</div>
                 ) : tickets.length === 0 ? (
                   <div className="py-8 text-center" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "3px" }}>
-                    <p className="text-xs" style={{ color: "#555" }}>No tickets found</p>
+                    <p className="text-xs" style={{ color: "#555" }}>{isArabic ? "لم يتم العثور على تذاكر." : "No tickets found"}</p>
                   </div>
                 ) : (
                   tickets.map((ticket) => {
@@ -227,11 +231,11 @@ export default function MyTickets() {
                       <p className="text-sm whitespace-pre-wrap" style={{ color: "#888" }} data-testid={`text-ticket-description-${selectedTicket.id}`}>{selectedTicket.description}</p>
                       <div className="grid grid-cols-2 gap-4 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                         <div>
-                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>Created</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>{isArabic ? "أُنشئت" : "Created"}</span>
                           <p className="text-xs font-bold mt-0.5" style={{ color: "var(--foreground)" }}>{selectedTicket.createdAt}</p>
                         </div>
                         <div>
-                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>Updated</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#555" }}>{isArabic ? "آخر تحديث" : "Updated"}</span>
                           <p className="text-xs font-bold mt-0.5" style={{ color: "var(--foreground)" }}>{selectedTicket.updatedAt}</p>
                         </div>
                       </div>
@@ -241,7 +245,7 @@ export default function MyTickets() {
                     <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                       <h4 className="font-black text-xs uppercase tracking-wider mb-4 flex items-center gap-2" style={{ color: "var(--foreground)" }}>
                         <MessageSquare className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
-                        Replies ({replies.length})
+                        {isArabic ? "الردود" : "Replies"} ({replies.length})
                       </h4>
 
                       <div className="space-y-3 mb-5">

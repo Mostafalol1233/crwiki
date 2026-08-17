@@ -9,10 +9,12 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { queryClient } from "@/lib/queryClient";
 import { getPostBySlug, getPostById, getPosts } from "@/lib/supabaseApi";
 import { SEOHead } from "@/components/SEOHead";
+import ContentImage from "@/components/ContentImage";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
+import WikiPageTemplate from "@/components/WikiPageTemplate";
 
 interface WikiTab {
   title: string;
@@ -25,7 +27,7 @@ export default function Article() {
   const slug = (params as any)?.slug as string | undefined;
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { data: article, isLoading } = useQuery<any>({
@@ -105,6 +107,19 @@ export default function Article() {
       .slice(0, 3);
   }, [finalArticle, allPosts]);
 
+  const useWikiTemplate = useMemo(() => {
+    const tags = Array.isArray(finalArticle?.tags)
+      ? finalArticle.tags.map((tag: unknown) => String(tag).toLowerCase())
+      : [];
+    return Boolean(
+      finalArticle?.fullLayout ||
+      finalArticle?.template === "wiki" ||
+      String(finalArticle?.category || "").toLowerCase() === "wiki" ||
+      tags.includes("wiki") ||
+      tags.includes("wiki-reference")
+    );
+  }, [finalArticle]);
+
   const rawContent = useMemo(() => {
     if (!finalArticle?.content) return "";
     const doc = new DOMParser().parseFromString(finalArticle.content, "text/html");
@@ -117,6 +132,13 @@ export default function Article() {
 
   const firstImageMatch = useMemo(() => /<img[^>]+src=["']([^"']+)["']/i.exec(rawContent || ""), [rawContent]);
   const descriptionImage = firstImageMatch ? firstImageMatch[1] : undefined;
+  const publishedLabel = useMemo(() => {
+    const value = finalArticle?.createdAt || finalArticle?.updatedAt;
+    if (!value) return language === "ar" ? "غير متاح" : "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return language === "ar" ? "غير متاح" : "N/A";
+    return parsed.toLocaleDateString(language === "ar" ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" });
+  }, [finalArticle?.createdAt, finalArticle?.updatedAt, language]);
 
   if (isLoading) {
     return (
@@ -130,11 +152,11 @@ export default function Article() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Article not found</p>
+          <p className="text-muted-foreground mb-4">{language === "ar" ? "المقال غير موجود" : "Article not found"}</p>
           <Button asChild>
-            <Link href="/">
+            <Link href={language === "ar" ? "/ar" : "/"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
+              {language === "ar" ? "العودة إلى الرئيسية" : "Back to Home"}
             </Link>
           </Button>
         </div>
@@ -142,15 +164,73 @@ export default function Article() {
     );
   }
 
+  if (useWikiTemplate) {
+    const title = isRTL && finalArticle.titleAr ? finalArticle.titleAr : finalArticle.title;
+    const content = isRTL && finalArticle.contentAr ? finalArticle.contentAr : finalArticle.content;
+    return (
+      <>
+        <SEOHead
+          title={finalArticle.seo_title || title}
+          description={finalArticle.seo_description || finalArticle.summary || title}
+          keywords={finalArticle.tags || []}
+          ogImage={finalArticle.og_image || finalArticle.image}
+          canonicalUrl={finalArticle.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : undefined)}
+          articlePublishedTime={finalArticle.created_at || finalArticle.createdAt}
+          articleModifiedTime={finalArticle.updated_at || finalArticle.updatedAt || finalArticle.created_at || finalArticle.createdAt}
+          articleAuthor={finalArticle.author || "CrossFire Wiki"}
+          articleSection={finalArticle.category || "Wiki"}
+          schemaType="Article"
+        />
+        <WikiPageTemplate
+          title={title || "CrossFire Wiki"}
+          content={content || ""}
+          slug={finalArticle.post_slug || slug || String(finalArticle.id)}
+          isAr={isRTL}
+          seoDescription={finalArticle.seo_description || finalArticle.summary}
+          publishedAt={finalArticle.created_at || finalArticle.createdAt}
+          updatedAt={finalArticle.updated_at || finalArticle.updatedAt || finalArticle.created_at || finalArticle.createdAt}
+          sourceUrl={finalArticle.source_url || finalArticle.sourceUrl}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <SEOHead
-        title={finalArticle?.title}
-        description={finalArticle?.summary}
-        keywords={finalArticle?.tags?.join(", ")}
-        ogImage={finalArticle?.image || descriptionImage}
-        canonicalUrl={finalArticle?.canonicalUrl || (slug ? `https://crossfire.wiki/article/${slug}` : undefined)}
-        schemaType={finalArticle?.schemaType || "Article"}
+        title={finalArticle?.seo_title || finalArticle?.title}
+        description={finalArticle?.seo_description || finalArticle?.summary || (finalArticle?.title ? `Complete CrossFire guide: ${finalArticle.title}` : undefined)}
+        keywords={finalArticle?.tags || []}
+        ogImage={finalArticle?.og_image || finalArticle?.image || descriptionImage}
+        ogImageAlt={`${finalArticle?.title || "CrossFire article"} — CrossFire Wiki`}
+        ogImageWidth={1200}
+        ogImageHeight={630}
+        twitterImage={finalArticle?.twitter_image || finalArticle?.og_image || finalArticle?.image || descriptionImage}
+        ogTitle={finalArticle?.seo_title || finalArticle?.title}
+        ogDescription={finalArticle?.seo_description || finalArticle?.summary}
+        ogType="article"
+        canonicalUrl={finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : undefined)}
+        articlePublishedTime={finalArticle?.created_at || finalArticle?.createdAt}
+        articleModifiedTime={finalArticle?.updated_at || finalArticle?.updatedAt || finalArticle?.created_at || finalArticle?.createdAt}
+        articleAuthor={finalArticle?.author || "CrossFire Wiki"}
+        articleSection={finalArticle?.category || "Guides"}
+        articleTags={finalArticle?.tags || []}
+        breadcrumbs={breadcrumbs}
+        schemaType={finalArticle?.schema_type || finalArticle?.schemaType || "Article"}
+        schemaData={{
+          "@id": `${finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : "https://crossfire.wiki/posts")}#article`,
+          headline: finalArticle?.title,
+          description: (finalArticle?.seo_description || finalArticle?.summary || finalArticle?.title || "").substring(0, 500),
+          image: finalArticle?.og_image || finalArticle?.image || descriptionImage,
+          url: finalArticle?.canonical_url || (slug ? `https://crossfire.wiki/posts/${slug}` : "https://crossfire.wiki/posts"),
+          author: { "@type": "Person", name: finalArticle?.author || "CrossFire Wiki Team" },
+          datePublished: finalArticle?.created_at || finalArticle?.createdAt,
+          dateModified: finalArticle?.updated_at || finalArticle?.updatedAt || finalArticle?.created_at || finalArticle?.createdAt,
+          articleSection: finalArticle?.category || "Guides",
+          keywords: finalArticle?.tags || [],
+          inLanguage: finalArticle?.language === "ar" ? "ar" : "en",
+          isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: "https://crossfire.wiki" },
+        }}
       />
       {finalArticle.image && (
         <SEOHead
@@ -170,7 +250,7 @@ export default function Article() {
           {!finalArticle.fullLayout && <Breadcrumbs items={breadcrumbs} />}
           
           <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">
-            <Link href="/">
+            <Link href={language === "ar" ? "/ar" : "/"}>
               <a className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}>
                 <ArrowLeft className="h-3 w-3" />
                 {t("backToHome")}
@@ -230,12 +310,12 @@ export default function Article() {
                             <span>{finalArticle.views} VIEWS</span>
                           </div>
                         )}
-                        <span>PUBLISHED: {finalArticle?.date || "N/A"}</span>
+                        <span>{language === "ar" ? "نُشر: " : "PUBLISHED: "}{publishedLabel}</span>
                       </div>
 
                       {finalArticle?.image && (
                         <div className="relative w-full aspect-video rounded-none border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
-                          <img
+                          <ContentImage
                             src={finalArticle.image}
                             alt={finalArticle.title}
                             className="object-contain w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
@@ -326,7 +406,7 @@ export default function Article() {
                       <div>
                         {(finalArticle.wikiTabs as WikiTab[])[activeTab]?.image && (
                           <div className="mb-8 flex justify-center">
-                            <img
+                            <ContentImage
                               src={(finalArticle.wikiTabs as WikiTab[])[activeTab].image}
                               alt={(finalArticle.wikiTabs as WikiTab[])[activeTab].title}
                               className="max-h-80 object-contain rounded border border-border/50 shadow-lg cursor-zoom-in"

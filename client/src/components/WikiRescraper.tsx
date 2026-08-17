@@ -413,7 +413,7 @@ export default function WikiRescraper() {
                   disabled={isSavingImage}
                   className="text-sm px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {isSavingImage ? "جاري الحفظ..." : "✓ استخدم هذه الصورة كصورة خارجية"}
+                  {isSavingImage ? "جاري الحفظ..." : "استخدم هذه الصورة كصورة خارجية"}
                 </button>
               </div>
             </div>

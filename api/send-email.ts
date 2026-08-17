@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "CrossFire Wiki <noreply@bimora.gg>",
+        from: process.env.EMAIL_FROM || "CrossFire Wiki <noreply@crossfire.wiki>",
         to: recipients,
         subject,
         html,

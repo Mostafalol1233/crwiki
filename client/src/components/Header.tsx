@@ -88,6 +88,7 @@ export function Header() {
       label: t("navShop"),
       dropdown: [
         { path: "/sellers", label: t("navSellers") },
+        { path: "/services", label: t("navServices") },
         { path: "/reviews", label: t("navReviews") },
       ],
     },
@@ -215,7 +216,7 @@ export function Header() {
             <div style={{ position: "relative" }}>
               <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.25)", pointerEvents: "none" }} />
               <input
-                type="search" placeholder="Search..." value={searchQ}
+                type="search" placeholder={language === "ar" ? "بحث..." : "Search..."} value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
                 style={{
                   height: 32, paddingLeft: 32, paddingRight: 12,
@@ -259,7 +260,7 @@ export function Header() {
                   {[
                     { href: "/profile", icon: User, label: t("navProfile") },
                     { href: "/my-tickets", icon: Ticket, label: t("navMyTickets") },
-                    { href: "/chat", icon: MessageSquare, label: "Chat" },
+                    { href: "/chat", icon: MessageSquare, label: language === "ar" ? "المحادثة" : "Chat" },
                   ].map(({ href, icon: Icon, label }, i, arr) => (
                     <Link key={href} href={href} style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
@@ -273,7 +274,7 @@ export function Header() {
                       <Icon size={13} strokeWidth={1.5} /> {label}
                     </Link>
                   ))}
-                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); window.location.href = "/"; }}
+                  <button onClick={async () => { await supabase.auth.signOut(); localStorage.removeItem("userId"); localStorage.removeItem("username"); setLocation("/"); }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
                       fontSize: 13, color: "rgba(239,68,68,0.7)", background: "none", border: "none",
@@ -359,7 +360,7 @@ export function Header() {
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${BORDER}` }}>
             <form onSubmit={handleSearch} style={{ position: "relative" }}>
               <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", pointerEvents: "none" }} />
-              <input type="search" placeholder="Search..." value={searchQ} onChange={e => setSearchQ(e.target.value)}
+              <input type="search" placeholder={language === "ar" ? "بحث..." : "Search..."} value={searchQ} onChange={e => setSearchQ(e.target.value)}
                 style={{ width: "100%", padding: "9px 12px 9px 32px", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, color: "#fff", fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", outline: "none", boxSizing: "border-box" }} />
             </form>
           </div>

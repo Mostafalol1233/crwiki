@@ -129,7 +129,8 @@ export default function AnnouncementModal({ location }: { location: string }) {
           try {
             const { supabaseShim } = await import('@/lib/supabaseShim');
             const json = await supabaseShim('/api/announcements/global', 'GET');
-            if (!aborted && json && json.active && location === "/") {
+            const isHomeRoute = location === "/" || location === "/ar" || location === "/ar/";
+            if (!aborted && json && json.active && isHomeRoute) {
               setData(json);
               setScope("global");
             }

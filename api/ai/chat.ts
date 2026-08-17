@@ -3,141 +3,216 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 dotenv.config();
 
-// Fetch live website context from Supabase for the AI system prompt
-async function fetchWebsiteContext(): Promise<string> {
-  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-  const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
-  if (!SUPABASE_URL || !ANON_KEY) return "";
-  const h = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
+const DEFAULT_FREE_MODEL = "openai/gpt-oss-20b:free";
+const FALLBACK_FREE_MODELS = [
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+];
+
+let cachedWebsiteContext = "";
+let contextCachedUntil = 0;
+
+function textFromContent(content: unknown): string {
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((part: any) => {
+      if (typeof part === "string") return part;
+      return typeof part?.text === "string" ? part.text : "";
+    })
+    .join("")
+    .trim();
+}
+
+function providerMessage(status: number, body: string): string {
   try {
-    const [wRes, rRes, mRes, merRes, evRes] = await Promise.allSettled([
-      fetch(`${SUPABASE_URL}/rest/v1/weapons?select=name,category&limit=150&order=name`, { headers: h, signal: AbortSignal.timeout(6000) }),
-      fetch(`${SUPABASE_URL}/rest/v1/ranks?select=name,tier,bonus&order=tier`,          { headers: h, signal: AbortSignal.timeout(6000) }),
-      fetch(`${SUPABASE_URL}/rest/v1/modes?select=name,type&order=name`,                { headers: h, signal: AbortSignal.timeout(6000) }),
-      fetch(`${SUPABASE_URL}/rest/v1/mercenaries?select=name,role&order=order_index`,   { headers: h, signal: AbortSignal.timeout(6000) }),
-      fetch(`${SUPABASE_URL}/rest/v1/events?select=title,date&limit=10&order=created_at.desc`, { headers: h, signal: AbortSignal.timeout(6000) }),
+    const parsed = JSON.parse(body);
+    const message = parsed?.error?.message || parsed?.error || parsed?.message;
+    if (typeof message === "string" && message.trim()) return message.trim().slice(0, 500);
+  } catch {
+    // Keep the raw short response below when the provider does not return JSON.
+  }
+  return body.trim().slice(0, 500) || `Provider returned HTTP ${status}`;
+}
+
+async function fetchWebsiteContext(): Promise<string> {
+  if (Date.now() < contextCachedUntil) return cachedWebsiteContext;
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+  const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+  if (!supabaseUrl || !anonKey) return "";
+
+  const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
+  try {
+    const [weapons, ranks, modes, mercenaries, events] = await Promise.allSettled([
+      fetch(`${supabaseUrl}/rest/v1/weapons?select=name,category&limit=150&order=name`, { headers, signal: AbortSignal.timeout(5000) }),
+      fetch(`${supabaseUrl}/rest/v1/ranks?select=name,tier,bonus&order=tier`, { headers, signal: AbortSignal.timeout(5000) }),
+      fetch(`${supabaseUrl}/rest/v1/modes?select=name,type&order=name`, { headers, signal: AbortSignal.timeout(5000) }),
+      fetch(`${supabaseUrl}/rest/v1/mercenaries?select=name,role&order=order_index`, { headers, signal: AbortSignal.timeout(5000) }),
+      fetch(`${supabaseUrl}/rest/v1/events?select=title,date&limit=10&order=created_at.desc`, { headers, signal: AbortSignal.timeout(5000) }),
     ]);
-    let ctx = "";
-    if (wRes.status === "fulfilled" && wRes.value.ok) {
-      const weapons: any[] = await wRes.value.json().catch(() => []);
-      if (weapons?.length) {
-        const byCat: Record<string, string[]> = {};
-        weapons.forEach((w: any) => { const c = w.category || "Other"; if (!byCat[c]) byCat[c] = []; byCat[c].push(w.name); });
-        ctx += "\nWEAPONS:\n";
-        Object.entries(byCat).forEach(([c, ns]) => { ctx += `  ${c}: ${ns.slice(0, 20).join(", ")}\n`; });
+
+    let context = "";
+    if (weapons.status === "fulfilled" && weapons.value.ok) {
+      const rows: any[] = await weapons.value.json().catch(() => []);
+      const byCategory: Record<string, string[]> = {};
+      rows.forEach((row: any) => {
+        const category = row.category || "Other";
+        if (!byCategory[category]) byCategory[category] = [];
+        byCategory[category].push(row.name);
+      });
+      if (rows.length) {
+        context += "\nWEAPONS:\n";
+        Object.entries(byCategory).forEach(([category, names]) => {
+          context += `  ${category}: ${names.slice(0, 20).join(", ")}\n`;
+        });
       }
     }
-    if (rRes.status === "fulfilled" && rRes.value.ok) {
-      const ranks: any[] = await rRes.value.json().catch(() => []);
-      if (ranks?.length) {
-        ctx += `\nRANKS (${ranks.length}):\n`;
-        ranks.forEach((r: any) => { ctx += `  T${r.tier}: ${r.name}${r.bonus ? ` [${r.bonus}]` : ""}\n`; });
+    if (ranks.status === "fulfilled" && ranks.value.ok) {
+      const rows: any[] = await ranks.value.json().catch(() => []);
+      if (rows.length) {
+        context += `\nRANKS (${rows.length}):\n`;
+        rows.forEach((row: any) => {
+          context += `  T${row.tier}: ${row.name}${row.bonus ? ` [${row.bonus}]` : ""}\n`;
+        });
       }
     }
-    if (mRes.status === "fulfilled" && mRes.value.ok) {
-      const modes: any[] = await mRes.value.json().catch(() => []);
-      if (modes?.length) ctx += `\nMODES: ${modes.map((m: any) => m.name).join(", ")}\n`;
+    if (modes.status === "fulfilled" && modes.value.ok) {
+      const rows: any[] = await modes.value.json().catch(() => []);
+      if (rows.length) context += `\nMODES: ${rows.map((row: any) => row.name).join(", ")}\n`;
     }
-    if (merRes.status === "fulfilled" && merRes.value.ok) {
-      const mercs: any[] = await merRes.value.json().catch(() => []);
-      if (mercs?.length) ctx += `\nMERCS: ${mercs.map((m: any) => `${m.name}${m.role ? `(${m.role})` : ""}`).join(", ")}\n`;
+    if (mercenaries.status === "fulfilled" && mercenaries.value.ok) {
+      const rows: any[] = await mercenaries.value.json().catch(() => []);
+      if (rows.length) context += `\nMERCS: ${rows.map((row: any) => `${row.name}${row.role ? `(${row.role})` : ""}`).join(", ")}\n`;
     }
-    if (evRes.status === "fulfilled" && evRes.value.ok) {
-      const events: any[] = await evRes.value.json().catch(() => []);
-      if (events?.length) ctx += `\nEVENTS: ${events.slice(0, 5).map((e: any) => e.title).join(", ")}\n`;
+    if (events.status === "fulfilled" && events.value.ok) {
+      const rows: any[] = await events.value.json().catch(() => []);
+      if (rows.length) context += `\nEVENTS: ${rows.slice(0, 5).map((row: any) => row.title).join(", ")}\n`;
     }
-    return ctx;
-  } catch { return ""; }
+
+    cachedWebsiteContext = context;
+    contextCachedUntil = Date.now() + 60_000;
+    return context;
+  } catch {
+    return "";
+  }
+}
+
+function normalizeMessages(input: unknown): Array<{ role: "user" | "assistant"; content: string }> {
+  if (!Array.isArray(input)) return [];
+  return input
+    .slice(-6)
+    .map((message: any) => ({
+      role: message?.role === "assistant" ? "assistant" as const : "user" as const,
+      content: typeof message?.content === "string" ? message.content.trim().slice(0, 4000) : "",
+    }))
+    .filter((message) => message.content.length > 0);
+}
+
+async function callOpenRouter(
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+): Promise<string> {
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://crossfire.wiki",
+      "X-Title": "CrossFire Wiki",
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens: 2048,
+      temperature: 0.45,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(35_000),
+  });
+
+  const raw = await response.text();
+  if (!response.ok) throw new Error(`${model}: ${providerMessage(response.status, raw)}`);
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`${model}: provider returned invalid JSON`);
+  }
+  const content = textFromContent(parsed?.choices?.[0]?.message?.content || parsed?.choices?.[0]?.text);
+  if (!content) throw new Error(`${model}: provider returned an empty answer`);
+  return content;
+}
+
+async function generateAnswer(
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  systemPrompt: { role: "system"; content: string },
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || "";
+  if (!apiKey) {
+    throw new Error("AI provider is not configured on this deployment");
+  }
+
+  const configuredModel = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "";
+  const firstModel = configuredModel.endsWith(":free") ? configuredModel : DEFAULT_FREE_MODEL;
+  const models = Array.from(new Set([firstModel, ...FALLBACK_FREE_MODELS]));
+  const errors: string[] = [];
+
+  for (const model of models) {
+    try {
+      return await callOpenRouter(apiKey, model, [systemPrompt, ...messages]);
+    } catch (error: any) {
+      errors.push(error?.message || `${model} failed`);
+    }
+  }
+
+  throw new Error(errors.join(" | ").slice(0, 1000) || "All free AI models failed");
+}
+
+function sendSse(res: VercelResponse, payload: unknown) {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS preflight
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
-  const { messages } = req.body || {};
-  if (!Array.isArray(messages) || messages.length === 0)
-    return res.status(400).json({ error: "messages array required" });
-
-  const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "openai/gpt-oss-20b:free";
-  if (!apiKey) return res.status(500).json({ error: "AI not configured" });
-
-  // Set SSE headers and claim the response immediately
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "X-Accel-Buffering": "no",
-    "Access-Control-Allow-Origin": "*",
-  });
-  res.write(": ok\n\n");
+  const messages = normalizeMessages(req.body?.messages);
+  if (!messages.length) return res.status(400).json({ error: "messages array required" });
 
   try {
     const websiteData = await fetchWebsiteContext();
     const systemPrompt = {
-      role: "system",
+      role: "system" as const,
       content: `You are CrossFire Wiki Assistant — the official AI for CrossFire Wiki.
 You are an expert on the CrossFire online FPS game. Help players with weapons, mercenaries, ranks, modes, maps, strategies, ZP/GP currencies, clans, and events.
-Format responses using Markdown when helpful: **bold** for key terms, bullet lists, tables for comparisons. Be friendly, direct, concise.
-IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get Arabic replies.
+Use Markdown when helpful: bold key terms, concise bullet lists, and comparison tables. Be friendly, direct, and useful. Do not invent exact live prices, event dates, account rules, or official announcements. When current data is unavailable, say so clearly and give the safest general guidance.
+IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get clear natural Arabic replies; English users get English replies.
 ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== END LIVE DATA ===\n` : ""}`,
     };
 
-    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://crossfirewiki.com",
-        "X-Title": "CrossFire Wiki",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [systemPrompt, ...messages.slice(-6)],
-        // 2048 gives enough room for reasoning tokens (~300-600) plus full response.
-        // Old 480 was exhausted entirely by reasoning, leaving 0 tokens for output.
-        max_tokens: 2048,
-        temperature: 0.5,
-        stream: true,
-      }),
-      signal: AbortSignal.timeout(35000),
+    const answer = await generateAnswer(messages, systemPrompt);
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Access-Control-Allow-Origin": "*",
     });
-
-    if (!upstream.ok) {
-      const upstreamText = await upstream.text().catch(() => "");
-      const upstreamError = upstreamText ? upstreamText.slice(0, 500) : "AI upstream error";
-      res.write(`data: ${JSON.stringify({ error: upstreamError })}\n\n`);
-      return res.end();
-    }
-
-    // @ts-ignore — ReadableStream iteration
-    let buffer = "";
-    for await (const rawChunk of upstream.body as any) {
-      const chunk = Buffer.isBuffer(rawChunk) ? rawChunk.toString("utf-8") : String(rawChunk);
-      buffer += chunk;
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith("data:")) continue;
-        const jsonStr = trimmed.slice(5).trim();
-        if (jsonStr === "[DONE]") { res.write("data: [DONE]\n\n"); continue; }
-        try {
-          const parsed = JSON.parse(jsonStr) as any;
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) res.write(`data: ${JSON.stringify({ delta })}\n\n`);
-        } catch { /* skip malformed */ }
-      }
-    }
-    res.end();
-  } catch (err: any) {
-    try {
-      res.write(`data: ${JSON.stringify({ error: err.message || "AI request failed" })}\n\n`);
-      res.end();
-    } catch { /* already ended */ }
+    sendSse(res, { delta: answer });
+    sendSse(res, { done: true });
+    res.write("data: [DONE]\n\n");
+    return res.end();
+  } catch (error: any) {
+    const message = error?.message || "AI request failed";
+    return res.status(503).json({
+      error: "The AI assistant is temporarily unavailable.",
+      detail: message.slice(0, 1000),
+    });
   }
 }

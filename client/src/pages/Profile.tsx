@@ -538,7 +538,7 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "var(--background)" }}>
-        <PageSEO title="Profile — CrossFire Wiki" description="Sign in to view your profile." />
+        <PageSEO title="Profile — CrossFire Wiki" description="Sign in to view your profile." noindex />
         <Shield className="h-12 w-12 opacity-20" style={{ color: GOLD }} />
         <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Not Signed In</h2>
         <p className="text-sm" style={{ color: "#555" }}>You need to be logged in to view your profile.</p>
@@ -566,7 +566,7 @@ export default function Profile() {
 
   return (
     <>
-      <PageSEO title={`${displayName || "Profile"} — CrossFire Wiki`} description="Your CrossFire Wiki profile." />
+      <PageSEO title={`${displayName || "Profile"} — CrossFire Wiki`} description="Your CrossFire Wiki profile." noindex />
 
       <div className="min-h-screen py-10 md:py-16" style={{ background: "var(--background)" }}>
         {/* Top gradient accent */}
@@ -849,7 +849,7 @@ export default function Profile() {
                             {rp.isMaxRank ? (
                               /* ── Max rank ── */
                               <p className="text-[9px] mt-1.5 font-bold" style={{ color: GOLD }}>
-                                🎖️ Maximum rank achieved — Grand Marshal!
+                                Maximum rank achieved: Grand Marshal
                               </p>
                             ) : rp.tableDataStale ? (
                               /* ── Table thresholds outdated for this rank range ── */
@@ -919,7 +919,7 @@ export default function Profile() {
                               onClick={() => { setTargetRankTier(null); setShowRankPicker(false); }}
                             >
                               <span className="text-[10px] font-bold">Next rank (default)</span>
-                              {!targetRankTier && <span className="ml-auto text-[9px]">✓</span>}
+                              {!targetRankTier && <span className="ml-auto text-[9px]">Selected</span>}
                             </div>
 
                             {/* All ranks above current */}
@@ -942,7 +942,7 @@ export default function Profile() {
                                     {info.name}
                                   </span>
                                   <span className="text-[9px] ml-auto font-mono" style={{ color: isChosen ? GOLD : "#3a3a3a" }}>
-                                    {expNeeded === 0 ? "✓" : `+${expNeeded.toLocaleString()}`}
+                                    {expNeeded === 0 ? "Ready" : `+${expNeeded.toLocaleString()}`}
                                   </span>
                                 </div>
                               );

@@ -209,8 +209,9 @@ function HeroSearch() {
 // ─── Event Card ───────────────────────────────────────────────────────────────
 function EventCard({ event, featured = false }: { event: any; featured?: boolean }) {
   const [hovered, setHovered] = useState(false);
-  const { t } = useLanguage();
-  const href = event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`;
+  const { t, language } = useLanguage();
+  const prefix = language === "ar" ? "/ar" : "";
+  const href = event.event_name_slug ? `${prefix}/events/${event.event_name_slug}` : `${prefix}/events/${event.id}`;
   const dateStr = event.date ? new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
   const img = event.image || event.imageUrl || event.image_url;
 
@@ -273,7 +274,10 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
 // ─── News List Item ───────────────────────────────────────────────────────────
 function NewsListItem({ item }: { item: any }) {
   const [hovered, setHovered] = useState(false);
-  const href = item.news_slug ? `/news/${item.news_slug}` : item.post_slug ? `/posts/${item.post_slug}` : `/news/${item.id}`;
+  const { language } = useLanguage();
+  const prefix = language === "ar" ? "/ar" : "";
+  const href = item.news_slug ? `${prefix}/news/${item.news_slug}` : item.post_slug ? `${prefix}/posts/${item.post_slug}` : `${prefix}/news/${item.id}`;
+  const displayTitle = language === "ar" && item.titleAr ? item.titleAr : item.title;
   const excerpt = stripHtml(String(item.summary || item.content || "")).slice(0, 80);
   const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
@@ -290,7 +294,7 @@ function NewsListItem({ item }: { item: any }) {
       >
         {item.image || item.imageUrl ? (
           <div style={{ width: 60, height: 60, borderRadius: 4, overflow: "hidden", flexShrink: 0 }}>
-            <img src={item.image || item.imageUrl} alt={item.title} width={60} height={60} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={item.image || item.imageUrl} alt={displayTitle} width={60} height={60} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         ) : (
           <div style={{ width: 60, height: 60, borderRadius: 4, background: CARD2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${BORDER}` }}>
@@ -305,7 +309,7 @@ function NewsListItem({ item }: { item: any }) {
             {dateStr && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)" }}>· {dateStr}</span>}
           </div>
           <h4 style={{ fontWeight: 600, fontSize: 13, color: hovered ? GOLD : "#fff", margin: "0 0 3px", lineHeight: 1.4, transition: "color 0.15s" }}>
-            {item.title}
+            {displayTitle}
           </h4>
           {excerpt && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0, lineHeight: 1.4 }}>{excerpt}</p>}
         </div>
@@ -442,7 +446,7 @@ export default function Home() {
     <>
       <PageSEO
         title="CrossFire Wiki — Weapons, Ranks, Events, Maps & Guides"
-        description="The #1 CrossFire fan wiki. Explore weapons, mercenaries, game modes, ranks, competitive events and tutorials for Z8Games CrossFire — in English and Arabic."
+        description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, and tutorials in English and Arabic."
         image="https://crossfire.wiki/feature-crossfire.jpg"
         canonicalPath="/"
       />
@@ -451,7 +455,7 @@ export default function Home() {
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <div style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
           {heroImage && (
-            <img src={heroImage} alt="CrossFire Wiki hero background — elite mercenaries in action" style={{
+            <img src={heroImage} alt="CrossFire gameplay artwork used for the CrossFire Wiki header" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.15,
             }} />
@@ -538,8 +542,8 @@ export default function Home() {
               {/* FEATURED EVENT - wiki spotlight */}
               {featuredEvent && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("featured")} title={t("eventSpotlight")} href="/events" />
-                  <Link href={featuredEvent.event_name_slug ? `/events/${featuredEvent.event_name_slug}` : `/events/${featuredEvent.id}`}>
+                  <SectionHeader eyebrow={t("featured")} title={t("eventSpotlight")} href={language === "ar" ? "/ar/events" : "/events"} />
+                  <Link href={featuredEvent.event_name_slug ? `${language === "ar" ? "/ar" : ""}/events/${featuredEvent.event_name_slug}` : `${language === "ar" ? "/ar" : ""}/events/${featuredEvent.id}`}>
                     <div style={{
                       background: CARD, border: `1px solid rgba(245,166,35,0.2)`,
                       borderRadius: 6, overflow: "hidden", cursor: "pointer",
@@ -605,7 +609,7 @@ export default function Home() {
               {/* EVENTS GRID */}
               {sideEvents.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("latest")} title={t("recentEvents")} href="/events" />
+                  <SectionHeader eyebrow={t("latest")} title={t("recentEvents")} href={language === "ar" ? "/ar/events" : "/events"} />
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="events-mini-grid">
                     {sideEvents.map((ev: any) => <EventCard key={ev.id} event={ev} />)}
                   </div>
@@ -622,7 +626,7 @@ export default function Home() {
               {/* NEWS FEED */}
               {newsItems.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("footerStayInformed")} title={t("newsUpdatesTitle")} href="/news" />
+                  <SectionHeader eyebrow={t("footerStayInformed")} title={t("newsUpdatesTitle")} href={language === "ar" ? "/ar/news" : "/news"} />
                   <div>
                     {newsItems.slice(0, 7).map((item: any) => <NewsListItem key={item.id} item={item} />)}
                   </div>

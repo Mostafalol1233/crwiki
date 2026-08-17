@@ -19,6 +19,7 @@ interface PageMeta {
   url: string;
   type: "website" | "article";
   datePublished?: string;
+  dateModified?: string;
   keywords?: string;
   schema?: object;
 }
@@ -80,12 +81,12 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   const newsM = path.match(/^\/news\/([^/?#]+)/);
   if (newsM) {
     const slug = newsM[1];
-    const item = await fetchOne("news", "slug", slug,
-      "title,seo_title,seo_description,image,image_url,created_at,updated_at,author,category");
+    const item = await fetchOne("news", "news_slug", slug,
+      "title,seo_title,seo_description,image_url,created_at,updated_at,author,category");
     if (item) {
       const title = item.seo_title || item.title || "CrossFire News";
       const desc  = item.seo_description || `CrossFire news: ${item.title}`;
-      const img   = item.image || item.image_url || DEFAULT_IMG;
+      const img   = item.image_url || DEFAULT_IMG;
       return {
         title:         `${title} | CrossFire Wiki`,
         description:   desc.substring(0, 160),
@@ -115,15 +116,15 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   const postM = path.match(/^\/posts\/([^/?#]+)/);
   if (postM) {
     const slug = postM[1];
-    const item = await fetchOne("posts", "slug", slug,
-      "title,seo_title,seo_description,image,created_at,author,category");
+    const item = await fetchOne("posts", "post_slug", slug,
+      "title,seo_title,seo_description,image_url,created_at,author,category");
     if (item) {
       const title = item.seo_title || item.title || "CrossFire";
       const desc  = item.seo_description || `${item.title} — CrossFire Wiki`;
       return {
         title:         `${title} | CrossFire Wiki`,
         description:   desc.substring(0, 160),
-        image:         item.image || DEFAULT_IMG,
+        image:         item.image_url || DEFAULT_IMG,
         url:           `${BASE}/posts/${slug}`,
         type:          "article",
         datePublished: item.created_at,
@@ -133,7 +134,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
           "@type": "Article",
           headline: title,
           description: desc.substring(0, 200),
-          image: item.image || DEFAULT_IMG,
+          image: item.image_url || DEFAULT_IMG,
           datePublished: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
           author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
           publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
@@ -142,30 +143,85 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     }
   }
 
-  // ── /tutorials/:slug ─────────────────────────────────────────────────
-  const tutM = path.match(/^\/tutorials\/([^/?#]+)/);
-  if (tutM) {
-    const slug = tutM[1];
+  // ── /tutorials/:slug and /videos/:category/:slug ───────────────────────
+  const tutM = path.match(/^\/tutorials\/([^/?#]+)$/);
+  const videoM = path.match(/^\/videos\/[^/?#]+\/([^/?#]+)$/);
+  if (tutM || videoM) {
+    const slug = (tutM || videoM)![1];
     const item = await fetchOne("tutorials", "slug", slug,
-      "title,seo_title,seo_description,image,created_at");
+      "title,seo_title,seo_description,image_url,created_at,youtube_url,youtube_id,video_url,category,difficulty");
     if (item) {
       const title = item.seo_title || item.title || "CrossFire Tutorial";
-      const desc  = item.seo_description || `Learn: ${item.title} — step-by-step CrossFire guide.`;
+      const desc  = item.seo_description || `Learn: ${item.title} — a complete CrossFire guide with steps, strategy and gameplay advice.`;
+      const image = item.image_url || (item.youtube_id ? `https://img.youtube.com/vi/${item.youtube_id}/hqdefault.jpg` : DEFAULT_IMG);
+      const url = `${BASE}${videoM ? path : `/tutorials/${slug}`}`;
+      const howTo = {
+        "@type": "HowTo",
+        name: title,
+        description: desc.substring(0, 200),
+        image,
+        totalTime: undefined,
+        supply: [],
+        tool: [],
+      };
+      const video = item.youtube_id || item.youtube_url || item.video_url ? {
+        "@type": "VideoObject",
+        name: title,
+        description: desc.substring(0, 200),
+        thumbnailUrl: [image],
+        uploadDate: item.created_at ? new Date(item.created_at).toISOString() : undefined,
+        embedUrl: item.youtube_id ? `https://www.youtube.com/embed/${item.youtube_id}` : undefined,
+        contentUrl: item.video_url || item.youtube_url || undefined,
+        publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
+        isFamilyFriendly: true,
+      } : null;
       return {
         title:         `${title} | CrossFire Tutorials`,
         description:   desc.substring(0, 160),
-        image:         item.image || DEFAULT_IMG,
-        url:           `${BASE}/tutorials/${slug}`,
+        image,
+        url,
         type:          "article",
         datePublished: item.created_at,
-        keywords:      "CrossFire tutorial, CrossFire guide, how to play CrossFire, Z8Games",
+        dateModified: item.created_at,
+        keywords:      `CrossFire tutorial, ${item.category || "gameplay guide"}, ${item.difficulty || "beginner"}, CrossFire video, Z8Games`,
         schema: {
           "@context": "https://schema.org",
-          "@type": "HowTo",
+          "@graph": [
+            { "@id": `${url}#howto`, ...howTo },
+            ...(video ? [{ "@id": `${url}#video`, ...video }] : []),
+          ],
+        },
+      };
+    }
+  }
+
+  // ── /pages/:slug ──────────────────────────────────────────────────────
+  const pageM = path.match(/^\/pages\/([^/?#]+)$/);
+  if (pageM) {
+    const slug = pageM[1];
+    const page = await fetchOne("custom_pages", "slug", slug,
+      "slug,title_en,title_ar,seo_title,seo_description,updated_at,status");
+    if (page && page.status === "published") {
+      const title = page.seo_title || page.title_en || page.title_ar || "CrossFire Wiki Page";
+      const desc = page.seo_description || `A detailed CrossFire Wiki page about ${title}.`;
+      const url = `${BASE}/pages/${slug}`;
+      return {
+        title: `${title} | CrossFire Wiki`,
+        description: desc.substring(0, 160),
+        image: DEFAULT_IMG,
+        url,
+        type: "article",
+        dateModified: page.updated_at,
+        keywords: `CrossFire Wiki, ${title}, CrossFire guide`,
+        schema: {
+          "@context": "https://schema.org",
+          "@type": "WebPage",
           name: title,
           description: desc.substring(0, 200),
-          image: item.image || DEFAULT_IMG,
-          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE },
+          url,
+          dateModified: page.updated_at ? new Date(page.updated_at).toISOString() : undefined,
+          isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: BASE },
+          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
         },
       };
     }
@@ -196,14 +252,18 @@ async function resolveMeta(path: string): Promise<PageMeta> {
 
   // ── static section pages ─────────────────────────────────────────────
   const sectionMeta: Record<string, Partial<PageMeta>> = {
-    "/events":      { title: "CrossFire Events 2025–2026 | Calendar & Rewards | CrossFire Wiki",           description: "All CrossFire West events, tournaments and limited-time updates. Dates, rewards and full details." },
+    "/events":      { title: "CrossFire Events | Calendar, Dates & Rewards | CrossFire Wiki",           description: "CrossFire events, tournaments, and limited-time updates with dates, reward details, and archived information." },
     "/weapons":     { title: "CrossFire Weapons Database — Stats, Variants & Guides | CrossFire Wiki",    description: "Complete CrossFire weapon stats, damage values, variants and unlock methods." },
     "/modes":       { title: "CrossFire Game Modes — Team Match, Mutation, Ghost & More | CrossFire Wiki", description: "Every CrossFire game mode explained: rules, strategies, and tips for Team Match, Mutation Mode, Ghost Mode and more." },
     "/ranks":       { title: "CrossFire Rank System — All 104 Tiers & EXP Required | CrossFire Wiki",    description: "Full CrossFire ranking system from Private to National Soldier. EXP requirements, badges and promotion tips." },
     "/mercenaries": { title: "CrossFire Mercenaries — Characters, Stats & Abilities | CrossFire Wiki",   description: "Every CrossFire mercenary with abilities, teams, and how to get them." },
     "/maps":        { title: "CrossFire Maps — Black Widow, Egypt, Cabin & More | CrossFire Wiki",       description: "All CrossFire maps with layout overviews, strategies and callouts." },
     "/news":        { title: "CrossFire News — Updates, Patches & Announcements | CrossFire Wiki",       description: "Latest CrossFire West news, patch notes, updates and game announcements." },
-    "/tutorials":   { title: "CrossFire Tutorials — Beginner to Pro Guides | CrossFire Wiki",           description: "Expert CrossFire tutorials: aim training, movement, weapons, and competitive strategies." },
+    "/tutorials":   { title: "CrossFire Tutorials | Beginner Guides & Game Systems | CrossFire Wiki",           description: "CrossFire tutorials covering installation, movement, weapons, game systems, and practical gameplay questions." },
+    "/videos":       { title: "CrossFire Videos — Tutorials, Gameplay & Highlights | CrossFire Wiki", description: "Watch CrossFire tutorials, gameplay, weapon guides, creator videos and highlights with useful explanations." },
+    "/pages":        { title: "CrossFire Wiki Pages — Guides, Updates & Reference | CrossFire Wiki", description: "Browse detailed CrossFire Wiki pages covering updates, modes, weapons, events, systems and community guides." },
+    "/content-hub":  { title: "CrossFire Content Hub | Guides, Updates & Reference | CrossFire Wiki", description: "Browse organized CrossFire guides, updates, videos, events, and reference pages in the wiki content hub." },
+    "/faq":          { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
   };
   const sp = sectionMeta[path];
   if (sp) {
@@ -219,7 +279,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   // ── Default fallback ─────────────────────────────────────────────────
   return {
     title:       "CrossFire Wiki | Weapons, Modes, Mercenaries & Community",
-    description: "The definitive CrossFire encyclopedia: weapons, maps, mercenaries, game modes, ranks, and community resources.",
+    description: "An independent CrossFire reference for weapons, maps, characters, game modes, ranks, events, and community resources.",
     image:       DEFAULT_IMG,
     url:         `${BASE}${path}`,
     type:        "website",
@@ -248,6 +308,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <meta name="robots" content="index, follow, max-image-preview:large">
 ${meta.keywords ? `<meta name="keywords" content="${e(meta.keywords)}">` : ""}
 ${meta.datePublished ? `<meta name="article:published_time" content="${e(meta.datePublished)}">` : ""}
+${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.dateModified)}">` : ""}
 <link rel="canonical" href="${e(meta.url)}">
 
 <!-- Open Graph -->

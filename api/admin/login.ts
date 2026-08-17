@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
+import { makeAdminToken } from "../../server/adminAuth.js";
+
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],
   ["Access-Control-Allow-Methods", "POST, OPTIONS"],
@@ -14,10 +16,6 @@ function addCorsHeaders(res: VercelResponse) {
 }
 
 
-function makeToken(payload: object): string {
-  return Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 86_400_000 * 7 })).toString("base64");
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
@@ -26,14 +24,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { username, password } = req.body || {};
     if (!password) return addCorsHeaders(res).status(400).json({ error: "Password required" });
 
-    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || "";
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
     const SUPABASE_URL   = process.env.SUPABASE_URL   || process.env.VITE_SUPABASE_URL   || "";
-    const SERVICE_KEY    = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+    const SERVICE_KEY    = process.env.SUPABASE_SERVICE_KEY || "";
 
     // ── Super-admin: password-only ────────────────────────────────────────────
     if (!username) {
       if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
-        const token = makeToken({ role: "super_admin", username: "super_admin", permissions: {} });
+        const token = makeAdminToken({ role: "super_admin", username: "super_admin", permissions: {} });
         return addCorsHeaders(res).status(200).json({
           token,
           admin: { roles: ["super_admin"], role: "super_admin", username: "super_admin", permissions: {} },
@@ -50,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const bcrypt = await import("bcryptjs");
           for (const row of rows) {
             if (await bcrypt.compare(password, row.password_hash || "")) {
-              const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+              const token = makeAdminToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
               return addCorsHeaders(res).status(200).json({
                 token,
                 admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },
@@ -79,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!await bcrypt.compare(password, row.password_hash || ""))
       return addCorsHeaders(res).status(401).json({ error: "Invalid credentials" });
 
-    const token = makeToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
+    const token = makeAdminToken({ id: row.id, role: row.role, username: row.username, permissions: row.permissions || {} });
     return addCorsHeaders(res).status(200).json({
       token,
       admin: { roles: [row.role], role: row.role, username: row.username, permissions: row.permissions || {} },

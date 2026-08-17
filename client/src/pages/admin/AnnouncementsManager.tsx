@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { adminFetch } from '@/lib/supabaseAdmin';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -30,37 +30,50 @@ export default function AnnouncementsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Partial<Announcement>>(EMPTY);
-  const client = supabaseService;
-
   const fetch = useCallback(async () => {
-    if (!client) return;
     setLoading(true);
-    const { data } = await client.from('announcements').select('*').order('created_at', { ascending: false });
-    setItems(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      const payload = await adminFetch<{ data?: Announcement[] }>('/api/admin/events?resource=announcements');
+      setItems(Array.isArray(payload?.data) ? payload.data : []);
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to load announcements');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const save = async () => {
-    if (!client || !editing.title_en) { toast.error('Title required'); return; }
+    if (!editing.title_en) { toast.error('Title required'); return; }
     setSaving(true);
     try {
       if (editing.id) {
-        const { error } = await client.from('announcements').update(editing).eq('id', editing.id);
-        if (error) throw error; toast.success('Updated');
+        await adminFetch('/api/admin/events?resource=announcements', {
+          method: 'PATCH',
+          body: JSON.stringify({ id: editing.id, values: { ...editing, id: undefined } }),
+        });
+        toast.success('Updated');
       } else {
-        const { error } = await client.from('announcements').insert({ ...editing, created_at: new Date().toISOString() });
-        if (error) throw error; toast.success('Created');
+        await adminFetch('/api/admin/events?resource=announcements', {
+          method: 'POST',
+          body: JSON.stringify({ ...editing, created_at: new Date().toISOString() }),
+        });
+        toast.success('Created');
       }
       await fetch(); setView('list'); setEditing(EMPTY);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete?')) return;
-    await client.from('announcements').delete().eq('id', id);
-    toast.success('Deleted'); await fetch();
+    if (!confirm('Delete?')) return;
+    try {
+      await adminFetch(`/api/admin/events?resource=announcements&id=${encodeURIComponent(id)}`, { method: 'DELETE', body: JSON.stringify({ id }) });
+      toast.success('Deleted');
+      await fetch();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const typeColor: Record<string, string> = { info: '#3b82f6', warning: '#f59e0b', promo: '#22c55e', maintenance: '#ef4444' };

@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
+import { uploadToSupabase } from './uploadToSupabase';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -7,7 +8,23 @@ function isMissingTableError(error: any) {
   return TABLE_MISSING_RE.test(msg) || error?.code === '42P01';
 }
 
+const PUBLIC_QUERY_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = PUBLIC_QUERY_TIMEOUT_MS): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("The request timed out. Please retry.")), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
 async function runSafeQuery<T>(fallback: T, executor: () => Promise<any>): Promise<{ data: T; count?: number }> {
+  if (!isSupabaseConfigured) {
+    return { data: fallback, count: Array.isArray(fallback) ? fallback.length : undefined };
+  }
+
   try {
     const result = await executor();
     if (result?.error && isMissingTableError(result.error)) {
@@ -102,7 +119,7 @@ export async function getWeapons(opts: {
   pageSize?: number;
 } = {}) {
   try {
-    const response = await fetch('/api/content?type=weapons');
+    const response = await withTimeout(fetch('/api/content?type=weapons'));
     if (response.ok) {
       const json = await response.json();
       const weapons = Array.isArray(json.weapons) ? json.weapons : [];
@@ -126,21 +143,32 @@ export async function getWeapons(opts: {
   }
 
   const { q, letter, category, sort = 'name', order = 'asc', page = 1, pageSize = 50 } = opts;
-  const result = await runSafeQuery(fallbackWeapons, async () => {
-    let query = supabase.from('weapons').select('*', { count: 'exact' });
+  try {
+    const result = await runSafeQuery(fallbackWeapons, async () => {
+      let query = supabase.from('weapons').select('*', { count: 'exact' });
 
-    if (q) query = query.ilike('name', `%${q}%`);
-    if (letter) query = query.ilike('name', `${letter}%`);
-    if (category) query = query.eq('category', category);
+      if (q) query = query.ilike('name', `%${q}%`);
+      if (letter) query = query.ilike('name', `${letter}%`);
+      if (category) query = query.eq('category', category);
 
-    const from = (page - 1) * pageSize;
-    query = query.range(from, from + pageSize - 1);
-    query = query.order(sort === 'name' ? 'name' : 'created_at', { ascending: order === 'asc' });
+      const from = (page - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+      query = query.order(sort === 'name' ? 'name' : 'created_at', { ascending: order === 'asc' });
 
-    return await query;
-  });
-  const data = Array.isArray(result.data) ? result.data : [];
-  return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize };
+      return await withTimeout(query);
+    });
+    const data = Array.isArray(result.data) ? result.data : [];
+    return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize };
+  } catch {
+    const start = (page - 1) * pageSize;
+    const items = fallbackWeapons
+      .filter((weapon: any) => !q || String(weapon.name).toLowerCase().includes(q.toLowerCase()))
+      .filter((weapon: any) => !letter || String(weapon.name).toLowerCase().startsWith(letter.toLowerCase()))
+      .filter((weapon: any) => !category || weapon.category === category)
+      .slice(start, start + pageSize)
+      .map(normalizeWeapon);
+    return { items, total: fallbackWeapons.length, page, pageSize };
+  }
 }
 
 export async function getWeaponById(id: string) {
@@ -243,16 +271,32 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
         items: posts.map((p: any) => normalizePost({
           id: p.id,
           title: p.title,
+          title_ar: p.title_ar,
           post_slug: p.post_slug || p.slug,
           content: p.content || p.excerpt || '',
+          content_ar: p.content_ar,
           summary: p.summary || p.excerpt || '',
+          summary_ar: p.summary_ar,
           image_url: p.image_url || '',
           category: p.category || 'community',
           tags: p.tags || [],
           author: p.author || 'CrossFire Wiki',
-          views: 0,
-          reading_time: 2,
+          views: p.views || 0,
+          reading_time: p.reading_time,
+          featured: p.featured,
+          language: p.language,
+          seo_title: p.seo_title,
+          seo_description: p.seo_description,
+          og_image: p.og_image,
+          canonical_url: p.canonical_url,
+          full_layout: p.full_layout ?? p.fullLayout,
+          template: p.template,
+          wiki_tabs: p.wiki_tabs ?? p.wikiTabs,
+          external_links: p.external_links ?? p.externalLinks,
+          source_url: p.source_url ?? p.sourceUrl,
+          gallery: p.gallery,
           created_at: p.created_at || p.date,
+          updated_at: p.updated_at,
         })),
         total: posts.length,
       };
@@ -295,26 +339,62 @@ function normalizePost(p: any) {
   } else if (typeof p.gallery === 'string') {
     try { gallery = JSON.parse(p.gallery) || []; } catch { gallery = []; }
   }
+  const parseArray = (value: unknown) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value !== 'string' || !value.trim()) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+  const wordCount = (value: unknown) => String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(?:nbsp|amp|lt|gt|quot|#39);/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+  const contentWordCount = Math.max(wordCount(p.content), wordCount(p.content_ar || p.contentAr));
+  const computedReadingTime = Math.max(1, Math.ceil(contentWordCount / 200));
+  const suppliedReadingTime = Number(p.reading_time ?? p.readingTime);
+  const readingTime = Number.isFinite(suppliedReadingTime) && suppliedReadingTime > 1
+    ? suppliedReadingTime
+    : computedReadingTime;
+  const createdAt = p.created_at || p.createdAt || p.date || p.published_at || null;
+  const updatedAt = p.updated_at || p.updatedAt || createdAt;
 
   return {
     id: String(p.id || ''),
     title: String(p.title || ''),
-    post_slug: String(p.post_slug || ''),
+    titleAr: String(p.title_ar || p.titleAr || ''),
+    post_slug: String(p.post_slug || p.slug || ''),
     content: String(p.content || ''),
+    contentAr: String(p.content_ar || p.contentAr || ''),
     summary: String(p.summary || ''),
+    summaryAr: String(p.summary_ar || p.summaryAr || ''),
     image: String(p.image_url || ''),
     imageUrl: String(p.image_url || ''),
     category: String(p.category || ''),
     tags: p.tags || [],
     author: String(p.author || ''),
     views: p.views || 0,
-    readingTime: p.reading_time || 1,
+    readingTime,
     featured: p.featured || false,
     previewOnHome: p.preview_on_home !== false,
-    createdAt: p.created_at,
+    createdAt,
+    updatedAt,
     language: p.language || 'en',
     seoTitle: p.seo_title || '',
     seoDescription: p.seo_description || '',
+    ogImage: p.og_image || '',
+    canonicalUrl: p.canonical_url || '',
+    fullLayout: Boolean(p.full_layout ?? p.fullLayout ?? p.template === 'wiki'),
+    template: String(p.template || (p.full_layout || p.fullLayout ? 'wiki' : 'standard')),
+    wikiTabs: parseArray(p.wiki_tabs ?? p.wikiTabs),
+    externalLinks: parseArray(p.external_links ?? p.externalLinks),
+    sourceUrl: String(p.source_url || p.sourceUrl || ''),
     gallery,
   };
 }
@@ -364,15 +444,22 @@ function normalizeNews(n: any) {
 // ─── Events ──────────────────────────────────────────────────────────────────
 export async function getEvents(opts: { limit?: number; offset?: number } = {}) {
   const { limit = 20, offset = 0 } = opts;
-  const result = await runSafeQuery(fallbackEvents, async () => {
-    return await supabase
-      .from('events')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-  });
-  const data = Array.isArray(result.data) ? result.data : [];
-  return { items: data.map(normalizeEvent), total: result.count || data.length || 0 };
+  try {
+    const result = await runSafeQuery(fallbackEvents, async () => {
+      return await withTimeout(
+        supabase
+          .from('events')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
+    });
+    const data = Array.isArray(result.data) ? result.data : [];
+    return { items: data.map(normalizeEvent), total: result.count || data.length || 0 };
+  } catch {
+    const items = fallbackEvents.slice(offset, offset + limit).map(normalizeEvent);
+    return { items, total: fallbackEvents.length };
+  }
 }
 
 export async function getEventBySlug(slug: string) {
@@ -727,26 +814,13 @@ export async function updateSiteSettings(patch: Record<string, any>) {
   }
 }
 
-// ─── Image Upload (Supabase Storage) ─────────────────────────────────────────
+// ─── Image Upload ─────────────────────────────────────────────────────────────
 export async function uploadImageToSupabase(
   file: File,
-  bucket = 'uploads',
+  _bucket = 'uploads',
   folder = 'images'
 ): Promise<string> {
-  // Use service-role client so uploads bypass storage RLS policies
-  const { supabaseService } = await import('@/lib/supabaseAdmin');
-  const client = supabaseService || supabase;
-
-  const ext = file.name.split('.').pop() || 'jpg';
-  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await client.storage.from(bucket).upload(fileName, file, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: file.type,
-  });
-  if (error) throw new Error(error.message);
-  const { data: urlData } = client.storage.from(bucket).getPublicUrl(data.path);
-  return urlData.publicUrl;
+  return uploadToSupabase(file, folder);
 }
 
 // ─── Auth (Supabase Auth) ─────────────────────────────────────────────────────

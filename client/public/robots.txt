@@ -68,8 +68,5 @@ Allow: /
 User-agent: Discordbot
 Allow: /
 
-# Sitemap Index — references all sub-sitemaps
-Sitemap: https://crossfire.wiki/sitemap-index.xml
+# Dynamic sitemap generated from the current database content
 Sitemap: https://crossfire.wiki/sitemap.xml
-Sitemap: https://crossfire.wiki/news-sitemap.xml
-Sitemap: https://crossfire.wiki/images-sitemap.xml

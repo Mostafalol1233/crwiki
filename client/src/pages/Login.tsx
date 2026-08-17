@@ -84,7 +84,7 @@ export default function Login() {
 
   return (
     <>
-      <PageSEO title="Sign In — CrossFire Wiki" description="Sign in to your CrossFire Wiki account." />
+      <PageSEO title="Sign In — CrossFire Wiki" description="Sign in to your CrossFire Wiki account." noindex />
       <div className="min-h-screen flex" style={{ background: "var(--background)" }}>
 
         {/* ── Left decorative panel ── */}
@@ -141,7 +141,7 @@ export default function Login() {
               <span className="text-sm font-black uppercase tracking-widest" style={{ color: "#f5a623" }}>CrossFire Wiki</span>
             </div>
             <h2 className="text-3xl font-black uppercase tracking-tight leading-none mb-3" style={{ color: "#fff" }}>
-              The Definitive<br />
+              A Practical<br />
               <span style={{ color: "#f5a623" }}>{t("loginCFResource")}</span>
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: "#555" }}>

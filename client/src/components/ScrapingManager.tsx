@@ -157,7 +157,7 @@ export default function ScrapingManager() {
       
       toast({
         title: "Events Created Successfully",
-        description: `✅ Created ${response.events?.length || 0} events from forum announcements`,
+        description: `Created ${response.events?.length || 0} events from forum announcements.`,
       });
       
       // Refresh events display if needed

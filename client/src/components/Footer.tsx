@@ -40,9 +40,10 @@ function SectionTitle({ label }: { label: string }) {
 
 function FooterLink({ label, path }: { label: string; path: string }) {
   const [hovered, setHovered] = useState(false);
+  const localizedPath = path;
   return (
     <li>
-      <Link href={path}>
+      <Link href={localizedPath}>
         <span
           style={{
             fontFamily: "'EB Garamond', serif",
@@ -94,6 +95,7 @@ export function Footer() {
   ];
   const shopLinks = [
     { label: t("footerSellersMarket"), path: "/sellers" },
+    { label: t("navServices"), path: "/services" },
     { label: t("footerCommunityReviews"), path: "/reviews" },
   ];
   const supportLinks = [

@@ -15,7 +15,7 @@ export default function RestorationManager() {
   const [overviewData, setOverviewData] = useState<any>(null);
 
   const handleRestore = async () => {
-    if (!window.confirm("⚠️ This will restore all historical events and grave modes. Continue?")) {
+    if (!window.confirm("This will restore all historical events and grave modes. Continue?")) {
       return;
     }
 
@@ -24,7 +24,7 @@ export default function RestorationManager() {
       const response = await apiRequest("/api/admin/restore-events", "POST", {});
       
       toast({
-        title: "✅ Restoration Successful",
+        title: "Restoration successful",
         description: response.message || "All events and graves have been restored!",
       });
 
@@ -32,7 +32,7 @@ export default function RestorationManager() {
       setTimeout(() => handleVerify(), 1000);
     } catch (error: any) {
       toast({
-        title: "❌ Restoration Failed",
+        title: "Restoration failed",
         description: error.message || "Failed to restore events",
         variant: "destructive",
       });
@@ -49,13 +49,13 @@ export default function RestorationManager() {
       if (response.success) {
         setVerificationData(response);
         toast({
-          title: "✅ Verification Complete",
+          title: "Verification complete",
           description: `Database contains ${response.database.events} events and ${response.database.modes} modes`,
         });
       }
     } catch (error: any) {
       toast({
-        title: "❌ Verification Failed",
+        title: "Verification failed",
         description: error.message || "Failed to verify database state",
         variant: "destructive",
       });
@@ -71,7 +71,7 @@ export default function RestorationManager() {
       setOverviewData(response);
     } catch (error: any) {
       toast({
-        title: "❌ Recovery snapshot failed",
+        title: "Recovery snapshot failed",
         description: error.message || "Failed to load content recovery overview",
         variant: "destructive",
       });
@@ -204,8 +204,8 @@ export default function RestorationManager() {
               <div className="border rounded-lg p-3">
                 <p className="font-medium">Settings Status</p>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                  <li>Site settings configured: {overviewData.settings.siteSettingsConfigured ? "✅ Yes" : "❌ No"}</li>
-                  <li>Chat registration enabled: {overviewData.settings.chatRegistrationEnabled ? "✅ Open" : "⛔ Closed"}</li>
+                  <li>Site settings configured: {overviewData.settings.siteSettingsConfigured ? "Yes" : "No"}</li>
+                  <li>Chat registration enabled: {overviewData.settings.chatRegistrationEnabled ? "Open" : "Closed"}</li>
                 </ul>
               </div>
               <div className="border rounded-lg p-3">

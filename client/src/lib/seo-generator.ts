@@ -47,14 +47,15 @@ export function generateEventSEO(
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 
   // 2. Generate optimized title
-  // Pattern: [Event Name] - [Event Type] | CrossFire Wiki
-  const title = `${eventName} - ${eventType} | CrossFire Wiki`;
+  // Pattern: [Event Name] | [Event Type] | CrossFire Wiki
+  const title = `${eventName} | ${eventType} | CrossFire Wiki`;
 
-  // 3. Generate meta description (max 160 chars)
-  // Pattern: [Event Name] is live! Join from [Start] to [End] to earn [Rewards]. [Short Snippet]
-  let meta_description = `${eventName} is live! Earn ${rewards} from ${startDate} to ${endDate}. ${description}`;
+  // 3. Generate a neutral meta description (max 160 chars)
+  // Dates and reward information are presented as recorded event data; the page itself determines whether the event is currently active.
+  const detail = description.trim();
+  let meta_description = `${eventName} was listed as a ${eventType.toLowerCase()} from ${startDate} to ${endDate}. Rewards: ${rewards}.${detail ? ` ${detail}` : ""}`;
   if (meta_description.length > 157) {
-    meta_description = meta_description.substring(0, 157) + "...";
+    meta_description = meta_description.substring(0, 157).replace(/\s+\S*$/, "") + "...";
   }
 
   // 4. Open Graph Tags
@@ -74,8 +75,8 @@ export function generateEventSEO(
   };
 
   // 6. Hero Description
-  // A punchy, exciting description for the hero section
-  const hero_description = `Get ready for ${eventName}! Dive into CrossFire between ${startDate} and ${endDate} to claim exclusive rewards like ${rewards}. Don't miss out on this limited-time ${eventType.toLowerCase()}!`;
+  // Keep the hero useful for readers and accurate for both live and archived events.
+  const hero_description = `${eventName} is recorded as a ${eventType.toLowerCase()} running from ${startDate} to ${endDate}. Listed rewards: ${rewards}.`;
 
   return {
     slug,
@@ -94,7 +95,7 @@ export function generateEventSEOFromData(data: Partial<Event> & { eventName?: st
     data.type || data.eventType || "Event",
     data.startDate ? new Date(data.startDate).toLocaleDateString() : "TBA",
     data.endDate ? new Date(data.endDate).toLocaleDateString() : "TBA",
-    data.rewards || "exclusive items",
+    data.rewards || "not specified",
     data.description || "",
     data.image || ""
   );

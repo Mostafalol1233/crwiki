@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
+import { getWeaponDescription } from '../../../shared/weapon-descriptions';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -189,22 +190,42 @@ export async function getWeaponById(id: string) {
 }
 
 function normalizeWeapon(w: any) {
+  const name = String(w.name || '');
+  const enrichment = getWeaponDescription(name);
+  const sourceDescription = String(w.description || '');
+  const isGenericDescription = /^CrossFire weapon\s*[-:]/i.test(sourceDescription) || /^Weapon\s*[-:]/i.test(sourceDescription);
+  const rawAcquisitionVerified = Boolean(w.acquisition_verified ?? w.acquisitionVerified ?? false);
+  const rawSourceUrl = String(w.source_url || w.sourceUrl || '');
+
   return {
     id: String(w.id || ''),
-    name: String(w.name || ''),
+    name,
     image: String(w.image_url || w.image || ''),
     imageUrl: String(w.image_url || w.image || ''),
     backgroundUrl: String(w.background_url || ''),
-    category: String(w.category || 'Uncategorized'),
-    description: String(w.description || ''),
+    category: String(w.category || enrichment?.category || 'Uncategorized'),
+    description: String(enrichment?.descriptionEn || (!isGenericDescription ? sourceDescription : '')),
+    descriptionAr: String(enrichment?.descriptionAr || ''),
+    descriptionStatus: enrichment?.descriptionStatus || 'unverified',
+    availabilityEn: String(enrichment?.availabilityEn || ''),
+    availabilityAr: String(enrichment?.availabilityAr || ''),
+    acquisitionKind: enrichment?.acquisitionKind || 'unverified',
+    acquisitionLabelEn: enrichment?.acquisitionLabelEn || 'Unverified',
+    acquisitionLabelAr: enrichment?.acquisitionLabelAr || 'غير متحقق منه',
+    acquisitionDetailsEn: enrichment?.acquisitionDetailsEn || 'No verified acquisition method is recorded.',
+    acquisitionDetailsAr: enrichment?.acquisitionDetailsAr || 'لا توجد طريقة اقتناء موثقة في السجل الحالي.',
+    acquisitionSources: enrichment?.acquisitionSources || [],
+    acquisitionVerified: Boolean(enrichment?.acquisitionVerified || rawAcquisitionVerified),
+    sourceUrl: rawSourceUrl || enrichment?.sourceUrl || '',
+    officialCatalogueUrl: enrichment?.officialCatalogueUrl || 'https://crossfire.z8games.com/weapons.html',
+    sourceKind: enrichment?.sourceKind || 'unverified',
+    matchMode: enrichment?.matchMode || 'not-found',
     stats: w.stats || {},
     acquisitionType: String(w.acquisition_type || w.acquisitionType || ''),
     acquisitionMethod: String(w.acquisition_method || w.acquisitionMethod || ''),
     acquisition: String(w.acquisition || ''),
     shopType: String(w.shop_type || w.shopType || ''),
     currency: String(w.currency || ''),
-    acquisitionVerified: Boolean(w.acquisition_verified ?? w.acquisitionVerified ?? false),
-    sourceUrl: String(w.source_url || w.sourceUrl || ''),
     createdAt: w.created_at || w.createdAt || undefined,
   };
 }

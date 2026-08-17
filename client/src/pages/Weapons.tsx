@@ -15,6 +15,18 @@ interface Weapon {
   category?: string;
   description?: string;
   descriptionAr?: string;
+  descriptionStatus?: "reference-described" | "unverified";
+  availabilityEn?: string;
+  availabilityAr?: string;
+  acquisitionKind?: string;
+  acquisitionLabelEn?: string;
+  acquisitionLabelAr?: string;
+  acquisitionDetailsEn?: string;
+  acquisitionDetailsAr?: string;
+  acquisitionSources?: string[];
+  officialCatalogueUrl?: string;
+  sourceKind?: string;
+  matchMode?: string;
   stats?: Record<string, any>;
   highlightedName?: string;
   createdAt?: string;
@@ -157,12 +169,23 @@ function getAcquisition(weapon: Weapon) {
     stats.availability,
   ].filter(Boolean).join(" ").toLowerCase();
 
+  const kind = String(weapon.acquisitionKind || "").toLowerCase();
   let key: AcquisitionKey = "unverified";
-  if (/black\s*market|lapis|garnet|crate|box|prospect/.test(raw)) key = "black-market";
-  else if (/battle\s*pass|event|reward|mission|season/.test(raw)) key = "event";
-  else if (/mileage|\bmp\b/.test(raw)) key = "mp";
-  else if (/\bzp\b|cash|premium/.test(raw)) key = "zp";
-  else if (/\bgp\b|gp\s*(shop|store)|item\s*shop/.test(raw)) key = "gp";
+  if (kind === "black_market") key = "black-market";
+  else if (["event", "battle_pass", "ranked_reward", "mode_reward", "reward"].includes(kind)) key = "event";
+  else if (kind === "mileage_shop") key = "mp";
+  else if (kind === "item_shop") {
+    if (/\bzp\b/.test(raw)) key = "zp";
+    else if (/\bgp\b/.test(raw)) key = "gp";
+  } else if (kind === "coupon_exchange" || kind === "vvip") key = "zp";
+
+  if (key === "unverified") {
+    if (/black\s*market|lapis|garnet|crate|box|prospect/.test(raw)) key = "black-market";
+    else if (/battle\s*pass|event|reward|mission|season/.test(raw)) key = "event";
+    else if (/mileage|\bmp\b/.test(raw)) key = "mp";
+    else if (/\bzp\b|zp\s*(shop|cash)/.test(raw)) key = "zp";
+    else if (/\bgp\b|gp\s*(shop|store)|item\s*shop/.test(raw)) key = "gp";
+  }
 
   return {
     key,
@@ -181,6 +204,18 @@ function normalizeWeapon(weapon: Partial<Weapon> & Record<string, any>): Weapon 
     category: String(weapon.category || "Uncategorized"),
     description: String(weapon.description || ""),
     descriptionAr: String(weapon.descriptionAr || weapon.description_ar || ""),
+    descriptionStatus: weapon.descriptionStatus,
+    availabilityEn: String(weapon.availabilityEn || ""),
+    availabilityAr: String(weapon.availabilityAr || ""),
+    acquisitionKind: String(weapon.acquisitionKind || "unverified"),
+    acquisitionLabelEn: String(weapon.acquisitionLabelEn || "Unverified"),
+    acquisitionLabelAr: String(weapon.acquisitionLabelAr || "غير متحقق منه"),
+    acquisitionDetailsEn: String(weapon.acquisitionDetailsEn || ""),
+    acquisitionDetailsAr: String(weapon.acquisitionDetailsAr || ""),
+    acquisitionSources: Array.isArray(weapon.acquisitionSources) ? weapon.acquisitionSources : [],
+    officialCatalogueUrl: String(weapon.officialCatalogueUrl || "https://crossfire.z8games.com/weapons.html"),
+    sourceKind: String(weapon.sourceKind || "unverified"),
+    matchMode: String(weapon.matchMode || "not-found"),
     stats: weapon.stats || {},
     highlightedName: weapon.highlightedName,
     createdAt: weapon.createdAt || weapon.created_at,

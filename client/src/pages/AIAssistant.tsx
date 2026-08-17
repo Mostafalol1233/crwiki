@@ -203,11 +203,12 @@ export default function AIAssistant() {
       });
 
       if (!resp.ok) {
-        try { const d = await resp.json(); throw new Error(d.error || "Request failed"); }
-        catch { throw new Error("Request failed"); }
+        const data = await resp.json().catch(() => null) as { error?: string; detail?: string } | null;
+        throw new Error(data?.error || data?.detail || `AI request failed (${resp.status})`);
       }
 
-      const reader = resp.body!.getReader();
+      if (!resp.body) throw new Error(isAr ? "لم يصل اتصال الدردشة من الخادم." : "The chat connection returned no response body.");
+      const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       let fullContent = "";

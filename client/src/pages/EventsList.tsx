@@ -155,8 +155,8 @@ function FeaturedCard({ ev, isAr }: { ev: any; isAr: boolean }) {
           {/* Image */}
           <div style={{ position: "relative", overflow: "hidden", minHeight: 300 }} className="featured-img-wrap">
             <ContentImage src={img} alt={title}
-              className="group-hover:scale-105 transition-transform duration-700 featured-img"
-              style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 300 }}
+              className="transition-opacity duration-700 featured-img"
+              style={{ width: "100%", height: "100%", objectFit: "contain", padding: 16, minHeight: 300, background: "rgba(0,0,0,0.16)" }}
               fallbackSrc={FALLBACK}
             />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, transparent 55%, var(--card) 100%)" }} />
@@ -247,8 +247,8 @@ function EventCard({ ev, isAr }: { ev: any; isAr: boolean }) {
         <div style={{ position: "relative", overflow: "hidden", paddingTop: "56.25%" }}>
           <ContentImage src={img} alt={title}
             loading="lazy"
-            className="group-hover:scale-105 transition-transform duration-500"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            className="transition-opacity duration-500"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 10, background: "rgba(0,0,0,0.16)" }}
             fallbackSrc={FALLBACK}
           />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />

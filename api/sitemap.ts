@@ -19,11 +19,40 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
   } catch { return []; }
 }
 
-async function readContentRows(type: 'weapons' | 'posts'): Promise<any[]> {
+async function readContentRows(
+  type: 'weapons' | 'posts',
+  opts: { limit?: number; offset?: number; category?: string } = {}
+): Promise<{ rows: any[]; total: number }> {
   if (type === 'weapons') {
-    return q('weapons', 'id,name,category,description,stats,image_url,created_at', 'name');
+    const rows = await q('weapons', 'id,name,category,description,stats,image_url,created_at', 'name');
+    return { rows, total: rows.length };
   }
-  return q('posts', 'id,title,post_slug,summary,content,category,author,tags,created_at', 'created_at.desc');
+
+  if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
+  const limit = Math.min(50, Math.max(1, Number(opts.limit) || 24));
+  const offset = Math.max(0, Number(opts.offset) || 0);
+  const params = new URLSearchParams({
+    select: 'id,title,title_ar,post_slug,summary,summary_ar,content,content_ar,image_url,category,tags,author,views,reading_time,featured,language,seo_title,seo_description,og_image,canonical_url,full_layout,template,wiki_tabs,external_links,source_url,gallery,created_at,updated_at',
+    order: 'created_at.desc',
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (opts.category) params.set('category', `eq.${opts.category}`);
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/posts?${params.toString()}`, {
+      headers: { ...h(), Prefer: 'count=exact' },
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!response.ok) return { rows: [], total: 0 };
+    const rows = await response.json();
+    const contentRange = response.headers.get('content-range') || '';
+    const totalText = contentRange.split('/')[1] || '';
+    const total = Number.parseInt(totalText, 10);
+    return { rows: Array.isArray(rows) ? rows : [], total: Number.isFinite(total) ? total : rows.length };
+  } catch {
+    return { rows: [], total: 0 };
+  }
 }
 
 function xe(s: string) {
@@ -85,10 +114,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const rawType = Array.isArray(req.query.type) ? req.query.type[0] : req.query.type;
   if (req.method === 'GET' && typeof rawType === 'string' && (rawType === 'weapons' || rawType === 'posts')) {
-    const rows = await readContentRows(rawType as 'weapons' | 'posts');
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
+    const rawCategory = Array.isArray(req.query.category) ? req.query.category[0] : req.query.category;
+    const { rows, total } = await readContentRows(rawType as 'weapons' | 'posts', {
+      limit: Number(rawLimit),
+      offset: Number(rawOffset),
+      category: typeof rawCategory === 'string' ? rawCategory : undefined,
+    });
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');
-    return res.status(200).json(rawType === 'weapons' ? { weapons: rows || [] } : { posts: rows || [] });
+    return res.status(200).json(rawType === 'weapons' ? { weapons: rows || [], total } : { posts: rows || [], total });
   }
 
   const today = new Date().toISOString().split("T")[0];

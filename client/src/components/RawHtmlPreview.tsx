@@ -62,7 +62,7 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
       <div 
         className={`prose prose-sm sm:prose-base md:prose-lg lg:prose-xl dark:prose-invert max-w-none
                    prose-img:mx-auto prose-img:rounded-2xl prose-img:border prose-img:border-primary/10 prose-img:shadow-2xl
-                   prose-headings:scroll-mt-24 prose-headings:text-primary prose-a:text-primary hover:prose-a:text-primary/80
+                   prose-headings:scroll-mt-24 prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80
                    prose-strong:text-foreground prose-li:marker:text-primary prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
                    prose-table:border prose-table:border-collapse prose-td:border prose-td:p-2 prose-th:bg-muted prose-th:text-foreground ${isRTL ? "text-right prose-table:[direction:rtl]" : "text-left"}`}
         dangerouslySetInnerHTML={{ __html: processedHtml }} 
@@ -110,12 +110,6 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
         .raw-html-preview-container .post-color-purple { color: #c084fc !important; }
         .raw-html-preview-container .post-color-white  { color: #f4f4f5 !important; }
         .raw-html-preview-container .post-color-cyan   { color: #22d3ee !important; }
-        /* Preserve inline style colors from forum spans — prose must not override */
-        .raw-html-preview-container span[style*="color"] { color: revert !important; }
-        .raw-html-preview-container font[color] { color: revert !important; }
-        .raw-html-preview-container p[style*="color"],
-        .raw-html-preview-container div[style*="color"],
-        .raw-html-preview-container li[style*="color"] { color: revert !important; }
         /* Keep spacing/lists from forum content */
         .raw-html-preview-container ul { padding-left: 1.5rem; margin: 0.75rem 0; }
         .raw-html-preview-container li { margin-bottom: 0.35rem; }

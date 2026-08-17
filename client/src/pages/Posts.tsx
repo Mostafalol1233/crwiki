@@ -152,8 +152,8 @@ export default function Posts() {
                         <ContentImage
                           src={getPostImage(featuredPost)}
                           alt={displayTitle(featuredPost)}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          style={{ minHeight: "260px" }}
+                          className="w-full h-full object-contain p-4 transition-opacity duration-500 group-hover:opacity-90"
+                          style={{ minHeight: "260px", objectFit: "contain" }}
                         />
                         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent, var(--card))" }} />
                         {featuredPost.featured && (
@@ -212,7 +212,8 @@ export default function Posts() {
                             src={getPostImage(post)}
                             alt={displayTitle(post)}
                             loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain p-2 transition-opacity duration-500 group-hover:opacity-90"
+                            style={{ objectFit: "contain" }}
                             />
                           <div
                             className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity"

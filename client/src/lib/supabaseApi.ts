@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
+import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -638,6 +639,14 @@ export async function getSellers() {
     totalReviews: s.total_reviews || 0,
     rank: s.rank || 9999,
   }));
+}
+
+export async function getServiceListings() {
+  const fallback = getDefaultServiceListings();
+  const result = await runSafeQuery(fallback, () => withTimeout(
+    supabase.from('service_listings').select('*').eq('published', true).order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
+  ));
+  return (result.data || []).map((row: any) => normalizeServiceListing(row));
 }
 
 export async function getSellerReviews(sellerId: string) {

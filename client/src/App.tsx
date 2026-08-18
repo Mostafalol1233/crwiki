@@ -411,17 +411,22 @@ function LocalizedApp() {
   useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
 
-  // Keep Arabic admin URLs canonical. The app uses /ar as the router base, but
-  // old bookmarks and admin links may still point to /admin/* without it.
+  // Keep every public and admin URL canonical. If Arabic is selected and an
+  // old/root link omits /ar, add it automatically; if English is selected,
+  // remove the prefix so users are never forced to type it manually.
   React.useEffect(() => {
-    const path = window.location.pathname;
-    if (language === "ar" && path === "/") {
-      window.history.replaceState(null, "", "/ar");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-      return;
-    }
-    if (language === "ar" && path.startsWith("/admin")) {
-      window.history.replaceState(null, "", `/ar${path}`);
+    const path = window.location.pathname || "/";
+    const search = window.location.search;
+    const hash = window.location.hash;
+    const hasArPrefix = path === "/ar" || path.startsWith("/ar/");
+    const basePath = hasArPrefix ? (path === "/ar" ? "/" : path.slice(3) || "/") : path;
+    const canonicalPath = language === "ar"
+      ? (hasArPrefix ? path : basePath === "/" ? "/ar" : `/ar${basePath}`)
+      : (hasArPrefix ? basePath : path);
+    const currentUrl = path + search + hash;
+    const nextUrl = canonicalPath + search + hash;
+    if (currentUrl !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
       window.dispatchEvent(new PopStateEvent("popstate"));
     }
   }, [language]);

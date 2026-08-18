@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { adminFetch } from '@/lib/supabaseAdmin';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -31,21 +31,17 @@ export default function WeaponsManager() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const client = supabaseService;
-
   const fetchPage = useCallback(async (pageOverride?: number, searchOverride?: string) => {
-    if (!client) return;
     const currentPage = pageOverride ?? page;
     const term = searchOverride ?? search;
     setLoading(true);
     try {
-      let query = client.from('weapons').select('*', { count: 'exact' }).order('name', { ascending: true });
-      if (term.trim()) query = query.ilike('name', `%${term.trim()}%`);
-      const from = (currentPage - 1) * PAGE_SIZE;
-      const { data, count, error } = await query.range(from, from + PAGE_SIZE - 1);
-      if (error) throw error;
-      setItems(data || []);
-      setTotal(count || 0);
+      const result = await adminFetch<{ data?: Weapon[]; count?: number }>('/api/admin/rebuild', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'admin-table', type: 'weapons', operation: 'list', page: currentPage, pageSize: PAGE_SIZE, search: term }),
+      });
+      setItems(Array.isArray(result.data) ? result.data : []);
+      setTotal(Number(result.count || 0));
       setPage(currentPage);
     } catch (e: any) {
       toast.error(e?.message || 'Unable to load weapons');
@@ -54,32 +50,28 @@ export default function WeaponsManager() {
     } finally {
       setLoading(false);
     }
-  }, [client, page, search]);
+  }, [page, search]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void fetchPage(1, search); }, 250);
     return () => window.clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => { void fetchPage(1, ''); }, []);
+  }, [search, fetchPage]);
 
   const save = async () => {
-    if (!client || !editing.name?.trim()) { toast.error('Name required'); return; }
+    if (!editing.name?.trim()) { toast.error('Name required'); return; }
     setSaving(true);
     try {
-      const payload = {
+      const { id, created_at, ...payload } = {
         ...editing,
         name: editing.name.trim(),
         background_url: '',
         stats: editing.stats || {},
       };
-      if (editing.id) {
-        const { error } = await client.from('weapons').update(payload).eq('id', editing.id);
-        if (error) throw error;
+      if (id) {
+        await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'weapons', operation: 'update', id, row: payload }) });
         toast.success('Updated');
       } else {
-        const { error } = await client.from('weapons').insert({ ...payload, created_at: new Date().toISOString() });
-        if (error) throw error;
+        await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'weapons', operation: 'create', row: { ...payload, created_at: new Date().toISOString() } }) });
         toast.success('Created');
       }
       setView('list');
@@ -93,10 +85,14 @@ export default function WeaponsManager() {
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete this weapon?')) return;
-    const { error } = await client.from('weapons').delete().eq('id', id);
-    if (error) { toast.error(error.message); return; }
-    toast.success('Deleted');
+    if (!confirm('Delete this weapon?')) return;
+    try {
+      await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'weapons', operation: 'delete', id }) });
+      toast.success('Deleted');
+    } catch (e: any) {
+      toast.error(e?.message || 'Unable to delete weapon');
+      return;
+    }
     const nextPage = items.length === 1 && page > 1 ? page - 1 : page;
     await fetchPage(nextPage, search);
   };

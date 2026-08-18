@@ -108,6 +108,71 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // ── action: admin-table ─────────────────────────────────────────────────────
+  // Browser admin pages use this authenticated multiplexer for tables whose
+  // writes must never depend on the public Supabase client/RLS policies.
+  if (action === "admin-table") {
+    if (!SUPABASE_URL || !SERVICE_KEY)
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+
+    const tableByResource: Record<string, string> = { weapons: "weapons", sellers: "sellers" };
+    const table = tableByResource[String(type || "")];
+    if (!table) return addCorsHeaders(res).status(400).json({ error: "Unsupported admin table" });
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_KEY,
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "Prefer": "return=representation,count=exact",
+    };
+    const baseUrl = `${SUPABASE_URL}/rest/v1/${table}`;
+
+    try {
+      if (operation === "list") {
+        const page = Math.max(1, Number(req.body?.page) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number(req.body?.pageSize) || 50));
+        const search = String(req.body?.search || "").trim();
+        const params = new URLSearchParams();
+        params.set("select", "*");
+        params.set("order", table === "sellers" ? "rank.asc.nullslast,name.asc" : "name.asc");
+        params.set("limit", String(pageSize));
+        params.set("offset", String((page - 1) * pageSize));
+        if (search) params.set("name", `ilike.*${search.replace(/[*,]/g, " ")}*`);
+        const listRes = await fetch(`${baseUrl}?${params.toString()}`, { headers });
+        if (!listRes.ok) throw new Error(`Supabase ${table} read failed: ${await listRes.text()}`);
+        const contentRange = listRes.headers.get("content-range") || "";
+        const totalText = contentRange.includes("/") ? contentRange.split("/").pop() : "";
+        const data = await listRes.json();
+        return addCorsHeaders(res).status(200).json({ data, count: totalText && totalText !== "*" ? Number(totalText) : data.length });
+      }
+
+      if (operation === "create") {
+        if (!row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "row required" });
+        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(row) });
+        if (!createRes.ok) throw new Error(`Supabase ${table} create failed: ${await createRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await createRes.json() });
+      }
+
+      if (operation === "update") {
+        if (!id || !row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "id and row required" });
+        const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(id))}`, { method: "PATCH", headers, body: JSON.stringify(row) });
+        if (!updateRes.ok) throw new Error(`Supabase ${table} update failed: ${await updateRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ data: await updateRes.json() });
+      }
+
+      if (operation === "delete") {
+        if (!id) return addCorsHeaders(res).status(400).json({ error: "id required" });
+        const deleteRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(id))}`, { method: "DELETE", headers });
+        if (!deleteRes.ok) throw new Error(`Supabase ${table} delete failed: ${await deleteRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ success: true });
+      }
+
+      return addCorsHeaders(res).status(400).json({ error: "Unknown admin-table operation" });
+    } catch (e: any) {
+      return addCorsHeaders(res).status(500).json({ error: e?.message || `Supabase ${table} operation failed` });
+    }
+  }
+
   // ── action: legacy-content ─────────────────────────────────────────────────
   if (action === "legacy-content") {
     if (!SUPABASE_URL || !SERVICE_KEY)

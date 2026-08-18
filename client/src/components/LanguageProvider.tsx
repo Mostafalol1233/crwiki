@@ -951,21 +951,19 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 function getInitialLanguage(): Language {
-  // 1. Check URL path — /ar prefix takes highest priority
-  let currentPath = "/";
+  // An explicit /ar prefix always wins. Otherwise keep the user's saved
+  // preference so direct visits such as /weapons can be canonicalized to
+  // /ar/weapons automatically when the user is already using Arabic.
   try {
-    currentPath = window.location.pathname;
+    const currentPath = window.location.pathname;
     if (currentPath === "/ar" || currentPath.startsWith("/ar/")) return "ar";
   } catch { }
-  // The root route may honor a saved preference. Every named non-Arabic
-  // route is canonical English and must not inherit stale Arabic state.
-  if (currentPath !== "/" && currentPath !== "") return "en";
-  // 2. Check saved preference
+
   try {
     const saved = localStorage.getItem("language");
     if (saved === "ar" || saved === "en") return saved;
   } catch { }
-  // 3. Auto-detect from browser locale
+
   try {
     const langs = navigator.languages || [navigator.language || ""];
     if (langs.some((l) => l.startsWith("ar"))) return "ar";
@@ -1011,7 +1009,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("language", language);
   }, [language]);
 
-  // Sync language when user navigates to /ar or away from it
+  // Sync language when the browser history changes. The effect in App.tsx
+  // keeps the URL canonical for the current language; this listener only
+  // updates state after a real back/forward navigation.
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { adminFetch } from '@/lib/supabaseAdmin';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -76,18 +76,23 @@ export default function SellersManager() {
   // Logo = images[0], gallery = images[1+] — no schema change needed
   const [logoUrl, setLogoUrl] = useState('');
   const [galleryText, setGalleryText] = useState('');
-  const client = supabaseService;
-
   const fetchSellers = useCallback(async () => {
-    if (!client) return;
     setLoading(true);
-    const { data, error } = await client.from('sellers').select('*').order('rank', { ascending: true });
-    if (error) toast.error(error.message);
-    setItems(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      const result = await adminFetch<{ data?: Seller[] }>('/api/admin/rebuild', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'admin-table', type: 'sellers', operation: 'list', page: 1, pageSize: 100 }),
+      });
+      setItems(Array.isArray(result.data) ? result.data : []);
+    } catch (e: any) {
+      toast.error(e?.message || 'Unable to load sellers');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { fetchSellers(); }, [fetchSellers]);
+  useEffect(() => { void fetchSellers(); }, [fetchSellers]);
 
   const openForm = (seller?: Seller) => {
     const s = seller || EMPTY;
@@ -105,7 +110,7 @@ export default function SellersManager() {
   };
 
   const save = async () => {
-    if (!client || !editing.name) { toast.error('Name required'); return; }
+    if (!editing.name) { toast.error('Name required'); return; }
     setSaving(true);
     try {
       const galleryImages = galleryText.split('\n').map(u => u.trim()).filter(Boolean);
@@ -124,12 +129,10 @@ export default function SellersManager() {
       delete (payload as any).created_at;
 
       if (editing.id) {
-        const { error } = await client.from('sellers').update(payload).eq('id', editing.id);
-        if (error) throw error;
+        await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'sellers', operation: 'update', id: editing.id, row: payload }) });
         toast.success('Seller updated');
       } else {
-        const { error } = await client.from('sellers').insert({ ...payload, created_at: new Date().toISOString() });
-        if (error) throw error;
+        await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'sellers', operation: 'create', row: { ...payload, created_at: new Date().toISOString() } }) });
         toast.success('Seller created');
       }
       await fetchSellers();
@@ -143,10 +146,14 @@ export default function SellersManager() {
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete this seller?')) return;
-    const { error } = await client.from('sellers').delete().eq('id', id);
-    if (error) toast.error(error.message);
-    else { toast.success('Deleted'); await fetchSellers(); }
+    if (!confirm('Delete this seller?')) return;
+    try {
+      await adminFetch('/api/admin/rebuild', { method: 'POST', body: JSON.stringify({ action: 'admin-table', type: 'sellers', operation: 'delete', id }) });
+      toast.success('Deleted');
+      await fetchSellers();
+    } catch (e: any) {
+      toast.error(e?.message || 'Unable to delete seller');
+    }
   };
 
   const inp: React.CSSProperties = { width: '100%', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', padding: '8px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box' };

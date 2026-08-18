@@ -121,11 +121,13 @@ export async function getWeapons(opts: {
   pageSize?: number;
 } = {}) {
   const { q, letter, category, sort = 'name', order = 'asc', page = 1, pageSize = 50 } = opts;
+  const effectivePageSize = Math.min(50, Math.max(1, pageSize));
+  const offset = Math.max(0, (page - 1) * effectivePageSize);
   try {
     const params = new URLSearchParams({
       type: 'weapons',
-      limit: String(Math.min(100, Math.max(1, pageSize))),
-      offset: String(Math.max(0, (page - 1) * pageSize)),
+      limit: String(effectivePageSize),
+      offset: String(offset),
       sort: sort === 'date' ? 'date' : 'name',
       order: order === 'desc' ? 'desc' : 'asc',
     });
@@ -135,7 +137,24 @@ export async function getWeapons(opts: {
     const response = await withTimeout(fetch(`/api/content?${params.toString()}`));
     if (response.ok) {
       const json = await response.json();
-      const weapons = Array.isArray(json.weapons) ? json.weapons : [];
+      const rawWeapons = Array.isArray(json.weapons) ? json.weapons : [];
+      // Older deployments ignored limit, offset, and search parameters. Cap and
+      // filter defensively so a stale API can never freeze the catalogue.
+      const apiReturnedMoreThanOnePage = rawWeapons.length > effectivePageSize;
+      const filteredWeapons = apiReturnedMoreThanOnePage
+        ? rawWeapons.filter((w: any) => {
+            const name = String(w.name || '').toLocaleLowerCase();
+            const wantedQuery = String(q || '').trim().toLocaleLowerCase();
+            const wantedLetter = String(letter || '').trim().toLocaleLowerCase();
+            const wantedCategory = String(category || '').trim().toLocaleLowerCase();
+            return (!wantedQuery || name.includes(wantedQuery))
+              && (!wantedLetter || name.startsWith(wantedLetter))
+              && (!wantedCategory || String(w.category || '').trim().toLocaleLowerCase() === wantedCategory);
+          })
+        : rawWeapons;
+      const weapons = apiReturnedMoreThanOnePage
+        ? filteredWeapons.slice(offset, offset + effectivePageSize)
+        : filteredWeapons;
       return {
         items: weapons.map((w: any) => normalizeWeapon({
           id: w.id,
@@ -154,9 +173,11 @@ export async function getWeapons(opts: {
           source_url: w.source_url || w.sourceUrl || '',
           created_at: w.created_at || '',
         })),
-        total: Number.isFinite(Number(json.total)) ? Number(json.total) : weapons.length,
+        total: apiReturnedMoreThanOnePage
+          ? filteredWeapons.length
+          : (Number.isFinite(Number(json.total)) ? Number(json.total) : weapons.length),
         page,
-        pageSize,
+        pageSize: effectivePageSize,
       };
     }
   } catch {
@@ -171,23 +192,22 @@ export async function getWeapons(opts: {
       if (letter) query = query.ilike('name', `${letter}%`);
       if (category) query = query.eq('category', category);
 
-      const from = (page - 1) * pageSize;
-      query = query.range(from, from + pageSize - 1);
+      query = query.range(offset, offset + effectivePageSize - 1);
       query = query.order(sort === 'name' ? 'name' : 'created_at', { ascending: order === 'asc' });
 
       return await withTimeout(query);
     });
     const data = Array.isArray(result.data) ? result.data : [];
-    return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize };
+    return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize: effectivePageSize };
   } catch {
-    const start = (page - 1) * pageSize;
+    const start = offset;
     const items = fallbackWeapons
       .filter((weapon: any) => !q || String(weapon.name).toLowerCase().includes(q.toLowerCase()))
       .filter((weapon: any) => !letter || String(weapon.name).toLowerCase().startsWith(letter.toLowerCase()))
       .filter((weapon: any) => !category || weapon.category === category)
-      .slice(start, start + pageSize)
+      .slice(start, start + effectivePageSize)
       .map(normalizeWeapon);
-    return { items, total: fallbackWeapons.length, page, pageSize };
+    return { items, total: fallbackWeapons.length, page, pageSize: effectivePageSize };
   }
 }
 

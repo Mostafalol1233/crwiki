@@ -24,7 +24,7 @@ async function readContentRows(
   opts: { limit?: number; offset?: number; category?: string; q?: string; letter?: string; sort?: string; order?: string } = {}
 ): Promise<{ rows: any[]; total: number }> {
   if (type === 'weapons') {
-    const limit = Math.min(100, Math.max(1, Number(opts.limit) || 50));
+    const limit = Math.min(50, Math.max(1, Number(opts.limit) || 50));
     const offset = Math.max(0, Number(opts.offset) || 0);
     const safeSort = opts.sort === 'date' ? 'created_at' : 'name';
     const safeOrder = opts.order === 'desc' ? 'desc' : 'asc';

@@ -242,8 +242,10 @@ export default function Weapons() {
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const debounceRef = useRef<number | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetchWeapons = async (opts?: { reset?: boolean; pageOverride?: number }) => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setIsError(false);
     setError(null);
@@ -259,15 +261,24 @@ export default function Weapons() {
         page: effectivePage,
         pageSize,
       });
+      if (requestId !== requestIdRef.current) return;
       const normalized = (data.items || []).map(normalizeWeapon);
       setTotal(data.total || 0);
-      if (opts?.reset) setResults(normalized);
-      else setResults((prev) => [...prev, ...normalized]);
+      if (opts?.reset) {
+        setResults(normalized.slice(0, pageSize));
+      } else {
+        setResults((prev) => {
+          const merged = new Map(prev.map((weapon) => [weapon.id, weapon]));
+          normalized.slice(0, pageSize).forEach((weapon: Weapon) => merged.set(weapon.id, weapon));
+          return Array.from(merged.values());
+        });
+      }
     } catch (e: any) {
+      if (requestId !== requestIdRef.current) return;
       setIsError(true);
       setError(new Error(e?.message || (arabic ? "تعذر تحميل الأسلحة." : "Failed to load weapons.")));
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   };
 
@@ -390,7 +401,7 @@ export default function Weapons() {
             <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
               <div className="relative flex-1 min-w-0">
                 <Search className={`absolute ${arabic ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 h-4 w-4`} style={{ color: "#657080" }} />
-                <Input placeholder={arabic ? "ابحث باسم السلاح..." : "Search weapon name..."} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setLetter(""); }} className={`${arabic ? "pr-10 pl-10" : "pl-10 pr-10"} h-10 border-0 rounded-none`} style={{ background: "#090c11", color: "#eef2f7" }} />
+                <Input type="search" inputMode="search" autoComplete="off" spellCheck={false} aria-label={arabic ? "البحث عن سلاح" : "Search weapons"} placeholder={arabic ? "ابحث باسم السلاح..." : "Search weapon name..."} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setLetter(""); }} onKeyDown={(e) => { if (e.key === "Escape") setSearchQuery(""); }} className={`${arabic ? "pr-10 pl-10" : "pl-10 pr-10"} h-10 border-0 rounded-none`} style={{ background: "#090c11", color: "#eef2f7" }} />
                 {searchQuery && <button onClick={() => setSearchQuery("")} className={`absolute ${arabic ? "left-3" : "right-3"} top-1/2 -translate-y-1/2`}><X className="h-4 w-4" style={{ color: "#8792a0" }} /></button>}
               </div>
               <div className="flex gap-2">
@@ -401,6 +412,10 @@ export default function Weapons() {
             <div className="flex flex-wrap gap-1.5 mt-3">
               <button onClick={() => setSelectedCategory("all")} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory === "all" ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory === "all" ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{arabic ? "كل الفئات" : "All classes"}</button>
               {allCategories.map((category) => <button key={category} onClick={() => setSelectedCategory(category)} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{categoryLabel(category, arabic)}</button>)}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 text-[10px] uppercase tracking-wider" style={{ color: "#788493" }} aria-live="polite">
+              <span>{searchQuery ? (arabic ? `نتائج البحث عن: ${searchQuery}` : `Results for: ${searchQuery}`) : (arabic ? "اكتب اسم السلاح للبحث" : "Type a weapon name to search")}</span>
+              {isLoading && <span className="inline-flex items-center gap-1" style={{ color: NEUTRAL_UI }}><Loader2 className="h-3 w-3 animate-spin" />{arabic ? "جارٍ البحث" : "Searching"}</span>}
             </div>
             <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,.07)" }}>
               {ALPHABET.map((ch) => <button key={ch} onClick={() => setLetter(letter === ch ? "" : ch)} className="w-6 h-6 text-[10px] font-bold border" style={{ borderColor: letter === ch ? NEUTRAL_UI : "rgba(255,255,255,.08)", color: letter === ch ? "#071018" : "#687483", background: letter === ch ? NEUTRAL_UI : "#090c11" }}>{ch}</button>)}

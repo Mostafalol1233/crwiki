@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabaseService } from '@/lib/supabaseAdmin';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
 import DataTable from '@/components/admin/DataTable';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -19,6 +19,7 @@ interface Weapon {
 
 const CATEGORIES = ['Assault Rifles', 'Sniper Rifles', 'SMG', 'Machine Guns', 'Shotguns', 'Pistols', 'Rifles', 'Melee', 'Grenade'];
 const EMPTY: Partial<Weapon> = { name: '', category: 'Assault Rifles', image_url: '', background_url: '', description: '', stats: {} };
+const PAGE_SIZE = 50;
 const col = createColumnHelper<Weapon>();
 
 export default function WeaponsManager() {
@@ -27,41 +28,84 @@ export default function WeaponsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Partial<Weapon>>(EMPTY);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const client = supabaseService;
 
-  const fetch = useCallback(async () => {
+  const fetchPage = useCallback(async (pageOverride?: number, searchOverride?: string) => {
     if (!client) return;
+    const currentPage = pageOverride ?? page;
+    const term = searchOverride ?? search;
     setLoading(true);
-    const { data } = await client.from('weapons').select('*').order('name');
-    setItems(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      let query = client.from('weapons').select('*', { count: 'exact' }).order('name', { ascending: true });
+      if (term.trim()) query = query.ilike('name', `%${term.trim()}%`);
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const { data, count, error } = await query.range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
+      setItems(data || []);
+      setTotal(count || 0);
+      setPage(currentPage);
+    } catch (e: any) {
+      toast.error(e?.message || 'Unable to load weapons');
+      setItems([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [client, page, search]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchPage(1, search); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => { void fetchPage(1, ''); }, []);
 
   const save = async () => {
-    if (!client || !editing.name) { toast.error('Name required'); return; }
+    if (!client || !editing.name?.trim()) { toast.error('Name required'); return; }
     setSaving(true);
     try {
+      const payload = {
+        ...editing,
+        name: editing.name.trim(),
+        background_url: '',
+        stats: editing.stats || {},
+      };
       if (editing.id) {
-        const { error } = await client.from('weapons').update(editing).eq('id', editing.id);
-        if (error) throw error; toast.success('Updated');
+        const { error } = await client.from('weapons').update(payload).eq('id', editing.id);
+        if (error) throw error;
+        toast.success('Updated');
       } else {
-        const { error } = await client.from('weapons').insert({ ...editing, created_at: new Date().toISOString() });
-        if (error) throw error; toast.success('Created');
+        const { error } = await client.from('weapons').insert({ ...payload, created_at: new Date().toISOString() });
+        if (error) throw error;
+        toast.success('Created');
       }
-      await fetch(); setView('list'); setEditing(EMPTY);
-    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+      setView('list');
+      setEditing(EMPTY);
+      await fetchPage(page, search);
+    } catch (e: any) {
+      toast.error(e?.message || 'Unable to save weapon');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete?')) return;
-    await client.from('weapons').delete().eq('id', id);
-    toast.success('Deleted'); await fetch();
+    if (!client || !confirm('Delete this weapon?')) return;
+    const { error } = await client.from('weapons').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Deleted');
+    const nextPage = items.length === 1 && page > 1 ? page - 1 : page;
+    await fetchPage(nextPage, search);
   };
 
   const inp: React.CSSProperties = { width: '100%', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', padding: '8px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box' };
   const lbl: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: '#a1a1aa', marginBottom: 4, display: 'block' };
+  const editStats = (patch: Record<string, any>) => setEditing((current) => ({ ...current, stats: { ...(current.stats || {}), ...patch } }));
+  const stats = editing.stats || {};
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const columns = [
     col.accessor('image_url', { header: '', cell: (i) => i.getValue() ? <img src={i.getValue()} alt="" style={{ width: 40, height: 30, objectFit: 'contain', background: '#09090b', borderRadius: 4, border: '1px solid #27272a', padding: 2 }} /> : <div style={{ width: 40, height: 30, background: '#27272a', borderRadius: 4 }} /> }),
@@ -95,12 +139,30 @@ export default function WeaponsManager() {
               </select>
             </div>
           </div>
-          <div><label style={lbl}>Description</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <ImageUpload label="Weapon Image" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url })} />
-            <ImageUpload label="Background Image" value={editing.background_url || ''} onChange={(url) => setEditing({ ...editing, background_url: url })} />
+          <div><label style={lbl}>Description (English)</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
+          <div><label style={lbl}>الوصف بالعربية</label><textarea dir="rtl" value={stats.description_ar || ''} onChange={(e) => editStats({ description_ar: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.8, textAlign: 'right' }} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={lbl}>Acquisition method</label>
+              <select value={stats.acquisition_kind || ''} onChange={(e) => editStats({ acquisition_kind: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
+                <option value="">Unverified</option>
+                <option value="gp_shop">GP Shop</option>
+                <option value="zp_shop">ZP Shop</option>
+                <option value="mileage_shop">Mileage Shop</option>
+                <option value="black_market">Black Market</option>
+                <option value="event">Event / Pass / Reward</option>
+                <option value="vvip">VIP / VVIP</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Arabic acquisition label</label>
+              <input dir="rtl" type="text" value={stats.acquisition_label_ar || ''} onChange={(e) => editStats({ acquisition_label_ar: e.target.value })} placeholder="مثال: متجر GP" style={{ ...inp, textAlign: 'right' }} />
+            </div>
           </div>
-          <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
+          <div><label style={lbl}>شرح الاقتناء بالعربية</label><textarea dir="rtl" value={stats.acquisition_details_ar || ''} onChange={(e) => editStats({ acquisition_details_ar: e.target.value })} rows={2} placeholder="مثال: يُشترى من متجر GP." style={{ ...inp, resize: 'vertical', lineHeight: 1.8, textAlign: 'right' }} /></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input id="acquisition-verified" type="checkbox" checked={Boolean(stats.acquisition_verified)} onChange={(e) => editStats({ acquisition_verified: e.target.checked })} /><label htmlFor="acquisition-verified" style={{ ...lbl, margin: 0 }}>Acquisition method verified by an editor</label></div>
+          <div><label style={lbl}>Weapon image</label><ImageUpload label="" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url, background_url: '' })} /><p style={{ color: '#71717a', fontSize: 12, marginTop: 6 }}>Only use an image showing this weapon alone. Card backgrounds are controlled by the catalogue.</p></div>
+          <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#b9c1cb', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
             {saving ? 'Saving...' : editing.id ? 'Update' : 'Create'}
           </button>
         </div>
@@ -110,13 +172,22 @@ export default function WeaponsManager() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1100 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#fafafa', margin: 0 }}>Weapons</h1>
-        <button type="button" onClick={() => { setEditing(EMPTY); setView('form'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#d4a017', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 500, cursor: 'pointer', fontSize: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div><h1 style={{ fontSize: 20, fontWeight: 600, color: '#fafafa', margin: 0 }}>Weapons</h1><p style={{ fontSize: 12, color: '#71717a', margin: '5px 0 0' }}>{total.toLocaleString()} records · 50 loaded per page</p></div>
+        <button type="button" onClick={() => { setEditing(EMPTY); setView('form'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#b9c1cb', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 500, cursor: 'pointer', fontSize: 13 }}>
           <Plus size={14} />New Weapon
         </button>
       </div>
-      <DataTable data={items} columns={columns} loading={loading} searchPlaceholder="Search weapons..." />
+      <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search all weapons by name..." style={{ ...inp, maxWidth: 420 }} />
+      <DataTable data={items} columns={columns} loading={loading} searchPlaceholder="Filter this page..." pageSize={PAGE_SIZE} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 2px', color: '#71717a', fontSize: 12 }}>
+        <span>{total ? `${((page - 1) * PAGE_SIZE) + 1}-${Math.min(page * PAGE_SIZE, total)} of ${total}` : '0 records'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button type="button" onClick={() => void fetchPage(page - 1)} disabled={loading || page <= 1} style={{ display: 'flex', alignItems: 'center', padding: '5px 8px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: page > 1 ? '#fafafa' : '#52525b', cursor: page > 1 ? 'pointer' : 'not-allowed' }}><ChevronLeft size={14} /></button>
+          <span>Page {page} of {pageCount}</span>
+          <button type="button" onClick={() => void fetchPage(page + 1)} disabled={loading || page >= pageCount} style={{ display: 'flex', alignItems: 'center', padding: '5px 8px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: page < pageCount ? '#fafafa' : '#52525b', cursor: page < pageCount ? 'pointer' : 'not-allowed' }}><ChevronRight size={14} /></button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -57,15 +57,31 @@ async function fandomApi(path, params = {}) {
   return response.json();
 }
 
-async function getCategoryMembers(category, limit = 50) {
-  const data = await fandomApi('', {
-    action: 'query',
-    list: 'categorymembers',
-    cmtitle: category,
-    cmlimit: String(limit),
-  });
+async function getCategoryMembers(category, maxItems = Infinity) {
+  const titles = [];
+  let continuation = {};
 
-  return (data?.query?.categorymembers || []).map((item) => item.title).filter(Boolean);
+  while (titles.length < maxItems) {
+    const data = await fandomApi('', {
+      action: 'query',
+      list: 'categorymembers',
+      cmtitle: category,
+      cmlimit: '500',
+      cmtype: 'page',
+      ...continuation,
+    });
+
+    for (const item of data?.query?.categorymembers || []) {
+      if (item.ns === 0 && item.title) titles.push(item.title);
+      if (titles.length >= maxItems) break;
+    }
+
+    if (!data?.continue || titles.length >= maxItems) break;
+    continuation = data.continue;
+    await sleep(200);
+  }
+
+  return titles.slice(0, maxItems);
 }
 
 async function getPageDetails(titles, limit = 25) {
@@ -144,20 +160,29 @@ async function clearExistingRows(table, slugColumn, slugValue) {
   await supabaseRequest(`${table}?${slugColumn}=eq.${encoded}`, { method: 'DELETE' });
 }
 
-function buildRow(table, item) {
+function buildRow(table, item, existing = null) {
   if (table === 'weapons') {
+    const existingStats = existing?.stats && typeof existing.stats === 'object' ? existing.stats : {};
+    const existingDescription = sanitizeText(existing?.description || '');
+    const existingCategory = sanitizeText(existing?.category || '');
+    const keepExistingDescription = existingDescription && !/^Imported from Fandom:/i.test(existingDescription) && !/^CrossFire weapon\s*[-:]/i.test(existingDescription) && !/^Weapon\s*[-:]/i.test(existingDescription);
+    const keepExistingCategory = existingCategory && existingCategory.toLowerCase() !== 'imported';
+
     return {
       name: item.title,
-      category: 'Imported',
-      description: item.extract || `Imported from Fandom: ${item.title}`,
+      category: keepExistingCategory ? existingCategory : 'Imported',
+      description: keepExistingDescription ? existingDescription : (item.extract || `Imported from Fandom: ${item.title}`),
       stats: {
+        ...existingStats,
         source: 'fandom',
         pageid: item.pageid,
         source_url: item.sourceUrl,
       },
-      image_url: item.thumbnail || '',
-      background_url: item.thumbnail || '',
-      created_at: new Date().toISOString(),
+      image_url: item.thumbnail || existing?.image_url || '',
+      // The catalogue uses one fixed official card background. Clear legacy
+      // thumbnail-backed backgrounds during the full import.
+      background_url: '',
+      created_at: existing?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
   }
@@ -187,11 +212,37 @@ function buildRow(table, item) {
   };
 }
 
-async function importRows(table, items) {
+async function getExistingWeapons() {
+  const existing = new Map();
+  const pageSize = 1000;
+  let offset = 0;
+
+  while (true) {
+    const rows = await supabaseRequest(`weapons?select=name,category,description,image_url,created_at,stats&limit=${pageSize}&offset=${offset}`, { method: 'GET' });
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (row?.name) existing.set(row.name, row);
+    }
+    if (!Array.isArray(rows) || rows.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return existing;
+}
+
+async function importRows(table, items, { upsert = false } = {}) {
   let inserted = 0;
+  const existingWeapons = table === 'weapons' && upsert ? await getExistingWeapons() : new Map();
+
   for (const item of items) {
-    const row = buildRow(table, item);
-    if (table === 'weapons') {
+    const existing = existingWeapons.get(item.title) || null;
+    const row = buildRow(table, item, existing);
+    if (table === 'weapons' && upsert) {
+      await supabaseRequest('weapons?on_conflict=name', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(row),
+      });
+    } else if (table === 'weapons') {
       await clearExistingRows('weapons', 'name', item.title);
       await supabaseRequest('weapons', { method: 'POST', body: JSON.stringify(row) });
     } else {
@@ -199,6 +250,7 @@ async function importRows(table, items) {
       await supabaseRequest('posts', { method: 'POST', body: JSON.stringify(row) });
     }
     inserted += 1;
+    if (inserted % 50 === 0) console.log(`Processed ${inserted}/${items.length}...`);
   }
   return inserted;
 }
@@ -207,6 +259,7 @@ async function main() {
   const args = parseArgs();
   const table = args.table || 'posts';
   const dryRun = args['dry-run'] === 'true' || args.dryRun === 'true';
+  const upsert = args.upsert === 'true' || args.upsert === true;
   const category = args.category || '';
   const titlesArg = args.titles || '';
   const limit = Number(args.limit || 25);
@@ -238,8 +291,8 @@ async function main() {
     return;
   }
 
-  const inserted = await importRows(table, pages);
-  console.log(`Inserted ${inserted} rows into ${table}.`);
+  const inserted = await importRows(table, pages, { upsert });
+  console.log(`${upsert ? 'Upserted' : 'Inserted'} ${inserted} rows into ${table}.`);
 }
 
 main().catch((error) => {

@@ -21,20 +21,57 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
 
 async function readContentRows(
   type: 'weapons' | 'posts',
-  opts: { limit?: number; offset?: number; category?: string } = {}
+  opts: { limit?: number; offset?: number; category?: string; q?: string; letter?: string; sort?: string; order?: string } = {}
 ): Promise<{ rows: any[]; total: number }> {
   if (type === 'weapons') {
-    // Keep the catalogue compatible with older Supabase schemas: try the richer
-    // acquisition fields first, then fall back to the stable public projection.
-    const enrichedRows = await q(
-      'weapons',
-      'id,name,category,description,stats,image_url,background_url,created_at,acquisition_type,acquisition_method,acquisition_verified,acquisition,shop_type,currency,source_url',
-      'name',
-    );
-    if (enrichedRows.length > 0) return { rows: enrichedRows, total: enrichedRows.length };
+    const limit = Math.min(100, Math.max(1, Number(opts.limit) || 50));
+    const offset = Math.max(0, Number(opts.offset) || 0);
+    const safeSort = opts.sort === 'date' ? 'created_at' : 'name';
+    const safeOrder = opts.order === 'desc' ? 'desc' : 'asc';
+    const baseParams = {
+      order: `${safeSort}.${safeOrder}`,
+      limit: String(limit),
+      offset: String(offset),
+    };
 
-    const rows = await q('weapons', 'id,name,category,description,stats,image_url,created_at', 'name');
-    return { rows, total: rows.length };
+    async function fetchWeaponProjection(select: string) {
+      const params = new URLSearchParams({ select, ...baseParams });
+      if (opts.category) params.set('category', `eq.${opts.category}`);
+      if (opts.q) params.set('name', `ilike.*${String(opts.q).replace(/[,*()]/g, '')}*`);
+      if (opts.letter) params.set('name', `ilike.${String(opts.letter).slice(0, 1)}*`);
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/weapons?${params.toString()}`, {
+        headers: { ...h(), Prefer: 'count=exact' },
+        signal: AbortSignal.timeout(9000),
+      });
+      if (!response.ok) return null;
+      const rows = await response.json();
+      const range = response.headers.get('content-range') || '';
+      const parsedTotal = Number.parseInt(range.split('/')[1] || '', 10);
+      return {
+        rows: Array.isArray(rows) ? rows : [],
+        total: Number.isFinite(parsedTotal) ? parsedTotal : (Array.isArray(rows) ? rows.length : 0),
+      };
+    }
+
+    if (SUPABASE_URL && ANON_KEY) {
+      try {
+        // Keep the catalogue compatible with older Supabase schemas: try the
+        // richer projection first, then fall back to the stable public fields.
+        const enriched = await fetchWeaponProjection(
+          'id,name,category,description,stats,image_url,background_url,created_at,acquisition_type,acquisition_method,acquisition_verified,acquisition,shop_type,currency,source_url',
+        );
+        if (enriched) return enriched;
+
+        const stable = await fetchWeaponProjection(
+          'id,name,category,description,stats,image_url,created_at',
+        );
+        if (stable) return stable;
+      } catch {
+        // Use an empty response rather than accidentally loading the full table.
+      }
+    }
+
+    return { rows: [], total: 0 };
   }
 
   if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
@@ -126,10 +163,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
     const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
     const rawCategory = Array.isArray(req.query.category) ? req.query.category[0] : req.query.category;
+    const rawQuery = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
+    const rawLetter = Array.isArray(req.query.letter) ? req.query.letter[0] : req.query.letter;
+    const rawSort = Array.isArray(req.query.sort) ? req.query.sort[0] : req.query.sort;
+    const rawOrder = Array.isArray(req.query.order) ? req.query.order[0] : req.query.order;
     const { rows, total } = await readContentRows(rawType as 'weapons' | 'posts', {
       limit: Number(rawLimit),
       offset: Number(rawOffset),
       category: typeof rawCategory === 'string' ? rawCategory : undefined,
+      q: typeof rawQuery === 'string' ? rawQuery : undefined,
+      letter: typeof rawLetter === 'string' ? rawLetter : undefined,
+      sort: typeof rawSort === 'string' ? rawSort : undefined,
+      order: typeof rawOrder === 'string' ? rawOrder : undefined,
     });
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');

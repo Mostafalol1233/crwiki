@@ -120,8 +120,19 @@ export async function getWeapons(opts: {
   page?: number;
   pageSize?: number;
 } = {}) {
+  const { q, letter, category, sort = 'name', order = 'asc', page = 1, pageSize = 50 } = opts;
   try {
-    const response = await withTimeout(fetch('/api/content?type=weapons'));
+    const params = new URLSearchParams({
+      type: 'weapons',
+      limit: String(Math.min(100, Math.max(1, pageSize))),
+      offset: String(Math.max(0, (page - 1) * pageSize)),
+      sort: sort === 'date' ? 'date' : 'name',
+      order: order === 'desc' ? 'desc' : 'asc',
+    });
+    if (q) params.set('q', q);
+    if (letter) params.set('letter', letter);
+    if (category) params.set('category', category);
+    const response = await withTimeout(fetch(`/api/content?${params.toString()}`));
     if (response.ok) {
       const json = await response.json();
       const weapons = Array.isArray(json.weapons) ? json.weapons : [];
@@ -143,16 +154,15 @@ export async function getWeapons(opts: {
           source_url: w.source_url || w.sourceUrl || '',
           created_at: w.created_at || '',
         })),
-        total: weapons.length,
-        page: opts.page || 1,
-        pageSize: opts.pageSize || 50,
+        total: Number.isFinite(Number(json.total)) ? Number(json.total) : weapons.length,
+        page,
+        pageSize,
       };
     }
   } catch {
     // fall back to Supabase below
   }
 
-  const { q, letter, category, sort = 'name', order = 'asc', page = 1, pageSize = 50 } = opts;
   try {
     const result = await runSafeQuery(fallbackWeapons, async () => {
       let query = supabase.from('weapons').select('*', { count: 'exact' });
@@ -193,9 +203,22 @@ function normalizeWeapon(w: any) {
   const name = String(w.name || '');
   const enrichment = getWeaponDescription(name);
   const sourceDescription = String(w.description || '');
+  const stats = w.stats && typeof w.stats === 'object' ? w.stats : {};
+  const adminDescriptionEn = String(stats.description_en || stats.descriptionEn || '').trim();
+  const adminDescriptionAr = String(stats.description_ar || stats.descriptionAr || '').trim();
+  const adminAvailabilityEn = String(stats.availability_en || stats.availabilityEn || '').trim();
+  const adminAvailabilityAr = String(stats.availability_ar || stats.availabilityAr || '').trim();
+  const adminAcquisitionKind = String(stats.acquisition_kind || stats.acquisitionKind || '').trim();
+  const adminAcquisitionLabelEn = String(stats.acquisition_label_en || stats.acquisitionLabelEn || '').trim();
+  const adminAcquisitionLabelAr = String(stats.acquisition_label_ar || stats.acquisitionLabelAr || '').trim();
+  const adminAcquisitionDetailsEn = String(stats.acquisition_details_en || stats.acquisitionDetailsEn || '').trim();
+  const adminAcquisitionDetailsAr = String(stats.acquisition_details_ar || stats.acquisitionDetailsAr || '').trim();
   const isGenericDescription = /^CrossFire weapon\s*[-:]/i.test(sourceDescription) || /^Weapon\s*[-:]/i.test(sourceDescription);
-  const rawAcquisitionVerified = Boolean(w.acquisition_verified ?? w.acquisitionVerified ?? false);
+  const rawAcquisitionVerified = Boolean(stats.acquisition_verified ?? stats.acquisitionVerified ?? w.acquisition_verified ?? w.acquisitionVerified ?? false);
   const rawSourceUrl = String(w.source_url || w.sourceUrl || '');
+  const rawCategory = String(w.category || '').trim();
+  const isGenericCategory = !rawCategory || /^(imported|uncategorized|standard)$/i.test(rawCategory);
+  const resolvedCategory = isGenericCategory ? String(enrichment?.category || rawCategory || 'Uncategorized') : rawCategory;
 
   return {
     id: String(w.id || ''),
@@ -203,24 +226,24 @@ function normalizeWeapon(w: any) {
     image: String(w.image_url || w.image || ''),
     imageUrl: String(w.image_url || w.image || ''),
     backgroundUrl: String(w.background_url || ''),
-    category: String(w.category || enrichment?.category || 'Uncategorized'),
-    description: String(enrichment?.descriptionEn || (!isGenericDescription ? sourceDescription : '')),
-    descriptionAr: String(enrichment?.descriptionAr || ''),
-    descriptionStatus: enrichment?.descriptionStatus || 'unverified',
-    availabilityEn: String(enrichment?.availabilityEn || ''),
-    availabilityAr: String(enrichment?.availabilityAr || ''),
-    acquisitionKind: enrichment?.acquisitionKind || 'unverified',
-    acquisitionLabelEn: enrichment?.acquisitionLabelEn || 'Unverified',
-    acquisitionLabelAr: enrichment?.acquisitionLabelAr || 'غير متحقق منه',
-    acquisitionDetailsEn: enrichment?.acquisitionDetailsEn || 'No verified acquisition method is recorded.',
-    acquisitionDetailsAr: enrichment?.acquisitionDetailsAr || 'لا توجد طريقة اقتناء موثقة في السجل الحالي.',
+    category: resolvedCategory,
+    description: adminDescriptionEn || String(enrichment?.descriptionEn || (!isGenericDescription ? sourceDescription : '')),
+    descriptionAr: adminDescriptionAr || String(enrichment?.descriptionAr || ''),
+    descriptionStatus: adminDescriptionAr || adminDescriptionEn ? 'reference-described' : (enrichment?.descriptionStatus || 'unverified'),
+    availabilityEn: adminAvailabilityEn || String(enrichment?.availabilityEn || ''),
+    availabilityAr: adminAvailabilityAr || String(enrichment?.availabilityAr || ''),
+    acquisitionKind: adminAcquisitionKind || enrichment?.acquisitionKind || 'unverified',
+    acquisitionLabelEn: adminAcquisitionLabelEn || enrichment?.acquisitionLabelEn || 'Unverified',
+    acquisitionLabelAr: adminAcquisitionLabelAr || enrichment?.acquisitionLabelAr || 'غير متحقق منه',
+    acquisitionDetailsEn: adminAcquisitionDetailsEn || String(enrichment?.acquisitionDetailsEn || 'No verified acquisition method is recorded.'),
+    acquisitionDetailsAr: adminAcquisitionDetailsAr || String(enrichment?.acquisitionDetailsAr || 'لا توجد طريقة اقتناء موثقة في السجل الحالي.'),
     acquisitionSources: enrichment?.acquisitionSources || [],
     acquisitionVerified: Boolean(enrichment?.acquisitionVerified || rawAcquisitionVerified),
     sourceUrl: rawSourceUrl || enrichment?.sourceUrl || '',
     officialCatalogueUrl: enrichment?.officialCatalogueUrl || 'https://crossfire.z8games.com/weapons.html',
     sourceKind: enrichment?.sourceKind || 'unverified',
     matchMode: enrichment?.matchMode || 'not-found',
-    stats: w.stats || {},
+    stats,
     acquisitionType: String(w.acquisition_type || w.acquisitionType || ''),
     acquisitionMethod: String(w.acquisition_method || w.acquisitionMethod || ''),
     acquisition: String(w.acquisition || ''),
@@ -669,7 +692,10 @@ export async function getWeaponCategories(): Promise<string[]> {
     .limit(5000);
   if (error) throw error;
   const cats = new Set<string>();
-  (data || []).forEach((w: any) => { if (w.category) cats.add(String(w.category)); });
+  (data || []).forEach((w: any) => {
+    const category = String(w.category || '').trim();
+    if (category && !/^(imported|uncategorized|standard)$/i.test(category)) cats.add(category);
+  });
   return Array.from(cats).sort();
 }
 

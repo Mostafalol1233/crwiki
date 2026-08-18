@@ -38,31 +38,19 @@ interface Weapon {
 
 type AcquisitionKey = "all" | "gp" | "zp" | "mp" | "black-market" | "event" | "unverified";
 
+const NEUTRAL_UI = "#aeb8c4";
+
 const ACQUISITION_META: Record<AcquisitionKey, { en: string; ar: string; color: string }> = {
-  all: { en: "All items", ar: "كل الأسلحة", color: "#f5a623" },
-  gp: { en: "GP Shop", ar: "متجر GP", color: "#72c7ff" },
-  zp: { en: "ZP / Cash", ar: "ZP / نقدي", color: "#f7c86b" },
-  mp: { en: "Mileage", ar: "متجر الأميال", color: "#c5a7ff" },
-  "black-market": { en: "Black Market", ar: "السوق السوداء", color: "#ff7d68" },
-  event: { en: "Event / Pass", ar: "فعالية / تذكرة", color: "#75d6a0" },
-  unverified: { en: "Unverified", ar: "غير متحقق", color: "#89909c" },
+  all: { en: "All items", ar: "كل الأسلحة", color: NEUTRAL_UI },
+  gp: { en: "GP Shop", ar: "متجر GP", color: NEUTRAL_UI },
+  zp: { en: "ZP / Cash", ar: "ZP / نقدي", color: NEUTRAL_UI },
+  mp: { en: "Mileage", ar: "متجر الأميال", color: NEUTRAL_UI },
+  "black-market": { en: "Black Market", ar: "السوق السوداء", color: NEUTRAL_UI },
+  event: { en: "Event / Pass", ar: "فعالية / تذكرة", color: NEUTRAL_UI },
+  unverified: { en: "Unverified", ar: "غير متحقق", color: NEUTRAL_UI },
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  "assault rifle": "#e76f51",
-  "assault rifles": "#e76f51",
-  "sniper rifle": "#61a9e8",
-  "sniper rifles": "#61a9e8",
-  smg: "#65c58a",
-  "submachine gun": "#65c58a",
-  shotgun: "#e6b85c",
-  shotguns: "#e6b85c",
-  "machine gun": "#aa8de5",
-  "machine guns": "#aa8de5",
-  pistol: "#dd83ae",
-  pistols: "#dd83ae",
-  melee: "#53c6b3",
-};
+const CATEGORY_COLORS: Record<string, string> = {};
 
 const CF_FALLBACK_CATEGORIES = [
   "Assault Rifle", "Sniper Rifle", "SMG", "Shotgun", "Machine Gun", "Pistol", "Melee",
@@ -86,10 +74,6 @@ function isSafeWeaponMediaSource(value?: string) {
 
 function normaliseCategory(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function categoryColor(category?: string) {
-  return CATEGORY_COLORS[normaliseCategory(category || "")] || "#f5a623";
 }
 
 function localWeaponImageCandidates(name: string) {
@@ -151,6 +135,21 @@ function WeaponImage({ weapon, className, alt }: { weapon: Weapon; className?: s
       {sourceIndex >= sources.length - 1 && <ImageIcon aria-hidden="true" className="absolute h-10 w-10" style={{ color: "#536274" }} />}
     </div>
   );
+}
+
+function acquisitionDisplay(weapon: Weapon, key: AcquisitionKey, arabic: boolean) {
+  const custom = arabic ? weapon.acquisitionDetailsAr : weapon.acquisitionDetailsEn;
+  if (custom && custom.length <= 180 && !/no verified|لا توجد طريقة|regional proof|إثبات إقليمي/i.test(custom)) return custom;
+  const labels: Record<AcquisitionKey, { en: string; ar: string }> = {
+    all: { en: "See the recorded acquisition method below.", ar: "راجع طريقة الاقتناء المسجلة أدناه." },
+    gp: { en: "Buy it from the GP Shop.", ar: "يُشترى من متجر GP." },
+    zp: { en: "Buy it with ZP or the listed cash currency.", ar: "يُشترى باستخدام ZP أو العملة النقدية المحددة." },
+    mp: { en: "Get it from the Mileage Shop.", ar: "يُحصل عليه من متجر الأميال." },
+    "black-market": { en: "Obtain it through the Black Market system.", ar: "يُحصل عليه من نظام السوق السوداء." },
+    event: { en: "Obtain it through the listed event, pass, or reward.", ar: "يُحصل عليه من الفعالية أو التذكرة أو المكافأة المحددة." },
+    unverified: { en: "The acquisition method is not verified yet.", ar: "طريقة الاقتناء غير موثقة حتى الآن." },
+  };
+  return arabic ? labels[key].ar : labels[key].en;
 }
 
 function getAcquisition(weapon: Weapon) {
@@ -340,16 +339,16 @@ export default function Weapons() {
             backgroundSize: "cover",
           }}
         >
-          <div className="absolute inset-0 opacity-50" style={{ background: "radial-gradient(circle at 75% 30%, rgba(245,166,35,.18), transparent 35%), linear-gradient(transparent 49%, rgba(245,166,35,.08) 50%, transparent 51%)" }} />
+          <div className="absolute inset-0 opacity-35" style={{ background: "linear-gradient(transparent 49%, rgba(174,184,196,.08) 50%, transparent 51%)" }} />
           <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-6 pb-12">
             <Breadcrumbs items={breadcrumbs} />
             <div className="mt-12 max-w-2xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-12 w-12 border" style={{ borderColor: "rgba(245,166,35,.65)", background: "rgba(5,8,12,.78)" }}>
-                  <WeaponGlyph category="Assault Rifle" color="#f5a623" size={28} />
+                <div className="flex items-center justify-center h-12 w-12 border" style={{ borderColor: "rgba(174,184,196,.45)", background: "rgba(5,8,12,.78)" }}>
+                  <WeaponGlyph category="Assault Rifle" color={NEUTRAL_UI} size={28} />
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[.28em]" style={{ color: "#f5a623" }}>{arabic ? "كتالوج الأسلحة" : "Weapons catalogue"}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[.28em]" style={{ color: NEUTRAL_UI }}>{arabic ? "كتالوج الأسلحة" : "Weapons catalogue"}</p>
                   <p className="text-[10px] uppercase tracking-[.18em]" style={{ color: "#8e99a7" }}>CrossFire Wiki / Inventory</p>
                 </div>
               </div>
@@ -358,7 +357,7 @@ export default function Weapons() {
                 {arabic ? "استعرض الأسلحة حسب الفئة وطريقة الاقتناء كما تظهر في مراجع اللعبة. السجلات غير الموثقة تبقى موسومة بوضوح." : "Browse weapons by class and acquisition reference. Items without a verified source remain clearly marked."}
               </p>
               <div className="flex flex-wrap gap-2 mt-6">
-                <span className="px-3 py-1 text-[10px] uppercase tracking-widest border" style={{ color: "#f5a623", borderColor: "rgba(245,166,35,.45)", background: "rgba(245,166,35,.08)" }}>{total || "—"} {arabic ? "سلاحًا" : "items"}</span>
+                <span className="px-3 py-1 text-[10px] uppercase tracking-widest border" style={{ color: NEUTRAL_UI, borderColor: "rgba(174,184,196,.35)", background: "rgba(174,184,196,.08)" }}>{total || "—"} {arabic ? "سلاحًا" : "items"}</span>
                 <span className="px-3 py-1 text-[10px] uppercase tracking-widest border" style={{ color: "#aab4c0", borderColor: "rgba(255,255,255,.14)", background: "rgba(0,0,0,.18)" }}>{arabic ? "فهرس قابل للبحث" : "Searchable index"}</span>
               </div>
             </div>
@@ -368,7 +367,7 @@ export default function Weapons() {
         <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-[.25em]" style={{ color: "#f5a623" }}>{arabic ? "طريقة الاقتناء" : "Acquisition"}</p>
+              <p className="text-[10px] uppercase tracking-[.25em]" style={{ color: NEUTRAL_UI }}>{arabic ? "طريقة الاقتناء" : "Acquisition"}</p>
               <h2 className="text-xl font-bold uppercase tracking-wide">{arabic ? "تصفّح الكتالوج" : "Browse catalogue"}</h2>
             </div>
             <p className="text-xs" style={{ color: "#7e8998" }}>{arabic ? "لا تُعد أي فئة مؤكدة ما لم يذكرها المصدر." : "A category is not treated as verified unless the source states it."}</p>
@@ -395,34 +394,34 @@ export default function Weapons() {
                 {searchQuery && <button onClick={() => setSearchQuery("")} className={`absolute ${arabic ? "left-3" : "right-3"} top-1/2 -translate-y-1/2`}><X className="h-4 w-4" style={{ color: "#8792a0" }} /></button>}
               </div>
               <div className="flex gap-2">
-                {(["alpha", "date"] as const).map((item) => <button key={item} onClick={() => setSort(item)} className="px-3 h-10 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: sort === item ? "#f5a623" : "rgba(255,255,255,.12)", color: sort === item ? "#f5a623" : "#8c96a4", background: sort === item ? "rgba(245,166,35,.09)" : "#090c11" }}>{item === "alpha" ? (arabic ? "الاسم" : "Name") : (arabic ? "الأحدث" : "Latest")}</button>)}
+                {(["alpha", "date"] as const).map((item) => <button key={item} onClick={() => setSort(item)} className="px-3 h-10 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: sort === item ? NEUTRAL_UI : "rgba(255,255,255,.12)", color: sort === item ? NEUTRAL_UI : "#8c96a4", background: sort === item ? "rgba(174,184,196,.09)" : "#090c11" }}>{item === "alpha" ? (arabic ? "الاسم" : "Name") : (arabic ? "الأحدث" : "Latest")}</button>)}
                 <button onClick={() => setOrder(order === "asc" ? "desc" : "asc")} className="flex items-center gap-1 px-3 h-10 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: "rgba(255,255,255,.12)", color: "#8c96a4", background: "#090c11" }}><ChevronUp className={`h-3 w-3 ${order === "desc" ? "rotate-180" : ""}`} />{order === "asc" ? (arabic ? "أ-ي" : "A-Z") : (arabic ? "ي-أ" : "Z-A")}</button>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-3">
-              <button onClick={() => setSelectedCategory("all")} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory === "all" ? "#f5a623" : "rgba(255,255,255,.1)", color: selectedCategory === "all" ? "#f5a623" : "#788493", background: "#090c11" }}>{arabic ? "كل الفئات" : "All classes"}</button>
-              {allCategories.map((category) => <button key={category} onClick={() => setSelectedCategory(category)} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory.toLowerCase() === category.toLowerCase() ? categoryColor(category) : "rgba(255,255,255,.1)", color: selectedCategory.toLowerCase() === category.toLowerCase() ? categoryColor(category) : "#788493", background: "#090c11" }}>{categoryLabel(category, arabic)}</button>)}
+              <button onClick={() => setSelectedCategory("all")} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory === "all" ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory === "all" ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{arabic ? "كل الفئات" : "All classes"}</button>
+              {allCategories.map((category) => <button key={category} onClick={() => setSelectedCategory(category)} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{categoryLabel(category, arabic)}</button>)}
             </div>
             <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,.07)" }}>
-              {ALPHABET.map((ch) => <button key={ch} onClick={() => setLetter(letter === ch ? "" : ch)} className="w-6 h-6 text-[10px] font-bold border" style={{ borderColor: letter === ch ? "#f5a623" : "rgba(255,255,255,.08)", color: letter === ch ? "#071018" : "#687483", background: letter === ch ? "#f5a623" : "#090c11" }}>{ch}</button>)}
+              {ALPHABET.map((ch) => <button key={ch} onClick={() => setLetter(letter === ch ? "" : ch)} className="w-6 h-6 text-[10px] font-bold border" style={{ borderColor: letter === ch ? NEUTRAL_UI : "rgba(255,255,255,.08)", color: letter === ch ? "#071018" : "#687483", background: letter === ch ? NEUTRAL_UI : "#090c11" }}>{ch}</button>)}
             </div>
           </div>
 
-          {isLoading && results.length === 0 ? <div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" style={{ color: "#f5a623" }} /></div> : isError ? <div className="py-20 text-center border" style={{ borderColor: "rgba(239,68,68,.25)", color: "#f87171" }}><p className="text-sm mb-3">{error?.message}</p><button onClick={() => fetchWeapons({ reset: true, pageOverride: 1 })} className="px-5 py-2 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: "rgba(255,255,255,.15)", color: "#b9c1cb" }}>{arabic ? "إعادة المحاولة" : "Retry"}</button></div> : sortedWeapons.length === 0 ? <div className="py-20 text-center border" style={{ borderColor: "rgba(255,255,255,.1)" }}><WeaponGlyph category="Assault Rifle" color="#f5a623" size={48} /><p className="mt-4 text-sm font-bold uppercase tracking-widest" style={{ color: "#657080" }}>{arabic ? "لا توجد نتائج مطابقة" : "No matching weapons"}</p></div> : (
+          {isLoading && results.length === 0 ? <div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" style={{ color: NEUTRAL_UI }} /></div> : isError ? <div className="py-20 text-center border" style={{ borderColor: "rgba(239,68,68,.25)", color: "#f87171" }}><p className="text-sm mb-3">{error?.message}</p><button onClick={() => fetchWeapons({ reset: true, pageOverride: 1 })} className="px-5 py-2 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: "rgba(255,255,255,.15)", color: "#b9c1cb" }}>{arabic ? "إعادة المحاولة" : "Retry"}</button></div> : sortedWeapons.length === 0 ? <div className="py-20 text-center border" style={{ borderColor: "rgba(255,255,255,.1)" }}><WeaponGlyph category="Assault Rifle" color={NEUTRAL_UI} size={48} /><p className="mt-4 text-sm font-bold uppercase tracking-widest" style={{ color: "#657080" }}>{arabic ? "لا توجد نتائج مطابقة" : "No matching weapons"}</p></div> : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {sortedWeapons.map((weapon) => {
-                const color = categoryColor(weapon.category);
+                const color = NEUTRAL_UI;
                 const acquisition = getAcquisition(weapon);
                 const meta = ACQUISITION_META[acquisition.key];
                 const title = weapon.highlightedName ? <span dangerouslySetInnerHTML={{ __html: weapon.highlightedName }} /> : weapon.name;
                 return <Dialog key={weapon.id}>
                   <DialogTrigger asChild>
                     <button className="group text-left relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 focus:outline-none" style={{ background: "#e8ebef", color: "#10151c", border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 8px 25px rgba(0,0,0,.22)" }}>
-                      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: color }} />
+                      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "#7e8998" }} />
                       <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
-                        <div className="absolute inset-0 opacity-40" style={{ background: "linear-gradient(135deg, transparent 0 45%, rgba(255,255,255,.12) 46%, transparent 47%), radial-gradient(circle at 20% 20%, rgba(245,166,35,.22), transparent 35%)" }} />
+                        <div className="absolute inset-0 opacity-35" style={{ background: "linear-gradient(135deg, transparent 0 45%, rgba(255,255,255,.12) 46%, transparent 47%)" }} />
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-105" />
-                        <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: meta.color, border: `1px solid ${meta.color}66` }}>{acquisition.key === "unverified" ? (arabic ? "غير متحقق" : "Unverified") : (arabic ? meta.ar : meta.en)}</span>
+                        <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{acquisition.key === "unverified" ? (arabic ? "غير متحقق" : "Unverified") : (arabic ? meta.ar : meta.en)}</span>
                       </div>
                       <div className="p-3 min-h-[91px]">
                         <div className="flex items-center gap-2 mb-2"><WeaponGlyph category={weapon.category} color={color} size={18} /><span className="text-[9px] uppercase tracking-wider font-bold" style={{ color }}>{categoryLabel(weapon.category, arabic)}</span></div>
@@ -430,17 +429,17 @@ export default function Weapons() {
                       </div>
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-xl p-0 overflow-hidden" style={{ background: "#11161d", border: "1px solid rgba(245,166,35,.32)", color: "#e8edf3" }}>
-                    <div className="h-1" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                  <DialogContent className="max-w-xl p-0 overflow-hidden" style={{ background: "#11161d", border: "1px solid rgba(174,184,196,.28)", color: "#e8edf3" }}>
+                    <div className="h-px" style={{ background: "#7e8998" }} />
                     <DialogHeader className="px-6 pt-5"><DialogTitle className="text-xl font-black uppercase">{title}</DialogTitle></DialogHeader>
                     <div className="px-6 pb-6 space-y-5 mt-3">
                       <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-7" />
                       </div>
-                      <div className="flex flex-wrap items-center gap-2"><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: `${color}1b`, color, border: `1px solid ${color}55` }}>{categoryLabel(weapon.category, arabic)}</span><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: `${meta.color}16`, color: meta.color, border: `1px solid ${meta.color}55` }}>{arabic ? meta.ar : meta.en}</span></div>
-                      <div><p className="text-[10px] uppercase tracking-[.22em] mb-2" style={{ color: "#f5a623" }}>{arabic ? "الوصف" : "Description"}</p><p className="text-sm leading-7" style={{ color: "#b7c0cb" }}>{arabic ? (weapon.descriptionAr || "لا يتوفر وصف عربي موثق لهذا السلاح حتى الآن.") : (weapon.description || "No sourced description is available for this weapon yet.")}</p></div>
-                      <div className="p-3 border" style={{ borderColor: acquisition.verified ? "rgba(117,214,160,.28)" : "rgba(255,255,255,.12)", background: acquisition.verified ? "rgba(117,214,160,.06)" : "rgba(255,255,255,.03)" }}><p className="text-[10px] uppercase tracking-[.2em] mb-1" style={{ color: acquisition.verified ? "#75d6a0" : "#aab4c0" }}>{arabic ? "حالة مصدر الاقتناء" : "Acquisition source status"}</p><p className="text-xs" style={{ color: "#b7c0cb" }}>{acquisition.verified ? (arabic ? "طريقة الاقتناء مرتبطة بمصدر موثق." : "The acquisition method is linked to a verified source.") : (arabic ? "لم يتم العثور على إثبات إقليمي كافٍ؛ لا تعتبر هذه الفئة حقيقة مؤكدة." : "No sufficient regional proof was found; this category is not treated as verified fact.")}</p></div>
-                      {weapon.sourceUrl && <a href={weapon.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs" style={{ color: "#f5a623" }}>{arabic ? "فتح المصدر" : "Open source"}<ExternalLink className="h-3.5 w-3.5" /></a>}
+                      <div className="flex flex-wrap items-center gap-2"><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{categoryLabel(weapon.category, arabic)}</span><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{arabic ? meta.ar : meta.en}</span></div>
+                      <div><p className="text-[10px] uppercase tracking-[.22em] mb-2" style={{ color: NEUTRAL_UI }}>{arabic ? "الوصف" : "Description"}</p><p className="text-sm leading-7" style={{ color: "#b7c0cb" }}>{arabic ? (weapon.descriptionAr || "لا يتوفر وصف عربي موثق لهذا السلاح حتى الآن.") : (weapon.description || "No sourced description is available for this weapon yet.")}</p></div>
+                      <div className="p-3 border" style={{ borderColor: "rgba(174,184,196,.2)", background: "rgba(174,184,196,.04)" }}><p className="text-[10px] uppercase tracking-[.2em] mb-1" style={{ color: NEUTRAL_UI }}>{arabic ? "طريقة الاقتناء" : "Acquisition method"}</p><p className="text-xs leading-6" style={{ color: "#b7c0cb" }}>{acquisitionDisplay(weapon, acquisition.key, arabic)}</p></div>
+                      {weapon.sourceUrl && <a href={weapon.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs" style={{ color: NEUTRAL_UI }}>{arabic ? "فتح المصدر" : "Open source"}<ExternalLink className="h-3.5 w-3.5" /></a>}
                     </div>
                   </DialogContent>
                 </Dialog>;
@@ -448,7 +447,7 @@ export default function Weapons() {
             </div>
           )}
 
-          {results.length < total && results.length > 0 && <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10"><span className="text-xs" style={{ color: "#778291" }}>{results.length} / {total}</span><button onClick={async () => { const next = page + 1; setPage(next); await fetchWeapons({ pageOverride: next }); }} disabled={isLoading} className="flex items-center gap-2 px-7 py-3 text-[10px] font-bold uppercase tracking-[.2em] border" style={{ borderColor: "rgba(245,166,35,.5)", color: "#f5a623", background: "rgba(245,166,35,.05)" }}>{isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{arabic ? "تحميل المزيد" : "Load more"}</button></div>}
+          {results.length < total && results.length > 0 && <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10"><span className="text-xs" style={{ color: "#778291" }}>{results.length} / {total}</span><button onClick={async () => { const next = page + 1; setPage(next); await fetchWeapons({ pageOverride: next }); }} disabled={isLoading} className="flex items-center gap-2 px-7 py-3 text-[10px] font-bold uppercase tracking-[.2em] border" style={{ borderColor: "rgba(174,184,196,.5)", color: NEUTRAL_UI, background: "rgba(174,184,196,.05)" }}>{isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{arabic ? "تحميل المزيد" : "Load more"}</button></div>}
         </main>
       </div>
     </>

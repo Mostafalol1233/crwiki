@@ -15,6 +15,7 @@ import GallerySection from "@/components/GallerySection";
 import { useToast } from "@/hooks/use-toast";
 import RawHtmlPreview from "@/components/RawHtmlPreview";
 import ContentImage from "@/components/ContentImage";
+import { baseRelativePath, eventPath } from "@/lib/routePaths";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -343,8 +344,9 @@ export default function EventDetail() {
 
   useEffect(() => {
     if (legacyId && event?.event_name_slug) {
-      const slugUrl = `${language === "ar" ? "/ar" : ""}/events/${event.event_name_slug}`;
-      if (typeof window !== "undefined" && window.location.pathname !== slugUrl) setLocation(slugUrl);
+      const slugUrl = eventPath(event.event_name_slug);
+      const currentPath = typeof window !== "undefined" ? baseRelativePath(window.location.pathname) : "";
+      if (currentPath !== slugUrl) setLocation(slugUrl);
     }
   }, [legacyId, event?.event_name_slug, language, setLocation]);
 
@@ -402,7 +404,7 @@ export default function EventDetail() {
       <div style={{ minHeight: "100vh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>{language === "ar" ? "الفعالية غير موجودة" : "Event not found."}</p>
-          <Link href={language === "ar" ? "/ar/events" : "/events"}>
+          <Link href={baseRelativePath("/events")}>
             <span style={{ fontSize: 12, color: GOLD, fontWeight: 700, cursor: "pointer" }}>← {language === "ar" ? "العودة إلى الفعاليات" : "Back to Events"}</span>
           </Link>
         </div>
@@ -566,15 +568,15 @@ export default function EventDetail() {
 
           {/* Breadcrumb — top left */}
           <div style={{ position: "absolute", top: 20, left: 24, display: "flex", alignItems: "center", gap: 6, zIndex: 4 }}>
-            <Link href={language === "ar" ? "/ar" : "/"}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الرئيسية" : "Home"}</span></Link>
+            <Link href={baseRelativePath("/")}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الرئيسية" : "Home"}</span></Link>
             <ChevronRight size={11} color="rgba(255,255,255,0.25)" />
-            <Link href={language === "ar" ? "/ar/events" : "/events"}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الفعاليات" : "Events"}</span></Link>
+            <Link href={baseRelativePath("/events")}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الفعاليات" : "Events"}</span></Link>
             <ChevronRight size={11} color="rgba(255,255,255,0.25)" />
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
           </div>
 
           {/* Back button — top left below breadcrumb */}
-          <Link href={language === "ar" ? "/ar/events" : "/events"}>
+          <Link href={baseRelativePath("/events")}>
             <div style={{
               position: "absolute", top: 50, left: 24, zIndex: 4,
               display: "flex", alignItems: "center", gap: 5,
@@ -713,7 +715,7 @@ export default function EventDetail() {
                     {relatedEvents.map((ev: any) => {
                       const evStatus = getStatusStyle(classifyStatus(ev));
                       return (
-                        <Link key={ev.id} href={`${resolvedLang === "ar" ? "/ar" : ""}/events/${ev.event_name_slug || ev.id}`}>
+                        <Link key={ev.id} href={eventPath(ev.event_name_slug || ev.id)}>
                           <div style={{
                             display: "flex", gap: 10, padding: "10px 12px",
                             background: CARD, border: `1px solid ${BORDER}`, borderRadius: 5,
@@ -887,7 +889,7 @@ export default function EventDetail() {
 
                   {/* View on events page */}
                   <div style={{ padding: "10px 14px" }}>
-                    <Link href={language === "ar" ? "/ar/events" : "/events"}>
+                    <Link href={baseRelativePath("/events")}>
                       <div style={{
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         padding: "7px", background: "rgba(245,166,35,0.08)", border: `1px solid rgba(245,166,35,0.2)`,
@@ -919,7 +921,7 @@ export default function EventDetail() {
                       { label: language === "ar" ? "أوضاع اللعب" : "Game Modes", href: "/modes" },
                       { label: language === "ar" ? "المرتزقة" : "Mercenaries", href: "/mercenaries" },
                     ].map(({ label, href }) => (
-                      <Link key={href} href={`${language === "ar" ? "/ar" : ""}${href}`}>
+                      <Link key={href} href={baseRelativePath(href)}>
                         <div style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
                           padding: "7px 10px", borderRadius: 3, cursor: "pointer", transition: "background 0.15s",

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/components/LanguageProvider";
+import { baseRelativePath, eventPath } from "@/lib/routePaths";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -210,8 +211,7 @@ function HeroSearch() {
 function EventCard({ event, featured = false }: { event: any; featured?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const { t, language } = useLanguage();
-  const prefix = language === "ar" ? "/ar" : "";
-  const href = event.event_name_slug ? `${prefix}/events/${event.event_name_slug}` : `${prefix}/events/${event.id}`;
+  const href = eventPath(event.event_name_slug || event.id);
   const dateStr = event.date ? new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
   const img = event.image || event.imageUrl || event.image_url;
 
@@ -542,8 +542,8 @@ export default function Home() {
               {/* FEATURED EVENT - wiki spotlight */}
               {featuredEvent && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("featured")} title={t("eventSpotlight")} href={language === "ar" ? "/ar/events" : "/events"} />
-                  <Link href={featuredEvent.event_name_slug ? `${language === "ar" ? "/ar" : ""}/events/${featuredEvent.event_name_slug}` : `${language === "ar" ? "/ar" : ""}/events/${featuredEvent.id}`}>
+                  <SectionHeader eyebrow={t("featured")} title={t("eventSpotlight")} href={baseRelativePath("/events")} />
+                  <Link href={eventPath(featuredEvent.event_name_slug || featuredEvent.id)}>
                     <div style={{
                       background: CARD, border: `1px solid rgba(245,166,35,0.2)`,
                       borderRadius: 6, overflow: "hidden", cursor: "pointer",

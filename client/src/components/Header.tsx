@@ -3,6 +3,7 @@ import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquar
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { pagePath } from "@/lib/routePaths";
 
 interface DropdownItem { path: string; label: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
@@ -48,7 +49,7 @@ export function Header() {
 
       if (!error && Array.isArray(data)) {
         setCustomNavItems(data.map((item: any) => ({
-          path: `/pages/${item.slug}`,
+          path: pagePath(item.slug),
           label: language === "ar" ? (item.title_ar || item.title_en) : (item.title_en || item.title_ar),
         })));
       }

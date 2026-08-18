@@ -418,11 +418,12 @@ function LocalizedApp() {
     const path = window.location.pathname || "/";
     const search = window.location.search;
     const hash = window.location.hash;
-    const hasArPrefix = path === "/ar" || path.startsWith("/ar/");
-    const basePath = hasArPrefix ? (path === "/ar" ? "/" : path.slice(3) || "/") : path;
+    // Collapse legacy URLs such as /ar/ar/events/... before applying the
+    // single language prefix required by the localized router.
+    const basePath = path.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
     const canonicalPath = language === "ar"
-      ? (hasArPrefix ? path : basePath === "/" ? "/ar" : `/ar${basePath}`)
-      : (hasArPrefix ? basePath : path);
+      ? (basePath === "/" ? "/ar" : `/ar${basePath}`)
+      : basePath;
     const currentUrl = path + search + hash;
     const nextUrl = canonicalPath + search + hash;
     if (currentUrl !== nextUrl) {

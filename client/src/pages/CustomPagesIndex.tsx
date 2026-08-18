@@ -3,6 +3,7 @@ import { Link as WouterLink } from "wouter";
 import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/components/LanguageProvider";
+import { pagePath } from "@/lib/routePaths";
 
 interface CustomPageSummary {
   slug: string;
@@ -72,7 +73,7 @@ export default function CustomPagesIndex() {
               const displayTitle = language === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
               const description = page.seo_description || "Expanded CrossFire content page";
               return (
-                <WouterLink key={page.slug} href={`/pages/${page.slug}`} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-amber-400/50">
+                <WouterLink key={page.slug} href={pagePath(page.slug)} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-amber-400/50">
                   <div className="text-sm uppercase tracking-[0.25em] text-amber-400">{page.template || "custom"}</div>
                   <h2 className="mt-3 text-xl font-semibold text-slate-100">{displayTitle}</h2>
                   <p className="mt-3 text-sm text-slate-300">{description}</p>

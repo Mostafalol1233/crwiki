@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Calendar, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
+import { eventPath } from "@/lib/routePaths";
 
 export interface Event {
   id: string;
@@ -65,9 +66,7 @@ export function EventsRibbon({ events }: EventsRibbonProps) {
         }}
       >
         {doubled.map((event, idx) => {
-          const href = event.event_name_slug
-            ? `/events/${event.event_name_slug}`
-            : `/events/${event.id}`;
+          const href = eventPath(event.event_name_slug || event.id);
           const isTrending = event.type === "trending";
           return (
             <Link

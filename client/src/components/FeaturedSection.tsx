@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { eventPath } from "@/lib/routePaths";
 
 interface FeaturedCard {
   id: string;
@@ -23,11 +24,11 @@ interface FeaturedSectionProps {
 }
 
 function getHref(card: FeaturedCard) {
-  if (card.event_name_slug) return `/events/${card.event_name_slug}`;
+  if (card.event_name_slug) return eventPath(card.event_name_slug);
   if (card.news_slug) return `/news/${card.news_slug}`;
   if (card.post_slug) return `/article/${card.post_slug}`;
-  if (card.slug) return `/events/${card.slug}`;
-  return `/events/${card.id}`;
+  if (card.slug) return eventPath(card.slug);
+  return eventPath(card.id);
 }
 
 function stripHtml(html: string): string {

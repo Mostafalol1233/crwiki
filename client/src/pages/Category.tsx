@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 import { getPosts, getEvents, getNews } from "@/lib/supabaseApi";
+import { eventPath } from "@/lib/routePaths";
 
 export default function Category() {
   const { t } = useLanguage();
@@ -163,7 +164,7 @@ export default function Category() {
                   return (
                     <>
                       {featured && (
-                        <Link href={featured.event_name_slug ? `/events/${featured.event_name_slug}` : `/events/${featured.id}`} className="group block">
+                        <Link href={eventPath(featured.event_name_slug || featured.id)} className="group block">
                           <div className="relative overflow-hidden rounded-2xl h-96 md:h-[520px] cursor-pointer">
                             <img
                               src={featured.image || featured.imageUrl || FALLBACK}
@@ -194,7 +195,7 @@ export default function Category() {
                       {rest.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {rest.map((event: any) => (
-                            <Link key={event.id} href={event.event_name_slug ? `/events/${event.event_name_slug}` : `/events/${event.id}`} className="group block">
+                            <Link key={event.id} href={eventPath(event.event_name_slug || event.id)} className="group block">
                               <div className="relative overflow-hidden rounded-xl aspect-video cursor-pointer border border-border/30 hover:border-primary/40 transition-colors">
                                 <img
                                   src={event.image || event.imageUrl || FALLBACK}

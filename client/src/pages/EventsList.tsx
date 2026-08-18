@@ -6,6 +6,7 @@ import { getEvents } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { DiscordWidget } from "@/components/DiscordWidget";
 import ContentImage from "@/components/ContentImage";
+import { baseRelativePath, eventPath } from "@/lib/routePaths";
 import {
   Calendar, Clock, MapPin, ChevronRight, Loader2, Zap, Filter,
   Flame, Star, Archive, CheckCircle2, BookOpen, Globe,
@@ -141,7 +142,7 @@ function FeaturedCard({ ev, isAr }: { ev: any; isAr: boolean }) {
   const statusStyle = getStatusStyle(status, isAr);
 
   return (
-    <Link href={`${isAr ? "/ar" : ""}/events/${slug}`} className="group block">
+    <Link href={eventPath(slug)} className="group block">
       <div style={{
         background: CARD, border: "1px solid rgba(245,166,35,0.22)",
         borderRadius: 6, overflow: "hidden",
@@ -237,7 +238,7 @@ function EventCard({ ev, isAr }: { ev: any; isAr: boolean }) {
   const statusStyle = getStatusStyle(status, isAr);
 
   return (
-    <Link href={`${isAr ? "/ar" : ""}/events/${slug}`} className="group block h-full">
+    <Link href={eventPath(slug)} className="group block h-full">
       <div style={{
         height: "100%", background: CARD, border: `1px solid ${BORDER}`,
         borderRadius: 5, overflow: "hidden",
@@ -324,7 +325,7 @@ function Tab({ label, icon: Icon, count, active, onClick }: any) {
 export default function EventsList() {
   const { language } = useLanguage();
   const isAr = language === "ar";
-  const localPath = (path: string) => isAr && path.startsWith("/") && !path.startsWith("/ar") ? `/ar${path}` : path;
+  const localPath = (path: string) => baseRelativePath(path);
   const [tab, setTab] = useState<"all" | "active" | "upcoming" | "past">("all");
   const [page, setPage] = useState(1);
   const limit = 20;
@@ -356,7 +357,7 @@ export default function EventsList() {
         title={isAr ? "فعاليات CrossFire — البطولات والتحديثات الموسمية | CrossFire Wiki" : "CrossFire Events — Tournaments, Esports & Seasonal Updates | CrossFire Wiki"}
         description={isAr ? "تابع بطولات CrossFire والفعاليات الموسمية والأنشطة المجتمعية مع جداول وتحديثات واضحة." : "Stay up-to-date with CrossFire esports tournaments, seasonal events, competitive matches and community activities. Live event schedules and results."}
         image="https://cdnr.escharts.com/uploads/public/68a/d91/360/68ad913604b0e066419134.jpg?width=1140&height=570&quality=90&extension=jpg"
-        canonicalPath={isAr ? "/ar/events" : "/events"}
+        canonicalPath="/events"
       />
 
       <div style={{ minHeight: "100vh", background: "var(--background)" }}>

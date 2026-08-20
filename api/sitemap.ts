@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createHash } from "node:crypto";
 import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
@@ -6,6 +7,139 @@ const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SU
 const BASE         = "https://crossfire.wiki";
 
 const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Content-Type": "application/json" });
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
+
+function requestBearer(req: VercelRequest): string {
+  const value = req.headers.authorization;
+  return typeof value === "string" ? value.replace(/^Bearer\s+/i, "").trim() : "";
+}
+
+async function authenticatedUserId(req: VercelRequest): Promise<string | null> {
+  const token = requestBearer(req);
+  if (!SUPABASE_URL || !ANON_KEY || !token) return null;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!response.ok) return null;
+    const user = await response.json();
+    return typeof user?.id === "string" ? user.id : null;
+  } catch {
+    return null;
+  }
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value.trim()).digest("hex");
+}
+
+async function competitionRequest(req: VercelRequest): Promise<{ status: number; body: any }> {
+  if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
+  const userId = await authenticatedUserId(req);
+  if (!userId) return { status: 401, body: { error: "Sign-in is required" } };
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const action = typeof body.action === "string" ? body.action : "";
+  const headers = serviceHeaders();
+  const base = `${SUPABASE_URL}/rest/v1`;
+
+  if (action === "start") {
+    const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+    const inviteCode = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
+    if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
+    if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
+
+    const configResponse = await fetch(`${base}/competition_config?id=eq.default&active=eq.true&select=id,invite_required&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!configResponse.ok) return { status: 502, body: { error: "Could not read competition settings" } };
+    const configRows = await configResponse.json();
+    const config = Array.isArray(configRows) ? configRows[0] : null;
+    if (!config) return { status: 409, body: { error: "Competition is not active" } };
+
+    let inviteCodeId: string | null = null;
+    if (config.invite_required !== false) {
+      if (!inviteCode) return { status: 400, body: { error: "Invitation code is required" } };
+      const params = new URLSearchParams({ select: "id,max_uses,uses_count,expires_at", code_hash: `eq.${sha256(inviteCode)}`, active: "eq.true", limit: "1" });
+      const codeResponse = await fetch(`${base}/competition_invite_codes?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+      if (!codeResponse.ok) return { status: 502, body: { error: "Could not validate invitation code" } };
+      const codes = await codeResponse.json();
+      const code = Array.isArray(codes) ? codes[0] : null;
+      const expired = code?.expires_at && new Date(code.expires_at).getTime() <= Date.now();
+      const exhausted = code?.max_uses != null && Number(code.uses_count || 0) >= Number(code.max_uses);
+      if (!code || expired || exhausted) return { status: 400, body: { error: "Invitation code is invalid or unavailable" } };
+      inviteCodeId = code.id;
+    }
+
+    const attemptResponse = await fetch(`${base}/competition_attempts`, {
+      method: "POST", headers,
+      body: JSON.stringify({ user_id: userId, invite_code_id: inviteCodeId, phone, consent_contact: true, status: "in_progress" }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!attemptResponse.ok) return { status: 502, body: { error: "Could not create competition attempt" } };
+    const attemptRows = await attemptResponse.json();
+    const attempt = Array.isArray(attemptRows) ? attemptRows[0] : null;
+    if (inviteCodeId) {
+      const currentParams = new URLSearchParams({ select: "uses_count", id: `eq.${inviteCodeId}`, limit: "1" });
+      const currentResponse = await fetch(`${base}/competition_invite_codes?${currentParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+      const currentRows = currentResponse.ok ? await currentResponse.json() : [];
+      const currentCount = Number(currentRows?.[0]?.uses_count || 0);
+      await fetch(`${base}/competition_invite_codes?id=eq.${encodeURIComponent(inviteCodeId)}`, { method: "PATCH", headers, body: JSON.stringify({ uses_count: currentCount + 1 }), signal: AbortSignal.timeout(9000) });
+    }
+    const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
+    const questions = questionsResponse.ok ? await questionsResponse.json() : [];
+    return { status: 200, body: { attempt: { id: attempt?.id }, questions: Array.isArray(questions) ? questions : [] } };
+  }
+
+  if (action === "submit_proof") {
+    const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const proofType = typeof body.proofType === "string" ? body.proofType : "other";
+    const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
+    const fileName = typeof body.fileName === "string" ? body.fileName.trim().slice(0, 180) : null;
+    if (!attemptId || !/^https:\/\//i.test(fileUrl) || fileUrl.length > 2000) return { status: 400, body: { error: "A valid HTTPS proof link is required" } };
+    if (!["subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
+    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, user_id: `eq.${userId}`, limit: "1" });
+    const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
+    const attempt = Array.isArray(attempts) ? attempts[0] : null;
+    if (!attempt || !["submitted", "reviewed"].includes(attempt.status)) return { status: 400, body: { error: "Submit the quiz before sending proof" } };
+    const proofResponse = await fetch(`${base}/competition_proofs`, {
+      method: "POST", headers,
+      body: JSON.stringify({ attempt_id: attemptId, proof_type: proofType, file_url: fileUrl, file_name: fileName, mime_type: "text/uri-list", status: "pending" }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!proofResponse.ok) return { status: 502, body: { error: "Could not submit proof" } };
+    const rows = await proofResponse.json();
+    return { status: 200, body: { proof: Array.isArray(rows) ? rows[0] : null, status: "pending" } };
+  }
+
+  if (action === "submit") {
+    const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
+    if (!attemptId) return { status: 400, body: { error: "Attempt id is required" } };
+    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, user_id: `eq.${userId}`, limit: "1" });
+    const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!attemptResponse.ok) return { status: 502, body: { error: "Could not read competition attempt" } };
+    const attempts = await attemptResponse.json();
+    const attempt = Array.isArray(attempts) ? attempts[0] : null;
+    if (!attempt || attempt.status !== "in_progress") return { status: 400, body: { error: "This competition attempt is no longer active" } };
+    const questionResponse = await fetch(`${base}/competition_questions?select=id,correct_option,points,kind&status=eq.published`, { headers, signal: AbortSignal.timeout(9000) });
+    const questions = questionResponse.ok ? await questionResponse.json() : [];
+    let objectiveScore = 0;
+    for (const question of Array.isArray(questions) ? questions : []) {
+      const submitted = typeof answers[question.id] === "string" ? answers[question.id] : "";
+      if (question.correct_option && submitted && submitted === question.correct_option) objectiveScore += Number(question.points || 0);
+    }
+    const updateResponse = await fetch(`${base}/competition_attempts?id=eq.${encodeURIComponent(attemptId)}&user_id=eq.${encodeURIComponent(userId)}`, {
+      method: "PATCH", headers,
+      body: JSON.stringify({ answers, objective_score: objectiveScore, final_score: objectiveScore, status: "submitted", submitted_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!updateResponse.ok) return { status: 502, body: { error: "Could not submit competition attempt" } };
+    return { status: 200, body: { objectiveScore, status: "submitted" } };
+  }
+
+  return { status: 400, body: { error: "Unknown competition action" } };
+}
 
 async function q(table: string, select: string, order: string, limit = 2000): Promise<any[]> {
   if (!SUPABASE_URL || !ANON_KEY) return [];
@@ -17,6 +151,35 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
     if (!r.ok) return [];
     return r.json();
   } catch { return []; }
+}
+
+async function readCompetitionContent(): Promise<{ config: any | null; prizes: any[]; questions: any[]; leaderboard: any[] }> {
+  if (!SUPABASE_URL || !ANON_KEY) return { config: null, prizes: [], questions: [], leaderboard: [] };
+  const request = async (table: string, select: string, extra: Record<string, string> = {}) => {
+    const params = new URLSearchParams({ select, ...extra });
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers: h(), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  };
+  try {
+    const [configs, prizes, questions] = await Promise.all([
+      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,invite_required,leaderboard_published', { id: 'eq.default', active: 'eq.true', limit: '1' }),
+      request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
+      request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
+    ]);
+    const config = configs[0] || null;
+    let leaderboard: any[] = [];
+    if (config?.leaderboard_published && SERVICE_KEY) {
+      const leaderboardParams = new URLSearchParams({ select: "final_score,submitted_at,status", status: "in.(submitted,reviewed)", final_score: "not.is.null", order: "final_score.desc,submitted_at.asc", limit: "20" });
+      const leaderboardResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_attempts?${leaderboardParams.toString()}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(9000) });
+      const leaderboardRows = leaderboardResponse.ok ? await leaderboardResponse.json() : [];
+      leaderboard = Array.isArray(leaderboardRows) ? leaderboardRows : [];
+    }
+    return { config, prizes, questions, leaderboard };
+  } catch {
+    return { config: null, prizes: [], questions: [], leaderboard: [] };
+  }
 }
 
 async function readContentRows(
@@ -159,6 +322,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const rawType = Array.isArray(req.query.type) ? req.query.type[0] : req.query.type;
+  if (req.method === 'POST' && rawType === 'competition') {
+    const result = await competitionRequest(req);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(result.status).json(result.body);
+  }
+
+  if (req.method === 'GET' && rawType === 'competition') {
+    const payload = await readCompetitionContent();
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.status(200).json(payload);
+  }
+
   if (req.method === 'GET' && typeof rawType === 'string' && (rawType === 'weapons' || rawType === 'posts')) {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
     const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;

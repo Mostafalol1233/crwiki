@@ -12,6 +12,7 @@ const EventsManager = lazy(() => import('./EventsManager'));
 const NewsManager = lazy(() => import('./NewsManager'));
 const TutorialsManager = lazy(() => import('./TutorialsManager'));
 const AnnouncementsManager = lazy(() => import('./AnnouncementsManager'));
+const CompetitionManager = lazy(() => import('./CompetitionManager'));
 const WeaponsManager = lazy(() => import('./WeaponsManager'));
 const ModesManager = lazy(() => import('./ModesManager'));
 const MapsManager = lazy(() => import('./MapsManager'));
@@ -56,6 +57,7 @@ function SectionContent({ section }: { section: string }) {
     case 'news': return <NewsManager />;
     case 'tutorials': return <TutorialsManager />;
     case 'announcements': return <AnnouncementsManager />;
+    case 'competition': return <CompetitionManager />;
     case 'weapons': return <WeaponsManager />;
     case 'modes': return <ModesManager />;
     case 'maps': return <MapsManager />;

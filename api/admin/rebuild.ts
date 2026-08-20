@@ -45,7 +45,8 @@ async function scrapePage(url: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
-  if (!verifyAdminRequest(req.headers as Record<string, unknown>)) {
+  const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
+  if (!admin) {
     return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
   }
 
@@ -115,9 +116,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
-    const tableByResource: Record<string, string> = { weapons: "weapons", sellers: "sellers" };
-    const table = tableByResource[String(type || "")];
+    const tableByResource: Record<string, string> = {
+      weapons: "weapons",
+      sellers: "sellers",
+      highlights: "site_highlights",
+      admin_users: "admin_users",
+      competition_config: "competition_config",
+      competition_invite_codes: "competition_invite_codes",
+      competition_questions: "competition_questions",
+      competition_attempts: "competition_attempts",
+      competition_proofs: "competition_proofs",
+      competition_prizes: "competition_prizes",
+    };
+    const resource = String(type || "");
+    const table = tableByResource[resource];
     if (!table) return addCorsHeaders(res).status(400).json({ error: "Unsupported admin table" });
+
+    const canManage = admin.role === "super_admin" || admin.permissions?.[`${resource}:manage`] === true || admin.permissions?.[`${resource}:write`] === true;
+    if (resource === "admin_users" && admin.role !== "super_admin") {
+      return addCorsHeaders(res).status(403).json({ error: "Only a super administrator can manage administrators" });
+    }
+    if (resource !== "admin_users" && !canManage && admin.role !== "super_admin") {
+      return addCorsHeaders(res).status(403).json({ error: `Missing ${resource} management permission` });
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -133,11 +154,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const pageSize = Math.min(100, Math.max(1, Number(req.body?.pageSize) || 50));
         const search = String(req.body?.search || "").trim();
         const params = new URLSearchParams();
-        params.set("select", "*");
-        params.set("order", table === "sellers" ? "rank.asc.nullslast,name.asc" : "name.asc");
+        params.set(
+          "select",
+          table === "admin_users"
+            ? "id,username,email,role,permissions,created_at"
+              : table === "competition_invite_codes"
+                ? "id,label,max_uses,uses_count,expires_at,active,created_at,created_by"
+                : table === "competition_attempts"
+                  ? "id,user_id,invite_code_id,phone,consent_contact,objective_score,essay_score,proof_bonus,final_score,status,answers,submitted_at,reviewed_at,created_at"
+                  : table === "competition_proofs"
+                    ? "id,attempt_id,proof_type,file_url,file_name,file_size,mime_type,status,bonus_points,reviewer_note,created_at,reviewed_at"
+                    : "*",
+        );
+        params.set(
+          "order",
+          table === "sellers"
+            ? "rank.asc.nullslast,name.asc"
+            : table === "highlights"
+              ? "sort_order.asc,created_at.asc"
+              : table === "admin_users"
+                ? "created_at.desc"
+                : table === "competition_questions" || table === "competition_prizes"
+                  ? "sort_order.asc,created_at.asc"
+                      : table === "competition_invite_codes"
+                        ? "created_at.desc"
+                        : table === "competition_attempts"
+                          ? "created_at.desc"
+                          : table === "competition_proofs"
+                            ? "created_at.desc"
+                            : table === "competition_config"
+                              ? "id.asc"
+                              : "name.asc",
+        );
         params.set("limit", String(pageSize));
         params.set("offset", String((page - 1) * pageSize));
-        if (search) params.set("name", `ilike.*${search.replace(/[*,]/g, " ")}*`);
+        if (search && (table === "weapons" || table === "sellers" || table === "highlights")) {
+          const field = table === "highlights" ? "title" : "name";
+          params.set(field, `ilike.*${search.replace(/[*,]/g, " ")}*`);
+        }
         const listRes = await fetch(`${baseUrl}?${params.toString()}`, { headers });
         if (!listRes.ok) throw new Error(`Supabase ${table} read failed: ${await listRes.text()}`);
         const contentRange = listRes.headers.get("content-range") || "";
@@ -148,14 +202,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (operation === "create") {
         if (!row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "row required" });
-        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(row) });
+        let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
+        let issuedCode: string | undefined;
+        if (table === "admin_users") {
+          const password = typeof safeRow.password === "string" ? safeRow.password : "";
+          delete safeRow.password;
+          delete safeRow.password_hash;
+          if (String(safeRow.username || "").trim().length < 3) return addCorsHeaders(res).status(400).json({ error: "Username must be at least 3 characters" });
+          if (password.length < 8) return addCorsHeaders(res).status(400).json({ error: "Password must be at least 8 characters" });
+          const bcrypt = await import("bcryptjs");
+          safeRow.password_hash = await bcrypt.hash(password, 12);
+          safeRow.permissions = safeRow.permissions && typeof safeRow.permissions === "object" ? safeRow.permissions : {};
+        }
+        if (table === "competition_invite_codes") {
+          const code = typeof safeRow.code === "string" ? safeRow.code.trim() : "";
+          if (code.length < 4) return addCorsHeaders(res).status(400).json({ error: "Invitation code must be at least 4 characters" });
+          issuedCode = code;
+          delete safeRow.code;
+          delete safeRow.code_hash;
+          safeRow.code_hash = (await import("node:crypto")).createHash("sha256").update(code).digest("hex");
+          safeRow.uses_count = 0;
+        }
+        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(safeRow) });
         if (!createRes.ok) throw new Error(`Supabase ${table} create failed: ${await createRes.text()}`);
-        return addCorsHeaders(res).status(200).json({ data: await createRes.json() });
+        return addCorsHeaders(res).status(200).json({ data: await createRes.json(), ...(issuedCode ? { issuedCode } : {}) });
       }
 
       if (operation === "update") {
         if (!id || !row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "id and row required" });
-        const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(id))}`, { method: "PATCH", headers, body: JSON.stringify(row) });
+        let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
+        if (table === "admin_users") {
+          delete safeRow.password_hash;
+          if (typeof safeRow.password === "string") {
+            const password = safeRow.password;
+            delete safeRow.password;
+            if (password.length < 8) return addCorsHeaders(res).status(400).json({ error: "Password must be at least 8 characters" });
+            const bcrypt = await import("bcryptjs");
+            safeRow.password_hash = await bcrypt.hash(password, 12);
+          }
+        }
+        const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(id))}`, { method: "PATCH", headers, body: JSON.stringify(safeRow) });
         if (!updateRes.ok) throw new Error(`Supabase ${table} update failed: ${await updateRes.text()}`);
         return addCorsHeaders(res).status(200).json({ data: await updateRes.json() });
       }

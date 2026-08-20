@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Trash2, GripVertical, Upload, Image as ImageIcon, Video, Save, X, Pencil, Download } from 'lucide-react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { adminFetch } from '@/lib/supabaseAdmin';
 import { supabase } from '@/lib/supabase';
 
 interface Highlight {
@@ -55,15 +55,15 @@ const S = {
   label: { fontSize: 11, color: '#71717a', marginBottom: 4, display: 'block' } as React.CSSProperties,
 };
 
-const adminClient = () => supabaseService || supabase;
+const ADMIN_TABLE_ENDPOINT = '/api/admin/rebuild?action=admin-table&type=highlights';
+const adminClient = () => supabase;
 
 async function fetchHighlights(): Promise<Highlight[]> {
-  const { data, error } = await (supabaseService || supabase)
-    .from('site_highlights')
-    .select('*')
-    .order('sort_order', { ascending: true });
-  if (error) throw error;
-  return (data || []).map((h: any) => ({
+  const response = await adminFetch<{ data?: any[] }>(ADMIN_TABLE_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ operation: 'list', page: 1, pageSize: 100 }),
+  });
+  return (response.data || []).map((h: any) => ({
     ...h,
     id: String(h.id),
     month: String(h.month || 'Jan'),
@@ -73,24 +73,29 @@ async function fetchHighlights(): Promise<Highlight[]> {
 }
 
 async function upsertHighlight(h: Partial<Highlight>): Promise<void> {
-  const { error } = await adminClient()
-    .from('site_highlights')
-    .upsert(h, { onConflict: 'id' });
-  if (error) throw error;
+  const id = String(h.id || '').trim();
+  await adminFetch(ADMIN_TABLE_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({
+      operation: id ? 'update' : 'create',
+      ...(id ? { id } : {}),
+      row: { ...h, ...(id ? {} : { sort_order: h.sort_order || Date.now() }) },
+    }),
+  });
 }
 
 async function deleteHighlight(id: string): Promise<void> {
-  const { error } = await adminClient()
-    .from('site_highlights')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
+  await adminFetch(ADMIN_TABLE_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ operation: 'delete', id }),
+  });
 }
 
 async function importStatic(): Promise<void> {
-  const rows = STATIC_HIGHLIGHTS.map((h) => ({ ...h }));
-  const { error } = await adminClient().from('site_highlights').insert(rows);
-  if (error) throw error;
+  await Promise.all(STATIC_HIGHLIGHTS.map((row) => adminFetch(ADMIN_TABLE_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({ operation: 'create', row }),
+  })));
 }
 
 // ─── Form ────────────────────────────────────────────────────────────────────

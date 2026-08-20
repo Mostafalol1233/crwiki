@@ -312,6 +312,27 @@ function annToPost(ann: any, type: 'global' | 'seller', sellerSlug = '') {
   };
 }
 
+function announcementRowToAnn(row: any) {
+  return {
+    id: row.id,
+    contentHtml: row.content_en || '',
+    contentHtmlEn: row.content_en || '',
+    contentHtmlAr: row.content_ar || '',
+    titleEn: row.title_en || '',
+    titleAr: row.title_ar || '',
+    imageUrl: '',
+    linkUrl: '',
+    active: row.active !== false,
+    dismissible: row.dismissible !== false,
+    direction: 'auto',
+    updatedAt: row.created_at,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    type: row.type || 'info',
+    display: row.display || 'banner',
+  };
+}
+
 function postToAnn(p: any) {
   return {
     id: p.id,
@@ -787,13 +808,23 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
     return { enabled: data?.announcements_enabled ?? true };
   }
 
-  // ── Announcements (stored as posts with category=__ANNOUNCEMENT__) ─────────
+  // ── Announcements ───────────────────────────────────────────────────────────
+  // Public reads use the dedicated table managed by /api/admin/events. The
+  // legacy posts-backed write branches below remain for compatibility only.
   if (path === '/announcements/global') {
     if (M === 'GET') {
-      const { data } = await client.from('posts').select('*')
-        .eq('category', ANN_CATEGORY).contains('tags', ['global']).eq('featured', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (!data) return null;
-      return postToAnn(data);
+      const { data, error } = await client.from('announcements').select('*')
+        .in('target', ['all', 'global']).eq('active', true)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      const now = Date.now();
+      const row = (data || []).find((item: any) => {
+        const starts = item.starts_at ? Date.parse(item.starts_at) : Number.NEGATIVE_INFINITY;
+        const ends = item.ends_at ? Date.parse(item.ends_at) : Number.POSITIVE_INFINITY;
+        return starts <= now && ends >= now;
+      });
+      if (!row) return null;
+      return announcementRowToAnn(row);
     }
     if (M === 'POST') {
       const row = { ...annToPost(body, 'global'), updated_at: new Date().toISOString() };
@@ -806,10 +837,11 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   if (path === '/admin/announcements/global') {
-    const { data } = await client.from('posts').select('*')
-      .eq('category', ANN_CATEGORY).contains('tags', ['global'])
+    const { data, error } = await client.from('announcements').select('*')
+      .in('target', ['all', 'global'])
       .order('created_at', { ascending: false });
-    return (data || []).map(postToAnn);
+    if (error) throw new Error(error.message);
+    return (data || []).map(announcementRowToAnn);
   }
 
   const globalAnnMatch = path.match(/^\/announcements\/global\/(.+)$/);

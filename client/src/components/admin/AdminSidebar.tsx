@@ -2,7 +2,7 @@ import { useLocation } from 'wouter';
 import { useAdminStore } from '@/store/adminStore';
 import { decodeAdminToken } from '@/lib/supabaseAdmin';
 import {
-  LayoutDashboard, BarChart2, FileText, Calendar, Newspaper,
+  LayoutDashboard, BarChart2, FileText, Calendar, Newspaper, Trophy,
   BookOpen, Megaphone, Swords, RefreshCw, Store, Star, BriefcaseBusiness,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
   ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
@@ -34,6 +34,7 @@ const NAV: NavSection[] = [
     items: [
       { label: 'Posts', path: '/admin/posts', icon: <FileText size={16} /> },
       { label: 'Events', path: '/admin/events', icon: <Calendar size={16} /> },
+      { label: 'Competition', path: '/admin/competition', icon: <Trophy size={16} /> },
       { label: 'News', path: '/admin/news', icon: <Newspaper size={16} /> },
       { label: 'Tutorials', path: '/admin/tutorials', icon: <BookOpen size={16} /> },
       { label: 'Announcements', path: '/admin/announcements', icon: <Megaphone size={16} /> },

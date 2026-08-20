@@ -134,6 +134,7 @@ const GlobalWiki         = lazy(() => import("@/pages/GlobalWiki"));
 const GlobalContentHub   = lazy(() => import("@/pages/GlobalContentHub"));
 const CustomPagesIndex   = lazy(() => import("@/pages/CustomPagesIndex"));
 const CustomPageRoute    = lazy(() => import("@/pages/CustomPageRoute"));
+const Competition        = lazy(() => import("@/pages/Competition"));
 
 function PageSpinner() {
   return (
@@ -196,6 +197,7 @@ function Router() {
       <Route path="/news/id/:legacyId"         component={() => <L C={NewsDetail} />} />
       <Route path="/events/:slug"              component={() => <L C={EventDetail} />} />
       <Route path="/events/id/:legacyId"       component={() => <L C={EventDetail} />} />
+      <Route path="/competition"                component={() => <L C={Competition} />} />
 
       {/* Wiki */}
       <Route path="/mercenaries"               component={() => <L C={Mercenaries} />} />

@@ -46,11 +46,11 @@ interface CompetitionLeaderboardEntry {
 }
 
 const organizers = [
-  { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true, accent: "var(--primary)" },
-  { name: "Zims", role: "Community partner", image: "/assets/competition/zims-mark.jpg", href: null, verified: true, accent: "var(--destructive)" },
-  { name: "Antifarming Clan", role: "Community partner", image: "/assets/competition/antifarming-clan-mark.png", href: "https://crossfire.z8games.com/clan/404003", verified: true, accent: "var(--chart-1)" },
-  { name: "Diaasadek", role: "Community partner", image: "/assets/sellers/diaa-store-logo.png", href: "https://diaasadek.com", verified: true, accent: "var(--chart-2)" },
-  { name: "Bemora", role: "Community partner", image: "/assets/competition/bemora-robot-card.jpg", href: null, verified: true, accent: "var(--chart-3)" },
+  { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true },
+  { name: "Zims", role: "Community partner", image: "/assets/competition/zims-mark.jpg", href: null, verified: true },
+  { name: "Antifarming Clan", role: "Community partner", image: "/assets/competition/antifarming-clan-mark.png", href: "https://crossfire.z8games.com/clan/404003", verified: true },
+  { name: "Diaasadek", role: "Community partner", image: "/assets/sellers/diaa-store-logo.png", href: "https://diaasadek.com", verified: true },
+  { name: "Bemora", role: "Community partner", image: "/assets/competition/bemora-robot-card.jpg", href: null, verified: true },
 ] as const;
 
 function questionOptions(question: CompetitionQuestion, isArabic: boolean): Array<{ value: string; label: string }> {
@@ -247,7 +247,7 @@ export default function Competition() {
         <div style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 24px 34px", position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 28 }}>
             <span style={eyebrow}><Trophy size={13} />{isArabic ? "الموسم الأول · بإدارة المشرفين" : "Season one · administrator managed"}</span>
-            <span style={{ ...eyebrow, color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--primary) / 0.35)", background: "hsl(var(--background) / 0.55)" }}>{isArabic ? "إنجليزي وعربي" : "English and Arabic"}</span>
+            <span style={{ ...eyebrow, color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))", background: "hsl(var(--background) / 0.55)" }}>{isArabic ? "إنجليزي وعربي" : "English and Arabic"}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 34, alignItems: "center" }}>
             <div>
@@ -276,10 +276,10 @@ export default function Competition() {
       </section>
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 24px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-        <Feature accent="hsl(var(--chart-3))" icon={<Trophy size={20} />} title={isArabic ? "نظام نقاط واضح" : "Clear scoring"} text={isArabic ? "النقاط وسياسة التعادل يحددها المشرف قبل النشر." : "Points and tie-break rules are configured before publication."} />
-        <Feature accent="hsl(var(--chart-1))" icon={<Volume2 size={20} />} title={isArabic ? "أسئلة صوتية" : "Audio questions"} text={isArabic ? "مقاطع قصيرة عن الخرائط والأنماط عند اعتمادها." : "Short map and mode identification clips when approved."} />
-        <Feature accent="hsl(var(--chart-2))" icon={<ShieldCheck size={20} />} title={isArabic ? "مراجعة عادلة" : "Reviewed fairly"} text={isArabic ? "الإثباتات والأسئلة المقالية تمر بمراجعة إدارية." : "Proofs and scenario answers go through administrator review."} />
-        <Feature accent="hsl(var(--primary))" icon={<Users size={20} />} title={isArabic ? "مجتمع CrossFire" : "CrossFire community"} text={isArabic ? "تنظيم CrossFire Wiki وداعموه المذكورون أعلاه." : "Organized by CrossFire Wiki and the supporters listed above."} />
+        <Feature icon={<Trophy size={20} />} title={isArabic ? "نظام نقاط واضح" : "Clear scoring"} text={isArabic ? "النقاط وسياسة التعادل يحددها المشرف قبل النشر." : "Points and tie-break rules are configured before publication."} />
+        <Feature icon={<Volume2 size={20} />} title={isArabic ? "أسئلة صوتية" : "Audio questions"} text={isArabic ? "مقاطع قصيرة عن الخرائط والأنماط عند اعتمادها." : "Short map and mode identification clips when approved."} />
+        <Feature icon={<ShieldCheck size={20} />} title={isArabic ? "مراجعة عادلة" : "Reviewed fairly"} text={isArabic ? "الإثباتات والأسئلة المقالية تمر بمراجعة إدارية." : "Proofs and scenario answers go through administrator review."} />
+        <Feature icon={<Users size={20} />} title={isArabic ? "مجتمع CrossFire" : "CrossFire community"} text={isArabic ? "تنظيم CrossFire Wiki وداعموه المذكورون أعلاه." : "Organized by CrossFire Wiki and the supporters listed above."} />
       </section>
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 24px 0", display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(320px, .85fr)", gap: 24 }}>
@@ -312,8 +312,8 @@ function QuestionCard({ question, index, isArabic, answer, onAnswer }: { questio
 }
 
 function OrganizerCard({ organizer, isArabic }: { organizer: (typeof organizers)[number]; isArabic: boolean }) {
-  const cardStyle: React.CSSProperties = { ...organizerCard, borderColor: `hsl(${organizer.accent} / 0.42)`, background: `linear-gradient(145deg, hsl(var(--card)), hsl(${organizer.accent} / 0.09))` };
-  const imageFrameStyle: React.CSSProperties = { ...organizerImageFrame, borderColor: `hsl(${organizer.accent} / 0.36)`, background: `linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(${organizer.accent} / 0.18) 48%, hsl(var(--background) / 0.72))` };
+  const cardStyle: React.CSSProperties = organizerCard;
+  const imageFrameStyle: React.CSSProperties = organizerImageFrame;
   const content = <>
     <div style={imageFrameStyle}>
       {organizer.image ? <img src={organizer.image} alt={`${organizer.name} ${isArabic ? "شعار المنظم" : "organizer mark"}`} loading="lazy" style={{ ...organizerImage, objectFit: "contain", filter: organizer.name === "Antifarming Clan" ? "invert(1) drop-shadow(0 12px 24px hsl(var(--background) / 0.65))" : organizerImage.filter }} /> : <div style={organizerFallback}><span>{organizer.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3)}</span><small>{isArabic ? "الصورة الرسمية غير متاحة" : "Official image unavailable"}</small></div>}
@@ -326,43 +326,43 @@ function OrganizerCard({ organizer, isArabic }: { organizer: (typeof organizers)
   return <article style={cardStyle}>{content}</article>;
 }
 
-function Feature({ accent, icon, title, text }: { accent: string; icon: React.ReactNode; title: string; text: string }) { return <article style={{ ...card, display: "grid", gap: 12, borderTop: `2px solid ${accent}`, background: "linear-gradient(145deg, hsl(var(--card)), hsl(var(--primary) / 0.06))" }}><div style={{ color: accent }}>{icon}</div><strong style={{ color: "hsl(var(--foreground))" }}>{title}</strong><p style={{ ...muted, margin: 0 }}>{text}</p></article>; }
+function Feature({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <article style={{ ...card, display: "grid", gap: 12, borderTop: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }}><div style={{ color: "hsl(var(--foreground))" }}>{icon}</div><strong style={{ color: "hsl(var(--foreground))" }}>{title}</strong><p style={{ ...muted, margin: 0 }}>{text}</p></article>; }
 
-const heroSection: React.CSSProperties = { position: "relative", overflow: "hidden", borderBottom: "1px solid hsl(var(--border))", background: "radial-gradient(circle at 75% 12%, hsl(var(--primary) / 0.16), transparent 30%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--content-bg)) 52%, hsl(var(--background)))" };
-const heroGlow: React.CSSProperties = { position: "absolute", width: 520, height: 520, borderRadius: "50%", insetInlineEnd: "-180px", top: "-260px", border: "1px solid hsl(var(--primary) / 0.18)", boxShadow: "0 0 0 30px hsl(var(--primary) / 0.04), 0 0 0 60px hsl(var(--primary) / 0.025)" };
+const heroSection: React.CSSProperties = { position: "relative", overflow: "hidden", borderBottom: "1px solid hsl(var(--border))", background: "radial-gradient(circle at 75% 12%, hsl(var(--foreground) / 0.08), transparent 30%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)) 52%, hsl(var(--background)))" };
+const heroGlow: React.CSSProperties = { position: "absolute", width: 520, height: 520, borderRadius: "50%", insetInlineEnd: "-180px", top: "-260px", border: "1px solid hsl(var(--foreground) / 0.16)", boxShadow: "0 0 0 30px hsl(var(--foreground) / 0.035), 0 0 0 60px hsl(var(--foreground) / 0.018)" };
 const heroGrid: React.CSSProperties = { position: "absolute", inset: 0, opacity: 0.32, backgroundImage: "linear-gradient(hsl(var(--border) / 0.32) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / 0.32) 1px, transparent 1px)", backgroundSize: "44px 44px", maskImage: "linear-gradient(to bottom, black, transparent 80%)" };
-const heroKicker: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, color: "hsl(var(--primary))", fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 18 };
-const heroKickerLine: React.CSSProperties = { width: 34, height: 2, background: "hsl(var(--primary))", boxShadow: "0 0 16px hsl(var(--primary) / 0.7)" };
+const heroKicker: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, color: "hsl(var(--foreground))", fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 18 };
+const heroKickerLine: React.CSSProperties = { width: 34, height: 2, background: "hsl(var(--foreground))", boxShadow: "0 0 16px hsl(var(--foreground) / 0.25)" };
 const heroStats: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", maxWidth: 640, marginTop: 34, borderTop: "1px solid hsl(var(--border))", borderBottom: "1px solid hsl(var(--border))", padding: "16px 0", gap: 18 };
-const heroSeal: React.CSSProperties = { minHeight: 330, display: "grid", placeItems: "center", alignContent: "center", gap: 10, border: "1px solid hsl(var(--primary) / 0.35)", borderRadius: "calc(var(--radius) * 1.5)", background: "linear-gradient(145deg, hsl(var(--card) / 0.88), hsl(var(--primary) / 0.08))", boxShadow: "0 22px 60px hsl(var(--background) / 0.45), inset 0 1px 0 hsl(var(--foreground) / 0.08)", position: "relative" };
-const heroSealRing: React.CSSProperties = { width: 190, height: 190, display: "grid", placeItems: "center", borderRadius: "50%", border: "1px solid hsl(var(--primary) / 0.6)", boxShadow: "0 0 0 10px hsl(var(--primary) / 0.06), 0 0 0 22px hsl(var(--primary) / 0.035), 0 0 50px hsl(var(--primary) / 0.22)" };
+const heroSeal: React.CSSProperties = { minHeight: 330, display: "grid", placeItems: "center", alignContent: "center", gap: 10, border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.5)", background: "linear-gradient(145deg, hsl(var(--card) / 0.95), hsl(var(--foreground) / 0.06))", boxShadow: "0 22px 60px hsl(var(--background) / 0.45), inset 0 1px 0 hsl(var(--foreground) / 0.08)", position: "relative" };
+const heroSealRing: React.CSSProperties = { width: 190, height: 190, display: "grid", placeItems: "center", borderRadius: "50%", border: "1px solid hsl(var(--foreground) / 0.42)", boxShadow: "0 0 0 10px hsl(var(--foreground) / 0.05), 0 0 0 22px hsl(var(--foreground) / 0.025), 0 0 50px hsl(var(--foreground) / 0.12)" };
 const heroSealInner: React.CSSProperties = { width: 156, height: 156, display: "grid", placeItems: "center", borderRadius: "50%", background: "hsl(var(--background) / 0.76)", border: "1px solid hsl(var(--border))" };
-const heroSealLabel: React.CSSProperties = { color: "hsl(var(--primary))", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" };
+const heroSealLabel: React.CSSProperties = { color: "hsl(var(--foreground))", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" };
 const heroSealTitle: React.CSSProperties = { color: "hsl(var(--foreground))", textAlign: "center", fontSize: 22, letterSpacing: "0.18em", lineHeight: 1.05 };
 const heroSealNote: React.CSSProperties = { color: "hsl(var(--muted-foreground))", fontSize: 12, textAlign: "center" };
 const sectionHeadingRow: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 24, marginBottom: 20 };
-const sectionOverline: React.CSSProperties = { display: "block", color: "hsl(var(--primary))", fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 };
+const sectionOverline: React.CSSProperties = { display: "block", color: "hsl(var(--foreground))", fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 };
 const organizerGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 };
 const organizerCard: React.CSSProperties = { display: "grid", gap: 12, minHeight: 220, padding: 12, color: "inherit", textDecoration: "none", background: "linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted) / 0.25))", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.15)", boxShadow: "var(--shadow-sm)", transition: "transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease" };
-const organizerImageFrame: React.CSSProperties = { minHeight: 142, position: "relative", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: "var(--radius)", border: "1px solid hsl(var(--border))", background: "linear-gradient(135deg, hsl(var(--secondary) / 0.95), hsl(var(--primary) / 0.13) 48%, hsl(var(--chart-1) / 0.08))" };
+const organizerImageFrame: React.CSSProperties = { minHeight: 142, position: "relative", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: "var(--radius)", border: "1px solid hsl(var(--border))", background: "linear-gradient(135deg, hsl(var(--secondary) / 0.95), hsl(var(--foreground) / 0.07) 48%, hsl(var(--background) / 0.76))" };
 const organizerImage: React.CSSProperties = { width: "100%", height: 142, objectFit: "contain", padding: 18, filter: "drop-shadow(0 12px 24px hsl(var(--background) / 0.65))" };
 const organizerFallback: React.CSSProperties = { display: "grid", placeItems: "center", gap: 8, width: "100%", height: 142, color: "hsl(var(--muted-foreground))", textAlign: "center" };
-const organizerStatus: React.CSSProperties = { position: "absolute", insetInlineStart: 8, top: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--background) / 0.82)", color: "hsl(var(--primary))", borderRadius: 999, padding: "4px 7px", fontSize: 9, fontWeight: 800, letterSpacing: "0.06em" };
+const organizerStatus: React.CSSProperties = { position: "absolute", insetInlineStart: 8, top: 8, border: "1px solid hsl(var(--foreground) / 0.22)", background: "hsl(var(--background) / 0.88)", color: "hsl(var(--foreground))", borderRadius: 999, padding: "4px 7px", fontSize: 9, fontWeight: 800, letterSpacing: "0.06em" };
 const organizerName: React.CSSProperties = { color: "hsl(var(--foreground))", fontSize: 15 };
 const organizerRole: React.CSSProperties = { color: "hsl(var(--muted-foreground))", fontSize: 11 };
-const organizerSite: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "hsl(var(--primary))", fontSize: 10, fontWeight: 700 };
+const organizerSite: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "hsl(var(--foreground))", fontSize: 10, fontWeight: 700 };
 const organizerSiteMuted: React.CSSProperties = { color: "hsl(var(--muted-foreground) / 0.72)", fontSize: 10 };
 
 const panel: React.CSSProperties = { background: "var(--content-bg)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.5)", padding: 24, boxShadow: "var(--shadow-sm)" };
 const card: React.CSSProperties = { background: "hsl(var(--card))", border: "1px solid hsl(var(--card-border))", borderRadius: "var(--radius)", padding: 20, boxShadow: "var(--shadow-sm)" };
 const heading: React.CSSProperties = { color: "hsl(var(--foreground))", fontSize: 28, margin: 0, letterSpacing: "-0.02em" };
 const muted: React.CSSProperties = { color: "hsl(var(--muted-foreground))", lineHeight: 1.7, fontSize: 14 };
-const eyebrow: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid hsl(var(--primary) / 0.35)", color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.08)", borderRadius: 999, padding: "6px 10px", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" };
+const eyebrow: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid hsl(var(--foreground) / 0.22)", color: "hsl(var(--foreground))", background: "hsl(var(--foreground) / 0.06)", borderRadius: 999, padding: "6px 10px", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" };
 const chip: React.CSSProperties = { display: "inline-flex", width: "fit-content", border: "1px solid hsl(var(--border))", color: "hsl(var(--muted-foreground))", background: "hsl(var(--muted) / 0.45)", borderRadius: 999, padding: "5px 9px", fontSize: 12 };
-const number: React.CSSProperties = { width: 28, height: 28, display: "grid", placeItems: "center", border: "1px solid hsl(var(--primary) / 0.45)", color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.08)", borderRadius: "50%", flex: "0 0 auto", fontSize: 12, fontWeight: 700 };
+const number: React.CSSProperties = { width: 28, height: 28, display: "grid", placeItems: "center", border: "1px solid hsl(var(--foreground) / 0.28)", color: "hsl(var(--foreground))", background: "hsl(var(--foreground) / 0.06)", borderRadius: "50%", flex: "0 0 auto", fontSize: 12, fontWeight: 700 };
 const closedBox: React.CSSProperties = { marginTop: 18, border: "1px dashed hsl(var(--border))", color: "hsl(var(--muted-foreground))", background: "hsl(var(--muted) / 0.25)", borderRadius: "var(--radius)", padding: 16, lineHeight: 1.6, fontSize: 13 };
 const label: React.CSSProperties = { display: "grid", gap: 7, color: "hsl(var(--muted-foreground))", fontSize: 13 };
 const input: React.CSSProperties = { background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "calc(var(--radius) * 0.75)", padding: "11px 12px", outline: "none", width: "100%", boxSizing: "border-box" };
-const button: React.CSSProperties = { background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", border: "1px solid hsl(var(--primary) / 0.7)", borderRadius: "var(--radius)", padding: "12px 14px", cursor: "pointer", fontWeight: 700, boxShadow: "var(--shadow-sm)" };
-const scoreBox: React.CSSProperties = { display: "flex", gap: 10, alignItems: "center", border: "1px solid hsl(var(--primary) / 0.35)", background: "hsl(var(--primary) / 0.08)", borderRadius: "var(--radius)", padding: 16, color: "hsl(var(--foreground))" };
+const button: React.CSSProperties = { background: "hsl(var(--foreground))", color: "hsl(var(--background))", border: "1px solid hsl(var(--foreground) / 0.65)", borderRadius: "var(--radius)", padding: "12px 14px", cursor: "pointer", fontWeight: 700, boxShadow: "var(--shadow-sm)" };
+const scoreBox: React.CSSProperties = { display: "flex", gap: 10, alignItems: "center", border: "1px solid hsl(var(--foreground) / 0.22)", background: "hsl(var(--foreground) / 0.06)", borderRadius: "var(--radius)", padding: 16, color: "hsl(var(--foreground))" };
 const quizList: React.CSSProperties = { display: "grid", gap: 14, maxHeight: 650, overflowY: "auto", paddingInlineEnd: 4 };

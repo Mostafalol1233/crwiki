@@ -275,8 +275,7 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
 function NewsListItem({ item }: { item: any }) {
   const [hovered, setHovered] = useState(false);
   const { language } = useLanguage();
-  const prefix = language === "ar" ? "/ar" : "";
-  const href = item.news_slug ? `${prefix}/news/${item.news_slug}` : item.post_slug ? `${prefix}/posts/${item.post_slug}` : `${prefix}/news/${item.id}`;
+  const href = baseRelativePath(item.news_slug ? `/news/${item.news_slug}` : item.post_slug ? `/posts/${item.post_slug}` : `/news/${item.id}`);
   const displayTitle = language === "ar" && item.titleAr ? item.titleAr : item.title;
   const excerpt = stripHtml(String(item.summary || item.content || "")).slice(0, 80);
   const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
@@ -626,7 +625,7 @@ export default function Home() {
               {/* NEWS FEED */}
               {newsItems.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("footerStayInformed")} title={t("newsUpdatesTitle")} href={language === "ar" ? "/ar/news" : "/news"} />
+                  <SectionHeader eyebrow={t("footerStayInformed")} title={t("newsUpdatesTitle")} href="/news" />
                   <div>
                     {newsItems.slice(0, 7).map((item: any) => <NewsListItem key={item.id} item={item} />)}
                   </div>

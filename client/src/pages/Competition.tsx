@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { CheckCircle2, LockKeyhole, Phone, ShieldCheck, Trophy, Users, Volume2 } from "lucide-react";
+import { CheckCircle2, ExternalLink, Globe2, LockKeyhole, Phone, ShieldCheck, Trophy, Users, Volume2 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -46,11 +46,11 @@ interface CompetitionLeaderboardEntry {
 }
 
 const organizers = [
-  { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true },
-  { name: "Zenith Clan", role: "Community partner", image: null, href: null, verified: false },
-  { name: "Antifarming Clan", role: "Community partner", image: "/assets/competition/antifarming-clan-mark.png", href: "https://crossfire.z8games.com/clan/404003", verified: true },
-  { name: "Diaasadek", role: "Community partner", image: "/assets/sellers/diaa-store-logo.png", href: "https://diaasadek.com", verified: true },
-  { name: "Bemora", role: "Community partner", image: null, href: null, verified: false },
+  { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true, accent: "var(--primary)" },
+  { name: "Zims", role: "Community partner", image: "/assets/competition/zims-mark.jpg", href: null, verified: true, accent: "var(--destructive)" },
+  { name: "Antifarming Clan", role: "Community partner", image: "/assets/competition/antifarming-clan-mark.png", href: "https://crossfire.z8games.com/clan/404003", verified: true, accent: "var(--chart-1)" },
+  { name: "Diaasadek", role: "Community partner", image: "/assets/sellers/diaa-store-logo.png", href: "https://diaasadek.com", verified: true, accent: "var(--chart-2)" },
+  { name: "Bemora", role: "Community partner", image: "/assets/competition/bemora-robot-card.jpg", href: null, verified: true, accent: "var(--chart-3)" },
 ] as const;
 
 function questionOptions(question: CompetitionQuestion, isArabic: boolean): Array<{ value: string; label: string }> {
@@ -249,7 +249,7 @@ export default function Competition() {
             <span style={eyebrow}><Trophy size={13} />{isArabic ? "الموسم الأول · بإدارة المشرفين" : "Season one · administrator managed"}</span>
             <span style={{ ...eyebrow, color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--primary) / 0.35)", background: "hsl(var(--background) / 0.55)" }}>{isArabic ? "إنجليزي وعربي" : "English and Arabic"}</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(260px, .9fr)", gap: 34, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 34, alignItems: "center" }}>
             <div>
               <div style={heroKicker}><span style={heroKickerLine} />{isArabic ? "اختبر معرفتك · ارفع ترتيبك · مثّل مجتمعك" : "Test your knowledge · climb the board · represent your community"}</div>
               <h1 style={{ fontSize: "clamp(42px, 7vw, 88px)", lineHeight: 0.94, letterSpacing: "-0.065em", maxWidth: 850, margin: 0, color: "hsl(var(--foreground))" }}>{title}</h1>
@@ -276,10 +276,10 @@ export default function Competition() {
       </section>
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "48px 24px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-        <Feature icon={<Trophy size={20} />} title={isArabic ? "نظام نقاط واضح" : "Clear scoring"} text={isArabic ? "النقاط وسياسة التعادل يحددها المشرف قبل النشر." : "Points and tie-break rules are configured before publication."} />
-        <Feature icon={<Volume2 size={20} />} title={isArabic ? "أسئلة صوتية" : "Audio questions"} text={isArabic ? "مقاطع قصيرة عن الخرائط والأنماط عند اعتمادها." : "Short map and mode identification clips when approved."} />
-        <Feature icon={<ShieldCheck size={20} />} title={isArabic ? "مراجعة عادلة" : "Reviewed fairly"} text={isArabic ? "الإثباتات والأسئلة المقالية تمر بمراجعة إدارية." : "Proofs and scenario answers go through administrator review."} />
-        <Feature icon={<Users size={20} />} title={isArabic ? "مجتمع CrossFire" : "CrossFire community"} text={isArabic ? "تنظيم CrossFire Wiki وداعموه المذكورون أعلاه." : "Organized by CrossFire Wiki and the supporters listed above."} />
+        <Feature accent="hsl(var(--chart-3))" icon={<Trophy size={20} />} title={isArabic ? "نظام نقاط واضح" : "Clear scoring"} text={isArabic ? "النقاط وسياسة التعادل يحددها المشرف قبل النشر." : "Points and tie-break rules are configured before publication."} />
+        <Feature accent="hsl(var(--chart-1))" icon={<Volume2 size={20} />} title={isArabic ? "أسئلة صوتية" : "Audio questions"} text={isArabic ? "مقاطع قصيرة عن الخرائط والأنماط عند اعتمادها." : "Short map and mode identification clips when approved."} />
+        <Feature accent="hsl(var(--chart-2))" icon={<ShieldCheck size={20} />} title={isArabic ? "مراجعة عادلة" : "Reviewed fairly"} text={isArabic ? "الإثباتات والأسئلة المقالية تمر بمراجعة إدارية." : "Proofs and scenario answers go through administrator review."} />
+        <Feature accent="hsl(var(--primary))" icon={<Users size={20} />} title={isArabic ? "مجتمع CrossFire" : "CrossFire community"} text={isArabic ? "تنظيم CrossFire Wiki وداعموه المذكورون أعلاه." : "Organized by CrossFire Wiki and the supporters listed above."} />
       </section>
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 24px 0", display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(320px, .85fr)", gap: 24 }}>
@@ -312,19 +312,21 @@ function QuestionCard({ question, index, isArabic, answer, onAnswer }: { questio
 }
 
 function OrganizerCard({ organizer, isArabic }: { organizer: (typeof organizers)[number]; isArabic: boolean }) {
+  const cardStyle: React.CSSProperties = { ...organizerCard, borderColor: `hsl(${organizer.accent} / 0.42)`, background: `linear-gradient(145deg, hsl(var(--card)), hsl(${organizer.accent} / 0.09))` };
+  const imageFrameStyle: React.CSSProperties = { ...organizerImageFrame, borderColor: `hsl(${organizer.accent} / 0.36)`, background: `linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(${organizer.accent} / 0.18) 48%, hsl(var(--background) / 0.72))` };
   const content = <>
-    <div style={organizerImageFrame}>
-      {organizer.image ? <img src={organizer.image} alt={`${organizer.name} ${isArabic ? "شعار المنظم" : "organizer mark"}`} loading="lazy" style={{ ...organizerImage, filter: organizer.name === "Antifarming Clan" ? "invert(1) drop-shadow(0 12px 24px hsl(var(--background) / 0.65))" : organizerImage.filter }} /> : <div style={organizerFallback}><span>{organizer.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3)}</span><small>{isArabic ? "الصورة الرسمية غير متاحة" : "Official image unavailable"}</small></div>}
+    <div style={imageFrameStyle}>
+      {organizer.image ? <img src={organizer.image} alt={`${organizer.name} ${isArabic ? "شعار المنظم" : "organizer mark"}`} loading="lazy" style={{ ...organizerImage, objectFit: "contain", filter: organizer.name === "Antifarming Clan" ? "invert(1) drop-shadow(0 12px 24px hsl(var(--background) / 0.65))" : organizerImage.filter }} /> : <div style={organizerFallback}><span>{organizer.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3)}</span><small>{isArabic ? "الصورة الرسمية غير متاحة" : "Official image unavailable"}</small></div>}
       <span style={organizerStatus}>{organizer.verified ? (isArabic ? "موثق" : "Verified") : (isArabic ? "بانتظار الشعار" : "Awaiting mark")}</span>
     </div>
-    <div style={{ display: "grid", gap: 5 }}><strong style={organizerName}>{organizer.name}</strong><span style={organizerRole}>{isArabic ? (organizer.role === "Host" ? "الجهة المستضيفة" : "شريك مجتمعي") : organizer.role}</span></div>
+    <div style={{ display: "grid", gap: 7 }}><strong style={organizerName}>{organizer.name}</strong><span style={organizerRole}>{isArabic ? (organizer.role === "Host" ? "الجهة المستضيفة" : "شريك مجتمعي") : organizer.role}</span>{organizer.href ? <span style={organizerSite}><Globe2 size={12} />{isArabic ? "فتح الموقع أو الملف" : "Open website or profile"}<ExternalLink size={11} /></span> : <span style={organizerSiteMuted}>{isArabic ? "الرابط يضاف من لوحة الإدارة" : "Website link managed in admin"}</span>}</div>
   </>;
-  if (organizer.href?.startsWith("http")) return <a href={organizer.href} target="_blank" rel="noreferrer" style={organizerCard}>{content}</a>;
-  if (organizer.href) return <Link href={organizer.href} style={organizerCard}>{content}</Link>;
-  return <article style={organizerCard}>{content}</article>;
+  if (organizer.href?.startsWith("http")) return <a href={organizer.href} target="_blank" rel="noreferrer" style={cardStyle}>{content}</a>;
+  if (organizer.href) return <Link href={organizer.href} style={cardStyle}>{content}</Link>;
+  return <article style={cardStyle}>{content}</article>;
 }
 
-function Feature({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <article style={{ ...card, display: "grid", gap: 12 }}><div style={{ color: "hsl(var(--muted-foreground))" }}>{icon}</div><strong style={{ color: "hsl(var(--foreground))" }}>{title}</strong><p style={{ ...muted, margin: 0 }}>{text}</p></article>; }
+function Feature({ accent, icon, title, text }: { accent: string; icon: React.ReactNode; title: string; text: string }) { return <article style={{ ...card, display: "grid", gap: 12, borderTop: `2px solid ${accent}`, background: "linear-gradient(145deg, hsl(var(--card)), hsl(var(--primary) / 0.06))" }}><div style={{ color: accent }}>{icon}</div><strong style={{ color: "hsl(var(--foreground))" }}>{title}</strong><p style={{ ...muted, margin: 0 }}>{text}</p></article>; }
 
 const heroSection: React.CSSProperties = { position: "relative", overflow: "hidden", borderBottom: "1px solid hsl(var(--border))", background: "radial-gradient(circle at 75% 12%, hsl(var(--primary) / 0.16), transparent 30%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--content-bg)) 52%, hsl(var(--background)))" };
 const heroGlow: React.CSSProperties = { position: "absolute", width: 520, height: 520, borderRadius: "50%", insetInlineEnd: "-180px", top: "-260px", border: "1px solid hsl(var(--primary) / 0.18)", boxShadow: "0 0 0 30px hsl(var(--primary) / 0.04), 0 0 0 60px hsl(var(--primary) / 0.025)" };
@@ -342,12 +344,14 @@ const sectionHeadingRow: React.CSSProperties = { display: "flex", justifyContent
 const sectionOverline: React.CSSProperties = { display: "block", color: "hsl(var(--primary))", fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 };
 const organizerGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 };
 const organizerCard: React.CSSProperties = { display: "grid", gap: 12, minHeight: 220, padding: 12, color: "inherit", textDecoration: "none", background: "linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted) / 0.25))", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.15)", boxShadow: "var(--shadow-sm)", transition: "transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease" };
-const organizerImageFrame: React.CSSProperties = { minHeight: 142, position: "relative", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: "var(--radius)", border: "1px solid hsl(var(--border))", background: "radial-gradient(circle, hsl(var(--primary) / 0.12), hsl(var(--background) / 0.8) 68%)" };
+const organizerImageFrame: React.CSSProperties = { minHeight: 142, position: "relative", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: "var(--radius)", border: "1px solid hsl(var(--border))", background: "linear-gradient(135deg, hsl(var(--secondary) / 0.95), hsl(var(--primary) / 0.13) 48%, hsl(var(--chart-1) / 0.08))" };
 const organizerImage: React.CSSProperties = { width: "100%", height: 142, objectFit: "contain", padding: 18, filter: "drop-shadow(0 12px 24px hsl(var(--background) / 0.65))" };
 const organizerFallback: React.CSSProperties = { display: "grid", placeItems: "center", gap: 8, width: "100%", height: 142, color: "hsl(var(--muted-foreground))", textAlign: "center" };
 const organizerStatus: React.CSSProperties = { position: "absolute", insetInlineStart: 8, top: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--background) / 0.82)", color: "hsl(var(--primary))", borderRadius: 999, padding: "4px 7px", fontSize: 9, fontWeight: 800, letterSpacing: "0.06em" };
 const organizerName: React.CSSProperties = { color: "hsl(var(--foreground))", fontSize: 15 };
 const organizerRole: React.CSSProperties = { color: "hsl(var(--muted-foreground))", fontSize: 11 };
+const organizerSite: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 5, color: "hsl(var(--primary))", fontSize: 10, fontWeight: 700 };
+const organizerSiteMuted: React.CSSProperties = { color: "hsl(var(--muted-foreground) / 0.72)", fontSize: 10 };
 
 const panel: React.CSSProperties = { background: "var(--content-bg)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.5)", padding: 24, boxShadow: "var(--shadow-sm)" };
 const card: React.CSSProperties = { background: "hsl(var(--card))", border: "1px solid hsl(var(--card-border))", borderRadius: "var(--radius)", padding: 20, boxShadow: "var(--shadow-sm)" };

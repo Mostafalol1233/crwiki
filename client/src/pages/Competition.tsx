@@ -53,6 +53,14 @@ const organizers = [
   { name: "Bemora", role: "Community partner", image: "/assets/competition/bemora-robot-card.jpg", href: null, verified: true },
 ] as const;
 
+function renderCompetitionTitle(title: string, isArabic: boolean) {
+  const brandMatch = title.match(/crossfire\s*wiki/i);
+  if (!brandMatch || brandMatch.index === undefined) return title;
+  const before = title.slice(0, brandMatch.index).trim();
+  const after = title.slice(brandMatch.index + brandMatch[0].length).trim();
+  return <>{before && <span style={{ display: "block", fontSize: "0.68em", fontWeight: 600, lineHeight: 1.2, marginBottom: 8, letterSpacing: isArabic ? "0" : "-0.02em" }}>{before}</span>}<span dir="ltr" style={{ display: "block", textAlign: isArabic ? "right" : "left", whiteSpace: "nowrap", fontFamily: "'Cinzel', serif", letterSpacing: "-0.045em", lineHeight: 1.02 }}>CrossFire Wiki</span>{after && <span style={{ display: "block", fontSize: "0.62em", marginTop: 8, letterSpacing: isArabic ? "0" : "-0.02em" }}>{after}</span>}</>;
+}
+
 function questionOptions(question: CompetitionQuestion, isArabic: boolean): Array<{ value: string; label: string }> {
   if (!Array.isArray(question.options)) return [];
   return question.options.flatMap((option) => {
@@ -252,7 +260,7 @@ export default function Competition() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 34, alignItems: "center" }}>
             <div>
               <div style={heroKicker}><span style={heroKickerLine} />{isArabic ? "اختبر معرفتك · ارفع ترتيبك · مثّل مجتمعك" : "Test your knowledge · climb the board · represent your community"}</div>
-              <h1 style={{ fontSize: "clamp(36px, 5.7vw, 68px)", lineHeight: 1.06, letterSpacing: isArabic ? "-0.03em" : "-0.045em", fontWeight: 700, fontFamily: isArabic ? "'IBM Plex Sans Arabic', sans-serif" : "'Cinzel', serif", maxWidth: 760, margin: 0, color: "hsl(var(--foreground))" }}>{title}</h1>
+              <h1 dir={isArabic ? "rtl" : "ltr"} style={{ fontSize: "clamp(34px, 5.2vw, 64px)", lineHeight: 1.12, letterSpacing: isArabic ? "-0.02em" : "-0.045em", fontWeight: 700, fontFamily: isArabic ? "'IBM Plex Sans Arabic', sans-serif" : "'Cinzel', serif", maxWidth: 680, margin: 0, color: "hsl(var(--foreground))", textAlign: isArabic ? "right" : "left", overflowWrap: "normal", wordBreak: "normal" }}>{renderCompetitionTitle(title, isArabic)}</h1>
               <p style={{ maxWidth: 650, color: "hsl(var(--muted-foreground))", fontSize: 16, lineHeight: 1.9, marginTop: 22, fontWeight: 400 }}>{intro || (isArabic ? "مسابقة مجتمعية لتقييم معرفة اللاعبين بعالم CrossFire، مع أسئلة عادلة ونظام نقاط قابل للمراجعة." : "A community competition for CrossFire knowledge, with fair questions and an administrator-reviewed scoring policy.")}</p>
               <div style={heroStats}>
                 <div><strong>{isArabic ? "ثنائي اللغة" : "Bilingual"}</strong><span>{isArabic ? "عربي وإنجليزي" : "Arabic and English"}</span></div>
@@ -261,7 +269,7 @@ export default function Competition() {
               </div>
             </div>
             <div style={heroSeal}>
-              <div style={heroSealRing}><div style={heroSealInner}><img src="/logo-new.png" alt="CrossFire Wiki" style={{ width: 68, height: 68, objectFit: "contain" }} /></div></div>
+              <div style={heroSealRing}><div style={heroSealInner}><img src="/logo-new.png" alt="CrossFire Wiki" style={{ width: 58, height: 58, objectFit: "contain" }} /></div></div>
               <span style={heroSealLabel}>{isArabic ? "مسابقة المعرفة" : "Knowledge competition"}</span>
               <strong style={heroSealTitle}>CROSSFIRE<br />WIKI</strong>
               <span style={heroSealNote}>{isArabic ? "نظام عادل · محتوى موثّق · مجتمع واحد" : "Fair play · verified content · one community"}</span>
@@ -334,11 +342,11 @@ const heroGrid: React.CSSProperties = { position: "absolute", inset: 0, opacity:
 const heroKicker: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, color: "hsl(var(--foreground))", fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 18 };
 const heroKickerLine: React.CSSProperties = { width: 34, height: 2, background: "hsl(var(--foreground))", boxShadow: "0 0 16px hsl(var(--foreground) / 0.25)" };
 const heroStats: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", maxWidth: 640, marginTop: 34, borderTop: "1px solid hsl(var(--border))", borderBottom: "1px solid hsl(var(--border))", padding: "16px 0", gap: 18 };
-const heroSeal: React.CSSProperties = { minHeight: 300, display: "grid", placeItems: "center", alignContent: "center", gap: 10, border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.5)", background: "linear-gradient(145deg, hsl(var(--card) / 0.95), hsl(var(--foreground) / 0.06))", boxShadow: "0 22px 60px hsl(var(--background) / 0.45), inset 0 1px 0 hsl(var(--foreground) / 0.08)", position: "relative" };
-const heroSealRing: React.CSSProperties = { width: 154, height: 154, display: "grid", placeItems: "center", borderRadius: "50%", border: "1px solid hsl(var(--foreground) / 0.42)", boxShadow: "0 0 0 10px hsl(var(--foreground) / 0.05), 0 0 0 22px hsl(var(--foreground) / 0.025), 0 0 50px hsl(var(--foreground) / 0.12)" };
-const heroSealInner: React.CSSProperties = { width: 124, height: 124, display: "grid", placeItems: "center", borderRadius: "50%", background: "hsl(var(--background) / 0.76)", border: "1px solid hsl(var(--border))" };
+const heroSeal: React.CSSProperties = { minHeight: 260, display: "grid", placeItems: "center", alignContent: "center", gap: 10, border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.5)", background: "linear-gradient(145deg, hsl(var(--card) / 0.95), hsl(var(--foreground) / 0.06))", boxShadow: "0 22px 60px hsl(var(--background) / 0.45), inset 0 1px 0 hsl(var(--foreground) / 0.08)", position: "relative" };
+const heroSealRing: React.CSSProperties = { width: 128, height: 128, display: "grid", placeItems: "center", borderRadius: "50%", border: "1px solid hsl(var(--foreground) / 0.42)", boxShadow: "0 0 0 10px hsl(var(--foreground) / 0.05), 0 0 0 22px hsl(var(--foreground) / 0.025), 0 0 50px hsl(var(--foreground) / 0.12)" };
+const heroSealInner: React.CSSProperties = { width: 102, height: 102, display: "grid", placeItems: "center", borderRadius: "50%", background: "hsl(var(--background) / 0.76)", border: "1px solid hsl(var(--border))" };
 const heroSealLabel: React.CSSProperties = { color: "hsl(var(--foreground))", fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" };
-const heroSealTitle: React.CSSProperties = { color: "hsl(var(--foreground))", textAlign: "center", fontSize: 18, letterSpacing: "0.18em", lineHeight: 1.05 };
+const heroSealTitle: React.CSSProperties = { color: "hsl(var(--foreground))", textAlign: "center", fontSize: 16, letterSpacing: "0.18em", lineHeight: 1.05 };
 const heroSealNote: React.CSSProperties = { color: "hsl(var(--muted-foreground))", fontSize: 12, textAlign: "center" };
 const sectionHeadingRow: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 24, marginBottom: 20 };
 const sectionOverline: React.CSSProperties = { display: "block", color: "hsl(var(--foreground))", fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 };

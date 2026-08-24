@@ -107,17 +107,42 @@ function categoryLabel(category: string | undefined, arabic: boolean) {
   return labels[normaliseCategory(category || "")] || category || "غير مصنف";
 }
 
-function WeaponGlyph({ category, color, size = 24 }: { category?: string; color: string; size?: number }) {
-  const kind = normaliseCategory(category || "");
-  const common = { fill: "none", stroke: color, strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  let body = <><path d="M5 9h12l3 3-3 2H8l-3-2z" {...common} /><path d="M9 14l-2 6h3l3-6" {...common} /><path d="M17 9V6" {...common} /></>;
-  if (kind.includes("sniper")) body = <><path d="M3 10h15l3 2-3 2H8l-5-2z" {...common} /><path d="M8 14l-2 6h4l2-6" {...common} /><circle cx="15" cy="7" r="2.5" {...common} /><path d="M15 4v6M12.5 7h5" {...common} /></>;
-  else if (kind.includes("shotgun")) body = <><path d="M3 9h13l5 2v3H9l-6-2z" {...common} /><path d="M9 14l-2 6h4l2-6" {...common} /><path d="M16 9V5M19 10V6" {...common} /></>;
-  else if (kind.includes("pistol")) body = <><path d="M4 8h15l2 2-2 3H9l-2 7H4l2-7H4z" {...common} /><path d="M15 13l2 7" {...common} /></>;
-  else if (kind.includes("melee")) body = <><path d="M5 19L18 6" {...common} /><path d="M14 4l6 6" {...common} /><path d="M10 14l4 4" {...common} /><path d="M4 20l3-1" {...common} /></>;
-  else if (kind.includes("machine")) body = <><path d="M3 9h15l3 3-3 2H7l-4-2z" {...common} /><path d="M8 14l-2 6h4l2-6" {...common} /><path d="M16 14v5h4" {...common} /><path d="M12 8V5h3" {...common} /></>;
-  else if (kind === "smg" || kind.includes("submachine")) body = <><path d="M4 9h13l4 3-3 2H9l-5-2z" {...common} /><path d="M10 14l-1 6h4l1-6" {...common} /><path d="M14 9V6h4" {...common} /></>;
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" role="img">{body}</svg>;
+const WEAPON_GLYPH_SOURCES = {
+  assault: "/assets/ui/quiver/weapon-assault-rifle.svg",
+  sniper: "/assets/ui/quiver/weapon-sniper-rifle.svg",
+  smg: "/assets/ui/quiver/weapon-smg.svg",
+  shotgun: "/assets/ui/quiver/weapon-shotgun.svg",
+  machine: "/assets/ui/quiver/weapon-machine-gun.svg",
+  pistol: "/assets/ui/quiver/weapon-pistol.svg",
+} as const;
+
+function weaponGlyphSource(category?: string) {
+  const kind = normaliseCategory(category || "assault rifle");
+  if (kind.includes("sniper")) return WEAPON_GLYPH_SOURCES.sniper;
+  if (kind.includes("shotgun")) return WEAPON_GLYPH_SOURCES.shotgun;
+  if (kind.includes("pistol")) return WEAPON_GLYPH_SOURCES.pistol;
+  if (kind === "smg" || kind.includes("submachine")) return WEAPON_GLYPH_SOURCES.smg;
+  if (kind.includes("machine")) return WEAPON_GLYPH_SOURCES.machine;
+  return WEAPON_GLYPH_SOURCES.assault;
+}
+
+function WeaponGlyph({ category, color, size = 24 }: { category?: string; color?: string; size?: number }) {
+  const kind = normaliseCategory(category || "assault rifle");
+  const tint = color || NEUTRAL_UI;
+  if (kind.includes("melee")) {
+    return (
+      <span aria-hidden="true" style={{ width: size * 1.8, height: size, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+        <span style={{ width: size * 1.25, height: Math.max(2, size * 0.1), background: tint, transform: "rotate(-45deg)", borderRadius: 999 }} />
+        <span style={{ position: "absolute", width: size * 0.32, height: Math.max(3, size * 0.14), background: tint, transform: "translate(7px, 7px) rotate(-45deg)", borderRadius: 999, opacity: 0.65 }} />
+      </span>
+    );
+  }
+  const source = weaponGlyphSource(category);
+  return (
+    <span aria-hidden="true" style={{ width: size * 1.8, height: size, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <img src={source} alt="" width={size * 1.8} height={size} loading="eager" decoding="async" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+    </span>
+  );
 }
 
 function WeaponImage({ weapon, className, alt }: { weapon: Weapon; className?: string; alt: string }) {

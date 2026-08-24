@@ -30,72 +30,13 @@ const SUGGESTED_AR = [
   "إزاي بيشتغل الـ Black Market؟",
 ];
 
-/* ── CrossFire Character SVG Avatars ─────────────────────────────────────── */
-// Global Risk soldier silhouette (AI)
+/* Official faction marks replace the old hand-drawn inline SVG silhouettes. */
 function GRSoldierIcon({ size = 34 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Helmet */}
-      <ellipse cx="20" cy="10" rx="7" ry="6" fill="white" opacity="0.95"/>
-      <rect x="13" y="13" width="14" height="4" rx="1" fill="white" opacity="0.9"/>
-      {/* Visor */}
-      <rect x="15" y="11" width="10" height="3" rx="1" fill="rgba(100,200,255,0.6)"/>
-      {/* Body / armor */}
-      <rect x="14" y="17" width="12" height="11" rx="2" fill="white" opacity="0.9"/>
-      {/* Chest plate detail */}
-      <rect x="17" y="19" width="6" height="4" rx="1" fill="rgba(100,200,255,0.4)"/>
-      {/* Left arm */}
-      <rect x="10" y="17" width="4" height="9" rx="2" fill="white" opacity="0.85"/>
-      {/* Right arm */}
-      <rect x="26" y="17" width="4" height="9" rx="2" fill="white" opacity="0.85"/>
-      {/* Gun (right hand) */}
-      <rect x="28" y="22" width="7" height="2.5" rx="1" fill="white" opacity="0.8"/>
-      <rect x="30" y="24.5" width="2" height="2" rx="0.5" fill="white" opacity="0.7"/>
-      {/* Legs */}
-      <rect x="15" y="28" width="4.5" height="8" rx="2" fill="white" opacity="0.85"/>
-      <rect x="20.5" y="28" width="4.5" height="8" rx="2" fill="white" opacity="0.85"/>
-      {/* Boots */}
-      <rect x="14.5" y="34" width="5.5" height="3" rx="1.5" fill="white" opacity="0.7"/>
-      <rect x="20" y="34" width="5.5" height="3" rx="1.5" fill="white" opacity="0.7"/>
-    </svg>
-  );
+  return <img src="/global-risk-logo.png" alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, objectFit: "contain", display: "block" }} />;
 }
 
-// Black List soldier silhouette (User)
 function BLSoldierIcon({ size = 34 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Skull mask / head */}
-      <ellipse cx="20" cy="10" rx="6.5" ry="6" fill="white" opacity="0.9"/>
-      {/* Skull details */}
-      <ellipse cx="17.5" cy="10" rx="2" ry="2.5" fill="rgba(0,0,0,0.35)"/>
-      <ellipse cx="22.5" cy="10" rx="2" ry="2.5" fill="rgba(0,0,0,0.35)"/>
-      <rect x="18.5" y="13" width="3" height="1" rx="0.5" fill="rgba(0,0,0,0.3)"/>
-      {/* Neck / balaclava */}
-      <rect x="16" y="14.5" width="8" height="3" rx="1" fill="white" opacity="0.85"/>
-      {/* Body / tactical vest */}
-      <rect x="13" y="17" width="14" height="11" rx="2" fill="white" opacity="0.88"/>
-      {/* Pouches */}
-      <rect x="14" y="19" width="3.5" height="5" rx="1" fill="rgba(245,166,35,0.4)"/>
-      <rect x="22.5" y="19" width="3.5" height="5" rx="1" fill="rgba(245,166,35,0.4)"/>
-      {/* Left arm */}
-      <rect x="9" y="17" width="4" height="10" rx="2" fill="white" opacity="0.85"/>
-      {/* Right arm */}
-      <rect x="27" y="17" width="4" height="10" rx="2" fill="white" opacity="0.85"/>
-      {/* Knife (left hand) */}
-      <rect x="5" y="23" width="5" height="1.5" rx="0.5" fill="white" opacity="0.75"/>
-      <polygon points="4,23 5,22 5,25" fill="white" opacity="0.7"/>
-      {/* Pistol (right hand) */}
-      <rect x="31" y="22.5" width="5" height="3" rx="1" fill="white" opacity="0.75"/>
-      <rect x="32.5" y="25.5" width="2" height="2" rx="0.5" fill="white" opacity="0.65"/>
-      {/* Legs */}
-      <rect x="14" y="28" width="5" height="8" rx="2" fill="white" opacity="0.85"/>
-      <rect x="21" y="28" width="5" height="8" rx="2" fill="white" opacity="0.85"/>
-      {/* Boots */}
-      <rect x="13" y="34" width="6.5" height="3" rx="1.5" fill="rgba(245,166,35,0.6)"/>
-      <rect x="20.5" y="34" width="6.5" height="3" rx="1.5" fill="rgba(245,166,35,0.6)"/>
-    </svg>
-  );
+  return <img src="/black-list-logo.png" alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, objectFit: "contain", display: "block" }} />;
 }
 
 /* ── Markdown renderer ────────────────────────────────────────────────────── */

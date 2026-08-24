@@ -2919,3 +2919,28 @@ img {
     min-height: 36px;
   }
 }
+
+/* Image fallback: quiet, geometric, and intentionally text-free. */
+.portal-image-fallback {
+  display: block;
+  width: 56px;
+  height: 42px;
+  border: 1px solid rgba(174, 184, 196, 0.24);
+  background:
+    linear-gradient(135deg, transparent 0 47%, rgba(174, 184, 196, 0.17) 48% 51%, transparent 52%),
+    linear-gradient(45deg, transparent 0 47%, rgba(174, 184, 196, 0.1) 48% 51%, transparent 52%),
+    rgba(174, 184, 196, 0.04);
+  clip-path: polygon(10% 0, 90% 0, 100% 16%, 100% 84%, 90% 100%, 10% 100%, 0 84%, 0 16%);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .portal-image-fallback {
+    transition: transform 180ms ease-out, opacity 180ms ease-out;
+  }
+}
+
+.portal-card:hover .portal-image-fallback {
+  transform: scale(1.04);
+  opacity: 1;
+}

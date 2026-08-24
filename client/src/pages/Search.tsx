@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search as SearchIcon, FileText, Calendar, Newspaper, Trophy, Crosshair, Shield, Loader2, MapPin, Users } from "lucide-react";
+import { Search as SearchIcon, FileText, Calendar, Newspaper, Trophy, Crosshair, Shield, Loader2, MapPin, Users, ChevronRight } from "lucide-react";
 import { getEvents, getWeapons, getModes, getRanks, getPosts, getNews, getMaps, getMercenaries } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { PageSEO } from "@/components/PageSEO";
@@ -275,7 +275,7 @@ export default function SearchPage() {
                           )}
                         </div>
                         <div style={{ color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                          <ChevronRight size={14} aria-hidden="true" />
                         </div>
                       </div>
                     </Link>

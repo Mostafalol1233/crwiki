@@ -81,6 +81,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
   return (
     <Link href={portal.href}>
       <div
+        className="portal-card"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -114,7 +115,7 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
             img.style.display = "none";
             const ph = document.createElement("div");
             ph.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);";
-            ph.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+            ph.innerHTML = '<span class="portal-image-fallback" aria-hidden="true"></span>';
             img.parentElement?.appendChild(ph);
           }}
         />

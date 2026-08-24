@@ -13,6 +13,48 @@ export interface SellerBrandAsset {
 }
 
 const BRAND_ASSETS: Record<string, SellerBrandAsset> = {
+  "gamescf": {
+    logoUrl: "/assets/services/sellers/gamescf.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/10548313/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
+  "moira20": {
+    logoUrl: "/assets/services/sellers/moira20.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/8286674/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
+  "playgamesmarket": {
+    logoUrl: "/assets/services/sellers/playgamesmarket.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/12993317/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
+  "xiaoda1": {
+    logoUrl: "/assets/services/sellers/xiaoda1.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/11484926/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
+  "antifarming": {
+    logoUrl: "/assets/services/sellers/antifarming.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/20387228/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
+  "drallspark": {
+    logoUrl: "/assets/services/sellers/drallspark.jpg",
+    gallery: [],
+    sourceUrl: "https://funpay.com/en/users/20710675/",
+    sourceLabel: "Public FunPay seller profile",
+    accent: "from-slate-500/20 via-background to-slate-900/10",
+  },
   "diaa sadek store": {
     logoUrl: "/assets/sellers/diaa-store-logo.png",
     gallery: [],

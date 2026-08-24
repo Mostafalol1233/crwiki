@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
 import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
+import { verifyAdminRequest } from "../server/adminAuth.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
@@ -37,8 +38,10 @@ function sha256(value: string): string {
 
 async function competitionRequest(req: VercelRequest): Promise<{ status: number; body: any }> {
   if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
+  const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
+  const previewAllowed = process.env.VERCEL_ENV !== "production" && admin?.role === "super_admin";
   const userId = await authenticatedUserId(req);
-  if (!userId) return { status: 401, body: { error: "Sign-in is required" } };
+  if (!userId && !previewAllowed) return { status: 401, body: { error: "Sign-in is required" } };
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const action = typeof body.action === "string" ? body.action : "";
   const headers = serviceHeaders();
@@ -50,11 +53,14 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
     if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
 
-    const configResponse = await fetch(`${base}/competition_config?id=eq.default&active=eq.true&select=id,invite_required&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const configParams = new URLSearchParams({ id: "eq.default", select: "id,invite_required,active,preview_only,preview_owner_username", limit: "1" });
+    if (!previewAllowed) configParams.set("active", "eq.true");
+    const configResponse = await fetch(`${base}/competition_config?${configParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     if (!configResponse.ok) return { status: 502, body: { error: "Could not read competition settings" } };
     const configRows = await configResponse.json();
     const config = Array.isArray(configRows) ? configRows[0] : null;
-    if (!config) return { status: 409, body: { error: "Competition is not active" } };
+    const ownerPreview = previewAllowed && config?.preview_only === true && config?.preview_owner_username === "super_admin";
+    if (!config || (!config.active && !ownerPreview)) return { status: 409, body: { error: "Competition is not active" } };
 
     let inviteCodeId: string | null = null;
     if (config.invite_required !== false) {
@@ -72,7 +78,7 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
 
     const attemptResponse = await fetch(`${base}/competition_attempts`, {
       method: "POST", headers,
-      body: JSON.stringify({ user_id: userId, invite_code_id: inviteCodeId, phone, consent_contact: true, status: "in_progress" }),
+      body: JSON.stringify({ user_id: userId || admin?.id || null, invite_code_id: inviteCodeId, phone, consent_contact: true, status: "in_progress" }),
       signal: AbortSignal.timeout(9000),
     });
     if (!attemptResponse.ok) return { status: 502, body: { error: "Could not create competition attempt" } };
@@ -97,7 +103,8 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     const fileName = typeof body.fileName === "string" ? body.fileName.trim().slice(0, 180) : null;
     if (!attemptId || !/^https:\/\//i.test(fileUrl) || fileUrl.length > 2000) return { status: 400, body: { error: "A valid HTTPS proof link is required" } };
     if (!["subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
-    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, user_id: `eq.${userId}`, limit: "1" });
+    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
+    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
     const attempt = Array.isArray(attempts) ? attempts[0] : null;
@@ -116,7 +123,8 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
     const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
     if (!attemptId) return { status: 400, body: { error: "Attempt id is required" } };
-    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, user_id: `eq.${userId}`, limit: "1" });
+    const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
+    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     if (!attemptResponse.ok) return { status: 502, body: { error: "Could not read competition attempt" } };
     const attempts = await attemptResponse.json();
@@ -129,7 +137,9 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
       const submitted = typeof answers[question.id] === "string" ? answers[question.id] : "";
       if (question.correct_option && submitted && submitted === question.correct_option) objectiveScore += Number(question.points || 0);
     }
-    const updateResponse = await fetch(`${base}/competition_attempts?id=eq.${encodeURIComponent(attemptId)}&user_id=eq.${encodeURIComponent(userId)}`, {
+    const updateParams = new URLSearchParams({ id: `eq.${attemptId}` });
+    if (!previewAllowed) updateParams.set("user_id", `eq.${userId}`);
+    const updateResponse = await fetch(`${base}/competition_attempts?${updateParams.toString()}`, {
       method: "PATCH", headers,
       body: JSON.stringify({ answers, objective_score: objectiveScore, final_score: objectiveScore, status: "submitted", submitted_at: new Date().toISOString() }),
       signal: AbortSignal.timeout(9000),
@@ -153,24 +163,25 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
   } catch { return []; }
 }
 
-async function readCompetitionContent(): Promise<{ config: any | null; prizes: any[]; questions: any[]; leaderboard: any[] }> {
+async function readCompetitionContent(previewAllowed = false): Promise<{ config: any | null; prizes: any[]; questions: any[]; leaderboard: any[] }> {
   if (!SUPABASE_URL || !ANON_KEY) return { config: null, prizes: [], questions: [], leaderboard: [] };
+  const readHeaders = previewAllowed && SERVICE_KEY ? serviceHeaders() : h();
   const request = async (table: string, select: string, extra: Record<string, string> = {}) => {
     const params = new URLSearchParams({ select, ...extra });
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers: h(), signal: AbortSignal.timeout(9000) });
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers: readHeaders, signal: AbortSignal.timeout(9000) });
     if (!response.ok) return [];
     const data = await response.json();
     return Array.isArray(data) ? data : [];
   };
   try {
     const [configs, prizes, questions] = await Promise.all([
-      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,invite_required,leaderboard_published', { id: 'eq.default', active: 'eq.true', limit: '1' }),
+      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', active: 'eq.true', limit: '1' }),
       request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
       request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);
     const config = configs[0] || null;
     let leaderboard: any[] = [];
-    if (config?.leaderboard_published && SERVICE_KEY) {
+    if (config?.leaderboard_published && SERVICE_KEY && !previewAllowed) {
       const leaderboardParams = new URLSearchParams({ select: "final_score,submitted_at,status", status: "in.(submitted,reviewed)", final_score: "not.is.null", order: "final_score.desc,submitted_at.asc", limit: "20" });
       const leaderboardResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_attempts?${leaderboardParams.toString()}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(9000) });
       const leaderboardRows = leaderboardResponse.ok ? await leaderboardResponse.json() : [];
@@ -330,7 +341,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET' && rawType === 'competition') {
-    const payload = await readCompetitionContent();
+    const previewAdmin = verifyAdminRequest(req.headers as Record<string, unknown>);
+    const previewAllowed = process.env.VERCEL_ENV !== "production" && previewAdmin?.role === "super_admin";
+    const payload = await readCompetitionContent(previewAllowed);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'private, no-store');
     return res.status(200).json(payload);
@@ -360,7 +373,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [events, news, posts, tutorials, customPages, weapons, mercs, modes] = await Promise.all([
+  const [events, news, posts, tutorials, customPages, weapons, mercs, modes, competitionConfig] = await Promise.all([
     q("events",       "id,title,event_name_slug,image_url,date,updated_at,seo_description,source_url", "date.desc"),
     q("news",         "id,title,news_slug,image_url,created_at,updated_at,seo_description,source_url", "created_at.desc"),
     q("posts",        "id,title,post_slug,image_url,created_at,updated_at,seo_description,source_url", "created_at.desc"),
@@ -369,6 +382,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     q("weapons",      "id,name,image_url",                                                   "name", 10000),
     q("mercenaries",  "id,name,image_url",                                                   "order_index", 10000),
     q("modes",        "id,name,image_url",                                                   "name", 10000),
+    q("competition_config", "id,active,updated_at", "updated_at.desc", 1),
   ]);
 
   // Use the newest real content timestamp for shared/static URLs. This avoids
@@ -406,6 +420,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/pages`,       priority: "0.7", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/content-hub`, priority: "0.8", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/faq`,         priority: "0.6", changefreq: "monthly", lastmod: latestContentDate },
+    ...(competitionConfig[0]?.active ? [{ loc: `${BASE}/competition`, priority: "0.65", changefreq: "weekly", lastmod: dateAtOrBefore(competitionConfig[0].updated_at, today) || latestContentDate }] : []),
     { loc: `${BASE}/grave-games`, priority: "0.5", changefreq: "monthly", lastmod: latestContentDate },
     { loc: `${BASE}/category/news`,   priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/events`, priority: "0.7", changefreq: "daily"   },

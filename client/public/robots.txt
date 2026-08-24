@@ -22,6 +22,8 @@ Allow: /news/
 Allow: /events/
 Allow: /tutorials/
 Allow: /category/
+Allow: /competition
+Allow: /ar/competition
 
 # Explicitly allow crawlable image assets
 Allow: /logo-new.png

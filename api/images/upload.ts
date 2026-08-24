@@ -104,8 +104,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const isAdmin = verifyAdminRequest(req.headers as Record<string, unknown>);
-  const participantUserId = isAdmin ? null : await authenticatedUserId(req);
-  if (!isAdmin && !participantUserId) return res.status(401).json({ error: "Sign in is required" });
+  const ownerPreview = Boolean(isAdmin?.role === "super_admin" && process.env.VERCEL_ENV !== "production");
+  const participantUserId = isAdmin && !ownerPreview ? null : await authenticatedUserId(req);
+  if (!isAdmin && !participantUserId && !ownerPreview) return res.status(401).json({ error: "Sign in is required" });
   if (!configureCloudinary()) {
     return res.status(500).json({ error: "Cloudinary is not configured" });
   }
@@ -120,10 +121,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = ((req as any).body || {}) as Record<string, unknown>;
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
     const proofType = typeof body.proofType === "string" ? body.proofType : "other";
-    if (!isAdmin) {
+    if (!isAdmin || ownerPreview) {
       if (!attemptId || !["subscription", "purchase_receipt", "other"].includes(proofType)) return res.status(400).json({ error: "A valid attempt and proof type are required" });
       if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return res.status(500).json({ error: "Proof storage is not configured" });
-      const attemptQuery = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, user_id: `eq.${participantUserId}`, status: "in.(submitted,reviewed)", limit: "1" });
+      const attemptQuery = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, status: "in.(submitted,reviewed)", limit: "1" });
+      if (!ownerPreview) attemptQuery.set("user_id", `eq.${participantUserId}`);
       const attemptResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_attempts?${attemptQuery.toString()}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(9000) });
       const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
       if (!Array.isArray(attempts) || !attempts[0]) return res.status(400).json({ error: "Submit the quiz before uploading proof" });

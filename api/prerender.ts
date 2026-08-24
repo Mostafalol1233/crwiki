@@ -22,6 +22,8 @@ interface PageMeta {
   dateModified?: string;
   keywords?: string;
   schema?: object;
+  robots?: string;
+  alternates?: Array<{ lang: string; url: string }>;
 }
 
 const HEADERS = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
@@ -227,6 +229,45 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     }
   }
 
+  // ── /competition and /ar/competition ─────────────────────────────
+  const isArabicCompetition = path === "/ar/competition";
+  if (path === "/competition" || isArabicCompetition) {
+    const activeConfig = await fetchOne("competition_config", "id", "default", "active");
+    const active = Boolean(activeConfig?.active);
+    const url = `${BASE}${path}`;
+    const englishUrl = `${BASE}/competition`;
+    const arabicUrl = `${BASE}/ar/competition`;
+    const title = isArabicCompetition
+      ? "مسابقة CrossFire Wiki بالعربية | اختبار معرفة كروس فاير"
+      : "CrossFire Wiki Competition | CrossFire Knowledge Quiz";
+    const description = isArabicCompetition
+      ? "اختبار معرفة ثنائي اللغة عن CrossFire بأسئلة موثقة ونظام نقاط ومراجعة إدارية."
+      : "A bilingual CrossFire knowledge quiz with sourced questions, administrator-reviewed scoring, and optional proof submissions.";
+    return {
+      title,
+      description,
+      image: `${BASE}/feature-crossfire.jpg`,
+      url,
+      type: "website",
+      robots: active ? undefined : "noindex, follow",
+      keywords: "CrossFire competition, CrossFire quiz, CrossFire Wiki, كروس فاير مسابقة",
+      alternates: [
+        { lang: "en", url: englishUrl },
+        { lang: "ar", url: arabicUrl },
+        { lang: "x-default", url: englishUrl },
+      ],
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: title,
+        description,
+        url,
+        isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: BASE },
+        inLanguage: isArabicCompetition ? "ar" : "en",
+      },
+    };
+  }
+
   // ── /:region and /:region/weapons/:slug ───────────────────────────
   const regionMatch = path.match(/^\/([a-z0-9-]+)(?:\/weapons\/([a-z0-9-]+))?$/);
   if (regionMatch) {
@@ -293,6 +334,9 @@ function e(s: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = String(req.query.path || "/").trim() || "/";
   const meta = await resolveMeta(path);
+  const requestHost = typeof req.headers.host === "string" ? req.headers.host : "";
+  const isPreviewHost = requestHost.length > 0 && !/(^|\.)crossfire\.wiki$/i.test(requestHost.split(":")[0]);
+  const robots = isPreviewHost ? "noindex, nofollow" : (meta.robots || "index, follow, max-image-preview:large");
 
   const schemaBlock = meta.schema
     ? `<script type="application/ld+json">${JSON.stringify(meta.schema)}</script>`
@@ -305,7 +349,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${e(meta.title)}</title>
 <meta name="description" content="${e(meta.description)}">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="robots" content="${e(robots)}">
 ${meta.keywords ? `<meta name="keywords" content="${e(meta.keywords)}">` : ""}
 ${meta.datePublished ? `<meta name="article:published_time" content="${e(meta.datePublished)}">` : ""}
 ${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.dateModified)}">` : ""}
@@ -322,8 +366,9 @@ ${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.date
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${e(meta.title)}">
 <meta property="og:site_name" content="CrossFire Wiki">
-<meta property="og:locale" content="en_US">
-<meta property="og:locale:alternate" content="ar_AR">
+<meta property="og:locale" content="${path.startsWith("/ar") ? "ar_AR" : "en_US"}">
+<meta property="og:locale:alternate" content="${path.startsWith("/ar") ? "en_US" : "ar_AR"}">
+${(meta.alternates || []).filter((alternate) => alternate.lang !== "x-default").map((alternate) => `<link rel="alternate" hreflang="${e(alternate.lang)}" href="${e(alternate.url)}">`).join("\n")}
 
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">

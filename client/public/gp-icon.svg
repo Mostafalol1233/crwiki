@@ -1,25 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <defs>
-    <radialGradient id="gpGrad" cx="40%" cy="30%" r="65%">
-      <stop offset="0%" stop-color="#fcd34d"/>
-      <stop offset="50%" stop-color="#f59e0b"/>
-      <stop offset="100%" stop-color="#92400e"/>
-    </radialGradient>
-    <radialGradient id="gpShine" cx="35%" cy="25%" r="50%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>
-      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-    </radialGradient>
-    <filter id="gpGlow">
-      <feGaussianBlur stdDeviation="1.5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <!-- Coin circle -->
-  <circle cx="24" cy="24" r="21" fill="url(#gpGrad)" filter="url(#gpGlow)"/>
-  <circle cx="24" cy="24" r="21" fill="url(#gpShine)"/>
-  <!-- Border rings -->
-  <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(252,211,77,0.9)" stroke-width="2"/>
-  <circle cx="24" cy="24" r="17.5" fill="none" stroke="rgba(252,211,77,0.4)" stroke-width="1"/>
-  <!-- GP Text -->
-  <text x="24" y="30" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="#78350f" letter-spacing="-0.5">GP</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 114.9 115">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <style type="text/css">.cls-0 {fill:url(#SVGID_1_);}
+.cls-1 {fill:#A8A499;}
+.cls-2 {fill:none;stroke:#A6A297;stroke-width:1.1726;stroke-miterlimit:10;}
+.cls-3 {fill:none;stroke:#FFFFFF;stroke-width:3.4927;stroke-miterlimit:10;}</style>
+  <linearGradient id="SVGID_1_" x1="57.5" x2="57.5" y1="3.001" y2="115" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#434D56" offset="0"/>
+    <stop stop-color="#454E54" offset="1"/>
+  </linearGradient>
+  <path class="cls-0" d="m114.9 58.3c0 26-22.1 56.7-57.4 56.7s-57.5-26.3-57.5-53v-3.7l1.4-0.3c0-27.3 24.3-58 56.1-58 28-0.3 57.4 23.9 57.4 58.3z"/>
+  <path class="cls-1" d="m1.4 58.3c0-26.1 23.6-55.8 56.1-55.8s56 25.4 56 56h1.5c0-32.1-24-58.5-55.7-58.5-35.7-0.9-60.8 29.3-59.3 58.3h1.4z"/>
+  <linearGradient id="SVGID_00000036237539083568952380000001786494949675492904_" x1="40.68" x2="81.32" y1="13.16" y2="104.3" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#434F58" offset="0"/>
+    <stop stop-color="#4C555B" offset="1"/>
+  </linearGradient>
+  <path d="m108.5 57.4c0 24.5-18.9 51.2-51.4 51.2-31 0-50.8-24.6-50.8-51.1 0-23.4 20.6-49.8 51.2-49.7 25.2 0 51 19.2 51 49.6z" fill="url(#SVGID_00000036237539083568952380000001786494949675492904_)"/>
+  <path class="cls-2" d="m76.3 29.1c7.6 4.8 15.6 14.4 15.6 28.9 0 14.6-11.2 34.6-34.5 34.6-21.2 0-34.6-17.7-34.6-34.5 0-11.3 6.2-21.9 15.7-29.1"/>
+  <path class="cls-3" d="m29.5 77 19.6-19.4-18.2-18.3c2.1-2.9 4.5-5.5 7.9-7.8l18.6 18.7 18.7-19c3.3 2.2 5.9 4.7 7.8 8l-19 19 19.3 18.6c-2.3 3.3-4.9 5.8-8.4 8.2l-18.4-18.8-18.4 19.2c-3.8-2.3-7-5.4-9.5-9.1z"/>
 </svg>

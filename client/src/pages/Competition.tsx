@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { CheckCircle2, ExternalLink, Globe2, LockKeyhole, Phone, ShieldCheck, Trophy, Users, Volume2 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { supabase } from "@/lib/supabase";
+import { SEOHead } from "@/components/SEOHead";
 
 interface CompetitionConfig {
   title_en: string;
@@ -14,6 +15,8 @@ interface CompetitionConfig {
   active: boolean;
   invite_required: boolean;
   leaderboard_published: boolean;
+  preview_only?: boolean;
+  preview_owner_username?: string | null;
 }
 
 interface CompetitionPrize {
@@ -45,13 +48,15 @@ interface CompetitionLeaderboardEntry {
   status: string;
 }
 
-const organizers = [
+type Organizer = { name: string; role: string; image: string | null; href: string | null; verified: boolean };
+
+const organizers: Organizer[] = [
   { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true },
   { name: "Zims", role: "Community partner", image: "/assets/competition/zims-mark.jpg", href: null, verified: true },
   { name: "Antifarming Clan", role: "Community partner", image: "/assets/competition/antifarming-clan-mark.png", href: "https://crossfire.z8games.com/clan/404003", verified: true },
   { name: "Diaasadek", role: "Community partner", image: "/assets/sellers/diaa-store-logo.png", href: "https://diaasadek.com", verified: true },
   { name: "Bemora", role: "Community partner", image: "/assets/competition/bemora-robot-card.jpg", href: null, verified: true },
-] as const;
+];
 
 function renderCompetitionTitle(title: string, isArabic: boolean) {
   const brandMatch = title.match(/crossfire\s*wiki/i);
@@ -84,6 +89,7 @@ export default function Competition() {
   const [leaderboard, setLeaderboard] = useState<CompetitionLeaderboardEntry[]>([]);
   const [email, setEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [adminToken] = useState<string | null>(() => typeof window === "undefined" ? null : localStorage.getItem("adminToken"));
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [phone, setPhone] = useState("");
@@ -91,6 +97,7 @@ export default function Competition() {
   const [consent, setConsent] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [submittedScore, setSubmittedScore] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
@@ -103,8 +110,9 @@ export default function Competition() {
     let cancelled = false;
     const load = async () => {
       try {
+        const competitionHeaders: HeadersInit = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
         const [competitionResponse, sessionResult] = await Promise.all([
-          fetch("/api/content?type=competition", { cache: "no-store" }),
+          fetch("/api/content?type=competition", { cache: "no-store", headers: competitionHeaders }),
           supabase.auth.getSession(),
         ]);
         const payload = competitionResponse.ok ? await competitionResponse.json() : { config: null, prizes: [], questions: [] };
@@ -131,12 +139,16 @@ export default function Competition() {
       cancelled = true;
       authState.data.subscription.unsubscribe();
     };
-  }, []);
+  }, [adminToken]);
 
+  const previewMode = Boolean(config?.preview_only && !config.active && adminToken);
+  const canRegister = Boolean(config?.active || previewMode);
   const title = config ? (isArabic ? config.title_ar : config.title_en) : (isArabic ? "مسابقة CrossFire Wiki" : "CrossFire Wiki Competition");
   const intro = config ? (isArabic ? config.intro_ar : config.intro_en) : null;
   const rules = config ? (isArabic ? config.rules_ar : config.rules_en) : null;
   const direction = isArabic ? "rtl" : "ltr";
+  const activeQuestion = questions[activeQuestionIndex] || null;
+  const progressPercent = questions.length > 0 ? Math.round(((activeQuestionIndex + 1) / questions.length) * 100) : 0;
 
   const requirements = useMemo(() => isArabic ? [
     "تسجيل الدخول بحساب الموقع قبل بدء المحاولة.",
@@ -155,13 +167,14 @@ export default function Competition() {
   const authHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    else if (adminToken) headers.Authorization = `Bearer ${adminToken}`;
     return headers;
   };
 
   const submitRegistration = async (event: React.FormEvent) => {
     event.preventDefault();
     setNotice("");
-    if (!email || !accessToken) {
+    if ((!email || !accessToken) && !previewMode) {
       setNotice(isArabic ? "سجّل الدخول أولًا للانضمام إلى المسابقة." : "Please sign in before joining the competition.");
       return;
     }
@@ -180,6 +193,7 @@ export default function Competition() {
       if (!response.ok) throw new Error(payload.error || "Registration failed");
       setAttemptId(typeof payload.attempt?.id === "string" ? payload.attempt.id : null);
       setQuestions(Array.isArray(payload.questions) ? payload.questions as CompetitionQuestion[] : []);
+      setActiveQuestionIndex(0);
       setNotice(isArabic ? "تم قبول التسجيل. أجب عن الأسئلة ثم أرسل المحاولة." : "Registration accepted. Answer the questions and submit your attempt.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : (isArabic ? "تعذر بدء المحاولة." : "Could not start the attempt."));
@@ -190,7 +204,7 @@ export default function Competition() {
 
   const submitProof = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!attemptId || !accessToken || (!proofUrl.trim() && !proofFile)) return;
+    if (!attemptId || (!accessToken && !adminToken) || (!proofUrl.trim() && !proofFile)) return;
     if (proofFile && proofFile.size > 10 * 1024 * 1024) {
       setProofNotice(isArabic ? "حجم الصورة يجب ألا يتجاوز 10 ميجابايت." : "The image must be 10 MB or smaller.");
       return;
@@ -204,7 +218,8 @@ export default function Competition() {
         formData.append("file", proofFile);
         formData.append("attemptId", attemptId);
         formData.append("proofType", proofType);
-        response = await fetch("/api/images/upload", { method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: formData });
+        const uploadToken = accessToken || adminToken;
+        response = await fetch("/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
       } else {
         response = await fetch("/api/content?type=competition", {
           method: "POST",
@@ -226,7 +241,7 @@ export default function Competition() {
 
   const submitQuiz = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!attemptId || !accessToken) return;
+    if (!attemptId || (!accessToken && !adminToken)) return;
     setSubmitting(true);
     setNotice("");
     try {
@@ -248,7 +263,24 @@ export default function Competition() {
   };
 
   return (
-    <main dir={direction} className="min-h-screen bg-background" style={{ color: "hsl(var(--foreground))", paddingBottom: 72 }}>
+    <>
+      <SEOHead
+        title={isArabic ? "مسابقة CrossFire Wiki بالعربية | اختبار معرفة كروس فاير" : "CrossFire Wiki Competition | CrossFire Knowledge Quiz"}
+        description={isArabic ? "اختبار معرفة ثنائي اللغة عن CrossFire بأسئلة موثقة ونظام نقاط ومراجعة إدارية." : "A bilingual CrossFire knowledge quiz with sourced questions, administrator-reviewed scoring, and optional proof submissions."}
+        canonicalUrl={`https://crossfire.wiki${isArabic ? "/ar/competition" : "/competition"}`}
+        hreflangAlternates={[
+          { lang: "en", url: "https://crossfire.wiki/competition" },
+          { lang: "ar", url: "https://crossfire.wiki/ar/competition" },
+        ]}
+        noindex={previewMode || !config?.active}
+        schemaType="WebPage"
+        schemaData={{
+          name: isArabic ? "مسابقة CrossFire Wiki" : "CrossFire Wiki Competition",
+          description: isArabic ? "اختبار معرفة ثنائي اللغة عن CrossFire." : "A bilingual CrossFire knowledge quiz.",
+          isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: "https://crossfire.wiki" },
+        }}
+      />
+      <main dir={direction} className="min-h-screen bg-background" style={{ color: "hsl(var(--foreground))", paddingBottom: 72 }}>
       <section style={heroSection}>
         <div aria-hidden="true" style={heroGlow} />
         <div aria-hidden="true" style={heroGrid} />
@@ -300,26 +332,27 @@ export default function Competition() {
         </div>
 
         <div style={panel}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><h2 style={heading}>{submittedScore !== null ? (isArabic ? "النتيجة" : "Result") : attemptId ? (isArabic ? "الاختبار" : "Quiz") : (isArabic ? "التسجيل" : "Registration")}</h2><p style={muted}>{loading ? (isArabic ? "جارٍ التحقق..." : "Checking status...") : config?.active ? (isArabic ? "المسابقة مفتوحة حسب إعدادات المشرف." : "The competition is open according to administrator settings.") : (isArabic ? "المسابقة غير منشورة حاليًا." : "The competition is not published yet.")}</p></div><LockKeyhole size={20} color="hsl(var(--muted-foreground))" /></div>
-          {!config?.active ? <div style={closedBox}>{isArabic ? "سيظهر التسجيل بعد تفعيل المسابقة من لوحة الإدارة." : "Registration will appear after an administrator activates the competition."}</div> : submittedScore !== null ? <div style={{ display: "grid", gap: 14, marginTop: 18 }}><div style={scoreBox}><CheckCircle2 size={20} /><strong>{isArabic ? `النقاط الموضوعية: ${submittedScore}` : `Objective score: ${submittedScore}`}</strong></div><p style={muted}>{isArabic ? "يمكنك إرسال صورة إثبات اختيارية بعد الاختبار، أو رابط HTTPS إذا كانت الصورة مستضافة بالفعل. لا تُضاف أي نقاط تلقائيًا قبل مراجعة المشرف." : "You may submit an optional proof image after the quiz, or an HTTPS link if the image is already hosted. No bonus is added automatically before administrator review."}</p><form onSubmit={submitProof} style={{ display: "grid", gap: 10 }}><label style={label}>{isArabic ? "نوع الإثبات" : "Proof type"}<select value={proofType} onChange={(event) => setProofType(event.target.value)} style={input}><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option><option value="subscription">{isArabic ? "اشتراك" : "Subscription"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option></select></label><label style={label}>{isArabic ? "رفع صورة الإثبات" : "Proof image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFile(event.target.files?.[0] || null)} style={input} />{proofFile && <small style={{ color: "hsl(var(--muted-foreground))" }}>{proofFile.name} · {(proofFile.size / 1024 / 1024).toFixed(2)} MB</small>}</label><label style={label}>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}<input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." style={input} inputMode="url" /></label><button type="submit" style={button} disabled={proofSubmitting || (!proofFile && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Submit for review")}</button>{proofNotice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{proofNotice}</p>}</form></div> : attemptId ? <form onSubmit={submitQuiz} style={{ display: "grid", gap: 18, marginTop: 18 }}><div style={quizList}>{questions.length === 0 ? <div style={closedBox}>{isArabic ? "لا توجد أسئلة منشورة بعد." : "No published questions are available yet."}</div> : questions.map((question, index) => <QuestionCard key={question.id} question={question} index={index} isArabic={isArabic} answer={answers[question.id] || ""} onAnswer={(value) => setAnswers((current) => ({ ...current, [question.id]: value }))} />)}</div>{questions.length > 0 && <button type="submit" style={button} disabled={submitting}>{submitting ? (isArabic ? "جارٍ الإرسال..." : "Submitting...") : (isArabic ? "إرسال الإجابات" : "Submit answers")}</button>}{notice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{notice}</p>}</form> : <form onSubmit={submitRegistration} style={{ display: "grid", gap: 12, marginTop: 18 }}><label style={label}><span><Phone size={14} style={{ verticalAlign: "-2px", marginInlineEnd: 6 }} />{isArabic ? "رقم الهاتف للتواصل" : "Contact phone"}</span><input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isArabic ? "+20..." : "+1..."} style={input} inputMode="tel" /></label>{config.invite_required !== false && <label style={label}>{isArabic ? "كود الدعوة" : "Invitation code"}<input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={isArabic ? "أدخل الكود الذي وصلك" : "Enter the code you received"} style={input} autoComplete="off" /></label>}<label style={{ display: "flex", gap: 9, alignItems: "flex-start", color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5 }}><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />{isArabic ? "أوافق على استخدام رقم الهاتف للتواصل المتعلق بالمسابقة فقط." : "I consent to using my phone number for competition-related contact only."}</label><button type="submit" style={button} disabled={submitting}>{submitting ? (isArabic ? "جارٍ التحقق..." : "Checking...") : email ? (isArabic ? "متابعة التسجيل" : "Continue registration") : (isArabic ? "سجّل الدخول أولًا" : "Sign in first")}</button>{notice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{notice}</p>}</form>}
-          {!email && !attemptId && <Link href="/login" style={{ display: "inline-block", marginTop: 18, color: "hsl(var(--muted-foreground))", textDecoration: "underline" }}>{isArabic ? "الانتقال إلى تسجيل الدخول" : "Go to sign in"}</Link>}
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><h2 style={heading}>{submittedScore !== null ? (isArabic ? "النتيجة" : "Result") : attemptId ? (isArabic ? "الاختبار" : "Quiz") : (isArabic ? "التسجيل" : "Registration")}</h2><p style={muted}>{loading ? (isArabic ? "جارٍ التحقق..." : "Checking status...") : previewMode ? (isArabic ? "وضع معاينة خاص بالمشرف على نسخة الاختبار فقط." : "Private administrator preview on the test deployment only.") : config?.active ? (isArabic ? "المسابقة مفتوحة حسب إعدادات المشرف." : "The competition is open according to administrator settings.") : (isArabic ? "المسابقة غير منشورة حاليًا." : "The competition is not published yet.")}</p></div><LockKeyhole size={20} color="hsl(var(--muted-foreground))" /></div>
+          {!canRegister ? <div style={closedBox}>{isArabic ? "سيظهر التسجيل بعد تفعيل المسابقة من لوحة الإدارة." : "Registration will appear after an administrator activates the competition."}</div> : submittedScore !== null ? <div style={{ display: "grid", gap: 14, marginTop: 18 }}><div style={scoreBox}><CheckCircle2 size={20} /><strong>{isArabic ? `النقاط الموضوعية: ${submittedScore}` : `Objective score: ${submittedScore}`}</strong></div><p style={muted}>{isArabic ? "يمكنك إرسال صورة إثبات اختيارية بعد الاختبار، أو رابط HTTPS إذا كانت الصورة مستضافة بالفعل. لا تُضاف أي نقاط تلقائيًا قبل مراجعة المشرف." : "You may submit an optional proof image after the quiz, or an HTTPS link if the image is already hosted. No bonus is added automatically before administrator review."}</p><form onSubmit={submitProof} style={{ display: "grid", gap: 10 }}><label style={label}>{isArabic ? "نوع الإثبات" : "Proof type"}<select value={proofType} onChange={(event) => setProofType(event.target.value)} style={input}><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option><option value="subscription">{isArabic ? "اشتراك" : "Subscription"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option></select></label><label style={label}>{isArabic ? "رفع صورة الإثبات" : "Proof image"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFile(event.target.files?.[0] || null)} style={input} />{proofFile && <small style={{ color: "hsl(var(--muted-foreground))" }}>{proofFile.name} · {(proofFile.size / 1024 / 1024).toFixed(2)} MB</small>}</label><label style={label}>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}<input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." style={input} inputMode="url" /></label><button type="submit" style={button} disabled={proofSubmitting || (!proofFile && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Submit for review")}</button>{proofNotice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{proofNotice}</p>}</form></div> : attemptId ? <form onSubmit={submitQuiz} style={{ display: "grid", gap: 18, marginTop: 18 }}><div style={quizShell}>{questions.length === 0 ? <div style={closedBox}>{isArabic ? "لا توجد أسئلة منشورة بعد." : "No published questions are available yet."}</div> : activeQuestion ? <><div style={quizMeta}><strong>{isArabic ? `السؤال ${activeQuestionIndex + 1} من ${questions.length}` : `Question ${activeQuestionIndex + 1} of ${questions.length}`}</strong><span>{progressPercent}%</span></div><div style={quizProgressTrack}><span style={{ ...quizProgressFill, width: `${progressPercent}%` }} /></div><div style={quizQuestionWrap}><span style={quizQuestionNumber}>{String(activeQuestionIndex + 1).padStart(2, "0")}</span><QuestionCard question={activeQuestion} index={activeQuestionIndex} isArabic={isArabic} answer={answers[activeQuestion.id] || ""} onAnswer={(value) => setAnswers((current) => ({ ...current, [activeQuestion.id]: value }))} /></div><div style={quizNav}><button type="button" style={quizNavButton} onClick={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} disabled={activeQuestionIndex === 0}>{isArabic ? "السؤال السابق" : "Previous"}</button>{activeQuestionIndex < questions.length - 1 ? <button type="button" style={button} onClick={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))}>{isArabic ? "السؤال التالي" : "Next question"}</button> : <button type="submit" style={button} disabled={submitting}>{submitting ? (isArabic ? "جارٍ الإرسال..." : "Submitting...") : (isArabic ? "إنهاء وإرسال الاختبار" : "Finish and submit")}</button>}</div></> : null}</div>{notice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{notice}</p>}</form> : <form onSubmit={submitRegistration} style={{ display: "grid", gap: 12, marginTop: 18 }}><label style={label}><span><Phone size={14} style={{ verticalAlign: "-2px", marginInlineEnd: 6 }} />{isArabic ? "رقم الهاتف للتواصل" : "Contact phone"}</span><input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isArabic ? "+20..." : "+1..."} style={input} inputMode="tel" /></label>{config?.invite_required !== false && <label style={label}>{isArabic ? "كود الدعوة" : "Invitation code"}<input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={isArabic ? "أدخل الكود الذي وصلك" : "Enter the code you received"} style={input} autoComplete="off" /></label>}<label style={{ display: "flex", gap: 9, alignItems: "flex-start", color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5 }}><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />{isArabic ? "أوافق على استخدام رقم الهاتف للتواصل المتعلق بالمسابقة فقط." : "I consent to using my phone number for competition-related contact only."}</label><button type="submit" style={button} disabled={submitting}>{submitting ? (isArabic ? "جارٍ التحقق..." : "Checking...") : previewMode ? (isArabic ? "بدء اختبار المعاينة" : "Start preview test") : email ? (isArabic ? "متابعة التسجيل" : "Continue registration") : (isArabic ? "سجّل الدخول أولًا" : "Sign in first")}</button>{notice && <p style={{ color: "hsl(var(--muted-foreground))", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{notice}</p>}</form>}
+          {!email && !attemptId && !previewMode && <Link href="/login" style={{ display: "inline-block", marginTop: 18, color: "hsl(var(--muted-foreground))", textDecoration: "underline" }}>{isArabic ? "الانتقال إلى تسجيل الدخول" : "Go to sign in"}</Link>}
         </div>
       </section>
 
       {config?.leaderboard_published && <section style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 24px 0" }}><h2 style={heading}>{isArabic ? "الترتيب المنشور" : "Published leaderboard"}</h2><p style={muted}>{isArabic ? "يعرض الترتيب النقاط فقط دون أسماء أو أرقام هواتف حفاظًا على الخصوصية." : "Only scores are shown; names and phone numbers remain private."}</p>{leaderboard.length === 0 ? <div style={closedBox}>{isArabic ? "لم يتم نشر نتائج بعد." : "No published results yet."}</div> : <div style={{ display: "grid", gap: 8, marginTop: 18 }}>{leaderboard.map((entry, index) => <div key={`${entry.submitted_at || "entry"}-${index}`} style={{ ...scoreBox, justifyContent: "space-between" }}><span>{isArabic ? `المركز ${index + 1}` : `Rank ${index + 1}`}</span><strong>{entry.final_score} {isArabic ? "نقطة" : "points"}</strong></div>)}</div>}</section>}
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 24px 0" }}><h2 style={heading}>{isArabic ? "فئات الجوائز" : "Prize categories"}</h2><p style={muted}>{isArabic ? "لا تظهر أي جائزة أو كمية إلا بعد إدخالها واعتمادها من لوحة الإدارة." : "No prize quantity or final allocation is shown until it is entered and published by an administrator."}</p>{prizes.length === 0 ? <div style={closedBox}>{isArabic ? "لم يتم نشر فئات الجوائز بعد." : "Prize categories have not been published yet."}</div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 20 }}>{prizes.map((prize) => <article key={prize.id} style={card}><span style={chip}>{prize.category}</span><h3 style={{ color: "hsl(var(--foreground))", margin: "14px 0 8px", fontSize: 18 }}>{isArabic ? (prize.title_ar || prize.title_en) : prize.title_en}</h3><p style={muted}>{isArabic ? (prize.description_ar || prize.description_en) : (prize.description_en || prize.description_ar)}</p><small style={{ color: "hsl(var(--muted-foreground))" }}>{isArabic ? (prize.availability_note_ar || prize.availability_note_en) : (prize.availability_note_en || prize.availability_note_ar)}</small></article>)}</div>}</section>
-    </main>
+      </main>
+    </>
   );
 }
 
 function QuestionCard({ question, index, isArabic, answer, onAnswer }: { question: CompetitionQuestion; index: number; isArabic: boolean; answer: string; onAnswer: (value: string) => void }) {
   const options = questionOptions(question, isArabic);
   const prompt = isArabic ? (question.question_ar || question.question_en) : question.question_en;
-  return <article style={{ border: "1px solid hsl(var(--border))", padding: 16, background: "hsl(var(--card))", borderRadius: "var(--radius)", display: "grid", gap: 12 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "hsl(var(--foreground))" }}><strong>{index + 1}. {prompt}</strong><small style={{ color: "hsl(var(--muted-foreground))", whiteSpace: "nowrap" }}>{question.points ?? 0} {isArabic ? "نقطة" : "points"}</small></div>{question.audio_url && <audio controls preload="none" src={question.audio_url} style={{ width: "100%" }} />}{options.length > 0 ? <div style={{ display: "grid", gap: 8 }}>{options.map((option) => <label key={option.value} style={{ display: "flex", gap: 9, alignItems: "flex-start", border: "1px solid hsl(var(--border))", padding: "9px 10px", borderRadius: "calc(var(--radius) * 0.75)", color: "hsl(var(--muted-foreground))", cursor: "pointer" }}><input type="radio" name={`question-${question.id}`} checked={answer === option.value} onChange={() => onAnswer(option.value)} />{option.label}</label>)}</div> : <textarea value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"} style={{ ...input, minHeight: 100, resize: "vertical" }} />}</article>;
+  return <article style={{ border: "1px solid hsl(var(--border))", padding: 18, background: "hsl(var(--card))", borderRadius: "var(--radius)", display: "grid", gap: 14, boxShadow: "var(--shadow-sm)" }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "hsl(var(--foreground))", alignItems: "flex-start" }}><strong style={{ lineHeight: 1.65 }}>{index + 1}. {prompt}</strong><small style={{ color: "hsl(var(--muted-foreground))", whiteSpace: "nowrap" }}>{question.points ?? 0} {isArabic ? "نقطة" : "points"}</small></div>{question.audio_url && <audio controls preload="none" src={question.audio_url} style={{ width: "100%" }} />}{options.length > 0 ? <div style={{ display: "grid", gap: 9 }}>{options.map((option) => <label key={option.value} style={{ display: "flex", gap: 10, alignItems: "flex-start", border: `1px solid ${answer === option.value ? "hsl(var(--foreground) / 0.7)" : "hsl(var(--border))"}`, padding: "12px", borderRadius: "calc(var(--radius) * 0.75)", color: "hsl(var(--foreground))", background: answer === option.value ? "hsl(var(--foreground) / 0.08)" : "transparent", cursor: "pointer", transition: "background 160ms ease-out, border-color 160ms ease-out" }}><input type="radio" name={`question-${question.id}`} checked={answer === option.value} onChange={() => onAnswer(option.value)} />{option.label}</label>)}</div> : <textarea value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"} style={{ ...input, minHeight: 120, resize: "vertical" }} />}</article>;
 }
 
-function OrganizerCard({ organizer, isArabic }: { organizer: (typeof organizers)[number]; isArabic: boolean }) {
+function OrganizerCard({ organizer, isArabic }: { organizer: Organizer; isArabic: boolean }) {
   const cardStyle: React.CSSProperties = organizerCard;
   const imageFrameStyle: React.CSSProperties = organizerImageFrame;
   const content = <>
@@ -373,4 +406,11 @@ const label: React.CSSProperties = { display: "grid", gap: 7, color: "hsl(var(--
 const input: React.CSSProperties = { background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "calc(var(--radius) * 0.75)", padding: "11px 12px", outline: "none", width: "100%", boxSizing: "border-box" };
 const button: React.CSSProperties = { background: "hsl(var(--foreground))", color: "hsl(var(--background))", border: "1px solid hsl(var(--foreground) / 0.65)", borderRadius: "var(--radius)", padding: "12px 14px", cursor: "pointer", fontWeight: 700, boxShadow: "var(--shadow-sm)" };
 const scoreBox: React.CSSProperties = { display: "flex", gap: 10, alignItems: "center", border: "1px solid hsl(var(--foreground) / 0.22)", background: "hsl(var(--foreground) / 0.06)", borderRadius: "var(--radius)", padding: 16, color: "hsl(var(--foreground))" };
-const quizList: React.CSSProperties = { display: "grid", gap: 14, maxHeight: 650, overflowY: "auto", paddingInlineEnd: 4 };
+  const quizShell: React.CSSProperties = { display: "grid", gap: 16, padding: 16, border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) * 1.15)", background: "hsl(var(--muted) / 0.18)" };
+  const quizMeta: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, color: "hsl(var(--foreground))", fontSize: 13, fontWeight: 700 };
+  const quizProgressTrack: React.CSSProperties = { height: 6, overflow: "hidden", background: "hsl(var(--border))", borderRadius: 999 };
+  const quizProgressFill: React.CSSProperties = { display: "block", height: "100%", background: "hsl(var(--foreground))", borderRadius: 999, transition: "width 180ms ease-out" };
+  const quizQuestionWrap: React.CSSProperties = { display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", gap: 12, alignItems: "start" };
+  const quizQuestionNumber: React.CSSProperties = { display: "grid", placeItems: "center", width: 40, height: 40, border: "1px solid hsl(var(--border))", borderRadius: "50%", color: "hsl(var(--muted-foreground))", fontSize: 12, fontWeight: 800 };
+  const quizNav: React.CSSProperties = { display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" };
+  const quizNavButton: React.CSSProperties = { ...button, background: "transparent", color: "hsl(var(--foreground))", borderColor: "hsl(var(--border))" };

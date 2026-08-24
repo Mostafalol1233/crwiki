@@ -108,7 +108,7 @@ export default function Support() {
 
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24 }}>
-            <Link href={isArabic ? "/ar" : "/"} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>{t("supportBreadcrumbHome")}</Link>
+            <Link href="/" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600, textDecoration: "none" }}>{t("supportBreadcrumbHome")}</Link>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
             <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 700 }}>{t("support")}</span>
           </div>

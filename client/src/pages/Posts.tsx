@@ -6,7 +6,7 @@ import { getPosts } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import ContentImage from "@/components/ContentImage";
 import { Loader2, BookOpen, ChevronRight, User, Clock, Star } from "lucide-react";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 interface PostItem {
   id: string;
@@ -61,7 +61,7 @@ function getPostImage(post: PostItem): string {
 export default function Posts() {
   const { t, language } = useLanguage();
   const isArabic = language === "ar";
-  const localPath = (path: string) => localizedPath(path, language);
+  const localPath = (path: string) => routerPath(path);
   const displayTitle = (post: PostItem) => isArabic ? (post.titleAr || post.title) : post.title;
   const displaySummary = (post: PostItem) => isArabic ? (post.summaryAr || post.summary) : post.summary;
   const [page, setPage] = useState(1);

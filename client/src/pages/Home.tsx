@@ -609,7 +609,7 @@ export default function Home() {
               {/* EVENTS GRID */}
               {sideEvents.length > 0 && (
                 <section style={{ marginBottom: 48 }}>
-                  <SectionHeader eyebrow={t("latest")} title={t("recentEvents")} href={language === "ar" ? "/ar/events" : "/events"} />
+                  <SectionHeader eyebrow={t("latest")} title={t("recentEvents")} href="/events" />
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="events-mini-grid">
                     {sideEvents.map((ev: any) => <EventCard key={ev.id} event={ev} />)}
                   </div>

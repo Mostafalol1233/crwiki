@@ -125,7 +125,7 @@ export default function NewsDetail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-4xl font-bold mb-4">{t("newsNotFound")}</h1>
-        <Link href={language === "ar" ? "/ar/news" : "/news"}>
+        <Link href="/news">
           <Button variant="outline" data-testid="button-back-to-news">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("backToNews")}

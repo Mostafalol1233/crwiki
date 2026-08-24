@@ -15,7 +15,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 import WikiPageTemplate from "@/components/WikiPageTemplate";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 interface WikiTab {
   title: string;
@@ -33,7 +33,7 @@ export default function Article() {
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
-  const localizePath = (path: string) => localizedPath(path, language);
+  const localizePath = (path: string) => routerPath(path);
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { data: article, isLoading } = useQuery<any>({
@@ -168,7 +168,7 @@ export default function Article() {
         <div className="text-center">
           <p className="text-muted-foreground mb-4">{language === "ar" ? "المقال غير موجود" : "Article not found"}</p>
           <Button asChild>
-            <Link href={language === "ar" ? "/ar" : "/"}>
+            <Link href="/">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {language === "ar" ? "العودة إلى الرئيسية" : "Back to Home"}
             </Link>
@@ -264,7 +264,7 @@ export default function Article() {
           {!finalArticle.fullLayout && <Breadcrumbs items={breadcrumbs} />}
           
           <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">
-            <Link href={language === "ar" ? "/ar" : "/"}>
+            <Link href="/">
               <a className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)", color: "#888", borderRadius: "2px" }}>
                 <ArrowLeft className="h-3 w-3" />
                 {t("backToHome")}

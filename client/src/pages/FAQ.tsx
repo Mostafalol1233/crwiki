@@ -832,7 +832,7 @@ export default function FAQ() {
                 : "If the FAQ does not cover your issue, send us a ticket and our support team will review it as soon as possible."}
             </p>
             <Link
-              href={isAr ? "/ar/support" : "/support"}
+              href="/support"
               className="inline-flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
               style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
             >

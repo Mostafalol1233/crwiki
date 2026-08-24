@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import PageSEO from "@/components/PageSEO";
 import { useLanguage } from "@/components/LanguageProvider";
 import { User, Camera, Loader2, Mail, Phone, Lock, UserPlus, Crosshair, Shield, Star } from "lucide-react";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 function createSchema(isAr: boolean) {
   return z.object({
@@ -35,7 +35,7 @@ const BENEFITS = [
 export default function Register() {
   const { language } = useLanguage();
   const isAr = language === "ar";
-  const localPath = (path: string) => localizedPath(path, language);
+  const localPath = (path: string) => routerPath(path);
   const schema = useMemo(() => createSchema(isAr), [isAr]);
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
   const [status, setStatus] = useState<string>("");

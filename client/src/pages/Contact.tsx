@@ -7,11 +7,11 @@ import { Mail, MessageSquare, Send, CheckCircle, ArrowRight } from "lucide-react
 import { SiDiscord, SiFacebook, SiWhatsapp, SiX } from "react-icons/si";
 import { Link } from "wouter";
 import { SITE_CONFIG } from "@/lib/siteConfig";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 export default function Contact() {
   const { t, language } = useLanguage();
-  const localPath = (path: string) => localizedPath(path, language);
+  const localPath = (path: string) => routerPath(path);
 
   const CHANNELS = [
     {

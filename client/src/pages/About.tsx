@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { SiDiscord, SiFacebook, SiYoutube, SiX } from "react-icons/si";
 import { SITE_CONFIG } from "@/lib/siteConfig";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 const ACCENT = "#d4a017";
 const BG = "#0a0a0a";
@@ -110,7 +110,7 @@ const SOCIALS = [
 export default function About() {
   const { t, language } = useLanguage();
   const isAr = language === "ar";
-  const localPath = (path: string) => localizedPath(path, language);
+  const localPath = (path: string) => routerPath(path);
 
   const { data: dbModes } = useQuery({ queryKey: ["about-modes"], queryFn: getModes, staleTime: 10 * 60 * 1000 });
   const { data: dbMaps }  = useQuery({ queryKey: ["about-maps"],  queryFn: getMaps,  staleTime: 10 * 60 * 1000 });

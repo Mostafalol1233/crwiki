@@ -23,6 +23,14 @@ export function localizedPath(value: unknown, language: "en" | "ar"): string {
   return path === "/" ? "/ar" : `/ar${path}`;
 }
 
+/**
+ * Path for Link/useLocation inside the Wouter router. The router's Arabic
+ * instance already mounts at /ar, so this must stay base-relative.
+ */
+export function routerPath(value: unknown): string {
+  return baseRelativePath(value, "/");
+}
+
 export function pagePath(value: unknown): string {
   let path = baseRelativePath(value, "");
   path = path.replace(/^\/pages(?=\/|$)/i, "") || "/";

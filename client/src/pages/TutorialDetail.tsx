@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import type { Tutorial } from "@shared/mongodb-schema";
 import { format } from "date-fns";
-import { localizedPath } from "@/lib/routePaths";
+import { routerPath } from "@/lib/routePaths";
 
 export default function TutorialDetailPage() {
   const params = useParams();
@@ -28,7 +28,7 @@ export default function TutorialDetailPage() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const isAr = language === "ar";
-  const localPath = (path: string) => localizedPath(path, language);
+  const localPath = (path: string) => routerPath(path);
 
   const [showLikeDialog, setShowLikeDialog] = useState(false);
 

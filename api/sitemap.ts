@@ -16,6 +16,13 @@ function requestBearer(req: VercelRequest): string {
   return typeof value === "string" ? value.replace(/^Bearer\s+/i, "").trim() : "";
 }
 
+// Temporary direct testing gate. It is intentionally limited to Vercel Preview
+// and an explicit URL flag; production can never enter this path.
+function directCompetitionPreviewRequested(req: VercelRequest): boolean {
+  const value = Array.isArray(req.query.competition_test) ? req.query.competition_test[0] : req.query.competition_test;
+  return process.env.VERCEL_ENV === "preview" && value === "1";
+}
+
 async function authenticatedUserId(req: VercelRequest): Promise<string | null> {
   const token = requestBearer(req);
   if (!SUPABASE_URL || !ANON_KEY || !token) return null;
@@ -39,7 +46,7 @@ function sha256(value: string): string {
 async function competitionRequest(req: VercelRequest): Promise<{ status: number; body: any }> {
   if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
   const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
-  const previewAllowed = process.env.VERCEL_ENV !== "production" && admin?.role === "super_admin";
+  const previewAllowed = (process.env.VERCEL_ENV !== "production" && admin?.role === "super_admin") || directCompetitionPreviewRequested(req);
   const userId = await authenticatedUserId(req);
   if (!userId && !previewAllowed) return { status: 401, body: { error: "Sign-in is required" } };
   const body = req.body && typeof req.body === "object" ? req.body : {};
@@ -63,7 +70,7 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     if (!config || (!config.active && !ownerPreview)) return { status: 409, body: { error: "Competition is not active" } };
 
     let inviteCodeId: string | null = null;
-    if (config.invite_required !== false) {
+    if (config.invite_required !== false && !directCompetitionPreviewRequested(req)) {
       if (!inviteCode) return { status: 400, body: { error: "Invitation code is required" } };
       const params = new URLSearchParams({ select: "id,max_uses,uses_count,expires_at", code_hash: `eq.${sha256(inviteCode)}`, active: "eq.true", limit: "1" });
       const codeResponse = await fetch(`${base}/competition_invite_codes?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
@@ -343,7 +350,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET' && rawType === 'competition') {
     const previewAdmin = verifyAdminRequest(req.headers as Record<string, unknown>);
-    const previewAllowed = process.env.VERCEL_ENV !== "production" && previewAdmin?.role === "super_admin";
+    const previewAllowed = (process.env.VERCEL_ENV !== "production" && previewAdmin?.role === "super_admin") || directCompetitionPreviewRequested(req);
     const payload = await readCompetitionContent(previewAllowed);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'private, no-store');

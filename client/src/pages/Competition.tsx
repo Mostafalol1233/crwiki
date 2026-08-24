@@ -132,6 +132,12 @@ export default function Competition() {
   const [email, setEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [adminToken] = useState<string | null>(() => typeof window === "undefined" ? null : localStorage.getItem("adminToken"));
+  const directPreviewMode = typeof window !== "undefined"
+    && window.location.hostname.endsWith(".vercel.app")
+    && new URLSearchParams(window.location.search).get("competition_test") === "1";
+  const competitionApiPath = directPreviewMode
+    ? "/api/content?type=competition&competition_test=1"
+    : "/api/content?type=competition";
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [phone, setPhone] = useState("");
@@ -155,7 +161,7 @@ export default function Competition() {
       try {
         const competitionHeaders: HeadersInit = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
         const [competitionResponse, sessionResult] = await Promise.all([
-          fetch("/api/content?type=competition", { cache: "no-store", headers: competitionHeaders }),
+          fetch(competitionApiPath, { cache: "no-store", headers: competitionHeaders }),
           supabase.auth.getSession(),
         ]);
         const payload = competitionResponse.ok ? await competitionResponse.json() : { config: null, prizes: [], questions: [] };
@@ -182,9 +188,9 @@ export default function Competition() {
       cancelled = true;
       authState.data.subscription.unsubscribe();
     };
-  }, [adminToken]);
+  }, [adminToken, competitionApiPath]);
 
-  const previewMode = Boolean(config?.preview_only && !config.active && adminToken);
+  const previewMode = Boolean(config?.preview_only && !config.active && (adminToken || directPreviewMode));
   const canRegister = Boolean(config?.active || previewMode);
   const title = config ? (isArabic ? config.title_ar : config.title_en) : (isArabic ? "مسابقة CrossFire Wiki" : "CrossFire Wiki Competition");
   const intro = config ? (isArabic ? config.intro_ar : config.intro_en) : null;
@@ -216,17 +222,17 @@ export default function Competition() {
   const submitRegistration = async (event: React.FormEvent) => {
     event.preventDefault();
     setNotice("");
-    if ((!email || !accessToken) && !previewMode) {
+    if ((!email || !accessToken) && !previewMode && !directPreviewMode) {
       setNotice(isArabic ? "سجّل الدخول أولًا للانضمام إلى المسابقة." : "Please sign in before joining the competition.");
       return;
     }
-    if (!phone.trim() || (config?.invite_required !== false && !inviteCode.trim()) || !consent) {
+    if (!phone.trim() || (config?.invite_required !== false && !directPreviewMode && !inviteCode.trim()) || !consent) {
       setNotice(isArabic ? "أكمل رقم الهاتف وكود الدعوة والموافقة قبل المتابعة." : "Complete the phone number, invitation code, and consent before continuing.");
       return;
     }
     setSubmitting(true);
     try {
-      const response = await fetch("/api/content?type=competition", {
+      const response = await fetch(competitionApiPath, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ action: "start", phone: phone.trim(), inviteCode: inviteCode.trim(), consent }),
@@ -247,11 +253,11 @@ export default function Competition() {
   };
 
   const submitQuiz = async () => {
-    if (!attemptId || (!accessToken && !adminToken)) return;
+    if (!attemptId || (!accessToken && !adminToken && !directPreviewMode)) return;
     setSubmitting(true);
     setNotice("");
     try {
-      const response = await fetch("/api/content?type=competition", {
+      const response = await fetch(competitionApiPath, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ action: "submit", attemptId, answers }),
@@ -271,7 +277,7 @@ export default function Competition() {
 
   const submitProof = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!attemptId || (!accessToken && !adminToken) || (!proofUrl.trim() && !proofFile)) return;
+    if (!attemptId || (!accessToken && !adminToken && !directPreviewMode) || (!proofUrl.trim() && !proofFile)) return;
     if (proofFile && proofFile.size > 10 * 1024 * 1024) {
       setProofNotice(isArabic ? "حجم الصورة يجب ألا يتجاوز 10 ميجابايت." : "The image must be 10 MB or smaller.");
       return;
@@ -286,9 +292,9 @@ export default function Competition() {
         formData.append("attemptId", attemptId);
         formData.append("proofType", proofType);
         const uploadToken = accessToken || adminToken;
-        response = await fetch("/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
+        response = await fetch(directPreviewMode ? "/api/images/upload?competition_test=1" : "/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
       } else {
-        response = await fetch("/api/content?type=competition", {
+        response = await fetch(competitionApiPath, {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({ action: "submit_proof", attemptId, proofType, fileUrl: proofUrl.trim() }),
@@ -362,7 +368,7 @@ export default function Competition() {
 
           <section className="competition-action-panel" aria-live="polite">
             <div className="competition-action-heading"><div><span className="competition-overline">{submittedScore !== null ? (isArabic ? "اكتمل الاختبار" : "Challenge complete") : attemptId ? (isArabic ? "وضع الاختبار" : "Challenge mode") : (isArabic ? "بوابة الدخول" : "Entry gate")}</span><h2>{submittedScore !== null ? (isArabic ? "نتيجتك الأولية" : "Your initial result") : attemptId ? (isArabic ? "أجب على مهل" : "Answer at your pace") : (isArabic ? "ابدأ من هنا" : "Start here")}</h2></div><LockKeyhole size={18} /></div>
-            {!canRegister ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "المسابقة غير منشورة حاليًا" : "The competition is not published"}</strong><p>{isArabic ? "لن يظهر التسجيل أو بنك الأسئلة للزوار قبل تفعيل المسابقة من لوحة الإدارة." : "Registration and the question bank remain hidden until an administrator activates the competition."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} email={email} previewMode={previewMode} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false} consent={consent} setConsent={setConsent} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
+            {!canRegister ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "المسابقة غير منشورة حاليًا" : "The competition is not published"}</strong><p>{isArabic ? "لن يظهر التسجيل أو بنك الأسئلة للزوار قبل تفعيل المسابقة من لوحة الإدارة." : "Registration and the question bank remain hidden until an administrator activates the competition."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} email={email} previewMode={previewMode} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
             {notice && !attemptId && <p className="competition-inline-notice">{notice}</p>}
           </section>
         </section>

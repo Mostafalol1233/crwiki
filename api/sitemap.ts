@@ -91,7 +91,7 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
       const currentCount = Number(currentRows?.[0]?.uses_count || 0);
       await fetch(`${base}/competition_invite_codes?id=eq.${encodeURIComponent(inviteCodeId)}`, { method: "PATCH", headers, body: JSON.stringify({ uses_count: currentCount + 1 }), signal: AbortSignal.timeout(9000) });
     }
-    const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
+    const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
     const questions = questionsResponse.ok ? await questionsResponse.json() : [];
     return { status: 200, body: { attempt: { id: attempt?.id }, questions: Array.isArray(questions) ? questions : [] } };
   }
@@ -177,7 +177,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
     const [configs, prizes, questions] = await Promise.all([
       request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', active: 'eq.true', limit: '1' }),
       request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
-      request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
+      request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);
     const config = configs[0] || null;
     let leaderboard: any[] = [];

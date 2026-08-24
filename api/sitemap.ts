@@ -43,6 +43,46 @@ function sha256(value: string): string {
   return createHash("sha256").update(value.trim()).digest("hex");
 }
 
+async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
+  const names = new Set<string>();
+  for (const question of questions) {
+    if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
+    for (const option of question.options) {
+      const name = typeof option === "string"
+        ? option
+        : option && typeof option === "object"
+          ? (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "")
+          : "";
+      if (name) names.add(name);
+    }
+  }
+  if (!names.size || !SUPABASE_URL) return questions;
+  try {
+    const params = new URLSearchParams({ select: "name,image_url", name: `in.(${Array.from(names).join(",")})`, limit: "200" });
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/weapons?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return questions;
+    const rows = await response.json();
+    const imageByName = new Map<string, string>();
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (typeof row?.name === "string" && typeof row?.image_url === "string" && row.image_url) imageByName.set(row.name, row.image_url);
+    }
+    return questions.map((question) => {
+      if (question?.kind !== "weapon" || !Array.isArray(question.options)) return question;
+      return {
+        ...question,
+        options: question.options.map((option: any) => {
+          if (typeof option === "string") return { value: option, label_en: option, image_url: imageByName.get(option) || null };
+          if (!option || typeof option !== "object") return option;
+          const name = typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "";
+          return { ...option, image_url: typeof option.image_url === "string" && option.image_url ? option.image_url : imageByName.get(name) || null };
+        }),
+      };
+    });
+  } catch {
+    return questions;
+  }
+}
+
 async function competitionRequest(req: VercelRequest): Promise<{ status: number; body: any }> {
   if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
   const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
@@ -99,8 +139,9 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
       await fetch(`${base}/competition_invite_codes?id=eq.${encodeURIComponent(inviteCodeId)}`, { method: "PATCH", headers, body: JSON.stringify({ uses_count: currentCount + 1 }), signal: AbortSignal.timeout(9000) });
     }
     const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
-    const questions = questionsResponse.ok ? await questionsResponse.json() : [];
-    return { status: 200, body: { attempt: { id: attempt?.id }, questions: Array.isArray(questions) ? questions : [] } };
+    const rawQuestions = questionsResponse.ok ? await questionsResponse.json() : [];
+    const questions = await enrichWeaponOptionImages(Array.isArray(rawQuestions) ? rawQuestions : [], headers);
+    return { status: 200, body: { attempt: { id: attempt?.id }, questions } };
   }
 
   if (action === "submit_proof") {
@@ -186,6 +227,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
       request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
       request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);
+    const enrichedQuestions = await enrichWeaponOptionImages(questions, readHeaders);
     const config = configs[0] || null;
     let leaderboard: any[] = [];
     if (config?.leaderboard_published && SERVICE_KEY && !previewAllowed) {
@@ -195,7 +237,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
       leaderboard = Array.isArray(leaderboardRows) ? leaderboardRows : [];
     }
     const previewOrActive = previewAllowed || config?.active === true;
-    return { config, prizes: previewOrActive ? prizes : [], questions: previewOrActive ? questions : [], leaderboard };
+    return { config, prizes: previewOrActive ? prizes : [], questions: previewOrActive ? enrichedQuestions : [], leaderboard };
   } catch {
     return { config: null, prizes: [], questions: [], leaderboard: [] };
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   Check,
@@ -11,6 +11,8 @@ import {
   Image as ImageIcon,
   LockKeyhole,
   Phone,
+  Pause,
+  Play,
   RotateCcw,
   Send,
   ShieldCheck,
@@ -68,7 +70,7 @@ interface CompetitionLeaderboardEntry {
 
 type Organizer = { name: string; role: string; image: string | null; href: string | null; verified: boolean };
 type AnswerMap = Record<string, string>;
-type QuestionOption = { value: string; label: string };
+type QuestionOption = { value: string; label: string; image_url?: string | null };
 
 const organizers: Organizer[] = [
   { name: "CrossFire Wiki", role: "Host", image: "/logo-new.png", href: "/", verified: true },
@@ -92,17 +94,18 @@ function renderCompetitionTitle(title: string, isArabic: boolean) {
   );
 }
 
-function questionOptions(question: CompetitionQuestion, isArabic: boolean): QuestionOption[] {
+function questionOptions(question: CompetitionQuestion): QuestionOption[] {
   if (!Array.isArray(question.options)) return [];
   return question.options.flatMap((option) => {
-    if (typeof option === "string") return [{ value: option, label: option }];
+    if (typeof option === "string") return [{ value: option, label: option, image_url: null }];
     if (!option || typeof option !== "object") return [];
     const item = option as Record<string, unknown>;
     const value = typeof item.value === "string" ? item.value : typeof item.id === "string" ? item.id : "";
-    const label = isArabic
-      ? (typeof item.label_ar === "string" ? item.label_ar : typeof item.label_en === "string" ? item.label_en : value)
-      : (typeof item.label_en === "string" ? item.label_en : typeof item.label_ar === "string" ? item.label_ar : value);
-    return value ? [{ value, label }] : [];
+    const label = typeof item.label_en === "string"
+      ? item.label_en
+      : typeof item.label_ar === "string" ? item.label_ar : value;
+    const imageUrl = typeof item.image_url === "string" && item.image_url ? item.image_url : null;
+    return value ? [{ value, label, image_url: imageUrl }] : [];
   });
 }
 
@@ -423,14 +426,81 @@ function ReviewPanel({ questions, answers, isArabic, onJump, onBack, onSubmit, s
 }
 
 function QuestionCard({ question, isArabic, answer, onAnswer }: { question: CompetitionQuestion; isArabic: boolean; answer: string; onAnswer: (value: string) => void }) {
-  const options = questionOptions(question, isArabic);
+  const options = questionOptions(question);
   const prompt = isArabic ? (question.question_ar || question.question_en) : question.question_en;
+  const isWeaponQuestion = question.kind === "weapon";
   return <article className="quiz-question-card">
-    <div className="quiz-question-prompt"><h3>{prompt}</h3><span>{isArabic ? "اختر إجابة واحدة" : "Choose one answer"}</span></div>
-    {question.image_url && <figure className="quiz-question-media"><img src={question.image_url} alt={isArabic ? "صورة مرجعية للسؤال" : "Question reference image"} loading="lazy" /><figcaption><ImageIcon size={13} />{isArabic ? "مرجع بصري من حزمة المسابقة" : "Visual reference from the competition pack"}</figcaption></figure>}
-    {question.audio_url && <div className="quiz-audio-card"><div className="quiz-audio-heading"><span className="quiz-audio-icon"><Volume2 size={17} /></span><div><strong>{isArabic ? "استمع إلى المقطع" : "Listen to the clip"}</strong><span>{isArabic ? "يمكنك إعادة التشغيل قبل اختيار إجابتك." : "Replay it before choosing your answer."}</span></div></div><audio controls preload="metadata" src={question.audio_url} /></div>}
-    {options.length > 0 ? <div className="quiz-answer-grid">{options.map((option, index) => { const selected = answer === option.value; return <button type="button" key={option.value} className={`quiz-answer-option ${selected ? "is-selected" : ""}`} onClick={() => onAnswer(option.value)} aria-pressed={selected}><span className="quiz-answer-letter">{String.fromCharCode(65 + index)}</span><span className="quiz-answer-label">{option.label}</span>{selected && <Check className="quiz-answer-check" size={17} />}</button>; })}</div> : <div className="quiz-written-answer"><label htmlFor={`answer-${question.id}`}>{isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"}</label><textarea id={`answer-${question.id}`} dir={isArabic ? "rtl" : "ltr"} value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابة عملية ومختصرة..." : "Write a practical, concise answer..."} maxLength={1200} /><span>{answer.length}/1200</span></div>}
+    <div className="quiz-question-prompt"><h3>{prompt}</h3><span>{options.length > 0 ? (isArabic ? "اختر الإجابة باللغة الإنجليزية" : "Choose one answer") : (isArabic ? "اكتب إجابة قصيرة للمراجعة" : "Write a short answer for review")}</span></div>
+    {isWeaponQuestion && question.image_url && <figure className="quiz-question-media quiz-weapon-media"><img src={question.image_url} alt={isArabic ? "صورة السلاح المرتبط بالسؤال" : "Weapon image for this question"} loading="lazy" /><figcaption><ImageIcon size={13} />{isArabic ? "صورة السلاح من كتالوج الويكي" : "Weapon image from the wiki catalogue"}</figcaption></figure>}
+    {question.audio_url && <AudioPlayer src={question.audio_url} isArabic={isArabic} />}
+    {options.length > 0 ? <div className="quiz-answer-grid" dir="ltr">{options.map((option, index) => { const selected = answer === option.value; return <button type="button" key={option.value} className={`quiz-answer-option ${selected ? "is-selected" : ""}`} onClick={() => onAnswer(option.value)} aria-pressed={selected}><span className="quiz-answer-letter">{String.fromCharCode(65 + index)}</span>{option.image_url && <img className="quiz-answer-image" src={option.image_url} alt="" loading="lazy" />}<span className="quiz-answer-label" dir="ltr">{option.label}</span>{selected && <Check className="quiz-answer-check" size={17} />}</button>; })}</div> : <div className="quiz-written-answer"><label htmlFor={`answer-${question.id}`}>{isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"}</label><textarea id={`answer-${question.id}`} dir={isArabic ? "rtl" : "ltr"} value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابة عملية ومختصرة..." : "Write a practical, concise answer..."} maxLength={1200} /><span>{answer.length}/1200</span></div>}
   </article>;
+}
+
+function formatAudioTime(value: number) {
+  if (!Number.isFinite(value) || value < 0) return "00:00";
+  const minutes = Math.floor(value / 60);
+  const seconds = Math.floor(value % 60);
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function AudioPlayer({ src, isArabic }: { src: string; isArabic: boolean }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [audioError, setAudioError] = useState(false);
+
+  useEffect(() => {
+    setPlaying(false);
+    setDuration(0);
+    setCurrentTime(0);
+    setAudioError(false);
+    audioRef.current?.pause();
+  }, [src]);
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    if (!audio || audioError) return;
+    try {
+      if (audio.paused) await audio.play();
+      else audio.pause();
+    } catch {
+      setAudioError(true);
+      setPlaying(false);
+    }
+  };
+
+  const seek = (value: string) => {
+    const nextTime = Number(value);
+    if (!Number.isFinite(nextTime) || !audioRef.current) return;
+    audioRef.current.currentTime = nextTime;
+    setCurrentTime(nextTime);
+  };
+
+  return <div className="quiz-audio-card">
+    <audio
+      ref={audioRef}
+      className="quiz-audio-native"
+      preload="metadata"
+      src={src}
+      onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
+      onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+      onPlay={() => setPlaying(true)}
+      onPause={() => setPlaying(false)}
+      onEnded={() => { setPlaying(false); setCurrentTime(0); }}
+      onError={() => { setAudioError(true); setPlaying(false); }}
+    />
+    <div className="quiz-audio-topline">
+      <button className="quiz-audio-play" type="button" onClick={() => void togglePlayback()} disabled={audioError} aria-label={playing ? (isArabic ? "إيقاف الصوت" : "Pause audio") : (isArabic ? "تشغيل الصوت" : "Play audio")}>
+        {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+      </button>
+      <div className="quiz-audio-heading"><div><strong>{isArabic ? "استمع إلى المقطع" : "Listen to the clip"}</strong><span>{audioError ? (isArabic ? "تعذر تحميل المقطع." : "The clip could not be loaded.") : (isArabic ? "يمكنك إعادة التشغيل قبل اختيار الإجابة." : "Replay the clip before choosing an answer.")}</span></div></div>
+      <span className="quiz-audio-time" aria-live="polite">{formatAudioTime(currentTime)} / {formatAudioTime(duration)}</span>
+    </div>
+    <input className="quiz-audio-seek" type="range" min="0" max={duration || 1} step="0.01" value={Math.min(currentTime, duration || 1)} onChange={(event) => seek(event.target.value)} disabled={!duration || audioError} aria-label={isArabic ? "موضع الصوت" : "Audio position"} />
+    <div className="quiz-audio-footline"><span>{audioError ? (isArabic ? "تحقق من اتصالك ثم أعد المحاولة." : "Check your connection and try again.") : (isArabic ? "مقطع أصلي من حزمة المسابقة" : "Original clip from the competition pack")}</span><Volume2 size={15} /></div>
+  </div>;
 }
 
 function ResultPanel({ isArabic, score, proofType, setProofType, proofFile, setProofFile, proofUrl, setProofUrl, proofSubmitting, proofNotice, onSubmit }: { isArabic: boolean; score: number; proofType: string; setProofType: (value: string) => void; proofFile: File | null; setProofFile: (file: File | null) => void; proofUrl: string; setProofUrl: (value: string) => void; proofSubmitting: boolean; proofNotice: string; onSubmit: (event: React.FormEvent) => void }) {

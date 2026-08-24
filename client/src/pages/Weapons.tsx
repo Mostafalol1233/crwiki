@@ -58,7 +58,7 @@ const CF_FALLBACK_CATEGORIES = [
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const OFFICIAL_CATALOG_HEADER = "/attached_assets/weapons/csp-bg-header2.jpg.jpeg";
-const OFFICIAL_CARD_BACKGROUND = "/attached_assets/weapons/cfw-weaponbg-vip.png";
+const WEAPON_IMAGE_SURFACE = "linear-gradient(145deg, #030303 0%, #0d1115 54%, #050505 100%)";
 const WEAPON_PLACEHOLDER = "/attached_assets/weapons/placeholder-weapons.png";
 
 // Weapon cards may receive legacy media URLs from imported content. Never allow
@@ -456,14 +456,14 @@ export default function Weapons() {
                 const title = weapon.highlightedName ? <span dangerouslySetInnerHTML={{ __html: weapon.highlightedName }} /> : weapon.name;
                 return <Dialog key={weapon.id}>
                   <DialogTrigger asChild>
-                    <button className="group text-left relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 focus:outline-none" style={{ background: "#e8ebef", color: "#10151c", border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 8px 25px rgba(0,0,0,.22)" }}>
+                    <button className="group text-left relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 focus:outline-none" style={{ background: "#0b0d10", color: "#e8edf3", border: "1px solid rgba(174,184,196,.2)", boxShadow: "0 10px 28px rgba(0,0,0,.38)" }}>
                       <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "#7e8998" }} />
-                      <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
+                      <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: WEAPON_IMAGE_SURFACE }}>
                         <div className="absolute inset-0 opacity-35" style={{ background: "linear-gradient(135deg, transparent 0 45%, rgba(255,255,255,.12) 46%, transparent 47%)" }} />
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-105" />
                         <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{acquisition.key === "unverified" ? (arabic ? "غير متحقق" : "Unverified") : (arabic ? meta.ar : meta.en)}</span>
                       </div>
-                      <div className="p-3 min-h-[91px]">
+                      <div className="p-3 min-h-[91px]" style={{ background: "#0b0d10" }}>
                         <div className="flex items-center gap-2 mb-2"><WeaponGlyph category={weapon.category} color={color} size={18} /><span className="text-[9px] uppercase tracking-wider font-bold" style={{ color }}>{categoryLabel(weapon.category, arabic)}</span></div>
                         <h3 className="font-black text-[12px] uppercase leading-tight line-clamp-2">{title}</h3>
                       </div>
@@ -473,7 +473,7 @@ export default function Weapons() {
                     <div className="h-px" style={{ background: "#7e8998" }} />
                     <DialogHeader className="px-6 pt-5"><DialogTitle className="text-xl font-black uppercase">{title}</DialogTitle></DialogHeader>
                     <div className="px-6 pb-6 space-y-5 mt-3">
-                      <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: `url(${OFFICIAL_CARD_BACKGROUND}) center/cover` }}>
+                      <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: WEAPON_IMAGE_SURFACE }}>
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-7" />
                       </div>
                       <div className="flex flex-wrap items-center gap-2"><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{categoryLabel(weapon.category, arabic)}</span><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{arabic ? meta.ar : meta.en}</span></div>

@@ -2829,3 +2829,35 @@ img {
     flex: 0 0 40px;
   }
 }
+
+.quiz-answer-option.is-weapon-option {
+  display: grid;
+  grid-template-columns: 34px 112px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.quiz-answer-option.is-weapon-option .quiz-answer-image {
+  width: 104px;
+  height: 64px;
+  padding: 3px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: hsl(var(--background));
+}
+
+.quiz-answer-option.is-weapon-option .quiz-answer-label {
+  text-align: start;
+}
+
+@media (max-width: 640px) {
+  .quiz-answer-option.is-weapon-option {
+    grid-template-columns: 32px 96px minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+
+  .quiz-answer-option.is-weapon-option .quiz-answer-image {
+    width: 90px;
+    height: 56px;
+  }
+}

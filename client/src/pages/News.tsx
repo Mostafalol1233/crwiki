@@ -6,6 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import { getNews, getPosts, getEvents } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import ContentImage from "@/components/ContentImage";
+import { localizedPath } from "@/lib/routePaths";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GOLD = "#f5a623";
@@ -286,7 +287,7 @@ export default function News() {
   const hasMore = allLoadedNews.length < total;
   const isLoading = newsLoading || postsLoading;
 
-  const localPath = (path: string) => language === "ar" ? `/ar${path}` : path;
+  const localPath = (path: string) => localizedPath(path, language);
 
   const getItemHref = (item: any) => {
     if (item._type === "event") return localPath(`/events/${item._eventSlug}`);

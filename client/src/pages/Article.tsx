@@ -15,6 +15,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
 import { sanitizeRichHtml } from "@/lib/sanitizeRichHtml";
 import WikiPageTemplate from "@/components/WikiPageTemplate";
+import { localizedPath } from "@/lib/routePaths";
 
 interface WikiTab {
   title: string;
@@ -32,10 +33,7 @@ export default function Article() {
   const legacyId = (params as any)?.legacyId as string | undefined;
   const [, setLocation] = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
-  const localizePath = (path: string) => {
-    if (language !== "ar" || !path.startsWith("/") || path === "/ar" || path.startsWith("/ar/")) return path;
-    return `/ar${path === "/" ? "" : path}`;
-  };
+  const localizePath = (path: string) => localizedPath(path, language);
   const [isRTL, setIsRTL] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { data: article, isLoading } = useQuery<any>({

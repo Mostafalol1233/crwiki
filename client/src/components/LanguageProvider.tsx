@@ -981,8 +981,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const path = window.location.pathname;
       const hash = window.location.hash;
       const search = window.location.search;
-      const isArPath = path === "/ar" || path.startsWith("/ar/");
-      const basePath = isArPath ? (path === "/ar" ? "/" : path.slice(3) || "/") : path;
+      const basePath = path.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
       if (lang === "ar") {
         const newPath = basePath === "/" ? "/ar" : `/ar${basePath}`;
         window.history.replaceState(null, "", newPath + search + hash);

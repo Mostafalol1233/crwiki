@@ -1,5 +1,6 @@
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/components/LanguageProvider";
+import { localizedPath } from "@/lib/routePaths";
 import { getRegionBreadcrumbs, getRegionBySlug, getRegionLanding, getWeaponBreadcrumbs, getWeaponBySlug, REGIONS } from "../../../shared/crossfire-regions.js";
 import {
   REGIONAL_CHARACTER_RECORDS,
@@ -30,7 +31,7 @@ export default function GlobalWiki({ params }: GlobalWikiProps) {
   const regionSlug = params?.region?.toLowerCase();
   const weaponSlug = params?.slug?.toLowerCase();
   const isArabic = language === "ar";
-  const pathFor = (path: string) => isArabic ? (path === "/" ? "/ar" : `/ar${path}`) : path;
+  const pathFor = (path: string) => localizedPath(path, language);
   const copy = (english: string, arabic: string) => languageText(language, english, arabic);
   const listFor = (english: string[], arabic: string[]) => isArabic ? arabic : english;
   const statLabel = (label: string) => {

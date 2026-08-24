@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { getSellerBrandAsset } from "@/lib/sellerBrandAssets";
 import { getServiceListings } from "@/lib/supabaseApi";
 import { getDefaultServiceListings, getListingContactLinks } from "../../../shared/services-directory.js";
+import { localizedPath } from "@/lib/routePaths";
 
 interface ServiceListing {
   id?: string;
@@ -35,7 +36,7 @@ interface ServiceListing {
   sortOrder?: number;
 }
 
-const localPath = (path: string, language: "en" | "ar") => language === "ar" ? `/ar${path}` : path;
+const localPath = (path: string, language: "en" | "ar") => localizedPath(path, language);
 
 function contactHref(key: string, value: string) {
   if (key === "email" && !value.startsWith("mailto:")) return `mailto:${value}`;

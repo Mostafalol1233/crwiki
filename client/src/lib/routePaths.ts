@@ -13,8 +13,14 @@ export function baseRelativePath(value: unknown, fallback = "/"): string {
   if (/^[a-z][a-z\d+.-]*:\/\//i.test(raw)) return raw;
 
   let path = raw.replace(/^\/+/, "/");
-  path = path.replace(/^\/ar(?=\/|$)/i, "") || "/";
+  path = path.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
   return path.startsWith("/") ? path : `/${path}`;
+}
+
+export function localizedPath(value: unknown, language: "en" | "ar"): string {
+  const path = baseRelativePath(value, "/");
+  if (language !== "ar") return path;
+  return path === "/" ? "/ar" : `/ar${path}`;
 }
 
 export function pagePath(value: unknown): string {

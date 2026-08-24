@@ -329,7 +329,7 @@ export default function Competition() {
               <h1 className="competition-title">{renderCompetitionTitle(title, isArabic)}</h1>
               <p className="competition-intro">{intro || (isArabic ? "اختبار مجتمعي مبني على مقاطع صوتية وأسئلة موثقة من عالم CrossFire. صُممت كل خطوة لتكون واضحة على الهاتف والكمبيوتر." : "A community challenge built around sourced audio clips and CrossFire knowledge. Every step is designed to stay clear on phone and desktop.")}</p>
               <div className="competition-hero-stats">
-                <div><strong>{questions.length || 25}</strong><span>{isArabic ? "سؤالًا" : "questions"}</span></div>
+                <div><strong>{previewMode ? (questions.length || 25) : config?.active ? (questions.length || "—") : "—"}</strong><span>{isArabic ? "سؤالًا" : "questions"}</span></div>
                 <div><strong>{isArabic ? "صوت" : "Audio"}</strong><span>{isArabic ? "مقاطع أصلية" : "original clips"}</span></div>
                 <div><strong>{isArabic ? "مراجعة" : "Review"}</strong><span>{isArabic ? "للسيناريو والإثبات" : "scenarios and proofs"}</span></div>
               </div>

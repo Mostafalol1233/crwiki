@@ -180,6 +180,7 @@ export function SEOHead({
           { name: "keywords", content: uniqueKeywords.join(", ") },
           { name: "robots", content: robotsValue },
           { name: "googlebot", content: robotsValue },
+          { name: "bingbot", content: robotsValue },
           // Open Graph
           { property: "og:site_name", content: "CrossFire Wiki" },
           { property: "og:locale", content: isArabicPage ? "ar_AR" : "en_US" },

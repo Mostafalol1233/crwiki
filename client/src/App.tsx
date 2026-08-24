@@ -437,23 +437,7 @@ function LocalizedApp() {
   const base = language === "ar" ? "/ar" : "";
   return (
     <WouterRouter base={base}>
-      <SEOHead
-        title="CrossFire Wiki — Weapons, Ranks, Events & Guides | Z8Games CF"
-        description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, tutorials, and community guides in English and Arabic. كروس فاير ويكي: مراجع للأسلحة والشخصيات والخرائط والفعاليات وأنظمة اللعب."
-        keywords={["CrossFire", "Crossfire", "CF", "Cross Fire", "CrossFire Wiki", "Z8Games", "FPS", "Shooter", "CrossFire events", "CrossFire weapons", "CrossFire ranks", "CrossFire mercenaries", "CrossFire news", "كروس فاير ويكي", "شرح كروس فاير", "ايفنتات كروس فاير", "خرائط كروس فاير", "اسلحة كروس فاير"]}
-        ogType="website"
-        ogImage="https://crossfire.wiki/feature-crossfire.jpg"
-        ogImageAlt="CrossFire Wiki — CrossFire weapons, maps, characters, and events reference"
-        ogImageWidth={1200}
-        ogImageHeight={630}
-        hreflangAlternates={[
-          { lang: "en", url: "https://crossfire.wiki/" },
-          { lang: "ar", url: "https://crossfire.wiki/ar/" },
-        ]}
-        breadcrumbs={[
-          { name: "CrossFire Wiki", url: "https://crossfire.wiki/" },
-        ]}
-      />
+      {/* Individual route SEO components own title, robots, canonical, and hreflang. */}
       <SEOHead
         onlySchema
         schemaType="Organization"

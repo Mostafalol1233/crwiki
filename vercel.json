@@ -35,6 +35,16 @@
   "rewrites": [
     { "source": "/api/content", "destination": "/api/sitemap" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    {
+      "source": "/ar/competition",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }],
+      "destination": "/api/prerender?path=%2Far%2Fcompetition"
+    },
+    {
+      "source": "/competition",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }],
+      "destination": "/api/prerender?path=%2Fcompetition"
+    },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

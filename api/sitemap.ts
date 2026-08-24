@@ -187,7 +187,8 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
       const leaderboardRows = leaderboardResponse.ok ? await leaderboardResponse.json() : [];
       leaderboard = Array.isArray(leaderboardRows) ? leaderboardRows : [];
     }
-    return { config, prizes, questions, leaderboard };
+    const previewOrActive = previewAllowed || config?.active === true;
+    return { config, prizes: previewOrActive ? prizes : [], questions: previewOrActive ? questions : [], leaderboard };
   } catch {
     return { config: null, prizes: [], questions: [], leaderboard: [] };
   }

@@ -421,7 +421,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/pages`,       priority: "0.7", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/content-hub`, priority: "0.8", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/faq`,         priority: "0.6", changefreq: "monthly", lastmod: latestContentDate },
-    ...(competitionConfig[0]?.active ? [{ loc: `${BASE}/competition`, priority: "0.65", changefreq: "weekly", lastmod: dateAtOrBefore(competitionConfig[0].updated_at, today) || latestContentDate }] : []),
+    ...(competitionConfig[0]?.active === true ? [{ loc: `${BASE}/competition`, priority: "0.65", changefreq: "weekly", lastmod: dateAtOrBefore(competitionConfig[0].updated_at, today) || latestContentDate }] : []),
     { loc: `${BASE}/grave-games`, priority: "0.5", changefreq: "monthly", lastmod: latestContentDate },
     { loc: `${BASE}/category/news`,   priority: "0.7", changefreq: "daily"   },
     { loc: `${BASE}/category/events`, priority: "0.7", changefreq: "daily"   },

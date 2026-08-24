@@ -2861,3 +2861,61 @@ img {
     height: 56px;
   }
 }
+
+/* Competition quiz mobile pass: keep the question immersive and move navigation below it. */
+@media (max-width: 900px) {
+  .quiz-flow-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quiz-main-card,
+  .quiz-question-rail {
+    width: 100%;
+  }
+
+  .quiz-main-card {
+    order: 1;
+  }
+
+  .quiz-question-rail {
+    order: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .quiz-flow-layout {
+    gap: 10px;
+  }
+
+  .quiz-main-card {
+    padding: 16px 13px;
+    border-radius: 18px;
+  }
+
+  .quiz-question-rail {
+    gap: 9px;
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  .quiz-question-rail .quiz-rail-heading {
+    padding-bottom: 8px;
+  }
+
+  .quiz-question-rail p {
+    display: none;
+  }
+
+  .quiz-question-chips {
+    width: 100%;
+    margin: 0;
+    padding: 2px 1px 3px;
+  }
+
+  .quiz-question-chip {
+    flex-basis: 38px;
+    min-height: 36px;
+  }
+}

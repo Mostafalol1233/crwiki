@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { useState, useMemo } from "react";
 import { Search, Image as ImageIcon, Loader2, ExternalLink, Target, Swords, Zap, Gamepad2, ChevronRight } from "lucide-react";
 import { getModes } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Badge } from "@/components/ui/badge";
 
 const bundledModeImages = import.meta.glob("@assets/modes/*", {
   eager: true,
@@ -266,7 +268,9 @@ export default function Modes() {
           </div>
 
           {/* ── Search ── */}
-          <div className="relative max-w-md mb-6">
+          <Card className="mb-6 max-w-2xl rounded-2xl border-border/60 bg-card/80 shadow-md">
+            <CardContent className="p-3">
+              <div className="relative max-w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#555" }} />
             <Input
               placeholder="Search mode name, type..."
@@ -275,7 +279,9 @@ export default function Modes() {
               className="pl-10"
               style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)" }}
             />
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* ── Category tabs ── */}
           <div className="flex gap-2 mb-8 flex-wrap">
@@ -317,7 +323,9 @@ export default function Modes() {
               <p className="text-sm font-bold uppercase tracking-widest" style={{ color: "#444" }}>No modes found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
+            <Card className="rounded-2xl border-border/60 bg-card/70 shadow-lg">
+              <CardContent className="p-3 md:p-5">
+                <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
               {/* ── Mode list sidebar ── */}
               <div className="space-y-1 lg:max-h-[70vh] lg:overflow-y-auto lg:pr-1" style={{ scrollbarWidth: "thin" }}>
                 {/* Category label */}
@@ -488,7 +496,9 @@ export default function Modes() {
                   )}
                 </div>
               )}
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

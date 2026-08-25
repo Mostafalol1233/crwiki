@@ -5,6 +5,8 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { SEOHead } from "@/components/SEOHead";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface Weapon {
   id: string;
@@ -414,38 +416,40 @@ export default function Weapons() {
               const meta = ACQUISITION_META[key];
               const active = selectedAcquisition === key;
               return (
-                <button key={key} onClick={() => setSelectedAcquisition(key)} className="min-h-[62px] px-3 py-2 text-left transition-colors" style={{ border: `1px solid ${active ? meta.color : "rgba(255,255,255,.1)"}`, background: active ? `${meta.color}18` : "#11161d", color: active ? meta.color : "#9da7b4" }}>
+                <Button key={key} type="button" variant="outline" onClick={() => setSelectedAcquisition(key)} className="min-h-[62px] h-auto rounded-xl px-3 py-2 text-left transition-colors shadow-sm" style={{ border: `1px solid ${active ? meta.color : "rgba(255,255,255,.1)"}`, background: active ? `${meta.color}18` : "#11161d", color: active ? meta.color : "#9da7b4" }}>
                   <span className="block text-[10px] font-bold uppercase tracking-wider">{arabic ? meta.ar : meta.en}</span>
                   <span className="block text-lg font-black mt-1" style={{ color: active ? meta.color : "#e8edf3" }}>{acquisitionCounts[key]}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
 
-          <div className="p-3 md:p-4 mb-7 border" style={{ background: "#11161d", borderColor: "rgba(255,255,255,.1)" }}>
-            <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
-              <div className="relative flex-1 min-w-0">
-                <Search className={`absolute ${arabic ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 h-4 w-4`} style={{ color: "#657080" }} />
-                <Input type="search" inputMode="search" autoComplete="off" spellCheck={false} aria-label={arabic ? "البحث عن سلاح" : "Search weapons"} placeholder={arabic ? "ابحث باسم السلاح..." : "Search weapon name..."} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setLetter(""); }} onKeyDown={(e) => { if (e.key === "Escape") setSearchQuery(""); }} className={`${arabic ? "pr-10 pl-10" : "pl-10 pr-10"} h-10 border-0 rounded-none`} style={{ background: "#090c11", color: "#eef2f7" }} />
-                {searchQuery && <button onClick={() => setSearchQuery("")} className={`absolute ${arabic ? "left-3" : "right-3"} top-1/2 -translate-y-1/2`}><X className="h-4 w-4" style={{ color: "#8792a0" }} /></button>}
+          <Card className="mb-7 rounded-2xl border-border/60 bg-card/80 shadow-lg" style={{ background: "#11161d", borderColor: "rgba(255,255,255,.1)" }}>
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+                <div className="relative flex-1 min-w-0">
+                  <Search className={`absolute ${arabic ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 h-4 w-4`} style={{ color: "#657080" }} />
+                  <Input type="search" inputMode="search" autoComplete="off" spellCheck={false} aria-label={arabic ? "البحث عن سلاح" : "Search weapons"} placeholder={arabic ? "ابحث باسم السلاح..." : "Search weapon name..."} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setLetter(""); }} onKeyDown={(e) => { if (e.key === "Escape") setSearchQuery(""); }} className={`${arabic ? "pr-10 pl-10" : "pl-10 pr-10"} h-10 border-0 rounded-lg`} style={{ background: "#090c11", color: "#eef2f7" }} />
+                  {searchQuery && <button type="button" onClick={() => setSearchQuery("")} className={`absolute ${arabic ? "left-3" : "right-3"} top-1/2 -translate-y-1/2`} aria-label={arabic ? "مسح البحث" : "Clear search"}><X className="h-4 w-4" style={{ color: "#8792a0" }} /></button>}
+                </div>
+                <div className="flex gap-2">
+                  {(["alpha", "date"] as const).map((item) => <Button key={item} type="button" variant="outline" onClick={() => setSort(item)} className="px-3 h-10 rounded-lg text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: sort === item ? NEUTRAL_UI : "rgba(255,255,255,.12)", color: sort === item ? NEUTRAL_UI : "#8c96a4", background: sort === item ? "rgba(174,184,196,.09)" : "#090c11" }}>{item === "alpha" ? (arabic ? "الاسم" : "Name") : (arabic ? "الأحدث" : "Latest")}</Button>)}
+                  <Button type="button" variant="outline" onClick={() => setOrder(order === "asc" ? "desc" : "asc")} className="flex items-center gap-1 px-3 h-10 rounded-lg text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: "rgba(255,255,255,.12)", color: "#8c96a4", background: "#090c11" }}><ChevronUp className={`h-3 w-3 ${order === "desc" ? "rotate-180" : ""}`} />{order === "asc" ? (arabic ? "أ-ي" : "A-Z") : (arabic ? "ي-أ" : "Z-A")}</Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                {(["alpha", "date"] as const).map((item) => <button key={item} onClick={() => setSort(item)} className="px-3 h-10 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: sort === item ? NEUTRAL_UI : "rgba(255,255,255,.12)", color: sort === item ? NEUTRAL_UI : "#8c96a4", background: sort === item ? "rgba(174,184,196,.09)" : "#090c11" }}>{item === "alpha" ? (arabic ? "الاسم" : "Name") : (arabic ? "الأحدث" : "Latest")}</button>)}
-                <button onClick={() => setOrder(order === "asc" ? "desc" : "asc")} className="flex items-center gap-1 px-3 h-10 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: "rgba(255,255,255,.12)", color: "#8c96a4", background: "#090c11" }}><ChevronUp className={`h-3 w-3 ${order === "desc" ? "rotate-180" : ""}`} />{order === "asc" ? (arabic ? "أ-ي" : "A-Z") : (arabic ? "ي-أ" : "Z-A")}</button>
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                <Button type="button" variant="outline" onClick={() => setSelectedCategory("all")} className="px-2.5 py-1 h-8 rounded-md text-[10px] uppercase tracking-wider" style={{ borderColor: selectedCategory === "all" ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory === "all" ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{arabic ? "كل الفئات" : "All classes"}</Button>
+                {allCategories.map((category) => <Button type="button" variant="outline" key={category} onClick={() => setSelectedCategory(category)} className="px-2.5 py-1 h-8 rounded-md text-[10px] uppercase tracking-wider" style={{ borderColor: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{categoryLabel(category, arabic)}</Button>)}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              <button onClick={() => setSelectedCategory("all")} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory === "all" ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory === "all" ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{arabic ? "كل الفئات" : "All classes"}</button>
-              {allCategories.map((category) => <button key={category} onClick={() => setSelectedCategory(category)} className="px-2.5 py-1 text-[10px] uppercase tracking-wider border" style={{ borderColor: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "rgba(255,255,255,.1)", color: selectedCategory.toLowerCase() === category.toLowerCase() ? NEUTRAL_UI : "#788493", background: "#090c11" }}>{categoryLabel(category, arabic)}</button>)}
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3 text-[10px] uppercase tracking-wider" style={{ color: "#788493" }} aria-live="polite">
-              <span>{searchQuery ? (arabic ? `نتائج البحث عن: ${searchQuery}` : `Results for: ${searchQuery}`) : (arabic ? "اكتب اسم السلاح للبحث" : "Type a weapon name to search")}</span>
-              {isLoading && <span className="inline-flex items-center gap-1" style={{ color: NEUTRAL_UI }}><Loader2 className="h-3 w-3 animate-spin" />{arabic ? "جارٍ البحث" : "Searching"}</span>}
-            </div>
-            <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,.07)" }}>
-              {ALPHABET.map((ch) => <button key={ch} onClick={() => setLetter(letter === ch ? "" : ch)} className="w-6 h-6 text-[10px] font-bold border" style={{ borderColor: letter === ch ? NEUTRAL_UI : "rgba(255,255,255,.08)", color: letter === ch ? "#071018" : "#687483", background: letter === ch ? NEUTRAL_UI : "#090c11" }}>{ch}</button>)}
-            </div>
-          </div>
+              <div className="mt-3 flex items-center justify-between gap-3 text-[10px] uppercase tracking-wider" style={{ color: "#788493" }} aria-live="polite">
+                <span>{searchQuery ? (arabic ? `نتائج البحث عن: ${searchQuery}` : `Results for: ${searchQuery}`) : (arabic ? "اكتب اسم السلاح للبحث" : "Type a weapon name to search")}</span>
+                {isLoading && <span className="inline-flex items-center gap-1" style={{ color: NEUTRAL_UI }}><Loader2 className="h-3 w-3 animate-spin" />{arabic ? "جارٍ البحث" : "Searching"}</span>}
+              </div>
+              <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t" style={{ borderColor: "rgba(255,255,255,.07)" }}>
+                {ALPHABET.map((ch) => <Button type="button" variant="outline" key={ch} onClick={() => setLetter(letter === ch ? "" : ch)} className="w-6 h-6 rounded-md p-0 text-[10px] font-bold border" style={{ borderColor: letter === ch ? NEUTRAL_UI : "rgba(255,255,255,.08)", color: letter === ch ? "#071018" : "#687483", background: letter === ch ? NEUTRAL_UI : "#090c11" }}>{ch}</Button>)}
+              </div>
+            </CardContent>
+          </Card>
 
           {isLoading && results.length === 0 ? <div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" style={{ color: NEUTRAL_UI }} /></div> : isError ? <div className="py-20 text-center border" style={{ borderColor: "rgba(239,68,68,.25)", color: "#f87171" }}><p className="text-sm mb-3">{error?.message}</p><button onClick={() => fetchWeapons({ reset: true, pageOverride: 1 })} className="px-5 py-2 text-[10px] font-bold uppercase tracking-wider border" style={{ borderColor: "rgba(255,255,255,.15)", color: "#b9c1cb" }}>{arabic ? "إعادة المحاولة" : "Retry"}</button></div> : sortedWeapons.length === 0 ? <div className="py-20 text-center border" style={{ borderColor: "rgba(255,255,255,.1)" }}><WeaponGlyph category="Assault Rifle" color={NEUTRAL_UI} size={48} /><p className="mt-4 text-sm font-bold uppercase tracking-widest" style={{ color: "#657080" }}>{arabic ? "لا توجد نتائج مطابقة" : "No matching weapons"}</p></div> : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">

@@ -6,6 +6,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import type { Plugin } from "vite";
 import { createRequire } from "module";
 import { makeAdminToken, verifyAdminRequest } from "./server/adminAuth";
+import { getAiModelCandidates } from "./shared/aiModels";
 // Pre-import undici at module level to avoid async gap inside SSE handler
 const _require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -201,7 +202,7 @@ function cfAiPlugin(): Plugin {
               res.write(`data: ${JSON.stringify({ error: "messages array required" })}\n\n`);
               return res.end();
             }
-            const apiKey = process.env.OPENROUTER_API_KEY;
+            const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY;
             if (!apiKey) {
               res.write(`data: ${JSON.stringify({ error: "AI not configured" })}\n\n`);
               return res.end();
@@ -237,7 +238,7 @@ ${websiteData ? `\n=== LIVE DATA FROM THE CROSSFIRE WIKI ===\nThis is the actual
                 "X-Title": "CrossFire Wiki"
               },
               body: JSON.stringify({
-                model: "openai/gpt-oss-20b:free",
+                model: getAiModelCandidates(process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL)[0],
                 messages: [systemPrompt, ...messages.slice(-6)],
                 // 2048 gives the model enough room to finish reasoning (~300-600 tokens)
                 // and still produce a full response. 480 was too small once this model

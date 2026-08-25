@@ -1,13 +1,8 @@
 import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getAiModelCandidates } from "../../shared/aiModels";
 
 dotenv.config();
-
-const DEFAULT_FREE_MODEL = "openai/gpt-oss-20b:free";
-const FALLBACK_FREE_MODELS = [
-  "google/gemma-4-31b-it:free",
-  "nvidia/nemotron-3.5-lightning:free",
-];
 
 let cachedWebsiteContext = "";
 let contextCachedUntil = 0;
@@ -156,8 +151,7 @@ async function generateAnswer(
   }
 
   const configuredModel = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "";
-  const firstModel = configuredModel.endsWith(":free") ? configuredModel : DEFAULT_FREE_MODEL;
-  const models = Array.from(new Set([firstModel, ...FALLBACK_FREE_MODELS]));
+  const models = getAiModelCandidates(configuredModel);
   const errors: string[] = [];
 
   for (const model of models) {

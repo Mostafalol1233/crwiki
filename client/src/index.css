@@ -2944,3 +2944,337 @@ img {
   transform: scale(1.04);
   opacity: 1;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CROSSFIRE WIKI UI SYSTEM — editorial tactical refresh
+   Inspired by reusable design-system principles, not copied branding.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --wiki-gold: #d4a017;
+  --wiki-gold-bright: #f5b632;
+  --wiki-gold-soft: rgba(212, 160, 23, 0.12);
+  --wiki-page-bg: #0a0a0a;
+  --wiki-surface: #111214;
+  --wiki-surface-raised: #17191c;
+  --wiki-surface-muted: #0e1012;
+  --wiki-line: rgba(255, 255, 255, 0.09);
+  --wiki-line-soft: rgba(255, 255, 255, 0.055);
+  --wiki-text: #f4f4f2;
+  --wiki-text-muted: rgba(244, 244, 242, 0.62);
+  --wiki-text-subtle: rgba(244, 244, 242, 0.42);
+  --wiki-radius-sm: 6px;
+  --wiki-radius-md: 10px;
+  --wiki-radius-lg: 14px;
+  --wiki-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --wiki-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.dark {
+  --wiki-page-bg: #0a0a0a;
+  --wiki-surface: #111214;
+  --wiki-surface-raised: #17191c;
+  --wiki-surface-muted: #0e1012;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--wiki-page-bg);
+}
+
+body {
+  background: var(--wiki-page-bg);
+  color: var(--wiki-text);
+}
+
+::selection {
+  color: #0a0a0a;
+  background: var(--wiki-gold-bright);
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--wiki-gold-bright);
+  outline-offset: 3px;
+}
+
+:where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.site-header {
+  background-image: linear-gradient(180deg, rgba(18, 18, 18, 0.98), rgba(10, 10, 10, 0.96));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.025), 0 10px 32px rgba(0, 0, 0, 0.16);
+}
+
+.site-header-inner {
+  min-height: 60px;
+}
+
+.site-header-inner > a:first-child {
+  position: relative;
+  padding-inline: 2px;
+}
+
+.site-header-inner > a:first-child::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -11px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--wiki-gold), transparent);
+  opacity: 0;
+  transform: scaleX(0.55);
+  transition: opacity 180ms var(--wiki-ease-out), transform 180ms var(--wiki-ease-out);
+}
+
+.site-header-inner > a:first-child:hover::after,
+.site-header-inner > a:first-child:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.site-desktop-nav {
+  gap: 2px;
+}
+
+.site-desktop-nav > .group > button {
+  letter-spacing: 0.01em;
+  border-radius: var(--wiki-radius-sm) var(--wiki-radius-sm) 0 0;
+}
+
+.site-desktop-nav > .group > button:hover {
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.site-header-controls {
+  gap: 6px !important;
+}
+
+.site-header-controls input:focus,
+.site-mobile-menu input:focus {
+  border-color: rgba(245, 182, 50, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.12);
+}
+
+.site-menu-button {
+  transition: background 160ms var(--wiki-ease-out), border-color 160ms var(--wiki-ease-out), transform 160ms var(--wiki-ease-out);
+}
+
+.site-menu-button:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(245, 182, 50, 0.55) !important;
+}
+
+.site-menu-button:active,
+.site-header a:active,
+.site-header button:active {
+  transform: scale(0.97);
+}
+
+.site-mobile-menu {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
+}
+
+.wiki-home-shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(212, 160, 23, 0.055), transparent 28rem),
+    var(--wiki-page-bg) !important;
+}
+
+.wiki-home-hero {
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(7, 8, 9, 0.2), rgba(10, 10, 10, 0.98)),
+    radial-gradient(circle at 50% 8%, rgba(245, 182, 50, 0.08), transparent 45%);
+}
+
+.wiki-home-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 76%);
+}
+
+.wiki-home-hero-inner {
+  padding-top: clamp(86px, 11vw, 132px) !important;
+  padding-bottom: clamp(66px, 8vw, 96px) !important;
+}
+
+.wiki-home-hero-inner h1 {
+  text-shadow: 0 8px 34px rgba(0, 0, 0, 0.48);
+}
+
+.wiki-home-hero-inner form > div {
+  border-color: rgba(245, 182, 50, 0.26) !important;
+  background: rgba(10, 10, 10, 0.72) !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px);
+}
+
+.wiki-events-ribbon {
+  background: linear-gradient(90deg, rgba(212, 160, 23, 0.04), rgba(255, 255, 255, 0.018), rgba(212, 160, 23, 0.04)) !important;
+}
+
+.wiki-portal-hub,
+.wiki-home-content {
+  position: relative;
+}
+
+.wiki-portal-hub::before,
+.wiki-home-content::before {
+  content: "";
+  position: absolute;
+  inset-inline: 24px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 160, 23, 0.32), transparent);
+  pointer-events: none;
+}
+
+.portal-grid {
+  gap: 14px !important;
+}
+
+.portal-card {
+  border-radius: var(--wiki-radius-md) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24) !important;
+}
+
+.portal-card:hover {
+  border-color: rgba(245, 182, 50, 0.5) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(212, 160, 23, 0.1) !important;
+}
+
+.portal-card img {
+  filter: saturate(0.86) contrast(1.04);
+}
+
+.featured-hover {
+  border-radius: var(--wiki-radius-lg) !important;
+  background: linear-gradient(145deg, rgba(22, 23, 25, 0.98), rgba(13, 14, 16, 0.98)) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+}
+
+.featured-hover:hover {
+  border-color: rgba(245, 182, 50, 0.48) !important;
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.42) !important;
+  transform: translateY(-2px);
+}
+
+.events-mini-grid {
+  gap: 14px !important;
+}
+
+.events-mini-grid > a,
+.events-mini-grid > a > * {
+  min-width: 0;
+}
+
+.wiki-sidebar-block {
+  border-radius: var(--wiki-radius-md) !important;
+  background: linear-gradient(145deg, rgba(20, 21, 23, 0.98), rgba(14, 15, 17, 0.98)) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  transition: border-color 180ms var(--wiki-ease-out), transform 180ms var(--wiki-ease-out), box-shadow 180ms var(--wiki-ease-out);
+}
+
+.wiki-sidebar-block:hover {
+  border-color: rgba(245, 182, 50, 0.28) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.nav-item {
+  border: 1px solid transparent;
+  transition: background 160ms var(--wiki-ease-out), border-color 160ms var(--wiki-ease-out), transform 160ms var(--wiki-ease-out) !important;
+}
+
+.nav-item:hover {
+  border-color: rgba(212, 160, 23, 0.2);
+  transform: translateX(2px);
+}
+
+.wiki-home-content section {
+  scroll-margin-top: 82px;
+}
+
+@media (max-width: 900px) {
+  .wiki-home-content {
+    padding-top: 38px !important;
+  }
+
+  .wiki-home-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .wiki-home-sidebar > .wiki-sidebar-block {
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header-inner {
+    height: 56px !important;
+    min-height: 56px;
+    padding-inline: 14px !important;
+  }
+
+  .site-header-inner > a:first-child img {
+    height: 32px !important;
+  }
+
+  .wiki-home-hero-inner {
+    padding-inline: 16px !important;
+    padding-top: 68px !important;
+    padding-bottom: 52px !important;
+  }
+
+  .wiki-home-hero-inner h1 {
+    font-size: clamp(2.35rem, 12vw, 3.35rem) !important;
+  }
+
+  .wiki-portal-hub,
+  .wiki-home-content {
+    padding-inline: 16px !important;
+  }
+
+  .wiki-portal-hub::before,
+  .wiki-home-content::before {
+    inset-inline: 16px;
+  }
+
+  .wiki-home-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-card {
+    height: 176px !important;
+  }
+
+  .featured-inner > div:first-child {
+    min-height: 210px !important;
+  }
+
+  .featured-inner > div:first-child img {
+    min-height: 210px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

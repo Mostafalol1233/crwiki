@@ -170,14 +170,14 @@ export function Header() {
   }
 
   return (
-    <header style={{
+    <header className="site-header" style={{
       position: "sticky", top: 0, zIndex: 50,
       background: scrolled ? "rgba(10,10,10,0.95)" : BG_HEADER,
       borderBottom: `1px solid ${scrolled ? "rgba(255,255,255,0.1)" : BORDER}`,
       backdropFilter: scrolled ? "blur(16px)" : "none",
       transition: "background 0.2s, border-color 0.2s, backdrop-filter 0.2s",
     }} dir="ltr">
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="site-header-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 8 }}>
 
         {/* Logo */}
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0, marginRight: 8 }}>
@@ -186,12 +186,12 @@ export function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center h-full flex-1" style={{ height: 56 }}>
+        <nav className="site-desktop-nav hidden md:flex items-center h-full flex-1" style={{ height: 56 }}>
           {navItems.map(item => <NavDrop key={item.label} item={item} />)}
         </nav>
 
         {/* Right controls */}
-        <div className="hidden md:flex items-center gap-1 ml-auto">
+        <div className="site-header-controls hidden md:flex items-center gap-1 ml-auto">
           {/* AI prominent button */}
           <Link href="/ai" style={{ textDecoration: "none" }}>
             <div style={{
@@ -321,7 +321,7 @@ export function Header() {
         </div>
 
         {/* Mobile hamburger */}
-        <button className="md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} style={{
+        <button className="site-menu-button md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} style={{
           width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
           background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, color: "rgba(255,255,255,0.7)", cursor: "pointer",
         }}>
@@ -331,7 +331,7 @@ export function Header() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div style={{ background: "#0d0d0d", borderTop: `1px solid ${BORDER}` }}>
+        <div className="site-mobile-menu" style={{ background: "#0d0d0d", borderTop: `1px solid ${BORDER}` }}>
           {/* Mobile AI quick link */}
           <div style={{ padding: "10px 16px", borderBottom: `1px solid ${BORDER}` }}>
             <Link href="/ai" onClick={() => setMobileOpen(false)} style={{ textDecoration: "none" }}>

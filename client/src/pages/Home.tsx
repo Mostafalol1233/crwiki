@@ -209,11 +209,24 @@ function HeroSearch() {
 }
 
 // ─── Event Card ───────────────────────────────────────────────────────────────
+function formatEventDate(value: unknown, language: "en" | "ar") {
+  if (!value) return "";
+  const parsed = new Date(value as string | number | Date);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString(language === "ar" ? "ar-EG" : "en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  return String(value).trim().replace(/\s+/g, " ");
+}
+
 function EventCard({ event, featured = false }: { event: any; featured?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const { t, language } = useLanguage();
   const href = eventPath(event.event_name_slug || event.id);
-  const dateStr = event.date ? new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const dateStr = formatEventDate(event.date, language);
   const img = event.image || event.imageUrl || event.image_url;
 
   return (
@@ -341,7 +354,7 @@ function SectionHeader({ eyebrow, title, href }: { eyebrow: string; title: strin
 // ─── Sidebar Block ────────────────────────────────────────────────────────────
 function SidebarBlock({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
   return (
-    <div style={{
+    <div className="wiki-sidebar-block" style={{
       background: CARD, border: `1px solid ${BORDER}`,
       borderRadius: 6, overflow: "hidden", marginBottom: 16,
     }}>
@@ -450,10 +463,10 @@ export default function Home() {
         image="https://crossfire.wiki/feature-crossfire.jpg"
         canonicalPath="/"
       />
-      <div style={{ background: BG, minHeight: "100vh", color: "#fff" }}>
+      <div className="wiki-home-shell" style={{ background: BG, minHeight: "100vh", color: "#fff" }}>
 
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
-        <div style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
+        <div className="wiki-home-hero" style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
           {heroImage && (
             <img src={heroImage} alt="CrossFire gameplay artwork used for the CrossFire Wiki header" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
@@ -464,7 +477,7 @@ export default function Home() {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 50%, #0a0a0a 100%)" }} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(to right, transparent, rgba(245,166,35,0.2) 30%, rgba(245,166,35,0.2) 70%, transparent)` }} />
 
-          <div style={{ position: "relative", maxWidth: 1140, margin: "0 auto", padding: "80px 24px 60px", textAlign: "center" }}>
+          <div className="wiki-home-hero-inner" style={{ position: "relative", maxWidth: 1140, margin: "0 auto", padding: "80px 24px 60px", textAlign: "center" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px",
               background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)",
@@ -492,13 +505,13 @@ export default function Home() {
 
         {/* ── EVENTS RIBBON ─────────────────────────────────────────────────── */}
         {ribbonEvents.length > 0 && (
-          <div style={{ borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.015)" }}>
+          <div className="wiki-events-ribbon" style={{ borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.015)" }}>
             <EventsRibbon events={ribbonEvents} />
           </div>
         )}
 
         {/* ── PORTAL HUB ───────────────────────────────────────────────────── */}
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "52px 24px 0" }}>
+        <div className="wiki-portal-hub" style={{ maxWidth: 1140, margin: "0 auto", padding: "52px 24px 0" }}>
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 6px" }}>{t("exploreTheWiki")}</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -533,7 +546,7 @@ export default function Home() {
         </div>
 
         {/* ── MAIN CONTENT (Two-column wiki layout) ─────────────────────────── */}
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 64px" }}>
+        <div className="wiki-home-content" style={{ maxWidth: 1140, margin: "0 auto", padding: "48px 24px 64px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }} className="main-content-grid">
 
             {/* ── LEFT COLUMN ── */}
@@ -587,7 +600,7 @@ export default function Home() {
                             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 14 }}>
                               <Calendar size={11} color={GOLD} />
                               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-                                {new Date(featuredEvent.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                                {formatEventDate(featuredEvent.date, language)}
                               </span>
                             </div>
                           )}
@@ -653,7 +666,7 @@ export default function Home() {
             </div>
 
             {/* ── RIGHT SIDEBAR ── */}
-            <aside style={{ position: "sticky", top: 80 }}>
+            <aside className="wiki-home-sidebar" style={{ position: "sticky", top: 80 }}>
 
               {/* On This Wiki */}
               <SidebarBlock title={t("onThisWiki")} icon={BookOpen}>

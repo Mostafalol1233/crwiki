@@ -1,8 +1,21 @@
 import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getAiModelCandidates } from "../../shared/aiModels";
-
 dotenv.config();
+
+const DEFAULT_AI_MODEL = "openai/gpt-oss-20b";
+const FALLBACK_AI_MODELS = [
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+] as const;
+
+function getAiModelCandidates(configuredModel?: string) {
+  const configured = String(configuredModel || "").trim();
+  const normalized = configured === "openai/gpt-oss-20b:free" ? DEFAULT_AI_MODEL : configured;
+  return Array.from(new Set([
+    normalized || DEFAULT_AI_MODEL,
+    ...FALLBACK_AI_MODELS,
+  ]));
+}
 
 let cachedWebsiteContext = "";
 let contextCachedUntil = 0;

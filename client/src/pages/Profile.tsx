@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { getCurrentUser } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { supabase } from "@/lib/supabase";
@@ -33,32 +36,30 @@ const CARD_BG = "var(--card)";
 
 function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string | number; sub?: string }) {
   return (
-    <div
-      className="flex flex-col items-center gap-1 p-4"
-      style={{ background: CARD_BG, border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
-    >
-      <Icon className="h-4 w-4 mb-1" style={{ color: GOLD }} />
-      <span className="text-xl font-black" style={{ color: "var(--foreground)" }}>{value}</span>
-      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>{label}</span>
-      {sub && <span className="text-[8px]" style={{ color: "#444" }}>{sub}</span>}
-    </div>
+    <Card className="rounded-2xl border-border/60 bg-card/80 shadow-sm" style={{ background: CARD_BG }}>
+      <CardContent className="flex flex-col items-center gap-1 p-4">
+        <Icon className="h-4 w-4 mb-1" style={{ color: GOLD }} />
+        <span className="text-xl font-black" style={{ color: "var(--foreground)" }}>{value}</span>
+        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>{label}</span>
+        {sub && <span className="text-[8px]" style={{ color: "#444" }}>{sub}</span>}
+      </CardContent>
+    </Card>
   );
 }
 
 function CFStatCard({ label, value, icon: Icon, color }: { label: string; value: string | number | null; icon: any; color?: string }) {
   return (
-    <div
-      className="flex flex-col gap-1 p-3"
-      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
-    >
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <Icon className="h-3 w-3" style={{ color: color || GOLD }} />
-        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>{label}</span>
-      </div>
-      <span className="text-base font-black" style={{ color: "var(--foreground)" }}>
-        {value !== null && value !== undefined ? value : "—"}
-      </span>
-    </div>
+    <Card className="rounded-xl border-border/60 bg-card/60 shadow-sm" style={{ background: "rgba(255,255,255,0.02)" }}>
+      <CardContent className="flex flex-col gap-1 p-3">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <Icon className="h-3 w-3" style={{ color: color || GOLD }} />
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#555" }}>{label}</span>
+        </div>
+        <span className="text-base font-black" style={{ color: "var(--foreground)" }}>
+          {value !== null && value !== undefined ? value : "—"}
+        </span>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -578,9 +579,9 @@ export default function Profile() {
         <div className="relative max-w-4xl mx-auto px-4 md:px-8">
 
           {/* ── Profile card ── */}
-          <div
-            className="relative overflow-hidden mb-6"
-            style={{ background: CARD_BG, border: "1px solid rgba(245,166,35,0.15)", borderRadius: "6px" }}
+          <Card
+            className="relative overflow-hidden mb-6 rounded-2xl border-border/60 bg-card/80 shadow-xl"
+            style={{ background: CARD_BG, borderColor: "rgba(245,166,35,0.15)" }}
           >
             {/* Top gold bar */}
             <div className="h-[3px]" style={{ background: `linear-gradient(to right, ${GOLD}, transparent)` }} />
@@ -632,10 +633,10 @@ export default function Profile() {
                 {/* Name + email */}
                 <div className="flex-1 pt-2">
                   {editing ? (
-                    <input
+                    <Input
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full text-2xl font-black uppercase tracking-tight bg-transparent outline-none border-b mb-1"
+                      className="w-full text-2xl font-black uppercase tracking-tight bg-transparent outline-none border-b mb-1 rounded-none"
                       style={{ color: "var(--foreground)", borderColor: "rgba(245,166,35,0.4)" }}
                       placeholder="Your display name"
                       maxLength={32}
@@ -695,7 +696,7 @@ export default function Profile() {
 
               {/* Bio */}
               {editing ? (
-                <textarea
+                <Textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Tell the community about yourself..."
@@ -715,7 +716,7 @@ export default function Profile() {
                 )
               )}
             </div>
-          </div>
+          </Card>
 
           {/* ── Site stats row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

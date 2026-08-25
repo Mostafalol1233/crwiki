@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/LanguageProvider";
 import { getTicketsByEmail, getTicketReplies, addTicketReply } from "@/lib/supabaseApi";
@@ -41,11 +45,11 @@ const priorityStyles: Record<string, { bg: string; color: string }> = {
   low:    { bg: "rgba(100,116,139,0.1)",  color: "#64748b" },
 };
 
-function StatusBadge({ label, styles }: { label: string; styles: { bg: string; color: string } }) {
+function StatusBadge({ label, styles, ...props }: { label: string; styles: { bg: string; color: string }; [key: string]: any }) {
   return (
-    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: styles.bg, color: styles.color }}>
+    <Badge variant="outline" {...props} className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: styles.bg, color: styles.color }}>
       {label}
-    </span>
+    </Badge>
   );
 }
 
@@ -128,13 +132,14 @@ export default function MyTickets() {
 
           {!searchedEmail ? (
             <div className="max-w-md mx-auto">
-              <div className="p-6" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
+              <Card className="rounded-2xl border-border/60 bg-card/80 shadow-lg" style={{ background: "var(--card)", borderColor: "rgba(255,255,255,0.06)" }}>
+                <CardContent className="p-6">
                 <h2 className="font-black text-sm uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>{isArabic ? "أدخل بريدك الإلكتروني" : "Enter Your Email"}</h2>
                 <p className="text-xs mb-4" style={{ color: "#555" }}>{isArabic ? "أدخل البريد المستخدم عند إرسال التذاكر" : "Enter the email you used to submit tickets"}</p>
                 <div className="space-y-3">
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
-                    <input
+                    <Input
                       type="email"
                       placeholder="your@email.com"
                       value={email}
@@ -145,16 +150,18 @@ export default function MyTickets() {
                       data-testid="input-search-email"
                     />
                   </div>
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleSearch}
-                    className="w-full h-10 text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
-                    style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}
+                    className="w-full h-10 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
+                    style={{ background: "#f5a623", color: "#000" }}
                     data-testid="button-search-tickets"
                   >
                     {isArabic ? "عرض تذاكري" : "View My Tickets"}
-                  </button>
+                  </Button>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <div className="grid lg:grid-cols-3 gap-5">

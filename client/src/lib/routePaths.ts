@@ -5,6 +5,12 @@
  * base-relative. These helpers also clean legacy database values that may
  * contain an /ar prefix or suffix.
  */
+/** Remove every repeated leading Arabic locale segment while preserving the rest of the pathname. */
+export function normalizeArabicLocalePath(pathname: string): string {
+  const value = pathname || "/";
+  return value.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
+}
+
 export function baseRelativePath(value: unknown, fallback = "/"): string {
   const raw = String(value ?? "").trim();
   if (!raw) return fallback;
@@ -13,7 +19,7 @@ export function baseRelativePath(value: unknown, fallback = "/"): string {
   if (/^[a-z][a-z\d+.-]*:\/\//i.test(raw)) return raw;
 
   let path = raw.replace(/^\/+/, "/");
-  path = path.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
+  path = normalizeArabicLocalePath(path);
   return path.startsWith("/") ? path : `/${path}`;
 }
 

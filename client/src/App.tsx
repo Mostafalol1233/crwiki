@@ -2,6 +2,7 @@ import * as React from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { useEffect, useState, Suspense, lazy } from "react";
 import { queryClient } from "./lib/queryClient";
+import { normalizeArabicLocalePath } from "@/lib/routePaths";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -413,25 +414,56 @@ function LocalizedApp() {
   useGoogleOAuthFirstLogin();
   const { language } = useLanguage();
 
-  // Keep every public and admin URL canonical. If Arabic is selected and an
-  // old/root link omits /ar, add it automatically; if English is selected,
-  // remove the prefix so users are never forced to type it manually.
+  // Central URL monitor: normalize duplicated Arabic locale prefixes not only
+  // on initial render, but also after any client-side history mutation.
   React.useEffect(() => {
-    const path = window.location.pathname || "/";
-    const search = window.location.search;
-    const hash = window.location.hash;
-    // Collapse legacy URLs such as /ar/ar/events/... before applying the
-    // single language prefix required by the localized router.
-    const basePath = path.replace(/^(?:\/ar)+(?=\/|$)/i, "") || "/";
-    const canonicalPath = language === "ar"
-      ? (basePath === "/" ? "/ar" : `/ar${basePath}`)
-      : basePath;
-    const currentUrl = path + search + hash;
-    const nextUrl = canonicalPath + search + hash;
-    if (currentUrl !== nextUrl) {
-      window.history.replaceState(null, "", nextUrl);
+    const history = window.history;
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
+    let normalizing = false;
+
+    const canonicalize = () => {
+      if (normalizing) return;
+      const path = window.location.pathname || "/";
+      const search = window.location.search;
+      const hash = window.location.hash;
+      const basePath = normalizeArabicLocalePath(path);
+      const canonicalPath = language === "ar"
+        ? (basePath === "/" ? "/ar" : `/ar${basePath}`)
+        : basePath;
+      const currentUrl = path + search + hash;
+      const nextUrl = canonicalPath + search + hash;
+      if (currentUrl === nextUrl) return;
+
+      normalizing = true;
+      originalReplaceState(null, "", nextUrl);
+      normalizing = false;
       window.dispatchEvent(new PopStateEvent("popstate"));
-    }
+    };
+
+    const scheduleCanonicalize = () => {
+      window.setTimeout(canonicalize, 0);
+    };
+
+    history.pushState = function (state: any, title: string, url?: string | URL | null) {
+      const result = originalPushState(state, title, url);
+      scheduleCanonicalize();
+      return result;
+    };
+    history.replaceState = function (state: any, title: string, url?: string | URL | null) {
+      const result = originalReplaceState(state, title, url);
+      scheduleCanonicalize();
+      return result;
+    };
+
+    window.addEventListener("popstate", canonicalize);
+    canonicalize();
+
+    return () => {
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+      window.removeEventListener("popstate", canonicalize);
+    };
   }, [language]);
 
   const base = language === "ar" ? "/ar" : "";

@@ -24,209 +24,298 @@ interface PageMeta {
   schema?: object;
   robots?: string;
   alternates?: Array<{ lang: string; url: string }>;
+  content?: string;
+  imageType?: string;
+  notFound?: boolean;
 }
 
 const HEADERS = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` };
 
+function safeIso(value: unknown): string | undefined {
+  if (!value) return undefined;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function stripHtml(value: unknown): string {
+  return String(value || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function clip(value: unknown, max: number): string {
+  return stripHtml(value).slice(0, max).trim();
+}
+
+function safeImage(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return DEFAULT_IMG;
+  try {
+    const parsed = new URL(value.trim(), BASE);
+    if (parsed.protocol !== "https:") return DEFAULT_IMG;
+    if (/^(image\.(?:us\.)?z8games\.com)$/i.test(parsed.hostname)) return DEFAULT_IMG;
+    return parsed.toString();
+  } catch {
+    return DEFAULT_IMG;
+  }
+}
+
+function imageType(value: string): string {
+  const pathname = (() => { try { return new URL(value).pathname.toLowerCase(); } catch { return ""; } })();
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".webp")) return "image/webp";
+  if (pathname.endsWith(".gif")) return "image/gif";
+  return "image/jpeg";
+}
+
+function localizePath(path: string): { routePath: string; isArabic: boolean; prefix: string } {
+  const isArabic = path === "/ar" || path.startsWith("/ar/");
+  const routePath = isArabic ? (path.replace(/^\/ar(?=\/|$)/, "") || "/") : path;
+  return { routePath, isArabic, prefix: isArabic ? "/ar" : "" };
+}
+
 async function fetchOne(table: string, field: string, value: string, select: string) {
-  if (!SUPABASE_URL || !ANON_KEY) return null;
+  if (!SUPABASE_URL || !ANON_KEY) return undefined;
   try {
     const r = await fetch(
       `${SUPABASE_URL}/rest/v1/${table}?${field}=eq.${encodeURIComponent(value)}&select=${encodeURIComponent(select)}&limit=1`,
       { headers: HEADERS, signal: AbortSignal.timeout(7000) }
     );
-    if (!r.ok) return null;
+    if (!r.ok) return undefined;
     const rows = await r.json();
     return rows?.[0] ?? null;
-  } catch { return null; }
+  } catch { return undefined; }
+}
+
+function missingMeta(url: string, label: string): PageMeta {
+  return {
+    title: `${label} not found | CrossFire Wiki`,
+    description: `The requested ${label.toLowerCase()} was not found on CrossFire Wiki.`,
+    image: DEFAULT_IMG,
+    url,
+    type: "website",
+    robots: "noindex, nofollow",
+    notFound: true,
+  };
 }
 
 async function resolveMeta(path: string): Promise<PageMeta> {
+  const { routePath, isArabic, prefix } = localizePath(path);
+  const localizedUrl = (section: string, slug = "") => `${BASE}${prefix}${section}${slug ? `/${slug}` : ""}`;
+  const alternateUrls = (section: string, slug = "") => [
+    { lang: "en", url: `${BASE}${section}${slug ? `/${slug}` : ""}` },
+    { lang: "ar", url: `${BASE}/ar${section}${slug ? `/${slug}` : ""}` },
+    { lang: "x-default", url: `${BASE}${section}${slug ? `/${slug}` : ""}` },
+  ];
   // ── /events/:slug ────────────────────────────────────────────────────
-  const evM = path.match(/^\/events\/([^/?#]+)/);
+  const evM = routePath.match(/^\/events\/([^/?#]+)/);
   if (evM) {
     const slug = evM[1];
     const ev = await fetchOne("events", "event_name_slug", slug,
-      "title,seo_title,seo_description,image_url,date,type,end_date");
-    if (ev) {
-      const title = ev.seo_title || ev.title || "CrossFire Event";
-      const desc  = ev.seo_description
-        || `CrossFire event "${ev.title}" — check dates, rewards and details on CrossFire Wiki.`;
-      return {
-        title:         `${title} | CrossFire Wiki`,
-        description:   desc.substring(0, 160),
-        image:         ev.image_url || DEFAULT_IMG,
-        url:           `${BASE}/events/${slug}`,
-        type:          "article",
-        datePublished: ev.date ? new Date(ev.date).toISOString() : undefined,
-        keywords:      `CrossFire, CrossFire event, ${ev.title}, Z8Games`,
-        schema: {
-          "@context": "https://schema.org",
-          "@type": "Event",
-          name: ev.title,
-          description: desc.substring(0, 200),
-          image: ev.image_url || DEFAULT_IMG,
-          startDate: ev.date,
-          endDate: ev.end_date || undefined,
-          url: `${BASE}/events/${slug}`,
-          eventStatus: "https://schema.org/EventScheduled",
-          eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-          location: { "@type": "VirtualLocation", url: "https://crossfire.z8games.com" },
-          organizer: { "@type": "Organization", name: "Smilegate West", url: "https://crossfire.z8games.com" },
-          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: LOGO },
-        },
-      };
-    }
+      "title,title_ar,description,description_ar,seo_title,seo_description,image_url,date,type,end_date,updated_at");
+    const url = localizedUrl("/events", slug);
+    if (ev === undefined) return { title: "CrossFire Events | CrossFire Wiki", description: "CrossFire events, dates, rewards and verified announcements.", image: DEFAULT_IMG, url, type: "article", alternates: alternateUrls("/events", slug) };
+    if (!ev) return { ...missingMeta(url, "Event"), alternates: alternateUrls("/events", slug) };
+    const title = (isArabic && ev.title_ar) || ev.seo_title || ev.title || "CrossFire Event";
+    const sourceDescription = isArabic ? (ev.description_ar || ev.description) : ev.description;
+    const desc = clip(ev.seo_description || sourceDescription || `CrossFire event "${ev.title}" — check dates, rewards and details on CrossFire Wiki.`, 160);
+    const image = safeImage(ev.image_url);
+    const startDate = safeIso(ev.date);
+    const modifiedDate = safeIso(ev.updated_at) || startDate;
+    return {
+      title: `${title} | CrossFire Wiki`,
+      description: desc,
+      content: clip(sourceDescription, 5000),
+      image,
+      imageType: imageType(image),
+      url,
+      type: "article",
+      datePublished: startDate,
+      dateModified: modifiedDate,
+      keywords: `CrossFire, CrossFire event, ${title}, Z8Games`,
+      alternates: alternateUrls("/events", slug),
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: title,
+        description: clip(sourceDescription || desc, 500),
+        image: { "@type": "ImageObject", url: image, width: 1200, height: 630 },
+        startDate,
+        endDate: safeIso(ev.end_date),
+        url,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+        location: { "@type": "VirtualLocation", url: "https://crossfire.z8games.com" },
+        organizer: { "@type": "Organization", name: "Smilegate West", url: "https://crossfire.z8games.com" },
+        publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 } },
+        inLanguage: isArabic ? "ar" : "en",
+      },
+    };
   }
 
   // ── /news/:slug ──────────────────────────────────────────────────────
-  const newsM = path.match(/^\/news\/([^/?#]+)/);
+  const newsM = routePath.match(/^\/news\/([^/?#]+)/);
   if (newsM) {
     const slug = newsM[1];
     const item = await fetchOne("news", "news_slug", slug,
-      "title,seo_title,seo_description,image_url,created_at,updated_at,author,category");
-    if (item) {
-      const title = item.seo_title || item.title || "CrossFire News";
-      const desc  = item.seo_description || `CrossFire news: ${item.title}`;
-      const img   = item.image_url || DEFAULT_IMG;
-      return {
-        title:         `${title} | CrossFire Wiki`,
-        description:   desc.substring(0, 160),
-        image:         img,
-        url:           `${BASE}/news/${slug}`,
-        type:          "article",
-        datePublished: item.created_at,
-        keywords:      `CrossFire, CrossFire news, ${item.category || "gaming"}, Z8Games`,
-        schema: {
-          "@context": "https://schema.org",
-          "@type": "NewsArticle",
-          headline: title,
-          description: desc.substring(0, 200),
-          image: [{ "@type": "ImageObject", url: img, width: 1200, height: 630 }],
-          datePublished: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
-          dateModified:  item.updated_at ? new Date(item.updated_at).toISOString() : new Date().toISOString(),
-          author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
-          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
-          mainEntityOfPage: { "@type": "WebPage", "@id": `${BASE}/news/${slug}` },
-          url: `${BASE}/news/${slug}`,
-        },
-      };
-    }
+      "title,title_ar,content,content_ar,html_content,seo_title,seo_description,image_url,created_at,updated_at,author,category");
+    const url = localizedUrl("/news", slug);
+    if (item === undefined) return { title: "CrossFire News | CrossFire Wiki", description: "Latest CrossFire updates, patch notes, announcements and verified game news.", image: DEFAULT_IMG, url, type: "article", alternates: alternateUrls("/news", slug) };
+    if (!item) return { ...missingMeta(url, isArabic ? "News item" : "News item"), alternates: alternateUrls("/news", slug) };
+    const title = (isArabic && item.title_ar) || item.seo_title || item.title || "CrossFire News";
+    const sourceContent = isArabic ? (item.content_ar || item.content || item.html_content) : (item.content || item.html_content);
+    const desc = clip(item.seo_description || sourceContent || `CrossFire news: ${item.title}`, 160);
+    const img = safeImage(item.image_url);
+    const published = safeIso(item.created_at);
+    const modified = safeIso(item.updated_at) || published;
+    return {
+      title: `${title} | CrossFire Wiki`,
+      description: desc,
+      content: clip(sourceContent, 7000),
+      image: img,
+      imageType: imageType(img),
+      url,
+      type: "article",
+      datePublished: published,
+      dateModified: modified,
+      keywords: `CrossFire, CrossFire news, ${item.category || "gaming"}, ${title}, Z8Games`,
+      alternates: alternateUrls("/news", slug),
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        headline: title,
+        description: clip(sourceContent || desc, 500),
+        image: [{ "@type": "ImageObject", url: img, width: 1200, height: 630 }],
+        datePublished: published,
+        dateModified: modified,
+        author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
+        publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 } },
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
+        url,
+        inLanguage: isArabic ? "ar" : "en",
+      },
+    };
   }
 
   // ── /posts/:slug ─────────────────────────────────────────────────────
-  const postM = path.match(/^\/posts\/([^/?#]+)/);
+  const postM = routePath.match(/^\/posts\/([^/?#]+)/);
   if (postM) {
     const slug = postM[1];
     const item = await fetchOne("posts", "post_slug", slug,
-      "title,seo_title,seo_description,image_url,created_at,author,category");
-    if (item) {
-      const title = item.seo_title || item.title || "CrossFire";
-      const desc  = item.seo_description || `${item.title} — CrossFire Wiki`;
-      return {
-        title:         `${title} | CrossFire Wiki`,
-        description:   desc.substring(0, 160),
-        image:         item.image_url || DEFAULT_IMG,
-        url:           `${BASE}/posts/${slug}`,
-        type:          "article",
-        datePublished: item.created_at,
-        keywords:      `CrossFire, ${item.category || "guide"}, Z8Games`,
-        schema: {
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: title,
-          description: desc.substring(0, 200),
-          image: item.image_url || DEFAULT_IMG,
-          datePublished: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
-          author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
-          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
-        },
-      };
-    }
+      "title,title_ar,content,content_ar,summary,summary_ar,seo_title,seo_description,image_url,og_image,created_at,updated_at,author,category,source_url");
+    const url = localizedUrl("/posts", slug);
+    if (item === undefined) return { title: "CrossFire Guides and Posts | CrossFire Wiki", description: "Verified CrossFire guides, explanations and community reference posts.", image: DEFAULT_IMG, url, type: "article", alternates: alternateUrls("/posts", slug) };
+    if (!item) return { ...missingMeta(url, "Post"), alternates: alternateUrls("/posts", slug) };
+    const title = (isArabic && item.title_ar) || item.seo_title || item.title || "CrossFire Guide";
+    const sourceContent = isArabic ? (item.content_ar || item.content || item.summary_ar || item.summary) : (item.content || item.summary);
+    const desc = clip(item.seo_description || sourceContent || `${item.title} — CrossFire Wiki`, 160);
+    const img = safeImage(item.og_image || item.image_url);
+    const published = safeIso(item.created_at);
+    const modified = safeIso(item.updated_at) || published;
+    return {
+      title: `${title} | CrossFire Wiki`,
+      description: desc,
+      content: clip(sourceContent, 7000),
+      image: img,
+      imageType: imageType(img),
+      url,
+      type: "article",
+      datePublished: published,
+      dateModified: modified,
+      keywords: `CrossFire, ${item.category || "guide"}, ${title}, Z8Games`,
+      alternates: alternateUrls("/posts", slug),
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: title,
+        description: clip(sourceContent || desc, 500),
+        image: { "@type": "ImageObject", url: img, width: 1200, height: 630 },
+        datePublished: published,
+        dateModified: modified,
+        author: [{ "@type": "Person", name: item.author || "CrossFire Wiki" }],
+        publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 } },
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
+        url,
+        inLanguage: isArabic ? "ar" : "en",
+      },
+    };
   }
 
   // ── /tutorials/:slug and /videos/:category/:slug ───────────────────────
-  const tutM = path.match(/^\/tutorials\/([^/?#]+)$/);
-  const videoM = path.match(/^\/videos\/[^/?#]+\/([^/?#]+)$/);
+  const tutM = routePath.match(/^\/tutorials\/([^/?#]+)$/);
+  const videoM = routePath.match(/^\/videos\/[^/?#]+\/([^/?#]+)$/);
   if (tutM || videoM) {
     const slug = (tutM || videoM)![1];
     const item = await fetchOne("tutorials", "slug", slug,
-      "title,seo_title,seo_description,image_url,created_at,youtube_url,youtube_id,video_url,category,difficulty");
-    if (item) {
-      const title = item.seo_title || item.title || "CrossFire Tutorial";
-      const desc  = item.seo_description || `Learn: ${item.title} — a complete CrossFire guide with steps, strategy and gameplay advice.`;
-      const image = item.image_url || (item.youtube_id ? `https://img.youtube.com/vi/${item.youtube_id}/hqdefault.jpg` : DEFAULT_IMG);
-      const url = `${BASE}${videoM ? path : `/tutorials/${slug}`}`;
-      const howTo = {
-        "@type": "HowTo",
-        name: title,
-        description: desc.substring(0, 200),
-        image,
-        totalTime: undefined,
-        supply: [],
-        tool: [],
-      };
-      const video = item.youtube_id || item.youtube_url || item.video_url ? {
-        "@type": "VideoObject",
-        name: title,
-        description: desc.substring(0, 200),
-        thumbnailUrl: [image],
-        uploadDate: item.created_at ? new Date(item.created_at).toISOString() : undefined,
-        embedUrl: item.youtube_id ? `https://www.youtube.com/embed/${item.youtube_id}` : undefined,
-        contentUrl: item.video_url || item.youtube_url || undefined,
-        publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
-        isFamilyFriendly: true,
-      } : null;
-      return {
-        title:         `${title} | CrossFire Tutorials`,
-        description:   desc.substring(0, 160),
-        image,
-        url,
-        type:          "article",
-        datePublished: item.created_at,
-        dateModified: item.created_at,
-        keywords:      `CrossFire tutorial, ${item.category || "gameplay guide"}, ${item.difficulty || "beginner"}, CrossFire video, Z8Games`,
-        schema: {
-          "@context": "https://schema.org",
-          "@graph": [
-            { "@id": `${url}#howto`, ...howTo },
-            ...(video ? [{ "@id": `${url}#video`, ...video }] : []),
-          ],
-        },
-      };
-    }
+      "title,title_ar,description,content,content_ar,seo_title,seo_description,image_url,created_at,youtube_url,youtube_id,video_url,category,difficulty");
+    const url = videoM ? localizedUrl(routePath.slice(0, routePath.lastIndexOf("/")), slug) : localizedUrl("/tutorials", slug);
+    if (item === undefined) return { title: "CrossFire Tutorials | CrossFire Wiki", description: "CrossFire tutorials and practical guides for weapons, modes and gameplay.", image: DEFAULT_IMG, url, type: "article" };
+    if (!item) return missingMeta(url, "Tutorial");
+    const title = (isArabic && item.title_ar) || item.seo_title || item.title || "CrossFire Tutorial";
+    const sourceContent = isArabic ? (item.content_ar || item.content || item.description) : (item.content || item.description);
+    const desc = clip(item.seo_description || sourceContent || `Learn: ${item.title} — a complete CrossFire guide with steps, strategy and gameplay advice.`, 160);
+    const image = safeImage(item.image_url || (item.youtube_id ? `https://img.youtube.com/vi/${item.youtube_id}/hqdefault.jpg` : DEFAULT_IMG));
+    const published = safeIso(item.created_at);
+    const howTo = { "@type": "HowTo", name: title, description: clip(sourceContent || desc, 500), image, supply: [], tool: [] };
+    const video = item.youtube_id || item.youtube_url || item.video_url ? {
+      "@type": "VideoObject",
+      name: title,
+      description: clip(sourceContent || desc, 500),
+      thumbnailUrl: [image],
+      uploadDate: published,
+      embedUrl: item.youtube_id ? `https://www.youtube.com/embed/${item.youtube_id}` : undefined,
+      contentUrl: item.video_url || item.youtube_url || undefined,
+      publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 } },
+      isFamilyFriendly: true,
+    } : null;
+    return {
+      title: `${title} | CrossFire Tutorials`,
+      description: desc,
+      content: clip(sourceContent, 7000),
+      image,
+      imageType: imageType(image),
+      url,
+      type: "article",
+      datePublished: published,
+      dateModified: published,
+      keywords: `CrossFire tutorial, ${item.category || "gameplay guide"}, ${item.difficulty || "beginner"}, CrossFire video, Z8Games`,
+      schema: { "@context": "https://schema.org", "@graph": [{ "@id": `${url}#howto`, ...howTo }, ...(video ? [{ "@id": `${url}#video`, ...video }] : [])] },
+    };
   }
 
   // ── /pages/:slug ──────────────────────────────────────────────────────
-  const pageM = path.match(/^\/pages\/([^/?#]+)$/);
+  const pageM = routePath.match(/^\/pages\/([^/?#]+)$/);
   if (pageM) {
     const slug = pageM[1];
     const page = await fetchOne("custom_pages", "slug", slug,
-      "slug,title_en,title_ar,seo_title,seo_description,updated_at,status");
-    if (page && page.status === "published") {
-      const title = page.seo_title || page.title_en || page.title_ar || "CrossFire Wiki Page";
-      const desc = page.seo_description || `A detailed CrossFire Wiki page about ${title}.`;
-      const url = `${BASE}/pages/${slug}`;
-      return {
-        title: `${title} | CrossFire Wiki`,
-        description: desc.substring(0, 160),
-        image: DEFAULT_IMG,
-        url,
-        type: "article",
-        dateModified: page.updated_at,
-        keywords: `CrossFire Wiki, ${title}, CrossFire guide`,
-        schema: {
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          name: title,
-          description: desc.substring(0, 200),
-          url,
-          dateModified: page.updated_at ? new Date(page.updated_at).toISOString() : undefined,
-          isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: BASE },
-          publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO } },
-        },
-      };
-    }
+      "slug,title_en,title_ar,content_en,content_ar,seo_title,seo_description,og_image,updated_at,status");
+    const url = localizedUrl("/pages", slug);
+    if (page === undefined) return { title: "CrossFire Wiki Pages", description: "Detailed CrossFire Wiki reference pages and guides.", image: DEFAULT_IMG, url, type: "article" };
+    if (!page || page.status !== "published") return missingMeta(url, "Wiki page");
+    const title = (isArabic && page.title_ar) || page.seo_title || page.title_en || page.title_ar || "CrossFire Wiki Page";
+    const sourceContent = isArabic ? (page.content_ar || page.content_en) : page.content_en;
+    const desc = clip(page.seo_description || sourceContent || `A detailed CrossFire Wiki page about ${title}.`, 160);
+    const image = safeImage(page.og_image);
+    const modified = safeIso(page.updated_at);
+    return {
+      title: `${title} | CrossFire Wiki`,
+      description: desc,
+      content: clip(sourceContent, 7000),
+      image,
+      imageType: imageType(image),
+      url,
+      type: "article",
+      dateModified: modified,
+      keywords: `CrossFire Wiki, ${title}, CrossFire guide`,
+      alternates: alternateUrls("/pages", slug),
+      schema: { "@context": "https://schema.org", "@type": "WebPage", name: title, description: clip(sourceContent || desc, 500), url, dateModified: modified, isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: BASE }, publisher: { "@type": "Organization", name: "CrossFire Wiki", url: BASE, logo: { "@type": "ImageObject", url: LOGO, width: 512, height: 512 } }, inLanguage: isArabic ? "ar" : "en" },
+    };
   }
 
   // ── /competition and /ar/competition ─────────────────────────────
@@ -269,7 +358,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
   }
 
   // ── /:region and /:region/weapons/:slug ───────────────────────────
-  const regionMatch = path.match(/^\/([a-z0-9-]+)(?:\/weapons\/([a-z0-9-]+))?$/);
+  const regionMatch = routePath.match(/^\/([a-z0-9-]+)(?:\/weapons\/([a-z0-9-]+))?$/);
   if (regionMatch) {
     const region = getRegionBySlug(regionMatch[1]);
     if (region) {
@@ -284,9 +373,11 @@ async function resolveMeta(path: string): Promise<PageMeta> {
       return {
         title,
         description: description.substring(0, 160),
-        image: `${BASE}/feature-crossfire.jpg`,
-        url: `${BASE}${path}`,
+        image: DEFAULT_IMG,
+        url: `${BASE}${prefix}${routePath}`,
         type: "website",
+        imageType: imageType(DEFAULT_IMG),
+        alternates: [{ lang: "en", url: `${BASE}${routePath}` }, { lang: "ar", url: `${BASE}/ar${routePath}` }, { lang: "x-default", url: `${BASE}${routePath}` }],
       };
     }
   }
@@ -306,29 +397,37 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     "/content-hub":  { title: "CrossFire Content Hub | Guides, Updates & Reference | CrossFire Wiki", description: "Browse organized CrossFire guides, updates, videos, events, and reference pages in the wiki content hub." },
     "/faq":          { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
   };
-  const sp = sectionMeta[path];
+  const sp = sectionMeta[routePath];
   if (sp) {
+    const sectionUrl = `${BASE}${prefix}${routePath}`;
     return {
-      title:       sp.title!,
+      title: isArabic ? `${sp.title!.split(" | ")[0]} بالعربية | CrossFire Wiki` : sp.title!,
       description: sp.description!,
-      url:         `${BASE}${path}`,
-      type:        "website",
-      image:       `${BASE}/feature-crossfire.jpg`,
+      image: DEFAULT_IMG,
+      imageType: imageType(DEFAULT_IMG),
+      url: sectionUrl,
+      type: "website",
+      alternates: routePath === "/competition" ? undefined : [{ lang: "en", url: `${BASE}${routePath}` }, { lang: "ar", url: `${BASE}/ar${routePath}` }, { lang: "x-default", url: `${BASE}${routePath}` }],
     };
   }
 
   // ── Default fallback ─────────────────────────────────────────────────
   return {
-    title:       "CrossFire Wiki | Weapons, Modes, Mercenaries & Community",
-    description: "An independent CrossFire reference for weapons, maps, characters, game modes, ranks, events, and community resources.",
-    image:       DEFAULT_IMG,
-    url:         `${BASE}${path}`,
-    type:        "website",
+    title: isArabic ? "CrossFire Wiki بالعربية | مرجع الأسلحة والأحداث والأدلة" : "CrossFire Wiki | Weapons, Modes, Mercenaries & Community",
+    description: isArabic ? "مرجع CrossFire يضم الأسلحة والخرائط والشخصيات والأوضاع والرتب والأحداث والأدلة." : "An independent CrossFire reference for weapons, maps, characters, game modes, ranks, events, and community resources.",
+    image: DEFAULT_IMG,
+    imageType: imageType(DEFAULT_IMG),
+    url: `${BASE}${path}`,
+    type: "website",
   };
 }
 
 function e(s: string) {
   return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function jsonLd(value: object): string {
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -338,18 +437,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isPreviewHost = requestHost.length > 0 && !/(^|\.)crossfire\.wiki$/i.test(requestHost.split(":")[0]);
   const robots = isPreviewHost ? "noindex, nofollow" : (meta.robots || "index, follow, max-image-preview:large");
 
+  const isArabic = path === "/ar" || path.startsWith("/ar/");
   const schemaBlock = meta.schema
-    ? `<script type="application/ld+json">${JSON.stringify(meta.schema)}</script>`
+    ? `<script type="application/ld+json">${jsonLd(meta.schema)}</script>`
+    : "";
+  const contentBlock = meta.content
+    ? `<section aria-label="${e(meta.title)}"><h2>${e(meta.title)}</h2><p>${e(meta.content)}</p></section>`
     : "";
 
   const html = `<!DOCTYPE html>
-<html lang="en" prefix="og: https://ogp.me/ns#">
+<html lang="${isArabic ? "ar" : "en"}" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${e(meta.title)}</title>
 <meta name="description" content="${e(meta.description)}">
 <meta name="robots" content="${e(robots)}">
+<meta name="googlebot" content="${e(robots)}">
+<meta name="bingbot" content="${e(robots)}">
 ${meta.keywords ? `<meta name="keywords" content="${e(meta.keywords)}">` : ""}
 ${meta.datePublished ? `<meta name="article:published_time" content="${e(meta.datePublished)}">` : ""}
 ${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.dateModified)}">` : ""}
@@ -362,18 +467,20 @@ ${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.date
 <meta property="og:description" content="${e(meta.description)}">
 <meta property="og:image" content="${e(meta.image)}">
 <meta property="og:image:secure_url" content="${e(meta.image)}">
+<meta property="og:image:type" content="${e(meta.imageType || "image/jpeg")}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${e(meta.title)}">
 <meta property="og:site_name" content="CrossFire Wiki">
-<meta property="og:locale" content="${path.startsWith("/ar") ? "ar_AR" : "en_US"}">
-<meta property="og:locale:alternate" content="${path.startsWith("/ar") ? "en_US" : "ar_AR"}">
+<meta property="og:locale" content="${isArabic ? "ar_AR" : "en_US"}">
+<meta property="og:locale:alternate" content="${isArabic ? "en_US" : "ar_AR"}">
 ${(meta.alternates || []).filter((alternate) => alternate.lang !== "x-default").map((alternate) => `<link rel="alternate" hreflang="${e(alternate.lang)}" href="${e(alternate.url)}">`).join("\n")}
 
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@crossfirewiki">
 <meta name="twitter:creator" content="@crossfirewiki">
+<meta name="twitter:url" content="${e(meta.url)}">
 <meta name="twitter:title" content="${e(meta.title)}">
 <meta name="twitter:description" content="${e(meta.description)}">
 <meta name="twitter:image" content="${e(meta.image)}">
@@ -387,13 +494,17 @@ ${schemaBlock}
 <script>if(!/bot|crawler|spider|crawling/i.test(navigator.userAgent)){window.location.replace("${e(meta.url)}")}</script>
 </head>
 <body style="font-family:sans-serif;background:#0a0a0a;color:#fff;padding:2rem">
+<main>
 <h1>${e(meta.title)}</h1>
 <p>${e(meta.description)}</p>
+${contentBlock}
 <p><a href="${e(meta.url)}" style="color:#f5a623">Visit ${e(meta.url)}</a></p>
+</main>
 </body>
 </html>`;
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("X-Robots-Tag", robots);
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300, stale-while-revalidate=3600");
-  return res.status(200).send(html);
+  return res.status(meta.notFound ? 404 : 200).send(html);
 }

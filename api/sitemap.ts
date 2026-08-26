@@ -941,7 +941,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   xml += "\n</urlset>";
 
+  const requestHost = typeof req.headers.host === "string" ? req.headers.host.split(":")[0] : "";
+  const isProductionHost = /(^|\.)crossfire\.wiki$/i.test(requestHost);
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("X-Robots-Tag", isProductionHost ? "index, follow" : "noindex, nofollow");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300, stale-while-revalidate=1800");
   return res.status(200).send(xml);
 }

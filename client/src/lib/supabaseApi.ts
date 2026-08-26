@@ -44,56 +44,16 @@ async function runSafeQuery<T>(fallback: T, executor: () => Promise<any>): Promi
   }
 }
 
-const fallbackWeapons = [
-  {
-    id: 'fallback-weapon-ak47',
-    name: 'AK47 Beast',
-    image_url: '',
-    category: 'Assault Rifle',
-    description: 'A globally referenced CrossFire assault rifle with strong region coverage.',
-    stats: { damage: 35 },
-  },
-  {
-    id: 'fallback-weapon-m4a1',
-    name: 'M4A1 Ranger',
-    image_url: '',
-    category: 'Assault Rifle',
-    description: 'A standard CrossFire carbine with balanced stats and broad availability.',
-    stats: { damage: 31 },
-  },
-];
-
-const fallbackMaps = [
-  { id: 'fallback-map-1', name: 'Dust II', image_url: '', description: 'Classic arena map with strong crossfire coverage.', mode: 'Team Deathmatch', category: 'Classic' },
-  { id: 'fallback-map-2', name: 'Village', image_url: '', description: 'A strategic map used in many CrossFire events.', mode: 'Search & Destroy', category: 'Classic' },
-];
-
-const fallbackModes = [
-  { id: 'fallback-mode-1', name: 'Team Deathmatch', image_url: '', description: 'Classic fast-paced combat mode.', type: 'PvP', category: 'Core' },
-  { id: 'fallback-mode-2', name: 'Search & Destroy', image_url: '', description: 'Objective-driven mode with tactical play.', type: 'PvP', category: 'Core' },
-];
-
-const fallbackRanks = [
-  { id: 'fallback-rank-1', name: 'Private', image_url: '', tier: 1, exp_required: 0, description: 'Starting rank for new players.', requirements: '', bonus: '' },
-  { id: 'fallback-rank-2', name: 'Corporal', image_url: '', tier: 2, exp_required: 2000, description: 'A solid progression milestone.', requirements: '', bonus: '' },
-];
-
-const fallbackMercenaries = [
-  { id: 'fallback-merc-1', name: 'Raptor', image_url: '', role: 'Support', sounds: [], order_index: 1 },
-  { id: 'fallback-merc-2', name: 'Blade', image_url: '', role: 'Assault', sounds: [], order_index: 2 },
-];
-
-const fallbackPosts = [
-  { id: 'fallback-post-1', title: 'CrossFire global wiki launch', post_slug: 'crossfire-global-wiki-launch', content: 'Global coverage is now being expanded across regions.', summary: 'Global wiki coverage is online.', image_url: '', category: 'news', tags: ['global'], author: 'CrossFire Wiki', views: 0, reading_time: 1, featured: true, preview_on_home: true, created_at: new Date().toISOString(), language: 'en', seo_title: 'CrossFire Global Wiki', seo_description: 'Global coverage for CrossFire regions.', gallery: [] },
-];
-
-const fallbackNews = [
-  { id: 'fallback-news-1', title: 'CrossFire regional archive is growing', news_slug: 'crossfire-regional-archive-is-growing', title_ar: 'أرشيف كروس فاير الإقليمي ينمو', date_range: '', image_url: '', category: 'news', content: 'Coverage for West, China, CFHD, Vietnam and Brazil is being consolidated.', content_ar: 'تم توحيد المحتوى الإقليمي.', html_content: '', author: 'CrossFire Wiki', featured: true, preview_on_home: true, created_at: new Date().toISOString(), type: 'news' },
-];
-
-const fallbackEvents = [
-  { id: 'fallback-event-1', title: 'Global Region Event', event_name_slug: 'global-region-event', title_ar: 'حدث عالمي', description: 'A placeholder event created so the UI stays functional even when Supabase tables are missing.', description_ar: 'حدث مؤقت حتى تعمل الجداول.', date: new Date().toISOString(), start_date: new Date().toISOString(), end_date: new Date().toISOString(), location: 'Global', type: 'event', image_url: '', gallery: [] },
-];
+// Do not fabricate wiki records when a live data source is unavailable. Public
+// pages should show an honest empty/error state and let operators fix the source.
+const fallbackWeapons: any[] = [];
+const fallbackMaps: any[] = [];
+const fallbackModes: any[] = [];
+const fallbackRanks: any[] = [];
+const fallbackMercenaries: any[] = [];
+const fallbackPosts: any[] = [];
+const fallbackNews: any[] = [];
+const fallbackEvents: any[] = [];
 
 const fallbackSiteSettings = {
   siteTitle: 'CrossFire Wiki',
@@ -219,7 +179,7 @@ export async function getWeaponById(id: string) {
   return normalizeWeapon(data || fallbackWeapons[0]);
 }
 
-function normalizeWeapon(w: any) {
+function normalizeWeapon(w: any = {}) {
   const name = String(w.name || '');
   const enrichment = getWeaponDescription(name);
   const sourceDescription = String(w.description || '');
@@ -419,7 +379,7 @@ export async function getPostById(id: string) {
   return normalizePost(data || fallbackPosts[0]);
 }
 
-function normalizePost(p: any) {
+function normalizePost(p: any = {}) {
   let gallery: { url: string; description?: string }[] = [];
   if (Array.isArray(p.gallery)) {
     gallery = p.gallery.filter((g: any) => g && typeof g.url === 'string' && g.url.trim());
@@ -515,7 +475,7 @@ export async function getNewsById(id: string) {
   return data ? normalizeNews(data) : null;
 }
 
-function normalizeNews(n: any) {
+function normalizeNews(n: any = {}) {
   return {
     id: String(n.id || ''),
     title: String(n.title || ''),
@@ -604,7 +564,7 @@ export async function getEventBySlug(slug: string) {
   return normalizeEvent(fallbackEvents[0]);
 }
 
-function normalizeEvent(e: any) {
+function normalizeEvent(e: any = {}) {
   // Parse gallery – stored as JSONB array [{url, description}]
   let gallery: { url: string; description?: string }[] = [];
   if (Array.isArray(e.gallery)) {

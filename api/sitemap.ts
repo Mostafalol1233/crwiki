@@ -301,25 +301,41 @@ async function readContentRows(
   if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
   const limit = Math.min(50, Math.max(1, Number(opts.limit) || 24));
   const offset = Math.max(0, Number(opts.offset) || 0);
-  const params = new URLSearchParams({
-    select: 'id,title,title_ar,post_slug,summary,summary_ar,content,content_ar,image_url,category,tags,author,views,reading_time,featured,language,seo_title,seo_description,og_image,canonical_url,full_layout,template,wiki_tabs,external_links,source_url,gallery,created_at,updated_at',
+  const baseParams = {
     order: 'created_at.desc',
     limit: String(limit),
     offset: String(offset),
-  });
-  if (opts.category) params.set('category', `eq.${opts.category}`);
+  };
+  if (opts.category) (baseParams as Record<string, string>).category = `eq.${opts.category}`;
 
-  try {
+  async function fetchPostProjection(select: string) {
+    const params = new URLSearchParams({ select, ...baseParams });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/posts?${params.toString()}`, {
       headers: { ...h(), Prefer: 'count=exact' },
       signal: AbortSignal.timeout(9000),
     });
-    if (!response.ok) return { rows: [], total: 0 };
+    if (!response.ok) return null;
     const rows = await response.json();
     const contentRange = response.headers.get('content-range') || '';
     const totalText = contentRange.split('/')[1] || '';
     const total = Number.parseInt(totalText, 10);
-    return { rows: Array.isArray(rows) ? rows : [], total: Number.isFinite(total) ? total : rows.length };
+    return { rows: Array.isArray(rows) ? rows : [], total: Number.isFinite(total) ? total : (Array.isArray(rows) ? rows.length : 0) };
+  }
+
+  try {
+    // The posts table has existed through several schema revisions. A single
+    // missing optional column must not make the public archive look empty.
+    const projections = [
+      'id,title,title_ar,post_slug,summary,summary_ar,content,content_ar,image_url,category,tags,author,views,reading_time,featured,language,seo_title,seo_description,og_image,canonical_url,full_layout,template,wiki_tabs,external_links,source_url,gallery,created_at,updated_at',
+      'id,title,title_ar,post_slug,summary,summary_ar,content,content_ar,image_url,category,tags,author,views,reading_time,featured,created_at,updated_at',
+      'id,title,post_slug,content,image_url,category,created_at',
+    ];
+    for (const projection of projections) {
+      const result = await fetchPostProjection(projection);
+      if (result) return result;
+    }
+    console.error('[api/content] all posts projections failed');
+    return { rows: [], total: 0 };
   } catch {
     return { rows: [], total: 0 };
   }

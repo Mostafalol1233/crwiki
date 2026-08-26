@@ -10,42 +10,45 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
-/** Route /api/* through Supabase shim; everything else is a plain fetch */
-export async function apiRequest(
-  url: string,
-  method: string,
-  data?: unknown,
-): Promise<any> {
-  // All /api/ calls go through the Supabase shim (no backend needed)
-  const apiPath = url.startsWith('/api/') ? url : url.startsWith('http') ? null : null;
+const SERVER_API_PREFIXES = [
+  "/api/admin/", "/api/scrape/", "/api/auth/", "/api/ai/", "/api/images/",
+  "/api/player/", "/api/send-email", "/api/sitemap", "/api/prerender",
+];
 
-  if (url.startsWith('/api/') || (url.startsWith('/') && !url.startsWith('//'))) {
-    try {
-      return await supabaseShim(url, method, data);
-    } catch (err: any) {
-      throw new Error(err?.message || String(err));
-    }
-  }
+function isServerApi(url: string) {
+  return SERVER_API_PREFIXES.some(prefix => url === prefix || url.startsWith(prefix));
+}
 
-  // External URLs — plain fetch
+async function fetchJson(url: string, method: string, data?: unknown): Promise<any> {
   const headers: Record<string, string> = {
     ...getAuthHeaders(),
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
-
   const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
-
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
   const text = await res.text();
-  try { return JSON.parse(text); } catch { return text; }
+  let payload: any;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
+  if (!res.ok) throw new Error(`${res.status}: ${payload?.error || payload || res.statusText}`);
+  return payload;
+}
+
+/** Use the real server for deployed functions; use the shim only for virtual DB routes. */
+export async function apiRequest(
+  url: string,
+  method: string,
+  data?: unknown,
+): Promise<any> {
+  if (isServerApi(url)) return fetchJson(url, method, data);
+  if (url.startsWith('/api/') || (url.startsWith('/') && !url.startsWith('//'))) {
+    try { return await supabaseShim(url, method, data); }
+    catch (err: any) { throw new Error(err?.message || String(err)); }
+  }
+  return fetchJson(url, method, data);
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -54,20 +57,23 @@ export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFu
   return async ({ queryKey }) => {
     const key = queryKey[0] as string;
 
-    // Route /api/ keys through shim
+    if (key && isServerApi(key)) {
+      try { return (await fetchJson(key, 'GET')) as T; }
+      catch (err: any) {
+        if (options.on401 === "returnNull" && String(err?.message || "").startsWith("401:")) return null as unknown as T;
+        throw err;
+      }
+    }
     if (key && key.startsWith('/api/')) {
-      try {
-        return (await supabaseShim(key, 'GET')) as T;
-      } catch (err: any) {
+      try { return (await supabaseShim(key, 'GET')) as T; }
+      catch (err: any) {
         if (options.on401 === "returnNull") return null as unknown as T;
         throw err;
       }
     }
 
-    // Plain fetch for other keys
     const headers = getAuthHeaders();
     const res = await fetch(key, { credentials: "include", headers });
-
     if (options.on401 === "returnNull" && res.status === 401) return null as unknown as T;
     if (!res.ok) {
       const text = (await res.text()) || res.statusText;

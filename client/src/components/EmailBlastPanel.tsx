@@ -173,9 +173,13 @@ export default function EmailBlastPanel({ subscribers }: Props) {
 
     setSending(true);
     try {
+      const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : "";
       const res = await fetch("/api/send-email", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+        },
         body: JSON.stringify({ to: recipients, subject: subject.trim(), html: htmlBody, recipientType }),
       });
       const data = await res.json() as { success?: boolean; error?: string };

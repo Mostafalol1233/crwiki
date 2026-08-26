@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
+import { verifyAdminRequest } from "../../server/adminAuth.js";
+import { assertApprovedSourceUrl } from "../../server/urlSafety.js";
+
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],
   ["Access-Control-Allow-Methods", "POST, OPTIONS"],
@@ -30,24 +33,6 @@ function normalizeImageUrl(value: unknown, baseUrl?: string): string {
   } catch {
     return "";
   }
-}
-
-function assertPublicHttpUrl(value: unknown): string {
-  if (typeof value !== "string") throw new Error("Valid URL required");
-  const parsed = new URL(value);
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("Valid URL required");
-  const hostname = parsed.hostname.toLowerCase();
-  const isPrivateHost =
-    hostname === "localhost" ||
-    hostname === "0.0.0.0" ||
-    hostname === "::1" ||
-    /^127\./.test(hostname) ||
-    /^10\./.test(hostname) ||
-    /^192\.168\./.test(hostname) ||
-    /^169\.254\./.test(hostname) ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
-  if (isPrivateHost) throw new Error("Private network URLs are not allowed");
-  return parsed.toString();
 }
 
 async function fetchHtml(url: string, timeoutMs = 20000) {
@@ -188,12 +173,56 @@ async function scrapeForumThread(url: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
+  if (!verifyAdminRequest(req.headers as Record<string, unknown>)) {
+    return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+  }
 
   try {
     const action = readAction(req);
-    if (action === "forum-list") return addCorsHeaders(res).status(200).json(await scrapeForumList());
-    if (action === "single-url") return addCorsHeaders(res).status(200).json(await scrapeSingleUrl(assertPublicHttpUrl(req.body?.url)));
-    if (action === "forum-thread") return addCorsHeaders(res).status(200).json(await scrapeForumThread(assertPublicHttpUrl(req.body?.url)));
+    if (action === "forum-list") {
+      const { posts } = await scrapeForumList();
+      return addCorsHeaders(res).status(200).json(posts);
+    }
+    if (action === "single-url") {
+      return addCorsHeaders(res).status(200).json(await scrapeSingleUrl(await assertApprovedSourceUrl(req.body?.url)));
+    }
+    if (action === "forum-thread") {
+      return addCorsHeaders(res).status(200).json(await scrapeForumThread(await assertApprovedSourceUrl(req.body?.url)));
+    }
+    if (action === "multiple-events") {
+      const rawUrls = Array.isArray(req.body?.urls) ? req.body.urls : [];
+      if (rawUrls.length === 0 || rawUrls.length > 25) {
+        return addCorsHeaders(res).status(400).json({ error: "Provide between 1 and 25 event URLs" });
+      }
+      const events: unknown[] = [];
+      for (const rawUrl of rawUrls) {
+        try {
+          const result = await scrapeForumThread(await assertApprovedSourceUrl(rawUrl));
+          if (Array.isArray(result.events)) {
+            events.push(...result.events.map(event => ({
+              ...event,
+              url: event.sourceUrl,
+              rawHtmlContent: event.description,
+              content: event.description,
+              category: "event",
+              colors: [],
+              preview: event.descriptionText,
+            })));
+          }
+        } catch (error) {
+          console.warn("[scrape/multiple-events] skipped source", error instanceof Error ? error.message : error);
+        }
+      }
+      return addCorsHeaders(res).status(200).json(events);
+    }
+    if (action === "validate-content") {
+      const html = typeof req.body?.html === "string" ? req.body.html : "";
+      if (html.length > 500_000) return addCorsHeaders(res).status(413).json({ error: "Content is too large" });
+      const colors = [...new Set([...html.matchAll(/(?:color\s*:\s*|color\s*=\s*[\"'])(#[0-9a-f]{3,8}|[a-z]+)\b/gi)].map(match => match[1].toLowerCase()))];
+      const tagCounts: Record<string, number> = {};
+      for (const match of html.matchAll(/<([a-z0-9-]+)\b/gi)) tagCounts[match[1].toLowerCase()] = (tagCounts[match[1].toLowerCase()] || 0) + 1;
+      return addCorsHeaders(res).status(200).json({ valid: true, colors, tagCounts, length: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length });
+    }
     return addCorsHeaders(res).status(404).json({ error: "Unsupported scrape action" });
   } catch (error: any) {
     return addCorsHeaders(res).status(500).json({ error: error?.message || "Scrape failed" });

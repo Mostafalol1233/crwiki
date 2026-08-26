@@ -60,9 +60,13 @@ function autoGenerateSEO(title: string, contentHtml: string): {
 async function scrapePageViaProxy(url: string): Promise<{
   title: string; content: string; summary: string; image: string; contentLength: number;
 }> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
   const res = await fetch('/api/scrape/single-url', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ url }),
   });
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -74,6 +78,19 @@ async function scrapePageViaProxy(url: string): Promise<{
     image: data.image || data.mainImage || '',
     contentLength: data.contentLength || 0,
   };
+}
+
+async function adminProxy(path: string, payload: Record<string, unknown>) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
+  if (!token) throw new Error('Admin authentication is required');
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `Admin request failed (${res.status})`);
+  return data;
 }
 
 // ─── Field mappers ────────────────────────────────────────────────────────────
@@ -354,6 +371,32 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   const { path, params } = parseUrlParams(rawUrl.replace(/^\/api/, ''));
   const M = method.toUpperCase();
   const client = db();
+
+  // All browser-side mutations for admin-managed catalogues must go through
+  // the authenticated service boundary. Public GET requests remain read-only.
+  const adminContentMatch = path.match(/^\/(posts|news|events|weapons|modes|ranks|mercenaries|tutorials|sellers)(?:\/([^/]+))?$/);
+  if (adminContentMatch && M !== "GET") {
+    const resource = adminContentMatch[1];
+    const id = adminContentMatch[2] ? decodeURIComponent(adminContentMatch[2]) : undefined;
+    const operation = M === "POST" ? "create" : M === "PATCH" ? "update" : M === "DELETE" ? "delete" : "";
+    if (!operation) throw new Error("Unsupported mutation method");
+    return adminProxy("/api/admin/rebuild", {
+      action: "admin-table",
+      type: resource,
+      operation,
+      ...(id ? { id } : {}),
+      ...(operation !== "delete" ? { row: body || {} } : {}),
+    });
+  }
+
+  if (path === "/events/reorder" && M === "PATCH") {
+    return adminProxy("/api/admin/rebuild", {
+      action: "admin-table",
+      type: "events",
+      operation: "reorder",
+      rows: Array.isArray(body?.orders) ? body.orders : [],
+    });
+  }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   if (path === '/stats') {
@@ -998,6 +1041,20 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
         contentLength,
       },
     };
+  }
+
+  // ── Server-backed admin scraping and rebuilds ───────────────────────────────
+  if (path === '/admin/rebuild' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { ...(body || {}) });
+  }
+  if (path === '/admin/rescrape-item' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rescrape-item', ...(body || {}) });
+  }
+  if (path === '/admin/rebuild-mercenary-posts' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rebuild-mercenary-posts' });
+  }
+  if (path === '/admin/rebuild-wiki-posts' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rebuild-wiki-posts' });
   }
 
   // ── Rebuild posts from Fandom Wiki ────────────────────────────────────────

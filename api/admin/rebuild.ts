@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 import { verifyAdminRequest } from "../../server/adminAuth.js";
+import { assertApprovedSourceUrl } from "../../server/urlSafety.js";
 
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],
@@ -42,6 +43,21 @@ async function scrapePage(url: string) {
   return { title, content, summary: plain.slice(0, 300), image };
 }
 
+function hasAnyPermission(admin: NonNullable<ReturnType<typeof verifyAdminRequest>>, permissions: string[]) {
+  return admin.role === "super_admin" || permissions.some(permission => admin.permissions?.[permission] === true);
+}
+
+async function deleteNonAnnouncementPosts(baseUrl: string, headers: Record<string, string>) {
+  const response = await fetch(`${baseUrl}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, {
+    method: "DELETE",
+    headers: { ...headers, Prefer: "return=minimal,count=exact" },
+  });
+  if (!response.ok) throw new Error(`Supabase posts cleanup failed: ${await response.text()}`);
+  const range = response.headers.get("content-range") || "";
+  const total = range.includes("/") ? Number(range.split("/").pop()) : 0;
+  return Number.isFinite(total) ? total : 0;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
@@ -51,12 +67,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { action, type, id, url, operation, row, rows } = req.body || {};
+  const isSuperAdmin = admin.role === "super_admin";
+  const canManageContent = hasAnyPermission(admin, ["content:manage", "posts:manage", "news:manage", "events:manage"]);
 
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
 
   // ── action: service-listings ───────────────────────────────────────────────
   if (action === "service-listings") {
+    if (!hasAnyPermission(admin, ["services:manage", "service-listings:manage", "sellers:manage"])) {
+      return addCorsHeaders(res).status(403).json({ error: "Missing services management permission" });
+    }
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
@@ -109,6 +130,95 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // ── action: bulk-events ──────────────────────────────────────────────────────
+    if (action === "bulk-events") {
+    if (!hasAnyPermission(admin, ["events:manage", "content:manage"])) {
+      return addCorsHeaders(res).status(403).json({ error: "Missing events management permission" });
+    }
+    const sourceEvents = Array.isArray(req.body?.events) ? req.body.events : [];
+    if (sourceEvents.length === 0 || sourceEvents.length > 50) {
+      return addCorsHeaders(res).status(400).json({ error: "Provide between 1 and 50 events" });
+    }
+    if (req.body?.confirmation !== "PUBLISH_SCRAPED_EVENTS") {
+      return addCorsHeaders(res).status(400).json({ error: "Explicit publish confirmation is required" });
+    }
+    if (!SUPABASE_URL || !SERVICE_KEY) {
+      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      Prefer: "return=minimal",
+    };
+    const eventsBase = `${SUPABASE_URL}/rest/v1/events`;
+    const newsBase = `${SUPABASE_URL}/rest/v1/news`;
+    const createAsNews = req.body?.createAsNews === true;
+    let created = 0;
+    let newsCreated = 0;
+    let skipped = 0;
+    const failed: Array<{ title: string; error: string }> = [];
+    const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || `event-${Date.now()}`;
+
+    for (const source of sourceEvents) {
+      const title = typeof source?.title === "string" ? source.title.trim() : "";
+      const description = typeof source?.content === "string" ? source.content : (typeof source?.description === "string" ? source.description : "");
+      const sourceUrl = source?.url || source?.sourceUrl;
+      if (!title || !description || !sourceUrl) {
+        failed.push({ title: title || "Untitled event", error: "Title, content, and source URL are required" });
+        continue;
+      }
+      let approvedUrl: string;
+      try { approvedUrl = await assertApprovedSourceUrl(sourceUrl); }
+      catch (error) { failed.push({ title, error: error instanceof Error ? error.message : "Invalid source URL" }); continue; }
+
+      try {
+        const existsResponse = await fetch(`${eventsBase}?source_url=eq.${encodeURIComponent(approvedUrl)}&select=id&limit=1`, { headers });
+        const existingRows = existsResponse.ok ? await existsResponse.json().catch(() => []) : [];
+        if (Array.isArray(existingRows) && existingRows.length > 0) {
+          skipped += 1;
+          continue;
+        }
+        const row = {
+          title,
+          event_name_slug: slugify(title),
+          description,
+          image_url: typeof source.image === "string" ? source.image : "",
+          date: typeof source.date === "string" ? source.date : new Date().toISOString(),
+          start_date: typeof source.startDate === "string" ? source.startDate : null,
+          end_date: typeof source.endDate === "string" ? source.endDate : null,
+          source_url: approvedUrl,
+          type: "upcoming",
+        };
+        const eventResponse = await fetch(eventsBase, { method: "POST", headers, body: JSON.stringify(row) });
+        if (!eventResponse.ok) throw new Error(`Event create failed: ${await eventResponse.text()}`);
+        created += 1;
+
+        if (createAsNews) {
+          const newsRow = {
+            title,
+            news_slug: `${slugify(title)}-${Date.now()}`,
+            content: description,
+            html_content: description,
+            image_url: row.image_url,
+            category: "events",
+            author: "CrossFire Wiki",
+            source_url: approvedUrl,
+            featured: false,
+            preview_on_home: true,
+          };
+          const newsResponse = await fetch(newsBase, { method: "POST", headers, body: JSON.stringify(newsRow) });
+          if (newsResponse.ok) newsCreated += 1;
+          else failed.push({ title, error: `News create failed: ${await newsResponse.text()}` });
+        }
+      } catch (error) {
+        failed.push({ title, error: error instanceof Error ? error.message : "Event create failed" });
+      }
+    }
+    return addCorsHeaders(res).status(failed.length ? 207 : 200).json({ created, newsCreated, skipped, failed });
+  }
+
   // ── action: admin-table ─────────────────────────────────────────────────────
   // Browser admin pages use this authenticated multiplexer for tables whose
   // writes must never depend on the public Supabase client/RLS policies.
@@ -120,6 +230,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       weapons: "weapons",
       sellers: "sellers",
       highlights: "site_highlights",
+      posts: "posts",
+      news: "news",
+      events: "events",
+      modes: "modes",
+      ranks: "ranks",
+      mercenaries: "mercenaries",
+      tutorials: "tutorials",
       admin_users: "admin_users",
       competition_config: "competition_config",
       competition_invite_codes: "competition_invite_codes",
@@ -166,26 +283,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     ? "id,attempt_id,proof_type,file_url,file_name,file_size,mime_type,status,bonus_points,reviewer_note,created_at,reviewed_at"
                     : "*",
         );
-        params.set(
-          "order",
-          table === "sellers"
-            ? "rank.asc.nullslast,name.asc"
-            : table === "highlights"
-              ? "sort_order.asc,created_at.asc"
-              : table === "admin_users"
-                ? "created_at.desc"
-                : table === "competition_questions" || table === "competition_prizes"
-                  ? "sort_order.asc,created_at.asc"
-                      : table === "competition_invite_codes"
-                        ? "created_at.desc"
-                        : table === "competition_attempts"
-                          ? "created_at.desc"
-                          : table === "competition_proofs"
-                            ? "created_at.desc"
-                            : table === "competition_config"
-                              ? "id.asc"
-                              : "name.asc",
-        );
+        const orderByTable: Record<string, string> = {
+          sellers: "rank.asc.nullslast,name.asc",
+          site_highlights: "sort_order.asc,created_at.asc",
+          admin_users: "created_at.desc",
+          competition_questions: "sort_order.asc,created_at.asc",
+          competition_prizes: "sort_order.asc,created_at.asc",
+          competition_invite_codes: "created_at.desc",
+          competition_attempts: "created_at.desc",
+          competition_proofs: "created_at.desc",
+          competition_config: "id.asc",
+          posts: "created_at.desc",
+          news: "created_at.desc",
+          events: "date.desc.nullslast,created_at.desc",
+          modes: "name.asc",
+          ranks: "tier.asc",
+          mercenaries: "order_index.asc.nullslast,name.asc",
+          tutorials: "order_index.asc.nullslast,created_at.desc",
+        };
+        params.set("order", orderByTable[table] || "name.asc");
         params.set("limit", String(pageSize));
         params.set("offset", String((page - 1) * pageSize));
         if (search && (table === "weapons" || table === "sellers" || table === "highlights")) {
@@ -200,10 +316,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return addCorsHeaders(res).status(200).json({ data, count: totalText && totalText !== "*" ? Number(totalText) : data.length });
       }
 
+      if (operation === "reorder") {
+        if (table !== "events" || !Array.isArray(rows) || rows.length > 100) return addCorsHeaders(res).status(400).json({ error: "Valid event order rows are required" });
+        let updated = 0;
+        for (const item of rows) {
+          if (!item || typeof item.id !== "string" || !Number.isFinite(Number(item.order))) continue;
+          const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(item.id)}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ sort_order: Number(item.order) }),
+          });
+          if (!updateRes.ok) throw new Error(`Supabase ${table} reorder failed: ${await updateRes.text()}`);
+          updated += 1;
+        }
+        return addCorsHeaders(res).status(200).json({ success: true, updated });
+      }
+
       if (operation === "create") {
         if (!row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "row required" });
         let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
         let issuedCode: string | undefined;
+        const aliases: Record<string, string> = {
+          image: "image_url", imageUrl: "image_url", titleAr: "title_ar", descriptionAr: "description_ar",
+          dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
+          previewOnHome: "preview_on_home", seoTitle: "seo_title", seoDescription: "seo_description",
+          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url",
+          youtubeUrl: "youtube_url", youtubeId: "youtube_id", order: "order_index",
+          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug",
+        };
+        for (const [from, to] of Object.entries(aliases)) {
+          if (safeRow[to] === undefined && safeRow[from] !== undefined) safeRow[to] = safeRow[from];
+          if (from !== to) delete safeRow[from];
+        }
         if (table === "admin_users") {
           const password = typeof safeRow.password === "string" ? safeRow.password : "";
           delete safeRow.password;
@@ -231,6 +375,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (operation === "update") {
         if (!id || !row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "id and row required" });
         let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
+        const aliases: Record<string, string> = {
+          image: "image_url", imageUrl: "image_url", titleAr: "title_ar", descriptionAr: "description_ar",
+          dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
+          previewOnHome: "preview_on_home", seoTitle: "seo_title", seoDescription: "seo_description",
+          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url",
+          youtubeUrl: "youtube_url", youtubeId: "youtube_id", order: "order_index",
+          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug",
+        };
+        for (const [from, to] of Object.entries(aliases)) {
+          if (safeRow[to] === undefined && safeRow[from] !== undefined) safeRow[to] = safeRow[from];
+          if (from !== to) delete safeRow[from];
+        }
         if (table === "admin_users") {
           delete safeRow.password_hash;
           if (typeof safeRow.password === "string") {
@@ -261,6 +417,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── action: legacy-content ─────────────────────────────────────────────────
   if (action === "legacy-content") {
+    if (!canManageContent) return addCorsHeaders(res).status(403).json({ error: "Missing content management permission" });
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
     if (!Array.isArray(rows) || rows.length === 0)
@@ -338,13 +495,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── action: rescrape-item ─────────────────────────────────────────────────
   if (action === "rescrape-item") {
-    if (!type || !id || !url || !String(url).startsWith("http"))
-      return addCorsHeaders(res).status(400).json({ error: "type, id, and valid url required" });
+    const permissionByType: Record<string, string[]> = {
+      posts: ["posts:manage", "content:manage"],
+      news: ["news:manage", "content:manage"],
+      events: ["events:manage", "content:manage"],
+    };
+    if (!type || !id || !url || !permissionByType[String(type)] || !hasAnyPermission(admin, permissionByType[String(type)])) {
+      return addCorsHeaders(res).status(403).json({ error: "Missing permission for this content type" });
+    }
+    let approvedUrl: string;
+    try { approvedUrl = await assertApprovedSourceUrl(url); }
+    catch (error) { return addCorsHeaders(res).status(400).json({ error: error instanceof Error ? error.message : "Invalid source URL" }); }
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
     try {
-      const scraped = await scrapePage(url);
+      const scraped = await scrapePage(approvedUrl);
       const plain = scraped.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
       const seoTitle = (scraped.title || "").slice(0, 60);
       const seoDesc  = (scraped.summary || "").slice(0, 160);
@@ -352,11 +518,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const table = type === "events" ? "events" : type === "news" ? "news" : "posts";
       let updateBody: any = {};
       if (type === "events") {
-        updateBody = { description: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+        updateBody = { description: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: approvedUrl };
       } else if (type === "news") {
-        updateBody = { content: scraped.content, html_content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+        updateBody = { content: scraped.content, html_content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: approvedUrl };
       } else {
-        updateBody = { content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: url };
+        updateBody = { content: scraped.content, image_url: scraped.image, seo_title: seoTitle, seo_description: seoDesc, source_url: approvedUrl };
       }
 
       const headers = { "Content-Type": "application/json", "apikey": SERVICE_KEY, "Authorization": `Bearer ${SERVICE_KEY}`, "Prefer": "return=minimal" };
@@ -376,6 +542,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── action: rebuild-mercenary-posts ───────────────────────────────────────
   if (action === "rebuild-mercenary-posts") {
+    if (!isSuperAdmin && !hasAnyPermission(admin, ["content:rebuild", "posts:rebuild"])) {
+      return addCorsHeaders(res).status(403).json({ error: "Only an authorized content manager can rebuild posts" });
+    }
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
@@ -386,7 +555,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Authorization": `Bearer ${SERVICE_KEY}`,
       };
 
-      await fetch(`${SUPABASE_URL}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, { method: "DELETE", headers });
+      if (req.body?.confirmation !== "REBUILD_MERCENARY_POSTS") {
+        return addCorsHeaders(res).status(400).json({ error: "Explicit rebuild confirmation is required" });
+      }
+      const deletedCount = await deleteNonAnnouncementPosts(SUPABASE_URL, headers);
 
       const mercenaries = [
         { name: "Wolf",          wikiSlug: "Wolf_(CrossFire)" },
@@ -426,7 +598,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (insRes.ok) created++; else failed++;
         } catch { failed++; }
       }
-      return addCorsHeaders(res).status(200).json({ deletedCount: 0, created, failed });
+      return addCorsHeaders(res).status(200).json({ deletedCount, created, failed });
     } catch (e: any) {
       return addCorsHeaders(res).status(500).json({ error: e.message });
     }
@@ -434,6 +606,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── action: rebuild-wiki-posts ────────────────────────────────────────────
   if (action === "rebuild-wiki-posts") {
+    if (!isSuperAdmin && !hasAnyPermission(admin, ["content:rebuild", "posts:rebuild"])) {
+      return addCorsHeaders(res).status(403).json({ error: "Only an authorized content manager can rebuild posts" });
+    }
     if (!SUPABASE_URL || !SERVICE_KEY)
       return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
 
@@ -444,7 +619,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Authorization": `Bearer ${SERVICE_KEY}`,
       };
 
-      await fetch(`${SUPABASE_URL}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, { method: "DELETE", headers });
+      if (req.body?.confirmation !== "REBUILD_WIKI_POSTS") {
+        return addCorsHeaders(res).status(400).json({ error: "Explicit rebuild confirmation is required" });
+      }
+      const deletedCount = await deleteNonAnnouncementPosts(SUPABASE_URL, headers);
 
       const wikiPages = [
         { name: "Ghost Mode",     wikiSlug: "Ghost_Mode",          category: "Modes" },
@@ -480,7 +658,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (insRes.ok) created++; else failed++;
         } catch { failed++; }
       }
-      return addCorsHeaders(res).status(200).json({ deletedCount: 0, created, failed });
+      return addCorsHeaders(res).status(200).json({ deletedCount, created, failed });
     } catch (e: any) {
       return addCorsHeaders(res).status(500).json({ error: e.message });
     }

@@ -9,6 +9,7 @@
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyAdminRequest } from "../../server/adminAuth.js";
+import { assertApprovedSourceUrl } from "../../server/urlSafety.js";
 
 const CORS = new Map([
   ["Access-Control-Allow-Origin", "*"],
@@ -89,17 +90,23 @@ async function scrapeDirect(url: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
-  if (!verifyAdminRequest(req.headers as Record<string, unknown>)) {
-    return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
-  }
+  const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
+  if (!admin) return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
 
   try {
     const { url, type, preview } = req.body || {};
-
-    if (!url || !String(url).startsWith("http"))
-      return addCorsHeaders(res).status(400).json({ error: "Valid URL required" });
-
     const contentType: ContentType = ["news", "events", "posts"].includes(type) ? type : "posts";
+    const permissionByType: Record<ContentType, string[]> = {
+      posts: ["posts:manage", "content:manage"],
+      news: ["news:manage", "content:manage"],
+      events: ["events:manage", "content:manage"],
+    };
+    const permitted = admin.role === "super_admin" || permissionByType[contentType].some(permission => admin.permissions?.[permission] === true);
+    if (!permitted) return addCorsHeaders(res).status(403).json({ error: "Missing content management permission" });
+
+    let approvedUrl: string;
+    try { approvedUrl = await assertApprovedSourceUrl(url); }
+    catch (error) { return addCorsHeaders(res).status(400).json({ error: error instanceof Error ? error.message : "Invalid source URL" }); }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || "";
     const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
@@ -112,10 +119,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let scraped: { title: string; content: string; summary: string; image: string };
     try {
       scraped = FC_KEY
-        ? await scrapeWithFirecrawl(url, FC_KEY)
-        : await scrapeDirect(url);
+        ? await scrapeWithFirecrawl(approvedUrl, FC_KEY)
+        : await scrapeDirect(approvedUrl);
     } catch {
-      scraped = await scrapeDirect(url);
+      scraped = await scrapeDirect(approvedUrl);
     }
 
     if (preview) {
@@ -166,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "Prefer": "return=minimal",
     };
     const upRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/${table}?source_url=eq.${encodeURIComponent(url)}`,
+      `${SUPABASE_URL}/rest/v1/${table}?source_url=eq.${encodeURIComponent(approvedUrl)}`,
       { method: "PATCH", headers: sbHeaders, body: JSON.stringify(updateBody) }
     );
     if (!upRes.ok) {

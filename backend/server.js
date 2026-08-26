@@ -41,23 +41,25 @@ const limiter = rateLimit({
 app.use("/images/upload", limiter);
 app.use("/cdn/fetch", limiter);
 
+const ADMIN_TOKEN_SECRET = String(process.env.ADMIN_TOKEN_SECRET || "").trim();
+if (ADMIN_TOKEN_SECRET.length < 32) {
+  throw new Error("ADMIN_TOKEN_SECRET must be configured with at least 32 characters");
+}
+
 function verifyAdminToken(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
-  const secret = String(
-    process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_PASSWORD || process.env.SUPABASE_SERVICE_KEY || "",
-  ).trim();
-  if (!token || !secret) return false;
+  if (!token) return false;
 
   const [payloadPart, signature, ...extra] = token.split(".");
   if (!payloadPart || !signature || extra.length) return false;
-  const expected = createHmac("sha256", secret).update(payloadPart).digest("base64url");
+  const expected = createHmac("sha256", ADMIN_TOKEN_SECRET).update(payloadPart).digest("base64url");
   const actualBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
   if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer)) return false;
 
   try {
     const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8"));
-    return typeof payload.exp === "number" && payload.exp > Date.now() && typeof payload.role === "string";
+    return typeof payload.exp === "number" && payload.exp > Date.now() && typeof payload.role === "string" && payload.role !== "user";
   } catch {
     return false;
   }

@@ -244,12 +244,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       competition_attempts: "competition_attempts",
       competition_proofs: "competition_proofs",
       competition_prizes: "competition_prizes",
+      tickets: "tickets",
+      ticket_messages: "ticket_messages",
+      comments: "comments",
+      seller_reviews: "seller_reviews",
+      maps: "maps",
+      site_settings: "site_settings",
+      custom_pages: "custom_pages",
+      faq_categories: "faq_categories",
+      faq_articles: "faq_articles",
     };
     const resource = String(type || "");
     const table = tableByResource[resource];
     if (!table) return addCorsHeaders(res).status(400).json({ error: "Unsupported admin table" });
 
-    const canManage = admin.role === "super_admin" || admin.permissions?.[`${resource}:manage`] === true || admin.permissions?.[`${resource}:write`] === true;
+    const permissionAliases: Record<string, string> = {
+      ticket_messages: "tickets",
+      seller_reviews: "sellers",
+      maps: "content",
+      custom_pages: "content",
+      faq_categories: "content",
+      faq_articles: "content",
+      site_settings: "settings",
+    };
+    const permissionResource = permissionAliases[resource] || resource;
+    const canManage = admin.role === "super_admin"
+      || admin.permissions?.[`${permissionResource}:manage`] === true
+      || admin.permissions?.[`${permissionResource}:write`] === true
+      || (resource === "comments" && admin.permissions?.["content:manage"] === true);
     if (resource === "admin_users" && admin.role !== "super_admin") {
       return addCorsHeaders(res).status(403).json({ error: "Only a super administrator can manage administrators" });
     }
@@ -271,17 +293,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const pageSize = Math.min(100, Math.max(1, Number(req.body?.pageSize) || 50));
         const search = String(req.body?.search || "").trim();
         const params = new URLSearchParams();
+        const requestedSelect = typeof req.body?.select === "string" && /^[a-zA-Z0-9_*, ]+$/.test(req.body.select)
+          ? req.body.select
+          : "";
         params.set(
           "select",
-          table === "admin_users"
-            ? "id,username,email,role,permissions,created_at"
-              : table === "competition_invite_codes"
-                ? "id,label,max_uses,uses_count,expires_at,active,created_at,created_by"
-                : table === "competition_attempts"
-                  ? "id,user_id,invite_code_id,phone,consent_contact,objective_score,essay_score,proof_bonus,final_score,status,answers,submitted_at,reviewed_at,created_at"
-                  : table === "competition_proofs"
-                    ? "id,attempt_id,proof_type,file_url,file_name,file_size,mime_type,status,bonus_points,reviewer_note,created_at,reviewed_at"
-                    : "*",
+          requestedSelect || (
+            table === "admin_users"
+              ? "id,username,email,role,permissions,created_at"
+              : table === "tickets"
+                ? "id,title,description,user_name,user_email,category,priority,status,created_at,updated_at"
+                : table === "ticket_messages"
+                  ? "id,ticket_id,message,is_internal,sender_id,created_at"
+                  : table === "competition_invite_codes"
+                    ? "id,label,max_uses,uses_count,expires_at,active,created_at,created_by"
+                    : table === "competition_attempts"
+                      ? "id,user_id,invite_code_id,phone,consent_contact,objective_score,essay_score,proof_bonus,final_score,status,answers,submitted_at,reviewed_at,created_at"
+                      : table === "competition_proofs"
+                        ? "id,attempt_id,proof_type,file_url,file_name,file_size,mime_type,status,bonus_points,reviewer_note,created_at,reviewed_at"
+                        : "*"
+          ),
         );
         const orderByTable: Record<string, string> = {
           sellers: "rank.asc.nullslast,name.asc",
@@ -300,13 +331,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ranks: "tier.asc",
           mercenaries: "order_index.asc.nullslast,name.asc",
           tutorials: "order_index.asc.nullslast,created_at.desc",
+          tickets: "created_at.desc",
+          ticket_messages: "created_at.asc",
+          comments: "created_at.desc",
+          seller_reviews: "created_at.desc",
+          maps: "name.asc",
+          site_settings: "key.asc",
+          custom_pages: "created_at.desc",
+          faq_categories: "sort_order.asc,created_at.asc",
+          faq_articles: "sort_order.asc,created_at.asc",
         };
-        params.set("order", orderByTable[table] || "name.asc");
+        const requestedOrder = typeof req.body?.order === "string" && req.body.order.trim() && /^[a-zA-Z0-9_., ]+$/.test(req.body.order)
+          ? req.body.order
+          : orderByTable[table] || "name.asc";
+        params.set("order", requestedOrder);
+        const requestedOffset = Number(req.body?.offset);
         params.set("limit", String(pageSize));
-        params.set("offset", String((page - 1) * pageSize));
+        params.set("offset", String(Number.isFinite(requestedOffset) && requestedOffset >= 0 ? Math.floor(requestedOffset) : (page - 1) * pageSize));
+        if (table === "ticket_messages" && typeof req.body?.ticketId === "string" && req.body.ticketId.trim()) {
+          params.set("ticket_id", `eq.${encodeURIComponent(req.body.ticketId.trim())}`);
+        }
         if (search && (table === "weapons" || table === "sellers" || table === "highlights")) {
           const field = table === "highlights" ? "title" : "name";
           params.set(field, `ilike.*${search.replace(/[*,]/g, " ")}*`);
+        }
+        if (Array.isArray(req.body?.filters)) {
+          for (const filter of req.body.filters.slice(0, 20)) {
+            const field = typeof filter?.field === "string" && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(filter.field) ? filter.field : "";
+            const operator = typeof filter?.operator === "string" && ["eq", "neq", "ilike", "in", "cs", "gt", "gte", "lt", "lte"].includes(filter.operator) ? filter.operator : "";
+            if (!field || !operator) continue;
+            const values = Array.isArray(filter.value) ? filter.value.map((value: unknown) => String(value).replace(/[{},\r\n]/g, "").slice(0, 120)).filter(Boolean) : [];
+            const rawValue = values.length ? values.join(",") : String(filter.value ?? "").replace(/[\r\n]/g, "");
+            const value = operator === "in" && values.length ? `(${rawValue})` : operator === "cs" && values.length ? `{${rawValue}}` : rawValue.slice(0, 500);
+            if (value) params.set(field, `${operator}.${value}`);
+          }
         }
         const listRes = await fetch(`${baseUrl}?${params.toString()}`, { headers });
         if (!listRes.ok) throw new Error(`Supabase ${table} read failed: ${await listRes.text()}`);
@@ -332,7 +390,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return addCorsHeaders(res).status(200).json({ success: true, updated });
       }
 
-      if (operation === "create") {
+      if (operation === "create" || operation === "upsert") {
         if (!row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "row required" });
         let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
         let issuedCode: string | undefined;
@@ -358,6 +416,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           safeRow.password_hash = await bcrypt.hash(password, 12);
           safeRow.permissions = safeRow.permissions && typeof safeRow.permissions === "object" ? safeRow.permissions : {};
         }
+        if (table === "tickets") {
+          const allowed = ["title", "description", "category", "priority", "status"];
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowed.includes(key)));
+          if (typeof safeRow.title === "string") safeRow.title = safeRow.title.trim().slice(0, 160);
+          if (typeof safeRow.description === "string") safeRow.description = safeRow.description.trim().slice(0, 10000);
+          if (safeRow.status !== undefined && !["open", "in-progress", "in_progress", "resolved", "closed"].includes(String(safeRow.status))) return addCorsHeaders(res).status(400).json({ error: "Invalid ticket status" });
+          if (safeRow.priority !== undefined && !["low", "normal", "medium", "high", "urgent"].includes(String(safeRow.priority))) return addCorsHeaders(res).status(400).json({ error: "Invalid ticket priority" });
+          safeRow.updated_at = new Date().toISOString();
+        }
+        if (table === "ticket_messages") {
+          if (operation === "update" || operation === "delete") return addCorsHeaders(res).status(405).json({ error: "Ticket messages cannot be edited or deleted" });
+          const ticketId = typeof safeRow.ticket_id === "string" ? safeRow.ticket_id.trim() : "";
+          const message = typeof safeRow.message === "string" ? safeRow.message.trim().slice(0, 10000) : "";
+          if (!ticketId || !message) return addCorsHeaders(res).status(400).json({ error: "Ticket id and message are required" });
+          safeRow = { ticket_id: ticketId, message, is_internal: safeRow.is_internal === true, sender_id: admin.id || admin.username };
+        }
         if (table === "competition_invite_codes") {
           const code = typeof safeRow.code === "string" ? safeRow.code.trim() : "";
           if (code.length < 4) return addCorsHeaders(res).status(400).json({ error: "Invitation code must be at least 4 characters" });
@@ -367,13 +441,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           safeRow.code_hash = (await import("node:crypto")).createHash("sha256").update(code).digest("hex");
           safeRow.uses_count = 0;
         }
-        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(safeRow) });
+        const writeHeaders = operation === "upsert"
+          ? { ...headers, Prefer: "resolution=merge-duplicates,return=representation,count=exact" }
+          : headers;
+        const writeParams = new URLSearchParams();
+        if (operation === "upsert" && typeof req.body?.onConflict === "string" && /^[a-zA-Z0-9_, ]+$/.test(req.body.onConflict)) {
+          writeParams.set("on_conflict", req.body.onConflict);
+        }
+        const writeUrl = writeParams.toString() ? `${baseUrl}?${writeParams.toString()}` : baseUrl;
+        const createRes = await fetch(writeUrl, { method: "POST", headers: writeHeaders, body: JSON.stringify(safeRow) });
         if (!createRes.ok) throw new Error(`Supabase ${table} create failed: ${await createRes.text()}`);
         return addCorsHeaders(res).status(200).json({ data: await createRes.json(), ...(issuedCode ? { issuedCode } : {}) });
       }
 
       if (operation === "update") {
         if (!id || !row || typeof row !== "object") return addCorsHeaders(res).status(400).json({ error: "id and row required" });
+        if (table === "ticket_messages") return addCorsHeaders(res).status(405).json({ error: "Ticket messages cannot be edited" });
         let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
         const aliases: Record<string, string> = {
           image: "image_url", imageUrl: "image_url", titleAr: "title_ar", descriptionAr: "description_ar",

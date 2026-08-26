@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { apiRequest } from '@/lib/queryClient';
 import { toast } from 'sonner';
 import { Trash2, Eye, EyeOff } from 'lucide-react';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -20,29 +20,44 @@ const col = createColumnHelper<Review>();
 export default function SellerReviews() {
   const [items, setItems] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const client = supabaseService;
-
   const fetch = useCallback(async () => {
-    if (!client) return;
     setLoading(true);
-    const { data } = await client.from('seller_reviews').select('*').order('created_at', { ascending: false });
-    setItems(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      const result = await apiRequest('/api/admin/rebuild', 'POST', {
+        action: 'admin-table', type: 'seller_reviews', operation: 'list', page: 1, pageSize: 100,
+      });
+      setItems(Array.isArray(result?.data) ? result.data : []);
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not load reviews');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const toggle = async (id: string, approved: boolean) => {
-    if (!client) return;
-    await client.from('seller_reviews').update({ approved: !approved }).eq('id', id);
-    toast.success(approved ? 'Hidden' : 'Approved');
-    await fetch();
+    try {
+      await apiRequest('/api/admin/rebuild', 'POST', {
+        action: 'admin-table', type: 'seller_reviews', operation: 'update', id, row: { approved: !approved },
+      });
+      toast.success(approved ? 'Hidden' : 'Approved');
+      await fetch();
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not update review');
+    }
   };
 
   const remove = async (id: string) => {
-    if (!client || !confirm('Delete review?')) return;
-    await client.from('seller_reviews').delete().eq('id', id);
-    toast.success('Deleted'); await fetch();
+    if (!confirm('Delete review?')) return;
+    try {
+      await apiRequest('/api/admin/rebuild', 'POST', { action: 'admin-table', type: 'seller_reviews', operation: 'delete', id });
+      toast.success('Deleted');
+      await fetch();
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not delete review');
+    }
   };
 
   const stars = (n: number) => `${Math.max(0, Math.min(5, n))}/5`;

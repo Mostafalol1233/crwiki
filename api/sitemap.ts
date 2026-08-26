@@ -23,24 +23,293 @@ function directCompetitionPreviewRequested(req: VercelRequest): boolean {
   return process.env.VERCEL_ENV === "preview" && value === "1";
 }
 
-async function authenticatedUserId(req: VercelRequest): Promise<string | null> {
+type AuthenticatedUser = {
+  id: string;
+  email: string;
+  username: string;
+};
+
+async function authenticatedUser(req: VercelRequest): Promise<AuthenticatedUser | null> {
   const token = requestBearer(req);
-  if (!SUPABASE_URL || !ANON_KEY || !token) return null;
+  const authKey = ANON_KEY || SERVICE_KEY;
+  if (!SUPABASE_URL || !authKey || !token) return null;
   try {
     const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}` },
+      headers: { apikey: authKey, Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(9000),
     });
     if (!response.ok) return null;
     const user = await response.json();
-    return typeof user?.id === "string" ? user.id : null;
+    if (typeof user?.id !== "string") return null;
+    const metadata = user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+    return {
+      id: user.id,
+      email: typeof user.email === "string" ? user.email.trim().toLowerCase() : "",
+      username: typeof metadata.username === "string" && metadata.username.trim()
+        ? metadata.username.trim().slice(0, 80)
+        : typeof user.email === "string" ? user.email.split("@")[0].slice(0, 80) : "Member",
+    };
   } catch {
     return null;
   }
 }
 
+async function authenticatedUserId(req: VercelRequest): Promise<string | null> {
+  return (await authenticatedUser(req))?.id || null;
+}
+
 function sha256(value: string): string {
   return createHash("sha256").update(value.trim()).digest("hex");
+}
+
+const communityRate = new Map<string, { count: number; startedAt: number }>();
+function allowCommunityRequest(req: VercelRequest, bucket: string, max: number, windowMs = 10 * 60 * 1000) {
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = String(Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || "unknown").split(",")[0].trim().slice(0, 100);
+  const key = `${bucket}:${ip}`;
+  const now = Date.now();
+  const current = communityRate.get(key);
+  if (!current || now - current.startedAt >= windowMs) {
+    communityRate.set(key, { count: 1, startedAt: now });
+    return true;
+  }
+  if (current.count >= max) return false;
+  current.count += 1;
+  return true;
+}
+
+function textField(value: unknown, min: number, max: number) {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim().replaceAll(String.fromCharCode(0), "");
+  return normalized.length >= min && normalized.length <= max ? normalized : "";
+}
+
+function emailField(value: unknown) {
+  const email = typeof value === "string" ? value.trim().toLowerCase() : "";
+  const at = email.indexOf("@");
+  const dot = email.lastIndexOf(".");
+  return !email.includes(" ") && at > 0 && dot > at + 1 && dot < email.length - 1 && email.length <= 320 ? email : "";
+}
+
+async function communityRequest(req: VercelRequest): Promise<{ status: number; body: any }> {
+  if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Community service is not configured" } };
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const action = typeof body.action === "string" ? body.action : "";
+  const base = `${SUPABASE_URL}/rest/v1`;
+  const headers = serviceHeaders();
+  const user = await authenticatedUser(req);
+
+  if (action === "ticket:create") {
+    if (!allowCommunityRequest(req, "ticket-create", 3)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const title = textField(body.title, 3, 160);
+    const description = textField(body.description, 10, 10000);
+    const email = user?.email || emailField(body.userEmail);
+    if (!title || !description || !email) return { status: 400, body: { error: "Valid title, description, and email are required" } };
+    const category = textField(body.category, 2, 60) || "general";
+    const priority = ["low", "normal", "high"].includes(body.priority) ? body.priority : "normal";
+    const response = await fetch(`${base}/tickets`, {
+      method: "POST", headers,
+      body: JSON.stringify({ title, description, user_name: user?.username || textField(body.userName, 2, 80) || "Member", user_email: email, category, priority, status: "open" }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!response.ok) return { status: 502, body: { error: "Could not create ticket" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (action === "ticket:list") {
+    if (!user?.email) return { status: 401, body: { error: "Sign-in is required to view tickets" } };
+    const response = await fetch(`${base}/tickets?user_email=eq.${encodeURIComponent(user.email)}&select=id,title,description,user_name,user_email,category,priority,status,created_at,updated_at&order=created_at.desc&limit=100`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not load tickets" } };
+    return { status: 200, body: await response.json() };
+  }
+
+  if (action === "ticket:replies") {
+    if (!user?.email) return { status: 401, body: { error: "Sign-in is required" } };
+    const ticketId = textField(body.ticketId, 1, 100);
+    if (!ticketId) return { status: 400, body: { error: "Ticket id is required" } };
+    const ownerResponse = await fetch(`${base}/tickets?id=eq.${encodeURIComponent(ticketId)}&user_email=eq.${encodeURIComponent(user.email)}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const ownerRows = ownerResponse.ok ? await ownerResponse.json() : [];
+    if (!Array.isArray(ownerRows) || !ownerRows.length) return { status: 404, body: { error: "Ticket not found" } };
+    const response = await fetch(`${base}/ticket_messages?ticket_id=eq.${encodeURIComponent(ticketId)}&is_internal=eq.false&order=created_at.asc`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not load ticket replies" } };
+    return { status: 200, body: await response.json() };
+  }
+
+  if (action === "ticket:reply") {
+    if (!user?.email) return { status: 401, body: { error: "Sign-in is required" } };
+    if (!allowCommunityRequest(req, "ticket-reply", 10)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const ticketId = textField(body.ticketId, 1, 100);
+    const content = textField(body.content, 1, 5000);
+    if (!ticketId || !content) return { status: 400, body: { error: "Ticket id and message are required" } };
+    const ownerResponse = await fetch(`${base}/tickets?id=eq.${encodeURIComponent(ticketId)}&user_email=eq.${encodeURIComponent(user.email)}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const ownerRows = ownerResponse.ok ? await ownerResponse.json() : [];
+    if (!Array.isArray(ownerRows) || !ownerRows.length) return { status: 404, body: { error: "Ticket not found" } };
+    const response = await fetch(`${base}/ticket_messages`, { method: "POST", headers, body: JSON.stringify({ ticket_id: ticketId, message: content, sender_id: user.id, is_internal: false }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not add ticket reply" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (action === "comment:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required to comment" } };
+    if (!allowCommunityRequest(req, "comment-create", 10)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const postId = textField(body.postId, 1, 120);
+    const postType = textField(body.postType, 1, 30) || "post";
+    const content = textField(body.content, 2, 5000);
+    if (!postId || !content) return { status: 400, body: { error: "Post and comment content are required" } };
+    const response = await fetch(`${base}/comments`, { method: "POST", headers, body: JSON.stringify({ post_id: postId, post_type: postType, content, author_name: user.username }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not add comment" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (["like:toggle", "like:status", "video-like:toggle", "video-like:status", "comment-like:toggle", "comment-like:status"].includes(action)) {
+    if (!user) return { status: 401, body: { error: "Sign-in is required to like" } };
+    if (!allowCommunityRequest(req, "like", 60)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const targetId = textField(body.targetId || body.videoId || body.commentId, 1, 120);
+    if (!targetId) return { status: 400, body: { error: "Target id is required" } };
+    const isToggle = action.endsWith(":toggle");
+    const table = action.startsWith("like:") ? "likes" : action.startsWith("video-like:") ? "video_likes" : "comment_likes";
+    const idColumn = table === "likes" ? "target_id" : table === "video_likes" ? "video_id" : "comment_id";
+    const query = `${base}/${table}?${idColumn}=eq.${encodeURIComponent(targetId)}&user_identifier=eq.${encodeURIComponent(user.id)}&select=id&limit=1`;
+    const existingResponse = await fetch(query, { headers, signal: AbortSignal.timeout(9000) });
+    const existingRows = existingResponse.ok ? await existingResponse.json() : [];
+    const existing = Array.isArray(existingRows) ? existingRows[0] : null;
+    if (!isToggle) {
+      const countResponse = await fetch(`${base}/${table}?${idColumn}=eq.${encodeURIComponent(targetId)}&select=id`, { headers, signal: AbortSignal.timeout(9000) });
+      const countRows = countResponse.ok ? await countResponse.json() : [];
+      return { status: 200, body: { liked: Boolean(existing?.id), count: Array.isArray(countRows) ? countRows.length : 0 } };
+    }
+    if (existing?.id) {
+      const deleteResponse = await fetch(`${base}/${table}?id=eq.${encodeURIComponent(existing.id)}`, { method: "DELETE", headers, signal: AbortSignal.timeout(9000) });
+      if (!deleteResponse.ok) return { status: 502, body: { error: "Could not remove like" } };
+    } else {
+      const row = action === "like:toggle"
+        ? { target_id: targetId, target_type: textField(body.targetType, 1, 40) || "post", user_identifier: user.id }
+        : action === "video-like:toggle" ? { video_id: targetId, user_identifier: user.id } : { comment_id: targetId, user_identifier: user.id };
+      const insertResponse = await fetch(`${base}/${table}`, { method: "POST", headers, body: JSON.stringify(row), signal: AbortSignal.timeout(9000) });
+      if (!insertResponse.ok && insertResponse.status !== 409) return { status: 502, body: { error: "Could not add like" } };
+    }
+    const countResponse = await fetch(`${base}/${table}?${idColumn}=eq.${encodeURIComponent(targetId)}&select=id`, { headers, signal: AbortSignal.timeout(9000) });
+    const countRows = countResponse.ok ? await countResponse.json() : [];
+    return { status: 200, body: { liked: !existing?.id, count: Array.isArray(countRows) ? countRows.length : 0 } };
+  }
+
+  if (action === "forum:thread:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required to create a topic" } };
+    if (!allowCommunityRequest(req, "forum-thread", 5)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const categoryId = textField(body.categoryId, 1, 120);
+    const title = textField(body.title, 5, 160);
+    const threadBody = textField(body.body, 10, 12000);
+    if (!categoryId || !title || !threadBody) return { status: 400, body: { error: "Category, title, and body are required" } };
+    const categoryResponse = await fetch(`${base}/forum_categories?id=eq.${encodeURIComponent(categoryId)}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const categoryRows = categoryResponse.ok ? await categoryResponse.json() : [];
+    if (!Array.isArray(categoryRows) || !categoryRows.length) return { status: 400, body: { error: "Forum category not found" } };
+    const response = await fetch(`${base}/forum_threads`, { method: "POST", headers, body: JSON.stringify({ category_id: categoryId, title, body: threadBody, author_id: user.id, author_name: user.username, author_avatar: "", reply_count: 0, view_count: 0, last_reply_at: new Date().toISOString() }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not create topic" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (action === "forum:post:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required to reply" } };
+    if (!allowCommunityRequest(req, "forum-post", 15)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const threadId = textField(body.threadId, 1, 120);
+    const postBody = textField(body.body, 1, 10000);
+    if (!threadId || !postBody) return { status: 400, body: { error: "Thread and reply body are required" } };
+    const threadResponse = await fetch(`${base}/forum_threads?id=eq.${encodeURIComponent(threadId)}&select=id,is_locked,reply_count&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const threads = threadResponse.ok ? await threadResponse.json() : [];
+    const thread = Array.isArray(threads) ? threads[0] : null;
+    if (!thread) return { status: 404, body: { error: "Topic not found" } };
+    if (thread.is_locked === true) return { status: 409, body: { error: "Topic is locked" } };
+    const response = await fetch(`${base}/forum_posts`, { method: "POST", headers, body: JSON.stringify({ thread_id: threadId, body: postBody, author_id: user.id, author_name: user.username, author_avatar: "", is_op: false }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not add reply" } };
+    await fetch(`${base}/forum_threads?id=eq.${encodeURIComponent(threadId)}`, { method: "PATCH", headers, body: JSON.stringify({ reply_count: Number(thread.reply_count || 0) + 1, last_reply_at: new Date().toISOString() }), signal: AbortSignal.timeout(9000) });
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (action === "forum:views") {
+    if (!allowCommunityRequest(req, "forum-views", 60, 60 * 1000)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const threadId = textField(body.threadId, 1, 120);
+    if (!threadId) return { status: 400, body: { error: "Thread id is required" } };
+    const threadResponse = await fetch(`${base}/forum_threads?id=eq.${encodeURIComponent(threadId)}&select=id,view_count&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const threads = threadResponse.ok ? await threadResponse.json() : [];
+    const thread = Array.isArray(threads) ? threads[0] : null;
+    if (!thread) return { status: 404, body: { error: "Topic not found" } };
+    await fetch(`${base}/forum_threads?id=eq.${encodeURIComponent(threadId)}`, { method: "PATCH", headers, body: JSON.stringify({ view_count: Number(thread.view_count || 0) + 1 }), signal: AbortSignal.timeout(9000) });
+    return { status: 200, body: { success: true } };
+  }
+
+  if (action === "chat:conversations:list") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required" } };
+    const member = encodeURIComponent(`cs.{${user.username.replace(/[{},]/g, "").slice(0, 80)}}`);
+    const response = await fetch(`${base}/conversations?participants=${member}&select=id,name,type,avatar,participants,last_message,last_message_at,created_at&order=last_message_at.desc.nullslast&limit=100`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not load conversations" } };
+    return { status: 200, body: await response.json() };
+  }
+
+  if (action === "chat:messages:list") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required" } };
+    const conversationId = textField(body.conversationId, 1, 120);
+    if (!conversationId) return { status: 400, body: { error: "Conversation id is required" } };
+    const member = encodeURIComponent(`cs.{${user.username.replace(/[{},]/g, "").slice(0, 80)}}`);
+    const conversationResponse = await fetch(`${base}/conversations?id=eq.${encodeURIComponent(conversationId)}&participants=${member}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const conversations = conversationResponse.ok ? await conversationResponse.json() : [];
+    if (!Array.isArray(conversations) || !conversations.length) return { status: 404, body: { error: "Conversation not found" } };
+    const response = await fetch(`${base}/messages?conversation_id=eq.${encodeURIComponent(conversationId)}&select=id,conversation_id,sender_username,content,type,reply_to_id,reply_to_content,reply_to_sender,created_at&order=created_at.asc&limit=200`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not load messages" } };
+    return { status: 200, body: await response.json() };
+  }
+
+  if (action === "chat:conversation:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required" } };
+    if (!allowCommunityRequest(req, "chat-conversation", 10)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const type = ["direct", "group", "channel"].includes(body.type) ? body.type : "direct";
+    const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+    const suppliedParticipants = Array.isArray(body.participants) ? body.participants : [];
+    const participants = [...new Set([user.username, ...suppliedParticipants.filter((value: unknown): value is string => typeof value === "string").map((value: string) => value.trim().replace(/[{},]/g, "").slice(0, 80)).filter(Boolean)])].slice(0, 20);
+    if (type !== "direct" && !name) return { status: 400, body: { error: "A conversation name is required" } };
+    if (type === "direct" && participants.length < 2) return { status: 400, body: { error: "A recipient is required" } };
+    const response = await fetch(`${base}/conversations`, { method: "POST", headers, body: JSON.stringify({ name: name || null, type, participants, last_message: "", last_message_at: new Date().toISOString() }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not create conversation" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  if (action === "chat:message:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required" } };
+    if (!allowCommunityRequest(req, "chat-message", 60)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const conversationId = textField(body.conversationId, 1, 120);
+    const content = textField(body.content, 1, 10000);
+    const type = ["text", "image", "system"].includes(body.type) ? body.type : "text";
+    if (!conversationId || !content) return { status: 400, body: { error: "Conversation and message content are required" } };
+    const member = encodeURIComponent(`cs.{${user.username.replace(/[{},]/g, "").slice(0, 80)}}`);
+    const conversationResponse = await fetch(`${base}/conversations?id=eq.${encodeURIComponent(conversationId)}&participants=${member}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const conversations = conversationResponse.ok ? await conversationResponse.json() : [];
+    if (!Array.isArray(conversations) || !conversations.length) return { status: 404, body: { error: "Conversation not found" } };
+    const messageRow: Record<string, unknown> = { conversation_id: conversationId, sender_username: user.username, content, type };
+    for (const key of ["reply_to_id", "reply_to_content", "reply_to_sender"]) {
+      if (typeof body[key] === "string" && body[key].trim()) messageRow[key] = body[key].trim().slice(0, 200);
+    }
+    const response = await fetch(`${base}/messages`, { method: "POST", headers, body: JSON.stringify(messageRow), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not send message" } };
+    const created = (await response.json())?.[0] || { ...messageRow, created_at: new Date().toISOString() };
+    await fetch(`${base}/conversations?id=eq.${encodeURIComponent(conversationId)}`, { method: "PATCH", headers, body: JSON.stringify({ last_message: content.slice(0, 500), last_message_at: created.created_at || new Date().toISOString() }), signal: AbortSignal.timeout(9000) });
+    return { status: 201, body: created };
+  }
+
+  if (action === "review:create") {
+    if (!user) return { status: 401, body: { error: "Sign-in is required to submit a review" } };
+    if (!allowCommunityRequest(req, "review-create", 3)) return { status: 429, body: { error: "Too many requests. Try again later." } };
+    const sellerId = textField(body.sellerId, 1, 120);
+    const rating = Number(body.rating);
+    const comment = textField(body.comment, 5, 5000);
+    if (!sellerId || !Number.isInteger(rating) || rating < 1 || rating > 5 || !comment) return { status: 400, body: { error: "Seller, rating, and comment are required" } };
+    const sellerResponse = await fetch(`${base}/sellers?id=eq.${encodeURIComponent(sellerId)}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const sellerRows = sellerResponse.ok ? await sellerResponse.json() : [];
+    if (!Array.isArray(sellerRows) || !sellerRows.length) return { status: 404, body: { error: "Seller not found" } };
+    const response = await fetch(`${base}/seller_reviews`, { method: "POST", headers, body: JSON.stringify({ seller_id: sellerId, user_name: user.username, rating, comment, helpful_votes: 0, status: "pending" }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return { status: 502, body: { error: "Could not submit review" } };
+    return { status: 201, body: (await response.json())?.[0] || { success: true } };
+  }
+
+  return { status: 400, body: { error: "Unsupported community action" } };
 }
 
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
@@ -393,7 +662,7 @@ function entry({ loc, lastmod, changefreq, priority, images, videos }: UrlEntry)
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(204).end();
   }
@@ -401,6 +670,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawType = Array.isArray(req.query.type) ? req.query.type[0] : req.query.type;
   if (req.method === 'POST' && rawType === 'competition') {
     const result = await competitionRequest(req);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(result.status).json(result.body);
+  }
+
+  if (req.method === 'POST' && rawType === 'community') {
+    const result = await communityRequest(req);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
     return res.status(result.status).json(result.body);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '@/lib/supabaseAdmin';
+import { apiRequest } from '@/lib/queryClient';
 import { toast } from 'sonner';
 import { createColumnHelper } from '@tanstack/react-table';
 import DataTable from '@/components/admin/DataTable';
@@ -35,21 +35,27 @@ export default function TicketsManager() {
   const [reply, setReply] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [sending, setSending] = useState(false);
-  const client = supabaseService;
-
   const fetch = useCallback(async () => {
-    if (!client) return;
     setLoading(true);
-    const { data } = await client.from('tickets').select('*').order('created_at', { ascending: false });
-    setTickets(data || []);
-    setLoading(false);
-  }, [client]);
+    try {
+      const result = await apiRequest('/api/admin/rebuild', 'POST', { action: 'admin-table', type: 'tickets', operation: 'list', page: 1, pageSize: 100 });
+      const rows = Array.isArray(result?.data) ? result.data : [];
+      setTickets(rows.map((ticket: any) => ({ ...ticket, subject: ticket.subject || ticket.title || '' })));
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not load tickets');
+      setTickets([]);
+    } finally { setLoading(false); }
+  }, []);
 
   const fetchMessages = useCallback(async (ticketId: string) => {
-    if (!client) return;
-    const { data } = await client.from('ticket_messages').select('*').eq('ticket_id', ticketId).order('created_at');
-    setMessages(data || []);
-  }, [client]);
+    try {
+      const result = await apiRequest('/api/admin/rebuild', 'POST', { action: 'admin-table', type: 'ticket_messages', operation: 'list', ticketId, page: 1, pageSize: 100 });
+      setMessages(Array.isArray(result?.data) ? result.data : []);
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not load ticket messages');
+      setMessages([]);
+    }
+  }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -60,28 +66,26 @@ export default function TicketsManager() {
   };
 
   const updateStatus = async (ticketId: string, status: string) => {
-    if (!client) return;
-    await client.from('tickets').update({ status, updated_at: new Date().toISOString() }).eq('id', ticketId);
-    setSelected((prev) => prev ? { ...prev, status } : prev);
-    await fetch();
-    toast.success('Status updated');
+    try {
+      await apiRequest('/api/admin/rebuild', 'POST', { action: 'admin-table', type: 'tickets', operation: 'update', id: ticketId, row: { status } });
+      setSelected((prev) => prev ? { ...prev, status } : prev);
+      await fetch();
+      toast.success('Status updated');
+    } catch (error: any) { toast.error(error?.message || 'Could not update ticket'); }
   };
 
   const sendReply = async () => {
-    if (!client || !selected || !reply.trim()) return;
+    if (!selected || !reply.trim()) return;
     setSending(true);
     try {
-      const { error } = await client.from('ticket_messages').insert({
-        ticket_id: selected.id,
-        message: reply,
-        is_internal: isInternal,
-        created_at: new Date().toISOString(),
+      await apiRequest('/api/admin/rebuild', 'POST', {
+        action: 'admin-table', type: 'ticket_messages', operation: 'create',
+        row: { ticket_id: selected.id, message: reply.trim(), is_internal: isInternal },
       });
-      if (error) throw error;
       setReply('');
       await fetchMessages(selected.id);
       toast.success(isInternal ? 'Internal note added' : 'Reply sent');
-    } catch (e: any) { toast.error(e.message); } finally { setSending(false); }
+    } catch (e: any) { toast.error(e?.message || 'Could not send reply'); } finally { setSending(false); }
   };
 
   const columns = [

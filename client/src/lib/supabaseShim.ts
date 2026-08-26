@@ -724,26 +724,21 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   // ── Tickets ────────────────────────────────────────────────────────────────
-  if (path === '/tickets') {
-    if (M === 'GET') {
-      const { data, error } = await client.from('tickets').select('*').order('created_at', { ascending: false });
-      if (error) throw new Error(error.message);
-      return data || [];
-    }
+  if (path === '/tickets' && M === 'GET') {
+    const result = await adminProxy('/api/admin/rebuild', {
+      action: 'admin-table', type: 'tickets', operation: 'list', page: 1, pageSize: 100,
+    });
+    return Array.isArray(result?.data) ? result.data : [];
   }
 
-  const ticketMatch = path.match(/^\/tickets\/(.+)$/);
-  if (ticketMatch) {
-    const id = ticketMatch[1];
-    if (M === 'PATCH') {
-      const { data, error } = await client.from('tickets').update(body).eq('id', id).select().single();
-      if (error) throw new Error(error.message);
-      return data;
-    }
-    if (M === 'DELETE') {
-      await client.from('tickets').delete().eq('id', id);
-      return { success: true };
-    }
+  const ticketMatch = path.match(/^\/tickets\/([^/]+)$/);
+  if (ticketMatch && (M === 'PATCH' || M === 'DELETE')) {
+    const id = decodeURIComponent(ticketMatch[1]);
+    const result = await adminProxy('/api/admin/rebuild', {
+      action: 'admin-table', type: 'tickets', operation: M === 'PATCH' ? 'update' : 'delete', id,
+      ...(M === 'PATCH' ? { row: body || {} } : {}),
+    });
+    return M === 'PATCH' ? (Array.isArray(result?.data) ? result.data[0] : result?.data || result) : result;
   }
 
   // ── Tutorials (Videos) ────────────────────────────────────────────────────

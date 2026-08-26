@@ -6884,13 +6884,15 @@ export default function Admin() {
                                     setReplyDialogOpen(true);
                                     (async () => {
                                       try {
-                                        const base = (import.meta as any).env?.VITE_API_URL || "";
-                                        const url = base ? `${base}/api/tickets/${ticket.id}/replies` : `/api/tickets/${ticket.id}/replies`;
-                                        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
-                                        if (res.ok) {
-                                          const json = await res.json();
-                                          setActiveTicketReplies(json || []);
-                                        }
+                                        const result = await apiRequest("/api/admin/rebuild", "POST", {
+                                          action: "admin-table", type: "ticket_messages", operation: "list",
+                                          ticketId: ticket.id, page: 1, pageSize: 100,
+                                        });
+                                        const rows = Array.isArray(result?.data) ? result.data : [];
+                                        setActiveTicketReplies(rows.map((r: any) => ({
+                                          id: r.id, content: r.message || "", isAdmin: Boolean(r.is_internal),
+                                          createdAt: r.created_at || "", mediaUrl: "",
+                                        })));
                                       } catch { }
                                     })();
                                   }}
@@ -6937,13 +6939,15 @@ export default function Admin() {
                                     setReplyDialogOpen(true);
                                     (async () => {
                                       try {
-                                        const base = (import.meta as any).env?.VITE_API_URL || "";
-                                        const url = base ? `${base}/api/tickets/${ticket.id}/replies` : `/api/tickets/${ticket.id}/replies`;
-                                        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
-                                        if (res.ok) {
-                                          const json = await res.json();
-                                          setActiveTicketReplies(json || []);
-                                        }
+                                        const result = await apiRequest("/api/admin/rebuild", "POST", {
+                                          action: "admin-table", type: "ticket_messages", operation: "list",
+                                          ticketId: ticket.id, page: 1, pageSize: 100,
+                                        });
+                                        const rows = Array.isArray(result?.data) ? result.data : [];
+                                        setActiveTicketReplies(rows.map((r: any) => ({
+                                          id: r.id, content: r.message || "", isAdmin: Boolean(r.is_internal),
+                                          createdAt: r.created_at || "", mediaUrl: "",
+                                        })));
                                       } catch { }
                                     })();
                                   }}
@@ -7431,23 +7435,30 @@ export default function Admin() {
               <Button
                 onClick={async () => {
                   if (!activeTicket || !replyText.trim()) return;
-                  const formData = new FormData();
-                  formData.append('authorName', adminUsername || 'Admin');
-                  formData.append('content', replyText);
-                  formData.append('isAdmin', 'true');
-                  if (replyFile) formData.append('attachment', replyFile);
-                  const base = (import.meta as any).env?.VITE_API_URL || '';
-                  const url = base ? `${base}/api/tickets/${activeTicket.id}/replies` : `/api/tickets/${activeTicket.id}/replies`;
-                  const res = await fetch(url, { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}` }, credentials: 'include' });
-                  if (res.ok) {
-                    const created = await res.json();
-                    setActiveTicketReplies([...(activeTicketReplies || []), created]);
+                  try {
+                    let message = replyText.trim();
+                    let attachmentUrl = '';
+                    if (replyFile) {
+                      attachmentUrl = await uploadImageToSupabase(replyFile, 'uploads', 'ticket-replies');
+                      if (attachmentUrl) message += "\n\nAttachment: " + attachmentUrl;
+                    }
+                    const result = await apiRequest('/api/admin/rebuild', 'POST', {
+                      action: 'admin-table', type: 'ticket_messages', operation: 'create',
+                      row: { ticket_id: activeTicket.id, message, is_internal: false },
+                    });
+                    const created = Array.isArray(result?.data) ? result.data[0] : result?.data || {};
+                    setActiveTicketReplies([...(activeTicketReplies || []), {
+                      id: created.id || `local-${Date.now()}`,
+                      content: created.message || message,
+                      isAdmin: Boolean(created.is_internal),
+                      createdAt: created.created_at || new Date().toISOString(),
+                      mediaUrl: attachmentUrl,
+                    }]);
                     setReplyText('');
                     setReplyFile(null);
                     toast({ title: 'Reply sent' });
-                  } else {
-                    const text = await res.text();
-                    toast({ title: 'Failed to send reply', description: text, variant: 'destructive' });
+                  } catch (error: any) {
+                    toast({ title: 'Failed to send reply', description: error?.message || 'Request failed', variant: 'destructive' });
                   }
                 }}
               >

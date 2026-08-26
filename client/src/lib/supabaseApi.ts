@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
+import { apiRequest } from './queryClient';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
 import { getWeaponDescription } from '../../../shared/weapon-descriptions';
 
@@ -736,18 +737,12 @@ export async function addSellerReview(review: {
   userPhone?: string;
   verificationAnswer?: string;
 }) {
-  const { data, error } = await supabase.from('seller_reviews').insert([{
-    seller_id: review.sellerId,
-    user_name: review.userName,
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'review:create',
+    sellerId: review.sellerId,
     rating: review.rating,
     comment: review.comment,
-    user_phone: review.userPhone,
-    verified_code: review.verificationAnswer,
-    helpful_votes: 0,
-    status: 'pending',
-  }]).select().single();
-  if (error) throw error;
-  return data;
+  });
 }
 
 // ─── Tutorials ───────────────────────────────────────────────────────────────
@@ -951,27 +946,20 @@ export async function createTicket(ticket: {
   category: string;
   priority?: string;
 }) {
-  const { data, error } = await supabase.from('tickets').insert([{
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'ticket:create',
     title: ticket.title,
     description: ticket.description,
-    user_name: ticket.userName,
-    user_email: ticket.userEmail,
+    userName: ticket.userName,
+    userEmail: ticket.userEmail,
     category: ticket.category,
     priority: ticket.priority || 'normal',
-    status: 'open',
-  }]).select().single();
-  if (error) throw error;
-  return data;
+  });
 }
 
-export async function getTicketsByEmail(email: string) {
-  const { data, error } = await supabase
-    .from('tickets')
-    .select('*')
-    .eq('user_email', email)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((t: any) => ({
+export async function getTicketsByEmail(_email: string) {
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:list' });
+  return (Array.isArray(data) ? data : []).map((t: any) => ({
     id: String(t.id),
     title: t.title || '',
     description: t.description || '',
@@ -997,31 +985,12 @@ function normalizeReply(r: any) {
 }
 
 export async function getTicketReplies(ticketId: string) {
-  // Try ticket_replies first; fall back to ticket_messages
-  const { data: replies, error: rErr } = await supabase
-    .from('ticket_replies')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: true });
-  if (!rErr) return (replies || []).map(normalizeReply);
-
-  const { data, error } = await supabase
-    .from('ticket_messages')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return (data || []).map(normalizeReply);
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:replies', ticketId });
+  return (Array.isArray(data) ? data : []).map(normalizeReply);
 }
 
-export async function addTicketReply(ticketId: string, content: string, authorName: string) {
-  const { data, error } = await supabase
-    .from('ticket_replies')
-    .insert([{ ticket_id: ticketId, content, author_name: authorName, is_admin: false }])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function addTicketReply(ticketId: string, content: string, _authorName: string) {
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:reply', ticketId, content });
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
@@ -1041,14 +1010,12 @@ export async function addComment(comment: {
   content: string;
   authorName: string;
 }) {
-  const { data, error } = await supabase.from('comments').insert([{
-    post_id: comment.postId,
-    post_type: comment.postType,
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'comment:create',
+    postId: comment.postId,
+    postType: comment.postType,
     content: comment.content,
-    author_name: comment.authorName,
-  }]).select().single();
-  if (error) throw error;
-  return data;
+  });
 }
 
 // ─── Likes (universal) ────────────────────────────────────────────────────────
@@ -1071,36 +1038,16 @@ export async function getLikeCount(targetId: string, targetType: string): Promis
 }
 
 export async function hasUserLiked(targetId: string, targetType: string): Promise<boolean> {
-  const uid = getUserIdentifier();
-  const { data } = await supabase
-    .from("likes")
-    .select("id")
-    .eq("target_id", targetId)
-    .eq("target_type", targetType)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  return !!data;
+  try {
+    const result = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'like:status', targetId, targetType });
+    return Boolean(result?.liked);
+  } catch {
+    return false;
+  }
 }
 
 export async function toggleLike(targetId: string, targetType: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const already = await hasUserLiked(targetId, targetType);
-  if (already) {
-    await supabase
-      .from("likes")
-      .delete()
-      .eq("target_id", targetId)
-      .eq("target_type", targetType)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("likes").insert([{
-      target_id: targetId,
-      target_type: targetType,
-      user_identifier: uid,
-    }]);
-  }
-  const count = await getLikeCount(targetId, targetType);
-  return { liked: !already, count };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'like:toggle', targetId, targetType });
 }
 
 // ─── Video Likes ──────────────────────────────────────────────────────────────
@@ -1113,24 +1060,7 @@ export async function getVideoLikeCount(videoId: string): Promise<number> {
 }
 
 export async function toggleVideoLike(videoId: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const { data: existing } = await supabase
-    .from("video_likes")
-    .select("id")
-    .eq("video_id", videoId)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  if (existing) {
-    await supabase
-      .from("video_likes")
-      .delete()
-      .eq("video_id", videoId)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("video_likes").insert([{ video_id: videoId, user_identifier: uid }]);
-  }
-  const count = await getVideoLikeCount(videoId);
-  return { liked: !existing, count };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'video-like:toggle', videoId });
 }
 
 // ─── Forum ───────────────────────────────────────────────────────────────────
@@ -1186,36 +1116,12 @@ export async function createForumThread(thread: {
   authorAvatar?: string;
   authorId?: string;
 }) {
-  const { data, error } = await supabase
-    .from('forum_threads')
-    .insert([{
-      category_id: thread.categoryId,
-      title: thread.title,
-      body: thread.body,
-      author_id: thread.authorId || null,
-      author_name: thread.authorName,
-      author_avatar: thread.authorAvatar || '',
-      reply_count: 0,
-      view_count: 0,
-      last_reply_at: new Date().toISOString(),
-    }])
-    .select()
-    .single();
-  if (error) throw error;
-  // Best-effort: increment category thread_count
-  try {
-    const { data: cat } = await supabase
-      .from('forum_categories')
-      .select('thread_count')
-      .eq('id', thread.categoryId)
-      .single();
-    if (cat) {
-      await supabase
-        .from('forum_categories')
-        .update({ thread_count: (cat.thread_count || 0) + 1 })
-        .eq('id', thread.categoryId);
-    }
-  } catch { /* non-critical */ }
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'forum:thread:create',
+    categoryId: thread.categoryId,
+    title: thread.title,
+    body: thread.body,
+  });
   return normalizeThread(data);
 }
 
@@ -1246,52 +1152,19 @@ export async function createForumPost(post: {
   authorId?: string;
   isOp?: boolean;
 }) {
-  const { data, error } = await supabase
-    .from('forum_posts')
-    .insert([{
-      thread_id: post.threadId,
-      body: post.body,
-      author_id: post.authorId || null,
-      author_name: post.authorName,
-      author_avatar: post.authorAvatar || '',
-      is_op: post.isOp || false,
-    }])
-    .select()
-    .single();
-  if (error) throw error;
-  // Best-effort: update thread reply_count + last_reply_at
-  if (!post.isOp) {
-    try {
-      const { data: th } = await supabase
-        .from('forum_threads')
-        .select('reply_count')
-        .eq('id', post.threadId)
-        .single();
-      if (th) {
-        await supabase
-          .from('forum_threads')
-          .update({ reply_count: (th.reply_count || 0) + 1, last_reply_at: new Date().toISOString() })
-          .eq('id', post.threadId);
-      }
-    } catch { /* non-critical */ }
-  }
-  return data;
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'forum:post:create',
+    threadId: post.threadId,
+    body: post.body,
+  });
 }
 
 export async function incrementThreadViews(threadId: string) {
   try {
-    const { data: th } = await supabase
-      .from('forum_threads')
-      .select('view_count')
-      .eq('id', threadId)
-      .single();
-    if (th) {
-      await supabase
-        .from('forum_threads')
-        .update({ view_count: (th.view_count || 0) + 1 })
-        .eq('id', threadId);
-    }
-  } catch { /* non-critical */ }
+    await apiRequest('/api/sitemap?type=community', 'POST', { action: 'forum:views', threadId });
+  } catch {
+    // View counting is non-critical and must not block reading a topic.
+  }
 }
 
 function normalizeThread(t: any) {
@@ -1317,25 +1190,5 @@ function normalizeThread(t: any) {
 
 // ─── Comment Likes ────────────────────────────────────────────────────────────
 export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const { data: existing } = await supabase
-    .from("comment_likes")
-    .select("id")
-    .eq("comment_id", commentId)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  if (existing) {
-    await supabase
-      .from("comment_likes")
-      .delete()
-      .eq("comment_id", commentId)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("comment_likes").insert([{ comment_id: commentId, user_identifier: uid }]);
-  }
-  const { count } = await supabase
-    .from("comment_likes")
-    .select("id", { count: "exact", head: true })
-    .eq("comment_id", commentId);
-  return { liked: !existing, count: count ?? 0 };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'comment-like:toggle', commentId });
 }

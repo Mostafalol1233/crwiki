@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { getForumThread, getForumPosts, createForumPost, incrementThreadViews, getMercenaries } from "@/lib/supabaseApi";
 import { supabase } from "@/lib/supabase";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 const ACCENT = "#f5a623";
 
@@ -143,7 +144,11 @@ export default function ForumThread({ params }: { params: { categorySlug: string
 
   const submitReply = async () => {
     const body = replyBody.trim();
-    const name = replyName.trim() || (isAr ? "مجهول" : "Anonymous");
+    if (!userSession) {
+      setError(isAr ? "يجب تسجيل الدخول لإضافة رد" : "You must sign in to add a reply");
+      return;
+    }
+    const name = replyName.trim();
     if (!body) return;
     setSubmitting(true);
     setError(null);
@@ -278,18 +283,11 @@ export default function ForumThread({ params }: { params: { categorySlug: string
               </h3>
 
               {!userSession && (
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "#444", marginBottom: 6 }}>
-                    {isAr ? "اسمك" : "Your Name"}
-                  </label>
-                  <input
-                    type="text"
-                    value={replyName}
-                    onChange={e => setReplyName(e.target.value)}
-                    placeholder={isAr ? "اكتب اسمك..." : "Enter your name..."}
-                    dir={isAr ? "rtl" : "ltr"}
-                    style={{ width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                  />
+                <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 5, background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.16)", fontSize: 12, color: "#999" }}>
+                  {isAr ? "تسجيل الدخول مطلوب لإضافة رد." : "Sign in is required to add a reply."}{" "}
+                  <Link href={buildAuthPath("login")} style={{ color: ACCENT, fontWeight: 700, textDecoration: "underline" }}>
+                    {isAr ? "تسجيل الدخول" : "Sign in"}
+                  </Link>
                 </div>
               )}
 
@@ -299,7 +297,7 @@ export default function ForumThread({ params }: { params: { categorySlug: string
                 placeholder={isAr ? "اكتب ردك هنا..." : "Write your reply here..."}
                 dir={isAr ? "rtl" : "ltr"}
                 rows={5}
-                disabled={submitting}
+                disabled={!userSession || submitting}
                 style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, color: "var(--foreground)", fontSize: 13, resize: "none", outline: "none", boxSizing: "border-box", marginBottom: 12, fontFamily: "inherit" }}
               />
 
@@ -308,17 +306,17 @@ export default function ForumThread({ params }: { params: { categorySlug: string
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <p style={{ fontSize: 11, color: "#3a3a3a" }}>
-                  {userSession ? (isAr ? `ترد بوصفك: ${replyName}` : `Replying as: ${replyName}`) : (isAr ? "يمكنك الرد بدون تسجيل دخول" : "No login required")}
+                  {userSession ? (isAr ? `ترد بوصفك: ${replyName}` : `Replying as: ${replyName}`) : (isAr ? "سجّل الدخول أولًا لإضافة رد" : "Sign in first to add a reply")}
                 </p>
                 <button
                   onClick={submitReply}
-                  disabled={!replyBody.trim() || submitting}
+                  disabled={!userSession || !replyBody.trim() || submitting}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    padding: "9px 20px", background: !replyBody.trim() || submitting ? "rgba(245,166,35,0.3)" : ACCENT,
+                    padding: "9px 20px", background: !userSession || !replyBody.trim() || submitting ? "rgba(245,166,35,0.3)" : ACCENT,
                     color: "#000", border: "none", borderRadius: 6,
                     fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    opacity: !replyBody.trim() || submitting ? 0.5 : 1,
+                    opacity: !userSession || !replyBody.trim() || submitting ? 0.5 : 1,
                   }}>
                   {submitting ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Send style={{ width: 14, height: 14 }} />}
                   {isAr ? "إرسال الرد" : "Post Reply"}

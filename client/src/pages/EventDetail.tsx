@@ -9,7 +9,7 @@ import {
 import { useRef, useState, useEffect, useMemo } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { ImageViewerOverlay, useZoomableImages } from "@/components/ImageViewer";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getEventById, getEventBySlug, getComments, addComment, getEvents, getMercenaries } from "@/lib/supabaseApi";
 import GallerySection from "@/components/GallerySection";
 import { useToast } from "@/hooks/use-toast";
@@ -331,9 +331,9 @@ export default function EventDetail() {
 
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.from("comments").delete().eq("id", commentId);
-      if (error) throw error;
+      return apiRequest("/api/admin/rebuild", "POST", {
+        action: "admin-table", type: "comments", operation: "delete", id: commentId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", event?.id, "comments"] });

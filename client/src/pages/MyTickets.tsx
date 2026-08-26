@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getTicketsByEmail, getTicketReplies, addTicketReply } from "@/lib/supabaseApi";
+import { getTicketsByEmail, getTicketReplies, addTicketReply, getCurrentUser } from "@/lib/supabaseApi";
 import { Ticket, MessageSquare, Clock, Mail, ArrowLeft, Send } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 interface TicketType {
   id: string;
@@ -58,15 +59,25 @@ export default function MyTickets() {
   const { language } = useLanguage();
   const isArabic = language === "ar";
   const queryClient = useQueryClient();
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (!active) return;
+      setAuthState(user ? "signed-in" : "signed-out");
+      if (user) setSearchedEmail("session");
+    }).catch(() => active && setAuthState("signed-out"));
+    return () => { active = false; };
+  }, []);
   const [email, setEmail] = useState("");
   const [searchedEmail, setSearchedEmail] = useState("");
+  const [authState, setAuthState] = useState<"loading" | "signed-in" | "signed-out">("loading");
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets/my", searchedEmail],
     queryFn: () => getTicketsByEmail(searchedEmail),
-    enabled: !!searchedEmail,
+    enabled: authState === "signed-in" && !!searchedEmail,
   });
 
   const { data: replies = [] } = useQuery<TicketReplyType[]>({
@@ -130,7 +141,22 @@ export default function MyTickets() {
 
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
 
-          {!searchedEmail ? (
+          {authState === "loading" ? (
+            <div className="max-w-md mx-auto text-center py-16 text-sm" style={{ color: "#777" }}>{isArabic ? "جارٍ التحقق من الجلسة..." : "Checking your session..."}</div>
+          ) : authState === "signed-out" ? (
+            <div className="max-w-md mx-auto">
+              <Card className="rounded-2xl border-border/60 bg-card/80 shadow-lg" style={{ background: "var(--card)", borderColor: "rgba(255,255,255,0.06)" }}>
+                <CardContent className="p-6 text-center">
+                  <Mail className="h-8 w-8 mx-auto mb-3" style={{ color: "#f5a623" }} />
+                  <h2 className="font-black text-sm uppercase tracking-wider mb-2" style={{ color: "var(--foreground)" }}>{isArabic ? "سجّل الدخول لعرض تذاكرك" : "Sign in to view your tickets"}</h2>
+                  <p className="text-xs mb-4" style={{ color: "#777" }}>{isArabic ? "لخصوصيتك، لا يمكن الوصول إلى التذاكر بالبريد الإلكتروني وحده." : "For your privacy, tickets cannot be accessed by email alone."}</p>
+                  <Button asChild className="w-full h-10 rounded-lg text-[11px] font-black uppercase tracking-widest" style={{ background: "#f5a623", color: "#000" }}>
+                    <a href={buildAuthPath("login")}>{isArabic ? "تسجيل الدخول" : "Sign in"}</a>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          ) : !searchedEmail ? (
             <div className="max-w-md mx-auto">
               <Card className="rounded-2xl border-border/60 bg-card/80 shadow-lg" style={{ background: "var(--card)", borderColor: "rgba(255,255,255,0.06)" }}>
                 <CardContent className="p-6">

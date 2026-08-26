@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "./LanguageProvider";
+import { supabase } from "@/lib/supabase";
+import { buildAuthPath } from "@/lib/authRedirect";
 import { MessageSquare, Bold, Italic, Link as LinkIcon, AtSign, ThumbsUp } from "lucide-react";
 
 const MAX_RECURSION_DEPTH = 5;
@@ -109,6 +111,9 @@ function CommentItemBase({
   const isReplying = replyingTo === comment.id;
   const maxDepth = 3;
   const hasLiked = currentUser && comment.likedBy?.includes(currentUser.id);
+  const goToLogin = () => {
+    if (typeof window !== "undefined") window.location.assign(buildAuthPath("login"));
+  };
 
   const childReplies = useMemo(() =>
     allComments.filter(c => isValidCommentId(c.id) && c.parentCommentId === comment.id),
@@ -194,24 +199,15 @@ function CommentItemBase({
 
           {isReplying && (
             <div className="mt-4 ml-14 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  placeholder="اسمك (مطلوب)"
-                  value={replyName}
-                  onChange={(e) => onReplyNameChange(e.target.value)}
-                  autoComplete="off"
-                  data-testid={`input-reply-name-${comment.id}`}
-                />
-                <Input
-                  placeholder="البريد الإلكتروني (اختياري)"
-                  type="email"
-                  value={replyEmail}
-                  onChange={(e) => onReplyEmailChange(e.target.value)}
-                  autoComplete="off"
-                  data-testid={`input-reply-email-${comment.id}`}
-                />
-              </div>
+              {!currentUser && (
+                <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                  يجب تسجيل الدخول لإضافة رد. {" "}
+                  <button type="button" onClick={goToLogin} className="font-semibold text-primary underline">تسجيل الدخول</button>
+                </div>
+              )}
+              {currentUser && <div className="text-xs text-muted-foreground">ترد باسم حسابك الموثق: <span className="font-semibold text-foreground">{currentUser.username}</span></div>}
               <Textarea
+                disabled={!currentUser}
                 placeholder={`رد على @${comment.name}...`}
                 value={replyContent}
                 onChange={(e) => onReplyContentChange(e.target.value)}
@@ -284,44 +280,54 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
 
   const [localComments, setLocalComments] = useState<Comment[]>(() => Array.isArray(comments) ? [...comments] : []);
 
-  // Auth state
-  const userId = localStorage.getItem("userId");
-  const username = localStorage.getItem("username");
-  // Fetch user avatar from profile if available
-  const userAvatar = localStorage.getItem("userAvatar");
-  const currentUser = userId ? { id: userId, username: username || "User", avatar: userAvatar && userAvatar !== 'placeholder.png' ? userAvatar : undefined } : null;
+  // Auth state comes from the persisted Supabase session, never from editable localStorage values.
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string; avatar?: string } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }: any) => {
+      if (!active) return;
+      const user = data?.session?.user;
+      if (user) {
+        const metadata = user.user_metadata || {};
+        setCurrentUser({
+          id: user.id,
+          username: metadata.username || user.email?.split("@")[0] || "User",
+          avatar: metadata.avatar || metadata.avatar_url || undefined,
+        });
+      } else {
+        setCurrentUser(null);
+      }
+      setAuthReady(true);
+    }).catch(() => active && setAuthReady(true));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+      const user = session?.user;
+      if (!user) { setCurrentUser(null); return; }
+      const metadata = user.user_metadata || {};
+      setCurrentUser({ id: user.id, username: metadata.username || user.email?.split("@")[0] || "User", avatar: metadata.avatar || metadata.avatar_url || undefined });
+    });
+    return () => { active = false; listener?.subscription?.unsubscribe?.(); };
+  }, []);
 
   const insertFormat = (tag: string) => {
     setComment(prev => prev + tag);
   };
 
+  const goToLogin = () => {
+    if (typeof window !== "undefined") window.location.assign(buildAuthPath("login"));
+  };
+
   const handleSubmit = () => {
-    // We always use the 'name' state from the input
-    const authorName = name;
-
-    if (!authorName.trim() || !comment.trim()) return;
-
-    if (onCommentSubmit) {
-      onCommentSubmit(authorName, comment, undefined, currentUser?.id, currentUser?.avatar, email);
-    }
-
-    if (!currentUser) {
-      setName("");
-      setEmail("");
-    }
+    if (!currentUser) { goToLogin(); return; }
+    if (!comment.trim()) return;
+    if (onCommentSubmit) onCommentSubmit(currentUser.username, comment.trim(), undefined, currentUser.id, currentUser.avatar);
     setComment("");
   };
 
   const handleReplySubmit = (parentId: string) => {
-    // We always use the 'replyName' state from the input
-    const authorName = replyName;
-
-    if (!authorName.trim() || !replyContent.trim()) return;
-
-    if (onCommentSubmit) {
-      onCommentSubmit(authorName, replyContent, parentId, currentUser?.id, currentUser?.avatar, replyEmail);
-    }
-
+    if (!currentUser) { goToLogin(); return; }
+    if (!replyContent.trim()) return;
+    if (onCommentSubmit) onCommentSubmit(currentUser.username, replyContent.trim(), parentId, currentUser.id, currentUser.avatar);
     setReplyName("");
     setReplyEmail("");
     setReplyContent("");
@@ -329,6 +335,7 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
   };
 
   const handleLike = async (commentId: string) => {
+    if (!currentUser) { goToLogin(); return; }
     if (onLike) {
       onLike(commentId);
       return;
@@ -384,33 +391,20 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
           <CardTitle className="text-lg">{t("addComment")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              placeholder="اسمك (مطلوب)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="off"
-              data-testid="input-comment-name"
-            />
-            <Input
-              placeholder="البريد الإلكتروني (اختياري)"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="off"
-              data-testid="input-comment-email"
-            />
-          </div>
-          {currentUser && (
+          {!authReady ? (
+            <div className="text-sm text-muted-foreground">جارٍ التحقق من الجلسة...</div>
+          ) : currentUser ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage
-                  src={currentUser.avatar && currentUser.avatar !== 'placeholder.png' ? currentUser.avatar : undefined}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
+                <AvatarImage src={currentUser.avatar} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 <AvatarFallback>{currentUser.username.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              Account: <span className="font-semibold text-foreground">{currentUser.username}</span>
+              حسابك الموثق: <span className="font-semibold text-foreground">{currentUser.username}</span>
+            </div>
+          ) : (
+            <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+              سجّل الدخول أولًا لإضافة تعليق. {" "}
+              <button type="button" onClick={goToLogin} className="font-semibold text-primary underline">تسجيل الدخول</button>
             </div>
           )}
           <div className="relative">
@@ -425,8 +419,9 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
                 <AtSign className="h-3 w-3" />
               </Button>
             </div>
-            <Textarea
-              placeholder="اكتب تعليقك..."
+              <Textarea
+                disabled={!currentUser}
+                placeholder="اكتب تعليقك..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
@@ -434,7 +429,7 @@ export function CommentSection({ comments = [], onCommentSubmit, isAdmin = false
               className="pr-24"
             />
           </div>
-          <Button onClick={handleSubmit} data-testid="button-submit-comment">
+          <Button onClick={handleSubmit} disabled={!authReady || !currentUser || !comment.trim()} data-testid="button-submit-comment">
             {t("submit")}
           </Button>
         </CardContent>

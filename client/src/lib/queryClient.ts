@@ -1,13 +1,18 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { supabaseShim } from "./supabaseShim";
+import { supabase } from "./supabase";
 
-function getAuthHeaders(): Record<string, string> {
+async function getAuthHeaders(): Promise<Record<string, string>> {
   const adminToken = localStorage.getItem("adminToken");
+  if (adminToken) return { Authorization: `Bearer ${adminToken}` };
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.access_token) return { Authorization: `Bearer ${data.session.access_token}` };
+  } catch {
+    // Public requests remain usable when Supabase is not configured.
+  }
   const userToken = localStorage.getItem("userToken");
-  const headers: Record<string, string> = {};
-  if (adminToken) headers["Authorization"] = `Bearer ${adminToken}`;
-  else if (userToken) headers["Authorization"] = `Bearer ${userToken}`;
-  return headers;
+  return userToken ? { Authorization: `Bearer ${userToken}` } : {};
 }
 
 const SERVER_API_PREFIXES = [
@@ -21,7 +26,7 @@ function isServerApi(url: string) {
 
 async function fetchJson(url: string, method: string, data?: unknown): Promise<any> {
   const headers: Record<string, string> = {
-    ...getAuthHeaders(),
+    ...(await getAuthHeaders()),
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
   const res = await fetch(url, {
@@ -72,7 +77,7 @@ export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFu
       }
     }
 
-    const headers = getAuthHeaders();
+    const headers = await getAuthHeaders();
     const res = await fetch(key, { credentials: "include", headers });
     if (options.on401 === "returnNull" && res.status === 401) return null as unknown as T;
     if (!res.ok) {

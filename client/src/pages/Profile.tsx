@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getCurrentUser } from "@/lib/supabaseApi";
+import { getCurrentUser, getTicketsByEmail } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -349,11 +349,11 @@ export default function Profile() {
 
         // Fetch real ticket and comment counts
         if (u.email) {
-          const [ticketsRes, commentsRes] = await Promise.all([
-            supabase.from("tickets").select("id", { count: "exact", head: true }).eq("user_email", u.email),
+          const [tickets, commentsRes] = await Promise.all([
+            getTicketsByEmail(u.email),
             supabase.from("comments").select("id", { count: "exact", head: true }).eq("author_name", u.user_metadata?.username || u.email),
           ]);
-          setTicketCount(ticketsRes.count ?? 0);
+          setTicketCount(Array.isArray(tickets) ? tickets.length : 0);
           setCommentCount(commentsRes.count ?? 0);
         }
       }

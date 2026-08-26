@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { getSellers, getSellerReviews, addSellerReview, getSiteSettings } from "@/lib/supabaseApi";
+import { getSellers, getSellerReviews, addSellerReview, getSiteSettings, getCurrentUser } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
   Dialog,
@@ -235,10 +235,10 @@ export default function Reviews() {
     },
   });
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!selectedSeller) return;
-    const userToken = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
-    if (!userToken) {
+    const user = await getCurrentUser().catch(() => null);
+    if (!user) {
       toast({
         title: "Sign in required",
         description: "Please sign in or sign up to submit a review.",
@@ -257,7 +257,7 @@ export default function Reviews() {
     // Phone optional during open submission; CSRF disabled server-side
     createReviewMutation.mutate({
       sellerId: selectedSeller.id,
-      userId: typeof window !== 'undefined' ? (localStorage.getItem('userId') || '') : '',
+      userId: user.id,
       userName: reviewForm.userName.trim(),
       userPhone: reviewForm.userPhone.trim(),
       rating: reviewForm.rating,

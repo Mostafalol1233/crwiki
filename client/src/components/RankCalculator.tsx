@@ -360,35 +360,39 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const manualExp = parseInt(manualExpInput.replace(/,/g, ""), 10);
   const currentExp: number | null = profile?.exp ?? (isNaN(manualExp) ? null : manualExp);
 
-  // Auto-detect rank from profile lookup.
-  // EXP is the ground truth — scraper rank names are often wrong.
-  // Only fall back to name/tier when EXP is absent.
+  // The profile's displayed rank is authoritative for the account. Some public
+  // profiles contain a Total EXP value that does not line up with the public
+  // threshold table (for example, an account can show Major General alongside
+  // a much larger lifetime EXP total). Never silently replace the source rank
+  // with a higher rank inferred from that conflicting number.
   const autoCurrentRank = useMemo<Rank | null>(() => {
     if (!profile) return null;
 
-    // 1. EXP-based detection (most reliable — rank name from Firecrawl can be wrong)
+    // 1. Rank emblem tier from the profile. Z8Games has used rank_105 for the
+    // Grand Marshal emblem while the public table labels it tier 104.
+    const normalizedTier = profile.rankTier === 105 ? 104 : profile.rankTier;
+    if (normalizedTier) {
+      const byTier = sortedRanks.find(r => r.tier === normalizedTier);
+      if (byTier) return byTier;
+    }
+
+    // 2. Rank name from the profile when the emblem was not available.
+    if (profile.rank) {
+      const nameL = profile.rank.toLowerCase().trim();
+      const exact = sortedRanks.find(r => r.name.toLowerCase() === nameL);
+      if (exact) return exact;
+      const byName = sortedRanks.find(r => r.name.toLowerCase().includes(nameL) || nameL.includes(r.name.toLowerCase()));
+      if (byName) return byName;
+    }
+
+    // 3. Only infer a rank from EXP when the profile did not provide one.
     if (profile.exp != null && profile.exp > 0) {
       let best: Rank | null = null;
       for (const r of sortedRanks) {
-        if (getExp(r) <= profile.exp!) best = r;
+        if (getExp(r) <= profile.exp) best = r;
         else break;
       }
       if (best) return best;
-    }
-
-    // 2. Tier number fallback
-    if (profile.rankTier) {
-      const r = sortedRanks.find(r => r.tier === profile.rankTier);
-      if (r) return r;
-    }
-
-    // 3. Rank name fallback (least reliable)
-    if (profile.rank) {
-      const nameL = profile.rank.toLowerCase().trim();
-      const r = sortedRanks.find(r => r.name.toLowerCase() === nameL);
-      if (r) return r;
-      const r2 = sortedRanks.find(r => r.name.toLowerCase().includes(nameL) || nameL.includes(r.name.toLowerCase()));
-      if (r2) return r2;
     }
 
     return null;

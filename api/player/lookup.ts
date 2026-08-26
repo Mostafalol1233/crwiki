@@ -13,28 +13,62 @@ function addCorsHeaders(res: VercelResponse) {
   return res;
 }
 
+function normalizeDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+}
+
+function parseNumber(value: string | undefined): number | null {
+  if (!value) return null;
+  const normalized = normalizeDigits(value).replace(/[\s,\u00a0]/g, "");
+  if (!/^\d+$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function normalizeRankTier(rawTier: number | null, rankName: string | null): number | null {
+  if (!rawTier) return null;
+  // Z8Games can expose the Grand Marshal emblem as rank_105 while the
+  // official rank table and this wiki use tier 104 for Grand Marshal.
+  if (rawTier >= 104 && /grand\s+marshal/i.test(rankName || "")) return 104;
+  return rawTier;
+}
 
 /** Parse Firecrawl markdown into a profile object. Returns null if insufficient data. */
-function parseFirecrawlMarkdown(md: string, regionLabel: string) {
-  if (!md || md.length < 100) return null;
+export function parseFirecrawlMarkdown(md: string, regionLabel: string) {
+  if (!md || md.length < 40) return null;
 
-  // Nickname: first H1/H2 heading that isn't a stat label
+  // Nickname: first H1/H2 heading that isn't a stat label.
   const nick =
-    md.match(/^#+\s+\[([^\]]{2,32})\]/m)?.[1]?.trim() ||
-    md.match(/^#+\s+([A-Za-z0-9_\-\.\[\]]{2,32})\s*$/m)?.[1]?.trim() ||
+    md.match(/^#+\s+\[([^\]]{2,48})\]/m)?.[1]?.trim() ||
+    md.match(/^#+\s+([A-Za-z0-9_*\-\.\[\]]{2,48})\s*$/m)?.[1]?.trim() ||
     null;
 
-  // Rank tier from image URL like /rank_42.jpg
-  const rankTierMatch = md.match(/\/rank_(\d{1,3})\.(jpg|png|webp)/i);
-  const rankTier = rankTierMatch ? parseInt(rankTierMatch[1], 10) : null;
+  // Rank tier from an image URL like /rank_83.jpg. The text after the image
+  // is the most reliable place to read the displayed rank and total EXP.
+  const rankImgMatch = md.match(
+    /!\[[^\]]*\]\(([^)]*\/rank_(\d{1,3})\.(?:jpg|png|webp))\)\s*([^\n]*)/i,
+  );
+  const rawRankTier = rankImgMatch ? parseInt(rankImgMatch[2], 10) : null;
+  const rankLineFull = rankImgMatch?.[3]?.trim() || "";
 
-  // Rank name — line after the rank image
-  const rankImgLine = md.match(/!\[[^\]]*\]\([^)]*\/rank_\d+\.[^\)]+\)[^\S\n]*([^\n]*)/);
-  const rankLineFull = rankImgLine?.[1]?.trim() || "";
-  const expStr = rankLineFull.match(/(\d[\d,]*)\s*EXP/)?.[1]?.replace(/,/g, "") ||
-    md.match(/(\d[\d,]+)\s*EXP/)?.[1]?.replace(/,/g, "") || null;
-  const exp = expStr ? parseInt(expStr, 10) : null;
-  const rankName = rankLineFull.replace(/\d[\d,]*\s*EXP.*/i, "").trim() || null;
+  // The profile has appeared in several layouts, including:
+  //   Major General 211551338 EXP
+  //   Total EXP: 119400214
+  // Prefer the rank line and an explicit Total EXP label before any generic
+  // EXP match, so a navigation/table label cannot become the player's value.
+  const expCandidates = [
+    rankLineFull.match(/([0-9٠-٩][0-9٠-٩,\u00a0 ]*)\s*(?:EXP|Experience)\b/i)?.[1],
+    md.match(/(?:Total\s+)?EXP\s*[:\-]?\s*([0-9٠-٩][0-9٠-٩,\u00a0 ]*)/i)?.[1],
+    md.match(/([0-9٠-٩][0-9٠-٩,\u00a0 ]*)\s*(?:EXP|Experience)\b/i)?.[1],
+  ];
+  const exp = expCandidates.map(parseNumber).find((value) => value !== null) ?? null;
+  const rankName = rankLineFull
+    .replace(/[0-9٠-٩][0-9٠-٩,\u00a0 ]*\s*(?:EXP|Experience).*/i, "")
+    .trim()
+    .replace(/\s{2,}/g, " ") || null;
+  const rankTier = normalizeRankTier(rawRankTier, rankName);
 
   // Stats helpers
   const statNum = (label: string): number | null => {
@@ -45,9 +79,9 @@ function parseFirecrawlMarkdown(md: string, regionLabel: string) {
     return m ? parseInt(m[1].replace(/,/g, ""), 10) : null;
   };
 
-  const kills  = statNum("Kills");
+  const kills = statNum("Kills");
   const deaths = statNum("Deaths");
-  const wins   = statNum("Wins");
+  const wins = statNum("Wins");
   const losses = statNum("Losses");
 
   const kdRatio = kills !== null && deaths !== null && deaths > 0
@@ -78,7 +112,7 @@ function parseFirecrawlMarkdown(md: string, regionLabel: string) {
   const clanHeadings = [...md.matchAll(/^##\s+(?:!\[[^\]]*\]\([^)]+\)){2,}([^\n!\[]+)/gm)];
   const clan = clanHeadings[0]?.[1]?.trim() || null;
 
-  // Require at minimum a nickname to consider the scrape useful
+  // Require at minimum a nickname to consider the scrape useful.
   if (!nick) return null;
 
   return {
@@ -136,7 +170,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         url: targetUrl,
         formats: ["markdown"],
         onlyMainContent: true,
-        waitFor: 2000,
+        waitFor: 3000,
+        // Player pages are dynamic and Firecrawl can otherwise reuse an old
+        // snapshot containing a previous EXP value.
+        maxAge: 0,
       }),
     });
 

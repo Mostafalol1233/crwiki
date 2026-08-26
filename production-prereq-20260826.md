@@ -1,0 +1,31 @@
+# فحص متطلبات الإنتاج — 2026-08-26
+
+## Preview بعد commit 62a4d3b
+
+- حالة deployment: READY.
+- المسارات العامة `/ar/posts` و`/ar/admin/scraper` و`/ar/content-hub/game-modes` و`/ar/download` أعادت 200.
+- المسار المكرر `/ar/ar/sellers` أعاد 200، ما يدعم تطبيع المسارات.
+- `/robots.txt` و`/sitemap.xml` أعادا 200.
+- `/api/scrape/automation` بلا تفويض أعاد 401.
+- `/api/scrape/fandom-preview` بلا طريقة POST أعاد 405.
+- `POST /api/admin/login` بجسم فارغ أعاد 400 تحققًا طبيعيًا، دون إرسال كلمة مرور.
+- استجابة Preview لـ`/sitemap.xml` ما زالت تحمل `x-robots-tag: noindex`. لا يوجد هذا الرأس في كود `api/sitemap.ts`؛ يُعامل على أنه حماية Preview/المنصة، ويجب التحقق من Production بعد النشر بدل إضعاف حماية Preview.
+
+## Vercel
+
+- المشروع ما زال يذكر `live: false` في القراءة الحالية.
+- لم يظهر النطاق المخصص `crossfire.wiki` ضمن قراءة المشروع؛ يجب التحقق من الربط/DNS قبل اعتبار النطاق المخصص Production.
+- حماية كلمة المرور وSSO وTrusted IP في إعداد المشروع غير مفعّلة بحسب القراءة الحالية. لم تُجرَ أي تغييرات عليها.
+- أدوات Vercel المتاحة لا تعرض متغيرات البيئة ولا تسمح بفحص وجود `ADMIN_TOKEN_SECRET` أو `CRON_SECRET` دون كشف/تعديل غير متاحين في هذه الجلسة.
+
+## Supabase
+
+- موصلا Supabase الظاهران في إعداد الجلسة (`Supabase` و`Supabase API`) معطّلان.
+- لا يوجد `SUPABASE_SERVICE_KEY` أو `SUPABASE_URL` مُصدّران في البيئة المحلية، ولا يوجد مفتاح خدمة في ملفات البيئة المفحوصة.
+- ملف `supabase-security-migration.sql` مقترح للمراجعة فقط ولم يُطبق.
+- مخطط `custom_pages` المحلي لا يحتوي أعمدة مصدر/تجزئة/قفل؛ الحفظ الحالي يعتمد على slug مشتق من المصدر ويدخل المصدر داخل المحتوى. إضافة قفل أو أعمدة جديدة تحتاج فحص المخطط الحي أولًا.
+- لا يجوز تشغيل RLS migration قبل قراءة `information_schema.columns` و`pg_policies` على الجداول الحية، خصوصًا `comments` و`seller_reviews` و`announcements`، لأن الملف يفترض أعمدة مثل `approved` و`active` و`target`.
+
+## قرار النشر
+
+الكود على فرع التدقيق نظيف ومتحقق محليًا وPreview جاهز، لكن الدمج إلى `main` سيدفع Production تلقائيًا على الأرجح. لا يُنفذ الدمج قبل تأكيد إعدادات Production السرية والوصول الآمن إلى Supabase ومراجعة/تطبيق RLS على المخطط الحي؛ لا توجد وسيلة آمنة في الجلسة الحالية لإثبات هذه المتطلبات أو تنفيذها دون أن يضيفها المستخدم عبر لوحة Vercel/Supabase أو يفعّل موصل Supabase المصرّح به.

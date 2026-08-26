@@ -23,6 +23,7 @@ import {
 import { useLanguage } from "@/components/LanguageProvider";
 import { supabase } from "@/lib/supabase";
 import { SEOHead } from "@/components/SEOHead";
+import { buildAuthPath, getCurrentAuthReturnPath } from "@/lib/authRedirect";
 
 interface CompetitionConfig {
   title_en: string;
@@ -137,6 +138,7 @@ export default function Competition() {
   const [leaderboard, setLeaderboard] = useState<CompetitionLeaderboardEntry[]>([]);
   const [email, setEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminToken] = useState<string | null>(() => typeof window === "undefined" ? null : localStorage.getItem("adminToken"));
   const directPreviewMode = typeof window !== "undefined"
     && window.location.hostname.endsWith(".vercel.app")
@@ -179,6 +181,7 @@ export default function Competition() {
           setLeaderboard(Array.isArray(payload.leaderboard) ? payload.leaderboard as CompetitionLeaderboardEntry[] : []);
           setEmail(session?.user?.email || null);
           setAccessToken(session?.access_token || null);
+          setIsAuthenticated(Boolean(session?.user && session?.access_token));
           setLoading(false);
         }
       } catch {
@@ -189,12 +192,13 @@ export default function Competition() {
     const authState = supabase.auth.onAuthStateChange((_event: string, session: { user?: { email?: string | null } | null; access_token?: string } | null) => {
       setEmail(session?.user?.email || null);
       setAccessToken(session?.access_token || null);
+      setIsAuthenticated(Boolean(session?.user && session?.access_token));
     });
     return () => {
       cancelled = true;
       authState.data.subscription.unsubscribe();
     };
-  }, [adminToken, competitionApiPath]);
+    }, [adminToken, competitionApiPath]);
 
   const previewMode = Boolean(config?.preview_only && !config.active && (adminToken || directPreviewMode));
   const canRegister = Boolean(config?.active || previewMode);
@@ -228,7 +232,7 @@ export default function Competition() {
   const submitRegistration = async (event: React.FormEvent) => {
     event.preventDefault();
     setNotice("");
-    if ((!email || !accessToken) && !previewMode && !directPreviewMode) {
+    if (!isAuthenticated && !previewMode && !directPreviewMode) {
       setNotice(isArabic ? "سجّل الدخول أولًا للانضمام إلى المسابقة." : "Please sign in before joining the competition.");
       return;
     }
@@ -374,7 +378,7 @@ export default function Competition() {
 
           <section className="competition-action-panel" aria-live="polite">
             <div className="competition-action-heading"><div><span className="competition-overline">{submittedScore !== null ? (isArabic ? "اكتمل الاختبار" : "Challenge complete") : attemptId ? (isArabic ? "وضع الاختبار" : "Challenge mode") : (isArabic ? "بوابة الدخول" : "Entry gate")}</span><h2>{submittedScore !== null ? (isArabic ? "نتيجتك الأولية" : "Your initial result") : attemptId ? (isArabic ? "أجب على مهل" : "Answer at your pace") : (isArabic ? "ابدأ من هنا" : "Start here")}</h2></div><LockKeyhole size={18} /></div>
-            {!canRegister ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "المسابقة غير منشورة حاليًا" : "The competition is not published"}</strong><p>{isArabic ? "لن يظهر التسجيل أو بنك الأسئلة للزوار قبل تفعيل المسابقة من لوحة الإدارة." : "Registration and the question bank remain hidden until an administrator activates the competition."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} email={email} previewMode={previewMode} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
+            {!canRegister ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "المسابقة غير منشورة حاليًا" : "The competition is not published"}</strong><p>{isArabic ? "لن يظهر التسجيل أو بنك الأسئلة للزوار قبل تفعيل المسابقة من لوحة الإدارة." : "Registration and the question bank remain hidden until an administrator activates the competition."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} email={email} authenticated={isAuthenticated} previewMode={previewMode} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
             {notice && !attemptId && <p className="competition-inline-notice">{notice}</p>}
           </section>
         </section>
@@ -387,14 +391,14 @@ export default function Competition() {
   );
 }
 
-function RegistrationForm({ isArabic, email, previewMode, phone, setPhone, inviteCode, setInviteCode, inviteRequired, consent, setConsent, submitting, notice, onSubmit }: { isArabic: boolean; email: string | null; previewMode: boolean; phone: string; setPhone: (value: string) => void; inviteCode: string; setInviteCode: (value: string) => void; inviteRequired: boolean; consent: boolean; setConsent: (value: boolean) => void; submitting: boolean; notice: string; onSubmit: (event: React.FormEvent) => void }) {
+function RegistrationForm({ isArabic, email, authenticated, previewMode, phone, setPhone, inviteCode, setInviteCode, inviteRequired, consent, setConsent, submitting, notice, onSubmit }: { isArabic: boolean; email: string | null; authenticated: boolean; previewMode: boolean; phone: string; setPhone: (value: string) => void; inviteCode: string; setInviteCode: (value: string) => void; inviteRequired: boolean; consent: boolean; setConsent: (value: boolean) => void; submitting: boolean; notice: string; onSubmit: (event: React.FormEvent) => void }) {
   return <form className="competition-registration-form" onSubmit={onSubmit}>
-    <div className="competition-form-intro"><span className="competition-step-number">01</span><div><strong>{previewMode ? (isArabic ? "اختبار المشرف الخاص" : "Private administrator test") : (isArabic ? "بيانات المشاركة" : "Participant details")}</strong><p>{previewMode ? (isArabic ? "هذه البوابة لا تعمل إلا للمدير على نسخة Vercel Preview." : "This gate works only for the administrator on the Vercel Preview deployment.") : email ? email : (isArabic ? "سجّل الدخول بحساب الموقع أولًا." : "Sign in with your website account first.")}</p></div></div>
+    <div className="competition-form-intro"><span className="competition-step-number">01</span><div><strong>{previewMode ? (isArabic ? "اختبار المشرف الخاص" : "Private administrator test") : (isArabic ? "بيانات المشاركة" : "Participant details")}</strong><p>{previewMode ? (isArabic ? "هذه البوابة لا تعمل إلا للمدير على نسخة Vercel Preview." : "This gate works only for the administrator on the Vercel Preview deployment.") : authenticated ? (email || (isArabic ? "تم تسجيل الدخول" : "Signed in")) : (isArabic ? "سجّل الدخول بحساب الموقع أولًا." : "Sign in with your website account first.")}</p></div></div>
     <label className="competition-field"><span><Phone size={14} />{isArabic ? "رقم الهاتف للتواصل" : "Contact phone"}</span><input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isArabic ? "+20..." : "+1..."} inputMode="tel" autoComplete="tel" /></label>
     {inviteRequired && <label className="competition-field"><span>{isArabic ? "كود الدعوة" : "Invitation code"}</span><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={isArabic ? "أدخل الكود الذي وصلك" : "Enter your private code"} autoComplete="off" /></label>}
     <label className="competition-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>{isArabic ? "أوافق على استخدام رقم الهاتف للتواصل المتعلق بالمسابقة فقط." : "I consent to using my phone number for competition-related contact only."}</span></label>
-    <button className="competition-primary-button" type="submit" disabled={submitting || (!previewMode && !email)}>{submitting ? (isArabic ? "جارٍ فتح الاختبار..." : "Opening challenge...") : previewMode ? (isArabic ? "فتح اختبار المعاينة" : "Open preview challenge") : email ? (isArabic ? "متابعة" : "Continue") : (isArabic ? "سجّل الدخول أولًا" : "Sign in first")}<ChevronLeft size={17} /></button>
-    {!email && !previewMode && <Link className="competition-secondary-link" href="/login">{isArabic ? "الانتقال إلى تسجيل الدخول" : "Go to sign in"}</Link>}
+    <button className="competition-primary-button" type="submit" disabled={submitting || (!previewMode && !authenticated)}>{submitting ? (isArabic ? "جارٍ فتح الاختبار..." : "Opening challenge...") : previewMode ? (isArabic ? "فتح اختبار المعاينة" : "Open preview challenge") : authenticated ? (isArabic ? "متابعة" : "Continue") : (isArabic ? "سجّل الدخول أولًا" : "Sign in first")}<ChevronLeft size={17} /></button>
+    {!authenticated && !previewMode && <Link className="competition-secondary-link" href={buildAuthPath("login", getCurrentAuthReturnPath())}>{isArabic ? "الانتقال إلى تسجيل الدخول" : "Go to sign in"}</Link>}
     {notice && <p className="competition-form-notice">{notice}</p>}
   </form>;
 }

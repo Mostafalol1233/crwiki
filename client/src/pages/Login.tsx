@@ -6,14 +6,18 @@ import PageSEO from "@/components/PageSEO";
 import { useLocation, Link } from "wouter";
 import { LogIn, User, Lock, Shield, Crosshair, Target, Zap } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { buildAuthPath, clearAuthReturnPath, getAuthReturnPath } from "@/lib/authRedirect";
+import { localizedPath } from "@/lib/routePaths";
 
 export default function Login() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { register, handleSubmit, setValue } = useForm();
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [redirectMsg, setRedirectMsg] = useState<string>("");
   const [, setLocation] = useLocation();
+  const returnPath = getAuthReturnPath(typeof window === "undefined" ? "" : window.location.search);
+  const localizedReturnPath = localizedPath(returnPath, language);
   const [dbCounts, setDbCounts] = useState({ weapons: "…", maps: "…", ranks: "…", modes: "…" });
 
   // Fetch real DB counts for the stats panel
@@ -56,7 +60,8 @@ export default function Login() {
       localStorage.setItem("userId", uid);
       localStorage.setItem("username", uname);
 
-      setLocation("/profile");
+      setLocation(returnPath);
+      clearAuthReturnPath();
     } catch (e: any) {
       setStatus(e.message || "Login failed. Check your credentials.");
     } finally {
@@ -287,8 +292,8 @@ export default function Login() {
                   setStatus("");
                   try {
                     const { signInWithGoogle } = await import("@/lib/supabaseApi");
-                    await signInWithGoogle();
-                    // Supabase redirects to Google — nothing else needed here
+                    await signInWithGoogle(localizedReturnPath);
+                    // Supabase redirects to Google — the callback returns to the saved page
                   } catch (e: any) {
                     setStatus(e.message || "Google sign-in failed.");
                     setLoading(false);
@@ -326,7 +331,7 @@ export default function Login() {
 
             <p className="text-center text-xs mt-5" style={{ color: "#555" }}>
               {t("loginNoAccount")}{" "}
-              <Link href="/register">
+              <Link href={buildAuthPath("register", returnPath)}>
                 <span className="font-bold cursor-pointer hover:opacity-80" style={{ color: "#f5a623" }}>{t("loginCreateOne")}</span>
               </Link>
             </p>

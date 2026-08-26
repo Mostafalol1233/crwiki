@@ -9,6 +9,7 @@ import PageSEO from "@/components/PageSEO";
 import { useLanguage } from "@/components/LanguageProvider";
 import { User, Camera, Loader2, Mail, Phone, Lock, UserPlus, Crosshair, Shield, Star } from "lucide-react";
 import { routerPath } from "@/lib/routePaths";
+import { clearAuthReturnPath, getAuthReturnPath } from "@/lib/authRedirect";
 
 function createSchema(isAr: boolean) {
   return z.object({
@@ -44,6 +45,7 @@ export default function Register() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, setLocation] = useLocation();
+  const returnPath = getAuthReturnPath(typeof window === "undefined" ? "" : window.location.search);
   const { toast } = useToast();
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +94,8 @@ export default function Register() {
       await signIn(values.email, values.password);
 
       toast({ title: isAr ? "مرحبًا بك!" : "Welcome!", description: isAr ? "حسابك جاهز الآن." : "Your account is ready." });
-      setLocation(localPath("/"));
+      setLocation(returnPath);
+      clearAuthReturnPath();
     } catch (e: any) {
       const msg = String(e.message || "");
       if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("already been registered") || msg.toLowerCase().includes("already exists")) {

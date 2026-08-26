@@ -4,6 +4,7 @@ import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { pagePath } from "@/lib/routePaths";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 interface DropdownItem { path: string; label: string }
 interface MenuItem { label: string; path?: string; dropdown?: DropdownItem[] }
@@ -116,6 +117,8 @@ export function Header() {
   const isLoggedIn = !!session?.user;
   const user = session?.user ?? null;
   const username = user?.user_metadata?.username || user?.email?.split("@")[0] || "Profile";
+  const loginHref = buildAuthPath("login");
+  const registerHref = buildAuthPath("register");
 
   const isActive = (items: DropdownItem[]) => items.some(i => location === i.path || location.startsWith(i.path + "/"));
 
@@ -290,7 +293,7 @@ export function Header() {
             </div>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Link href="/login" style={{
+              <Link href={loginHref} style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center",
                 fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
                 color: "rgba(255,255,255,0.7)", textDecoration: "none",
@@ -301,7 +304,7 @@ export function Header() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
                 {t("login")}
               </Link>
-              <Link href="/register" style={{
+              <Link href={registerHref} style={{
                 height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 600, fontFamily: "Inter, system-ui, sans-serif",
                 color: "#000", textDecoration: "none",
@@ -402,10 +405,10 @@ export function Header() {
             </button>
             {!isLoggedIn ? (
               <div style={{ display: "flex", gap: 8 }}>
-                <Link href="/login" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href={loginHref} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)", textDecoration: "none", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("login")}
                 </Link>
-                <Link href="/register" onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+                <Link href={registerHref} onClick={() => setMobileOpen(false)} style={{ padding: "7px 16px", fontSize: 13, fontWeight: 600, color: "#000", textDecoration: "none", background: ACCENT, borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
                   {t("signUp")}
                 </Link>
               </div>

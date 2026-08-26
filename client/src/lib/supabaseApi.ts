@@ -958,11 +958,14 @@ export async function signIn(email: string, password: string) {
   return data;
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(returnPath = "/profile") {
+  const safeReturnPath = returnPath.startsWith("/") && !returnPath.startsWith("//")
+    ? returnPath
+    : "/profile";
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}/profile`,
+      redirectTo: `${window.location.origin}${safeReturnPath}`,
     },
   });
   if (error) throw error;

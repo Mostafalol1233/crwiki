@@ -415,6 +415,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(payload);
   }
 
+  if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts') {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(400).json({ error: 'Unsupported content type. Use weapons or posts.' });
+  }
+
   if (req.method === 'GET' && typeof rawType === 'string' && (rawType === 'weapons' || rawType === 'posts')) {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
     const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;

@@ -213,6 +213,46 @@ function getExp(r: Rank): number {
 
 function fmt(n: number) { return n.toLocaleString(); }
 
+export function resolveProfileRank(profile: PlayerProfile | null, sortedRanks: Rank[]): Rank | null {
+  if (!profile) return null;
+
+  if (profile.rank) {
+    const nameL = profile.rank.toLowerCase().trim().replace(/\s+/g, " ");
+    const exact = sortedRanks.find(r => r.name.toLowerCase().trim() === nameL);
+    if (exact) return exact;
+    const byName = sortedRanks.find(r => {
+      const candidate = r.name.toLowerCase().trim();
+      return candidate.includes(nameL) || nameL.includes(candidate);
+    });
+    if (byName) return byName;
+  }
+
+  // Z8Games has used rank_105 for the Grand Marshal emblem while the public
+  // table labels it tier 104.
+  const normalizedTier = profile.rankTier === 105 ? 104 : profile.rankTier;
+  if (normalizedTier) {
+    const byTier = sortedRanks.find(r => r.tier === normalizedTier);
+    if (byTier) return byTier;
+  }
+
+  if (profile.exp != null && profile.exp > 0) {
+    let best: Rank | null = null;
+    for (const r of sortedRanks) {
+      if (getExp(r) <= profile.exp) best = r;
+      else break;
+    }
+    if (best) return best;
+  }
+
+  return null;
+}
+
+export function calculateProgressPercent(currentExp: number | null, currentRankExp: number, destinationExp: number): number {
+  if (currentExp == null || destinationExp <= currentRankExp) return 0;
+  const raw = ((currentExp - currentRankExp) / (destinationExp - currentRankExp)) * 100;
+  return Math.min(100, Math.max(0, Math.floor(raw * 10) / 10));
+}
+
 function parseTipsToPoints(text: string): string[] {
   return text
     .split(/\n/)
@@ -361,46 +401,25 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
   const currentExp: number | null = profile?.exp ?? (isNaN(manualExp) ? null : manualExp);
 
   // The profile's displayed rank is authoritative for the account. Some public
-  // profiles contain a Total EXP value that does not line up with the public
-  // threshold table (for example, an account can show Major General alongside
-  // a much larger lifetime EXP total). Never silently replace the source rank
-  // with a higher rank inferred from that conflicting number.
-  const autoCurrentRank = useMemo<Rank | null>(() => {
-    if (!profile) return null;
+  // profiles use an emblem number that is one step ahead of the text label
+  // (for example, rank_11 can be displayed beside "Staff Sergeant 1").
+  // Always prefer the visible rank name, then the emblem tier, and infer from
+  // EXP only when neither source field is available.
+  const autoCurrentRank = useMemo<Rank | null>(() => resolveProfileRank(profile, sortedRanks), [profile, sortedRanks]);
 
-    // 1. Rank emblem tier from the profile. Z8Games has used rank_105 for the
-    // Grand Marshal emblem while the public table labels it tier 104.
-    const normalizedTier = profile.rankTier === 105 ? 104 : profile.rankTier;
-    if (normalizedTier) {
-      const byTier = sortedRanks.find(r => r.tier === normalizedTier);
-      if (byTier) return byTier;
+  const manualSelectedRank = currentRankId ? sortedRanks.find(r => r.id === currentRankId) ?? null : null;
+  const manualRankFromExp = useMemo<Rank | null>(() => {
+    if (profile || !Number.isFinite(manualExp) || manualExp < 0) return null;
+    let best: Rank | null = null;
+    for (const rank of sortedRanks) {
+      if (getExp(rank) <= manualExp) best = rank;
+      else break;
     }
-
-    // 2. Rank name from the profile when the emblem was not available.
-    if (profile.rank) {
-      const nameL = profile.rank.toLowerCase().trim();
-      const exact = sortedRanks.find(r => r.name.toLowerCase() === nameL);
-      if (exact) return exact;
-      const byName = sortedRanks.find(r => r.name.toLowerCase().includes(nameL) || nameL.includes(r.name.toLowerCase()));
-      if (byName) return byName;
-    }
-
-    // 3. Only infer a rank from EXP when the profile did not provide one.
-    if (profile.exp != null && profile.exp > 0) {
-      let best: Rank | null = null;
-      for (const r of sortedRanks) {
-        if (getExp(r) <= profile.exp) best = r;
-        else break;
-      }
-      if (best) return best;
-    }
-
-    return null;
-  }, [profile, sortedRanks]);
+    return best;
+  }, [profile, manualExp, sortedRanks]);
 
   const effectiveCurrentRank: Rank | null =
-    autoCurrentRank ||
-    (currentRankId ? sortedRanks.find(r => r.id === currentRankId) ?? null : null);
+    autoCurrentRank || manualSelectedRank || manualRankFromExp;
 
   const currentIdx = effectiveCurrentRank
     ? sortedRanks.findIndex(r => r.id === effectiveCurrentRank.id)
@@ -430,14 +449,13 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
     return destinationExp > currentRankExp ? destinationExp - currentRankExp : 0;
   }, [destinationRank, currentExp, destinationExp, currentRankExp]);
 
-  // Progress within the current rank segment (currentRank.exp → destinationRank.exp)
-  const progressPct = useMemo(() => {
-    if (!effectiveCurrentRank || !destinationRank || currentExp == null) return 0;
-    const start = currentRankExp;
-    const end   = destinationExp;
-    if (end <= start) return 0;
-    return Math.min(100, Math.round(((currentExp - start) / (end - start)) * 100));
-  }, [effectiveCurrentRank, destinationRank, currentExp, currentRankExp, destinationExp]);
+  // Progress within the current rank segment (currentRank.exp → destinationRank.exp).
+  // Floor to one decimal so 23,940 / 23,941 remains 99.9%, not 100%, until
+  // the player actually reaches the next-rank threshold.
+  const progressPct = useMemo(() => calculateProgressPercent(currentExp, currentRankExp, destinationExp), [currentExp, currentRankExp, destinationExp]);
+  const progressDisplayExp = currentExp == null
+    ? currentRankExp
+    : Math.min(Math.max(currentExp, currentRankExp), destinationExp);
 
   const pathRanks = useMemo(() => {
     if (currentIdx < 0 || destIdx <= currentIdx) return [];
@@ -721,7 +739,7 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                   <p className="text-[10px] font-bold" style={{ color: "#555" }}>
                     Progress: {effectiveCurrentRank.name} → {destinationRank.name}
                   </p>
-                  <p className="text-[11px] font-black" style={{ color: "#d4a017" }}>{progressPct}%</p>
+                  <p className="text-[11px] font-black" style={{ color: "#d4a017" }}>{progressPct.toFixed(1)}%</p>
                 </div>
                 <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
                   <div
@@ -730,11 +748,11 @@ export default function RankCalculator({ ranks }: RankCalculatorProps) {
                   />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(currentRankExp)} XP
+                  <span className="text-[9px] tabular-nums" style={{ color: "#333" }}>
+                    {fmt(progressDisplayExp)} / {fmt(destinationExp)} XP
                   </span>
-                  <span className="text-[9px]" style={{ color: "#333" }}>
-                    {fmt(destinationExp)} XP
+                  <span className="text-[9px] tabular-nums" style={{ color: "#333" }}>
+                    {progressPct.toFixed(1)}%
                   </span>
                 </div>
               </div>

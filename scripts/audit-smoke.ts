@@ -38,12 +38,23 @@ const queryClientSource = readFileSync(new URL("../client/src/lib/queryClient.ts
 const reviewsSource = readFileSync(new URL("../client/src/lib/supabaseApi.ts", import.meta.url), "utf8");
 const communitySource = readFileSync(new URL("../api/sitemap.ts", import.meta.url), "utf8");
 const adminSource = readFileSync(new URL("../api/admin/rebuild.ts", import.meta.url), "utf8");
+const scraperSource = readFileSync(new URL("../api/scrape/[action].ts", import.meta.url), "utf8");
+const sitemapSource = readFileSync(new URL("../api/sitemap.ts", import.meta.url), "utf8");
+const vercelSource = readFileSync(new URL("../vercel.json", import.meta.url), "utf8");
 assert.match(queryClientSource, /requiresAdminToken/);
 assert.match(queryClientSource, /getAuthHeaders\(requiresAdminToken\(url\)\)/);
 assert.match(reviewsSource, /select\('id,seller_id,user_name,rating,comment,approved,created_at'\)/);
 assert.match(communitySource, /action === \"review:settings\"/);
 assert.match(communitySource, /review_verification_passphrase/);
 assert.match(adminSource, /table === \"seller_reviews\"/);
-assert.match(adminSource, /table === \"tickets\"/);
+assert.match(adminSource, /table === "tickets"/);
+assert.match(scraperSource, /function cronAuthorized/);
+assert.match(scraperSource, /action === "fandom-page"/);
+assert.match(scraperSource, /action === "fandom-crawl-start"/);
+assert.match(scraperSource, /buildFandomDraft/);
+assert.match(scraperSource, /custom_pages/);
+assert.match(vercelSource, /"crons"/);
+assert.match(vercelSource, /\/api\/scrape\/automation/);
+assert.doesNotMatch(sitemapSource, /X-Robots-Tag.*noindex/);
 
 console.log("audit-smoke: passed");

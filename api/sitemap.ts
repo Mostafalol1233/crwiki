@@ -943,6 +943,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=300, stale-while-revalidate=1800");
-  res.setHeader("X-Robots-Tag", "noindex");
   return res.status(200).send(xml);
 }

@@ -384,25 +384,50 @@ async function resolveMeta(path: string): Promise<PageMeta> {
 
   // ── static section pages ─────────────────────────────────────────────
   const sectionMeta: Record<string, Partial<PageMeta>> = {
-    "/events":      { title: "CrossFire Events | Calendar, Dates & Rewards | CrossFire Wiki",           description: "CrossFire events, tournaments, and limited-time updates with dates, reward details, and archived information." },
+        "/events":      { title: "CrossFire Events | Calendar, Dates & Rewards | CrossFire Wiki",           description: "CrossFire events, tournaments, and limited-time updates with dates, reward details, and archived information." },
     "/weapons":     { title: "CrossFire Weapons Database — Stats, Variants & Guides | CrossFire Wiki",    description: "Complete CrossFire weapon stats, damage values, variants and unlock methods." },
     "/modes":       { title: "CrossFire Game Modes — Team Match, Mutation, Ghost & More | CrossFire Wiki", description: "Every CrossFire game mode explained: rules, strategies, and tips for Team Match, Mutation Mode, Ghost Mode and more." },
     "/ranks":       { title: "CrossFire Rank System — All 104 Tiers & EXP Required | CrossFire Wiki",    description: "Full CrossFire ranking system from Private to National Soldier. EXP requirements, badges and promotion tips." },
     "/mercenaries": { title: "CrossFire Mercenaries — Characters, Stats & Abilities | CrossFire Wiki",   description: "Every CrossFire mercenary with abilities, teams, and how to get them." },
     "/maps":        { title: "CrossFire Maps — Black Widow, Egypt, Cabin & More | CrossFire Wiki",       description: "All CrossFire maps with layout overviews, strategies and callouts." },
     "/news":        { title: "CrossFire News — Updates, Patches & Announcements | CrossFire Wiki",       description: "Latest CrossFire West news, patch notes, updates and game announcements." },
+    "/posts":       { title: "CrossFire Guides and Posts | Builds, Explanations & Reference | CrossFire Wiki", description: "Detailed CrossFire guides, mechanics explanations, strategies and verified community reference posts." },
     "/tutorials":   { title: "CrossFire Tutorials | Beginner Guides & Game Systems | CrossFire Wiki",           description: "CrossFire tutorials covering installation, movement, weapons, game systems, and practical gameplay questions." },
-    "/videos":       { title: "CrossFire Videos — Tutorials, Gameplay & Highlights | CrossFire Wiki", description: "Watch CrossFire tutorials, gameplay, weapon guides, creator videos and highlights with useful explanations." },
-    "/pages":        { title: "CrossFire Wiki Pages — Guides, Updates & Reference | CrossFire Wiki", description: "Browse detailed CrossFire Wiki pages covering updates, modes, weapons, events, systems and community guides." },
-    "/content-hub":  { title: "CrossFire Content Hub | Guides, Updates & Reference | CrossFire Wiki", description: "Browse organized CrossFire guides, updates, videos, events, and reference pages in the wiki content hub." },
-    "/faq":          { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
+    "/videos":      { title: "CrossFire Videos — Tutorials, Gameplay & Highlights | CrossFire Wiki", description: "Watch CrossFire tutorials, gameplay, weapon guides, creator videos and highlights with useful explanations." },
+    "/pages":       { title: "CrossFire Wiki Pages — Guides, Updates & Reference | CrossFire Wiki", description: "Browse detailed CrossFire Wiki pages covering updates, modes, weapons, events, systems and community guides." },
+    "/content-hub": { title: "CrossFire Content Hub | Guides, Updates & Reference | CrossFire Wiki", description: "Browse organized CrossFire guides, updates, videos, events, and reference pages in the wiki content hub." },
+    "/global-wiki":  { title: "CrossFire Global Wiki | Regional Weapons, Modes & Game Data", description: "Explore region-specific CrossFire weapons, modes, maps and verified game data across global versions." },
+    "/grave-games":  { title: "CrossFire Grave Games | Modes, Rules & Reference | CrossFire Wiki", description: "Reference information for CrossFire Grave Games modes, rules and related game content." },
+    "/sellers":      { title: "CrossFire Sellers | Trusted Stores, Top-Up & Community Services", description: "Browse CrossFire sellers and stores with available services, contact links and profile information." },
+    "/services":     { title: "CrossFire Services | Player Services and Offers | CrossFire Wiki", description: "Explore reviewed CrossFire player services and available seller offers with clear details." },
+    "/reviews":      { title: "CrossFire Seller Reviews | Community Ratings & Feedback", description: "Read community feedback and ratings for CrossFire sellers and services." },
+    "/forum":        { title: "CrossFire Community Forum | Questions, Guides & Discussion", description: "Join CrossFire community discussions, ask questions and share useful gameplay knowledge." },
+    "/download":     { title: "Download CrossFire | Official Installation and Support Links", description: "Find official CrossFire download, installation and support resources." },
+    "/about":        { title: "About CrossFire Wiki | Independent CrossFire Reference", description: "Learn about CrossFire Wiki, its sources, editorial approach and community reference goals." },
+    "/contact":      { title: "Contact CrossFire Wiki | Support and Feedback", description: "Contact CrossFire Wiki for corrections, source suggestions and site feedback." },
+    "/faq":         { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
+  };
+  const sectionMetaAr: Record<string, { title: string; description: string }> = {
+    "/events": { title: "أحداث CrossFire | التقويم والمواعيد والمكافآت", description: "أحداث CrossFire والبطولات والتحديثات المؤقتة مع المواعيد والمكافآت والمعلومات الموثقة." },
+    "/weapons": { title: "أسلحة CrossFire | الإحصائيات والأنواع وطرق الاقتناء", description: "قاعدة بيانات أسلحة CrossFire مع الإحصائيات والضرر والأنواع وطرق الحصول على كل سلاح." },
+    "/modes": { title: "أوضاع لعب CrossFire | شرح القواعد والاستراتيجيات", description: "شرح أوضاع لعب CrossFire مثل Team Match وMutation وGhost مع القواعد والنصائح العملية." },
+    "/ranks": { title: "رتب CrossFire | مستويات الخبرة ومتطلبات الترقية", description: "شرح نظام رتب CrossFire ومستويات الخبرة والشارات ومتطلبات الترقية." },
+    "/mercenaries": { title: "شخصيات CrossFire | القدرات والأدوار", description: "مرجع شخصيات CrossFire مع القدرات والأدوار والفرق وطرق الاستخدام." },
+    "/maps": { title: "خرائط CrossFire | Black Widow وEgypt وغيرها", description: "خرائط CrossFire مع الشروحات وأماكن التحرك والاستراتيجيات ونقاط النداء." },
+    "/news": { title: "أخبار CrossFire | التحديثات والإعلانات", description: "آخر أخبار CrossFire والتحديثات وملاحظات التصحيح والإعلانات الموثقة." },
+    "/posts": { title: "مقالات وأدلة CrossFire | الشروحات والاستراتيجيات", description: "مقالات وأدلة CrossFire المفصلة لشرح الأسلحة والأنظمة والاستراتيجيات والمعلومات الموثقة." },
+    "/tutorials": { title: "أدلة CrossFire التعليمية | شرح المبتدئين وأنظمة اللعبة", description: "أدلة تعليمية عملية عن CrossFire والتثبيت والحركة والأسلحة وأنظمة اللعب." },
+    "/videos": { title: "فيديوهات CrossFire | شروحات وأسلوب اللعب", description: "فيديوهات وشروحات CrossFire عن الأسلحة والأوضاع وأسلوب اللعب والمحتوى المفيد." },
+    "/content-hub": { title: "مركز محتوى CrossFire | الأدلة والأخبار والمرجع", description: "تصفح أدلة CrossFire والأخبار والفيديوهات والأحداث وصفحات المرجع في مكان واحد." },
+    "/faq": { title: "الأسئلة الشائعة عن CrossFire | إجابات واضحة", description: "إجابات واضحة عن تثبيت CrossFire والأسلحة والرتب والأحداث والحسابات وأسلوب اللعب." },
   };
   const sp = sectionMeta[routePath];
   if (sp) {
     const sectionUrl = `${BASE}${prefix}${routePath}`;
+    const localized = isArabic ? (sectionMetaAr[routePath] || { title: `${sp.title!.split(" | ")[0]} بالعربية | CrossFire Wiki`, description: sp.description! }) : { title: sp.title!, description: sp.description! };
     return {
-      title: isArabic ? `${sp.title!.split(" | ")[0]} بالعربية | CrossFire Wiki` : sp.title!,
-      description: sp.description!,
+      title: localized.title,
+      description: localized.description,
       image: DEFAULT_IMG,
       imageType: imageType(DEFAULT_IMG),
       url: sectionUrl,

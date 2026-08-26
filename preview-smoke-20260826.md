@@ -1,11 +1,12 @@
 # Preview smoke findings — 2026-08-26
 
-- Deployment: commit `0044fb5` on `audit/hardening-20260826`; Preview became READY.
-- Preview alias tested: `https://crossfirewiki-o6bc4jk2i-mostafalol1233s-projects.vercel.app`.
+- Code commit: `0044fb5` on `audit/hardening-20260826`; its Preview became READY.
+- Final documentation deployment: commit `8401810`, also READY on `https://crossfirewiki-nluawjmul-mostafalol1233s-projects.vercel.app`.
+- Preview alias tested: `https://crossfirewiki-git-audit-hardeni-138d64-mostafalol1233s-projects.vercel.app`.
 - Browser navigation from `/ar/ar/sellers` normalized to `/ar/sellers` inside the app; the Arabic seller page rendered with seller cards.
 - `/ar/posts` rendered after the loading state completed. The page showed seven post cards with real source image URLs, categories, titles, and links; no empty-post state or blank content was observed.
 - The first visual capture briefly showed a loading spinner; the follow-up browser view showed the complete hero card and remaining cards. This is an asynchronous loading state, not a persistent blank page.
-- Safe API smoke results: page routes returned 200; `/api/content?type=posts` returned 200; unsupported `type=news` returned expected 400; unauthenticated admin/scrape/email writes returned 401; community `ticket:list` returned 401; AI request from an untrusted Origin returned 403.
+- Final safe API smoke results: page routes returned 200; `/api/content?type=posts` returned 200; unauthenticated admin and community ticket-list requests returned 401; the AI request from an untrusted Origin returned 403. The duplicate route was also normalized inside the application to `/ar/sellers`.
 - No user writes, admin login, secret values, competition changes, or production deployment were performed.
 
 ## Reviews browser check

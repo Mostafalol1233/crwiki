@@ -17,11 +17,13 @@
 | فرع Production قبل المراجعة | `main` عند الالتزام `1e37dbc` |
 | فرع الإصلاحات | `audit/hardening-20260826` |
 | آخر commit للإصلاحات | `0044fb5`، بعد `ddff0ab` و`bcccf7b` و`e8ce061` |
+| آخر commit للتوثيق والتحقق | `8401810` |
 | عدد دوال Vercel | 12، دون إضافة دالة جديدة |
 | فحص TypeScript | ناجح |
 | البناء الكامل | ناجح، مع تحذير قائم من أحجام حزم كبيرة |
 | الاختبار الخفيف الجديد | ناجح: `audit-smoke: passed` |
-| نشر Preview الأخير | READY، commit `0044fb5` |
+| Preview الكود | READY، commit `0044fb5` |
+| Preview النهائي بعد التوثيق | READY، commit `8401810` |
 | نشر Production | لم يتغير أثناء هذه المراجعة |
 
 ## الإصلاحات المنفذة
@@ -107,7 +109,7 @@
 
 ## قرار النشر
 
-الفرع `audit/hardening-20260826` مرفوع إلى GitHub، وPreview الأخير للـcommit `0044fb5` READY، والاختبارات المحلية وHTTP والحالات السلبية في المتصفح ناجحة. أوصي بعدم الدمج في `main` أو إعادة نشر Production قبل تنفيذ ثلاثة بنود: ضبط `ADMIN_TOKEN_SECRET` المستقل واختبار دخول إداري صالح، فحص سياسات RLS الحية واعتماد migration المرفقة بعد مراجعتها، ثم اختبار أدوار الإدارة وحالات إنشاء تذكرة وتعليق ومحادثة ومراجعة بحساب تجريبي. بعد ذلك يمكن فتح طلب دمج ومراجعة Preview مرة أخيرة.
+الفرع `audit/hardening-20260826` مرفوع إلى GitHub. Preview الكود عند `0044fb5` وPreview التوثيق النهائي عند `8401810` كلاهما READY، والاختبارات المحلية وHTTP والحالات السلبية في المتصفح ناجحة. أوصي بعدم الدمج في `main` أو إعادة نشر Production قبل تنفيذ ثلاثة بنود: ضبط `ADMIN_TOKEN_SECRET` المستقل واختبار دخول إداري صالح، فحص سياسات RLS الحية واعتماد migration المرفقة بعد مراجعتها، ثم اختبار أدوار الإدارة وحالات إنشاء تذكرة وتعليق ومحادثة ومراجعة بحساب تجريبي. بعد ذلك يمكن فتح طلب دمج ومراجعة Preview مرة أخيرة.
 
 ## المراجع
 
@@ -131,6 +133,8 @@
 
 [10]: https://github.com/Mostafalol1233/crwiki/blob/0044fb57e2bf393c1d744d696a7cc80f27e096fb/client/src/pages/GlobalContentHub.tsx — route mapping لمركز المحتوى.
 
-[11]: https://crossfirewiki-o6bc4jk2i-mostafalol1233s-projects.vercel.app — نشر Preview الأخير.
+[11]: https://crossfirewiki-nluawjmul-mostafalol1233s-projects.vercel.app — Preview النهائي بعد توثيق التحقق.
+
+[13]: https://crossfirewiki-o6bc4jk2i-mostafalol1233s-projects.vercel.app — Preview الكود عند `0044fb5`.
 
 [12]: https://crossfire.z8games.com/ranks.html — المصدر المشار إليه في الكود لعتبات رتب CrossFire.

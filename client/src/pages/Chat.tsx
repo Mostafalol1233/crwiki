@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
 import { useLocation } from "wouter";
-import { Send, Image as ImageIcon, Plus, Users, Hash, MoreVertical, Phone, Video, Settings, Upload, X, Loader2 } from "lucide-react";
+import { Send, Image as ImageIcon, Plus, Users, Hash, Settings, Upload, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
+import { apiRequest } from "@/lib/queryClient";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,6 +67,7 @@ export default function Chat() {
 
   // Data
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [chatError, setChatError] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -78,7 +81,6 @@ export default function Chat() {
   const [newDMUser, setNewDMUser] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const realtimeRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // ── Step 1: resolve auth from Supabase session ────────────────────────────
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function Chat() {
       const session = result?.data?.session;
       if (!session) {
         sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
-        setLocation("/login");
+        setLocation(buildAuthPath("login"));
         return;
       }
       const uname = session.user.user_metadata?.username
@@ -102,90 +104,54 @@ export default function Chat() {
       setMyDisplayName(displayName);
       setMyAvatar(avatar);
       setAuthReady(true);
+    }).catch(() => {
+      sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
+      setLocation(buildAuthPath("login"));
     });
   }, [setLocation]);
 
   // DB migration needed flag
   const [needsMigration, setNeedsMigration] = useState(false);
 
-  // ── Step 2: load conversations once auth is ready ─────────────────────────
+  const fetchConversations = useCallback(async () => {
+    if (!username) return;
+    try {
+      const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'chat:conversations:list' });
+      setNeedsMigration(false);
+      setChatError("");
+      setConversations(Array.isArray(data) ? data as Conversation[] : []);
+    } catch (error: any) {
+      if (String(error?.message || '').toLowerCase().includes('conversation')) setNeedsMigration(true);
+      else {
+        setChatError("Could not load private conversations. Please try again.");
+        console.error('fetchConversations:', error?.message || error);
+      }
+    }
+  }, [username]);
+
+  const fetchMessages = useCallback(async (conversationId: string) => {
+    try {
+      const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'chat:messages:list', conversationId });
+      setMessages(Array.isArray(data) ? data as Message[] : []);
+      setChatError("");
+    } catch (error) {
+      setChatError("Could not load messages. Please try again.");
+      console.error('fetchMessages:', error);
+      setMessages([]);
+    }
+  }, []);
+
+  // ── Step 3: load messages and refresh private chat data ─────────────────────
   useEffect(() => {
     if (!authReady || !username) return;
     fetchConversations();
-  }, [authReady, username]);
-
-  const fetchConversations = useCallback(async () => {
-    if (!username) return;
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .contains("participants", [username])
-      .order("last_message_at", { ascending: false });
-    if (error) {
-      // PGRST205 = table doesn't exist yet — user needs to run migration SQL
-      if (error.code === "PGRST205" || error.message?.includes("conversations")) {
-        setNeedsMigration(true);
-      } else {
-        console.error("fetchConversations:", error.message);
-      }
-      return;
-    }
-    setNeedsMigration(false);
-    setConversations((data as Conversation[]) || []);
-  }, [username]);
-
-  // ── Step 3: load messages when active conversation changes ────────────────
-  useEffect(() => {
-    if (!activeConvId) return;
-    supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", activeConvId)
-      .order("created_at", { ascending: true })
-      .limit(100)
-      .then((result: any) => setMessages((result.data as Message[]) || []));
-  }, [activeConvId]);
-
-  // ── Step 4: Supabase Realtime — broadcast channel for new messages ─────────
-  useEffect(() => {
-    if (!authReady || !username) return;
-
-    // Use broadcast channel — works without postgres_realtime publication
-    const channel = supabase.channel("cf-wiki-chat");
-
-    channel
-      .on("broadcast", { event: "new_message" }, ({ payload }: { payload: any }) => {
-        const msg = payload.message as Message;
-        // Add to messages if we're watching that conversation
-        setMessages(prev => {
-          if (msg.conversation_id !== activeConvId) return prev;
-          if (prev.some(m => m.id === msg.id)) return prev; // de-dupe
-          return [...prev, msg];
-        });
-        // Update conversation preview
-        setConversations(prev =>
-          prev.map(c =>
-            c.id === msg.conversation_id
-              ? { ...c, last_message: msg.content, last_message_at: msg.created_at }
-              : c
-          ).sort((a, b) =>
-            new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime()
-          )
-        );
-      })
-      .on("broadcast", { event: "new_conversation" }, () => {
-        fetchConversations();
-      })
-      .subscribe((status: any, err: any) => {
-        // Silently ignore 406 / realtime-not-enabled errors — chat still works via polling
-        if (err && process.env.NODE_ENV === "development") {
-          console.debug("[Chat realtime]", status, err?.message);
-        }
-      });
-
-    realtimeRef.current = channel;
-    return () => { supabase.removeChannel(channel); };
-  }, [authReady, username, activeConvId, fetchConversations]);
+    if (activeConvId) fetchMessages(activeConvId);
+    const timer = window.setInterval(() => {
+      fetchConversations();
+      if (activeConvId) fetchMessages(activeConvId);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [authReady, username, activeConvId, fetchConversations, fetchMessages]);
 
   // Auto-scroll
   useEffect(() => {
@@ -195,55 +161,28 @@ export default function Chat() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const sendMessage = useCallback(async (content: string, type: "text" | "image" = "text") => {
-    if (!activeConvId || !username) return;
-
-    const msgData: Omit<Message, "id" | "created_at"> & { created_at?: string } = {
-      conversation_id: activeConvId,
-      sender_username: username,
-      content,
-      type,
-      ...(replyingTo ? {
-        reply_to_id: replyingTo.id,
-        reply_to_content: replyingTo.content.slice(0, 120),
-        reply_to_sender: replyingTo.sender_username,
-      } : {}),
-    };
-
-    const { data: inserted, error } = await supabase
-      .from("messages")
-      .insert(msgData)
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
-      return;
+    if (!activeConvId || !username || !content.trim()) return;
+    try {
+      const inserted = await apiRequest('/api/sitemap?type=community', 'POST', {
+        action: 'chat:message:create',
+        conversationId: activeConvId,
+        content: content.trim(),
+        type,
+        ...(replyingTo ? {
+          reply_to_id: replyingTo.id,
+          reply_to_content: replyingTo.content.slice(0, 120),
+          reply_to_sender: replyingTo.sender_username,
+        } : {}),
+      });
+      setMessages(prev => prev.some(m => m.id === inserted.id) ? prev : [...prev, inserted as Message]);
+      setConversations(prev => prev.map(c => c.id === activeConvId
+        ? { ...c, last_message: content.trim(), last_message_at: inserted.created_at }
+        : c));
+      setText("");
+      setReplyingTo(null);
+    } catch (error: any) {
+      toast({ title: "Failed to send message", description: error?.message || "Could not send message", variant: "destructive" });
     }
-
-    // Update conversation last_message
-    await supabase.from("conversations").update({
-      last_message: content,
-      last_message_at: inserted.created_at,
-    }).eq("id", activeConvId);
-
-    // Broadcast to all subscribers (including self in other tabs)
-    await realtimeRef.current?.send({
-      type: "broadcast",
-      event: "new_message",
-      payload: { message: inserted },
-    });
-
-    // Add to local state immediately
-    setMessages(prev => prev.some(m => m.id === inserted.id) ? prev : [...prev, inserted]);
-    setConversations(prev =>
-      prev.map(c => c.id === activeConvId
-        ? { ...c, last_message: content, last_message_at: inserted.created_at }
-        : c
-      )
-    );
-
-    setText("");
-    setReplyingTo(null);
   }, [activeConvId, username, replyingTo, toast]);
 
   const handleSend = useCallback(() => {
@@ -286,24 +225,17 @@ export default function Chat() {
 
   const handleCreateChannel = async () => {
     if (!newGroupName.trim() || !username) return;
-    const { data: conv, error } = await supabase
-      .from("conversations")
-      .insert({
-        name: newGroupName.trim(),
-        type: "channel",
-        participants: [username],
-        last_message: `${username} created this channel`,
-        last_message_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (error) { toast({ title: "Failed to create channel", description: error.message, variant: "destructive" }); return; }
-    setConversations(prev => [conv, ...prev]);
-    setActiveConvId(conv.id);
-    setIsNewGroupOpen(false);
-    setNewGroupName("");
-    // broadcast new conversation
-    await realtimeRef.current?.send({ type: "broadcast", event: "new_conversation", payload: {} });
+    try {
+      const conv = await apiRequest('/api/sitemap?type=community', 'POST', {
+        action: 'chat:conversation:create', type: 'channel', name: newGroupName.trim(), participants: [username],
+      });
+      setConversations(prev => [conv as Conversation, ...prev]);
+      setActiveConvId(conv.id);
+      setIsNewGroupOpen(false);
+      setNewGroupName("");
+    } catch (error: any) {
+      toast({ title: "Failed to create channel", description: error?.message || "Could not create channel", variant: "destructive" });
+    }
   };
 
   const handleStartDM = async () => {
@@ -317,22 +249,17 @@ export default function Chat() {
     );
     if (existing) { setActiveConvId(existing.id); setIsNewGroupOpen(false); setNewDMUser(""); return; }
 
-    const { data: conv, error } = await supabase
-      .from("conversations")
-      .insert({
-        type: "direct",
-        participants: [username, target],
-        last_message: "",
-        last_message_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (error) { toast({ title: "Failed to start DM", description: error.message, variant: "destructive" }); return; }
-    setConversations(prev => [conv, ...prev]);
-    setActiveConvId(conv.id);
-    setIsNewGroupOpen(false);
-    setNewDMUser("");
-    await realtimeRef.current?.send({ type: "broadcast", event: "new_conversation", payload: {} });
+    try {
+      const conv = await apiRequest('/api/sitemap?type=community', 'POST', {
+        action: 'chat:conversation:create', type: 'direct', participants: [username, target],
+      });
+      setConversations(prev => [conv as Conversation, ...prev]);
+      setActiveConvId(conv.id);
+      setIsNewGroupOpen(false);
+      setNewDMUser("");
+    } catch (error: any) {
+      toast({ title: "Failed to start DM", description: error?.message || "Could not start direct message", variant: "destructive" });
+    }
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -365,13 +292,27 @@ CREATE INDEX IF NOT EXISTS idx_conv_participants ON conversations USING GIN (par
 CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages (conversation_id, created_at);
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY conv_all ON conversations FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY msg_all ON messages FOR ALL USING (true) WITH CHECK (true);`;
+REVOKE ALL ON TABLE conversations, messages FROM anon, authenticated;
+-- The application server uses the Supabase service role after checking session ownership.
+-- Do not create public USING(true) or WITH CHECK(true) policies.`;
 
   if (!authReady) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (chatError && !needsMigration) {
+    return (
+      <div className="container mx-auto px-4 py-10 max-w-2xl">
+        <PageSEO title="Chat — Error" description="Private chat error" noindex />
+        <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-6 space-y-4 text-center">
+          <h2 className="font-black text-lg">Private chat is temporarily unavailable</h2>
+          <p className="text-sm text-muted-foreground">{chatError}</p>
+          <Button onClick={() => { setChatError(""); fetchConversations(); if (activeConvId) fetchMessages(activeConvId); }}>Retry</Button>
+        </div>
       </div>
     );
   }
@@ -550,11 +491,7 @@ CREATE POLICY msg_all ON messages FOR ALL USING (true) WITH CHECK (true);`;
                     )}
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><Video className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                </div>
+
               </div>
 
               {/* Messages */}

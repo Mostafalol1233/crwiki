@@ -11,12 +11,8 @@ export type AdminTokenPayload = {
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function tokenSecret(): string {
-  return (
-    process.env.ADMIN_TOKEN_SECRET ||
-    process.env.ADMIN_PASSWORD ||
-    process.env.SUPABASE_SERVICE_KEY ||
-    ""
-  ).trim();
+  const secret = (process.env.ADMIN_TOKEN_SECRET || "").trim();
+  return secret.length >= 32 ? secret : "";
 }
 
 function sign(encodedPayload: string): string {
@@ -25,7 +21,7 @@ function sign(encodedPayload: string): string {
 
 export function makeAdminToken(payload: Omit<AdminTokenPayload, "exp">): string {
   if (!tokenSecret()) {
-    throw new Error("ADMIN_TOKEN_SECRET or an equivalent server secret is required");
+    throw new Error("ADMIN_TOKEN_SECRET must be configured with at least 32 characters");
   }
 
   const encodedPayload = Buffer.from(

@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { URLSearchParams } from 'url';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.VITE_SERVICE_ROLE || process.env.service_role || process.env.SUPABASE_SERVICE_KEY || '';
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const FANWIKI_BASE = process.env.FANDOM_WIKI_BASE || process.env.CROSSFIRE_FANDOM_BASE || 'https://crossfirefps.fandom.com';
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -124,7 +124,7 @@ async function getPageDetails(titles, limit = 25) {
 
 async function supabaseRequest(path, init = {}) {
   if (!SUPABASE_URL || !SERVICE_KEY) {
-    throw new Error('Supabase credentials are missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_KEY first.');
+    throw new Error('Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_KEY in the server environment first.');
   }
 
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {

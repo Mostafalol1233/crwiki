@@ -16,6 +16,7 @@
     "start": "NODE_ENV=production PORT=5000 node backend/server.js",
     "start:prod": "NODE_ENV=production node backend/server.js",
     "check": "tsc",
+    "audit:smoke": "tsx scripts/audit-smoke.ts",
     "db:push": "drizzle-kit push",
     "import:fandom": "node scripts/import-fandom-data.js"
   },

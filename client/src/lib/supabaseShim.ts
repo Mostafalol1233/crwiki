@@ -60,9 +60,13 @@ function autoGenerateSEO(title: string, contentHtml: string): {
 async function scrapePageViaProxy(url: string): Promise<{
   title: string; content: string; summary: string; image: string; contentLength: number;
 }> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
   const res = await fetch('/api/scrape/single-url', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ url }),
   });
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -74,6 +78,19 @@ async function scrapePageViaProxy(url: string): Promise<{
     image: data.image || data.mainImage || '',
     contentLength: data.contentLength || 0,
   };
+}
+
+async function adminProxy(path: string, payload: Record<string, unknown>) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
+  if (!token) throw new Error('Admin authentication is required');
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `Admin request failed (${res.status})`);
+  return data;
 }
 
 // ─── Field mappers ────────────────────────────────────────────────────────────
@@ -354,6 +371,32 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   const { path, params } = parseUrlParams(rawUrl.replace(/^\/api/, ''));
   const M = method.toUpperCase();
   const client = db();
+
+  // All browser-side mutations for admin-managed catalogues must go through
+  // the authenticated service boundary. Public GET requests remain read-only.
+  const adminContentMatch = path.match(/^\/(posts|news|events|weapons|modes|ranks|mercenaries|tutorials|sellers)(?:\/([^/]+))?$/);
+  if (adminContentMatch && M !== "GET") {
+    const resource = adminContentMatch[1];
+    const id = adminContentMatch[2] ? decodeURIComponent(adminContentMatch[2]) : undefined;
+    const operation = M === "POST" ? "create" : M === "PATCH" ? "update" : M === "DELETE" ? "delete" : "";
+    if (!operation) throw new Error("Unsupported mutation method");
+    return adminProxy("/api/admin/rebuild", {
+      action: "admin-table",
+      type: resource,
+      operation,
+      ...(id ? { id } : {}),
+      ...(operation !== "delete" ? { row: body || {} } : {}),
+    });
+  }
+
+  if (path === "/events/reorder" && M === "PATCH") {
+    return adminProxy("/api/admin/rebuild", {
+      action: "admin-table",
+      type: "events",
+      operation: "reorder",
+      rows: Array.isArray(body?.orders) ? body.orders : [],
+    });
+  }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   if (path === '/stats') {
@@ -676,31 +719,26 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   // ── Reviews ────────────────────────────────────────────────────────────────
   if (path.startsWith('/reviews/seller/by-slug/')) {
     const slug = decodeURIComponent(path.replace('/reviews/seller/by-slug/', ''));
-    const { data } = await client.from('seller_reviews').select('*').eq('seller_slug', slug).order('created_at', { ascending: false });
+    const { data } = await client.from('seller_reviews').select('id,seller_id,seller_slug,user_name,rating,comment,helpful_votes,approved,created_at').eq('seller_slug', slug).eq('approved', true).order('created_at', { ascending: false });
     return data || [];
   }
 
   // ── Tickets ────────────────────────────────────────────────────────────────
-  if (path === '/tickets') {
-    if (M === 'GET') {
-      const { data, error } = await client.from('tickets').select('*').order('created_at', { ascending: false });
-      if (error) throw new Error(error.message);
-      return data || [];
-    }
+  if (path === '/tickets' && M === 'GET') {
+    const result = await adminProxy('/api/admin/rebuild', {
+      action: 'admin-table', type: 'tickets', operation: 'list', page: 1, pageSize: 100,
+    });
+    return Array.isArray(result?.data) ? result.data : [];
   }
 
-  const ticketMatch = path.match(/^\/tickets\/(.+)$/);
-  if (ticketMatch) {
-    const id = ticketMatch[1];
-    if (M === 'PATCH') {
-      const { data, error } = await client.from('tickets').update(body).eq('id', id).select().single();
-      if (error) throw new Error(error.message);
-      return data;
-    }
-    if (M === 'DELETE') {
-      await client.from('tickets').delete().eq('id', id);
-      return { success: true };
-    }
+  const ticketMatch = path.match(/^\/tickets\/([^/]+)$/);
+  if (ticketMatch && (M === 'PATCH' || M === 'DELETE')) {
+    const id = decodeURIComponent(ticketMatch[1]);
+    const result = await adminProxy('/api/admin/rebuild', {
+      action: 'admin-table', type: 'tickets', operation: M === 'PATCH' ? 'update' : 'delete', id,
+      ...(M === 'PATCH' ? { row: body || {} } : {}),
+    });
+    return M === 'PATCH' ? (Array.isArray(result?.data) ? result.data[0] : result?.data || result) : result;
   }
 
   // ── Tutorials (Videos) ────────────────────────────────────────────────────
@@ -769,31 +807,23 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   // ── Site Settings ──────────────────────────────────────────────────────────
-  if (path === '/settings/site' || path === '/public/settings/site' || path === '/admin/settings/site') {
+  const publicSettingsSelect = 'id,review_verification_enabled,review_verification_video_url,review_verification_prompt,review_verification_timecode,review_verification_you_tube_channel_url,announcements_enabled,seo_title,seo_description,seo_keywords,seo_og_image_url,hero_image,robots,featured_weapons,featured_event_id,secondary_event_ids,public_base_url,portal_img_weapons,portal_img_maps,portal_img_mercenaries,portal_img_modes,portal_img_ranks,portal_img_events';
+  if (path === '/settings/site' || path === '/public/settings/site') {
     if (M === 'GET') {
-      const { data } = await client.from('site_settings').select('*').limit(1).single();
+      const { data, error } = await client.from('site_settings').select(publicSettingsSelect).limit(1).maybeSingle();
+      if (error) throw new Error(error.message);
       return data || {};
     }
     if (M === 'PUT' || M === 'POST') {
-      const { data: existing } = await client.from('site_settings').select('id').limit(1).single();
-      if (existing?.id) {
-        const { data } = await client.from('site_settings').update({
-          seo_title: body.seoTitle || body.seo_title,
-          seo_description: body.seoDescription || body.seo_description,
-          seo_keywords: body.seoKeywords || body.seo_keywords || [],
-          robots: body.robots,
-          announcements_enabled: body.announcementsEnabled ?? body.announcements_enabled,
-          review_verification_enabled: body.reviewVerificationEnabled ?? body.review_verification_enabled,
-          public_base_url: body.publicBaseUrl || body.public_base_url || '',
-        }).eq('id', existing.id).select().single();
-        return data || {};
-      }
-      return {};
+      throw new Error('Site settings must be updated through the authenticated admin boundary');
     }
+  }
+  if (path === '/admin/settings/site') {
+    throw new Error('Use the authenticated admin settings endpoint');
   }
 
   if (path === '/public/settings/seo') {
-    const { data } = await client.from('site_settings').select('*').limit(1).maybeSingle();
+    const { data } = await client.from('site_settings').select('seo_title,seo_description,seo_keywords,seo_og_image_url,robots').limit(1).maybeSingle();
     return {
       seoTitle: data?.seo_title || 'CrossFire Wiki',
       seoDescription: data?.seo_description || '',
@@ -827,6 +857,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
       return announcementRowToAnn(row);
     }
     if (M === 'POST') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       const row = { ...annToPost(body, 'global'), updated_at: new Date().toISOString() };
       // Upsert: delete old global then insert
       await client.from('posts').delete().eq('category', ANN_CATEGORY).contains('tags', ['global']);
@@ -848,12 +879,14 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   if (globalAnnMatch) {
     const id = globalAnnMatch[1];
     if (M === 'PATCH') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       const row = annToPost(body, 'global');
       const { data, error } = await client.from('posts').update(row).eq('id', id).select().single();
       if (error) throw new Error(error.message);
       return postToAnn(data);
     }
     if (M === 'DELETE') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       await client.from('posts').delete().eq('id', id);
       return { success: true };
     }
@@ -870,6 +903,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
       return postToAnn(data);
     }
     if (M === 'POST' || M === 'PATCH') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       await client.from('posts').delete().eq('category', ANN_CATEGORY).contains('tags', [`seller:${slug}`]);
       const { data, error } = await client.from('posts').insert([annToPost(body, 'seller', slug)]).select().single();
       if (error) throw new Error(error.message);
@@ -998,6 +1032,20 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
         contentLength,
       },
     };
+  }
+
+  // ── Server-backed admin scraping and rebuilds ───────────────────────────────
+  if (path === '/admin/rebuild' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { ...(body || {}) });
+  }
+  if (path === '/admin/rescrape-item' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rescrape-item', ...(body || {}) });
+  }
+  if (path === '/admin/rebuild-mercenary-posts' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rebuild-mercenary-posts' });
+  }
+  if (path === '/admin/rebuild-wiki-posts' && M === 'POST') {
+    return adminProxy('/api/admin/rebuild', { action: 'rebuild-wiki-posts' });
   }
 
   // ── Rebuild posts from Fandom Wiki ────────────────────────────────────────

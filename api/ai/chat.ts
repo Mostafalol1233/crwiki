@@ -2,17 +2,42 @@ import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 dotenv.config();
 
-const DEFAULT_AI_MODEL = "openai/gpt-oss-20b";
+const DEFAULT_AI_MODEL = "google/gemma-4-31b-it:free";
 const FALLBACK_AI_MODELS = [
-  "google/gemma-4-31b-it:free",
   "nvidia/nemotron-3.5-lightning:free",
+  "openai/gpt-oss-20b:free",
 ] as const;
+
+const aiRate = new Map<string, { count: number; startedAt: number }>();
+function allowAiRequest(req: VercelRequest): boolean {
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = String(Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || "unknown").split(",")[0].trim().slice(0, 100);
+  const now = Date.now();
+  const current = aiRate.get(ip);
+  if (!current || now - current.startedAt >= 10 * 60 * 1000) {
+    aiRate.set(ip, { count: 1, startedAt: now });
+    return true;
+  }
+  if (current.count >= 20) return false;
+  current.count += 1;
+  return true;
+}
+
+function requestOriginAllowed(req: VercelRequest): boolean {
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin : "";
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === String(req.headers.host || "");
+  } catch {
+    return false;
+  }
+}
 
 function getAiModelCandidates(configuredModel?: string) {
   const configured = String(configuredModel || "").trim();
-  const normalized = configured === "openai/gpt-oss-20b:free" ? DEFAULT_AI_MODEL : configured;
+  const safeConfigured = configured.endsWith(":free") ? configured : "";
   return Array.from(new Set([
-    normalized || DEFAULT_AI_MODEL,
+    safeConfigured || DEFAULT_AI_MODEL,
     ...FALLBACK_AI_MODELS,
   ]));
 }
@@ -112,7 +137,7 @@ function normalizeMessages(input: unknown): Array<{ role: "user" | "assistant"; 
     .slice(-6)
     .map((message: any) => ({
       role: message?.role === "assistant" ? "assistant" as const : "user" as const,
-      content: typeof message?.content === "string" ? message.content.trim().slice(0, 4000) : "",
+      content: typeof message?.content === "string" ? message.content.trim().slice(0, 2000) : "",
     }))
     .filter((message) => message.content.length > 0);
 }
@@ -158,7 +183,7 @@ async function generateAnswer(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   systemPrompt: { role: "system"; content: string },
 ): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || "";
+  const apiKey = process.env.OPENROUTER_API_KEY || "";
   if (!apiKey) {
     throw new Error("AI provider is not configured on this deployment");
   }
@@ -183,14 +208,19 @@ function sendSse(res: VercelResponse, payload: unknown) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin : "";
+  if (origin && requestOriginAllowed(req)) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method === "OPTIONS") return res.status(requestOriginAllowed(req) ? 204 : 403).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (!requestOriginAllowed(req)) return res.status(403).json({ error: "Origin not allowed" });
+  if (!allowAiRequest(req)) return res.status(429).json({ error: "Too many AI requests. Try again later." });
 
   const messages = normalizeMessages(req.body?.messages);
-  if (!messages.length) return res.status(400).json({ error: "messages array required" });
+  const totalLength = messages.reduce((sum, message) => sum + message.content.length, 0);
+  if (!messages.length || totalLength > 12000) return res.status(400).json({ error: "A non-empty messages array under 12000 characters is required" });
 
   try {
     const websiteData = await fetchWebsiteContext();
@@ -209,7 +239,7 @@ ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== EN
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
-      "Access-Control-Allow-Origin": "*",
+      ...(origin && requestOriginAllowed(req) ? { "Access-Control-Allow-Origin": origin } : {}),
     });
     sendSse(res, { delta: answer });
     sendSse(res, { done: true });

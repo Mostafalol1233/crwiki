@@ -6,15 +6,20 @@ import PageSEO from "@/components/PageSEO";
 import { useQuery } from "@tanstack/react-query";
 import { ITutorial } from "@shared/mongodb-schema";
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
-const CATEGORIES: Array<{ key: string; title: string; description: string; icon: any }> = [
-  { key: "tutorial", title: "Tutorial", description: "Guides and how-to videos", icon: BookOpen },
-  { key: "streamer", title: "Streamer", description: "Creator spotlights and streams", icon: Radio },
-  { key: "highlights", title: "Highlights", description: "Best moments and clips", icon: Zap },
-  { key: "game-weapons", title: "Game & Weapons", description: "Loadouts, weapons, and gameplay", icon: Crosshair },
+const CATEGORIES: Array<{ key: string; title: string; titleAr: string; description: string; descriptionAr: string; icon: any }> = [
+  { key: "tutorial", title: "Tutorial", titleAr: "دروس", description: "Guides and how-to videos", descriptionAr: "أدلة وفيديوهات شرح", icon: BookOpen },
+  { key: "streamer", title: "Streamer", titleAr: "بث مباشر", description: "Creator spotlights and streams", descriptionAr: "مقاطع المبدعين والبثوث", icon: Radio },
+  { key: "highlights", title: "Highlights", titleAr: "أبرز المقاطع", description: "Best moments and clips", descriptionAr: "أفضل اللحظات والمقاطع", icon: Zap },
+  { key: "game-weapons", title: "Game & Weapons", titleAr: "اللعبة والأسلحة", description: "Loadouts, weapons, and gameplay", descriptionAr: "العتاد والأسلحة وأسلوب اللعب", icon: Crosshair },
 ];
 
 export default function VideosPage() {
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
+  const displayTitle = (video: any) => isArabic ? (video.titleAr || video.title_ar || video.title) : video.title;
+  const displayDescription = (video: any) => isArabic ? (video.descriptionAr || video.description_ar || video.description) : video.description;
   const { data: tutorialsData } = useQuery<{ items: ITutorial[], total: number }>({
     queryKey: ["/api/tutorials"],
   });
@@ -37,8 +42,8 @@ export default function VideosPage() {
   return (
     <>
       <PageSEO
-        title={"Videos — CrossFire Wiki"}
-        description={"Browse CrossFire videos by category: tutorials, streamer, highlights, and game & weapons."}
+        title={isArabic ? "فيديوهات كروس فاير — CrossFire Wiki" : "Videos — CrossFire Wiki"}
+        description={isArabic ? "تصفح فيديوهات كروس فاير حسب الفئة: الدروس والبثوث وأبرز المقاطع والأسلحة." : "Browse CrossFire videos by category: tutorials, streamer, highlights, and game & weapons."}
         canonicalPath="/videos"
       />
       <div className="min-h-screen" style={{ background: "var(--background)" }}>
@@ -49,12 +54,16 @@ export default function VideosPage() {
           <div className="relative max-w-3xl mx-auto px-6">
             <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
               <Video className="h-3 w-3" style={{ color: "#f5a623" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>CrossFire Content</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>
+                {isArabic ? "محتوى كروس فاير" : "CrossFire Content"}
+              </span>
             </div>
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none mb-3" style={{ color: "var(--foreground)" }} data-testid="text-page-title">
-              CF <span style={{ color: "#f5a623" }}>Videos</span>
+              {isArabic ? <>فيديوهات <span style={{ color: "#f5a623" }}>كروس فاير</span></> : <>CF <span style={{ color: "#f5a623" }}>Videos</span></>}
             </h1>
-            <p className="text-sm" style={{ color: "#666" }}>Choose a category to explore CrossFire videos</p>
+            <p className="text-sm" style={{ color: "#666" }}>
+              {isArabic ? "اختر فئة لاستكشاف فيديوهات كروس فاير" : "Choose a category to explore CrossFire videos"}
+            </p>
           </div>
         </div>
 
@@ -65,14 +74,16 @@ export default function VideosPage() {
             <div className="mb-14">
               <div className="flex items-center gap-2 mb-6">
                 <Star className="h-4 w-4" style={{ color: "#f5a623", fill: "#f5a623" }} />
-                <h2 className="text-lg font-black uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Featured Videos</h2>
+                <h2 className="text-lg font-black uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
+                  {isArabic ? "الفيديوهات المميزة" : "Featured Videos"}
+                </h2>
               </div>
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_0.8fr]">
                 {activeVideo && (
                   <div className="overflow-hidden" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
                     <div className="aspect-video bg-black">
                       <iframe
-                        title={activeVideo.title}
+                        title={displayTitle(activeVideo)}
                         src={`https://www.youtube.com/embed/${activeVideo.youtubeId}`}
                         className="h-full w-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -82,13 +93,17 @@ export default function VideosPage() {
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <Video className="h-3 w-3" style={{ color: "#f5a623" }} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>Featured</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: "#f5a623" }}>
+                          {isArabic ? "مميز" : "Featured"}
+                        </span>
                       </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{activeVideo.title}</h3>
-                      {activeVideo.description && <p className="text-sm mb-4" style={{ color: "#666" }}>{activeVideo.description}</p>}
+                      <h3 className="text-xl font-black uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
+                        {displayTitle(activeVideo)}
+                      </h3>
+                      {displayDescription(activeVideo) && <p className="text-sm mb-4" style={{ color: "#666" }}>{displayDescription(activeVideo)}</p>}
                       <div className="flex flex-wrap gap-2">
                         <Link href={`/tutorials/${activeVideo.tutorial_slug || activeVideo.id}`} className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110" style={{ background: "#f5a623", color: "#000", borderRadius: "2px" }}>
-                          Full Page
+                          {isArabic ? "الصفحة الكاملة" : "Full Page"}
                         </Link>
                         <a
                           href={`https://www.youtube.com/watch?v=${activeVideo.youtubeId}`}
@@ -97,7 +112,7 @@ export default function VideosPage() {
                           className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-wider transition-all hover:brightness-110"
                           style={{ background: "rgba(255,255,255,0.06)", color: "var(--foreground)", borderRadius: "2px" }}
                         >
-                          YouTube ↗
+                          {isArabic ? "يوتيوب ↗" : "YouTube ↗"}
                         </a>
                       </div>
                     </div>
@@ -120,7 +135,7 @@ export default function VideosPage() {
                       <div className="relative aspect-video overflow-hidden">
                         <img
                           src={`https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`}
-                          alt={video.title}
+                          alt={displayTitle(video)}
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
                             const target = e.currentTarget;
@@ -135,7 +150,7 @@ export default function VideosPage() {
                         </div>
                       </div>
                       <div className="p-3">
-                        <h3 className="line-clamp-2 font-bold text-sm" style={{ color: "var(--foreground)" }}>{video.title}</h3>
+                        <h3 className="line-clamp-2 font-bold text-sm" style={{ color: "var(--foreground)" }}>{displayTitle(video)}</h3>
                         {video.category && <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: "#555" }}>{video.category}</p>}
                       </div>
                     </button>
@@ -147,7 +162,9 @@ export default function VideosPage() {
 
           {/* Categories */}
           <div className="mb-12">
-            <h2 className="text-lg font-black uppercase tracking-wider mb-5" style={{ color: "var(--foreground)" }}>Categories</h2>
+            <h2 className="text-lg font-black uppercase tracking-wider mb-5" style={{ color: "var(--foreground)" }}>
+              {isArabic ? "الفئات" : "Categories"}
+            </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
@@ -162,10 +179,14 @@ export default function VideosPage() {
                     <div className="w-9 h-9 flex items-center justify-center mb-3" style={{ background: "rgba(245,166,35,0.1)", borderRadius: "2px" }}>
                       <Icon className="h-4.5 w-4.5" style={{ color: "#f5a623" }} />
                     </div>
-                    <h3 className="font-black text-sm uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>{c.title}</h3>
-                    <p className="text-[11px]" style={{ color: "#555" }}>{c.description}</p>
+                    <h3 className="font-black text-sm uppercase tracking-wide mb-1" style={{ color: "var(--foreground)" }}>
+                      {isArabic ? c.titleAr : c.title}
+                    </h3>
+                    <p className="text-[11px]" style={{ color: "#555" }}>
+                      {isArabic ? c.descriptionAr : c.description}
+                    </p>
                     <div className="flex items-center gap-1 mt-3 text-[10px] font-black uppercase tracking-wider" style={{ color: "#f5a623" }}>
-                      Browse <ArrowLeft className="h-3 w-3 rotate-180 transition-transform group-hover:translate-x-1" />
+                      {isArabic ? "تصفح" : "Browse"} <ArrowLeft className="h-3 w-3 rotate-180 transition-transform group-hover:translate-x-1" />
                     </div>
                   </Link>
                 );

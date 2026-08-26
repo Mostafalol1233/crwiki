@@ -53,6 +53,11 @@ export default function ScrapingManager() {
 
   const [isMirroring, setIsMirroring] = useState(false);
 
+  const getAdminHeaders = (): HeadersInit => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : "";
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const upsertScrapedEvent = (event: ScrapedEvent) => {
     setScrapedEvents((prev) => prev.map((item) => (item.url === event.url ? event : item)));
     setPreviewEvent(event);
@@ -62,19 +67,25 @@ export default function ScrapingManager() {
   const handleMirror = async (url: string) => {
     setIsMirroring(true);
     try {
-      const response = await apiRequest("/api/mirror-url", "POST", { url });
-      if (response.success) {
-        const nextEvent = {
-          ...editedEvent!,
-          content: response.content,
-          rawHtmlContent: response.content,
-          title: response.title || editedEvent?.title
-        };
-        upsertScrapedEvent(nextEvent);
-        toast({ title: "Mirroring Successful", description: "Content has been mirrored with local assets." });
-      }
+      const response = await fetch("/api/admin/scraper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAdminHeaders() },
+        credentials: "include",
+        body: JSON.stringify({ url, type: "events", preview: true }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.scraped) throw new Error(data.error || "Preview request failed");
+      const nextEvent = {
+        ...editedEvent!,
+        content: data.scraped.content || editedEvent?.content || "",
+        rawHtmlContent: data.scraped.content || editedEvent?.content || "",
+        image: data.scraped.image || editedEvent?.image || "",
+        title: data.scraped.title || editedEvent?.title,
+      };
+      upsertScrapedEvent(nextEvent);
+      toast({ title: "Source preview loaded", description: "The source content was refreshed without writing to the database." });
     } catch (error: any) {
-      toast({ title: "Mirroring Failed", description: error.message, variant: "destructive" });
+      toast({ title: "Preview failed", description: error.message, variant: "destructive" });
     } finally {
       setIsMirroring(false);
     }
@@ -84,15 +95,7 @@ export default function ScrapingManager() {
     setIsScraping(true);
     
     try {
-      const scraperApiKey = import.meta.env.VITE_SCRAPER_API_KEY || localStorage.getItem('scraperApiKey');
-      const token = localStorage.getItem('adminToken');
-      const headers: HeadersInit = {};
-      if (scraperApiKey) {
-        headers['X-Scraper-API-Key'] = scraperApiKey;
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      const headers: HeadersInit = getAdminHeaders();
 
       const listResponse = await fetch("/api/scrape/forum-list", { headers, credentials: 'include' });
       const posts = await listResponse.json();
@@ -148,26 +151,34 @@ export default function ScrapingManager() {
     }
   };
 
-  // Simple admin scraping (no API key needed, just JWT)
+  // Fetch, review, and publish through the single authenticated admin multiplexer.
   const handleAdminQuickScrape = async () => {
     setIsScraping(true);
-    
     try {
-      const response = await apiRequest("/api/admin/scrape-and-create-events", "POST", {});
-      
-      toast({
-        title: "Events Created Successfully",
-        description: `Created ${response.events?.length || 0} events from forum announcements.`,
+      const headers = getAdminHeaders();
+      const listResponse = await fetch("/api/scrape/forum-list", { headers, credentials: "include" });
+      const posts = await listResponse.json().catch(() => []);
+      if (!listResponse.ok || !Array.isArray(posts)) throw new Error(posts?.error || "Failed to fetch forum announcements");
+      const detailResponse = await fetch("/api/scrape/multiple-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        credentials: "include",
+        body: JSON.stringify({ urls: posts.slice(0, 25).map((post: any) => post.url).filter(Boolean) }),
       });
-      
-      // Refresh events display if needed
+      const events = await detailResponse.json().catch(() => []);
+      if (!detailResponse.ok || !Array.isArray(events)) throw new Error(events?.error || "Failed to fetch event details");
+      if (!events.length) throw new Error("No valid events were found");
+      if (!window.confirm(`Publish ${events.length} scraped event(s) to the database?`)) return;
+      const response = await apiRequest("/api/admin/rebuild", "POST", {
+        action: "bulk-events",
+        events,
+        createAsNews: false,
+        confirmation: "PUBLISH_SCRAPED_EVENTS",
+      });
+      toast({ title: "Events created", description: `Created ${response.created || 0}; skipped ${response.skipped || 0}.` });
       setScrapedEvents([]);
     } catch (error: any) {
-      toast({
-        title: "Error Creating Events",
-        description: error.message || "Failed to scrape and create events",
-        variant: "destructive",
-      });
+      toast({ title: "Error creating events", description: error.message || "Failed to scrape and create events", variant: "destructive" });
     } finally {
       setIsScraping(false);
     }
@@ -265,9 +276,12 @@ export default function ScrapingManager() {
       }
       const eventsToPublish = Array.from(eventMap.values()).filter(e => selectedEvents.has(e.url));
       
-      const response = await apiRequest("/api/events/bulk-create", "POST", {
+      if (!window.confirm(`Publish ${eventsToPublish.length} selected event(s) to the database?`)) return;
+      const response = await apiRequest("/api/admin/rebuild", "POST", {
+        action: "bulk-events",
         events: eventsToPublish,
-        createAsNews: createAsNews,
+        createAsNews,
+        confirmation: "PUBLISH_SCRAPED_EVENTS",
       });
 
       toast({
@@ -576,7 +590,7 @@ export default function ScrapingManager() {
                         try {
                           const res = await fetch('/api/scrape/validate-content', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', ...getAdminHeaders() },
                             body: JSON.stringify({ html: editedEvent?.content || '' })
                           });
                           const json = await res.json();

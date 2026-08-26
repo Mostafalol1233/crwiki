@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import PageSEO from "@/components/PageSEO";
 import { getForumCategories, createForumThread, createForumPost } from "@/lib/supabaseApi";
 import { supabase } from "@/lib/supabase";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 const ACCENT = "#f5a623";
 
@@ -30,6 +31,7 @@ export default function NewThread({ params }: { params: { categorySlug: string }
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userSession, setUserSession] = useState<any>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then((result: any) => {
@@ -39,7 +41,7 @@ export default function NewThread({ params }: { params: { categorySlug: string }
         const meta = data.session.user.user_metadata;
         setAuthorName(meta?.username || data.session.user.email?.split("@")[0] || "");
       }
-    });
+    }).finally(() => setSessionChecked(true));
     getForumCategories().then((cats: any[]) => {
       const cat = cats.find(c => c.slug === categorySlug);
       if (cat) setCategory(cat);
@@ -56,6 +58,10 @@ export default function NewThread({ params }: { params: { categorySlug: string }
       return;
     }
     if (!category) return;
+    if (!userSession) {
+      setError(isAr ? "يجب تسجيل الدخول للنشر في المنتدى" : "You must sign in to post in the forum");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -87,7 +93,7 @@ export default function NewThread({ params }: { params: { categorySlug: string }
     }
   };
 
-  if (!category) {
+  if (!category || !sessionChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
         <div className="animate-spin h-6 w-6 border-2 rounded-full" style={{ borderColor: ACCENT, borderTopColor: "transparent" }} />
@@ -96,6 +102,19 @@ export default function NewThread({ params }: { params: { categorySlug: string }
   }
 
   const catName = isAr && category.nameAr ? category.nameAr : category.name;
+  if (!userSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--background)" }}>
+        <div className="max-w-md w-full p-8 text-center rounded-lg" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <h1 className="text-xl font-black mb-3" style={{ color: "var(--foreground)" }}>{isAr ? "سجّل الدخول للنشر" : "Sign in to post"}</h1>
+          <p className="text-sm mb-5" style={{ color: "#777" }}>{isAr ? "أصبح تسجيل الدخول مطلوبًا لحماية المنتدى من الرسائل المزعجة وانتحال الهوية." : "Sign-in is required to protect the forum from spam and impersonation."}</p>
+          <Link href={buildAuthPath("login")} className="inline-flex items-center justify-center px-5 py-2.5 rounded text-sm font-bold" style={{ background: ACCENT, color: "#000", textDecoration: "none" }}>
+            {isAr ? "تسجيل الدخول" : "Sign in"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -129,23 +148,9 @@ export default function NewThread({ params }: { params: { categorySlug: string }
 
         <div className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="p-6 rounded-lg" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            {/* Author name (non-logged-in) */}
-            {!userSession && (
-              <div className="mb-5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "#555" }}>
-                  {isAr ? "اسمك (اختياري)" : "Your Name (Optional)"}
-                </label>
-                <input
-                  type="text"
-                  value={authorName}
-                  onChange={e => setAuthorName(e.target.value)}
-                  placeholder={isAr ? "اكتب اسمك أو اتركه فارغاً..." : "Enter your name or leave blank for Anonymous"}
-                  dir={isAr ? "rtl" : "ltr"}
-                  className="w-full text-sm focus:outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "var(--foreground)", padding: "10px 14px" }}
-                />
-              </div>
-            )}
+            <div className="mb-5 text-xs" style={{ color: "#777" }}>
+              {isAr ? "سيظهر اسم حسابك الموثق مع الموضوع." : "Your verified account name will appear with this topic."}
+            </div>
 
             {/* Thread title */}
             <div className="mb-4">
@@ -205,7 +210,7 @@ export default function NewThread({ params }: { params: { categorySlug: string }
           </div>
 
           <p className="text-xs mt-4 text-center" style={{ color: "#444" }}>
-            {isAr ? "لا يلزم تسجيل الدخول للنشر — الجميع مرحب به في المنتدى." : "No login required to post — everyone is welcome in the forum."}
+            {isAr ? "تسجيل الدخول مطلوب للنشر، والجميع مرحب به للقراءة والمشاركة." : "Sign-in is required to post; everyone is welcome to read and participate."}
           </p>
         </div>
       </div>

@@ -40,7 +40,12 @@ function StatPill({ value, accent }: { value: string; accent: string }) {
 export default function GlobalContentHub({ params }: GlobalContentHubProps) {
   const { language } = useLanguage();
   const isArabic = language === "ar";
-  const page = globalContentPages.find((item) => item.slug === params?.slug);
+  const requestedSlug = String(params?.slug || "").trim().toLowerCase();
+  const slugAliases: Record<string, string> = {
+    "game-modes": "mode-and-map-collections",
+  };
+  const canonicalSlug = slugAliases[requestedSlug] || requestedSlug;
+  const page = globalContentPages.find((item) => item.slug === canonicalSlug);
   const BackIcon = isArabic ? ArrowRight : ArrowLeft;
   const ForwardIcon = isArabic ? ArrowLeft : ArrowRight;
 
@@ -123,6 +128,20 @@ export default function GlobalContentHub({ params }: GlobalContentHubProps) {
               <WouterLink href="/content-hub" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-amber-400 transition hover:text-amber-300"><BackIcon className="h-4 w-4" />{isArabic ? "العودة إلى المركز" : "Back to content hub"}</WouterLink>
             </aside>
           </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (requestedSlug && !page) {
+    return (
+      <div dir={isArabic ? "rtl" : "ltr"} className="flex min-h-screen items-center justify-center bg-[#080c12] px-6 text-slate-100">
+        <SEOHead title={isArabic ? "الصفحة غير موجودة | CrossFire Wiki" : "Page not found | CrossFire Wiki"} description={isArabic ? "هذا القسم غير موجود في مركز المحتوى." : "This content-hub section does not exist."} />
+        <main className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#101722] p-8 text-center shadow-2xl">
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-400">404</p>
+          <h1 className="mt-3 text-3xl font-black text-white">{isArabic ? "القسم غير موجود" : "Section not found"}</h1>
+          <p className="mt-3 text-sm leading-7 text-slate-400">{isArabic ? "تحقق من الرابط أو عُد إلى مركز المحتوى لاختيار قسم منشور." : "Check the link or return to the content hub to choose a published section."}</p>
+          <WouterLink href="/content-hub" className="mt-6 inline-flex rounded-full bg-amber-500 px-5 py-3 text-sm font-black text-slate-950">{isArabic ? "العودة إلى المركز" : "Back to content hub"}</WouterLink>
         </main>
       </div>
     );

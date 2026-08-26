@@ -7,6 +7,7 @@ import { Mail, MessageSquare, Send, CheckCircle, ArrowRight } from "lucide-react
 import { SiDiscord, SiFacebook, SiWhatsapp, SiX } from "react-icons/si";
 import { Link } from "wouter";
 import { SITE_CONFIG } from "@/lib/siteConfig";
+import { createTicket } from "@/lib/supabaseApi";
 import { routerPath } from "@/lib/routePaths";
 
 export default function Contact() {
@@ -55,24 +56,17 @@ export default function Contact() {
     if (!name.trim() || !email.trim() || !message.trim()) return;
     setStatus("sending");
     try {
-      const formData = new FormData();
-      formData.append("title", `Contact: ${name}`);
-      formData.append("description", message);
-      formData.append("userName", name);
-      formData.append("userEmail", email);
-      formData.append("category", "contact");
-      formData.append("priority", "normal");
-      const base = (import.meta as any).env?.VITE_API_URL || "";
-      const url = base ? `${base}/api/tickets` : "/api/tickets";
-      const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
-      if (res.ok) {
-        setStatus("ok");
-        setName(""); setEmail(""); setMessage("");
-        setTimeout(() => setStatus("idle"), 6000);
-      } else {
-        setStatus("err");
-        setTimeout(() => setStatus("idle"), 4000);
-      }
+      await createTicket({
+        title: `Contact: ${name.trim()}`,
+        description: message.trim(),
+        userName: name.trim(),
+        userEmail: email.trim(),
+        category: "contact",
+        priority: "normal",
+      });
+      setStatus("ok");
+      setName(""); setEmail(""); setMessage("");
+      setTimeout(() => setStatus("idle"), 6000);
     } catch {
       setStatus("err");
       setTimeout(() => setStatus("idle"), 4000);

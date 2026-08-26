@@ -37,8 +37,5 @@ Allow: /
 User-agent: WhatsApp
 Allow: /
 
-# Sitemap Index (references all sitemaps)
-Sitemap: https://crossfire.wiki/sitemap-index.xml
+# Dynamic sitemap generated from the current published database content.
 Sitemap: https://crossfire.wiki/sitemap.xml
-Sitemap: https://crossfire.wiki/news-sitemap.xml
-Sitemap: https://crossfire.wiki/images-sitemap.xml

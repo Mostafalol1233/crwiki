@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
+import { apiRequest } from './queryClient';
+import { adminFetch } from './supabaseAdmin';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
 import { getWeaponDescription } from '../../../shared/weapon-descriptions';
 
@@ -44,56 +46,16 @@ async function runSafeQuery<T>(fallback: T, executor: () => Promise<any>): Promi
   }
 }
 
-const fallbackWeapons = [
-  {
-    id: 'fallback-weapon-ak47',
-    name: 'AK47 Beast',
-    image_url: '',
-    category: 'Assault Rifle',
-    description: 'A globally referenced CrossFire assault rifle with strong region coverage.',
-    stats: { damage: 35 },
-  },
-  {
-    id: 'fallback-weapon-m4a1',
-    name: 'M4A1 Ranger',
-    image_url: '',
-    category: 'Assault Rifle',
-    description: 'A standard CrossFire carbine with balanced stats and broad availability.',
-    stats: { damage: 31 },
-  },
-];
-
-const fallbackMaps = [
-  { id: 'fallback-map-1', name: 'Dust II', image_url: '', description: 'Classic arena map with strong crossfire coverage.', mode: 'Team Deathmatch', category: 'Classic' },
-  { id: 'fallback-map-2', name: 'Village', image_url: '', description: 'A strategic map used in many CrossFire events.', mode: 'Search & Destroy', category: 'Classic' },
-];
-
-const fallbackModes = [
-  { id: 'fallback-mode-1', name: 'Team Deathmatch', image_url: '', description: 'Classic fast-paced combat mode.', type: 'PvP', category: 'Core' },
-  { id: 'fallback-mode-2', name: 'Search & Destroy', image_url: '', description: 'Objective-driven mode with tactical play.', type: 'PvP', category: 'Core' },
-];
-
-const fallbackRanks = [
-  { id: 'fallback-rank-1', name: 'Private', image_url: '', tier: 1, exp_required: 0, description: 'Starting rank for new players.', requirements: '', bonus: '' },
-  { id: 'fallback-rank-2', name: 'Corporal', image_url: '', tier: 2, exp_required: 2000, description: 'A solid progression milestone.', requirements: '', bonus: '' },
-];
-
-const fallbackMercenaries = [
-  { id: 'fallback-merc-1', name: 'Raptor', image_url: '', role: 'Support', sounds: [], order_index: 1 },
-  { id: 'fallback-merc-2', name: 'Blade', image_url: '', role: 'Assault', sounds: [], order_index: 2 },
-];
-
-const fallbackPosts = [
-  { id: 'fallback-post-1', title: 'CrossFire global wiki launch', post_slug: 'crossfire-global-wiki-launch', content: 'Global coverage is now being expanded across regions.', summary: 'Global wiki coverage is online.', image_url: '', category: 'news', tags: ['global'], author: 'CrossFire Wiki', views: 0, reading_time: 1, featured: true, preview_on_home: true, created_at: new Date().toISOString(), language: 'en', seo_title: 'CrossFire Global Wiki', seo_description: 'Global coverage for CrossFire regions.', gallery: [] },
-];
-
-const fallbackNews = [
-  { id: 'fallback-news-1', title: 'CrossFire regional archive is growing', news_slug: 'crossfire-regional-archive-is-growing', title_ar: 'أرشيف كروس فاير الإقليمي ينمو', date_range: '', image_url: '', category: 'news', content: 'Coverage for West, China, CFHD, Vietnam and Brazil is being consolidated.', content_ar: 'تم توحيد المحتوى الإقليمي.', html_content: '', author: 'CrossFire Wiki', featured: true, preview_on_home: true, created_at: new Date().toISOString(), type: 'news' },
-];
-
-const fallbackEvents = [
-  { id: 'fallback-event-1', title: 'Global Region Event', event_name_slug: 'global-region-event', title_ar: 'حدث عالمي', description: 'A placeholder event created so the UI stays functional even when Supabase tables are missing.', description_ar: 'حدث مؤقت حتى تعمل الجداول.', date: new Date().toISOString(), start_date: new Date().toISOString(), end_date: new Date().toISOString(), location: 'Global', type: 'event', image_url: '', gallery: [] },
-];
+// Do not fabricate wiki records when a live data source is unavailable. Public
+// pages should show an honest empty/error state and let operators fix the source.
+const fallbackWeapons: any[] = [];
+const fallbackMaps: any[] = [];
+const fallbackModes: any[] = [];
+const fallbackRanks: any[] = [];
+const fallbackMercenaries: any[] = [];
+const fallbackPosts: any[] = [];
+const fallbackNews: any[] = [];
+const fallbackEvents: any[] = [];
 
 const fallbackSiteSettings = {
   siteTitle: 'CrossFire Wiki',
@@ -219,7 +181,7 @@ export async function getWeaponById(id: string) {
   return normalizeWeapon(data || fallbackWeapons[0]);
 }
 
-function normalizeWeapon(w: any) {
+function normalizeWeapon(w: any = {}) {
   const name = String(w.name || '');
   const enrichment = getWeaponDescription(name);
   const sourceDescription = String(w.description || '');
@@ -419,7 +381,7 @@ export async function getPostById(id: string) {
   return normalizePost(data || fallbackPosts[0]);
 }
 
-function normalizePost(p: any) {
+function normalizePost(p: any = {}) {
   let gallery: { url: string; description?: string }[] = [];
   if (Array.isArray(p.gallery)) {
     gallery = p.gallery.filter((g: any) => g && typeof g.url === 'string' && g.url.trim());
@@ -515,7 +477,7 @@ export async function getNewsById(id: string) {
   return data ? normalizeNews(data) : null;
 }
 
-function normalizeNews(n: any) {
+function normalizeNews(n: any = {}) {
   return {
     id: String(n.id || ''),
     title: String(n.title || ''),
@@ -604,7 +566,7 @@ export async function getEventBySlug(slug: string) {
   return normalizeEvent(fallbackEvents[0]);
 }
 
-function normalizeEvent(e: any) {
+function normalizeEvent(e: any = {}) {
   // Parse gallery – stored as JSONB array [{url, description}]
   let gallery: { url: string; description?: string }[] = [];
   if (Array.isArray(e.gallery)) {
@@ -759,13 +721,34 @@ export async function getServiceListings() {
 }
 
 export async function getSellerReviews(sellerId: string) {
-  const { data, error } = await supabase
+  const baseQuery = () => supabase
     .from('seller_reviews')
-    .select('*')
+    .select('id,seller_id,user_name,rating,comment,approved,created_at')
     .eq('seller_id', sellerId)
     .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  let result = await baseQuery();
+  if (result.error) {
+    result = await supabase
+      .from('seller_reviews')
+      .select('id,seller_id,user_name,rating,comment,status,created_at')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+  }
+  if (result.error) throw result.error;
+  return (result.data || [])
+    .filter((review: any) => review.approved === undefined
+      ? ['approved', 'published'].includes(String(review.status || '').toLowerCase())
+      : review.approved === true)
+    .map((review: any) => ({
+      id: String(review.id),
+      sellerId: String(review.seller_id),
+      userName: String(review.user_name || 'Anonymous player'),
+      rating: Math.max(1, Math.min(5, Number(review.rating) || 1)),
+      comment: typeof review.comment === 'string' ? review.comment : '',
+      helpfulVotes: Number(review.helpful_votes) || 0,
+      status: review.status || (review.approved ? 'approved' : 'pending'),
+      createdAt: review.created_at ? new Date(review.created_at) : new Date(0),
+    }));
 }
 
 export async function addSellerReview(review: {
@@ -776,18 +759,13 @@ export async function addSellerReview(review: {
   userPhone?: string;
   verificationAnswer?: string;
 }) {
-  const { data, error } = await supabase.from('seller_reviews').insert([{
-    seller_id: review.sellerId,
-    user_name: review.userName,
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'review:create',
+    sellerId: review.sellerId,
     rating: review.rating,
     comment: review.comment,
-    user_phone: review.userPhone,
-    verified_code: review.verificationAnswer,
-    helpful_votes: 0,
-    status: 'pending',
-  }]).select().single();
-  if (error) throw error;
-  return data;
+    ...(review.verificationAnswer ? { verificationAnswer: review.verificationAnswer } : {}),
+  });
 }
 
 // ─── Tutorials ───────────────────────────────────────────────────────────────
@@ -798,8 +776,10 @@ export async function getTutorials(category?: string) {
   if (error) throw error;
   return (data || []).map((t: any) => ({
     id: String(t.id),
-    title: t.title,
+    title: t.title || '',
+    titleAr: t.title_ar || '',
     description: t.description || '',
+    descriptionAr: t.description_ar || '',
     youtubeUrl: t.youtube_url,
     youtubeId: t.youtube_id,
     category: t.category || 'tutorial',
@@ -812,15 +792,11 @@ export async function getTutorials(category?: string) {
 // Uses select('*') so missing columns never cause a 400 error.
 export async function getPortalImages(): Promise<Record<string, string>> {
   try {
-    const { data } = await supabase
-      .from('site_settings')
-      .select('*')
-      .limit(1)
-      .maybeSingle();
-    if (!data) return {};
+    const settings = await getSiteSettings();
     const map: Record<string, string> = {};
-    for (const [k, v] of Object.entries(data)) {
-      if (v && typeof v === 'string' && k.startsWith('portal_img_')) map[k] = v;
+    for (const key of ['portal_img_weapons', 'portal_img_maps', 'portal_img_mercenaries', 'portal_img_modes', 'portal_img_ranks', 'portal_img_events']) {
+      const value = settings[key as keyof typeof settings];
+      if (typeof value === 'string' && value) map[key] = value;
     }
     return map;
   } catch {
@@ -904,32 +880,66 @@ export function normalizeSiteSettings(data: any) {
   };
 }
 
+const PUBLIC_SITE_SETTINGS_FIELDS = [
+  'id',
+  'review_verification_enabled',
+  'review_verification_video_url',
+  'review_verification_prompt',
+  'review_verification_timecode',
+  'review_verification_you_tube_channel_url',
+  'announcements_enabled',
+  'seo_title',
+  'seo_description',
+  'seo_keywords',
+  'seo_og_image_url',
+  'hero_image',
+  'robots',
+  'featured_weapons',
+  'featured_event_id',
+  'secondary_event_ids',
+  'public_base_url',
+  'portal_img_weapons',
+  'portal_img_maps',
+  'portal_img_mercenaries',
+  'portal_img_modes',
+  'portal_img_ranks',
+  'portal_img_events',
+].join(',');
+
 export async function getSiteSettings() {
   const result = await runSafeQuery(fallbackSiteSettings, async () => {
-    return await supabase.from('site_settings').select('*').limit(1).maybeSingle();
+    const primary = await supabase.from('site_settings').select(PUBLIC_SITE_SETTINGS_FIELDS).limit(1).maybeSingle();
+    if (!primary.error) return primary;
+    return await supabase.from('site_settings').select('id,review_verification_enabled,announcements_enabled,seo_title,seo_description,seo_keywords,seo_og_image_url,robots,featured_weapons,public_base_url,created_at,updated_at').limit(1).maybeSingle();
   });
   return normalizeSiteSettings(result.data ?? null);
 }
 
 export async function updateSiteSettings(patch: Record<string, any>) {
-  // Convert camelCase app keys to snake_case DB column names
-  const dbPatch: Record<string, any> = { updated_at: new Date().toISOString() };
+  const result = await adminFetch<{ data?: any[] }>("/api/admin/rebuild", {
+    method: "POST",
+    body: JSON.stringify({ action: "admin-table", type: "site_settings", operation: "list", page: 1, pageSize: 1, select: "*" }),
+  });
+  const existing = Array.isArray(result?.data) ? result.data[0] : null;
+  if (!existing?.id) throw new Error('Site settings row not found');
+
+  const dbPatch: Record<string, any> = {};
+  const columns = new Set(Object.keys(existing));
   for (const [key, value] of Object.entries(patch)) {
     if (key === 'id' || key === 'updated_at' || key === 'created_at') continue;
-    const dbKey = SETTINGS_FIELD_MAP[key] ?? key; // portal_img_* keys pass through as-is
-    dbPatch[dbKey] = value;
+    const dbKey = SETTINGS_FIELD_MAP[key] ?? key;
+    if (dbKey === 'review_verification_passphrase') {
+      if (typeof value === 'string' && value.trim()) dbPatch[dbKey] = value;
+      continue;
+    }
+    if (columns.has(dbKey)) dbPatch[dbKey] = value;
   }
-
-  const { data: existing } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
-  if (existing?.id) {
-    const { data, error } = await supabase.from('site_settings').update(dbPatch).eq('id', existing.id).select().single();
-    if (error) throw error;
-    return normalizeSiteSettings(data);
-  } else {
-    const { data, error } = await supabase.from('site_settings').insert(dbPatch).select().single();
-    if (error) throw error;
-    return normalizeSiteSettings(data);
-  }
+  const updated = await adminFetch<{ data?: any[] }>("/api/admin/rebuild", {
+    method: "POST",
+    body: JSON.stringify({ action: "admin-table", type: "site_settings", operation: "update", id: existing.id, row: dbPatch }),
+  });
+  const data = Array.isArray(updated?.data) ? updated.data[0] : updated?.data || { ...existing, ...dbPatch };
+  return normalizeSiteSettings(data);
 }
 
 // ─── Image Upload ─────────────────────────────────────────────────────────────
@@ -991,27 +1001,20 @@ export async function createTicket(ticket: {
   category: string;
   priority?: string;
 }) {
-  const { data, error } = await supabase.from('tickets').insert([{
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'ticket:create',
     title: ticket.title,
     description: ticket.description,
-    user_name: ticket.userName,
-    user_email: ticket.userEmail,
+    userName: ticket.userName,
+    userEmail: ticket.userEmail,
     category: ticket.category,
     priority: ticket.priority || 'normal',
-    status: 'open',
-  }]).select().single();
-  if (error) throw error;
-  return data;
+  });
 }
 
-export async function getTicketsByEmail(email: string) {
-  const { data, error } = await supabase
-    .from('tickets')
-    .select('*')
-    .eq('user_email', email)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((t: any) => ({
+export async function getMyTickets() {
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:list' });
+  return (Array.isArray(data) ? data : []).map((t: any) => ({
     id: String(t.id),
     title: t.title || '',
     description: t.description || '',
@@ -1037,31 +1040,12 @@ function normalizeReply(r: any) {
 }
 
 export async function getTicketReplies(ticketId: string) {
-  // Try ticket_replies first; fall back to ticket_messages
-  const { data: replies, error: rErr } = await supabase
-    .from('ticket_replies')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: true });
-  if (!rErr) return (replies || []).map(normalizeReply);
-
-  const { data, error } = await supabase
-    .from('ticket_messages')
-    .select('*')
-    .eq('ticket_id', ticketId)
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return (data || []).map(normalizeReply);
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:replies', ticketId });
+  return (Array.isArray(data) ? data : []).map(normalizeReply);
 }
 
-export async function addTicketReply(ticketId: string, content: string, authorName: string) {
-  const { data, error } = await supabase
-    .from('ticket_replies')
-    .insert([{ ticket_id: ticketId, content, author_name: authorName, is_admin: false }])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function addTicketReply(ticketId: string, content: string, _authorName: string) {
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:reply', ticketId, content });
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
@@ -1081,14 +1065,12 @@ export async function addComment(comment: {
   content: string;
   authorName: string;
 }) {
-  const { data, error } = await supabase.from('comments').insert([{
-    post_id: comment.postId,
-    post_type: comment.postType,
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'comment:create',
+    postId: comment.postId,
+    postType: comment.postType,
     content: comment.content,
-    author_name: comment.authorName,
-  }]).select().single();
-  if (error) throw error;
-  return data;
+  });
 }
 
 // ─── Likes (universal) ────────────────────────────────────────────────────────
@@ -1111,36 +1093,16 @@ export async function getLikeCount(targetId: string, targetType: string): Promis
 }
 
 export async function hasUserLiked(targetId: string, targetType: string): Promise<boolean> {
-  const uid = getUserIdentifier();
-  const { data } = await supabase
-    .from("likes")
-    .select("id")
-    .eq("target_id", targetId)
-    .eq("target_type", targetType)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  return !!data;
+  try {
+    const result = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'like:status', targetId, targetType });
+    return Boolean(result?.liked);
+  } catch {
+    return false;
+  }
 }
 
 export async function toggleLike(targetId: string, targetType: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const already = await hasUserLiked(targetId, targetType);
-  if (already) {
-    await supabase
-      .from("likes")
-      .delete()
-      .eq("target_id", targetId)
-      .eq("target_type", targetType)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("likes").insert([{
-      target_id: targetId,
-      target_type: targetType,
-      user_identifier: uid,
-    }]);
-  }
-  const count = await getLikeCount(targetId, targetType);
-  return { liked: !already, count };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'like:toggle', targetId, targetType });
 }
 
 // ─── Video Likes ──────────────────────────────────────────────────────────────
@@ -1153,24 +1115,7 @@ export async function getVideoLikeCount(videoId: string): Promise<number> {
 }
 
 export async function toggleVideoLike(videoId: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const { data: existing } = await supabase
-    .from("video_likes")
-    .select("id")
-    .eq("video_id", videoId)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  if (existing) {
-    await supabase
-      .from("video_likes")
-      .delete()
-      .eq("video_id", videoId)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("video_likes").insert([{ video_id: videoId, user_identifier: uid }]);
-  }
-  const count = await getVideoLikeCount(videoId);
-  return { liked: !existing, count };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'video-like:toggle', videoId });
 }
 
 // ─── Forum ───────────────────────────────────────────────────────────────────
@@ -1226,36 +1171,12 @@ export async function createForumThread(thread: {
   authorAvatar?: string;
   authorId?: string;
 }) {
-  const { data, error } = await supabase
-    .from('forum_threads')
-    .insert([{
-      category_id: thread.categoryId,
-      title: thread.title,
-      body: thread.body,
-      author_id: thread.authorId || null,
-      author_name: thread.authorName,
-      author_avatar: thread.authorAvatar || '',
-      reply_count: 0,
-      view_count: 0,
-      last_reply_at: new Date().toISOString(),
-    }])
-    .select()
-    .single();
-  if (error) throw error;
-  // Best-effort: increment category thread_count
-  try {
-    const { data: cat } = await supabase
-      .from('forum_categories')
-      .select('thread_count')
-      .eq('id', thread.categoryId)
-      .single();
-    if (cat) {
-      await supabase
-        .from('forum_categories')
-        .update({ thread_count: (cat.thread_count || 0) + 1 })
-        .eq('id', thread.categoryId);
-    }
-  } catch { /* non-critical */ }
+  const data = await apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'forum:thread:create',
+    categoryId: thread.categoryId,
+    title: thread.title,
+    body: thread.body,
+  });
   return normalizeThread(data);
 }
 
@@ -1286,52 +1207,19 @@ export async function createForumPost(post: {
   authorId?: string;
   isOp?: boolean;
 }) {
-  const { data, error } = await supabase
-    .from('forum_posts')
-    .insert([{
-      thread_id: post.threadId,
-      body: post.body,
-      author_id: post.authorId || null,
-      author_name: post.authorName,
-      author_avatar: post.authorAvatar || '',
-      is_op: post.isOp || false,
-    }])
-    .select()
-    .single();
-  if (error) throw error;
-  // Best-effort: update thread reply_count + last_reply_at
-  if (!post.isOp) {
-    try {
-      const { data: th } = await supabase
-        .from('forum_threads')
-        .select('reply_count')
-        .eq('id', post.threadId)
-        .single();
-      if (th) {
-        await supabase
-          .from('forum_threads')
-          .update({ reply_count: (th.reply_count || 0) + 1, last_reply_at: new Date().toISOString() })
-          .eq('id', post.threadId);
-      }
-    } catch { /* non-critical */ }
-  }
-  return data;
+  return apiRequest('/api/sitemap?type=community', 'POST', {
+    action: 'forum:post:create',
+    threadId: post.threadId,
+    body: post.body,
+  });
 }
 
 export async function incrementThreadViews(threadId: string) {
   try {
-    const { data: th } = await supabase
-      .from('forum_threads')
-      .select('view_count')
-      .eq('id', threadId)
-      .single();
-    if (th) {
-      await supabase
-        .from('forum_threads')
-        .update({ view_count: (th.view_count || 0) + 1 })
-        .eq('id', threadId);
-    }
-  } catch { /* non-critical */ }
+    await apiRequest('/api/sitemap?type=community', 'POST', { action: 'forum:views', threadId });
+  } catch {
+    // View counting is non-critical and must not block reading a topic.
+  }
 }
 
 function normalizeThread(t: any) {
@@ -1357,25 +1245,5 @@ function normalizeThread(t: any) {
 
 // ─── Comment Likes ────────────────────────────────────────────────────────────
 export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
-  const uid = getUserIdentifier();
-  const { data: existing } = await supabase
-    .from("comment_likes")
-    .select("id")
-    .eq("comment_id", commentId)
-    .eq("user_identifier", uid)
-    .maybeSingle();
-  if (existing) {
-    await supabase
-      .from("comment_likes")
-      .delete()
-      .eq("comment_id", commentId)
-      .eq("user_identifier", uid);
-  } else {
-    await supabase.from("comment_likes").insert([{ comment_id: commentId, user_identifier: uid }]);
-  }
-  const { count } = await supabase
-    .from("comment_likes")
-    .select("id", { count: "exact", head: true })
-    .eq("comment_id", commentId);
-  return { liked: !existing, count: count ?? 0 };
+  return apiRequest('/api/sitemap?type=community', 'POST', { action: 'comment-like:toggle', commentId });
 }

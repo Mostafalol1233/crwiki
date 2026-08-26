@@ -4,15 +4,18 @@ import { useState } from "react";
 import { Play, Loader2, Youtube } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 import { Link } from "wouter";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const CATEGORIES = [
-  { id: "all",        label: "All" },
-  { id: "highlights", label: "Highlights" },
-  { id: "tutorial",   label: "Tutorials" },
-  { id: "gameplay",   label: "Gameplay" },
+  { id: "all",        label: "All",        labelAr: "الكل" },
+  { id: "highlights", label: "Highlights", labelAr: "أبرز المقاطع" },
+  { id: "tutorial",   label: "Tutorials",  labelAr: "دروس" },
+  { id: "gameplay",   label: "Gameplay",   labelAr: "أسلوب اللعب" },
 ];
 
 export default function TutorialsPage() {
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
   const [activeCategory, setActiveCategory] = useState("all");
 
   const { data: rawTutorials = [], isLoading } = useQuery({
@@ -31,8 +34,8 @@ export default function TutorialsPage() {
   return (
     <>
       <PageSEO
-        title="CrossFire Tutorials & Highlights — CrossFire Wiki"
-        description="Watch CrossFire tutorials, gameplay highlights, esports coverage and community clips. Improve your skills and stay up to date."
+        title={isArabic ? "دروس وأبرز مقاطع كروس فاير — CrossFire Wiki" : "CrossFire Tutorials & Highlights — CrossFire Wiki"}
+        description={isArabic ? "شاهد دروس كروس فاير وأبرز مقاطع أسلوب اللعب والمحتوى المجتمعي المتاح في الأرشيف." : "Watch CrossFire tutorials, gameplay highlights, esports coverage and community clips. Improve your skills and stay up to date."}
         canonicalPath="/tutorials"
       />
 
@@ -41,22 +44,22 @@ export default function TutorialsPage() {
 
           {/* Breadcrumb */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
-            <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>Home</span></Link>
+            <Link href="/"><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", fontWeight: 600 }}>{isArabic ? "الرئيسية" : "Home"}</span></Link>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>›</span>
-            <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>Tutorials & Highlights</span>
+            <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>{isArabic ? "الدروس وأبرز المقاطع" : "Tutorials & Highlights"}</span>
           </div>
 
           {/* Header */}
           <div style={{ marginBottom: 32 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: 3, marginBottom: 12 }}>
               <Youtube size={11} color={GOLD} />
-              <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.3em", color: GOLD }}>Videos & Guides</span>
+              <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.3em", color: GOLD }}>{isArabic ? "فيديوهات وأدلة" : "Videos & Guides"}</span>
             </div>
             <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.6rem)", fontWeight: 900, letterSpacing: "-0.03em", color: "var(--foreground)", margin: "0 0 8px" }}>
-              Tutorials &amp; <span style={{ color: GOLD }}>Highlights</span>
+              {isArabic ? <>دروس وأبرز <span style={{ color: GOLD }}>المقاطع</span></> : <>Tutorials &amp; <span style={{ color: GOLD }}>Highlights</span></>}
             </h1>
             <p style={{ fontSize: 13, color: "#666", margin: "0 0 24px" }}>
-              CrossFire gameplay guides, esports highlights, and community content.
+              {isArabic ? "أدلة أسلوب اللعب وأبرز المنافسات والمحتوى المجتمعي الموثق." : "CrossFire gameplay guides, esports highlights, and community content."}
             </p>
 
             {/* Category tabs */}
@@ -74,7 +77,7 @@ export default function TutorialsPage() {
                     borderRadius: 3, cursor: "pointer",
                   }}
                 >
-                  {cat.label}
+                  {isArabic ? cat.labelAr : cat.label}
                 </button>
               ))}
 
@@ -86,7 +89,7 @@ export default function TutorialsPage() {
                   color: "rgba(255,255,255,0.3)", borderRadius: 3, cursor: "pointer",
                   marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
                 }}>
-                  <Youtube size={10} /> All Videos →
+                  <Youtube size={10} /> {isArabic ? "كل الفيديوهات ←" : "All Videos →"}
                 </button>
               </Link>
             </div>
@@ -101,11 +104,11 @@ export default function TutorialsPage() {
           ) : tutorials.length === 0 ? (
             <div style={{ padding: "80px 20px", textAlign: "center", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 4 }}>
               <Youtube size={40} color="rgba(255,255,255,0.06)" style={{ marginBottom: 12 }} />
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontWeight: 700 }}>No videos in this category</p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", marginTop: 4 }}>Check back soon or browse all videos</p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", fontWeight: 700 }}>{isArabic ? "لا توجد فيديوهات في هذا التصنيف" : "No videos in this category"}</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)", marginTop: 4 }}>{isArabic ? "تحقق لاحقًا أو تصفح كل الفيديوهات" : "Check back soon or browse all videos"}</p>
               <Link href="/videos">
                 <button style={{ marginTop: 16, padding: "8px 20px", background: GOLD, border: "none", borderRadius: 3, color: "#000", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                  Browse All Videos
+                  {isArabic ? "تصفح كل الفيديوهات" : "Browse All Videos"}
                 </button>
               </Link>
             </div>
@@ -145,7 +148,7 @@ export default function TutorialsPage() {
                       ) : (
                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
                           <Youtube size={32} color="rgba(245,166,35,0.4)" />
-                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>Video</span>
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{isArabic ? "فيديو" : "Video"}</span>
                         </div>
                       )}
                       {/* Play overlay */}
@@ -169,11 +172,11 @@ export default function TutorialsPage() {
                         </span>
                       )}
                       <p style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", margin: "0 0 6px", lineHeight: 1.4 }}>
-                        {video.title}
+                          {isArabic ? (video.titleAr || video.title) : video.title}
                       </p>
                       {video.description && (
                         <p style={{ fontSize: 11, color: "#555", margin: 0, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                          {video.description}
+                          {isArabic ? (video.descriptionAr || video.description) : video.description}
                         </p>
                       )}
                     </div>

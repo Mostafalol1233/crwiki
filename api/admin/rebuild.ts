@@ -47,6 +47,44 @@ function hasAnyPermission(admin: NonNullable<ReturnType<typeof verifyAdminReques
   return admin.role === "super_admin" || permissions.some(permission => admin.permissions?.[permission] === true);
 }
 
+const ANNOUNCEMENT_POST_CATEGORY = "__ANNOUNCEMENT__";
+
+function announcementFromRow(row: Record<string, any>, scope: "global" | "seller") {
+  const isPost = scope === "seller";
+  return {
+    id: String(row.id || ""),
+    contentHtml: isPost ? String(row.content || "") : String(row.content_en || ""),
+    contentHtmlEn: isPost ? String(row.content || "") : String(row.content_en || ""),
+    contentHtmlAr: isPost ? String(row.summary || "") : String(row.content_ar || ""),
+    imageUrl: isPost ? String(row.image_url || "") : "",
+    linkUrl: isPost ? String(row.og_image || "") : "",
+    active: isPost ? row.featured !== false : row.active !== false,
+    dismissible: isPost ? row.preview_on_home !== false : row.dismissible !== false,
+    direction: isPost ? String(row.source_url || "auto") : "auto",
+    sellerSlug: isPost ? String((Array.isArray(row.tags) ? row.tags : []).find((tag: unknown) => String(tag).startsWith("seller:")) || "").replace(/^seller:/, "") : "",
+    updatedAt: row.updated_at || row.created_at || null,
+  };
+}
+
+function announcementPostRow(body: Record<string, any>, sellerSlug: string) {
+  const safeSlug = sellerSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 80);
+  return {
+    title: `__seller_announcement__:${safeSlug}`,
+    post_slug: `__seller-announcement__-${safeSlug}`,
+    content: String(body.contentHtmlEn || body.contentHtml || "").slice(0, 20000),
+    summary: String(body.contentHtmlAr || "").slice(0, 20000),
+    category: ANNOUNCEMENT_POST_CATEGORY,
+    tags: [`seller:${safeSlug}`],
+    author: "admin",
+    featured: body.active !== false,
+    image_url: String(body.imageUrl || "").slice(0, 2000),
+    og_image: String(body.linkUrl || "").slice(0, 2000),
+    source_url: ["auto", "ltr", "rtl"].includes(String(body.direction)) ? String(body.direction) : "auto",
+    preview_on_home: body.dismissible !== false,
+    language: "en",
+  };
+}
+
 async function deleteNonAnnouncementPosts(baseUrl: string, headers: Record<string, string>) {
   const response = await fetch(`${baseUrl}/rest/v1/posts?category=neq.__ANNOUNCEMENT__`, {
     method: "DELETE",
@@ -219,6 +257,87 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return addCorsHeaders(res).status(failed.length ? 207 : 200).json({ created, newsCreated, skipped, failed });
   }
 
+  // ── action: announcement-admin ───────────────────────────────────────────────
+  // Global announcements use the verified announcements table; seller notices
+  // retain the existing announcement-post compatibility format, but all writes
+  // happen server-side behind the admin token.
+  if (action === "announcement-admin") {
+    if (!hasAnyPermission(admin, ["announcements:manage", "content:manage", "posts:manage"])) {
+      return addCorsHeaders(res).status(403).json({ error: "Missing announcements management permission" });
+    }
+    if (!SUPABASE_URL || !SERVICE_KEY) return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+    const scope = req.body?.scope === "seller" ? "seller" : "global";
+    const announcementOperation = String(req.body?.operation || "list");
+    const sellerSlug = String(req.body?.sellerSlug || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 80);
+    if (scope === "seller" && !sellerSlug) return addCorsHeaders(res).status(400).json({ error: "Seller slug is required" });
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "apikey": SERVICE_KEY,
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "Prefer": "return=representation,count=exact",
+    };
+    const table = scope === "seller" ? "posts" : "announcements";
+    const baseUrl = `${SUPABASE_URL}/rest/v1/${table}`;
+    try {
+      const listUrl = scope === "seller"
+        ? `${baseUrl}?category=eq.${encodeURIComponent(ANNOUNCEMENT_POST_CATEGORY)}&tags=cs.${encodeURIComponent(`{seller:${sellerSlug}}`)}&order=created_at.desc&limit=100`
+        : `${baseUrl}?target=eq.global&order=created_at.desc&limit=100`;
+      if (announcementOperation === "list") {
+        const listRes = await fetch(listUrl, { headers });
+        if (!listRes.ok) throw new Error(`Supabase ${table} announcement read failed: ${await listRes.text()}`);
+        const rows = await listRes.json();
+        return addCorsHeaders(res).status(200).json({ data: Array.isArray(rows) ? rows.map((row: Record<string, any>) => announcementFromRow(row, scope)) : [] });
+      }
+      const announcementId = typeof req.body?.id === "string" ? req.body.id.trim() : "";
+      if (announcementOperation === "delete") {
+        if (!announcementId) return addCorsHeaders(res).status(400).json({ error: "Announcement id is required" });
+        const sellerTagsFilter = encodeURIComponent(`{seller:${sellerSlug}}`);
+        const deleteUrl = scope === "seller"
+          ? `${baseUrl}?id=eq.${encodeURIComponent(announcementId)}&category=eq.${encodeURIComponent(ANNOUNCEMENT_POST_CATEGORY)}&tags=cs.${sellerTagsFilter}`
+          : `${baseUrl}?id=eq.${encodeURIComponent(announcementId)}&target=eq.global`;
+        const deleteRes = await fetch(deleteUrl, { method: "DELETE", headers });
+        if (!deleteRes.ok) throw new Error(`Supabase ${table} announcement delete failed: ${await deleteRes.text()}`);
+        return addCorsHeaders(res).status(200).json({ success: true });
+      }
+      if (announcementOperation !== "create") return addCorsHeaders(res).status(400).json({ error: "Unsupported announcement operation" });
+      const body = req.body?.row && typeof req.body.row === "object" ? req.body.row : req.body;
+      const contentEn = String(body.contentHtmlEn || body.contentHtml || "").trim().slice(0, 20000);
+      const contentAr = String(body.contentHtmlAr || "").trim().slice(0, 20000);
+      if (!contentEn && !contentAr) return addCorsHeaders(res).status(400).json({ error: "Announcement content is required" });
+      if (scope === "seller") {
+        const oldRowsRes = await fetch(listUrl, { headers });
+        if (!oldRowsRes.ok) throw new Error(`Supabase seller announcement lookup failed: ${await oldRowsRes.text()}`);
+        const oldRows = await oldRowsRes.json();
+        for (const oldRow of Array.isArray(oldRows) ? oldRows.slice(0, 20) : []) {
+          if (!oldRow?.id) continue;
+          const deleteRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(oldRow.id))}&category=eq.${encodeURIComponent(ANNOUNCEMENT_POST_CATEGORY)}&tags=cs.${encodeURIComponent(`{seller:${sellerSlug}}`)}`, { method: "DELETE", headers });
+          if (!deleteRes.ok) throw new Error(`Supabase seller announcement replace failed: ${await deleteRes.text()}`);
+        }
+        const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(announcementPostRow({ ...body, contentHtmlEn: contentEn, contentHtmlAr: contentAr }, sellerSlug)) });
+        if (!createRes.ok) throw new Error(`Supabase seller announcement create failed: ${await createRes.text()}`);
+        const created = (await createRes.json())?.[0];
+        return addCorsHeaders(res).status(200).json({ data: announcementFromRow(created || {}, scope) });
+      }
+      const globalRow = {
+        title_en: String(body.titleEn || "Global announcement").trim().slice(0, 160),
+        title_ar: String(body.titleAr || "").trim().slice(0, 160),
+        content_en: contentEn,
+        content_ar: contentAr,
+        type: "info",
+        target: "global",
+        display: "banner",
+        active: body.active !== false,
+        dismissible: body.dismissible !== false,
+      };
+      const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(globalRow) });
+      if (!createRes.ok) throw new Error(`Supabase global announcement create failed: ${await createRes.text()}`);
+      const created = (await createRes.json())?.[0];
+      return addCorsHeaders(res).status(200).json({ data: announcementFromRow(created || {}, scope) });
+    } catch (e: any) {
+      return addCorsHeaders(res).status(500).json({ error: e?.message || "Announcement operation failed" });
+    }
+  }
+
   // ── action: admin-table ─────────────────────────────────────────────────────
   // Browser admin pages use this authenticated multiplexer for tables whose
   // writes must never depend on the public Supabase client/RLS policies.
@@ -336,7 +455,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           comments: "created_at.desc",
           seller_reviews: "created_at.desc",
           maps: "name.asc",
-          site_settings: "key.asc",
+          site_settings: "id.asc",
           custom_pages: "created_at.desc",
           faq_categories: "sort_order.asc,created_at.asc",
           faq_articles: "sort_order.asc,created_at.asc",
@@ -366,11 +485,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (value) params.set(field, `${operator}.${value}`);
           }
         }
+        if (table === "site_settings") params.set("select", "*");
         const listRes = await fetch(`${baseUrl}?${params.toString()}`, { headers });
         if (!listRes.ok) throw new Error(`Supabase ${table} read failed: ${await listRes.text()}`);
         const contentRange = listRes.headers.get("content-range") || "";
         const totalText = contentRange.includes("/") ? contentRange.split("/").pop() : "";
-        const data = await listRes.json();
+        const rawData = await listRes.json();
+        const data = table === "site_settings" && Array.isArray(rawData)
+          ? rawData.map(({ review_verification_passphrase: _passphrase, ...safeSettings }: Record<string, unknown>) => safeSettings)
+          : rawData;
         return addCorsHeaders(res).status(200).json({ data, count: totalText && totalText !== "*" ? Number(totalText) : data.length });
       }
 
@@ -479,6 +602,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const bcrypt = await import("bcryptjs");
             safeRow.password_hash = await bcrypt.hash(password, 12);
           }
+        }
+        if (table === "tickets") {
+          const allowed = ["title", "description", "category", "priority", "status"];
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowed.includes(key)));
+          if (typeof safeRow.title === "string") safeRow.title = safeRow.title.trim().slice(0, 160);
+          if (typeof safeRow.description === "string") safeRow.description = safeRow.description.trim().slice(0, 10000);
+          if (safeRow.status !== undefined && !["open", "in-progress", "in_progress", "resolved", "closed"].includes(String(safeRow.status))) return addCorsHeaders(res).status(400).json({ error: "Invalid ticket status" });
+          if (safeRow.priority !== undefined && !["low", "normal", "medium", "high", "urgent"].includes(String(safeRow.priority))) return addCorsHeaders(res).status(400).json({ error: "Invalid ticket priority" });
+          safeRow.updated_at = new Date().toISOString();
+        }
+        if (table === "seller_reviews") {
+          const allowed = ["approved", "status", "comment", "helpful_votes"];
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowed.includes(key)));
+          if (safeRow.approved !== undefined && typeof safeRow.approved !== "boolean") return addCorsHeaders(res).status(400).json({ error: "Invalid review approval value" });
+          if (safeRow.status !== undefined && !["pending", "approved", "published", "rejected", "hidden"].includes(String(safeRow.status))) return addCorsHeaders(res).status(400).json({ error: "Invalid review status" });
+          if (safeRow.comment !== undefined) {
+            if (typeof safeRow.comment !== "string") return addCorsHeaders(res).status(400).json({ error: "Invalid review comment" });
+            safeRow.comment = safeRow.comment.trim().slice(0, 5000);
+          }
+          if (safeRow.helpful_votes !== undefined && (!Number.isInteger(Number(safeRow.helpful_votes)) || Number(safeRow.helpful_votes) < 0)) return addCorsHeaders(res).status(400).json({ error: "Invalid helpful vote count" });
+        }
+        if (table === "site_settings") {
+          const allowed = ["seo_title", "seo_description", "seo_keywords", "seo_og_image_url", "hero_image", "robots", "announcements_enabled", "review_verification_enabled", "review_verification_video_url", "review_verification_prompt", "review_verification_passphrase", "review_verification_timecode", "review_verification_you_tube_channel_url", "featured_weapons", "featured_event_id", "secondary_event_ids", "public_base_url", "portal_img_weapons", "portal_img_maps", "portal_img_mercenaries", "portal_img_modes", "portal_img_ranks", "portal_img_events"];
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowed.includes(key)));
+          if (safeRow.seo_title !== undefined && typeof safeRow.seo_title !== "string") return addCorsHeaders(res).status(400).json({ error: "Invalid SEO title" });
+          if (safeRow.seo_description !== undefined && typeof safeRow.seo_description !== "string") return addCorsHeaders(res).status(400).json({ error: "Invalid SEO description" });
+          if (safeRow.review_verification_passphrase !== undefined && typeof safeRow.review_verification_passphrase !== "string") return addCorsHeaders(res).status(400).json({ error: "Invalid review verification value" });
+          safeRow.updated_at = new Date().toISOString();
+        }
+        if (table === "comments") {
+          const allowed = ["content", "is_hidden", "moderation_status"];
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowed.includes(key)));
+          if (safeRow.content !== undefined) {
+            if (typeof safeRow.content !== "string" || safeRow.content.trim().length < 2) return addCorsHeaders(res).status(400).json({ error: "Invalid comment content" });
+            safeRow.content = safeRow.content.trim().slice(0, 5000);
+          }
+          if (safeRow.is_hidden !== undefined && typeof safeRow.is_hidden !== "boolean") return addCorsHeaders(res).status(400).json({ error: "Invalid comment visibility" });
+          if (safeRow.moderation_status !== undefined && !["pending", "approved", "rejected", "hidden"].includes(String(safeRow.moderation_status))) return addCorsHeaders(res).status(400).json({ error: "Invalid comment moderation status" });
         }
         const updateRes = await fetch(`${baseUrl}?id=eq.${encodeURIComponent(String(id))}`, { method: "PATCH", headers, body: JSON.stringify(safeRow) });
         if (!updateRes.ok) throw new Error(`Supabase ${table} update failed: ${await updateRes.text()}`);

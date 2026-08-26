@@ -3,10 +3,11 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getCurrentUser, getTicketsByEmail } from "@/lib/supabaseApi";
+import { getCurrentUser, getMyTickets } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/components/LanguageProvider";
 import {
   User, Camera, Shield, Edit3, Check, X, Loader2,
   Ticket, MessageSquare, Clock, Award, LogOut,
@@ -304,6 +305,8 @@ function parseProfileInput(raw: string): { type: "url"; profileUrl: string } | {
 
 export default function Profile() {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -348,14 +351,12 @@ export default function Profile() {
         if (savedSync) setCfSyncTime(savedSync);
 
         // Fetch real ticket and comment counts
-        if (u.email) {
-          const [tickets, commentsRes] = await Promise.all([
-            getTicketsByEmail(u.email),
-            supabase.from("comments").select("id", { count: "exact", head: true }).eq("author_name", u.user_metadata?.username || u.email),
-          ]);
-          setTicketCount(Array.isArray(tickets) ? tickets.length : 0);
-          setCommentCount(commentsRes.count ?? 0);
-        }
+        const [tickets, commentsRes] = await Promise.all([
+          getMyTickets(),
+          supabase.from("comments").select("id", { count: "exact", head: true }).eq("author_name", u.user_metadata?.username || u.email || ""),
+        ]);
+        setTicketCount(Array.isArray(tickets) ? tickets.length : 0);
+        setCommentCount(commentsRes.count ?? 0);
       }
       setLoading(false);
     });
@@ -400,7 +401,7 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/";
+    window.location.href = isArabic ? "/ar/" : "/";
   };
 
   // Fetch CF player stats — accepts profile URL or nickname
@@ -539,17 +540,17 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "var(--background)" }}>
-        <PageSEO title="Profile — CrossFire Wiki" description="Sign in to view your profile." noindex />
+        <PageSEO title={isArabic ? "الملف الشخصي — CrossFire Wiki" : "Profile — CrossFire Wiki"} description={isArabic ? "سجّل الدخول لعرض ملفك الشخصي." : "Sign in to view your profile."} noindex />
         <Shield className="h-12 w-12 opacity-20" style={{ color: GOLD }} />
-        <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>Not Signed In</h2>
-        <p className="text-sm" style={{ color: "#555" }}>You need to be logged in to view your profile.</p>
+        <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: "var(--foreground)" }}>{isArabic ? "لم تسجل الدخول" : "Not Signed In"}</h2>
+        <p className="text-sm" style={{ color: "#555" }}>{isArabic ? "يجب تسجيل الدخول لعرض ملفك الشخصي." : "You need to be logged in to view your profile."}</p>
         <div className="flex gap-3">
           <Link href="/login">
             <button
               className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest"
               style={{ background: GOLD, color: "#000", borderRadius: "2px" }}
             >
-              Sign In
+              {isArabic ? "تسجيل الدخول" : "Sign In"}
             </button>
           </Link>
           <Link href="/register">
@@ -557,8 +558,7 @@ export default function Profile() {
               className="px-6 py-2.5 text-[11px] font-black uppercase tracking-widest"
               style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", color: GOLD, borderRadius: "2px" }}
             >
-              Create Account
-            </button>
+              {isArabic ? "إنشاء حساب" : "Create Account"}            </button>
           </Link>
         </div>
       </div>
@@ -567,7 +567,7 @@ export default function Profile() {
 
   return (
     <>
-      <PageSEO title={`${displayName || "Profile"} — CrossFire Wiki`} description="Your CrossFire Wiki profile." noindex />
+      <PageSEO title={`${displayName || (isArabic ? "الملف الشخصي" : "Profile")} — CrossFire Wiki`} description={isArabic ? "ملفك الشخصي وإحصاءات CrossFire المحفوظة." : "Your CrossFire Wiki profile."} noindex />
 
       <div className="min-h-screen py-10 md:py-16" style={{ background: "var(--background)" }}>
         {/* Top gradient accent */}
@@ -638,7 +638,7 @@ export default function Profile() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="w-full text-2xl font-black uppercase tracking-tight bg-transparent outline-none border-b mb-1 rounded-none"
                       style={{ color: "var(--foreground)", borderColor: "rgba(245,166,35,0.4)" }}
-                      placeholder="Your display name"
+                      placeholder={isArabic ? "اسم العرض" : "Your display name"}
                       maxLength={32}
                     />
                   ) : (
@@ -648,7 +648,7 @@ export default function Profile() {
                   )}
                   <p className="text-[11px] mt-0.5" style={{ color: "#555" }}>{email}</p>
                   <p className="text-[9px] font-bold uppercase tracking-widest mt-1" style={{ color: "#444" }}>
-                    Member since {joinDate}
+                    {isArabic ? `عضو منذ ${joinDate}` : `Member since ${joinDate}`}
                   </p>
                 </div>
 
@@ -663,14 +663,14 @@ export default function Profile() {
                         style={{ background: GOLD, color: "#000", borderRadius: "2px" }}
                       >
                         {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        Save
+                        {isArabic ? "حفظ" : "Save"}
                       </button>
                       <button
                         onClick={() => setEditing(false)}
                         className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-widest"
                         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#666", borderRadius: "2px" }}
                       >
-                        <X className="h-3 w-3" /> Cancel
+                        <X className="h-3 w-3" /> {isArabic ? "إلغاء" : "Cancel"}
                       </button>
                     </>
                   ) : (
@@ -680,7 +680,7 @@ export default function Profile() {
                         className="flex items-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-110"
                         style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", color: GOLD, borderRadius: "2px" }}
                       >
-                        <Edit3 className="h-3 w-3" /> Edit Profile
+                        <Edit3 className="h-3 w-3" /> {isArabic ? "تعديل الملف" : "Edit Profile"}
                       </button>
                       <button
                         onClick={handleSignOut}
@@ -699,7 +699,7 @@ export default function Profile() {
                 <Textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell the community about yourself..."
+                  placeholder={isArabic ? "اكتب نبذة عنك للمجتمع..." : "Tell the community about yourself..."}
                   maxLength={200}
                   rows={2}
                   className="w-full text-sm bg-transparent outline-none resize-none px-3 py-2"
@@ -720,10 +720,10 @@ export default function Profile() {
 
           {/* ── Site stats row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <StatCard icon={Ticket} label="Tickets" value={ticketCount !== null ? ticketCount : "—"} />
-            <StatCard icon={MessageSquare} label="Comments" value={commentCount !== null ? commentCount : "—"} />
-            <StatCard icon={Clock} label="Days Active" value={Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)} />
-            <StatCard icon={Award} label="Rank" value="Member" />
+            <StatCard icon={Ticket} label={isArabic ? "التذاكر" : "Tickets"} value={ticketCount !== null ? ticketCount : "—"} />
+            <StatCard icon={MessageSquare} label={isArabic ? "التعليقات" : "Comments"} value={commentCount !== null ? commentCount : "—"} />
+            <StatCard icon={Clock} label={isArabic ? "أيام النشاط" : "Days Active"} value={Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000)} />
+            <StatCard icon={Award} label={isArabic ? "الرتبة" : "Rank"} value={isArabic ? "عضو" : "Member"} />
           </div>
 
           {/* ── CrossFire Game Stats ── */}

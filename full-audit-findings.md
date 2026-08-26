@@ -41,3 +41,9 @@
 
 ### التحقق النهائي على Preview الثاني — الالتزام `bcccf7b` — 2026-08-26
 النشر الثاني أصبح READY. الاختبار غير المتلف أعاد الصفحة الرئيسية وصفحة posts وalias مركز المحتوى بحالة 200، و`/api/content?type=posts&limit=5&offset=0` أعاد 5 من إجمالي 7، و`/api/content?type=weapons&limit=1` أعاد 1 من إجمالي 3599. صار طلب `type=news` يعيد JSON بحالة 400 بدل XML sitemap مضلل. بقيت كل بوابات admin/scraper/email بحالة 401 دون توثيق، ولم تُرسل أي كتابة أو توكن صالح أو بيانات مستخدم.
+
+### دفعة الإصلاح الثانية — تحقق Preview — الالتزام `ddff0ab`
+
+نشر Vercel Preview المرتبط بالفرع `audit/hardening-20260826` أصبح READY على الرابط `crossfirewiki-c3gzyz45t-mostafalol1233s-projects.vercel.app`. الفحص غير المتلف أعاد 200 لصفحات `/ar/posts` و`/ar/chat` و`/ar/my-tickets` و`/ar/content-hub/game-modes` و`/ar/admin/login`. endpoint المنشورات أعاد إجمالي 7، والنوع غير المدعوم أعاد 400 واضحًا. المسارات غير الموثقة `/api/admin/rebuild` و`/api/scrape/forum-list` و`/api/send-email` وبوابة المجتمع أعادت 401، وطلب AI من أصل غير مسموحٍ أعاد 403.
+
+التحقق البصري من `/ar/posts` بعد اكتمال التحميل أظهر سبع بطاقات منشورات فعلية بصور وعناوين وروابط تفاصيل، ولم تعد الصفحة فارغة أو عالقة على مؤشر التحميل. لم تُرسل أي تذكرة أو تعليق أو مراجعة، ولم تُستخدم بيانات دخول أو توكنات في الاختبار.

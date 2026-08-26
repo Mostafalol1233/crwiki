@@ -11,7 +11,7 @@ import { Star, User } from "lucide-react";
 import { format } from "date-fns";
 import DOMPurify from "isomorphic-dompurify";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getSellers, getSellerReviews, addSellerReview, getSiteSettings, getCurrentUser } from "@/lib/supabaseApi";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
@@ -111,16 +111,27 @@ export default function Reviews() {
     }
   });
 
-  const { data: sellerPage } = useQuery<any>({
-    queryKey: ["/api/seller-pages", sellerSlug],
-    enabled: false,
-  });
+  const sellerPage = useMemo(() => {
+    const seller = sellerByName?.seller;
+    const images = Array.isArray(seller?.images) ? seller.images.filter((image: unknown): image is string => typeof image === "string" && image.trim().length > 0) : [];
+    return {
+      blocks: images.map((image: string) => ({ image, contentHtml: "", description: seller?.description || "" })),
+      images,
+      descriptionHtml: seller?.description || "",
+    };
+  }, [sellerByName]);
 
-  const { data: verificationSettings } = useQuery<any>({
+  const { data: verificationSettings } = useQuery<ReviewVerificationSettings>({
     queryKey: ["/api/public/settings/review-verification"],
     queryFn: async () => {
-      await getSiteSettings();
-      return { reviewVerificationEnabled: false, reviewVerificationVideoUrl: '', reviewVerificationTimecode: '' };
+      const settings = await getSiteSettings();
+      return {
+        reviewVerificationEnabled: settings.reviewVerificationEnabled,
+        reviewVerificationVideoUrl: settings.reviewVerificationVideoUrl,
+        reviewVerificationPrompt: settings.reviewVerificationPrompt,
+        reviewVerificationTimecode: settings.reviewVerificationTimecode,
+        reviewVerificationYouTubeChannelUrl: settings.reviewVerificationYouTubeChannelUrl,
+      };
     },
   });
 
@@ -254,7 +265,14 @@ export default function Reviews() {
       });
       return;
     }
-    // Phone optional during open submission; CSRF disabled server-side
+    if (reviewForm.comment.trim().length < 5) {
+      toast({
+        title: "Error",
+        description: "Please share at least five characters about your experience",
+        variant: "destructive",
+      });
+      return;
+    }
     createReviewMutation.mutate({
       sellerId: selectedSeller.id,
       userId: user.id,
@@ -262,7 +280,7 @@ export default function Reviews() {
       userPhone: reviewForm.userPhone.trim(),
       rating: reviewForm.rating,
       comment: reviewForm.comment.trim(),
-      verificationAnswer: undefined,
+      verificationAnswer: verifiedCode || undefined,
     });
   };
 
@@ -344,10 +362,14 @@ export default function Reviews() {
               </h1>
 
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
-              <span className="text-sm font-bold" style={{ color: "#f5a623" }}>{(sellerByName.seller.averageRating || 0).toFixed(1)}</span>
-              <span className="text-sm" style={{ color: "#555" }}>({sellerByName.seller.totalReviews || 0} reviews)</span>
+                <div className="flex items-center gap-2 mt-1">
+              {sellerByName.seller.totalReviews > 0 ? (
+                <>
+                  {renderStars(Math.round(sellerByName.seller.averageRating || 0))}
+                  <span className="text-sm font-bold" style={{ color: "#f5a623" }}>{(sellerByName.seller.averageRating || 0).toFixed(1)}</span>
+                  <span className="text-sm" style={{ color: "#555" }}>({sellerByName.seller.totalReviews} reviews)</span>
+                </>
+              ) : <span className="text-sm text-muted-foreground">No reviews yet</span>}
             </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
@@ -372,9 +394,14 @@ export default function Reviews() {
                             const ok = window.confirm('Delete this image from seller page?');
                             if (!ok) return;
                             try {
-                              const nextBlocks = (sellerPage?.blocks || []).filter((_b: any, i: any) => i !== 0);
-                              const nextImages = (sellerPage?.images || []).filter((url: any) => url !== sellerPage!.blocks[0].image);
-                              toast({ title: "Image management requires admin backend" });
+                              const nextImages = (sellerPage?.images || []).filter((url: string) => url !== sellerPage!.blocks[0].image);
+                              await apiRequest("/api/admin/rebuild", "POST", {
+                                action: "admin-table", type: "sellers", operation: "update", id: sellerByName.seller.id,
+                                row: { images: nextImages },
+                              });
+                              await queryClient.invalidateQueries({ queryKey: ["/api/reviews/seller/by-name", sellerNameParam] });
+                              await queryClient.invalidateQueries({ queryKey: ["/api/sellers"] });
+                              toast({ title: "Image removed" });
                             } catch (err: any) {
                               alert(err?.message || 'Failed to delete image');
                             }
@@ -411,7 +438,14 @@ export default function Reviews() {
                           title="Delete image"
                           onClick={async (e) => {
                             e.stopPropagation();
-                            toast({ title: "Image management requires admin backend" });
+                            const nextImages = (sellerPage?.images || []).filter((url: string) => url !== blk.image);
+                            await apiRequest("/api/admin/rebuild", "POST", {
+                              action: "admin-table", type: "sellers", operation: "update", id: sellerByName.seller.id,
+                              row: { images: nextImages },
+                            });
+                            await queryClient.invalidateQueries({ queryKey: ["/api/reviews/seller/by-name", sellerNameParam] });
+                            await queryClient.invalidateQueries({ queryKey: ["/api/sellers"] });
+                            toast({ title: "Image removed" });
                           }}
                         >×</button>
                       )}
@@ -453,7 +487,17 @@ export default function Reviews() {
                           toast({ title: "Nothing to update", variant: "destructive" });
                           return;
                         }
-                        toast({ title: "Seller page management requires admin backend" });
+                        const nextImages = [...(sellerPage?.images || [])];
+                        const image = sellerImageEdit.trim();
+                        if (image && !nextImages.includes(image)) nextImages.push(image);
+                        const row: Record<string, unknown> = { images: nextImages };
+                        if (sellerDescEdit.trim()) row.description = sellerDescEdit.trim().slice(0, 5000);
+                        await apiRequest("/api/admin/rebuild", "POST", {
+                          action: "admin-table", type: "sellers", operation: "update", id: sellerByName.seller.id, row,
+                        });
+                        await queryClient.invalidateQueries({ queryKey: ["/api/reviews/seller/by-name", sellerNameParam] });
+                        await queryClient.invalidateQueries({ queryKey: ["/api/sellers"] });
+                        toast({ title: "Seller details saved" });
                         setSellerImageEdit("");
                         setSellerDescEdit("");
                         setSellerHtmlEdit("");
@@ -474,7 +518,7 @@ export default function Reviews() {
               <Button variant={sort === "helpful" ? "default" : "outline"} size="sm" onClick={()=> setSort("helpful")}>Most Helpful</Button>
               <Dialog open={isReviewDialogOpen} onOpenChange={(open)=> { if (!open) closeReviewDialog(); }}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={()=> { setSelectedSeller({ id: sellerByName.seller.id, name: sellerByName.seller.name, description: "", images: [], prices: [], averageRating: 0, totalReviews: 0 }); setIsReviewDialogOpen(true); }}>Write Review</Button>
+                  <Button variant="default" size="sm" onClick={() => handleOpenReviewDialog(sellerByName.seller)}>Write Review</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
@@ -487,15 +531,11 @@ export default function Reviews() {
                       <Input id="reviewer-name" value={reviewForm.userName} onChange={(e)=> setReviewForm({ ...reviewForm, userName: e.target.value })} placeholder="Enter your name" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="reviewer-phone">Your Phone Number</Label>
-                      <Input id="reviewer-phone" value={reviewForm.userPhone} onChange={(e)=> setReviewForm({ ...reviewForm, userPhone: e.target.value })} placeholder="Enter your phone number" />
-                    </div>
-                    <div className="space-y-2">
                       <Label>Rating</Label>
                       {renderStars(reviewForm.rating, true)}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="review-comment">Comment (Optional)</Label>
+                      <Label htmlFor="review-comment">Comment</Label>
                       <Textarea id="review-comment" value={reviewForm.comment} onChange={(e)=> setReviewForm({ ...reviewForm, comment: e.target.value })} rows={4} placeholder="Share your experience..." />
                     </div>
                     <Button onClick={handleSubmitReview} disabled={createReviewMutation.isPending}>{createReviewMutation.isPending ? "Submitting..." : "Submit Review"}</Button>
@@ -571,24 +611,14 @@ export default function Reviews() {
                 <p className="text-sm text-muted-foreground">{seller.description}</p>
                 
                 <div className="flex items-center justify-between">
-                  {renderStars(Math.round(seller.averageRating))}
-                  <span className="text-sm font-medium">{seller.averageRating.toFixed(1)}</span>
+                  {seller.totalReviews > 0 ? (
+                    <>
+                      {renderStars(Math.round(seller.averageRating))}
+                      <span className="text-sm font-medium">{seller.averageRating.toFixed(1)}</span>
+                    </>
+                  ) : <span className="text-sm text-muted-foreground">No reviews yet</span>}
                 </div>
 
-                {seller.images.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {seller.images.slice(0, 2).map((image, idx) => (
-                      <div key={idx} className="flex items-center justify-center">
-                        <img
-                          src={image}
-                          alt={`${seller.name} ${idx + 1}`}
-                          className="max-h-36 max-w-36 w-full object-contain cursor-pointer"
-                          onClick={() => { setPreviewImageUrl(image); setIsImagePreviewOpen(true); }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
                 <Dialog
                   open={isReviewDialogOpen && selectedSeller?.id === seller.id}
                   onOpenChange={(open) => {
@@ -629,23 +659,12 @@ export default function Reviews() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="reviewer-phone" className="text-sm font-medium">Your Phone Number</Label>
-                          <Input
-                            id="reviewer-phone"
-                            value={reviewForm.userPhone}
-                            onChange={(e) => setReviewForm({ ...reviewForm, userPhone: e.target.value })}
-                            placeholder="Enter your phone number"
-                            data-testid="input-reviewer-phone"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
                           <Label className="text-sm font-medium">Rating</Label>
                           {renderStars(reviewForm.rating, true)}
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="review-comment" className="text-sm font-medium">Comment (Optional)</Label>
+                          <Label htmlFor="review-comment" className="text-sm font-medium">Comment</Label>
                           <Textarea
                             id="review-comment"
                             value={reviewForm.comment}

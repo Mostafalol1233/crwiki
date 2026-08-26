@@ -294,6 +294,25 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
     return { status: 201, body: created };
   }
 
+  if (action === "review:settings") {
+    let response = await fetch(`${base}/site_settings?select=review_verification_enabled,review_verification_video_url,review_verification_prompt,review_verification_timecode,review_verification_you_tube_channel_url&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) {
+      response = await fetch(`${base}/site_settings?select=review_verification_enabled&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    }
+    if (!response.ok) return { status: 502, body: { error: "Could not load review settings" } };
+    const setting = (await response.json())?.[0] || {};
+    return {
+      status: 200,
+      body: {
+        reviewVerificationEnabled: setting.review_verification_enabled === true,
+        reviewVerificationVideoUrl: typeof setting.review_verification_video_url === "string" ? setting.review_verification_video_url : "",
+        reviewVerificationPrompt: typeof setting.review_verification_prompt === "string" ? setting.review_verification_prompt : "",
+        reviewVerificationTimecode: typeof setting.review_verification_timecode === "string" ? setting.review_verification_timecode : "",
+        reviewVerificationYouTubeChannelUrl: typeof setting.review_verification_you_tube_channel_url === "string" ? setting.review_verification_you_tube_channel_url : "",
+      },
+    };
+  }
+
   if (action === "review:create") {
     if (!user) return { status: 401, body: { error: "Sign-in is required to submit a review" } };
     if (!allowCommunityRequest(req, "review-create", 3)) return { status: 429, body: { error: "Too many requests. Try again later." } };
@@ -301,10 +320,23 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
     const rating = Number(body.rating);
     const comment = textField(body.comment, 5, 5000);
     if (!sellerId || !Number.isInteger(rating) || rating < 1 || rating > 5 || !comment) return { status: 400, body: { error: "Seller, rating, and comment are required" } };
+    let settingsResponse = await fetch(`${base}/site_settings?select=review_verification_enabled,review_verification_passphrase&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!settingsResponse.ok) settingsResponse = await fetch(`${base}/site_settings?select=review_verification_enabled&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
+    const setting = settingsResponse.ok ? (await settingsResponse.json())?.[0] || {} : {};
+    if (setting.review_verification_enabled === true) {
+      const expected = textField(setting.review_verification_passphrase, 1, 200);
+      const answer = textField(body.verificationAnswer, 1, 200);
+      if (!expected || !answer || sha256(answer.toLocaleLowerCase()) !== sha256(expected.toLocaleLowerCase())) {
+        return { status: 403, body: { error: "Review verification failed" } };
+      }
+    }
     const sellerResponse = await fetch(`${base}/sellers?id=eq.${encodeURIComponent(sellerId)}&select=id&limit=1`, { headers, signal: AbortSignal.timeout(9000) });
     const sellerRows = sellerResponse.ok ? await sellerResponse.json() : [];
     if (!Array.isArray(sellerRows) || !sellerRows.length) return { status: 404, body: { error: "Seller not found" } };
-    const response = await fetch(`${base}/seller_reviews`, { method: "POST", headers, body: JSON.stringify({ seller_id: sellerId, user_name: user.username, rating, comment, helpful_votes: 0, status: "pending" }), signal: AbortSignal.timeout(9000) });
+    let response = await fetch(`${base}/seller_reviews`, { method: "POST", headers, body: JSON.stringify({ seller_id: sellerId, user_name: user.username, rating, comment, approved: false }), signal: AbortSignal.timeout(9000) });
+    if (!response.ok) {
+      response = await fetch(`${base}/seller_reviews`, { method: "POST", headers, body: JSON.stringify({ seller_id: sellerId, user_name: user.username, rating, comment, status: "pending" }), signal: AbortSignal.timeout(9000) });
+    }
     if (!response.ok) return { status: 502, body: { error: "Could not submit review" } };
     return { status: 201, body: (await response.json())?.[0] || { success: true } };
   }

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import imageCompression from 'browser-image-compression';
 import { supabaseShim } from "@/lib/supabaseShim";
+import { adminFetch } from "@/lib/supabaseAdmin";
+import { apiRequest } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
 import { Input } from "@/components/ui/input";
@@ -77,6 +79,13 @@ export default function AdminAnnouncements() {
   const [sArMode, setSArMode] = useState<"rich" | "html">("rich");
 
 
+  const announcementRequest = async (scope: "global" | "seller", operation: "list" | "create" | "delete", row: Record<string, unknown> = {}) => {
+    return adminFetch<{ data?: any[]; success?: boolean }>("/api/admin/rebuild", {
+      method: "POST",
+      body: JSON.stringify({ action: "announcement-admin", scope, operation, ...row }),
+    });
+  };
+
   const pickPrimaryContent = (en: string, ar: string) => {
     const normalize = (html: string) =>
       String(html || "")
@@ -119,8 +128,8 @@ export default function AdminAnnouncements() {
         } catch {}
       } finally { setLoadingGlobal(false); }
       try {
-        const list = await supabaseShim('/api/admin/announcements/global', 'GET');
-        setGlobalList(Array.isArray(list) ? list : []);
+        const result = await announcementRequest("global", "list");
+        setGlobalList(Array.isArray(result?.data) ? result.data : []);
       } catch {}
     })();
   }, []);
@@ -143,20 +152,22 @@ export default function AdminAnnouncements() {
     try {
       setLoadingGlobal(true);
       const primary = pickPrimaryContent(gContentHtmlEn, gContentHtmlAr);
-      await supabaseShim('/api/announcements/global', 'POST', {
-        contentHtml: primary,
-        contentHtmlEn: gContentHtmlEn,
-        contentHtmlAr: gContentHtmlAr,
-        imageUrl: gImageUrl,
-        linkUrl: gLinkUrl,
-        active: gActive,
-        dismissible: gDismissible,
-        direction: gDirection,
+      await announcementRequest("global", "create", {
+        row: {
+          contentHtml: primary,
+          contentHtmlEn: gContentHtmlEn,
+          contentHtmlAr: gContentHtmlAr,
+          imageUrl: gImageUrl,
+          linkUrl: gLinkUrl,
+          active: gActive,
+          dismissible: gDismissible,
+          direction: gDirection,
+        },
       });
       toast({ title: "Created", description: "New global announcement added" });
       try {
-        const list = await supabaseShim('/api/admin/announcements/global', 'GET');
-        setGlobalList(Array.isArray(list) ? list : []);
+        const result = await announcementRequest("global", "list");
+        setGlobalList(Array.isArray(result?.data) ? result.data : []);
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -167,7 +178,7 @@ export default function AdminAnnouncements() {
 
   const deleteGlobal = async (id: string) => {
     try {
-      await supabaseShim(`/api/announcements/global/${encodeURIComponent(id)}`, 'DELETE');
+      await announcementRequest("global", "delete", { id });
       setGlobalList((prev) => prev.filter((g) => g.id !== id));
       toast({ title: 'Deleted', description: 'Global announcement removed' });
     } catch (e: any) {
@@ -180,26 +191,26 @@ export default function AdminAnnouncements() {
     if (!targetSlug) return;
     try {
       setLoadingSeller(true);
+      let sellerList: any[] = [];
       try {
-        const json: Announcement = await supabaseShim(`/api/announcements/seller/${encodeURIComponent(targetSlug)}`, 'GET');
-        if (json) {
-          setSContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
-          setSContentHtmlAr(json.contentHtmlAr || "");
-          setSImageUrl(json.imageUrl || "");
-          setSLinkUrl(json.linkUrl || "");
-          setSActive(Boolean(json.active ?? true));
-          setSDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
+        const result = await announcementRequest("seller", "list", { sellerSlug: targetSlug });
+        sellerList = Array.isArray(result?.data) ? result.data : [];
+        setSellerAnnouncements(sellerList);
+        const current = sellerList[0];
+        if (current) {
+          setSContentHtmlEn(current.contentHtmlEn || current.contentHtml || "");
+          setSContentHtmlAr(current.contentHtmlAr || "");
+          setSImageUrl(current.imageUrl || "");
+          setSLinkUrl(current.linkUrl || "");
+          setSActive(Boolean(current.active ?? true));
+          setSDirection((current.direction as any) === 'rtl' ? 'rtl' : (current.direction as any) === 'ltr' ? 'ltr' : 'auto');
         } else {
           setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
         }
       } catch {
+        setSellerAnnouncements([]);
         setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       }
-      // Load seller announcement list
-      try {
-        const list = await supabaseShim('/api/admin/announcements/seller', 'GET');
-        if (Array.isArray(list)) setSellerAnnouncements(list);
-      } catch {}
       // Load reviews for this seller slug
       try {
         const reviews = await supabaseShim(`/api/reviews/seller/by-slug/${encodeURIComponent(targetSlug)}`, 'GET');
@@ -217,19 +228,23 @@ export default function AdminAnnouncements() {
     try {
       setLoadingSeller(true);
       const primary = pickPrimaryContent(sContentHtmlEn, sContentHtmlAr);
-      await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, 'POST', {
-        contentHtml: primary,
-        contentHtmlEn: sContentHtmlEn,
-        contentHtmlAr: sContentHtmlAr,
-        imageUrl: sImageUrl,
-        linkUrl: sLinkUrl,
-        active: sActive,
-        direction: sDirection,
+      await announcementRequest("seller", "create", {
+        sellerSlug,
+        row: {
+          contentHtml: primary,
+          contentHtmlEn: sContentHtmlEn,
+          contentHtmlAr: sContentHtmlAr,
+          imageUrl: sImageUrl,
+          linkUrl: sLinkUrl,
+          active: sActive,
+          dismissible: true,
+          direction: sDirection,
+        },
       });
       toast({ title: "Saved", description: "Seller announcement updated" });
       try {
-        const list = await supabaseShim('/api/admin/announcements/seller', 'GET');
-        if (Array.isArray(list)) setSellerAnnouncements(list);
+        const result = await announcementRequest("seller", "list", { sellerSlug });
+        if (Array.isArray(result?.data)) setSellerAnnouncements(result.data);
       } catch {}
     } catch (e: any) {
       toast({ title: "Save failed", description: e?.message || "", variant: "destructive" });
@@ -241,8 +256,10 @@ export default function AdminAnnouncements() {
   const deleteSellerAnnouncement = async () => {
     if (!sellerSlug) return;
     try {
-      await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlug)}`, 'DELETE');
-      setSellerAnnouncements((prev) => prev.filter((s) => s.sellerSlug !== sellerSlug));
+      const current = sellerAnnouncements.find((item) => item.sellerSlug === sellerSlug);
+      if (!current?.id) throw new Error("Seller announcement was not found");
+      await announcementRequest("seller", "delete", { sellerSlug, id: current.id });
+      setSellerAnnouncements((prev) => prev.filter((s) => s.id !== current.id));
       setSContentHtmlEn(""); setSContentHtmlAr(""); setSImageUrl(""); setSLinkUrl(""); setSActive(true); setSDirection('auto');
       toast({ title: 'Deleted', description: 'Seller announcement removed' });
     } catch (e: any) {
@@ -253,7 +270,10 @@ export default function AdminAnnouncements() {
   const deleteSellerReview = async (reviewId: string) => {
     try {
       if (!activeSellerForReviews) return;
-      await supabaseShim(`/api/sellers/${activeSellerForReviews.id}/reviews/${encodeURIComponent(reviewId)}`, 'DELETE');
+      await adminFetch("/api/admin/rebuild", {
+        method: "POST",
+        body: JSON.stringify({ action: "admin-table", type: "seller_reviews", operation: "delete", id: reviewId }),
+      });
       setSellerReviews((prev) => prev.filter((r) => r.id !== reviewId));
       toast({ title: 'Review deleted' });
     } catch (e: any) {
@@ -264,7 +284,7 @@ export default function AdminAnnouncements() {
   const saveAnnouncementsEnabled = async () => {
     try {
       setAnnSettingsLoading(true);
-      await supabaseShim('/api/settings/site', 'PUT', { announcementsEnabled });
+      await apiRequest('/api/settings/site', 'PUT', { announcementsEnabled });
       toast({ title: 'Saved', description: 'Announcements setting updated' });
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message || '', variant: 'destructive' });

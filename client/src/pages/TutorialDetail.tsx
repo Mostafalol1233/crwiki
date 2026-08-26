@@ -31,6 +31,7 @@ export default function TutorialDetailPage() {
   const localPath = (path: string) => routerPath(path);
 
   const [showLikeDialog, setShowLikeDialog] = useState(false);
+  const [likeCount, setLikeCount] = useState<number | null>(null);
 
   const { data: tutorial, isLoading: tutorialLoading, isError: tutorialError } = useQuery<any>({
     queryKey: ["tutorial", slug || legacyId || ""],
@@ -53,11 +54,12 @@ export default function TutorialDetailPage() {
   const likeMutation = useMutation({
     mutationFn: async () => {
       const id = (tutorial as any)?.id || legacyId;
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.from('tutorials').update({ likes: supabase.rpc('increment', { row_id: id, amount: 1 }) } as any).eq('id', id);
-      if (error) throw error;
+      if (!id) throw new Error(isAr ? "تعذر تحديد الدليل" : "Tutorial identifier is missing");
+      const { toggleVideoLike } = await import("@/lib/supabaseApi");
+      return toggleVideoLike(String(id));
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setLikeCount(Number(result?.count || 0));
       const id = (tutorial as any)?.id || legacyId || "";
       queryClient.invalidateQueries({ queryKey: ["/api/tutorials", id] });
       toast({
@@ -232,7 +234,7 @@ export default function TutorialDetailPage() {
                 data-testid="button-like"
               >
                 <ThumbsUp className="h-3 w-3" />
-                {tutorial.likes || 0} Likes
+                {likeCount ?? tutorial.likes ?? 0} {isAr ? "إعجاب" : "Likes"}
               </button>
             </div>
 

@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import PageSEO from "@/components/PageSEO";
 import { useLocation } from "wouter";
-import { Send, Image as ImageIcon, Plus, Users, Hash, MoreVertical, Phone, Video, Settings, Upload, X, Loader2 } from "lucide-react";
+import { Send, Image as ImageIcon, Plus, Users, Hash, Settings, Upload, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { uploadToSupabase } from "@/lib/uploadToSupabase";
 import { apiRequest } from "@/lib/queryClient";
+import { buildAuthPath } from "@/lib/authRedirect";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ export default function Chat() {
 
   // Data
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [chatError, setChatError] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -79,7 +81,6 @@ export default function Chat() {
   const [newDMUser, setNewDMUser] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const realtimeRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // ── Step 1: resolve auth from Supabase session ────────────────────────────
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function Chat() {
       const session = result?.data?.session;
       if (!session) {
         sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
-        setLocation("/login");
+        setLocation(buildAuthPath("login"));
         return;
       }
       const uname = session.user.user_metadata?.username
@@ -103,27 +104,28 @@ export default function Chat() {
       setMyDisplayName(displayName);
       setMyAvatar(avatar);
       setAuthReady(true);
+    }).catch(() => {
+      sessionStorage.setItem("authRedirectMsg", "You must be signed in to access Chat.");
+      setLocation(buildAuthPath("login"));
     });
   }, [setLocation]);
 
   // DB migration needed flag
   const [needsMigration, setNeedsMigration] = useState(false);
 
-  // ── Step 2: load conversations once auth is ready ─────────────────────────
-  useEffect(() => {
-    if (!authReady || !username) return;
-    fetchConversations();
-  }, [authReady, username]);
-
   const fetchConversations = useCallback(async () => {
     if (!username) return;
     try {
       const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'chat:conversations:list' });
       setNeedsMigration(false);
+      setChatError("");
       setConversations(Array.isArray(data) ? data as Conversation[] : []);
     } catch (error: any) {
       if (String(error?.message || '').toLowerCase().includes('conversation')) setNeedsMigration(true);
-      else console.error('fetchConversations:', error?.message || error);
+      else {
+        setChatError("Could not load private conversations. Please try again.");
+        console.error('fetchConversations:', error?.message || error);
+      }
     }
   }, [username]);
 
@@ -131,7 +133,9 @@ export default function Chat() {
     try {
       const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'chat:messages:list', conversationId });
       setMessages(Array.isArray(data) ? data as Message[] : []);
+      setChatError("");
     } catch (error) {
+      setChatError("Could not load messages. Please try again.");
       console.error('fetchMessages:', error);
       setMessages([]);
     }
@@ -296,6 +300,19 @@ REVOKE ALL ON TABLE conversations, messages FROM anon, authenticated;
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (chatError && !needsMigration) {
+    return (
+      <div className="container mx-auto px-4 py-10 max-w-2xl">
+        <PageSEO title="Chat — Error" description="Private chat error" noindex />
+        <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-6 space-y-4 text-center">
+          <h2 className="font-black text-lg">Private chat is temporarily unavailable</h2>
+          <p className="text-sm text-muted-foreground">{chatError}</p>
+          <Button onClick={() => { setChatError(""); fetchConversations(); if (activeConvId) fetchMessages(activeConvId); }}>Retry</Button>
+        </div>
       </div>
     );
   }
@@ -474,11 +491,7 @@ REVOKE ALL ON TABLE conversations, messages FROM anon, authenticated;
                     )}
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><Video className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                </div>
+
               </div>
 
               {/* Messages */}

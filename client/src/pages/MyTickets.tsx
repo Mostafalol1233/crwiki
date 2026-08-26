@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/LanguageProvider";
-import { getTicketsByEmail, getTicketReplies, addTicketReply, getCurrentUser } from "@/lib/supabaseApi";
-import { Ticket, MessageSquare, Clock, Mail, ArrowLeft, Send } from "lucide-react";
+import { getMyTickets, getTicketReplies, addTicketReply, getCurrentUser } from "@/lib/supabaseApi";
+import { Ticket, MessageSquare, Clock, Mail, Send } from "lucide-react";
 import PageSEO from "@/components/PageSEO";
 import { buildAuthPath } from "@/lib/authRedirect";
 
@@ -64,20 +63,17 @@ export default function MyTickets() {
     getCurrentUser().then((user) => {
       if (!active) return;
       setAuthState(user ? "signed-in" : "signed-out");
-      if (user) setSearchedEmail("session");
     }).catch(() => active && setAuthState("signed-out"));
     return () => { active = false; };
   }, []);
-  const [email, setEmail] = useState("");
-  const [searchedEmail, setSearchedEmail] = useState("");
   const [authState, setAuthState] = useState<"loading" | "signed-in" | "signed-out">("loading");
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
   const [replyContent, setReplyContent] = useState("");
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
-    queryKey: ["/api/tickets/my", searchedEmail],
-    queryFn: () => getTicketsByEmail(searchedEmail),
-    enabled: authState === "signed-in" && !!searchedEmail,
+    queryKey: ["/api/tickets/my"],
+    queryFn: getMyTickets,
+    enabled: authState === "signed-in",
   });
 
   const { data: replies = [] } = useQuery<TicketReplyType[]>({
@@ -99,15 +95,6 @@ export default function MyTickets() {
       toast({ title: "Error", description: error.message || "Failed to add reply", variant: "destructive" });
     },
   });
-
-  const handleSearch = () => {
-    if (!email.trim()) {
-      toast({ title: "Email required", description: "Enter your email to view tickets", variant: "destructive" });
-      return;
-    }
-    setSearchedEmail(email);
-    setSelectedTicket(null);
-  };
 
   const handleAddReply = () => {
     if (!replyContent.trim() || !selectedTicket) return;
@@ -156,39 +143,6 @@ export default function MyTickets() {
                 </CardContent>
               </Card>
             </div>
-          ) : !searchedEmail ? (
-            <div className="max-w-md mx-auto">
-              <Card className="rounded-2xl border-border/60 bg-card/80 shadow-lg" style={{ background: "var(--card)", borderColor: "rgba(255,255,255,0.06)" }}>
-                <CardContent className="p-6">
-                <h2 className="font-black text-sm uppercase tracking-wider mb-1" style={{ color: "var(--foreground)" }}>{isArabic ? "أدخل بريدك الإلكتروني" : "Enter Your Email"}</h2>
-                <p className="text-xs mb-4" style={{ color: "#555" }}>{isArabic ? "أدخل البريد المستخدم عند إرسال التذاكر" : "Enter the email you used to submit tickets"}</p>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "#555" }} />
-                    <Input
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                      className="w-full pl-9 pr-4 h-10 text-sm outline-none"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "2px", color: "var(--foreground)" }}
-                      data-testid="input-search-email"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleSearch}
-                    className="w-full h-10 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all hover:brightness-110"
-                    style={{ background: "#f5a623", color: "#000" }}
-                    data-testid="button-search-tickets"
-                  >
-                    {isArabic ? "عرض تذاكري" : "View My Tickets"}
-                  </Button>
-                </div>
-                </CardContent>
-              </Card>
-            </div>
           ) : (
             <div className="grid lg:grid-cols-3 gap-5">
               {/* Ticket List */}
@@ -197,14 +151,6 @@ export default function MyTickets() {
                   <h2 className="font-black text-sm uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
                     {isArabic ? "التذاكر" : "Tickets"} <span style={{ color: "#f5a623" }}>({tickets.length})</span>
                   </h2>
-                  <button
-                    onClick={() => { setSearchedEmail(""); setEmail(""); setSelectedTicket(null); }}
-                    className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider transition-opacity hover:opacity-80"
-                    style={{ color: "#555" }}
-                    data-testid="button-change-email"
-                  >
-                    <ArrowLeft className="h-3 w-3" /> {isArabic ? "تغيير" : "Change"}
-                  </button>
                 </div>
 
                 {isLoading ? (

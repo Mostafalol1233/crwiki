@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { calculateProgressPercent, resolveProfileRank } from "../client/src/components/RankCalculator.tsx";
 import { makeAdminToken, verifyAdminToken } from "../server/adminAuth.ts";
 import { assertApprovedSourceUrl } from "../server/urlSafety.ts";
@@ -32,5 +33,17 @@ else process.env.ADMIN_TOKEN_SECRET = previousSecret;
 await assert.rejects(() => assertApprovedSourceUrl("http://forum.z8games.com/thread"));
 await assert.rejects(() => assertApprovedSourceUrl("https://example.com/thread"));
 await assert.rejects(() => assertApprovedSourceUrl("https://localhost/thread"));
+
+const queryClientSource = readFileSync(new URL("../client/src/lib/queryClient.ts", import.meta.url), "utf8");
+const reviewsSource = readFileSync(new URL("../client/src/lib/supabaseApi.ts", import.meta.url), "utf8");
+const communitySource = readFileSync(new URL("../api/sitemap.ts", import.meta.url), "utf8");
+const adminSource = readFileSync(new URL("../api/admin/rebuild.ts", import.meta.url), "utf8");
+assert.match(queryClientSource, /requiresAdminToken/);
+assert.match(queryClientSource, /getAuthHeaders\(requiresAdminToken\(url\)\)/);
+assert.match(reviewsSource, /select\('id,seller_id,user_name,rating,comment,approved,created_at'\)/);
+assert.match(communitySource, /action === \"review:settings\"/);
+assert.match(communitySource, /review_verification_passphrase/);
+assert.match(adminSource, /table === \"seller_reviews\"/);
+assert.match(adminSource, /table === \"tickets\"/);
 
 console.log("audit-smoke: passed");

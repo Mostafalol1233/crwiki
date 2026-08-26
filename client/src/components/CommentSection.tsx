@@ -10,6 +10,9 @@ import { buildAuthPath } from "@/lib/authRedirect";
 import { MessageSquare, Bold, Italic, Link as LinkIcon, AtSign, ThumbsUp } from "lucide-react";
 
 const MAX_RECURSION_DEPTH = 5;
+// The current comments schema has no verified parent_comment_id column.
+// Keep replies hidden until a reviewed migration and server write path exist.
+const COMMENT_REPLIES_ENABLED = false;
 
 export interface Comment {
   id: string;
@@ -169,7 +172,7 @@ function CommentItemBase({
                   {comment.likes || 0}
                 </Button>
 
-                {depth < maxDepth && (
+                {COMMENT_REPLIES_ENABLED && depth < maxDepth && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -197,7 +200,7 @@ function CommentItemBase({
             </div>
           </div>
 
-          {isReplying && (
+          {COMMENT_REPLIES_ENABLED && isReplying && (
             <div className="mt-4 ml-14 space-y-3">
               {!currentUser && (
                 <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">

@@ -3,7 +3,8 @@ import PageSEO from "@/components/PageSEO";
 import { useLanguage } from "@/components/LanguageProvider";
 
 export default function DownloadPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isArabic = language === "ar";
   const downloadUrl = "https://crossfire.z8games.com/download.html";
   const patchNotesUrl = "https://crossfire.z8games.com/news.html";
 
@@ -63,17 +64,25 @@ export default function DownloadPage() {
   ];
 
   const steps = [
-    { n: "01", title: "Download Installer", desc: "Click the button below to get the official CrossFire West installer from Z8Games." },
-    { n: "02", title: "Run Setup", desc: "Launch the installer and follow the on-screen instructions to install the game client." },
-    { n: "03", title: "Create Account", desc: "Register a free account on z8games.com or log in with an existing account." },
-    { n: "04", title: "Play Now", desc: "Launch CrossFire, pick a mode, and join millions of players around the world." },
+    { n: "01", title: "Download Installer", titleAr: "تنزيل المثبت", desc: "Click the button below to get the official CrossFire West installer from Z8Games.", descAr: "اضغط الزر التالي للحصول على مثبت CrossFire West الرسمي من Z8Games." },
+    { n: "02", title: "Run Setup", titleAr: "تشغيل التثبيت", desc: "Launch the installer and follow the on-screen instructions to install the game client.", descAr: "شغّل المثبت واتبع التعليمات الظاهرة لتثبيت عميل اللعبة." },
+    { n: "03", title: "Create Account", titleAr: "إنشاء حساب", desc: "Register a free account on z8games.com or log in with an existing account.", descAr: "أنشئ حسابًا مجانيًا على z8games.com أو سجّل الدخول بحساب موجود." },
+    { n: "04", title: "Play Now", titleAr: "ابدأ اللعب", desc: "Launch CrossFire, pick a mode, and join millions of players around the world.", descAr: "شغّل CrossFire واختر نمطًا وانضم إلى اللاعبين حول العالم." },
   ];
+  const specCategoryAr: Record<string, string> = {
+    "Processor (CPU)": "المعالج المركزي",
+    "Memory (RAM)": "الذاكرة",
+    "Video Card": "بطاقة الرسوميات",
+    "Storage (HDD)": "التخزين",
+    "Operating System": "نظام التشغيل",
+    "DirectX® + Internet": "DirectX® والإنترنت",
+  };
 
   return (
     <>
       <PageSEO
-        title="Download CrossFire West — System Requirements | CrossFire Wiki"
-        description="Download CrossFire West (crossfirewest) — the North American server by Z8Games. System requirements, installation guide, and latest patch notes."
+        title={isArabic ? "تنزيل CrossFire West ومتطلبات التشغيل | CrossFire Wiki" : "Download CrossFire West — System Requirements | CrossFire Wiki"}
+        description={isArabic ? "تنزيل CrossFire West من Z8Games مع متطلبات التشغيل ودليل التثبيت وملاحظات التحديث." : "Download CrossFire West (crossfirewest) — the North American server by Z8Games. System requirements, installation guide, and latest patch notes."}
         canonicalPath="/download"
         schemaType="WebPage"
         schemaData={{ name: "CrossFire West Download", description: "Download CrossFire West", url: "/download" }}
@@ -90,13 +99,15 @@ export default function DownloadPage() {
           <div className="relative max-w-4xl mx-auto px-6 md:px-10">
             <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "2px" }}>
               <Download className="h-3.5 w-3.5" style={{ color: "#f5a623" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Z8Games · Official Client</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>
+                {isArabic ? "العميل الرسمي من Z8Games" : "Z8Games · Official Client"}
+              </span>
             </div>
             <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-none mb-4" style={{ color: "var(--foreground)" }}>
-              Download<br /><span style={{ color: "#f5a623" }}>CrossFire</span>
+              {isArabic ? <>تنزيل<br /><span style={{ color: "#f5a623" }}>CrossFire</span></> : <>Download<br /><span style={{ color: "#f5a623" }}>CrossFire</span></>}
             </h1>
             <p className="text-sm md:text-base max-w-xl mx-auto mb-8" style={{ color: "#777" }}>
-              The official CrossFire West client by Z8Games — North American server, free to play, millions of players.
+              {isArabic ? "عميل CrossFire West الرسمي من Z8Games؛ خادم أمريكا الشمالية ومتاح للعب مجانًا." : "The official CrossFire West client by Z8Games — North American server, free to play, millions of players."}
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <a
@@ -115,7 +126,7 @@ export default function DownloadPage() {
                 className="flex items-center gap-2 px-7 py-3.5 text-[11px] font-black uppercase tracking-widest transition-all hover:border-[#f5a623] hover:text-[#f5a623]"
                 style={{ background: "transparent", color: "#666", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px" }}
               >
-                Patch Notes <ChevronRight className="h-3.5 w-3.5" />
+                {isArabic ? "ملاحظات التحديث" : "Patch Notes"} <ChevronRight className="h-3.5 w-3.5" />
               </a>
             </div>
           </div>
@@ -130,9 +141,11 @@ export default function DownloadPage() {
           >
             <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: "#f5a623" }} />
             <div>
-              <p className="font-black text-sm uppercase tracking-tight mb-1" style={{ color: "#f5a623" }}>Important Note</p>
+              <p className="font-black text-sm uppercase tracking-tight mb-1" style={{ color: "#f5a623" }}>
+                {isArabic ? "ملاحظة مهمة" : "Important Note"}
+              </p>
               <p className="text-[12px] leading-relaxed" style={{ color: "#777" }}>
-                This wiki covers CrossFire West (crossfirewest) — the official Z8Games server. We provide game guides, event info, and community resources. We are not affiliated with Smilegate or Z8Games and do not distribute game files or modifications.
+                {isArabic ? "يغطي هذا الموقع CrossFire West، خادم Z8Games الرسمي. نقدم أدلة للعبة ومعلومات عن الفعاليات وموارد للمجتمع، ولسنا تابعين لـSmilegate أو Z8Games ولا نوزع ملفات اللعبة أو تعديلات عليها." : "This wiki covers CrossFire West (crossfirewest) — the official Z8Games server. We provide game guides, event info, and community resources. We are not affiliated with Smilegate or Z8Games and do not distribute game files or modifications."}
               </p>
             </div>
           </div>
@@ -141,10 +154,12 @@ export default function DownloadPage() {
           <section>
             <div className="flex items-center gap-2 mb-6">
               <div className="h-[1px] flex-1" style={{ background: "linear-gradient(to right, rgba(245,166,35,0.3), transparent)" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>Getting Started</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>
+                {isArabic ? "البداية" : "Getting Started"}
+              </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-6" style={{ color: "var(--foreground)" }}>
-              How to Install
+              {isArabic ? "طريقة التثبيت" : "How to Install"}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {steps.map((step) => (
@@ -154,8 +169,12 @@ export default function DownloadPage() {
                   style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}
                 >
                   <div className="text-3xl font-black leading-none mb-3" style={{ color: "rgba(245,166,35,0.2)" }}>{step.n}</div>
-                  <h3 className="font-black text-sm uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>{step.title}</h3>
-                  <p className="text-[11px] leading-relaxed" style={{ color: "#666" }}>{step.desc}</p>
+                  <h3 className="font-black text-sm uppercase tracking-tight mb-2" style={{ color: "var(--foreground)" }}>
+                    {isArabic ? step.titleAr : step.title}
+                  </h3>
+                  <p className="text-[11px] leading-relaxed" style={{ color: "#666" }}>
+                    {isArabic ? step.descAr : step.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -165,10 +184,12 @@ export default function DownloadPage() {
           <section>
             <div className="flex items-center gap-2 mb-6">
               <div className="h-[1px] flex-1" style={{ background: "linear-gradient(to right, rgba(245,166,35,0.3), transparent)" }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>PC Requirements</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: "#f5a623" }}>
+                {isArabic ? "متطلبات الكمبيوتر" : "PC Requirements"}
+              </span>
             </div>
             <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-6" style={{ color: "var(--foreground)" }}>
-              {t("systemRequirements") || "System Requirements"}
+              {isArabic ? "متطلبات التشغيل" : (t("systemRequirements") || "System Requirements")}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -184,7 +205,9 @@ export default function DownloadPage() {
                       <div className="w-8 h-8 flex items-center justify-center rounded" style={{ background: `${spec.color}15` }}>
                         <Icon className="h-4 w-4" style={{ color: spec.color }} />
                       </div>
-                      <h3 className="font-black text-[11px] uppercase tracking-wider" style={{ color: "var(--foreground)" }}>{spec.category}</h3>
+                      <h3 className="font-black text-[11px] uppercase tracking-wider" style={{ color: "var(--foreground)" }}>
+                        {isArabic ? (specCategoryAr[spec.category] || spec.category) : spec.category}
+                      </h3>
                     </div>
                     <div className="space-y-3">
                       {spec.items.map((item, i) => (

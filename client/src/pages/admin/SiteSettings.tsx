@@ -21,10 +21,8 @@ interface Settings {
   ga_id: string;
   gsc_id: string;
   default_og_image: string;
-  enable_forum: boolean;
-  enable_shop: boolean;
-  enable_reviews: boolean;
-  maintenance_mode: boolean;
+  announcements_enabled: boolean;
+  review_verification_enabled: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -32,21 +30,44 @@ const DEFAULTS: Settings = {
   hero_bg_url: '', hero_title_en: '', hero_title_ar: '', hero_subtitle_en: '', hero_subtitle_ar: '',
   hero_cta_text: '', hero_cta_url: '', logo_url: '', favicon_url: '', contact_email: '',
   ga_id: '', gsc_id: '', default_og_image: '',
-  enable_forum: false, enable_shop: false, enable_reviews: true, maintenance_mode: false,
+  announcements_enabled: true, review_verification_enabled: false,
 };
 
 async function getSettings(client: any): Promise<Settings> {
-  const { data } = await client.from('site_settings').select('key, value');
-  const map: Record<string, any> = {};
-  (data || []).forEach((row: any) => { map[row.key] = row.value; });
-  return { ...DEFAULTS, ...map };
+  const { data, error } = await client.from('site_settings').select('*').limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = data || {};
+  return {
+    ...DEFAULTS,
+    site_name: row.seo_title || row.site_name || DEFAULTS.site_name,
+    site_description_en: row.seo_description || row.site_description_en || '',
+    hero_bg_url: row.hero_image || row.hero_bg_url || '',
+    default_og_image: row.seo_og_image_url || row.default_og_image || '',
+    announcements_enabled: row.announcements_enabled ?? DEFAULTS.announcements_enabled,
+    review_verification_enabled: row.review_verification_enabled ?? DEFAULTS.review_verification_enabled,
+  };
 }
 
-async function saveSettings(client: any, settings: Settings) {
-  const entries = Object.entries(settings).map(([key, value]) => ({ key, value }));
-  for (const entry of entries) {
-    await client.from('site_settings').upsert({ key: entry.key, value: entry.value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-  }
+async function saveSettings(client: any, settings: Settings): Promise<number> {
+  const { data: existing, error: readError } = await client.from('site_settings').select('*').limit(1).maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!existing?.id) throw new Error('Site settings row not found');
+
+  const patch: Record<string, unknown> = {};
+  const setIfPresent = (column: string, value: unknown) => {
+    if (Object.prototype.hasOwnProperty.call(existing, column)) patch[column] = value;
+  };
+  setIfPresent('seo_title', settings.site_name.trim());
+  setIfPresent('seo_description', settings.site_description_en.trim());
+  setIfPresent('hero_image', settings.hero_bg_url.trim());
+  setIfPresent('seo_og_image_url', settings.default_og_image.trim());
+  setIfPresent('announcements_enabled', settings.announcements_enabled);
+  setIfPresent('review_verification_enabled', settings.review_verification_enabled);
+  setIfPresent('public_base_url', (existing.public_base_url || '').trim());
+  if (!Object.keys(patch).length) throw new Error('No supported site settings columns are available');
+  const { error } = await client.from('site_settings').update(patch).eq('id', existing.id);
+  if (error) throw new Error(error.message);
+  return Object.keys(patch).length;
 }
 
 export default function SiteSettings() {
@@ -66,8 +87,8 @@ export default function SiteSettings() {
     if (!client) { toast.error('No admin client available'); return; }
     setSaving(true);
     try {
-      await saveSettings(client, settings);
-      toast.success('Settings saved');
+      const savedCount = await saveSettings(client, settings);
+      toast.success(`Settings saved (${savedCount} supported fields)`);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
@@ -140,10 +161,8 @@ export default function SiteSettings() {
         <div style={sectionTitle}>Feature Flags</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {([
-            ['enable_forum', 'Enable Forum'],
-            ['enable_shop', 'Enable Shop'],
-            ['enable_reviews', 'Enable Reviews'],
-            ['maintenance_mode', 'Maintenance Mode'],
+            ['announcements_enabled', 'Enable Announcements'],
+            ['review_verification_enabled', 'Enable Review Verification'],
           ] as const).map(([key, label]) => (
             <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <div style={{ position: 'relative', width: 36, height: 20 }}>
@@ -154,7 +173,7 @@ export default function SiteSettings() {
                 </div>
               </div>
               <span style={{ fontSize: 13, color: '#a1a1aa' }}>{label}</span>
-              {key === 'maintenance_mode' && settings[key] && <span style={{ fontSize: 11, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 6px', borderRadius: 3 }}>ACTIVE</span>}
+              {settings[key] && <span style={{ fontSize: 11, color: '#4ade80', background: 'rgba(74,222,128,0.1)', padding: '1px 6px', borderRadius: 3 }}>ACTIVE</span>}
             </label>
           ))}
         </div>

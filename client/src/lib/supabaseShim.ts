@@ -719,7 +719,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   // ── Reviews ────────────────────────────────────────────────────────────────
   if (path.startsWith('/reviews/seller/by-slug/')) {
     const slug = decodeURIComponent(path.replace('/reviews/seller/by-slug/', ''));
-    const { data } = await client.from('seller_reviews').select('*').eq('seller_slug', slug).order('created_at', { ascending: false });
+    const { data } = await client.from('seller_reviews').select('id,seller_id,seller_slug,user_name,rating,comment,helpful_votes,approved,created_at').eq('seller_slug', slug).eq('approved', true).order('created_at', { ascending: false });
     return data || [];
   }
 
@@ -807,31 +807,23 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   }
 
   // ── Site Settings ──────────────────────────────────────────────────────────
-  if (path === '/settings/site' || path === '/public/settings/site' || path === '/admin/settings/site') {
+  const publicSettingsSelect = 'id,review_verification_enabled,review_verification_video_url,review_verification_prompt,review_verification_timecode,review_verification_you_tube_channel_url,announcements_enabled,seo_title,seo_description,seo_keywords,seo_og_image_url,hero_image,robots,featured_weapons,featured_event_id,secondary_event_ids,public_base_url,portal_img_weapons,portal_img_maps,portal_img_mercenaries,portal_img_modes,portal_img_ranks,portal_img_events';
+  if (path === '/settings/site' || path === '/public/settings/site') {
     if (M === 'GET') {
-      const { data } = await client.from('site_settings').select('*').limit(1).single();
+      const { data, error } = await client.from('site_settings').select(publicSettingsSelect).limit(1).maybeSingle();
+      if (error) throw new Error(error.message);
       return data || {};
     }
     if (M === 'PUT' || M === 'POST') {
-      const { data: existing } = await client.from('site_settings').select('id').limit(1).single();
-      if (existing?.id) {
-        const { data } = await client.from('site_settings').update({
-          seo_title: body.seoTitle || body.seo_title,
-          seo_description: body.seoDescription || body.seo_description,
-          seo_keywords: body.seoKeywords || body.seo_keywords || [],
-          robots: body.robots,
-          announcements_enabled: body.announcementsEnabled ?? body.announcements_enabled,
-          review_verification_enabled: body.reviewVerificationEnabled ?? body.review_verification_enabled,
-          public_base_url: body.publicBaseUrl || body.public_base_url || '',
-        }).eq('id', existing.id).select().single();
-        return data || {};
-      }
-      return {};
+      throw new Error('Site settings must be updated through the authenticated admin boundary');
     }
+  }
+  if (path === '/admin/settings/site') {
+    throw new Error('Use the authenticated admin settings endpoint');
   }
 
   if (path === '/public/settings/seo') {
-    const { data } = await client.from('site_settings').select('*').limit(1).maybeSingle();
+    const { data } = await client.from('site_settings').select('seo_title,seo_description,seo_keywords,seo_og_image_url,robots').limit(1).maybeSingle();
     return {
       seoTitle: data?.seo_title || 'CrossFire Wiki',
       seoDescription: data?.seo_description || '',
@@ -865,6 +857,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
       return announcementRowToAnn(row);
     }
     if (M === 'POST') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       const row = { ...annToPost(body, 'global'), updated_at: new Date().toISOString() };
       // Upsert: delete old global then insert
       await client.from('posts').delete().eq('category', ANN_CATEGORY).contains('tags', ['global']);
@@ -886,12 +879,14 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
   if (globalAnnMatch) {
     const id = globalAnnMatch[1];
     if (M === 'PATCH') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       const row = annToPost(body, 'global');
       const { data, error } = await client.from('posts').update(row).eq('id', id).select().single();
       if (error) throw new Error(error.message);
       return postToAnn(data);
     }
     if (M === 'DELETE') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       await client.from('posts').delete().eq('id', id);
       return { success: true };
     }
@@ -908,6 +903,7 @@ export async function supabaseShim(rawUrl: string, method: string, body?: any): 
       return postToAnn(data);
     }
     if (M === 'POST' || M === 'PATCH') {
+      throw new Error('Announcement writes must use the authenticated admin boundary');
       await client.from('posts').delete().eq('category', ANN_CATEGORY).contains('tags', [`seller:${slug}`]);
       const { data, error } = await client.from('posts').insert([annToPost(body, 'seller', slug)]).select().single();
       if (error) throw new Error(error.message);

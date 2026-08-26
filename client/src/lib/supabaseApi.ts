@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { uploadToSupabase } from './uploadToSupabase';
 import { apiRequest } from './queryClient';
+import { adminFetch } from './supabaseAdmin';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
 import { getWeaponDescription } from '../../../shared/weapon-descriptions';
 
@@ -720,13 +721,34 @@ export async function getServiceListings() {
 }
 
 export async function getSellerReviews(sellerId: string) {
-  const { data, error } = await supabase
+  const baseQuery = () => supabase
     .from('seller_reviews')
-    .select('*')
+    .select('id,seller_id,user_name,rating,comment,approved,created_at')
     .eq('seller_id', sellerId)
     .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  let result = await baseQuery();
+  if (result.error) {
+    result = await supabase
+      .from('seller_reviews')
+      .select('id,seller_id,user_name,rating,comment,status,created_at')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+  }
+  if (result.error) throw result.error;
+  return (result.data || [])
+    .filter((review: any) => review.approved === undefined
+      ? ['approved', 'published'].includes(String(review.status || '').toLowerCase())
+      : review.approved === true)
+    .map((review: any) => ({
+      id: String(review.id),
+      sellerId: String(review.seller_id),
+      userName: String(review.user_name || 'Anonymous player'),
+      rating: Math.max(1, Math.min(5, Number(review.rating) || 1)),
+      comment: typeof review.comment === 'string' ? review.comment : '',
+      helpfulVotes: Number(review.helpful_votes) || 0,
+      status: review.status || (review.approved ? 'approved' : 'pending'),
+      createdAt: review.created_at ? new Date(review.created_at) : new Date(0),
+    }));
 }
 
 export async function addSellerReview(review: {
@@ -742,6 +764,7 @@ export async function addSellerReview(review: {
     sellerId: review.sellerId,
     rating: review.rating,
     comment: review.comment,
+    ...(review.verificationAnswer ? { verificationAnswer: review.verificationAnswer } : {}),
   });
 }
 
@@ -753,8 +776,10 @@ export async function getTutorials(category?: string) {
   if (error) throw error;
   return (data || []).map((t: any) => ({
     id: String(t.id),
-    title: t.title,
+    title: t.title || '',
+    titleAr: t.title_ar || '',
     description: t.description || '',
+    descriptionAr: t.description_ar || '',
     youtubeUrl: t.youtube_url,
     youtubeId: t.youtube_id,
     category: t.category || 'tutorial',
@@ -767,15 +792,11 @@ export async function getTutorials(category?: string) {
 // Uses select('*') so missing columns never cause a 400 error.
 export async function getPortalImages(): Promise<Record<string, string>> {
   try {
-    const { data } = await supabase
-      .from('site_settings')
-      .select('*')
-      .limit(1)
-      .maybeSingle();
-    if (!data) return {};
+    const settings = await getSiteSettings();
     const map: Record<string, string> = {};
-    for (const [k, v] of Object.entries(data)) {
-      if (v && typeof v === 'string' && k.startsWith('portal_img_')) map[k] = v;
+    for (const key of ['portal_img_weapons', 'portal_img_maps', 'portal_img_mercenaries', 'portal_img_modes', 'portal_img_ranks', 'portal_img_events']) {
+      const value = settings[key as keyof typeof settings];
+      if (typeof value === 'string' && value) map[key] = value;
     }
     return map;
   } catch {
@@ -859,32 +880,66 @@ export function normalizeSiteSettings(data: any) {
   };
 }
 
+const PUBLIC_SITE_SETTINGS_FIELDS = [
+  'id',
+  'review_verification_enabled',
+  'review_verification_video_url',
+  'review_verification_prompt',
+  'review_verification_timecode',
+  'review_verification_you_tube_channel_url',
+  'announcements_enabled',
+  'seo_title',
+  'seo_description',
+  'seo_keywords',
+  'seo_og_image_url',
+  'hero_image',
+  'robots',
+  'featured_weapons',
+  'featured_event_id',
+  'secondary_event_ids',
+  'public_base_url',
+  'portal_img_weapons',
+  'portal_img_maps',
+  'portal_img_mercenaries',
+  'portal_img_modes',
+  'portal_img_ranks',
+  'portal_img_events',
+].join(',');
+
 export async function getSiteSettings() {
   const result = await runSafeQuery(fallbackSiteSettings, async () => {
-    return await supabase.from('site_settings').select('*').limit(1).maybeSingle();
+    const primary = await supabase.from('site_settings').select(PUBLIC_SITE_SETTINGS_FIELDS).limit(1).maybeSingle();
+    if (!primary.error) return primary;
+    return await supabase.from('site_settings').select('id,review_verification_enabled,announcements_enabled,seo_title,seo_description,seo_keywords,seo_og_image_url,robots,featured_weapons,public_base_url,created_at,updated_at').limit(1).maybeSingle();
   });
   return normalizeSiteSettings(result.data ?? null);
 }
 
 export async function updateSiteSettings(patch: Record<string, any>) {
-  // Convert camelCase app keys to snake_case DB column names
-  const dbPatch: Record<string, any> = { updated_at: new Date().toISOString() };
+  const result = await adminFetch<{ data?: any[] }>("/api/admin/rebuild", {
+    method: "POST",
+    body: JSON.stringify({ action: "admin-table", type: "site_settings", operation: "list", page: 1, pageSize: 1, select: "*" }),
+  });
+  const existing = Array.isArray(result?.data) ? result.data[0] : null;
+  if (!existing?.id) throw new Error('Site settings row not found');
+
+  const dbPatch: Record<string, any> = {};
+  const columns = new Set(Object.keys(existing));
   for (const [key, value] of Object.entries(patch)) {
     if (key === 'id' || key === 'updated_at' || key === 'created_at') continue;
-    const dbKey = SETTINGS_FIELD_MAP[key] ?? key; // portal_img_* keys pass through as-is
-    dbPatch[dbKey] = value;
+    const dbKey = SETTINGS_FIELD_MAP[key] ?? key;
+    if (dbKey === 'review_verification_passphrase') {
+      if (typeof value === 'string' && value.trim()) dbPatch[dbKey] = value;
+      continue;
+    }
+    if (columns.has(dbKey)) dbPatch[dbKey] = value;
   }
-
-  const { data: existing } = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
-  if (existing?.id) {
-    const { data, error } = await supabase.from('site_settings').update(dbPatch).eq('id', existing.id).select().single();
-    if (error) throw error;
-    return normalizeSiteSettings(data);
-  } else {
-    const { data, error } = await supabase.from('site_settings').insert(dbPatch).select().single();
-    if (error) throw error;
-    return normalizeSiteSettings(data);
-  }
+  const updated = await adminFetch<{ data?: any[] }>("/api/admin/rebuild", {
+    method: "POST",
+    body: JSON.stringify({ action: "admin-table", type: "site_settings", operation: "update", id: existing.id, row: dbPatch }),
+  });
+  const data = Array.isArray(updated?.data) ? updated.data[0] : updated?.data || { ...existing, ...dbPatch };
+  return normalizeSiteSettings(data);
 }
 
 // ─── Image Upload ─────────────────────────────────────────────────────────────
@@ -957,7 +1012,7 @@ export async function createTicket(ticket: {
   });
 }
 
-export async function getTicketsByEmail(_email: string) {
+export async function getMyTickets() {
   const data = await apiRequest('/api/sitemap?type=community', 'POST', { action: 'ticket:list' });
   return (Array.isArray(data) ? data : []).map((t: any) => ({
     id: String(t.id),

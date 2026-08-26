@@ -15,7 +15,7 @@ DECLARE
   protected_tables text[] := ARRAY[
     'comments', 'seller_reviews', 'likes', 'video_likes', 'comment_likes',
     'forum_categories', 'forum_threads', 'forum_posts', 'tickets', 'ticket_messages',
-    'conversations', 'messages'
+    'conversations', 'messages', 'announcements'
   ];
 BEGIN
   FOREACH table_name IN ARRAY protected_tables LOOP
@@ -39,13 +39,30 @@ BEGIN
 
     IF table_name = ANY(public_read_tables) THEN
       EXECUTE format('GRANT SELECT ON TABLE public.%I TO anon, authenticated', table_name);
-      EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', 'crwiki_public_read_' || table_name, table_name);
+      IF table_name = 'seller_reviews' THEN
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (approved = true)', 'crwiki_public_read_' || table_name, table_name);
+      ELSIF table_name = 'comments' THEN
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (approved = true)', 'crwiki_public_read_' || table_name, table_name);
+      ELSE
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR SELECT TO anon, authenticated USING (true)', 'crwiki_public_read_' || table_name, table_name);
+      END IF;
     ELSE
       -- Tickets and ticket messages are private. They are read and written by
       -- server endpoints after ownership or admin authorization checks.
       EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon, authenticated', table_name);
     END IF;
   END LOOP;
+END $$;
+
+-- Announcements are public only while active and targeted at the public site.
+-- All writes remain server-side through the service role.
+DO $$
+BEGIN
+  IF to_regclass('public.announcements') IS NULL THEN
+    RETURN;
+  END IF;
+  EXECUTE 'GRANT SELECT ON TABLE public.announcements TO anon, authenticated';
+  EXECUTE 'CREATE POLICY crwiki_public_read_announcements ON public.announcements FOR SELECT TO anon, authenticated USING (active = true AND target IN (''all'', ''global''))';
 END $$;
 
 -- Keep the service role as the only database actor for private support data.

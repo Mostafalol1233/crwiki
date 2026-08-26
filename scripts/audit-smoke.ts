@@ -48,6 +48,8 @@ assert.match(communitySource, /action === \"review:settings\"/);
 assert.match(communitySource, /review_verification_passphrase/);
 assert.match(adminSource, /table === \"seller_reviews\"/);
 assert.match(adminSource, /table === "tickets"/);
+assert.match(adminSource, /Legacy destructive rebuilds are intentionally disabled/);
+assert.match(adminSource, /status\(410\)/);
 assert.match(scraperSource, /function cronAuthorized/);
 assert.match(scraperSource, /action === "fandom-page"/);
 assert.match(scraperSource, /action === "fandom-crawl-start"/);

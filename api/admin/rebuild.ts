@@ -784,6 +784,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // Legacy destructive rebuilds are intentionally disabled. They deleted unrelated
+  // public posts and used fixed content instead of verified source records.
+  if (action === "rebuild-mercenary-posts" || action === "rebuild-wiki-posts") {
+    return addCorsHeaders(res).status(410).json({ error: "Legacy destructive rebuild is disabled; use verified source drafts instead" });
+  }
+
   // ── action: rebuild-mercenary-posts ───────────────────────────────────────
   if (action === "rebuild-mercenary-posts") {
     if (!isSuperAdmin && !hasAnyPermission(admin, ["content:rebuild", "posts:rebuild"])) {

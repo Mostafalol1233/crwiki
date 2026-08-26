@@ -35,7 +35,7 @@ export default function WikiRescraper() {
   const [log, setLog] = useState<string[]>([]);
   const [customUrl, setCustomUrl] = useState('');
   const [category, setCategory] = useState('Weapons');
-  const [customBusy, setCustomBusy] = useState<'page' | 'discover' | 'crawl' | ''>('');
+  const [customBusy, setCustomBusy] = useState<'page' | 'discover' | 'crawl' | 'save' | ''>('');
   const [deepResult, setDeepResult] = useState<DeepScrapeResult | null>(null);
   const [discoveredPages, setDiscoveredPages] = useState<DiscoveredPage[]>([]);
   const client = supabaseService;
@@ -95,6 +95,22 @@ export default function WikiRescraper() {
     } catch (e: any) {
       toast.error(e.message || 'فشل جمع الصفحة');
       setLog((l) => [`خطأ في المعاينة: ${e.message}`, ...l]);
+    } finally {
+      setCustomBusy('');
+    }
+  };
+
+  const saveDraft = async () => {
+    if (!customUrl.trim() || !deepResult) return toast.error('نفّذ المعاينة أولًا');
+    setCustomBusy('save');
+    try {
+      const res = await globalThis.fetch('/api/scrape/fandom-draft-save', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ url: customUrl.trim() }) });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || 'تعذر حفظ المسودة');
+      setLog((l) => [`حُفظت مسودة موثقة: ${payload.title || customUrl}`, ...l]);
+      toast.success('تم حفظ المسودة؛ راجعها في إدارة الصفحات قبل النشر');
+    } catch (e: any) {
+      toast.error(e.message || 'فشل حفظ المسودة');
     } finally {
       setCustomBusy('');
     }
@@ -167,6 +183,7 @@ export default function WikiRescraper() {
           <button type="button" onClick={runDeepPage} disabled={Boolean(customBusy)} style={{ ...tabStyle(false), display: 'inline-flex', alignItems: 'center', gap: 6 }}><Search size={13} />{customBusy === 'page' ? 'جارٍ الجمع…' : 'معاينة الصفحة كاملة'}</button>
           <button type="button" onClick={discoverCategory} disabled={Boolean(customBusy)} style={{ ...tabStyle(false), display: 'inline-flex', alignItems: 'center', gap: 6 }}>{customBusy === 'discover' ? 'جارٍ الاكتشاف…' : 'اكتشاف صفحات الفئة'}</button>
           <button type="button" onClick={startCrawl} disabled={Boolean(customBusy)} style={{ ...tabStyle(false), display: 'inline-flex', alignItems: 'center', gap: 6 }}>{customBusy === 'crawl' ? 'جارٍ البدء…' : 'بدء جمع محدود'}</button>
+          {deepResult && <button type="button" onClick={saveDraft} disabled={Boolean(customBusy)} style={{ ...tabStyle(true), display: 'inline-flex', alignItems: 'center', gap: 6 }}>{customBusy === 'save' ? 'جارٍ الحفظ…' : 'حفظ كمسودة'}</button>}
         </div>
         {deepResult && (
           <div style={{ marginTop: 14, padding: 12, background: '#09090b', border: '1px solid #3f3f46', borderRadius: 6 }}>

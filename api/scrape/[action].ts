@@ -417,8 +417,8 @@ async function saveFandomPageDraft(sourceUrl: string) {
 }
 
 async function runFandomAutomation() {
-  const rootUrl = process.env.FANDOM_AUTOMATION_ROOT_URL || "";
-  const category = (process.env.FANDOM_AUTOMATION_CATEGORY || "").trim();
+  const rootUrl = process.env.FANDOM_AUTOMATION_ROOT_URL || "https://crossfirefps.fandom.com/wiki/Weapons";
+  const category = (process.env.FANDOM_AUTOMATION_CATEGORY || "Weapons").trim();
   const configuredLimit = Number(process.env.FANDOM_AUTOMATION_MAX_PAGES || 3);
   const limit = Math.min(3, Math.max(1, Number.isFinite(configuredLimit) ? Math.floor(configuredLimit) : 3));
   if (!rootUrl || !category) return { status: "skipped", reason: "Fandom automation source is not configured", discovered: 0, drafted: 0, skippedPublished: 0, failed: [] };

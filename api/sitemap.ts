@@ -12,38 +12,63 @@ const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Conte
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
-const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en: string }> = {
-  "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟", question_en: "Listen closely to this clip. Which game mode does this music belong to?" },
-  "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟", question_en: "Listen closely to this Round Intro. Which map or location do you hear it on?" },
-  "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟", question_en: "Listen to this opening cue. Which map uses this music when the round begins?" },
-  "40": { question_ar: "اسمع التراك ده.. الحماس والمزيكا دي بتشتغل في أنهي وضع وأنهي لحظة بالظبط؟", question_en: "Listen to this track. Which mode uses this music, and exactly when does it play?" },
-  "50": { question_ar: "اسمع التأثير الصوتي ده كويس.. التراك ده بتسمعه في انهي مود؟", question_en: "Listen carefully to this sound effect. Which mode features this track?" },
-  "60": { question_ar: "اسمع المقطع ده.. الصوت ده بيشتغل في انهي لحظة بالظبط؟", question_en: "Listen to this clip. At exactly which moment does this sound play?" },
-  "70": { question_ar: "المقطع الصوتي ده بيعبر عن إيه بالظبط؟", question_en: "What exactly does this audio clip represent?" },
-  "80": { question_ar: "لحن الـ Boss ده بتسمعه وأنت بتواجه الزعيم الأخير في أنهي ماب زومبي؟", question_en: "Which Zombie map plays this Boss theme when you face the final boss?" },
-  "90": { question_ar: "اسمع المزيكا دي.. التراك ده شغال في أنهي ماب ومرحلة في الزومبي؟", question_en: "Listen to this music. Which Zombie map and stage use this track?" },
-  "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟", question_en: "Listen carefully to this Boss theme. Which map plays this music?" },
-  "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟", question_en: "Which Zombie setting and map use this frightening music?" },
-  "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟", question_en: "When you hear this piano melody in Zombie Mode, which map are you in?" },
-  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟", question_en: "What is the key difference between Infection and Elimination in Shadow Mode?" },
-  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟", question_en: "In Weapon Master played as team deathmatch, what is the basic condition for your team to win?" },
-  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟", question_en: "Zombie Mode 4 introduced mechanics that differed from earlier entries. What was its key added feature?" },
-  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟", question_en: "In traditional Team Deathmatch, what is the basic rule for determining the winner?" },
-  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟", question_en: "On Search & Destroy, after a fast C4 plant at site A, where and when should you hold your crosshair for post-plant retake defense?" },
-  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟", question_en: "You have four Battle Rifle images. Which one is the G3A3?" },
-  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟", question_en: "Zoom in on the sniper's details and markings. Which image is the Barrett M82A1-Journey to the West?" },
-  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟", question_en: "Open the images and zoom in on the markings. Which one is the Dragon Blade-Journey to the West?" },
-  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟", question_en: "Which image shows the Flashbang included in the West Rank Match rewards?" },
-  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟", question_en: "Which grenade in the choices is the West Rank Match Event version?" },
-  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟", question_en: "Tactical scenario: You are the In-Game Leader and your team is weaker than the opponent. The enemy uses a fixed 3A/2B setup on Desert Eagle. Explain your first-30-second plan to gather info, create a quiet fake or rotation, open a weak site, and plant C4 without losing teammates." },
-  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية.", question_en: "Tactical scenario: You are playing the match point on Black Widow as the Terrorists (Black Ravens). The enemy has a strong AWP holding Mid. Explain how to use smokes and flashes, coordinating two B players and three A players, to force the sniper off the angle and open a site without giving away free kills." },
-  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ Gathering Info (هدوء وتحديد أماكن) لمرحلة الـ Execute/Rush (ضغط مساحات واستخدام اليوتيليتي)؟", question_en: "In no more than two or three sentences, explain how callouts and voice communication should change from gathering information to an execute or rush with space pressure and utility." },
+const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string }> = {
+  "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟" },
+  "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟" },
+  "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟" },
+  "40": { question_ar: "اسمع التراك ده.. الحماس والمزيكا دي بتشتغل في أنهي وضع وأنهي لحظة بالظبط؟" },
+  "50": { question_ar: "اسمع التأثير الصوتي ده كويس.. التراك ده بتسمعه في انهي مود؟" },
+  "60": { question_ar: "اسمع المقطع ده.. الصوت ده بيشتغل في انهي لحظة بالظبط؟" },
+  "70": { question_ar: "المقطع الصوتي ده بيعبر عن إيه بالظبط؟" },
+  "80": { question_ar: "لحن الـ Boss ده بتسمعه وأنت بتواجه الزعيم الأخير في أنهي ماب زومبي؟" },
+  "90": { question_ar: "اسمع المزيكا دي.. التراك ده شغال في أنهي ماب ومرحلة في الزومبي؟" },
+  "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟" },
+  "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟" },
+  "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟" },
+  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
+  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
+  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
+  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
+  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
+  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
+  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
+  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟" },
+  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟" },
+  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟" },
+  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟" },
+  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
+  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
+};
+
+const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
+  "10": ["Zombie Mode", "Wave Mode", "Super Mutation Mode", "Boss Tower Mode"],
+  "20": ["Chicago (Elimination)", "Western (Elimination)", "Venice (Elimination)", "Hangar (Elimination)"],
+  "30": ["Western (Elimination)", "Chicago (Elimination)", "Colombia (Elimination)", "Alamo (Elimination)"],
+  "40": ["Occupation Knife Mode - دخلة الـ Overtime", "Capture Knife Mode - عند سحب الـ Flag", "King Knife Mode - الجولة الحاسمة", "Blade TDM Mode - آخر 30 ثانية"],
+  "50": ["Shadow Mode", "Ghost Mode", "Spies Mode", "Stealth Mutation Mode"],
+  "60": ["Wave Mode - Complete", "Zombie Mode - Defense Clear", "Super Hero Mode - Victory", "Chaos Wave - Round Finish"],
+  "70": ["Weapon Master - FFA Lose", "Weapon Master - TDM Defeat", "Gun King Mode - Match End", "Arms Race Mode - Final Rank Lose"],
+  "80": ["Arcadia", "Titan Citadel", "Devastated City", "Crater"],
+  "90": ["EMD Lab (لحظة الـ Bullet Time)", "Titan Citadel (غرفة دكتور Haze)", "Dinner Theater (مقطوعة البيانو)", "Bio Tower (مرحلة الـ Elevator)"],
+  "100": ["Titan Citadel", "EMD Lab", "Devastated City", "Silent Castle"],
+  "110": ["Devastated City", "Arcadia", "Dinner Theater", "Forbidden Tower"],
+  "120": ["Dinner Theater", "Silent Castle", "EMD Lab", "Venetian Theater"],
+  "130": ["في الـ Infection اللاعب اللي بيموت من الـ Mercenaries بيتحول لـ Shadow", "الـ Shadows معاهم أسلحة نارية في الـ Infection", "الـ Elimination فيه وقت محدد لكن الـ Infection ملوش وقت", "مفيش أي أثر للأقدام (Footsteps) في الـ Infection"],
+  "140": ["إن الفريق يجمع عدد Kills معين بمختلف الأسلحة لحد ما يوصل لآخر سلاح وتصفيته", "إن لاعب واحد بس من الفريق يتفركش ويثبت أعلى DPM", "إن الماتش يخلص في الوقت والمجموع الكلي للدم يكون أعلى", "إن الفريق يسيطر على نقط الماب بأسلحة محددة"],
+  "150": ["نظام الـ Skill Tree وتطوير قدرات الشخصية أثناء الجيم", "إن الزومبي بقوا يقدروا يضربوا بالأسلحة النارية", "اللعب بشخصيات الـ VIP فقط", "إلغاء الـ Revive Tokens تماماً"],
+  "160": ["أول فريق يوصل لعدد الـ Kills المطلوب أو الفريق الأعلى Kills عند انتهاء الوقت", "الفريق اللي يثبت على أرض الموقع A و B أطول وقت", "الفريق اللي يعطل قنبلة C4 أكتر من 3 مرات", "تجميع أكبر عدد من الـ Badges خلال الجولة"],
+  "170": ["التثبيت على زوايا الـ Off-angle لتغطية الـ Chokepoints من غير ما تبان للـ Retakers", "الوقوف المباشر فوق الـ C4 وعمل Crouch", "الجري المستمر داخل الـ Site لعمل Noise", "الرمي العشوائي للـ Smoke داخل الـ Site لتغطية رؤية فريقك"],
 };
 
 function applyCompetitionQuestionWording(questions: any[]): any[] {
   return questions.map((question) => {
-    const override = COMPETITION_QUESTION_WORDING_OVERRIDES[String(question?.sort_order || "")];
-    return override ? { ...question, ...override } : question;
+    const key = String(question?.sort_order || "");
+    const override = COMPETITION_QUESTION_WORDING_OVERRIDES[key];
+    const labels = COMPETITION_OPTION_LABEL_OVERRIDES[key];
+    const nextOptions = labels && Array.isArray(question?.options)
+      ? question.options.map((option: any, index: number) => ({ ...option, label_ar: labels[index] || option.label_ar || option.label_en || option.value }))
+      : question?.options;
+    return override || labels ? { ...question, ...(override || {}), ...(labels ? { options: nextOptions } : {}) } : question;
   });
 }
 

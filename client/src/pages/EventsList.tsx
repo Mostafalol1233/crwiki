@@ -419,7 +419,7 @@ export default function EventsList() {
         </div>
 
         {/* ── CONTENT ── */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
+              <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }} className="events-content-shell">
           <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }} className="events-layout">
 
             {/* Main column */}
@@ -560,11 +560,15 @@ export default function EventsList() {
 
           <style>{`
             @media(max-width:1024px){.events-sidebar{display:none!important;}}
-            @media(max-width:700px){.ev-grid{grid-template-columns:1fr!important;}}
-            @media(max-width:900px){.ev-grid{grid-template-columns:repeat(2,1fr)!important;}}
+            @media(max-width:900px){.ev-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+            @media(max-width:700px){
+              .ev-grid{grid-template-columns:minmax(0,1fr)!important;}
+            }
             @media(max-width:680px){
+              .events-content-shell{padding:24px 16px 48px!important;}
               .featured-img-wrap{min-height:0!important;height:220px!important;}
               .featured-img{min-height:0!important;object-fit:contain!important;background:#050505;}
+              .featured-inner > div:last-child{padding:20px 16px!important;}
             }
             .load-more-btn:hover{background:rgba(245,166,35,0.15)!important;}
             .quick-link-item:hover{background:rgba(255,255,255,0.04)!important;}

@@ -412,7 +412,8 @@ export default function EventDetail() {
     );
   }
 
-  const seoImage = event.ogImage || event.image;
+  const eventImage = event.image || event.image_url || event.imageUrl || "";
+  const seoImage = event.ogImage || eventImage;
   const canonicalOrigin = "https://crossfire.wiki";
   const eventSlug = event.event_name_slug || slug || legacyId;
   const eventUrl = `${canonicalOrigin}/events/${eventSlug}`;
@@ -527,12 +528,12 @@ export default function EventDetail() {
       <div style={{ minHeight: "100vh", background: BG }}>
 
         {/* ── HERO BANNER ──────────────────────────────────────────────────── */}
-        <div style={{ position: "relative", height: 480, overflow: "hidden", background: "#050505" }}>
+        <div className="event-hero" style={{ position: "relative", height: 480, overflow: "hidden", background: "#050505" }}>
           {/* Background image */}
-          {event.image && (
+          {eventImage && (
             <>
               <ContentImage
-                src={event.image}
+                src={eventImage}
                 alt=""
                 aria-hidden
                 style={{
@@ -543,14 +544,16 @@ export default function EventDetail() {
                 }}
               />
               <ContentImage
-                src={event.image}
+                className="event-hero-image"
+                src={eventImage}
                 alt={title}
                 onLoad={() => setHeroLoaded(true)}
                 style={{
                   position: "absolute",
                   top: "50%", left: "50%",
                   transform: "translate(-50%, -50%)",
-                  maxHeight: "90%", maxWidth: "55%",
+                  width: "min(860px, 55vw)",
+                  maxHeight: "90%", maxWidth: "92vw",
                   objectFit: "contain",
                   opacity: heroLoaded ? 1 : 0,
                   transition: "opacity 0.5s",
@@ -787,7 +790,7 @@ export default function EventDetail() {
                         background: idx % 2 === 1 ? "rgba(255,255,255,0.01)" : "transparent",
                       }}>
                         <CommentAvatar name={c.name || c.author || "User"} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>
                               {String(c.name || c.author || "").trim() || "Anonymous"}
@@ -803,7 +806,7 @@ export default function EventDetail() {
                               </button>
                             )}
                           </div>
-                          <p style={{ fontSize: 13, lineHeight: 1.65, color: "rgba(255,255,255,0.55)", margin: 0 }}>{c.content}</p>
+                          <p style={{ fontSize: 13, lineHeight: 1.65, color: "rgba(255,255,255,0.55)", margin: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>{c.content}</p>
                           <CommentReactions commentId={c.id} likes={c.likes} />
                         </div>
                       </div>
@@ -848,9 +851,9 @@ export default function EventDetail() {
                   </div>
 
                   {/* Hero image thumbnail */}
-                  {event.image && (
-                    <div style={{ position: "relative", cursor: "zoom-in" }} onClick={() => setViewer({ open: true, src: event.image, alt: title })}>
-                      <ContentImage src={event.image} alt={title} loading="lazy" style={{ width: "100%", maxHeight: 220, objectFit: "contain", padding: 12, background: "rgba(0,0,0,0.16)", display: "block" }} />
+                  {eventImage && (
+                    <div style={{ position: "relative", cursor: "zoom-in" }} onClick={() => setViewer({ open: true, src: eventImage, alt: title })}>
+                      <ContentImage src={eventImage} alt={title} loading="lazy" style={{ width: "100%", maxHeight: 220, objectFit: "contain", padding: 12, background: "rgba(0,0,0,0.16)", display: "block" }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
                     </div>
                   )}
@@ -942,6 +945,8 @@ export default function EventDetail() {
           <style>{`
             @media(max-width:900px){.event-sidebar{display:none!important;}}
             @media(max-width:640px){
+              .event-hero{height:360px!important;}
+              .event-hero-image{width:92vw!important;max-width:92vw!important;max-height:44%!important;}
               .event-detail-grid{display:block!important;}
               .related-grid{grid-template-columns:1fr!important;}
               .comment-grid{grid-template-columns:1fr!important;}
@@ -953,6 +958,10 @@ export default function EventDetail() {
       {/* Event article content styles */}
       <style>{`
         .event-article-body {
+          min-width: 0;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
           font-size: 15px;
           line-height: 1.85;
           color: rgba(255,255,255,0.75);
@@ -986,8 +995,11 @@ export default function EventDetail() {
         .event-article-body ul, .event-article-body ol { padding-left: 1.6em; margin-bottom: 1em; }
         .event-article-body li { margin-bottom: 0.4em; color: rgba(255,255,255,0.65); }
         .event-article-body table {
-          width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 13px;
+          width: 100%; max-width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 13px;
+          table-layout: auto;
         }
+        .event-article-body pre,
+        .event-article-body table { overflow-x: auto; }
         .event-article-body th {
           padding: 8px 12px; background: rgba(245,166,35,0.08);
           border: 1px solid rgba(255,255,255,0.07); font-weight: 700;

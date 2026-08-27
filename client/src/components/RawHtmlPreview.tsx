@@ -60,7 +60,7 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
   return (
     <div className={`raw-html-preview-container ${className || ""}`} dir={isRTL ? "rtl" : "ltr"}>
       <div 
-        className={`prose prose-sm sm:prose-base md:prose-lg lg:prose-xl dark:prose-invert max-w-none
+        className={`raw-html-preview-content prose prose-sm sm:prose-base md:prose-lg lg:prose-xl dark:prose-invert max-w-none
                    prose-img:mx-auto prose-img:rounded-2xl prose-img:border prose-img:border-primary/10 prose-img:shadow-2xl
                    prose-headings:scroll-mt-24 prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80
                    prose-strong:text-foreground prose-li:marker:text-primary prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-xl
@@ -68,11 +68,23 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
         dangerouslySetInnerHTML={{ __html: processedHtml }} 
       />
       <style>{`
+        .raw-html-preview-container {
+          min-width: 0;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+        .raw-html-preview-content {
+          min-width: 0;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
         .raw-html-preview-container img {
           max-width: 100%;
           height: auto;
           display: block;
           margin: 1.5rem auto;
+          object-fit: contain;
         }
         .raw-html-preview-container h2,
         .raw-html-preview-container h3,
@@ -93,7 +105,21 @@ const RawHtmlPreview: React.FC<RawHtmlPreviewProps> = ({ html, className, isFull
         }
         .raw-html-preview-container table {
           width: 100% !important;
+          max-width: 100%;
           margin: 1rem 0;
+          table-layout: auto;
+        }
+        .raw-html-preview-container pre,
+        .raw-html-preview-container table {
+          overflow-x: auto;
+        }
+        .raw-html-preview-container a,
+        .raw-html-preview-container p,
+        .raw-html-preview-container li,
+        .raw-html-preview-container td,
+        .raw-html-preview-container th {
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
         .raw-html-preview-container iframe {
           width: 100%;

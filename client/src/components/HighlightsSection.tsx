@@ -13,13 +13,21 @@ interface Highlight {
 }
 
 const STATIC_HIGHLIGHTS: Highlight[] = [
-  { id: "1", month: "Jun", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260528_cfwe_zppu_bonus_forums.jpg", title: "Summer Breeze Bonus — June 2026", sort_order: 1 },
-  { id: "2", month: "Apr", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260330_cfwe_bp_apr_main_forum.jpg", title: "Mercenary Pass Season 59: Rising Tide — April 2026", sort_order: 2 },
-  { id: "3", month: "Mar", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260223_cfwe_zppubonus_forums.jpg", title: "March Of Gold — March 2026", sort_order: 3 },
-  { id: "4", month: "Jan", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251223_cfwe_bp_jan2026_main_forum.jpg", title: "Mercenary Pass Season 58: Timeless Treasures — January 2026", sort_order: 4 },
-  { id: "5", month: "Dec", year: 2025, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251126_cfwe_npu_forum.jpg", title: "Sleighbell Bonus — December 2025", sort_order: 5 },
-  { id: "6", month: "Nov", year: 2025, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/251027_cfwe_zppubonus_forums.jpg", title: "Wavelite Bonus Surge — November 2025", sort_order: 6 },
+  { id: "rifle-week-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/rifle-week-2026.jpg", title: "Rifle Week — August 24–30, 2026", sort_order: 1 },
+  { id: "fantastic-frenzy-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/fantastic-frenzy-august-2026.jpg", title: "Fantastic Frenzy Weekend — August 2026", sort_order: 2 },
+  { id: "mercenary-pass-61", month: "Aug", year: 2026, media_type: "image", url: "/highlights/mercenary-pass-season-61.jpg", title: "Mercenary Pass Season 61: High Ground — August 6–September 1, 2026", sort_order: 3 },
+  { id: "roadmap-august-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/crossfire-roadmap-2026.jpg", title: "August 2026 Update: Scorpion Weapons, ZM4 Mount Kunlun & Tactical Retake", sort_order: 4 },
 ];
+
+const MONTH_NUMBERS: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+function isRecentHighlight(highlight: Highlight): boolean {
+  const rawMonth = String(highlight?.month || "");
+  const month = MONTH_NUMBERS[rawMonth.slice(0, 3).replace(/^./, (c) => c.toUpperCase())];
+  if (month === undefined || !Number.isFinite(Number(highlight?.year))) return false;
+  const now = new Date();
+  const currentKey = now.getFullYear() * 12 + now.getMonth();
+  return Number(highlight.year) * 12 + month >= currentKey - 1;
+}
 
 const GOLD = "#f5a623";
 const GOLD_DIM = "rgba(245,166,35,0.18)";
@@ -40,7 +48,8 @@ export function HighlightsSection({ hideHeader }: { hideHeader?: boolean } = {})
           .from("site_highlights")
           .select("*")
           .order("sort_order", { ascending: true });
-        if (data && data.length > 0) setHighlights(data as Highlight[]);
+        const recent = (data as Highlight[]).filter(isRecentHighlight).sort((a, b) => a.sort_order - b.sort_order);
+        if (recent.length > 0) setHighlights(recent);
       } catch { /* use static fallback */ }
     })();
   }, []);

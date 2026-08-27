@@ -527,6 +527,17 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
   const limit = Math.min(50, Math.max(1, requestedLimit));
   const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
   try {
+    const params = new URLSearchParams({ type: 'events', limit: String(limit), offset: String(offset) });
+    const response = await withTimeout(fetch(`/api/content?${params.toString()}`, { headers: { Accept: 'application/json' } }));
+    if (response.ok) {
+      const payload = await response.json();
+      const rows = Array.isArray(payload.events) ? payload.events : [];
+      return { items: rows.map(normalizeEvent), total: Number(payload.total) || rows.length };
+    }
+  } catch {
+    // Fall back to the direct public query for local/older deployments.
+  }
+  try {
     const result = await runSafeQuery(fallbackEvents, async () => {
       return await withTimeout(
         supabase
@@ -546,6 +557,17 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
 
 export async function getEventById(id: string) {
   try {
+    const params = new URLSearchParams({ type: 'events', id, limit: '1' });
+    const response = await withTimeout(fetch(`/api/content?${params.toString()}`, { headers: { Accept: 'application/json' } }));
+    if (response.ok) {
+      const payload = await response.json();
+      const row = Array.isArray(payload.events) ? payload.events[0] : null;
+      if (row) return normalizeEvent(row);
+    }
+  } catch {
+    // Fall back to the direct public query for local/older deployments.
+  }
+  try {
     const result = await runSafeQuery<any>(null, async () => {
       return await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').eq('id', id).maybeSingle();
     });
@@ -557,6 +579,17 @@ export async function getEventById(id: string) {
 }
 
 export async function getEventBySlug(slug: string) {
+  try {
+    const params = new URLSearchParams({ type: 'events', slug, limit: '1' });
+    const response = await withTimeout(fetch(`/api/content?${params.toString()}`, { headers: { Accept: 'application/json' } }));
+    if (response.ok) {
+      const payload = await response.json();
+      const row = Array.isArray(payload.events) ? payload.events[0] : null;
+      if (row) return normalizeEvent(row);
+    }
+  } catch {
+    // Fall back to the direct public query for local/older deployments.
+  }
   try {
     const result = await runSafeQuery(fallbackEvents, async () => {
       return await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').eq('event_name_slug', slug).single();

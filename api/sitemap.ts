@@ -544,6 +544,39 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
   }
 }
 
+async function readEventRows(opts: { limit?: number; offset?: number; id?: string; slug?: string } = {}): Promise<{ rows: any[]; total: number }> {
+  if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
+  const limit = Math.min(50, Math.max(1, Number(opts.limit) || 20));
+  const offset = Math.max(0, Number(opts.offset) || 0);
+  const safeValue = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 160);
+  const filters: Record<string, string> = {};
+  if (opts.id) filters.id = `eq.${safeValue(opts.id)}`;
+  if (opts.slug) filters.event_name_slug = `eq.${safeValue(opts.slug)}`;
+  const projections = [
+    'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at',
+    'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,featured,created_at',
+    'id,title,event_name_slug,title_ar,description,date,type,image_url,created_at',
+  ];
+  for (const select of projections) {
+    try {
+      const params = new URLSearchParams({ select, order: 'created_at.desc', limit: String(limit), offset: String(offset), ...filters });
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/events?${params.toString()}`, {
+        headers: { ...h(), Prefer: 'count=exact' },
+        signal: AbortSignal.timeout(9000),
+      });
+      if (!response.ok) continue;
+      const rows = await response.json();
+      const contentRange = response.headers.get('content-range') || '';
+      const parsedTotal = Number.parseInt(contentRange.split('/')[1] || '', 10);
+      return { rows: Array.isArray(rows) ? rows : [], total: Number.isFinite(parsedTotal) ? parsedTotal : (Array.isArray(rows) ? rows.length : 0) };
+    } catch {
+      // Try the next compatible projection.
+    }
+  }
+  console.error('[api/content] all events projections failed');
+  return { rows: [], total: 0 };
+}
+
 async function readContentRows(
   type: 'weapons' | 'posts',
   opts: { limit?: number; offset?: number; category?: string; q?: string; letter?: string; sort?: string; order?: string } = {}
@@ -723,9 +756,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(payload);
   }
 
-  if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts') {
+  if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts' && rawType !== 'events') {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.status(400).json({ error: 'Unsupported content type. Use weapons or posts.' });
+    return res.status(400).json({ error: 'Unsupported content type. Use weapons, posts, or events.' });
+  }
+
+  if (req.method === 'GET' && rawType === 'events') {
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
+    const rawId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
+    const rawSlug = Array.isArray(req.query.slug) ? req.query.slug[0] : req.query.slug;
+    const { rows, total } = await readEventRows({
+      limit: Number(rawLimit),
+      offset: Number(rawOffset),
+      id: typeof rawId === 'string' ? rawId : undefined,
+      slug: typeof rawSlug === 'string' ? rawSlug : undefined,
+    });
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
+    return res.status(200).json({ events: rows || [], total });
   }
 
   if (req.method === 'GET' && typeof rawType === 'string' && (rawType === 'weapons' || rawType === 'posts')) {

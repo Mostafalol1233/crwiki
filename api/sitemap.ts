@@ -405,8 +405,15 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
   return { status: 400, body: { error: "Unsupported community action" } };
 }
 
-const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, string[]> = {
-  "180": ["G3A3", "FAL", "HK417", "FN FNC"],
+const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: string; lookup: string }>> = {
+  // The live catalogue names the base FAL entry "FN FAL"; keep the supplied
+  // visible choice "FAL" while resolving its image from that verified record.
+  "180": [
+    { label: "G3A3", lookup: "G3A3" },
+    { label: "FAL", lookup: "FN FAL" },
+    { label: "HK417", lookup: "HK417" },
+    { label: "FN FNC", lookup: "FN FNC" },
+  ],
 };
 
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
@@ -414,7 +421,7 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
   for (const question of questions) {
     if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
     const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
-    if (displayNames) displayNames.forEach((name) => names.add(name));
+    if (displayNames) displayNames.forEach(({ lookup }) => names.add(lookup));
     for (const option of question.options) {
       const name = typeof option === "string"
         ? option
@@ -440,10 +447,12 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
       return {
         ...question,
         options: question.options.map((option: any, index: number) => {
-          const displayName = displayNames?.[index];
-          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(displayName || option) || null };
+          const displayConfig = displayNames?.[index];
+          const displayName = displayConfig?.label;
+          const lookupName = displayConfig?.lookup || displayName;
+          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(lookupName || option) || null };
           if (!option || typeof option !== "object") return option;
-          const name = displayName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
+          const name = lookupName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
           const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
           return { ...option, label_en: displayName || option.label_en, display_label_en: displayName || option.display_label_en, image_url: imageByName.get(name) || (displayNames ? null : existingImage) };
         }),

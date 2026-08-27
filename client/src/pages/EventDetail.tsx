@@ -111,6 +111,24 @@ function fmtDate(d: string, language: "en" | "ar" = "en") {
   } catch { return d; }
 }
 
+function decodeUrlValue(value: unknown): string {
+  if (typeof value !== "string") return "";
+  let decoded = value.trim();
+  for (let i = 0; i < 2 && /%[0-9a-f]{2}/i.test(decoded); i += 1) {
+    try { decoded = decodeURIComponent(decoded); } catch { break; }
+  }
+  return decoded.trim();
+}
+
+function readableEventLocation(value: unknown, language: "en" | "ar"): { label: string; href: string | null } {
+  const decoded = decodeUrlValue(value);
+  if (!decoded) return { label: "", href: null };
+  if (/^https?:\/\//i.test(decoded)) {
+    return { label: language === "ar" ? "الموقع الرسمي للفعالية" : "Official event page", href: decoded };
+  }
+  return { label: decoded.replace(/\s+/g, " ").trim(), href: null };
+}
+
 // ─── Countdown ────────────────────────────────────────────────────────────────
 function Countdown({ dateStr, language = "en" }: { dateStr: string; language?: "en" | "ar" }) {
   const [p, setP] = useState({ d: 0, h: 0, m: 0, s: 0 });
@@ -413,6 +431,7 @@ export default function EventDetail() {
   }
 
   const eventImage = event.image || event.image_url || event.imageUrl || "";
+  const eventLocation = readableEventLocation(event.location, language);
   const seoImage = event.ogImage || eventImage;
   const canonicalOrigin = "https://crossfire.wiki";
   const eventSlug = event.event_name_slug || slug || legacyId;
@@ -570,7 +589,7 @@ export default function EventDetail() {
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, ${GOLD}, rgba(245,166,35,0.3) 50%, transparent)`, zIndex: 3 }} />
 
           {/* Breadcrumb — top left */}
-          <div style={{ position: "absolute", top: 20, left: 24, display: "flex", alignItems: "center", gap: 6, zIndex: 4 }}>
+          <div className="event-hero-breadcrumbs" style={{ position: "absolute", top: 20, left: 24, display: "flex", alignItems: "center", gap: 6, zIndex: 4 }}>
             <Link href={baseRelativePath("/")}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الرئيسية" : "Home"}</span></Link>
             <ChevronRight size={11} color="rgba(255,255,255,0.25)" />
             <Link href={baseRelativePath("/events")}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontWeight: 600 }}>{language === "ar" ? "الفعاليات" : "Events"}</span></Link>
@@ -580,7 +599,7 @@ export default function EventDetail() {
 
           {/* Back button — top left below breadcrumb */}
           <Link href={baseRelativePath("/events")}>
-            <div style={{
+            <div className="event-hero-back" style={{
               position: "absolute", top: 50, left: 24, zIndex: 4,
               display: "flex", alignItems: "center", gap: 5,
               padding: "5px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
@@ -593,10 +612,10 @@ export default function EventDetail() {
           </Link>
 
           {/* Hero bottom content */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 32px 28px", zIndex: 4 }}>
+          <div className="event-hero-content" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 32px 28px", zIndex: 4 }}>
             <div style={{ maxWidth: 1200, margin: "0 auto" }}>
               {/* Badges row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+              <div className="event-hero-badges" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                 {event.type && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(245,166,35,0.2)", border: "1px solid rgba(245,166,35,0.4)", color: GOLD, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", borderRadius: 2, backdropFilter: "blur(8px)" }}>
                     <Tag size={9} /> {event.type}
@@ -607,7 +626,7 @@ export default function EventDetail() {
                   {statusLabel(status)}
                 </span>
                 {hasArabicVersion && (
-                  <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
+                  <div className="event-hero-language" style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
                     {["en", "ar"].map((l) => (
                       <button key={l} onClick={() => setContentLanguage(l as "en" | "ar")} style={{
                         padding: "3px 8px", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
@@ -641,10 +660,10 @@ export default function EventDetail() {
                     {fmtDate(event.date, language)}
                   </span>
                 )}
-                {event.location && (
-                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>
+                {eventLocation.label && (
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>
                     <MapPin size={12} color={GOLD} />
-                    {event.location}
+                    {eventLocation.href ? <a href={eventLocation.href} target="_blank" rel="noreferrer" style={{ color: "inherit", overflowWrap: "anywhere" }}>{eventLocation.label}</a> : eventLocation.label}
                   </span>
                 )}
               </div>
@@ -821,7 +840,7 @@ export default function EventDetail() {
                     <input type="text" placeholder={language === "ar" ? "اسمك" : "Your name"} value={newCommentAuthor} onChange={(e) => setNewCommentAuthor(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
                     <input type="email" placeholder={language === "ar" ? "البريد الإلكتروني (اختياري)" : "Email (optional)"} value={newCommentEmail} onChange={(e) => setNewCommentEmail(e.target.value)} style={{ padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3, width: "100%" }} />
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div className="comment-entry-row" style={{ display: "flex", gap: 8 }}>
                     <input type="text" placeholder={language === "ar" ? "اكتب تعليقك…" : "Write your comment…"} value={newComment} onChange={(e) => setNewComment(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && newComment.trim() && newCommentAuthor.trim()) addCommentMutation.mutate({ author: newCommentAuthor, email: newCommentEmail, content: newComment }); }}
                       style={{ flex: 1, padding: "9px 12px", fontSize: 13, background: BG, border: `1px solid ${BORDER}`, color: "var(--foreground)", outline: "none", borderRadius: 3 }}
@@ -876,8 +895,10 @@ export default function EventDetail() {
                     </InfoRow>
                   )}
 
-                  {event.location && (
-                    <InfoRow label={language === "ar" ? "المكان" : "Location"} icon={MapPin} value={event.location} />
+                  {eventLocation.label && (
+                    <InfoRow label={eventLocation.href ? (language === "ar" ? "الرابط" : "Link") : (language === "ar" ? "المكان" : "Location")} icon={MapPin}>
+                      {eventLocation.href ? <a href={eventLocation.href} target="_blank" rel="noreferrer" style={{ color: GOLD, overflowWrap: "anywhere" }}>{eventLocation.label}</a> : eventLocation.label}
+                    </InfoRow>
                   )}
 
                   {/* Countdown for upcoming events */}
@@ -945,11 +966,21 @@ export default function EventDetail() {
           <style>{`
             @media(max-width:900px){.event-sidebar{display:none!important;}}
             @media(max-width:640px){
-              .event-hero{height:360px!important;}
-              .event-hero-image{width:92vw!important;max-width:92vw!important;max-height:44%!important;}
+              .event-hero{height:auto!important;min-height:0!important;padding-top:74px;}
+              .event-hero-image{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;inset:auto!important;transform:none!important;display:block!important;width:100%!important;height:230px!important;max-width:100%!important;max-height:none!important;margin:0 auto!important;object-fit:contain!important;border-radius:0!important;box-shadow:none!important;}
+              .event-hero-content{position:relative!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;padding:18px 16px 26px!important;}
+              .event-hero-breadcrumbs{top:14px!important;left:16px!important;right:16px!important;gap:5px!important;min-width:0;overflow:hidden;}
+              .event-hero-back{top:44px!important;left:16px!important;}
+              .event-hero-badges{align-items:flex-start!important;}
+              .event-hero-language{margin-left:0!important;}
+              .event-hero-content h1{font-size:clamp(1.45rem,8vw,2rem)!important;line-height:1.22!important;overflow-wrap:anywhere!important;word-break:break-word!important;text-transform:none!important;}
+              .event-hero-content > div > div:last-child{align-items:flex-start!important;gap:8px!important;}
               .event-detail-grid{display:block!important;}
               .related-grid{grid-template-columns:1fr!important;}
               .comment-grid{grid-template-columns:1fr!important;}
+              .comment-entry-row{flex-direction:column!important;align-items:stretch!important;}
+              .comment-entry-row input{width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+              .comment-entry-row button{width:100%!important;justify-content:center!important;box-sizing:border-box!important;}
             }
           `}</style>
         </div>
@@ -960,6 +991,7 @@ export default function EventDetail() {
         .event-article-body {
           min-width: 0;
           max-width: 100%;
+          overflow-x: hidden;
           overflow-wrap: anywhere;
           word-break: break-word;
           font-size: 15px;
@@ -999,7 +1031,8 @@ export default function EventDetail() {
           table-layout: auto;
         }
         .event-article-body pre,
-        .event-article-body table { overflow-x: auto; }
+        .event-article-body table { overflow-x: auto; max-width: 100%; }
+        .event-article-body pre { white-space: pre-wrap; overflow-wrap: anywhere; }
         .event-article-body th {
           padding: 8px 12px; background: rgba(245,166,35,0.08);
           border: 1px solid rgba(255,255,255,0.07); font-weight: 700;

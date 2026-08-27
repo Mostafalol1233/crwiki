@@ -6,6 +6,32 @@ interface BreadcrumbItem {
   url: string;
 }
 
+type SiteSeo = {
+  publicBaseUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  seoOgImage?: string;
+  robots?: string;
+};
+
+let siteSeoCache: SiteSeo | null = null;
+let siteSeoPromise: Promise<SiteSeo | null> | null = null;
+
+function loadSiteSeo(): Promise<SiteSeo | null> {
+  if (siteSeoCache) return Promise.resolve(siteSeoCache);
+  if (siteSeoPromise) return siteSeoPromise;
+  siteSeoPromise = import("@/lib/supabaseApi")
+    .then(({ getSiteSettings }) => getSiteSettings() as Promise<SiteSeo>)
+    .then((data) => {
+      siteSeoCache = data || null;
+      return siteSeoCache;
+    })
+    .catch(() => null)
+    .finally(() => { siteSeoPromise = null; });
+  return siteSeoPromise;
+}
+
 interface SEOHeadProps {
   title?: string;
   description?: string;
@@ -76,14 +102,7 @@ export function SEOHead({
 }: SEOHeadProps) {
   const [location] = useLocation();
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
-  const [siteSeo, setSiteSeo] = useState<{
-    publicBaseUrl?: string;
-    seoTitle?: string;
-    seoDescription?: string;
-    seoKeywords?: string[];
-    seoOgImage?: string;
-    robots?: string;
-  } | null>(null);
+  const [siteSeo, setSiteSeo] = useState<SiteSeo | null>(() => siteSeoCache);
 
   const currentOrigin = (siteSeo?.publicBaseUrl || envBase || "https://crossfire.wiki").replace(/\/$/, "");
   const canonicalOrigin = "https://crossfire.wiki";
@@ -136,8 +155,7 @@ export function SEOHead({
     let cancelled = false;
     (async () => {
       try {
-        const { getSiteSettings } = await import("@/lib/supabaseApi");
-        const data = await getSiteSettings();
+        const data = await loadSiteSeo();
         if (!cancelled && data) setSiteSeo(data);
       } catch {
         // gracefully ignore when Supabase is unavailable

@@ -57,6 +57,8 @@ assert.match(scraperSource, /buildFandomDraft/);
 assert.match(scraperSource, /custom_pages/);
 assert.match(vercelSource, /"crons"/);
 assert.match(vercelSource, /\/api\/scrape\/automation/);
-assert.doesNotMatch(sitemapSource, /X-Robots-Tag.*noindex/);
+assert.match(sitemapSource, /X-Robots-Tag/);
+assert.match(sitemapSource, /isProductionHost/);
+assert.match(sitemapSource, /index, follow/);
 
 console.log("audit-smoke: passed");

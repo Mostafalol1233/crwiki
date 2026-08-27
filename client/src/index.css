@@ -418,6 +418,12 @@
     font-family: 'IBM Plex Sans Arabic', sans-serif;
   }
 
+  /* Defer paint work for below-the-fold sections while preserving layout space. */
+  .cf-below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 320px;
+  }
+
   /* Cinematic fire glow utilities for homepage background */
   .fire-glow-strong {
     animation: fire-glow-float 18s ease-in-out infinite alternate;

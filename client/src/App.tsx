@@ -8,7 +8,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider, useLanguage } from "@/components/LanguageProvider";
-import DataSeeder from "@/components/DataSeeder";
 
 // ── Chunk-load error boundary ─────────────────────────────────────────────────
 // After a new deployment, hashed JS chunk filenames change. Old cached HTML pages
@@ -73,8 +72,8 @@ import { Footer } from "@/components/Footer";
 import Home from "@/pages/Home";
 import Maintenance from "@/pages/Maintenance";
 import { SEOHead } from "@/components/SEOHead";
-import AnnouncementModal from "@/components/AnnouncementModal";
-import TargetCursor from "@/components/TargetCursor";
+const AnnouncementModal = lazy(() => import("@/components/AnnouncementModal"));
+const TargetCursor = lazy(() => import("@/components/TargetCursor"));
 
 // ══════════════════════════════════════════════
 // MAINTENANCE MODE — غير true لـ false لفتح الموقع
@@ -258,6 +257,59 @@ function Router() {
   );
 }
 
+function useIdleMount(timeout = 1500) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const reveal = () => { if (!cancelled) setMounted(true); };
+    if (browserWindow.requestIdleCallback) {
+      const id = browserWindow.requestIdleCallback(reveal, { timeout });
+      return () => {
+        cancelled = true;
+        browserWindow.cancelIdleCallback?.(id);
+      };
+    }
+    const id = window.setTimeout(reveal, Math.min(timeout, 800));
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [timeout]);
+
+  return mounted;
+}
+
+function DeferredAnnouncement({ location }: { location: string }) {
+  const mounted = useIdleMount(900);
+  if (!mounted) return null;
+  return (
+    <Suspense fallback={null}>
+      <AnnouncementModal location={location} />
+    </Suspense>
+  );
+}
+
+function DeferredTargetCursor() {
+  const mounted = useIdleMount(1800);
+  const [finePointer, setFinePointer] = useState(false);
+
+  useEffect(() => {
+    setFinePointer(typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches);
+  }, []);
+
+  if (!mounted || !finePointer) return null;
+  return (
+    <Suspense fallback={null}>
+      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+    </Suspense>
+  );
+}
+
 function Layout() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith("/admin");
@@ -366,7 +418,7 @@ function Layout() {
       >
         <Header />
         <main className="flex-1">
-          <AnnouncementModal location={location} />
+          <DeferredAnnouncement location={location} />
           <Router />
         </main>
         <Footer />
@@ -516,7 +568,7 @@ function LocalizedApp() {
         }}
       />
       <Layout />
-      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+      <DeferredTargetCursor />
       <Toaster />
     </WouterRouter>
   );

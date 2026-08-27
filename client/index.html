@@ -48,13 +48,22 @@
     <meta name="twitter:image" content="https://crossfire.wiki/feature-crossfire.jpg" data-seo="true" />
     <meta name="twitter:image:alt" content="CrossFire Wiki — CrossFire weapons, maps, characters, and events reference" data-seo="true" />
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJSL5CQGP3"></script>
+    <!-- Google Analytics: load after the first paint so it cannot compete with critical assets. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-LJSL5CQGP3');
+      (function(){
+        var loadAnalytics = function(){
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=G-LJSL5CQGP3';
+          document.head.appendChild(script);
+        };
+        if (window.requestIdleCallback) window.requestIdleCallback(loadAnalytics, { timeout: 3000 });
+        else window.setTimeout(loadAnalytics, 2000);
+      })();
     </script>
 
     <!-- Additional SEO -->
@@ -88,7 +97,7 @@
     <link rel="dns-prefetch" href="//res.cloudinary.com" />
 
     <!-- Optimized font loading -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Crimson+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@300;400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Crimson+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
     <!-- Company-level Structured Data -->
     <script type="application/ld+json">

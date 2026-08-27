@@ -11,6 +11,24 @@ const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Conte
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
+const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en: string }> = {
+  "20": {
+    question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟",
+    question_en: "Listen closely to this Round Intro. Which map or location do you hear it on?",
+  },
+  "40": {
+    question_ar: "اسمع التراك ده.. الحماس والمزيكا دي بتشتغل في أنهي وضع وأنهي لحظة بالظبط؟",
+    question_en: "Listen to this track. Which mode uses this music, and exactly when does it play?",
+  },
+};
+
+function applyCompetitionQuestionWording(questions: any[]): any[] {
+  return questions.map((question) => {
+    const override = COMPETITION_QUESTION_WORDING_OVERRIDES[String(question?.sort_order || "")];
+    return override ? { ...question, ...override } : question;
+  });
+}
+
 function requestBearer(req: VercelRequest): string {
   const value = req.headers.authorization;
   return typeof value === "string" ? value.replace(/^Bearer\s+/i, "").trim() : "";
@@ -375,7 +393,7 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
           if (typeof option === "string") return { value: option, label_en: option, image_url: imageByName.get(option) || null };
           if (!option || typeof option !== "object") return option;
           const name = typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "";
-          return { ...option, image_url: typeof option.image_url === "string" && option.image_url ? option.image_url : imageByName.get(name) || null };
+          return { ...option, image_url: imageByName.get(name) || (typeof option.image_url === "string" && option.image_url ? option.image_url : null) };
         }),
       };
     });
@@ -529,6 +547,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
       request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);
     const enrichedQuestions = await enrichWeaponOptionImages(questions, readHeaders);
+    const rewrittenQuestions = applyCompetitionQuestionWording(enrichedQuestions);
     const config = configs[0] || null;
     let leaderboard: any[] = [];
     if (config?.leaderboard_published && SERVICE_KEY && !previewAllowed) {
@@ -538,7 +557,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
       leaderboard = Array.isArray(leaderboardRows) ? leaderboardRows : [];
     }
     const previewOrActive = previewAllowed || config?.active === true;
-    return { config, prizes: previewOrActive ? prizes : [], questions: previewOrActive ? enrichedQuestions : [], leaderboard };
+    return { config, prizes: previewOrActive ? prizes : [], questions: previewOrActive ? rewrittenQuestions : [], leaderboard };
   } catch {
     return { config: null, prizes: [], questions: [], leaderboard: [] };
   }

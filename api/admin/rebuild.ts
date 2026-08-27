@@ -556,13 +556,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           safeRow = { ticket_id: ticketId, message, is_internal: safeRow.is_internal === true, sender_id: admin.id || admin.username };
         }
         if (table === "competition_invite_codes") {
-          const code = typeof safeRow.code === "string" ? safeRow.code.trim() : "";
-          if (code.length < 4) return addCorsHeaders(res).status(400).json({ error: "Invitation code must be at least 4 characters" });
+          const crypto = await import("node:crypto");
+          const requestedCode = typeof safeRow.code === "string" ? safeRow.code.trim() : "";
+          const code = requestedCode || `CFW-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+          if (code.length < 4 || code.length > 80) return addCorsHeaders(res).status(400).json({ error: "Invitation code must be between 4 and 80 characters" });
           issuedCode = code;
           delete safeRow.code;
           delete safeRow.code_hash;
-          safeRow.code_hash = (await import("node:crypto")).createHash("sha256").update(code).digest("hex");
+          safeRow.code_hash = crypto.createHash("sha256").update(code).digest("hex");
           safeRow.uses_count = 0;
+          safeRow.created_by = admin.id || admin.username;
         }
         const writeHeaders = operation === "upsert"
           ? { ...headers, Prefer: "resolution=merge-duplicates,return=representation,count=exact" }

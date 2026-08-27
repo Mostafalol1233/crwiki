@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
 import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
 import { verifyAdminRequest } from "../server/adminAuth.js";
+import { signCompetitionAttemptToken, verifyCompetitionAttemptToken } from "../server/competitionAccess.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
@@ -423,17 +424,48 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
   if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
   const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
   const previewAllowed = (process.env.VERCEL_ENV !== "production" && admin?.role === "super_admin") || directCompetitionPreviewRequested(req);
-  const userId = await authenticatedUserId(req);
-  if (!userId && !previewAllowed) return { status: 401, body: { error: "Sign-in is required" } };
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const action = typeof body.action === "string" ? body.action : "";
+  const requestedAttemptId = typeof body.attemptId === "string" ? body.attemptId.trim() : "";
+  const requestedInviteCode = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
+  const requestedAttemptToken = typeof body.attemptToken === "string" ? body.attemptToken.trim() : "";
+  const userId = await authenticatedUserId(req);
+  const anonymousCompetitionAction = action === "request_access"
+    || (action === "start" && (requestedInviteCode.length >= 4 || body.accessMode === "new"))
+    || ((action === "submit" || action === "submit_proof") && requestedAttemptId.length >= 20 && verifyCompetitionAttemptToken(requestedAttemptId, requestedAttemptToken));
+  if (!userId && !previewAllowed && !anonymousCompetitionAction) return { status: 401, body: { error: "Sign-in is required" } };
   const headers = serviceHeaders();
   const base = `${SUPABASE_URL}/rest/v1`;
+
+  if (action === "request_access") {
+    const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+    if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
+    if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
+    const requestResponse = await fetch(`${base}/competition_attempts`, {
+      method: "POST", headers,
+      body: JSON.stringify({ user_id: userId || null, phone, consent_contact: true, status: "in_progress", answers: { access_request: true } }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!requestResponse.ok) return { status: 502, body: { error: "Could not save access request" } };
+    const requestRows = await requestResponse.json().catch(() => []);
+    return { status: 200, body: { status: "access_requested", requestId: Array.isArray(requestRows) ? requestRows[0]?.id : null, message: "Your phone number was received. Your participation code will be sent shortly." } };
+  }
 
   if (action === "start") {
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     const inviteCode = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
+    const accessMode = body.accessMode === "new" ? "new" : "returning";
     if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
+    if (accessMode === "new") {
+      if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
+      const requestResponse = await fetch(`${base}/competition_attempts`, {
+        method: "POST", headers,
+        body: JSON.stringify({ user_id: userId || null, phone, consent_contact: true, status: "in_progress", answers: { access_request: true } }),
+        signal: AbortSignal.timeout(9000),
+      });
+      if (!requestResponse.ok) return { status: 502, body: { error: "Could not save access request" } };
+      return { status: 200, body: { status: "access_requested", message: "Your phone number was received. Your participation code will be sent shortly." } };
+    }
     if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
 
     const configParams = new URLSearchParams({ id: "eq.default", select: "id,invite_required,active,preview_only,preview_owner_username", limit: "1" });
@@ -476,26 +508,31 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     }
     const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
     const rawQuestions = questionsResponse.ok ? await questionsResponse.json() : [];
-    const questions = await enrichWeaponOptionImages(Array.isArray(rawQuestions) ? rawQuestions : [], headers);
-    return { status: 200, body: { attempt: { id: attempt?.id }, questions } };
+    const questions = applyCompetitionQuestionWording(await enrichWeaponOptionImages(Array.isArray(rawQuestions) ? rawQuestions : [], headers));
+    const attemptToken = attempt?.id ? signCompetitionAttemptToken(String(attempt.id)) : "";
+    return { status: 200, body: { attempt: { id: attempt?.id }, ...(attemptToken ? { attemptToken } : {}), questions } };
   }
 
   if (action === "submit_proof") {
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const attemptToken = typeof body.attemptToken === "string" ? body.attemptToken : "";
     const proofType = typeof body.proofType === "string" ? body.proofType : "other";
     const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
     const fileName = typeof body.fileName === "string" ? body.fileName.trim().slice(0, 180) : null;
     if (!attemptId || !/^https:\/\//i.test(fileUrl) || fileUrl.length > 2000) return { status: 400, body: { error: "A valid HTTPS proof link is required" } };
-    if (!["subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
+    if (!["youtube_subscription", "discord_membership", "game_subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
+    const storedProofType = ["youtube_subscription", "discord_membership", "game_subscription"].includes(proofType) ? "subscription" : proofType;
+    const proofNote = storedProofType === "subscription" && proofType !== "subscription" ? `Requested proof type: ${proofType}` : null;
     const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
-    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && !userId && !verifyCompetitionAttemptToken(attemptId, attemptToken)) return { status: 401, body: { error: "Invalid competition session" } };
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
     const attempt = Array.isArray(attempts) ? attempts[0] : null;
     if (!attempt || !["submitted", "reviewed"].includes(attempt.status)) return { status: 400, body: { error: "Submit the quiz before sending proof" } };
     const proofResponse = await fetch(`${base}/competition_proofs`, {
       method: "POST", headers,
-      body: JSON.stringify({ attempt_id: attemptId, proof_type: proofType, file_url: fileUrl, file_name: fileName, mime_type: "text/uri-list", status: "pending" }),
+      body: JSON.stringify({ attempt_id: attemptId, proof_type: storedProofType, file_url: fileUrl, file_name: fileName, mime_type: "text/uri-list", status: "pending", reviewer_note: proofNote }),
       signal: AbortSignal.timeout(9000),
     });
     if (!proofResponse.ok) return { status: 502, body: { error: "Could not submit proof" } };
@@ -505,10 +542,12 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
 
   if (action === "submit") {
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const attemptToken = typeof body.attemptToken === "string" ? body.attemptToken : "";
     const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
     if (!attemptId) return { status: 400, body: { error: "Attempt id is required" } };
     const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
-    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && !userId && !verifyCompetitionAttemptToken(attemptId, attemptToken)) return { status: 401, body: { error: "Invalid competition session" } };
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     if (!attemptResponse.ok) return { status: 502, body: { error: "Could not read competition attempt" } };
     const attempts = await attemptResponse.json();
@@ -559,7 +598,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
   };
   try {
     const [configs, prizes, questions] = await Promise.all([
-      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', active: 'eq.true', limit: '1' }),
+      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', or: '(active.eq.true,leaderboard_published.eq.true)', limit: '1' }),
       request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
       request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);

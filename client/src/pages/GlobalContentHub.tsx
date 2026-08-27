@@ -21,7 +21,7 @@ function SafeImage({ src, alt, className = "" }: { src: string; alt: string; cla
       </div>
     );
   }
-  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className={`h-full w-full object-contain ${className}`} />;
+  return <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} className={`h-full w-full object-contain ${className}`} />;
 }
 
 function AccentLine({ accent }: { accent: string }) {
@@ -164,7 +164,7 @@ export default function GlobalContentHub({ params }: GlobalContentHubProps) {
                 <WouterLink href="/news" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm font-bold text-white transition hover:border-amber-400/50 hover:text-amber-300"><CalendarDays className="h-4 w-4" />{isArabic ? "آخر الأخبار" : "Latest updates"}</WouterLink>
               </div>
               <div className="mt-9 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-5">
-                {[{ icon: BookOpen, value: "06", label: isArabic ? "مسارات معرفة" : "knowledge paths" }, { icon: Target, value: "100%", label: isArabic ? "محتوى عملي" : "practical focus" }, { icon: Zap, value: "Live", label: isArabic ? "قابل للتحديث" : "built to evolve" }].map(({ icon: Icon, value, label }) => <div key={label}><Icon className="h-4 w-4 text-amber-400" /><div className="mt-2 text-lg font-black text-white">{value}</div><div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</div></div>)}
+                {[{ icon: BookOpen, value: String(globalContentPages.length).padStart(2, "0"), label: isArabic ? "أقسام معرفة" : "knowledge sections" }, { icon: Target, value: String(globalContentPages.reduce((total, item) => total + item.sections.length, 0)), label: isArabic ? "فصول تحريرية" : "editorial chapters" }, { icon: Zap, value: String(globalContentPages.reduce((total, item) => total + item.relatedLinks.length, 0)), label: isArabic ? "روابط داخلية" : "internal links" }].map(({ icon: Icon, value, label }) => <div key={label}><Icon className="h-4 w-4 text-amber-400" /><div className="mt-2 text-lg font-black text-white">{value}</div><div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</div></div>)}
               </div>
             </div>
             <div className="order-1 min-h-[260px] bg-[#0b1119] lg:order-2 lg:min-h-0">

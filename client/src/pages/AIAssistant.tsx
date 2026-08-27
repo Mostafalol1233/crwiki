@@ -40,6 +40,18 @@ function BLSoldierIcon({ size = 34 }: { size?: number }) {
 }
 
 /* ── Markdown renderer ────────────────────────────────────────────────────── */
+function safeMarkdownUrl(value: unknown) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  try {
+    const url = new URL(raw);
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
 const mdComponents: any = {
   p: ({ children }: any) => <p className="mb-2 last:mb-0 leading-relaxed text-[13px]">{children}</p>,
   strong: ({ children }: any) => <strong style={{ color: "#f5d97a", fontWeight: 700 }}>{children}</strong>,
@@ -75,11 +87,14 @@ const mdComponents: any = {
   td: ({ children }: any) => (
     <td className="px-3 py-2 text-xs" style={{ borderRight: "1px solid rgba(255,255,255,0.05)", opacity: 0.85 }}>{children}</td>
   ),
-  img: ({ src, alt }: any) =>
-    src ? <img src={src} alt={alt || ""} className="rounded-lg my-2 max-w-full" style={{ maxHeight: 260, border: "1px solid rgba(255,255,255,0.08)" }} /> : null,
-  a: ({ href, children }: any) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#f5a623", textDecoration: "underline" }}>{children}</a>
-  ),
+  img: ({ src, alt }: any) => {
+    const safeSrc = safeMarkdownUrl(src);
+    return safeSrc ? <img src={safeSrc} alt={alt || ""} loading="lazy" decoding="async" className="rounded-lg my-2 max-w-full" style={{ maxHeight: 260, border: "1px solid rgba(255,255,255,0.08)" }} /> : null;
+  },
+  a: ({ href, children }: any) => {
+    const safeHref = safeMarkdownUrl(href);
+    return safeHref ? <a href={safeHref} target="_blank" rel="noopener noreferrer" style={{ color: "#f5a623", textDecoration: "underline" }}>{children}</a> : <span>{children}</span>;
+  },
   hr: () => <hr className="my-3" style={{ borderColor: "rgba(255,255,255,0.07)" }} />,
 };
 
@@ -184,13 +199,13 @@ export default function AIAssistant() {
     } catch (err: any) {
       if (err.name === "AbortError") return;
       setStreamingContent(null);
-      setError(err.message || "Something went wrong");
+      setError(isAr ? "تعذر إكمال الرد من خدمة الذكاء الاصطناعي. جرّب مرة أخرى." : "The AI service could not complete the reply. Please try again.");
     } finally {
       setLoading(false);
       setStreamingContent(null);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [messages, loading]);
+  }, [isAr, messages, loading]);
 
   const reset = () => {
     abortRef.current?.abort();
@@ -356,10 +371,11 @@ export default function AIAssistant() {
               )}
 
               {error && (
-                <div style={{ textAlign: "center", padding: "8px 0 16px" }} className="ai-msg-enter">
-                  <span style={{ fontSize: 12, padding: "6px 16px", borderRadius: 20, background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)" }}>
-                    Error: {error}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 8, padding: "8px 0 16px" }} className="ai-msg-enter">
+                  <span style={{ fontSize: 12, padding: "6px 12px", borderRadius: 20, background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)" }}>
+                    {isAr ? "تعذر الرد" : "Reply unavailable"}: {error}
                   </span>
+                  {(() => { const lastPrompt = [...messages].reverse().find((message) => message.role === "user"); return lastPrompt ? <button type="button" onClick={() => void send(lastPrompt.content)} style={{ fontSize: 11, padding: "6px 12px", borderRadius: 20, background: "rgba(245,166,35,0.1)", color: "#f5a623", border: "1px solid rgba(245,166,35,0.25)", cursor: "pointer" }}>{isAr ? "إعادة المحاولة" : "Try again"}</button> : null; })()}
                 </div>
               )}
 

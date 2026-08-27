@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { verifyAdminRequest } from "../../server/adminAuth.js";
+import { verifyCompetitionAttemptToken } from "../../server/competitionAccess.js";
 
 export const config = {
   api: { bodyParser: false },
@@ -108,7 +109,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     && (Array.isArray(req.query.competition_test) ? req.query.competition_test[0] : req.query.competition_test) === "1";
   const ownerPreview = Boolean((isAdmin?.role === "super_admin" && process.env.VERCEL_ENV !== "production") || directPreviewTest);
   const participantUserId = isAdmin && !ownerPreview ? null : await authenticatedUserId(req);
-  if (!isAdmin && !participantUserId && !ownerPreview) return res.status(401).json({ error: "Sign in is required" });
   if (!configureCloudinary()) {
     return res.status(500).json({ error: "Cloudinary is not configured" });
   }
@@ -122,17 +122,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const body = ((req as any).body || {}) as Record<string, unknown>;
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const attemptToken = typeof body.attemptToken === "string" ? body.attemptToken : "";
     const proofType = typeof body.proofType === "string" ? body.proofType : "other";
+    const signedAttempt = attemptId && verifyCompetitionAttemptToken(attemptId, attemptToken);
+    if (!isAdmin && !participantUserId && !ownerPreview && !signedAttempt) return res.status(401).json({ error: "Sign in or a valid competition session is required" });
     if (!isAdmin || ownerPreview) {
-      if (!attemptId || !["subscription", "purchase_receipt", "other"].includes(proofType)) return res.status(400).json({ error: "A valid attempt and proof type are required" });
+      if (!attemptId || !["youtube_subscription", "discord_membership", "game_subscription", "purchase_receipt", "other"].includes(proofType)) return res.status(400).json({ error: "A valid attempt and proof type are required" });
+      const storedProofType = ["youtube_subscription", "discord_membership", "game_subscription"].includes(proofType) ? "subscription" : proofType;
+      const proofNote = storedProofType === "subscription" && proofType !== "subscription" ? `Requested proof type: ${proofType}` : null;
       if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return res.status(500).json({ error: "Proof storage is not configured" });
       const attemptQuery = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, status: "in.(submitted,reviewed)", limit: "1" });
-      if (!ownerPreview) attemptQuery.set("user_id", `eq.${participantUserId}`);
+      if (!ownerPreview && participantUserId) attemptQuery.set("user_id", `eq.${participantUserId}`);
       const attemptResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_attempts?${attemptQuery.toString()}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(9000) });
       const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
       if (!Array.isArray(attempts) || !attempts[0]) return res.status(400).json({ error: "Submit the quiz before uploading proof" });
       const result = await uploadBuffer(file.buffer, file.originalname, file.mimetype, "crossfire-wiki/competition-proofs");
-      const proofResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_proofs`, { method: "POST", headers: serviceHeaders(), body: JSON.stringify({ attempt_id: attemptId, proof_type: proofType, file_url: result.secure_url, file_name: file.originalname.slice(0, 180), file_size: file.buffer.length, mime_type: file.mimetype, status: "pending" }), signal: AbortSignal.timeout(9000) });
+      const proofResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_proofs`, { method: "POST", headers: serviceHeaders(), body: JSON.stringify({ attempt_id: attemptId, proof_type: storedProofType, file_url: result.secure_url, file_name: file.originalname.slice(0, 180), file_size: file.buffer.length, mime_type: file.mimetype, status: "pending", reviewer_note: proofNote }), signal: AbortSignal.timeout(9000) });
       if (!proofResponse.ok) return res.status(502).json({ error: "Proof was uploaded but could not be registered" });
       const rows = await proofResponse.json();
       return res.status(200).json({ proof_id: Array.isArray(rows) ? rows[0]?.id : null, secure_url: result.secure_url, status: "pending" });

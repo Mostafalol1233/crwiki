@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
 import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
 import { verifyAdminRequest } from "../server/adminAuth.js";
+import { signCompetitionAttemptToken, verifyCompetitionAttemptToken } from "../server/competitionAccess.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
@@ -11,38 +12,63 @@ const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Conte
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
-const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en: string }> = {
-  "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟", question_en: "Listen closely to this clip. Which game mode does this music belong to?" },
-  "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟", question_en: "Listen closely to this Round Intro. Which map or location do you hear it on?" },
-  "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟", question_en: "Listen to this opening cue. Which map uses this music when the round begins?" },
-  "40": { question_ar: "اسمع التراك ده.. الحماس والمزيكا دي بتشتغل في أنهي وضع وأنهي لحظة بالظبط؟", question_en: "Listen to this track. Which mode uses this music, and exactly when does it play?" },
-  "50": { question_ar: "اسمع التأثير الصوتي ده كويس.. التراك ده بتسمعه في انهي مود؟", question_en: "Listen carefully to this sound effect. Which mode features this track?" },
-  "60": { question_ar: "اسمع المقطع ده.. الصوت ده بيشتغل في انهي لحظة بالظبط؟", question_en: "Listen to this clip. At exactly which moment does this sound play?" },
-  "70": { question_ar: "المقطع الصوتي ده بيعبر عن إيه بالظبط؟", question_en: "What exactly does this audio clip represent?" },
-  "80": { question_ar: "لحن الـ Boss ده بتسمعه وأنت بتواجه الزعيم الأخير في أنهي ماب زومبي؟", question_en: "Which Zombie map plays this Boss theme when you face the final boss?" },
-  "90": { question_ar: "اسمع المزيكا دي.. التراك ده شغال في أنهي ماب ومرحلة في الزومبي؟", question_en: "Listen to this music. Which Zombie map and stage use this track?" },
-  "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟", question_en: "Listen carefully to this Boss theme. Which map plays this music?" },
-  "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟", question_en: "Which Zombie setting and map use this frightening music?" },
-  "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟", question_en: "When you hear this piano melody in Zombie Mode, which map are you in?" },
-  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟", question_en: "What is the key difference between Infection and Elimination in Shadow Mode?" },
-  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟", question_en: "In Weapon Master played as team deathmatch, what is the basic condition for your team to win?" },
-  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟", question_en: "Zombie Mode 4 introduced mechanics that differed from earlier entries. What was its key added feature?" },
-  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟", question_en: "In traditional Team Deathmatch, what is the basic rule for determining the winner?" },
-  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟", question_en: "On Search & Destroy, after a fast C4 plant at site A, where and when should you hold your crosshair for post-plant retake defense?" },
-  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟", question_en: "You have four Battle Rifle images. Which one is the G3A3?" },
-  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟", question_en: "Zoom in on the sniper's details and markings. Which image is the Barrett M82A1-Journey to the West?" },
-  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟", question_en: "Open the images and zoom in on the markings. Which one is the Dragon Blade-Journey to the West?" },
-  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟", question_en: "Which image shows the Flashbang included in the West Rank Match rewards?" },
-  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟", question_en: "Which grenade in the choices is the West Rank Match Event version?" },
-  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟", question_en: "Tactical scenario: You are the In-Game Leader and your team is weaker than the opponent. The enemy uses a fixed 3A/2B setup on Desert Eagle. Explain your first-30-second plan to gather info, create a quiet fake or rotation, open a weak site, and plant C4 without losing teammates." },
-  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية.", question_en: "Tactical scenario: You are playing the match point on Black Widow as the Terrorists (Black Ravens). The enemy has a strong AWP holding Mid. Explain how to use smokes and flashes, coordinating two B players and three A players, to force the sniper off the angle and open a site without giving away free kills." },
-  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ Gathering Info (هدوء وتحديد أماكن) لمرحلة الـ Execute/Rush (ضغط مساحات واستخدام اليوتيليتي)؟", question_en: "In no more than two or three sentences, explain how callouts and voice communication should change from gathering information to an execute or rush with space pressure and utility." },
+const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string }> = {
+  "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟" },
+  "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟" },
+  "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟" },
+  "40": { question_ar: "اسمع التراك ده.. الحماس والمزيكا دي بتشتغل في أنهي وضع وأنهي لحظة بالظبط؟" },
+  "50": { question_ar: "اسمع التأثير الصوتي ده كويس.. التراك ده بتسمعه في انهي مود؟" },
+  "60": { question_ar: "اسمع المقطع ده.. الصوت ده بيشتغل في انهي لحظة بالظبط؟" },
+  "70": { question_ar: "المقطع الصوتي ده بيعبر عن إيه بالظبط؟" },
+  "80": { question_ar: "لحن الـ Boss ده بتسمعه وأنت بتواجه الزعيم الأخير في أنهي ماب زومبي؟" },
+  "90": { question_ar: "اسمع المزيكا دي.. التراك ده شغال في أنهي ماب ومرحلة في الزومبي؟" },
+  "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟" },
+  "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟" },
+  "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟" },
+  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
+  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
+  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
+  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
+  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
+  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
+  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
+  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟" },
+  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟" },
+  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟" },
+  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟" },
+  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
+  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
+};
+
+const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
+  "10": ["Zombie Mode", "Wave Mode", "Super Mutation Mode", "Boss Tower Mode"],
+  "20": ["Chicago (Elimination)", "Western (Elimination)", "Venice (Elimination)", "Hangar (Elimination)"],
+  "30": ["Western (Elimination)", "Chicago (Elimination)", "Colombia (Elimination)", "Alamo (Elimination)"],
+  "40": ["Occupation Knife Mode - دخلة الـ Overtime", "Capture Knife Mode - عند سحب الـ Flag", "King Knife Mode - الجولة الحاسمة", "Blade TDM Mode - آخر 30 ثانية"],
+  "50": ["Shadow Mode", "Ghost Mode", "Spies Mode", "Stealth Mutation Mode"],
+  "60": ["Wave Mode - Complete", "Zombie Mode - Defense Clear", "Super Hero Mode - Victory", "Chaos Wave - Round Finish"],
+  "70": ["Weapon Master - FFA Lose", "Weapon Master - TDM Defeat", "Gun King Mode - Match End", "Arms Race Mode - Final Rank Lose"],
+  "80": ["Arcadia", "Titan Citadel", "Devastated City", "Crater"],
+  "90": ["EMD Lab (لحظة الـ Bullet Time)", "Titan Citadel (غرفة دكتور Haze)", "Dinner Theater (مقطوعة البيانو)", "Bio Tower (مرحلة الـ Elevator)"],
+  "100": ["Titan Citadel", "EMD Lab", "Devastated City", "Silent Castle"],
+  "110": ["Devastated City", "Arcadia", "Dinner Theater", "Forbidden Tower"],
+  "120": ["Dinner Theater", "Silent Castle", "EMD Lab", "Venetian Theater"],
+  "130": ["في الـ Infection اللاعب اللي بيموت من الـ Mercenaries بيتحول لـ Shadow", "الـ Shadows معاهم أسلحة نارية في الـ Infection", "الـ Elimination فيه وقت محدد لكن الـ Infection ملوش وقت", "مفيش أي أثر للأقدام (Footsteps) في الـ Infection"],
+  "140": ["إن الفريق يجمع عدد Kills معين بمختلف الأسلحة لحد ما يوصل لآخر سلاح وتصفيته", "إن لاعب واحد بس من الفريق يتفركش ويثبت أعلى DPM", "إن الماتش يخلص في الوقت والمجموع الكلي للدم يكون أعلى", "إن الفريق يسيطر على نقط الماب بأسلحة محددة"],
+  "150": ["نظام الـ Skill Tree وتطوير قدرات الشخصية أثناء الجيم", "إن الزومبي بقوا يقدروا يضربوا بالأسلحة النارية", "اللعب بشخصيات الـ VIP فقط", "إلغاء الـ Revive Tokens تماماً"],
+  "160": ["أول فريق يوصل لعدد الـ Kills المطلوب أو الفريق الأعلى Kills عند انتهاء الوقت", "الفريق اللي يثبت على أرض الموقع A و B أطول وقت", "الفريق اللي يعطل قنبلة C4 أكتر من 3 مرات", "تجميع أكبر عدد من الـ Badges خلال الجولة"],
+  "170": ["التثبيت على زوايا الـ Off-angle لتغطية الـ Chokepoints من غير ما تبان للـ Retakers", "الوقوف المباشر فوق الـ C4 وعمل Crouch", "الجري المستمر داخل الـ Site لعمل Noise", "الرمي العشوائي للـ Smoke داخل الـ Site لتغطية رؤية فريقك"],
 };
 
 function applyCompetitionQuestionWording(questions: any[]): any[] {
   return questions.map((question) => {
-    const override = COMPETITION_QUESTION_WORDING_OVERRIDES[String(question?.sort_order || "")];
-    return override ? { ...question, ...override } : question;
+    const key = String(question?.sort_order || "");
+    const override = COMPETITION_QUESTION_WORDING_OVERRIDES[key];
+    const labels = COMPETITION_OPTION_LABEL_OVERRIDES[key];
+    const nextOptions = labels && Array.isArray(question?.options)
+      ? question.options.map((option: any, index: number) => ({ ...option, label_ar: labels[index] || option.label_ar || option.label_en || option.value }))
+      : question?.options;
+    return override || labels ? { ...question, ...(override || {}), ...(labels ? { options: nextOptions } : {}) } : question;
   });
 }
 
@@ -379,10 +405,23 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
   return { status: 400, body: { error: "Unsupported community action" } };
 }
 
+const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: string; lookup: string }>> = {
+  // The live catalogue names the base FAL entry "FN FAL"; keep the supplied
+  // visible choice "FAL" while resolving its image from that verified record.
+  "180": [
+    { label: "G3A3", lookup: "G3A3" },
+    { label: "FAL", lookup: "FN FAL" },
+    { label: "HK417", lookup: "HK417" },
+    { label: "FN FNC", lookup: "FN FNC" },
+  ],
+};
+
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
   const names = new Set<string>();
   for (const question of questions) {
     if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
+    const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+    if (displayNames) displayNames.forEach(({ lookup }) => names.add(lookup));
     for (const option of question.options) {
       const name = typeof option === "string"
         ? option
@@ -404,13 +443,18 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
     }
     return questions.map((question) => {
       if (question?.kind !== "weapon" || !Array.isArray(question.options)) return question;
+      const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
       return {
         ...question,
-        options: question.options.map((option: any) => {
-          if (typeof option === "string") return { value: option, label_en: option, image_url: imageByName.get(option) || null };
+        options: question.options.map((option: any, index: number) => {
+          const displayConfig = displayNames?.[index];
+          const displayName = displayConfig?.label;
+          const lookupName = displayConfig?.lookup || displayName;
+          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(lookupName || option) || null };
           if (!option || typeof option !== "object") return option;
-          const name = typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "";
-          return { ...option, image_url: imageByName.get(name) || (typeof option.image_url === "string" && option.image_url ? option.image_url : null) };
+          const name = lookupName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
+          const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
+          return { ...option, label_en: displayName || option.label_en, display_label_en: displayName || option.display_label_en, image_url: imageByName.get(name) || (displayNames ? null : existingImage) };
         }),
       };
     });
@@ -423,17 +467,50 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
   if (!SUPABASE_URL || !SERVICE_KEY) return { status: 500, body: { error: "Competition service is not configured" } };
   const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
   const previewAllowed = (process.env.VERCEL_ENV !== "production" && admin?.role === "super_admin") || directCompetitionPreviewRequested(req);
-  const userId = await authenticatedUserId(req);
-  if (!userId && !previewAllowed) return { status: 401, body: { error: "Sign-in is required" } };
   const body = req.body && typeof req.body === "object" ? req.body : {};
   const action = typeof body.action === "string" ? body.action : "";
+  const requestedAttemptId = typeof body.attemptId === "string" ? body.attemptId.trim() : "";
+  const requestedInviteCode = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
+  const requestedAttemptToken = typeof body.attemptToken === "string" ? body.attemptToken.trim() : "";
+  const userId = await authenticatedUserId(req);
+  const anonymousCompetitionAction = action === "request_access"
+    || (action === "start" && (requestedInviteCode.length >= 4 || body.accessMode === "new"))
+    || ((action === "submit" || action === "submit_proof") && requestedAttemptId.length >= 20 && verifyCompetitionAttemptToken(requestedAttemptId, requestedAttemptToken));
+  if (!userId && !previewAllowed && !anonymousCompetitionAction) return { status: 401, body: { error: "Sign-in is required" } };
   const headers = serviceHeaders();
   const base = `${SUPABASE_URL}/rest/v1`;
+
+  if (action === "request_access") {
+    if (!allowCommunityRequest(req, "competition-access", 3)) return { status: 429, body: { error: "Too many access requests. Try again later." } };
+    const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+    if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
+    if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
+    const requestResponse = await fetch(`${base}/competition_attempts`, {
+      method: "POST", headers,
+      body: JSON.stringify({ user_id: userId || null, phone, consent_contact: true, status: "in_progress", answers: { access_request: true } }),
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!requestResponse.ok) return { status: 502, body: { error: "Could not save access request" } };
+    const requestRows = await requestResponse.json().catch(() => []);
+    return { status: 200, body: { status: "access_requested", requestId: Array.isArray(requestRows) ? requestRows[0]?.id : null, message: "Your phone number was received. Your participation code will be sent shortly." } };
+  }
 
   if (action === "start") {
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     const inviteCode = typeof body.inviteCode === "string" ? body.inviteCode.trim() : "";
+    const accessMode = body.accessMode === "new" ? "new" : "returning";
     if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
+    if (accessMode === "new") {
+      if (!allowCommunityRequest(req, "competition-access", 3)) return { status: 429, body: { error: "Too many access requests. Try again later." } };
+      if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
+      const requestResponse = await fetch(`${base}/competition_attempts`, {
+        method: "POST", headers,
+        body: JSON.stringify({ user_id: userId || null, phone, consent_contact: true, status: "in_progress", answers: { access_request: true } }),
+        signal: AbortSignal.timeout(9000),
+      });
+      if (!requestResponse.ok) return { status: 502, body: { error: "Could not save access request" } };
+      return { status: 200, body: { status: "access_requested", message: "Your phone number was received. Your participation code will be sent shortly." } };
+    }
     if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
 
     const configParams = new URLSearchParams({ id: "eq.default", select: "id,invite_required,active,preview_only,preview_owner_username", limit: "1" });
@@ -476,26 +553,31 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     }
     const questionsResponse = await fetch(`${base}/competition_questions?select=id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order&status=eq.published&order=sort_order.asc`, { headers, signal: AbortSignal.timeout(9000) });
     const rawQuestions = questionsResponse.ok ? await questionsResponse.json() : [];
-    const questions = await enrichWeaponOptionImages(Array.isArray(rawQuestions) ? rawQuestions : [], headers);
-    return { status: 200, body: { attempt: { id: attempt?.id }, questions } };
+    const questions = applyCompetitionQuestionWording(await enrichWeaponOptionImages(Array.isArray(rawQuestions) ? rawQuestions : [], headers));
+    const attemptToken = attempt?.id ? signCompetitionAttemptToken(String(attempt.id)) : "";
+    return { status: 200, body: { attempt: { id: attempt?.id }, ...(attemptToken ? { attemptToken } : {}), questions } };
   }
 
   if (action === "submit_proof") {
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const attemptToken = typeof body.attemptToken === "string" ? body.attemptToken : "";
     const proofType = typeof body.proofType === "string" ? body.proofType : "other";
     const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
     const fileName = typeof body.fileName === "string" ? body.fileName.trim().slice(0, 180) : null;
     if (!attemptId || !/^https:\/\//i.test(fileUrl) || fileUrl.length > 2000) return { status: 400, body: { error: "A valid HTTPS proof link is required" } };
-    if (!["subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
+    if (!["youtube_subscription", "discord_membership", "game_subscription", "purchase_receipt", "other"].includes(proofType)) return { status: 400, body: { error: "Unsupported proof type" } };
+    const storedProofType = ["youtube_subscription", "discord_membership", "game_subscription"].includes(proofType) ? "subscription" : proofType;
+    const proofNote = storedProofType === "subscription" && proofType !== "subscription" ? `Requested proof type: ${proofType}` : null;
     const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
-    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && !userId && !verifyCompetitionAttemptToken(attemptId, attemptToken)) return { status: 401, body: { error: "Invalid competition session" } };
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
     const attempt = Array.isArray(attempts) ? attempts[0] : null;
     if (!attempt || !["submitted", "reviewed"].includes(attempt.status)) return { status: 400, body: { error: "Submit the quiz before sending proof" } };
     const proofResponse = await fetch(`${base}/competition_proofs`, {
       method: "POST", headers,
-      body: JSON.stringify({ attempt_id: attemptId, proof_type: proofType, file_url: fileUrl, file_name: fileName, mime_type: "text/uri-list", status: "pending" }),
+      body: JSON.stringify({ attempt_id: attemptId, proof_type: storedProofType, file_url: fileUrl, file_name: fileName, mime_type: "text/uri-list", status: "pending", reviewer_note: proofNote }),
       signal: AbortSignal.timeout(9000),
     });
     if (!proofResponse.ok) return { status: 502, body: { error: "Could not submit proof" } };
@@ -505,10 +587,12 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
 
   if (action === "submit") {
     const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    const attemptToken = typeof body.attemptToken === "string" ? body.attemptToken : "";
     const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
     if (!attemptId) return { status: 400, body: { error: "Attempt id is required" } };
     const attemptParams = new URLSearchParams({ select: "id,status", id: `eq.${attemptId}`, limit: "1" });
-    if (!previewAllowed) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) attemptParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && !userId && !verifyCompetitionAttemptToken(attemptId, attemptToken)) return { status: 401, body: { error: "Invalid competition session" } };
     const attemptResponse = await fetch(`${base}/competition_attempts?${attemptParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
     if (!attemptResponse.ok) return { status: 502, body: { error: "Could not read competition attempt" } };
     const attempts = await attemptResponse.json();
@@ -549,7 +633,10 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
 
 async function readCompetitionContent(previewAllowed = false): Promise<{ config: any | null; prizes: any[]; questions: any[]; leaderboard: any[] }> {
   if (!SUPABASE_URL || !ANON_KEY) return { config: null, prizes: [], questions: [], leaderboard: [] };
-  const readHeaders = previewAllowed && SERVICE_KEY ? serviceHeaders() : h();
+  // Read through the server-only key so an announced leaderboard remains readable
+  // after the public active flag is turned off; questions and prizes are still
+  // gated by previewOrActive below and the key is never returned to the client.
+  const readHeaders = SERVICE_KEY ? serviceHeaders() : h();
   const request = async (table: string, select: string, extra: Record<string, string> = {}) => {
     const params = new URLSearchParams({ select, ...extra });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers: readHeaders, signal: AbortSignal.timeout(9000) });
@@ -559,7 +646,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
   };
   try {
     const [configs, prizes, questions] = await Promise.all([
-      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', active: 'eq.true', limit: '1' }),
+      request('competition_config', 'id,title_en,title_ar,intro_en,intro_ar,rules_en,rules_ar,active,preview_only,preview_owner_username,invite_required,leaderboard_published', previewAllowed ? { id: 'eq.default', limit: '1' } : { id: 'eq.default', or: '(active.eq.true,leaderboard_published.eq.true)', limit: '1' }),
       request('competition_prizes', 'id,category,title_en,title_ar,description_en,description_ar,availability_note_en,availability_note_ar,sort_order', { published: 'eq.true', order: 'sort_order.asc' }),
       request('competition_questions', 'id,kind,question_en,question_ar,options,points,audio_url,image_url,weapon_id,sort_order', { status: 'eq.published', order: 'sort_order.asc' }),
     ]);
@@ -580,7 +667,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
   }
 }
 
-async function readEventRows(opts: { limit?: number; offset?: number; id?: string; slug?: string } = {}): Promise<{ rows: any[]; total: number }> {
+async function readEventRows(opts: { limit?: number; offset?: number; id?: string; slug?: string; q?: string } = {}): Promise<{ rows: any[]; total: number }> {
   if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
   const limit = Math.min(50, Math.max(1, Number(opts.limit) || 20));
   const offset = Math.max(0, Number(opts.offset) || 0);
@@ -588,6 +675,7 @@ async function readEventRows(opts: { limit?: number; offset?: number; id?: strin
   const filters: Record<string, string> = {};
   if (opts.id) filters.id = `eq.${safeValue(opts.id)}`;
   if (opts.slug) filters.event_name_slug = `eq.${safeValue(opts.slug)}`;
+  const search = String(opts.q || '').trim().slice(0, 80).replace(/[,*()%]/g, ' ');
   const projections = [
     'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at',
     'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,featured,created_at',
@@ -596,6 +684,7 @@ async function readEventRows(opts: { limit?: number; offset?: number; id?: strin
   for (const select of projections) {
     try {
       const params = new URLSearchParams({ select, order: 'created_at.desc', limit: String(limit), offset: String(offset), ...filters });
+      if (search) params.set('or', `(title.ilike.*${search}*,title_ar.ilike.*${search}*,description.ilike.*${search}*,description_ar.ilike.*${search}*)`);
       const response = await fetch(`${SUPABASE_URL}/rest/v1/events?${params.toString()}`, {
         headers: { ...h(), Prefer: 'count=exact' },
         signal: AbortSignal.timeout(9000),
@@ -678,8 +767,12 @@ async function readContentRows(
   };
   if (opts.category) (baseParams as Record<string, string>).category = `eq.${opts.category}`;
 
-  async function fetchPostProjection(select: string) {
+  const safeQuery = String(opts.q || '').trim().slice(0, 80).replace(/[,*()]/g, ' ');
+  async function fetchPostProjection(select: string, searchFields: string[]) {
     const params = new URLSearchParams({ select, ...baseParams });
+    if (safeQuery) {
+      params.set('or', `(${searchFields.map((field) => `${field}.ilike.*${safeQuery}*`).join(',')})`);
+    }
     const response = await fetch(`${SUPABASE_URL}/rest/v1/posts?${params.toString()}`, {
       headers: { ...h(), Prefer: 'count=exact' },
       signal: AbortSignal.timeout(9000),
@@ -701,7 +794,10 @@ async function readContentRows(
       'id,title,post_slug,content,image_url,category,created_at',
     ];
     for (const projection of projections) {
-      const result = await fetchPostProjection(projection);
+      const searchFields = projection.includes('title_ar')
+        ? ['title', 'title_ar', 'summary', 'summary_ar', 'content', 'content_ar']
+        : ['title', 'content'];
+      const result = await fetchPostProjection(projection, searchFields);
       if (result) return result;
     }
     console.error('[api/content] all posts projections failed');
@@ -802,11 +898,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
     const rawId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
     const rawSlug = Array.isArray(req.query.slug) ? req.query.slug[0] : req.query.slug;
+    const rawQuery = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
     const { rows, total } = await readEventRows({
       limit: Number(rawLimit),
       offset: Number(rawOffset),
       id: typeof rawId === 'string' ? rawId : undefined,
       slug: typeof rawSlug === 'string' ? rawSlug : undefined,
+      q: typeof rawQuery === 'string' ? rawQuery : undefined,
     });
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');

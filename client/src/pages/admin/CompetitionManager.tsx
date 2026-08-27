@@ -19,7 +19,7 @@ async function tableRequest(type: string, operation: string, extra: Record<strin
 }
 
 function asNumber(value: unknown) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : 0; }
-function whatsappUrl(phone: string) { const normalized = phone.replace(/[^\d+]/g, "").replace(/^\+/, ""); return normalized ? `https://wa.me/${normalized}` : ""; }
+function whatsappUrl(phone: string, message = "") { const normalized = phone.replace(/[^\d+]/g, "").replace(/^\+/, ""); return normalized ? `https://wa.me/${normalized}${message ? `?text=${encodeURIComponent(message)}` : ""}` : ""; }
 
 export default function CompetitionManager() {
   const [tab, setTab] = useState<Tab>("config");
@@ -66,6 +66,18 @@ export default function CompetitionManager() {
     finally { setBusy(false); }
   };
 
+  const finishCompetition = async () => {
+    if (!window.confirm("End the competition and publish the leaderboard?")) return;
+    setBusy(true); setMessage("");
+    try {
+      const next = { ...config, active: false, leaderboard_published: true };
+      await tableRequest("competition_config", "update", { id: config.id, row: next });
+      setConfig(next);
+      setMessage("Competition ended and leaderboard published.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to publish results"); }
+    finally { setBusy(false); }
+  };
+
   const createCode = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setMessage("");
     try {
@@ -92,6 +104,19 @@ export default function CompetitionManager() {
     finally { setBusy(false); }
   };
 
+  const createParticipantCode = async (attempt: Attempt) => {
+    setBusy(true); setMessage("");
+    try {
+      const result = await tableRequest("competition_invite_codes", "create", { row: { label: `Participant ${attempt.phone}`, max_uses: 1, active: true } });
+      const code = result.issuedCode || "";
+      const message = code ? `مرحبًا، هذا كود المشاركة الخاص بك في مسابقة CrossFire Wiki: ${code}\nاستخدمه في صفحة المسابقة مع رقم الهاتف الذي سجلت به.` : "";
+      setMessage(code ? `تم توليد الكود ${code}. استخدم زر واتساب لإرساله للمشارك.` : "تم إنشاء الكود، راجع قائمة الأكواد.");
+      await load();
+      return { code, whatsapp: whatsappUrl(attempt.phone, message) };
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to generate participant code"); return { code: "", whatsapp: "" }; }
+    finally { setBusy(false); }
+  };
+
   const updateAttempt = async (attempt: Attempt, patch: Partial<Attempt>) => {
     setBusy(true); setMessage("");
     try {
@@ -105,8 +130,17 @@ export default function CompetitionManager() {
 
   const updateProof = async (proof: Proof, patch: Partial<Proof>) => {
     setBusy(true); setMessage("");
-    try { await tableRequest("competition_proofs", "update", { id: proof.id, row: { status: patch.status ?? proof.status, bonus_points: asNumber(patch.bonus_points ?? proof.bonus_points), reviewer_note: patch.reviewer_note ?? proof.reviewer_note, reviewed_at: new Date().toISOString() } }); setMessage("Proof review saved."); await load(); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save proof review"); }
+    try {
+      const status = patch.status ?? proof.status;
+      const bonus = asNumber(patch.bonus_points ?? proof.bonus_points);
+      await tableRequest("competition_proofs", "update", { id: proof.id, row: { status, bonus_points: bonus, reviewer_note: patch.reviewer_note ?? proof.reviewer_note, reviewed_at: new Date().toISOString() } });
+      const attempt = attempts.find((item) => item.id === proof.attempt_id);
+      if (attempt && status === "approved") {
+        const finalScore = asNumber(attempt.objective_score) + asNumber(attempt.essay_score) + bonus;
+        await tableRequest("competition_attempts", "update", { id: attempt.id, row: { proof_bonus: bonus, final_score: finalScore, status: "reviewed", reviewed_at: new Date().toISOString() } });
+      }
+      setMessage("Proof review saved and score updated."); await load();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save proof review"); }
     finally { setBusy(false); }
   };
 
@@ -128,25 +162,28 @@ export default function CompetitionManager() {
     {message && <div style={notice}>{message}</div>}
     <div style={tabsStyle}>{tabs.map((item) => <button key={item.id} onClick={() => setTab(item.id)} style={{ ...tabButton, ...(tab === item.id ? activeTab : {}) }}>{item.label}</button>)}</div>
 
-    {tab === "config" && <form onSubmit={saveConfig} style={panel}><h2 style={sectionTitle}>Public competition settings</h2><div style={grid}><Field label="English title" value={config.title_en} onChange={(value) => setConfig({ ...config, title_en: value })} /><Field label="Arabic title" value={config.title_ar} onChange={(value) => setConfig({ ...config, title_ar: value })} dir="rtl" /><TextArea label="English introduction" value={config.intro_en || ""} onChange={(value) => setConfig({ ...config, intro_en: value })} /><TextArea label="Arabic introduction" value={config.intro_ar || ""} onChange={(value) => setConfig({ ...config, intro_ar: value })} dir="rtl" /><TextArea label="English rules" value={config.rules_en || ""} onChange={(value) => setConfig({ ...config, rules_en: value })} /><TextArea label="Arabic rules" value={config.rules_ar || ""} onChange={(value) => setConfig({ ...config, rules_ar: value })} dir="rtl" /></div><div style={checkRow}><Check label="Competition active" value={config.active} onChange={(value) => setConfig({ ...config, active: value })} /><Check label="Invitation code required" value={config.invite_required} onChange={(value) => setConfig({ ...config, invite_required: value })} /><Check label="Publish leaderboard" value={config.leaderboard_published} onChange={(value) => setConfig({ ...config, leaderboard_published: value })} /></div><button style={primaryButton} disabled={busy}>Save configuration</button></form>}
+    {tab === "config" && <form onSubmit={saveConfig} style={panel}><h2 style={sectionTitle}>Public competition settings</h2><div style={grid}><Field label="English title" value={config.title_en} onChange={(value) => setConfig({ ...config, title_en: value })} /><Field label="Arabic title" value={config.title_ar} onChange={(value) => setConfig({ ...config, title_ar: value })} dir="rtl" /><TextArea label="English introduction" value={config.intro_en || ""} onChange={(value) => setConfig({ ...config, intro_en: value })} /><TextArea label="Arabic introduction" value={config.intro_ar || ""} onChange={(value) => setConfig({ ...config, intro_ar: value })} dir="rtl" /><TextArea label="English rules" value={config.rules_en || ""} onChange={(value) => setConfig({ ...config, rules_en: value })} /><TextArea label="Arabic rules" value={config.rules_ar || ""} onChange={(value) => setConfig({ ...config, rules_ar: value })} dir="rtl" /></div><div style={checkRow}><Check label="Competition active" value={config.active} onChange={(value) => setConfig({ ...config, active: value })} /><Check label="Invitation code required" value={config.invite_required} onChange={(value) => setConfig({ ...config, invite_required: value })} /><Check label="Publish leaderboard" value={config.leaderboard_published} onChange={(value) => setConfig({ ...config, leaderboard_published: value })} /></div><div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}><button style={primaryButton} disabled={busy}>Save configuration</button><button type="button" style={{ ...secondaryButton, borderColor: "#a16207", color: "#fbbf24" }} disabled={busy} onClick={() => void finishCompetition()}>End competition and publish results</button></div></form>}
 
-    {tab === "codes" && <div style={twoColumn}><form onSubmit={createCode} style={panel}><h2 style={sectionTitle}>Create invitation code</h2><p style={muted}>The plaintext code is accepted only on creation and stored as a SHA-256 hash. Keep the returned code private.</p><div style={gridOne}><Field label="Label" value={codeForm.label} onChange={(value) => setCodeForm({ ...codeForm, label: value })} /><Field label="Plaintext code" value={codeForm.code} onChange={(value) => setCodeForm({ ...codeForm, code: value })} /><Field label="Maximum uses" type="number" value={String(codeForm.max_uses)} onChange={(value) => setCodeForm({ ...codeForm, max_uses: Number(value) })} /><Field label="Expires at" type="datetime-local" value={codeForm.expires_at} onChange={(value) => setCodeForm({ ...codeForm, expires_at: value })} /></div><Check label="Active" value={codeForm.active} onChange={(value) => setCodeForm({ ...codeForm, active: value })} /><button style={primaryButton} disabled={busy}>Create code</button></form><ListPanel title="Existing codes">{codes.map((item) => <div key={item.id} style={listRow}><div><strong>{item.label || "Untitled code"}</strong><div style={small}>{item.uses_count || 0} / {item.max_uses ?? "unlimited"} uses · {item.active ? "active" : "inactive"}</div></div><button style={dangerButton} onClick={() => void deleteRow("competition_invite_codes", item.id)}>Delete</button></div>)}</ListPanel></div>}
+    {tab === "codes" && <div style={twoColumn}><form onSubmit={createCode} style={panel}><h2 style={sectionTitle}>Create invitation code</h2><p style={muted}>Leave the code blank to generate a secure one-time code automatically, or enter a shared code manually. The plaintext is returned only once and stored as a hash.</p><div style={gridOne}><Field label="Label" value={codeForm.label} onChange={(value) => setCodeForm({ ...codeForm, label: value })} /><Field label="Plaintext code" value={codeForm.code} onChange={(value) => setCodeForm({ ...codeForm, code: value })} /><Field label="Maximum uses" type="number" value={String(codeForm.max_uses)} onChange={(value) => setCodeForm({ ...codeForm, max_uses: Number(value) })} /><Field label="Expires at" type="datetime-local" value={codeForm.expires_at} onChange={(value) => setCodeForm({ ...codeForm, expires_at: value })} /></div><Check label="Active" value={codeForm.active} onChange={(value) => setCodeForm({ ...codeForm, active: value })} /><button style={primaryButton} disabled={busy}>Create code</button></form><ListPanel title="Existing codes">{codes.map((item) => <div key={item.id} style={listRow}><div><strong>{item.label || "Untitled code"}</strong><div style={small}>{item.uses_count || 0} / {item.max_uses ?? "unlimited"} uses · {item.active ? "active" : "inactive"}</div></div><button style={dangerButton} onClick={() => void deleteRow("competition_invite_codes", item.id)}>Delete</button></div>)}</ListPanel></div>}
 
     {tab === "questions" && <div style={twoColumn}><form onSubmit={createQuestion} style={panel}><h2 style={sectionTitle}>Add question</h2><div style={gridOne}><Select label="Question type" value={question.kind} options={["multiple_choice", "audio", "weapon", "essay", "scenario"]} onChange={(value) => setQuestion({ ...question, kind: value })} /><Field label="Points" type="number" value={String(question.points)} onChange={(value) => setQuestion({ ...question, points: Number(value) })} /><Field label="Order" type="number" value={String(question.sort_order)} onChange={(value) => setQuestion({ ...question, sort_order: Number(value) })} /><Select label="Status" value={question.status} options={["draft", "published", "archived"]} onChange={(value) => setQuestion({ ...question, status: value })} /></div><TextArea label="English question" value={question.question_en} onChange={(value) => setQuestion({ ...question, question_en: value })} /><TextArea label="Arabic question" value={question.question_ar} onChange={(value) => setQuestion({ ...question, question_ar: value })} dir="rtl" /><TextArea label="Options (one per line)" value={question.options.join("\n")} onChange={(value) => setQuestion({ ...question, options: value.split("\n") })} /><Field label="Correct option" value={question.correct_option} onChange={(value) => setQuestion({ ...question, correct_option: value })} /><Field label="Audio URL" value={question.audio_url} onChange={(value) => setQuestion({ ...question, audio_url: value })} /><Field label="Related weapon UUID (optional)" value={question.weapon_id} onChange={(value) => setQuestion({ ...question, weapon_id: value })} /><TextArea label="Source or review note" value={question.source_note} onChange={(value) => setQuestion({ ...question, source_note: value })} /><button style={primaryButton} disabled={busy}>Save draft question</button></form><ListPanel title={`Question bank (${questions.length})`}>{questions.map((item) => <div key={item.id} style={listRow}><div><strong>{item.kind} · {item.question_en || item.question_ar || "Untitled"}</strong><div style={small}>{item.points} points · {item.status} · {item.kind === "essay" || item.kind === "scenario" ? "manual review" : "auto-score"}</div></div><button style={dangerButton} onClick={() => void deleteRow("competition_questions", item.id)}>Delete</button></div>)}</ListPanel></div>}
 
     {tab === "prizes" && <div style={twoColumn}><form onSubmit={createPrize} style={panel}><h2 style={sectionTitle}>Add prize category</h2><div style={gridOne}><Field label="Category" value={prize.category} onChange={(value) => setPrize({ ...prize, category: value })} /><Field label="English title" value={prize.title_en} onChange={(value) => setPrize({ ...prize, title_en: value })} /><Field label="Arabic title" value={prize.title_ar} onChange={(value) => setPrize({ ...prize, title_ar: value })} dir="rtl" /><TextArea label="English description" value={prize.description_en} onChange={(value) => setPrize({ ...prize, description_en: value })} /><TextArea label="Arabic description" value={prize.description_ar} onChange={(value) => setPrize({ ...prize, description_ar: value })} dir="rtl" /><Field label="Availability note" value={prize.availability_note_en} onChange={(value) => setPrize({ ...prize, availability_note_en: value })} /><Field label="Arabic availability note" value={prize.availability_note_ar} onChange={(value) => setPrize({ ...prize, availability_note_ar: value })} dir="rtl" /><Field label="Order" type="number" value={String(prize.sort_order)} onChange={(value) => setPrize({ ...prize, sort_order: Number(value) })} /></div><Check label="Publish this category" value={prize.published} onChange={(value) => setPrize({ ...prize, published: value })} /><button style={primaryButton} disabled={busy}>Save prize category</button></form><ListPanel title={`Prize categories (${prizes.length})`}>{prizes.map((item) => <div key={item.id} style={listRow}><div><strong>{item.category}: {item.title_en || item.title_ar}</strong><div style={small}>{item.published ? "published" : "draft"}</div></div><button style={dangerButton} onClick={() => void deleteRow("competition_prizes", item.id)}>Delete</button></div>)}</ListPanel></div>}
 
-    {tab === "attempts" && <ListPanel title={`Participant attempts (${attempts.length})`}>{attempts.length === 0 && <p style={muted}>No attempts have been submitted.</p>}{attempts.map((item) => <AttemptRow key={item.id} attempt={item} busy={busy} onSave={updateAttempt} />)}</ListPanel>}
+    {tab === "attempts" && <ListPanel title={`Participant requests and attempts (${attempts.length})`}>{attempts.length === 0 && <p style={muted}>No participant requests have been submitted.</p>}{attempts.map((item) => <AttemptRow key={item.id} attempt={item} busy={busy} onSave={updateAttempt} onGenerateCode={createParticipantCode} />)}</ListPanel>}
     {tab === "proofs" && <ListPanel title={`Uploaded proofs (${proofs.length})`}>{proofs.length === 0 && <p style={muted}>No proof uploads have been submitted.</p>}{proofs.map((item) => <ProofRow key={item.id} proof={item} busy={busy} onSave={updateProof} />)}</ListPanel>}
   </section>;
 }
 
-function AttemptRow({ attempt, busy, onSave }: { attempt: Attempt; busy: boolean; onSave: (attempt: Attempt, patch: Partial<Attempt>) => Promise<void> }) {
+function AttemptRow({ attempt, busy, onSave, onGenerateCode }: { attempt: Attempt; busy: boolean; onSave: (attempt: Attempt, patch: Partial<Attempt>) => Promise<void>; onGenerateCode: (attempt: Attempt) => Promise<{ code: string; whatsapp: string }> }) {
   const [essay, setEssay] = useState(String(attempt.essay_score || 0));
+  const [generatedCode, setGeneratedCode] = useState("");
+  const [whatsappMessageUrl, setWhatsappMessageUrl] = useState("");
   const [bonus, setBonus] = useState(String(attempt.proof_bonus || 0));
   const [status, setStatus] = useState(attempt.status);
   const link = whatsappUrl(attempt.phone);
-  return <div style={reviewRow}><div style={{ minWidth: 220 }}><strong>{attempt.phone || "No phone"}</strong><div style={small}>{attempt.id} · {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : "not submitted"}</div>{link && <a href={link} target="_blank" rel="noreferrer" style={contactLink}>Open WhatsApp</a>}</div><div style={reviewGrid}><Field label="Objective" value={String(attempt.objective_score || 0)} onChange={() => undefined} /><Field label="Essay score" type="number" value={essay} onChange={setEssay} /><Field label="Proof bonus" type="number" value={bonus} onChange={setBonus} /><Select label="Status" value={status} options={["in_progress", "submitted", "reviewed", "withdrawn"]} onChange={setStatus} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(attempt, { essay_score: Number(essay), proof_bonus: Number(bonus), status })}>Save review</button></div>;
+  const isAccessRequest = Boolean(attempt.answers && attempt.answers.access_request === true);
+  return <div style={reviewRow}><div style={{ minWidth: 220 }}><strong>{attempt.phone || "No phone"}</strong><div style={small}>{isAccessRequest ? "Participation code request" : attempt.id} · {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : "not submitted"}</div>{link && <a href={link} target="_blank" rel="noreferrer" style={contactLink}>Open WhatsApp</a>}{isAccessRequest && <button style={{ ...secondaryButton, marginTop: 8 }} disabled={busy} onClick={() => void onGenerateCode(attempt).then((result) => { setGeneratedCode(result.code); setWhatsappMessageUrl(result.whatsapp); })}>Generate private code</button>}{generatedCode && <div style={{ ...small, color: "#fbbf24" }}>Code: {generatedCode}{whatsappMessageUrl && <a href={whatsappMessageUrl} target="_blank" rel="noreferrer" style={{ ...contactLink, marginLeft: 8 }}>WhatsApp message</a>}</div>}</div><div style={reviewGrid}><Field label="Objective" value={String(attempt.objective_score || 0)} onChange={() => undefined} /><Field label="Essay score" type="number" value={essay} onChange={setEssay} /><Field label="Proof bonus" type="number" value={bonus} onChange={setBonus} /><Select label="Status" value={status} options={["in_progress", "submitted", "reviewed", "withdrawn"]} onChange={setStatus} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(attempt, { essay_score: Number(essay), proof_bonus: Number(bonus), status })}>Save review</button></div>;
 }
 
 function ProofRow({ proof, busy, onSave }: { proof: Proof; busy: boolean; onSave: (proof: Proof, patch: Partial<Proof>) => Promise<void> }) {

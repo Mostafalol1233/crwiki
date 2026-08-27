@@ -23,6 +23,7 @@ import {
 import { useLanguage } from "@/components/LanguageProvider";
 import { supabase } from "@/lib/supabase";
 import { SEOHead } from "@/components/SEOHead";
+import { ImageViewerOverlay } from "@/components/ImageViewer";
 import { buildAuthPath, getCurrentAuthReturnPath } from "@/lib/authRedirect";
 
 interface CompetitionConfig {
@@ -151,7 +152,10 @@ export default function Competition() {
   const [phone, setPhone] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [consent, setConsent] = useState(false);
+  const [accessMode, setAccessMode] = useState<"new" | "returning">(directPreviewMode ? "returning" : "new");
+  const [accessRequested, setAccessRequested] = useState(false);
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptToken, setAttemptToken] = useState<string | null>(null);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [reviewing, setReviewing] = useState(false);
@@ -202,6 +206,8 @@ export default function Competition() {
 
   const previewMode = Boolean(config?.preview_only && !config.active && (adminToken || directPreviewMode));
   const canRegister = Boolean(config?.active || previewMode);
+  const canRequestAccess = Boolean(config && !config.leaderboard_published);
+  const showEntryForm = canRegister || canRequestAccess;
   const title = config ? (isArabic ? config.title_ar : config.title_en) : (isArabic ? "مسابقة CrossFire Wiki" : "CrossFire Wiki Competition");
   const intro = config ? (isArabic ? config.intro_ar : config.intro_en) : null;
   const rules = config ? (isArabic ? config.rules_ar : config.rules_en) : null;
@@ -232,8 +238,31 @@ export default function Competition() {
   const submitRegistration = async (event: React.FormEvent) => {
     event.preventDefault();
     setNotice("");
-    if (!isAuthenticated && !previewMode && !directPreviewMode) {
-      setNotice(isArabic ? "سجّل الدخول أولًا للانضمام إلى المسابقة." : "Please sign in before joining the competition.");
+    if (accessMode === "new") {
+      if (!phone.trim() || !consent) {
+        setNotice(isArabic ? "أدخل رقم الهاتف ووافق على التواصل قبل إرسال الطلب." : "Enter your phone number and consent before sending the request.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const response = await fetch(competitionApiPath, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ action: "request_access", phone: phone.trim(), consent }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Access request failed");
+        setAccessRequested(true);
+        setNotice(isArabic ? "تم استلام رقمك. خلال بعض الوقت سيتم إرسال كود المشاركة لك." : "Your phone number was received. Your participation code will be sent shortly.");
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : (isArabic ? "تعذر إرسال الطلب." : "Could not send the request."));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+    if (!isAuthenticated && !previewMode && !directPreviewMode && !inviteCode.trim()) {
+      setNotice(isArabic ? "أدخل كود المشاركة الذي وصلك." : "Enter the participation code you received.");
       return;
     }
     if (!phone.trim() || (config?.invite_required !== false && !directPreviewMode && !inviteCode.trim()) || !consent) {
@@ -245,11 +274,12 @@ export default function Competition() {
       const response = await fetch(competitionApiPath, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ action: "start", phone: phone.trim(), inviteCode: inviteCode.trim(), consent }),
+        body: JSON.stringify({ action: "start", accessMode: "returning", phone: phone.trim(), inviteCode: inviteCode.trim(), consent }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Registration failed");
       setAttemptId(typeof payload.attempt?.id === "string" ? payload.attempt.id : null);
+      setAttemptToken(typeof payload.attemptToken === "string" ? payload.attemptToken : null);
       setQuestions(Array.isArray(payload.questions) ? payload.questions as CompetitionQuestion[] : []);
       setAnswers({});
       setActiveQuestionIndex(0);
@@ -270,7 +300,7 @@ export default function Competition() {
       const response = await fetch(competitionApiPath, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ action: "submit", attemptId, answers }),
+        body: JSON.stringify({ action: "submit", attemptId, attemptToken, answers }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Submission failed");
@@ -300,6 +330,7 @@ export default function Competition() {
         const formData = new FormData();
         formData.append("file", proofFile);
         formData.append("attemptId", attemptId);
+        if (attemptToken) formData.append("attemptToken", attemptToken);
         formData.append("proofType", proofType);
         const uploadToken = accessToken || adminToken;
         response = await fetch(directPreviewMode ? "/api/images/upload?competition_test=1" : "/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
@@ -307,7 +338,7 @@ export default function Competition() {
         response = await fetch(competitionApiPath, {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({ action: "submit_proof", attemptId, proofType, fileUrl: proofUrl.trim() }),
+          body: JSON.stringify({ action: "submit_proof", attemptId, attemptToken, proofType, fileUrl: proofUrl.trim() }),
         });
       }
       const payload = await response.json().catch(() => ({}));
@@ -378,7 +409,7 @@ export default function Competition() {
 
           <section className="competition-action-panel" aria-live="polite">
             <div className="competition-action-heading"><div><span className="competition-overline">{submittedScore !== null ? (isArabic ? "اكتمل الاختبار" : "Challenge complete") : attemptId ? (isArabic ? "وضع الاختبار" : "Challenge mode") : (isArabic ? "بوابة الدخول" : "Entry gate")}</span><h2>{submittedScore !== null ? (isArabic ? "نتيجتك الأولية" : "Your initial result") : attemptId ? (isArabic ? "أجب على مهل" : "Answer at your pace") : (isArabic ? "ابدأ من هنا" : "Start here")}</h2></div><LockKeyhole size={18} /></div>
-            {!canRegister ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "المسابقة غير منشورة حاليًا" : "The competition is not published"}</strong><p>{isArabic ? "لن يظهر التسجيل أو بنك الأسئلة للزوار قبل تفعيل المسابقة من لوحة الإدارة." : "Registration and the question bank remain hidden until an administrator activates the competition."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} email={email} authenticated={isAuthenticated} previewMode={previewMode} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
+            {!showEntryForm ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "لا يمكن فتح بوابة المسابقة حاليًا" : "The competition gate is unavailable"}</strong><p>{isArabic ? "تعذر تحميل إعدادات المسابقة. حاول مرة أخرى لاحقًا." : "Competition settings could not be loaded. Please try again later."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} previewMode={previewMode} canRegister={canRegister} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} accessMode={accessMode} setAccessMode={setAccessMode} accessRequested={accessRequested} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
             {notice && !attemptId && <p className="competition-inline-notice">{notice}</p>}
           </section>
         </section>
@@ -391,14 +422,16 @@ export default function Competition() {
   );
 }
 
-function RegistrationForm({ isArabic, email, authenticated, previewMode, phone, setPhone, inviteCode, setInviteCode, inviteRequired, consent, setConsent, submitting, notice, onSubmit }: { isArabic: boolean; email: string | null; authenticated: boolean; previewMode: boolean; phone: string; setPhone: (value: string) => void; inviteCode: string; setInviteCode: (value: string) => void; inviteRequired: boolean; consent: boolean; setConsent: (value: boolean) => void; submitting: boolean; notice: string; onSubmit: (event: React.FormEvent) => void }) {
+function RegistrationForm({ isArabic, previewMode, canRegister, phone, setPhone, inviteCode, setInviteCode, inviteRequired, consent, setConsent, accessMode, setAccessMode, accessRequested, submitting, notice, onSubmit }: { isArabic: boolean; previewMode: boolean; canRegister: boolean; phone: string; setPhone: (value: string) => void; inviteCode: string; setInviteCode: (value: string) => void; inviteRequired: boolean; consent: boolean; setConsent: (value: boolean) => void; accessMode: "new" | "returning"; setAccessMode: (value: "new" | "returning") => void; accessRequested: boolean; submitting: boolean; notice: string; onSubmit: (event: React.FormEvent) => void }) {
+  const isNew = accessMode === "new";
   return <form className="competition-registration-form" onSubmit={onSubmit}>
-    <div className="competition-form-intro"><span className="competition-step-number">01</span><div><strong>{previewMode ? (isArabic ? "اختبار المشرف الخاص" : "Private administrator test") : (isArabic ? "بيانات المشاركة" : "Participant details")}</strong><p>{previewMode ? (isArabic ? "هذه البوابة لا تعمل إلا للمدير على نسخة Vercel Preview." : "This gate works only for the administrator on the Vercel Preview deployment.") : authenticated ? (email || (isArabic ? "تم تسجيل الدخول" : "Signed in")) : (isArabic ? "سجّل الدخول بحساب الموقع أولًا." : "Sign in with your website account first.")}</p></div></div>
-    <label className="competition-field"><span><Phone size={14} />{isArabic ? "رقم الهاتف للتواصل" : "Contact phone"}</span><input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isArabic ? "+20..." : "+1..."} inputMode="tel" autoComplete="tel" /></label>
-    {inviteRequired && <label className="competition-field"><span>{isArabic ? "كود الدعوة" : "Invitation code"}</span><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={isArabic ? "أدخل الكود الذي وصلك" : "Enter your private code"} autoComplete="off" /></label>}
+    <div className="competition-form-intro"><span className="competition-step-number">01</span><div><strong>{previewMode ? (isArabic ? "اختبار المشرف الخاص" : "Private administrator test") : (isArabic ? "بوابة المشاركة" : "Participation gate")}</strong><p>{previewMode ? (isArabic ? "هذه البوابة مخصصة لاختبار المشرف على نسخة Preview." : "This gate is for administrator testing on the Preview deployment.") : (isArabic ? "اختر طريقة الدخول المناسبة لك." : "Choose the entry option that fits you.")}</p></div></div>
+    <div className="competition-access-choice" role="group" aria-label={isArabic ? "نوع المشاركة" : "Participation type"}><button type="button" className={isNew ? "is-selected" : ""} onClick={() => setAccessMode("new")}>{isArabic ? "أول مرة؟ اطلب كودًا" : "First time? Request a code"}</button><button type="button" className={!isNew ? "is-selected" : ""} onClick={() => setAccessMode("returning")}>{isArabic ? "لدي كود مشاركة" : "I have a participation code"}</button></div>
+    <p className="competition-access-help">{isNew ? (isArabic ? "أدخل رقم هاتفك فقط. سيظهر طلبك للمشرف، وسيتم إرسال كود المشاركة لك خلال بعض الوقت." : "Enter your phone number only. The administrator will receive your request and send your code shortly.") : (isArabic ? "أدخل رقم الهاتف الذي سجلت به وكود المشاركة المرسل لك." : "Enter the phone number you registered with and the code you received.")}</p>
+    <label className="competition-field"><span><Phone size={14} />{isArabic ? "رقم الهاتف للتواصل" : "Contact phone"}</span><input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={isArabic ? "+20..." : "+1..."} inputMode="tel" autoComplete="tel" required /></label>
+    {!isNew && <label className="competition-field"><span>{isArabic ? "كود المشاركة" : "Participation code"}</span><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={isArabic ? "أدخل الكود الذي وصلك" : "Enter the code you received"} autoComplete="off" required={inviteRequired} /></label>}
     <label className="competition-consent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>{isArabic ? "أوافق على استخدام رقم الهاتف للتواصل المتعلق بالمسابقة فقط." : "I consent to using my phone number for competition-related contact only."}</span></label>
-    <button className="competition-primary-button" type="submit" disabled={submitting || (!previewMode && !authenticated)}>{submitting ? (isArabic ? "جارٍ فتح الاختبار..." : "Opening challenge...") : previewMode ? (isArabic ? "فتح اختبار المعاينة" : "Open preview challenge") : authenticated ? (isArabic ? "متابعة" : "Continue") : (isArabic ? "سجّل الدخول أولًا" : "Sign in first")}<ChevronLeft size={17} /></button>
-    {!authenticated && !previewMode && <Link className="competition-secondary-link" href={buildAuthPath("login", getCurrentAuthReturnPath())}>{isArabic ? "الانتقال إلى تسجيل الدخول" : "Go to sign in"}</Link>}
+    <button className="competition-primary-button" type="submit" disabled={submitting || (isNew && accessRequested) || (!isNew && !canRegister && !previewMode)}>{submitting ? (isArabic ? "جارٍ إرسال الطلب..." : "Sending request...") : isNew ? (accessRequested ? (isArabic ? "تم إرسال الطلب" : "Request sent") : (isArabic ? "إرسال طلب المشاركة" : "Request participation code")) : (isArabic ? "دخول بال code" : "Enter with code")}<ChevronLeft size={17} /></button>
     {notice && <p className="competition-form-notice">{notice}</p>}
   </form>;
 }
@@ -436,12 +469,21 @@ function QuestionCard({ question, isArabic, answer, onAnswer }: { question: Comp
   const options = questionOptions(question);
   const prompt = isArabic ? (question.question_ar || question.question_en) : question.question_en;
   const isWeaponQuestion = question.kind === "weapon";
-  return <article className="quiz-question-card">
+  const [viewer, setViewer] = useState<{ src: string; alt: string } | null>(null);
+  const openImage = (event: React.MouseEvent | React.KeyboardEvent, src: string, alt: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setViewer({ src, alt });
+  };
+  return <>
+  <article className="quiz-question-card">
     <div className="quiz-question-prompt"><h3>{prompt}</h3><span>{options.length > 0 ? (isArabic ? "اختر الإجابة باللغة الإنجليزية" : "Choose one answer") : (isArabic ? "اكتب إجابة قصيرة للمراجعة" : "Write a short answer for review")}</span></div>
-    {isWeaponQuestion && question.image_url && <figure className="quiz-question-media quiz-weapon-media"><img src={question.image_url} alt={isArabic ? "صورة السلاح المرتبط بالسؤال" : "Weapon image for this question"} loading="lazy" /><figcaption><ImageIcon size={13} />{isArabic ? "صورة السلاح من كتالوج الويكي" : "Weapon image from the wiki catalogue"}</figcaption></figure>}
+    {isWeaponQuestion && question.image_url && <figure className="quiz-question-media quiz-weapon-media"><img src={question.image_url} alt={isArabic ? "صورة السلاح المرتبط بالسؤال" : "Weapon image for this question"} loading="lazy" onClick={(event) => openImage(event, question.image_url as string, isArabic ? "صورة السلاح المرتبط بالسؤال" : "Weapon image for this question")} onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && openImage(event, question.image_url as string, isArabic ? "صورة السلاح المرتبط بالسؤال" : "Weapon image for this question")} role="button" tabIndex={0} aria-label={isArabic ? "تكبير صورة السلاح" : "Zoom weapon image"} /><figcaption><ImageIcon size={13} />{isArabic ? "اضغط على الصورة لتكبيرها" : "Click the image to zoom"}</figcaption></figure>}
     {question.audio_url && <AudioPlayer src={question.audio_url} isArabic={isArabic} />}
-    {options.length > 0 ? <div className="quiz-answer-grid" dir="ltr">{options.map((option, index) => { const selected = answer === option.value; return <button type="button" key={option.value} className={`quiz-answer-option ${option.image_url ? "is-weapon-option" : ""} ${selected ? "is-selected" : ""}`} onClick={() => onAnswer(option.value)} aria-pressed={selected} aria-label={option.accessibilityLabel}><span className="quiz-answer-letter">{String.fromCharCode(65 + index)}</span>{option.image_url && <img className="quiz-answer-image" src={option.image_url} alt="" loading="eager" decoding="async" />}<span className="quiz-answer-label" dir="ltr">{option.label}</span>{selected && <Check className="quiz-answer-check" size={17} />}</button>; })}</div> : <div className="quiz-written-answer"><label htmlFor={`answer-${question.id}`}>{isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"}</label><textarea id={`answer-${question.id}`} dir={isArabic ? "rtl" : "ltr"} value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابة عملية ومختصرة..." : "Write a practical, concise answer..."} maxLength={1200} /><span>{answer.length}/1200</span></div>}
-  </article>;
+    {options.length > 0 ? <div className="quiz-answer-grid" dir="ltr">{options.map((option, index) => { const selected = answer === option.value; return <button type="button" key={option.value} className={`quiz-answer-option ${option.image_url ? "is-weapon-option" : ""} ${selected ? "is-selected" : ""}`} onClick={() => onAnswer(option.value)} aria-pressed={selected} aria-label={option.accessibilityLabel}><span className="quiz-answer-letter">{String.fromCharCode(65 + index)}</span>{option.image_url && <img className="quiz-answer-image" src={option.image_url} alt="" loading="eager" decoding="async" onClick={(event) => openImage(event, option.image_url as string, option.accessibilityLabel)} onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && openImage(event, option.image_url as string, option.accessibilityLabel)} role="button" tabIndex={0} aria-label={isArabic ? `تكبير صورة ${option.accessibilityLabel}` : `Zoom ${option.accessibilityLabel}`} />}<span className="quiz-answer-label" dir="ltr">{option.label}</span>{selected && <Check className="quiz-answer-check" size={17} />}</button>; })}</div> : <div className="quiz-written-answer"><label htmlFor={`answer-${question.id}`}>{isArabic ? "اكتب إجابتك للمراجعة الإدارية" : "Write your answer for administrator review"}</label><textarea id={`answer-${question.id}`} dir={isArabic ? "rtl" : "ltr"} value={answer} onChange={(event) => onAnswer(event.target.value)} placeholder={isArabic ? "اكتب إجابة عملية ومختصرة..." : "Write a practical, concise answer..."} maxLength={1200} /><span>{answer.length}/1200</span></div>}
+  </article>
+  {viewer && <ImageViewerOverlay src={viewer.src} alt={viewer.alt} open onClose={() => setViewer(null)} />}
+  </>;
 }
 
 function formatAudioTime(value: number) {
@@ -511,7 +553,7 @@ function AudioPlayer({ src, isArabic }: { src: string; isArabic: boolean }) {
 }
 
 function ResultPanel({ isArabic, score, proofType, setProofType, proofFile, setProofFile, proofUrl, setProofUrl, proofSubmitting, proofNotice, onSubmit }: { isArabic: boolean; score: number; proofType: string; setProofType: (value: string) => void; proofFile: File | null; setProofFile: (file: File | null) => void; proofUrl: string; setProofUrl: (value: string) => void; proofSubmitting: boolean; proofNotice: string; onSubmit: (event: React.FormEvent) => void }) {
-  return <div className="competition-result-panel"><div className="competition-result-score"><CheckCircle2 size={24} /><div><span>{isArabic ? "النقاط الموضوعية" : "Objective score"}</span><strong>{score}</strong></div></div><div className="competition-result-copy"><h3>{isArabic ? "أحسنت، انتهى الجزء الآلي" : "The automatic part is complete"}</h3><p>{isArabic ? "الأسئلة السيناريو والمقالية لا تُحسب تلقائيًا. يمكنك إرسال إثبات اختياري، ثم يراجع المشرف الدرجة النهائية وأي نقاط إضافية." : "Scenario and written questions are not auto-scored. You can send optional proof, then the administrator reviews the final score and any bonus."}</p></div><form className="competition-proof-form" onSubmit={onSubmit}><label className="competition-field"><span>{isArabic ? "نوع الإثبات" : "Proof type"}</span><select value={proofType} onChange={(event) => setProofType(event.target.value)}><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option><option value="subscription">{isArabic ? "اشتراك" : "Subscription"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option></select></label><label className="competition-field"><span>{isArabic ? "رفع صورة الإثبات" : "Proof image"}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFile(event.target.files?.[0] || null)} />{proofFile && <small>{proofFile.name} · {(proofFile.size / 1024 / 1024).toFixed(2)} MB</small>}</label><label className="competition-field"><span>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}</span><input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." inputMode="url" /></label><button className="competition-primary-button" type="submit" disabled={proofSubmitting || (!proofFile && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Send for review")}<Send size={16} /></button>{proofNotice && <p className="competition-form-notice">{proofNotice}</p>}</form></div>;
+  return <div className="competition-result-panel"><div className="competition-result-score"><CheckCircle2 size={24} /><div><span>{isArabic ? "النقاط الموضوعية" : "Objective score"}</span><strong>{score}</strong></div></div><div className="competition-result-copy"><h3>{isArabic ? "أحسنت، انتهى الجزء الآلي" : "The automatic part is complete"}</h3><p>{isArabic ? "الأسئلة السيناريو والمقالية لا تُحسب تلقائيًا. يمكنك رفع إثبات الاشتراك في يوتيوب أو ديسكورد أو أي شرط آخر، ثم يراجع المشرف الدرجة النهائية وأي نقاط إضافية." : "Scenario and written questions are not auto-scored. You can upload YouTube, Discord, or other requirement proof, then the administrator reviews the final score and any bonus."}</p></div><form className="competition-proof-form" onSubmit={onSubmit}><label className="competition-field"><span>{isArabic ? "نوع الإثبات" : "Proof type"}</span><select value={proofType} onChange={(event) => setProofType(event.target.value)}><option value="youtube_subscription">{isArabic ? "اشتراك قناة يوتيوب" : "YouTube subscription"}</option><option value="discord_membership">{isArabic ? "عضوية ديسكورد" : "Discord membership"}</option><option value="game_subscription">{isArabic ? "اشتراك أو متابعة داخل اللعبة" : "Game subscription or follow"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option></select></label><label className="competition-field"><span>{isArabic ? "رفع صورة الإثبات" : "Proof image"}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFile(event.target.files?.[0] || null)} />{proofFile && <small>{proofFile.name} · {(proofFile.size / 1024 / 1024).toFixed(2)} MB</small>}</label><label className="competition-field"><span>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}</span><input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." inputMode="url" /></label><button className="competition-primary-button" type="submit" disabled={proofSubmitting || (!proofFile && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Send for review")}<Send size={16} /></button>{proofNotice && <p className="competition-form-notice">{proofNotice}</p>}</form></div>;
 }
 
 function OrganizerCard({ organizer, isArabic }: { organizer: Organizer; isArabic: boolean }) {

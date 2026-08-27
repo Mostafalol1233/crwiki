@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 dotenv.config();
 
-const DEFAULT_AI_MODEL = "google/gemma-4-31b-it:free";
+const DEFAULT_AI_MODEL = "minimax/minimax-m3:free";
 const FALLBACK_AI_MODELS = [
-  "nvidia/nemotron-3.5-lightning:free",
-  "openai/gpt-oss-20b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "z-ai/glm-5.2:free",
 ] as const;
 
 const aiRate = new Map<string, { count: number; startedAt: number }>();
@@ -55,6 +55,10 @@ function textFromContent(content: unknown): string {
     })
     .join("")
     .trim();
+}
+
+function stripEmojis(value: string): string {
+  return value.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/[ \t]{2,}/g, ' ').trim();
 }
 
 function providerMessage(status: number, body: string): string {
@@ -162,7 +166,7 @@ async function callOpenRouter(
       temperature: 0.45,
       stream: false,
     }),
-    signal: AbortSignal.timeout(35_000),
+    signal: AbortSignal.timeout(25_000),
   });
 
   const raw = await response.text();
@@ -176,7 +180,7 @@ async function callOpenRouter(
   }
   const content = textFromContent(parsed?.choices?.[0]?.message?.content || parsed?.choices?.[0]?.text);
   if (!content) throw new Error(`${model}: provider returned an empty answer`);
-  return content;
+  return stripEmojis(content);
 }
 
 async function generateAnswer(
@@ -230,6 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 You are an expert on the CrossFire online FPS game. Help players with weapons, mercenaries, ranks, modes, maps, strategies, ZP/GP currencies, clans, and events.
 Use Markdown when helpful: bold key terms, concise bullet lists, and comparison tables. Be friendly, direct, and useful. Do not invent exact live prices, event dates, account rules, or official announcements. When current data is unavailable, say so clearly and give the safest general guidance.
 IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get clear natural Arabic replies; English users get English replies.
+Do not use emojis or decorative symbols unless the user explicitly asks for them.
 ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== END LIVE DATA ===\n` : ""}`,
     };
 
@@ -247,9 +252,11 @@ ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== EN
     return res.end();
   } catch (error: any) {
     const message = error?.message || "AI request failed";
+    console.error("[ai/chat] provider failure", message.slice(0, 1000));
     return res.status(503).json({
       error: "The AI assistant is temporarily unavailable.",
-      detail: message.slice(0, 1000),
+      code: "AI_PROVIDER_UNAVAILABLE",
+      detail: "No compatible free AI provider is currently available. Please try again shortly.",
     });
   }
 }

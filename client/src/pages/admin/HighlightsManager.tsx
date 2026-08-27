@@ -20,12 +20,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 // Same static highlights shown on the homepage — used as fallback/seed
 const STATIC_HIGHLIGHTS: Omit<Highlight, 'id'>[] = [
-  { month: 'Jun', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260528_cfwe_zppu_bonus_forums.jpg',   title: 'Summer Breeze Bonus — June 2026',                           sort_order: 1 },
-  { month: 'Apr', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260330_cfwe_bp_apr_main_forum.jpg',     title: 'Mercenary Pass Season 59: Rising Tide — April 2026',        sort_order: 2 },
-  { month: 'Mar', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260223_cfwe_zppubonus_forums.jpg',      title: 'March Of Gold — March 2026',                               sort_order: 3 },
-  { month: 'Jan', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/251223_cfwe_bp_jan2026_main_forum.jpg', title: 'Mercenary Pass Season 58: Timeless Treasures — January 2026', sort_order: 4 },
-  { month: 'Dec', year: 2025, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/251126_cfwe_npu_forum.jpg',             title: 'Sleighbell Bonus — December 2025',                          sort_order: 5 },
-  { month: 'Nov', year: 2025, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/251027_cfwe_zppubonus_forums.jpg',      title: 'Wavelite Bonus Surge — November 2025',                      sort_order: 6 },
+  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/rifle-week-2026.jpg', title: 'Rifle Week — August 24–30, 2026', sort_order: 1 },
+  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/fantastic-frenzy-august-2026.jpg', title: 'Fantastic Frenzy Weekend — August 2026', sort_order: 2 },
+  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/mercenary-pass-season-61.jpg', title: 'Mercenary Pass Season 61: High Ground — August 6–September 1, 2026', sort_order: 3 },
+  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/crossfire-roadmap-2026.jpg', title: 'August 2026 Update: Scorpion Weapons, ZM4 Mount Kunlun & Tactical Retake', sort_order: 4 },
 ];
 
 const S = {

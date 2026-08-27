@@ -1,7 +1,28 @@
-# Preview smoke check — 2026-08-27
+# نتائج فحص Preview — 2026-08-27
 
-Preview deployment checked: `crossfirewiki-oqlzk01gt-mostafalol1233s-projects.vercel.app`.
+## النشر
 
-The deployment metadata reported `READY` for commit `bc4bfabfb55b6976d81cd173e88488a11a9b3cfc` from PR #45. Read-only HTTP checks returned status 200 for the competition API in preview mode, the events API with limit 3, the Arabic events route, the Arabic competition route in preview mode, `sitemap.xml`, and `robots.txt`. The competition API response was 25,351 bytes and contained the private-preview configuration and question payload. The events API response was 20,202 bytes; the Arabic events page was 10,695 bytes; the Arabic competition page was 10,695 bytes; the sitemap was 437,207 bytes; and robots.txt was 1,204 bytes.
+الفرع الذي تم اختباره هو `audit/hardening-20260826`، وآخر التزام خاص بالإصلاح البصري هو `e32ed08`. أنشأ Vercel Preview بعنوان `crossfirewiki-887a9aiie-mostafalol1233s-projects.vercel.app`. أثناء الفحص كانت لوحة Vercel تعرض حالة البناء قبل أن تنعكس الجاهزية، لكن العنوان المباشر أعاد استجابات ناجحة.
 
-This file records Preview only. No production alias, DNS, deployment protection, secret, or Supabase environment setting was changed.
+## المسارات التي أعادت نجاحًا
+
+| المسار | النتيجة |
+|---|---:|
+| `/ar/competition?competition_test=1` | 200 |
+| `/api/content?type=competition&competition_test=1` | 200 |
+| `/ar/events` | 200 |
+| `/api/content?type=events&limit=3&q=August` | 200 |
+| `/ar/sellers` | 200 |
+| `/ar/services` | 200 |
+| `/ar/search?q=G3A3` | 200 |
+| `/ar/ai` | 200 |
+| `/sitemap.xml` | 200 |
+| `/robots.txt` | 200 |
+
+## المسابقة
+
+أعادت الحمولة 25 سؤالًا. سؤال الصور ذي الترتيب 180 يعرض الخيارات الإنجليزية المطلوبة: `G3A3` و`FAL` و`HK417` و`FN FNC`. أصبحت الخيارات الأربعة مرتبطة بصور أسلحة منفردة من الكتالوج الحي، بما في ذلك ربط الاسم الظاهر `FAL` بسجل الكتالوج الموثق باسم `FN FAL`. بقيت قيم الخيارات الداخلية القديمة محفوظة مؤقتًا حتى لا ينكسر مفتاح التصحيح قبل اعتماد ترحيل رسمي في قاعدة البيانات.
+
+## الأداء والملاحظات
+
+البناء المحلي وPreview نجحا مع تحذير معروف فقط حول حجم chunk وصفحات الاستيراد الديناميكي. لم تتم إضافة وظيفة API جديدة؛ العدد ما زال 12. لم يتم تغيير Production أو DNS أو متغيرات البيئة أو مفاتيح Supabase.

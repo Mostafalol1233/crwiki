@@ -59,3 +59,13 @@
 أضيفت في commitّي `262ed1a` و`6f12077` قواعد bot prerender للصفحات العامة، metadata عربية وإنجليزية، canonical وhreflang، OG/Twitter كاملين، JSON-LD مهروبًا، صورة HTTPS بديلة، نص المحتوى المخزن بعد تنظيفه، و404 حقيقيًا للـslug غير الموجود. فحص Preview وProduction deployment المباشر نجح لصفحة الحدث الإنجليزية والعربية، والقوائم، و`/weapons`، مع صورة OG ومحتوى body قابل للقراءة؛ الـslug غير الموجود أعاد 404، وطلب المستخدم العادي بقي shell SPA.
 
 بعد دمج PR رقم 36، deployment Production الجديد `f55dc995` أصبح READY، لكن `crossfire.wiki` وaliases الافتراضية ما زالت تقدم deploymentًا أقدم؛ لذلك يظهر فيها عنوان الصفحة الرئيسية و`X-Robots-Tag: noindex` ولا تصلها إصلاحات SEO الجديدة. رابط deployment المباشر الجديد يقدم metadata الصحيحة. لا يمكن إصلاح promotion/ربط alias من الجلسة الحالية لأن لوحة Vercel تطلب تسجيل دخولًا يدويًا.
+
+
+## دفعة الأداء ونتيجة الدمج — 2026-08-27
+
+- دُققت دفعة الأداء محليًا بنجاح: `pnpm run check` و`pnpm run audit:smoke` و`pnpm run build` و`git diff --check`، مع بقاء عدد دوال Vercel عند 12.
+- التحسينات شملت فصل بيانات أوصاف الأسلحة إلى تحميل مؤجل، تقليل أعمدة وكمية استعلامات البيانات العامة، تأجيل المكونات غير الضرورية والتحليلات، تحسين التحميل الكسول للصور، وإضافة صيغ WebP للصور الثابتة التي حققت خفضًا فعليًا للحجم.
+- دُمج PR رقم 37 بعنوان `perf: improve loading, images, and public data payloads` إلى `main` بدمج commit `a6f2b621`، وفرع العمل ما زال محفوظًا.
+- فحص Vercel اللاحق لم يُظهر deployment مرتبطًا بـ`a6f2b621` أو commit الأداء؛ أحدث deployment Production الظاهر ما زال مرتبطًا بـ`f55dc995`، لذلك لا يُعتبر الأداء منشورًا على Production حتى يظهر deployment جديد بحالة READY.
+- يلزم إعادة فحص deployment بعد تفعيل webhook/البناء من Vercel، ثم اختبار رابط deployment المباشر والنطاق `crossfire.wiki` منفصلين. لا يجوز اعتبار alias أو النطاق المخصص محدثًا اعتمادًا على نجاح الدمج وحده.
+- لا تزال حماية المسابقة وبوابات Preview كما هي، ولم تُضف أي دالة Vercel جديدة أو أي محتوى وهمي.

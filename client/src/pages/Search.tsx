@@ -47,10 +47,10 @@ export default function SearchPage() {
 
   const enabled = !!debouncedQuery;
 
-  const { data: rawPosts,    isLoading: lPosts    } = useQuery({ queryKey: ["search-posts"],    queryFn: () => getPosts({ limit: 200 }),         enabled, staleTime: 60_000 });
-  const { data: rawNews,     isLoading: lNews     } = useQuery({ queryKey: ["search-news"],     queryFn: () => getNews({ limit: 200 }),          enabled, staleTime: 60_000 });
-  const { data: rawEvents,   isLoading: lEvents   } = useQuery({ queryKey: ["search-events"],   queryFn: () => getEvents({ limit: 200 }),        enabled, staleTime: 60_000 });
-  const { data: rawWeapons,  isLoading: lWeapons  } = useQuery({ queryKey: ["search-weapons"],  queryFn: () => getWeapons({ pageSize: 9999 }),   enabled, staleTime: 60_000 });
+  const { data: rawPosts,    isLoading: lPosts    } = useQuery({ queryKey: ["search-posts", debouncedQuery],    queryFn: () => getPosts({ limit: 50, q: debouncedQuery }), enabled, staleTime: 60_000 });
+  const { data: rawNews,     isLoading: lNews     } = useQuery({ queryKey: ["search-news", debouncedQuery],     queryFn: () => getNews({ limit: 50, q: debouncedQuery }), enabled, staleTime: 60_000 });
+  const { data: rawEvents,   isLoading: lEvents   } = useQuery({ queryKey: ["search-events", debouncedQuery],   queryFn: () => getEvents({ limit: 50, q: debouncedQuery }), enabled, staleTime: 60_000 });
+  const { data: rawWeapons,  isLoading: lWeapons  } = useQuery({ queryKey: ["search-weapons", debouncedQuery],  queryFn: () => getWeapons({ q: debouncedQuery, pageSize: 50 }), enabled, staleTime: 60_000 });
   const { data: rawModes,    isLoading: lModes    } = useQuery({ queryKey: ["search-modes"],    queryFn: () => getModes(),                       enabled, staleTime: 60_000 });
   const { data: rawRanks,    isLoading: lRanks    } = useQuery({ queryKey: ["search-ranks"],    queryFn: () => getRanks(),                       enabled, staleTime: 60_000 });
   const { data: rawMaps,     isLoading: lMaps     } = useQuery({ queryKey: ["search-maps"],     queryFn: () => getMaps(),                        enabled, staleTime: 60_000 });
@@ -256,7 +256,7 @@ export default function SearchPage() {
                         {/* Thumbnail or icon */}
                         {img ? (
                           <div style={{ width: 48, height: 36, flexShrink: 0, borderRadius: 3, overflow: "hidden", background: "#050505" }}>
-                            <img src={img} alt={title} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            <img src={img} alt={title} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                           </div>
                         ) : (
                           <div style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 3, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", color }}>
@@ -269,7 +269,7 @@ export default function SearchPage() {
                             <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", padding: "2px 6px", background: `${color}18`, color, borderRadius: 2 }}>{item._type}</span>
                           </div>
                           {cleanDesc && (
-                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: 0, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", overflowWrap: "anywhere" }}>
                               {cleanDesc}
                             </p>
                           )}

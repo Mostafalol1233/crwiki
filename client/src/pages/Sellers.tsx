@@ -12,6 +12,7 @@ import { SiDiscord, SiWhatsapp, SiFacebook, SiX, SiInstagram, SiYoutube, SiTikto
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import PageSEO from "@/components/PageSEO";
+import { useLanguage } from "@/components/LanguageProvider";
 import DOMPurify from "isomorphic-dompurify";
 import { useQuery as useRQ } from "@tanstack/react-query";
 import { mergeSellerBrandAssets, type SellerBrandAsset } from "@/lib/sellerBrandAssets";
@@ -167,6 +168,8 @@ function GalleryLightbox({ images, initialIndex, onClose }: { images: string[]; 
 }
 
 export default function Sellers() {
+  const { language } = useLanguage();
+  const isArabic = language === "ar";
   const [slugMatchEn, slugParamsEn] = useRoute("/seller/:slug");
   const [slugMatchAr, slugParamsAr] = useRoute("/ar/seller/:slug");
   const slugMatch = slugMatchEn || slugMatchAr;
@@ -249,7 +252,13 @@ export default function Sellers() {
   const normalizeUrl = (u?: string) => {
     const s = String(u || '').trim();
     if (!s) return '';
-    return s.startsWith('http') ? s : `https://${s}`;
+    try {
+      const candidate = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+      const url = new URL(candidate);
+      return ["http:", "https:"].includes(url.protocol) ? url.toString() : '';
+    } catch {
+      return '';
+    }
   };
 
   const openSellerDialog = (seller: SellerWithBrand) => {
@@ -294,17 +303,17 @@ export default function Sellers() {
           <div className="relative flex items-center justify-between gap-4">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-2 shadow-lg dark:bg-slate-950/80">
               {seller.displayLogo ? (
-                <img src={seller.displayLogo} alt={`${seller.name} logo`} className="h-full w-full object-contain" loading="lazy" />
+                <img src={seller.displayLogo} alt={`${seller.name} logo`} className="h-full w-full object-contain" loading="lazy" decoding="async" />
               ) : (
                 <span className="text-2xl font-black tracking-tight text-primary">{initials}</span>
               )}
             </div>
             <div className="min-w-0 flex-1 text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">CrossFire store</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">{isArabic ? "متجر CrossFire" : "CrossFire store"}</p>
               <h3 className="mt-1 truncate text-xl font-black tracking-tight text-foreground">{seller.name}</h3>
               <div className="mt-2 flex flex-wrap justify-end gap-1.5">
-                {isFeatured && <Badge className="border-0 bg-amber-500 text-white shadow-sm">Featured</Badge>}
-                {seller.brand.sourceUrl && <Badge variant="outline" className="border-foreground/15 bg-background/60 text-[10px]">Brand source</Badge>}
+                {isFeatured && <Badge className="border-0 bg-amber-500 text-white shadow-sm">{isArabic ? "مميز" : "Featured"}</Badge>}
+                {seller.brand.sourceUrl && <Badge variant="outline" className="border-foreground/15 bg-background/60 text-[10px]">{isArabic ? "مصدر الهوية" : "Brand source"}</Badge>}
               </div>
             </div>
           </div>
@@ -326,7 +335,7 @@ export default function Sellers() {
               <span className="text-sm font-bold tabular-nums">{formatRating(seller.averageRating)}</span>
               <span className="text-[11px] text-muted-foreground">({seller.totalReviews || 0})</span>
             </div>
-            {seller.rank && seller.rank <= 5 && <Badge variant="secondary" className="shrink-0 text-[10px]"><CheckCircle className="mr-1 h-3 w-3" />Listed</Badge>}
+            {seller.rank && seller.rank <= 5 && <Badge variant="secondary" className="shrink-0 text-[10px]"><CheckCircle className="mr-1 h-3 w-3" />{isArabic ? "مدرج" : "Listed"}</Badge>}
           </div>
           <CardDescription className="line-clamp-2 text-xs leading-5">{seller.description}</CardDescription>
         </CardHeader>
@@ -335,7 +344,7 @@ export default function Sellers() {
           {seller.promotionText && <div className="rounded-xl border border-primary/15 bg-primary/[0.06] p-3 text-xs font-medium leading-5 text-primary">{seller.promotionText}</div>}
           {seller.prices.length > 0 && (
             <div className="rounded-xl border bg-muted/20 p-3">
-              <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Top deals</p><span className="text-[10px] text-muted-foreground">{seller.prices.length} items</span></div>
+              <div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{isArabic ? "أبرز الأسعار" : "Top deals"}</p><span className="text-[10px] text-muted-foreground">{seller.prices.length} {isArabic ? "عناصر" : "items"}</span></div>
               <div className="space-y-2">
                 {seller.prices.slice(0, 3).map((price, idx) => <div key={idx} className="flex items-center justify-between gap-3 text-xs"><span className="truncate text-muted-foreground">{price.item}</span><span className="shrink-0 font-black text-emerald-600 dark:text-emerald-400">{price.price}</span></div>)}
               </div>
@@ -350,7 +359,7 @@ export default function Sellers() {
             {seller.telegram && <SiTelegram className="h-4 w-4 text-sky-600" />}
             {seller.facebook && <SiFacebook className="h-4 w-4 text-blue-600" />}
           </div>
-          <div className="flex items-center text-xs font-bold text-primary transition-all group-hover:gap-2">Open storefront <ExternalLink className="ml-1 h-3 w-3" /></div>
+          <div className="flex items-center text-xs font-bold text-primary transition-all group-hover:gap-2">{isArabic ? "فتح المتجر" : "Open storefront"} <ExternalLink className="ml-1 h-3 w-3" /></div>
         </CardFooter>
       </Card>
     );
@@ -394,7 +403,7 @@ export default function Sellers() {
           <div className="relative bg-gradient-to-br from-primary/10 via-background to-primary/5 border-b">
             <div className="max-w-6xl mx-auto px-4 md:px-8 py-10 md:py-16">
               <Button variant="ghost" onClick={() => window.location.href = '/sellers'} className="mb-6 pl-0 hover:pl-2 transition-all text-sm">
-                ← Back to All Sellers
+                {isArabic ? "← العودة إلى جميع البائعين" : "← Back to All Sellers"}
               </Button>
 
               <div className="flex flex-col md:flex-row items-start gap-6">
@@ -412,21 +421,21 @@ export default function Sellers() {
                   <h1 className="text-3xl md:text-5xl font-bold mb-3 flex flex-wrap items-center gap-3">
                     {s.name}
                     {s.featured && (
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">⭐ Featured</Badge>
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">{isArabic ? "مميز" : "Featured"}</Badge>
                     )}
                     {s.rank && s.rank <= 5 && (
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 flex items-center gap-1 text-xs">
-                        <CheckCircle className="h-3 w-3" /> Listed
+                        <CheckCircle className="h-3 w-3" /> {isArabic ? "مدرج" : "Listed"}
                       </Badge>
                     )}
                   </h1>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-2xl font-bold tabular-nums">{formatRating(s.averageRating)}</span>
                     {renderStars(Math.round(isFiniteNumber(s.averageRating) ? s.averageRating : 0))}
-                    <span className="text-muted-foreground text-sm">({s.totalReviews || 0} reviews)</span>
+                    <span className="text-muted-foreground text-sm">({s.totalReviews || 0} {isArabic ? "تقييمًا" : "reviews"})</span>
                   </div>
                   <p className="text-muted-foreground max-w-2xl leading-relaxed">{s.description}</p>
-                  {s.brand.sourceUrl && <a href={s.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"><Globe className="h-3.5 w-3.5" /> {s.brand.sourceLabel || "Brand source"} <ExternalLink className="h-3 w-3" /></a>}
+                  {s.brand.sourceUrl && <a href={s.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"><Globe className="h-3.5 w-3.5" /> {s.brand.sourceLabel || (isArabic ? "مصدر الهوية" : "Brand source")} <ExternalLink className="h-3 w-3" /></a>}
                 </div>
               </div>
             </div>
@@ -440,7 +449,7 @@ export default function Sellers() {
                   <div className="space-y-4 rounded-2xl border bg-card/60 p-4 md:p-5">
                     <h3 className="text-xl font-semibold flex items-center gap-2">
                       <ZoomIn className="h-5 w-5 text-muted-foreground" />
-                      Gallery
+                      {isArabic ? "المعرض" : "Gallery"}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {profileImages.map((image, idx) => (
@@ -454,6 +463,7 @@ export default function Sellers() {
                             alt={`${s.name} ${idx + 1}`}
                             className="block h-auto max-h-[420px] min-h-[180px] w-full object-contain bg-transparent p-2"
                             loading="lazy"
+                            decoding="async"
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center">
                             <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover/img:opacity-100 transition-opacity drop-shadow-lg" />
@@ -466,7 +476,7 @@ export default function Sellers() {
 
                 {Array.isArray(s.prices) && s.prices.length > 0 && (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">Price List</h3>
+                    <h3 className="text-xl font-semibold">{isArabic ? "قائمة الأسعار" : "Price List"}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {s.prices.map((price, idx) => (
                         <div key={idx} className="flex justify-between items-center p-4 rounded-xl border bg-card hover:shadow-md transition-all hover:border-primary/30 group">
@@ -491,12 +501,12 @@ export default function Sellers() {
               <div className="space-y-5">
                 <Card className="shadow-md border-0 overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent pb-3">
-                    <CardTitle className="text-lg">Contact Seller</CardTitle>
+                    <CardTitle className="text-lg">{isArabic ? "تواصل مع البائع" : "Contact Seller"}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pt-3">
-                    {s.website && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(normalizeUrl(s.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
-                    {s.email && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`mailto:${s.email}`, '_blank')}><Mail className="h-4 w-4" /> Email</Button>}
-                    {s.phone && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`tel:${s.phone}`, '_self')}><Phone className="h-4 w-4" /> Phone</Button>}
+                    {s.website && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(normalizeUrl(s.website), '_blank')}><Globe className="h-4 w-4" /> {isArabic ? "الموقع" : "Website"}</Button>}
+                    {s.email && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`mailto:${s.email}`, '_blank')}><Mail className="h-4 w-4" /> {isArabic ? "البريد الإلكتروني" : "Email"}</Button>}
+                    {s.phone && <Button variant="outline" className="w-full justify-start gap-2 h-10" onClick={() => window.open(`tel:${s.phone}`, '_self')}><Phone className="h-4 w-4" /> {isArabic ? "الهاتف" : "Phone"}</Button>}
                     {s.whatsapp && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-green-600 hover:text-green-700 hover:border-green-300" onClick={() => window.open(normalizeUrl(s.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
                     {s.discord && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-indigo-600 hover:text-indigo-700 hover:border-indigo-300" onClick={() => window.open(normalizeUrl(s.discord), '_blank')}><SiDiscord className="h-4 w-4" /> Discord</Button>}
                     {s.telegram && <Button variant="outline" className="w-full justify-start gap-2 h-10 text-sky-600 hover:text-sky-700 hover:border-sky-300" onClick={() => window.open(normalizeUrl(s.telegram), '_blank')}><SiTelegram className="h-4 w-4" /> Telegram</Button>}
@@ -506,7 +516,7 @@ export default function Sellers() {
                 {(s.facebook || s.twitter || s.instagram || s.youtube || s.tiktok || s.telegram) && (
                   <Card className="shadow-md border-0">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Social Media</CardTitle>
+                      <CardTitle className="text-lg">{isArabic ? "وسائل التواصل" : "Social Media"}</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-2 pt-0">
                       {s.facebook && <Button variant="ghost" size="sm" onClick={() => window.open(normalizeUrl(s.facebook!), '_blank')}><SiFacebook className="mr-2 h-4 w-4" /> Facebook</Button>}
@@ -520,7 +530,7 @@ export default function Sellers() {
                 )}
 
                 <Button size="lg" className="w-full shadow-md" onClick={() => window.location.href = `/reviews/seller/slug/${s.seller_name_slug || slug}`}>
-                  Read All Reviews
+                  {isArabic ? "قراءة كل التقييمات" : "Read All Reviews"}
                 </Button>
               </div>
             </div>
@@ -592,9 +602,9 @@ export default function Sellers() {
                   <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                     {renderStars(Math.round(isFiniteNumber(sellerBySlug.averageRating) ? sellerBySlug.averageRating : 0))}
                     <span className="font-medium text-foreground">{formatRating(sellerBySlug.averageRating)}</span>
-                    <span>({sellerBySlug.totalReviews || 0} reviews)</span>
+                    <span>({sellerBySlug.totalReviews || 0} {isArabic ? "تقييمًا" : "reviews"})</span>
                     {sellerBySlug.featured && (
-                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">⭐ Featured</Badge>
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">{isArabic ? "مميز" : "Featured"}</Badge>
                     )}
                   </div>
                 </div>
@@ -609,11 +619,7 @@ export default function Sellers() {
 
               {mainImage && (
                 <div className="relative w-full overflow-hidden mb-8">
-                  <img
-                    src={mainImage}
-                    alt={`${sellerBySlug.name} main`}
-                    className="w-full h-auto md:max-h-[560px] object-contain cursor-zoom-in bg-transparent"
-                    loading="lazy"
+                  <img src={mainImage} alt={`${sellerBySlug.name} main`} className="w-full h-auto md:max-h-[560px] object-contain cursor-zoom-in bg-transparent" loading="lazy" decoding="async"
                     onClick={() => setLightbox({ images, index: 0 })}
                   />
                 </div>
@@ -651,7 +657,7 @@ export default function Sellers() {
                         className="group relative rounded-lg border bg-muted overflow-hidden cursor-pointer"
                         onClick={() => setLightbox({ images, index: idx + 1 })}
                       >
-                        <img src={img} className="block h-auto min-h-40 max-h-60 w-full object-contain bg-transparent p-2" alt={`${sellerBySlug.name} ${idx + 2}`} />
+                        <img src={img} className="block h-auto min-h-40 max-h-60 w-full object-contain bg-transparent p-2" alt={`${sellerBySlug.name} ${idx + 2}`} loading="lazy" decoding="async" />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                           <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
@@ -694,8 +700,8 @@ export default function Sellers() {
     <LocalErrorBoundary>
       <>
         <PageSEO
-          title={"Game Card Sellers — CrossFire Wiki"}
-          description={"Explore community-listed CrossFire card stores with brand identity, public contact channels, prices, and review signals."}
+          title={isArabic ? "بائعو بطاقات CrossFire — CrossFire Wiki" : "Game Card Sellers — CrossFire Wiki"}
+          description={isArabic ? "دليل البائعين المدرجين من المجتمع مع الهوية ووسائل التواصل والأسعار وإشارات التقييم." : "Explore community-listed CrossFire card stores with brand identity, public contact channels, prices, and review signals."}
           canonicalPath="/sellers"
         />
         <div className="min-h-screen bg-background">
@@ -707,20 +713,20 @@ export default function Sellers() {
               <div className="max-w-3xl mx-auto text-center">
                 <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
                   <Store className="h-3.5 w-3.5" />
-                  CURATED STORE DIRECTORY
+                  {isArabic ? "دليل المتاجر المدرجة" : "CURATED STORE DIRECTORY"}
                 </div>
                 <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60">
-                  CrossFire Sellers Market
+                  {isArabic ? "سوق بائعي CrossFire" : "CrossFire Sellers Market"}
                 </h1>
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
-                  Discover community-listed CrossFire card stores with real storefront identity, public contact channels, and visible price signals. Compare the details yourself before you buy.
+                  {isArabic ? "اكتشف متاجر بطاقات CrossFire المدرجة من المجتمع، مع هوية واضحة ووسائل تواصل عامة ومؤشرات سعر ظاهرة. راجع التفاصيل بنفسك قبل الشراء." : "Discover community-listed CrossFire card stores with real storefront identity, public contact channels, and visible price signals. Compare the details yourself before you buy."}
                 </p>
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
                   {[
-                    { label: "Listed Stores", value: String(filteredSellers.length || sellers.length) },
-                    { label: "Featured Stores", value: String(sellers.filter(s => s.featured).length) },
-                    { label: "Community Reviews", value: String(sellers.reduce((acc, s) => acc + (s.totalReviews || 0), 0)) },
+                    { label: isArabic ? "المتاجر المدرجة" : "Listed Stores", value: String(filteredSellers.length || sellers.length) },
+                    { label: isArabic ? "المتاجر المميزة" : "Featured Stores", value: String(sellers.filter(s => s.featured).length) },
+                    { label: isArabic ? "تقييمات المجتمع" : "Community Reviews", value: String(sellers.reduce((acc, s) => acc + (s.totalReviews || 0), 0)) },
                   ].map(stat => (
                     <div key={stat.label} className="text-center p-3 rounded-xl bg-card/60 border border-border/50 backdrop-blur-sm">
                       <div className="text-2xl font-black text-primary">{stat.value}</div>
@@ -738,7 +744,7 @@ export default function Sellers() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search sellers, items, or descriptions..."
+                  placeholder={isArabic ? "ابحث عن بائع أو عنصر أو وصف..." : "Search sellers, items, or descriptions..."}
                   className="pl-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -749,13 +755,13 @@ export default function Sellers() {
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sort by" />
+                      <SelectValue placeholder={isArabic ? "ترتيب حسب" : "Sort by"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="rank">Recommended</SelectItem>
-                      <SelectItem value="rating">Highest Rated</SelectItem>
-                      <SelectItem value="reviews">Most Reviewed</SelectItem>
-                      <SelectItem value="name">Name (A-Z)</SelectItem>
+                      <SelectItem value="rank">{isArabic ? "المقترح" : "Recommended"}</SelectItem>
+                      <SelectItem value="rating">{isArabic ? "الأعلى تقييمًا" : "Highest Rated"}</SelectItem>
+                      <SelectItem value="reviews">{isArabic ? "الأكثر تقييمًا" : "Most Reviewed"}</SelectItem>
+                      <SelectItem value="name">{isArabic ? "الاسم (أ-ي)" : "Name (A-Z)"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -767,7 +773,7 @@ export default function Sellers() {
               <div className="mb-12">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <Star className="fill-yellow-400 text-yellow-400 h-6 w-6" />
-                  Featured Stores
+                  {isArabic ? "المتاجر المميزة" : "Featured Stores"}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {featuredSellers.map((seller) => (
@@ -780,7 +786,7 @@ export default function Sellers() {
             {/* All Sellers */}
             <div>
               <h2 className="text-2xl font-semibold mb-6">
-                {featuredSellers.length > 0 ? "All Listed Stores" : "Listed Stores"}
+                {featuredSellers.length > 0 ? (isArabic ? "كل المتاجر المدرجة" : "All Listed Stores") : (isArabic ? "المتاجر المدرجة" : "Listed Stores")}
               </h2>
               {regularSellers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -790,7 +796,7 @@ export default function Sellers() {
                 </div>
               ) : (
                 <div className="text-center py-16 text-muted-foreground">
-                  {searchQuery ? "No sellers found matching your search." : "No sellers available."}
+                  {searchQuery ? (isArabic ? "لا يوجد بائعون يطابقون بحثك." : "No sellers found matching your search.") : (isArabic ? "لا يوجد بائعون متاحون حاليًا." : "No sellers available.")}
                 </div>
               )}
             </div>
@@ -808,13 +814,13 @@ export default function Sellers() {
                         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/90 p-2 shadow-lg dark:bg-slate-950/80">
                           {selectedSeller.displayLogo ? <img src={selectedSeller.displayLogo} alt={`${selectedSeller.name} logo`} className="h-full w-full object-contain" /> : <span className="text-2xl font-black text-primary">{selectedSeller.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>}
                         </div>
-                        <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">Community-listed storefront</p><p className="mt-1 text-xl font-black tracking-tight">{selectedSeller.name}</p>{selectedSeller.brand.sourceUrl && <a href={selectedSeller.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Brand source <ExternalLink className="h-3 w-3" /></a>}</div>
+                        <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/60">{isArabic ? "متجر مدرج من المجتمع" : "Community-listed storefront"}</p><p className="mt-1 text-xl font-black tracking-tight">{selectedSeller.name}</p>{selectedSeller.brand.sourceUrl && <a href={selectedSeller.brand.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">{isArabic ? "مصدر الهوية" : "Brand source"} <ExternalLink className="h-3 w-3" /></a>}</div>
                       </div>
                     </div>
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2 text-2xl">
                         {selectedSeller.name}
-                        {selectedSeller.featured && <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">⭐ Featured</Badge>}
+                        {selectedSeller.featured && <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 text-xs">{isArabic ? "مميز" : "Featured"}</Badge>}
                       </DialogTitle>
                       <DialogDescription>
                         <div className="flex items-center gap-2 mt-1">
@@ -831,7 +837,7 @@ export default function Sellers() {
 
                     {selectedSeller.displayImages.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="font-semibold">Gallery</h3>
+                        <h3 className="font-semibold">{isArabic ? "المعرض" : "Gallery"}</h3>
                         <div className="grid grid-cols-2 gap-2">
                           {selectedSeller.displayImages.slice(0, 4).map((img, idx) => (
                             <div
@@ -854,7 +860,7 @@ export default function Sellers() {
 
                     {Array.isArray(selectedSeller.prices) && selectedSeller.prices.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="font-semibold">Price List</h3>
+                        <h3 className="font-semibold">{isArabic ? "قائمة الأسعار" : "Price List"}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {selectedSeller.prices.map((p, idx) => (
                             <div key={idx} className="flex justify-between items-center p-3 rounded-lg border bg-muted/50 hover:border-primary/30 transition-colors">
@@ -870,7 +876,7 @@ export default function Sellers() {
                   {/* Right: Contact & Sidebar */}
                   <div className="space-y-4">
                     <div className="rounded-2xl border bg-card p-4 space-y-3 shadow-sm">
-                      <h3 className="font-semibold">Contact Seller</h3>
+                      <h3 className="font-semibold">{isArabic ? "تواصل مع البائع" : "Contact Seller"}</h3>
                       <div className="grid gap-2">
                         {selectedSeller.website && <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => window.open(normalizeUrl(selectedSeller.website), '_blank')}><Globe className="h-4 w-4" /> Website</Button>}
                         {selectedSeller.whatsapp && <Button variant="outline" size="sm" className="justify-start gap-2 text-green-600" onClick={() => window.open(normalizeUrl(selectedSeller.whatsapp), '_blank')}><SiWhatsapp className="h-4 w-4" /> WhatsApp</Button>}
@@ -883,11 +889,11 @@ export default function Sellers() {
                       const sellerSlug = selectedSeller.seller_name_slug || selectedSeller.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
                       window.location.href = `/seller/${sellerSlug}`;
                     }}>
-                      View Full Profile
+                      {isArabic ? "عرض الملف الكامل" : "View Full Profile"}
                     </Button>
 
                     <Button variant="outline" className="w-full" onClick={() => window.location.href = `/reviews/seller/slug/${selectedSeller.seller_name_slug || slug}`}>
-                      View All Reviews
+                      {isArabic ? "عرض كل التقييمات" : "View All Reviews"}
                     </Button>
                   </div>
                 </div>

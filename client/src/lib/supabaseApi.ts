@@ -321,7 +321,7 @@ export async function getMercenaries() {
 }
 
 // ─── Posts ───────────────────────────────────────────────────────────────────
-export async function getPosts(opts: { limit?: number; offset?: number; category?: string } = {}) {
+export async function getPosts(opts: { limit?: number; offset?: number; category?: string; q?: string } = {}) {
   const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
   const limit = Math.min(50, Math.max(1, requestedLimit));
   const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
@@ -333,6 +333,7 @@ const params = new URLSearchParams({
         offset: String(offset),
     });
     if (category) params.set('category', category);
+    if (opts.q) params.set('q', String(opts.q).trim().slice(0, 80));
     const response = await fetch(`/api/content?${params.toString()}`);
     if (response.ok) {
       const json = await response.json();
@@ -378,6 +379,8 @@ const params = new URLSearchParams({
   const result = await runSafeQuery(fallbackPosts, async () => {
     let query = supabase.from('posts').select('id,title,title_ar,post_slug,content,content_ar,summary,image_url,category,tags,author,views,reading_time,featured,preview_on_home,language,seo_title,seo_description,og_image,canonical_url,gallery,created_at,updated_at', { count: 'exact' }).order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
+    const search = String(opts.q || '').trim().slice(0, 80).replace(/[,*()]/g, ' ');
+    if (search) query = query.or(`title.ilike.%${search}%,title_ar.ilike.%${search}%,summary.ilike.%${search}%,content.ilike.%${search}%,content_ar.ilike.%${search}%`);
     query = query.range(offset, offset + limit - 1);
     return await query;
   });
@@ -469,7 +472,7 @@ function normalizePost(p: any = {}) {
 }
 
 // ─── News ────────────────────────────────────────────────────────────────────
-export async function getNews(opts: { limit?: number; offset?: number; category?: string } = {}) {
+export async function getNews(opts: { limit?: number; offset?: number; category?: string; q?: string } = {}) {
   const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
   const limit = Math.min(50, Math.max(1, requestedLimit));
   const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
@@ -477,6 +480,8 @@ export async function getNews(opts: { limit?: number; offset?: number; category?
   const result = await runSafeQuery(fallbackNews, async () => {
     let query = supabase.from('news').select('id,title,title_ar,news_slug,date_range,image_url,category,content,content_ar,html_content,author,featured,preview_on_home,created_at', { count: 'exact' }).order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
+    const search = String(opts.q || '').trim().slice(0, 80).replace(/[,*()]/g, ' ');
+    if (search) query = query.or(`title.ilike.%${search}%,title_ar.ilike.%${search}%,content.ilike.%${search}%,content_ar.ilike.%${search}%`);
     query = query.range(offset, offset + limit - 1);
     return await query;
   });
@@ -522,12 +527,14 @@ function normalizeNews(n: any = {}) {
 }
 
 // ─── Events ──────────────────────────────────────────────────────────────────
-export async function getEvents(opts: { limit?: number; offset?: number } = {}) {
+export async function getEvents(opts: { limit?: number; offset?: number; q?: string } = {}) {
   const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
   const limit = Math.min(50, Math.max(1, requestedLimit));
   const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
+  const search = String(opts.q || '').trim().slice(0, 80);
   try {
     const params = new URLSearchParams({ type: 'events', limit: String(limit), offset: String(offset) });
+    if (search) params.set('q', search);
     const response = await withTimeout(fetch(`/api/content?${params.toString()}`, { headers: { Accept: 'application/json' } }));
     if (response.ok) {
       const payload = await response.json();
@@ -539,13 +546,16 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
   }
   try {
     const result = await runSafeQuery(fallbackEvents, async () => {
-      return await withTimeout(
-        supabase
-          .from('events')
-          .select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1)
-      );
+      let query = supabase
+        .from('events')
+        .select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (search) {
+        const safeSearch = search.replace(/[,*()%]/g, ' ');
+        query = query.or(`title.ilike.%${safeSearch}%,title_ar.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%,description_ar.ilike.%${safeSearch}%`);
+      }
+      return await withTimeout(query);
     });
     const data = Array.isArray(result.data) ? result.data : [];
     return { items: data.map(normalizeEvent), total: result.count || data.length || 0 };

@@ -3325,3 +3325,71 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Shared content safety: keep long wiki data usable on narrow screens. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+iframe {
+  border: 0;
+}
+
+:where(pre, code, a, p, h1, h2, h3, h4, h5, h6, li, td, th) {
+  overflow-wrap: anywhere;
+}
+
+:where(input, textarea, select, button) {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  :where(.rich-html-content, .raw-html-preview, .prose) table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :where(.rich-html-content, .raw-html-preview, .prose) pre {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+
+  .search-result-card {
+    align-items: flex-start !important;
+  }
+
+  .search-result-card p {
+    display: -webkit-box;
+    overflow: hidden !important;
+    white-space: normal !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  [data-testid="tabs-admin"] > [role="tablist"] {
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  img,
+  video {
+    scroll-behavior: auto;
+  }
+}

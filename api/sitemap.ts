@@ -405,10 +405,16 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
   return { status: 400, body: { error: "Unsupported community action" } };
 }
 
+const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, string[]> = {
+  "180": ["G3A3", "FAL", "HK417", "FN FNC"],
+};
+
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
   const names = new Set<string>();
   for (const question of questions) {
     if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
+    const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+    if (displayNames) displayNames.forEach((name) => names.add(name));
     for (const option of question.options) {
       const name = typeof option === "string"
         ? option
@@ -430,13 +436,16 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
     }
     return questions.map((question) => {
       if (question?.kind !== "weapon" || !Array.isArray(question.options)) return question;
+      const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
       return {
         ...question,
-        options: question.options.map((option: any) => {
-          if (typeof option === "string") return { value: option, label_en: option, image_url: imageByName.get(option) || null };
+        options: question.options.map((option: any, index: number) => {
+          const displayName = displayNames?.[index];
+          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(displayName || option) || null };
           if (!option || typeof option !== "object") return option;
-          const name = typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "";
-          return { ...option, image_url: imageByName.get(name) || (typeof option.image_url === "string" && option.image_url ? option.image_url : null) };
+          const name = displayName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
+          const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
+          return { ...option, label_en: displayName || option.label_en, display_label_en: displayName || option.display_label_en, image_url: imageByName.get(name) || (displayNames ? null : existingImage) };
         }),
       };
     });
@@ -463,6 +472,7 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
   const base = `${SUPABASE_URL}/rest/v1`;
 
   if (action === "request_access") {
+    if (!allowCommunityRequest(req, "competition-access", 3)) return { status: 429, body: { error: "Too many access requests. Try again later." } };
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
     if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
@@ -482,6 +492,7 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     const accessMode = body.accessMode === "new" ? "new" : "returning";
     if (phone.length < 5 || phone.length > 40) return { status: 400, body: { error: "A valid phone number is required" } };
     if (accessMode === "new") {
+      if (!allowCommunityRequest(req, "competition-access", 3)) return { status: 429, body: { error: "Too many access requests. Try again later." } };
       if (body.consent !== true) return { status: 400, body: { error: "Contact consent is required" } };
       const requestResponse = await fetch(`${base}/competition_attempts`, {
         method: "POST", headers,
@@ -613,7 +624,10 @@ async function q(table: string, select: string, order: string, limit = 2000): Pr
 
 async function readCompetitionContent(previewAllowed = false): Promise<{ config: any | null; prizes: any[]; questions: any[]; leaderboard: any[] }> {
   if (!SUPABASE_URL || !ANON_KEY) return { config: null, prizes: [], questions: [], leaderboard: [] };
-  const readHeaders = previewAllowed && SERVICE_KEY ? serviceHeaders() : h();
+  // Read through the server-only key so an announced leaderboard remains readable
+  // after the public active flag is turned off; questions and prizes are still
+  // gated by previewOrActive below and the key is never returned to the client.
+  const readHeaders = SERVICE_KEY ? serviceHeaders() : h();
   const request = async (table: string, select: string, extra: Record<string, string> = {}) => {
     const params = new URLSearchParams({ select, ...extra });
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers: readHeaders, signal: AbortSignal.timeout(9000) });
@@ -644,7 +658,7 @@ async function readCompetitionContent(previewAllowed = false): Promise<{ config:
   }
 }
 
-async function readEventRows(opts: { limit?: number; offset?: number; id?: string; slug?: string } = {}): Promise<{ rows: any[]; total: number }> {
+async function readEventRows(opts: { limit?: number; offset?: number; id?: string; slug?: string; q?: string } = {}): Promise<{ rows: any[]; total: number }> {
   if (!SUPABASE_URL || !ANON_KEY) return { rows: [], total: 0 };
   const limit = Math.min(50, Math.max(1, Number(opts.limit) || 20));
   const offset = Math.max(0, Number(opts.offset) || 0);
@@ -652,6 +666,7 @@ async function readEventRows(opts: { limit?: number; offset?: number; id?: strin
   const filters: Record<string, string> = {};
   if (opts.id) filters.id = `eq.${safeValue(opts.id)}`;
   if (opts.slug) filters.event_name_slug = `eq.${safeValue(opts.slug)}`;
+  const search = String(opts.q || '').trim().slice(0, 80).replace(/[,*()%]/g, ' ');
   const projections = [
     'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at',
     'id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,featured,created_at',
@@ -660,6 +675,7 @@ async function readEventRows(opts: { limit?: number; offset?: number; id?: strin
   for (const select of projections) {
     try {
       const params = new URLSearchParams({ select, order: 'created_at.desc', limit: String(limit), offset: String(offset), ...filters });
+      if (search) params.set('or', `(title.ilike.*${search}*,title_ar.ilike.*${search}*,description.ilike.*${search}*,description_ar.ilike.*${search}*)`);
       const response = await fetch(`${SUPABASE_URL}/rest/v1/events?${params.toString()}`, {
         headers: { ...h(), Prefer: 'count=exact' },
         signal: AbortSignal.timeout(9000),
@@ -742,8 +758,12 @@ async function readContentRows(
   };
   if (opts.category) (baseParams as Record<string, string>).category = `eq.${opts.category}`;
 
-  async function fetchPostProjection(select: string) {
+  const safeQuery = String(opts.q || '').trim().slice(0, 80).replace(/[,*()]/g, ' ');
+  async function fetchPostProjection(select: string, searchFields: string[]) {
     const params = new URLSearchParams({ select, ...baseParams });
+    if (safeQuery) {
+      params.set('or', `(${searchFields.map((field) => `${field}.ilike.*${safeQuery}*`).join(',')})`);
+    }
     const response = await fetch(`${SUPABASE_URL}/rest/v1/posts?${params.toString()}`, {
       headers: { ...h(), Prefer: 'count=exact' },
       signal: AbortSignal.timeout(9000),
@@ -765,7 +785,10 @@ async function readContentRows(
       'id,title,post_slug,content,image_url,category,created_at',
     ];
     for (const projection of projections) {
-      const result = await fetchPostProjection(projection);
+      const searchFields = projection.includes('title_ar')
+        ? ['title', 'title_ar', 'summary', 'summary_ar', 'content', 'content_ar']
+        : ['title', 'content'];
+      const result = await fetchPostProjection(projection, searchFields);
       if (result) return result;
     }
     console.error('[api/content] all posts projections failed');
@@ -866,11 +889,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawOffset = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
     const rawId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
     const rawSlug = Array.isArray(req.query.slug) ? req.query.slug[0] : req.query.slug;
+    const rawQuery = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
     const { rows, total } = await readEventRows({
       limit: Number(rawLimit),
       offset: Number(rawOffset),
       id: typeof rawId === 'string' ? rawId : undefined,
       slug: typeof rawSlug === 'string' ? rawSlug : undefined,
+      q: typeof rawQuery === 'string' ? rawQuery : undefined,
     });
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');

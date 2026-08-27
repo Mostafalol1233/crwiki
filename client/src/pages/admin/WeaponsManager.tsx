@@ -17,7 +17,7 @@ interface Weapon {
   created_at: string;
 }
 
-const CATEGORIES = ['Assault Rifles', 'Sniper Rifles', 'SMG', 'Machine Guns', 'Shotguns', 'Pistols', 'Rifles', 'Melee', 'Grenade'];
+const CATEGORIES = ['Assault Rifle', 'Assault Rifles', 'Sniper Rifle', 'Sniper Rifles', 'SMG', 'Machine Gun', 'Machine Guns', 'Shotgun', 'Shotguns', 'Pistol', 'Pistols', 'Rifle', 'Rifles', 'Melee', 'Grenade'];
 const EMPTY: Partial<Weapon> = { name: '', category: 'Assault Rifles', image_url: '', background_url: '', description: '', stats: {} };
 const PAGE_SIZE = 50;
 const col = createColumnHelper<Weapon>();
@@ -104,7 +104,7 @@ export default function WeaponsManager() {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const columns = [
-    col.accessor('image_url', { header: '', cell: (i) => i.getValue() ? <img src={i.getValue()} alt="" style={{ width: 40, height: 30, objectFit: 'contain', background: '#09090b', borderRadius: 4, border: '1px solid #27272a', padding: 2 }} /> : <div style={{ width: 40, height: 30, background: '#27272a', borderRadius: 4 }} /> }),
+    col.accessor('image_url', { header: '', cell: (i) => i.getValue() ? <img src={i.getValue()} alt="" loading="lazy" decoding="async" style={{ width: 40, height: 30, objectFit: 'contain', background: '#09090b', borderRadius: 4, border: '1px solid #27272a', padding: 2 }} /> : <div style={{ width: 40, height: 30, background: '#27272a', borderRadius: 4 }} /> }),
     col.accessor('name', { header: 'Name', cell: (i) => <span style={{ color: '#fafafa', fontWeight: 500 }}>{i.getValue()}</span> }),
     col.accessor('category', { header: 'Category', cell: (i) => <span style={{ fontSize: 12, color: '#a1a1aa' }}>{i.getValue()}</span> }),
     col.display({

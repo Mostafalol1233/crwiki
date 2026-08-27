@@ -3,7 +3,24 @@ import { uploadToSupabase } from './uploadToSupabase';
 import { apiRequest } from './queryClient';
 import { adminFetch } from './supabaseAdmin';
 import { getDefaultServiceListings, normalizeServiceListing } from '../../../shared/services-directory.js';
-import { getWeaponDescription } from '../../../shared/weapon-descriptions';
+type WeaponDescriptionRecord = import('../../../shared/weapon-descriptions').WeaponDescriptionRecord;
+
+let weaponDescriptionModulePromise: Promise<typeof import('../../../shared/weapon-descriptions')> | null = null;
+function loadWeaponDescriptionModule() {
+  if (!weaponDescriptionModulePromise) {
+    weaponDescriptionModulePromise = import('../../../shared/weapon-descriptions');
+  }
+  return weaponDescriptionModulePromise;
+}
+
+async function normalizeWeaponAsync(weapon: any) {
+  try {
+    const { getWeaponDescription } = await loadWeaponDescriptionModule();
+    return normalizeWeapon(weapon, getWeaponDescription(String(weapon?.name || '')));
+  } catch {
+    return normalizeWeapon(weapon);
+  }
+}
 
 const TABLE_MISSING_RE = /(does not exist|relation .* does not exist|42P01|not found)/i;
 
@@ -118,7 +135,7 @@ export async function getWeapons(opts: {
         ? filteredWeapons.slice(offset, offset + effectivePageSize)
         : filteredWeapons;
       return {
-        items: weapons.map((w: any) => normalizeWeapon({
+        items: await Promise.all(weapons.map(async (w: any) => normalizeWeaponAsync({
           id: w.id,
           name: w.name,
           image_url: w.image_url || w.image || '',
@@ -134,7 +151,7 @@ export async function getWeapons(opts: {
           currency: w.currency || '',
           source_url: w.source_url || w.sourceUrl || '',
           created_at: w.created_at || '',
-        })),
+        }))),
         total: apiReturnedMoreThanOnePage
           ? filteredWeapons.length
           : (Number.isFinite(Number(json.total)) ? Number(json.total) : weapons.length),
@@ -148,7 +165,7 @@ export async function getWeapons(opts: {
 
   try {
     const result = await runSafeQuery(fallbackWeapons, async () => {
-      let query = supabase.from('weapons').select('*', { count: 'exact' });
+      let query = supabase.from('weapons').select('id,name,image_url,background_url,category,description,stats,acquisition_type,acquisition_method,source_url,created_at', { count: 'exact' });
 
       if (q) query = query.ilike('name', `%${q}%`);
       if (letter) query = query.ilike('name', `${letter}%`);
@@ -160,7 +177,7 @@ export async function getWeapons(opts: {
       return await withTimeout(query);
     });
     const data = Array.isArray(result.data) ? result.data : [];
-    return { items: data.map(normalizeWeapon), total: result.count || data.length || 0, page, pageSize: effectivePageSize };
+    return { items: await Promise.all(data.map(normalizeWeaponAsync)), total: result.count || data.length || 0, page, pageSize: effectivePageSize };
   } catch {
     const start = offset;
     const items = fallbackWeapons
@@ -168,22 +185,22 @@ export async function getWeapons(opts: {
       .filter((weapon: any) => !letter || String(weapon.name).toLowerCase().startsWith(letter.toLowerCase()))
       .filter((weapon: any) => !category || weapon.category === category)
       .slice(start, start + effectivePageSize)
-      .map(normalizeWeapon);
+      .map((weapon) => normalizeWeapon(weapon));
     return { items, total: fallbackWeapons.length, page, pageSize: effectivePageSize };
   }
 }
 
 export async function getWeaponById(id: string) {
   const result = await runSafeQuery(fallbackWeapons, async () => {
-    return await supabase.from('weapons').select('*').eq('id', id).single();
+    return await supabase.from('weapons').select('id,name,image_url,background_url,category,description,stats,acquisition_type,acquisition_method,source_url,created_at').eq('id', id).single();
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  return normalizeWeapon(data || fallbackWeapons[0]);
+  return normalizeWeaponAsync(data || fallbackWeapons[0]);
 }
 
-function normalizeWeapon(w: any = {}) {
+function normalizeWeapon(w: any = {}, providedEnrichment?: WeaponDescriptionRecord) {
   const name = String(w.name || '');
-  const enrichment = getWeaponDescription(name);
+  const enrichment = providedEnrichment;
   const sourceDescription = String(w.description || '');
   const stats = w.stats && typeof w.stats === 'object' ? w.stats : {};
   const adminDescriptionEn = String(stats.description_en || stats.descriptionEn || '').trim();
@@ -238,7 +255,7 @@ function normalizeWeapon(w: any = {}) {
 // ─── Modes ───────────────────────────────────────────────────────────────────
 export async function getModes() {
   const result = await runSafeQuery(fallbackModes, async () => {
-    return await supabase.from('modes').select('*').order('name');
+    return await supabase.from('modes').select('id,name,image_url,description,type,category').order('name');
   });
   const data = Array.isArray(result.data) ? result.data : [];
   return data.map((m: any) => ({
@@ -254,7 +271,7 @@ export async function getModes() {
 // ─── Maps ────────────────────────────────────────────────────────────────────
 export async function getMaps() {
   const result = await runSafeQuery(fallbackMaps, async () => {
-    return await supabase.from('maps').select('*').order('name');
+    return await supabase.from('maps').select('id,name,image_url,description,mode,category').order('name');
   });
   const data = Array.isArray(result.data) ? result.data : [];
   return data.map((m: any) => ({
@@ -271,7 +288,7 @@ export async function getMaps() {
 // ─── Ranks ───────────────────────────────────────────────────────────────────
 export async function getRanks() {
   const result = await runSafeQuery(fallbackRanks, async () => {
-    return await supabase.from('ranks').select('*').order('tier', { ascending: true });
+    return await supabase.from('ranks').select('id,name,image_url,tier,exp_required,description,requirements,bonus').order('tier', { ascending: true });
   });
   const data = Array.isArray(result.data) ? result.data : [];
   return data.map((r: any) => ({
@@ -290,7 +307,7 @@ export async function getRanks() {
 // ─── Mercenaries ─────────────────────────────────────────────────────────────
 export async function getMercenaries() {
   const result = await runSafeQuery(fallbackMercenaries, async () => {
-    return await supabase.from('mercenaries').select('*').order('order_index', { ascending: true });
+    return await supabase.from('mercenaries').select('id,name,image_url,role,sounds,order_index').order('order_index', { ascending: true });
   });
   const data = Array.isArray(result.data) ? result.data : [];
   return data.map((m: any) => ({
@@ -305,12 +322,15 @@ export async function getMercenaries() {
 
 // ─── Posts ───────────────────────────────────────────────────────────────────
 export async function getPosts(opts: { limit?: number; offset?: number; category?: string } = {}) {
-  const { limit = 20, offset = 0, category } = opts;
+  const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
+  const limit = Math.min(50, Math.max(1, requestedLimit));
+  const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
+  const { category } = opts;
   try {
-    const params = new URLSearchParams({
-      type: 'posts',
-      limit: String(Math.min(50, Math.max(1, limit))),
-      offset: String(Math.max(0, offset)),
+const params = new URLSearchParams({
+        type: 'posts',
+        limit: String(limit),
+        offset: String(offset),
     });
     if (category) params.set('category', category);
     const response = await fetch(`/api/content?${params.toString()}`);
@@ -356,7 +376,7 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
   }
 
   const result = await runSafeQuery(fallbackPosts, async () => {
-    let query = supabase.from('posts').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+    let query = supabase.from('posts').select('id,title,title_ar,post_slug,content,content_ar,summary,image_url,category,tags,author,views,reading_time,featured,preview_on_home,language,seo_title,seo_description,og_image,canonical_url,gallery,created_at,updated_at', { count: 'exact' }).order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
     query = query.range(offset, offset + limit - 1);
     return await query;
@@ -367,7 +387,7 @@ export async function getPosts(opts: { limit?: number; offset?: number; category
 
 export async function getPostBySlug(slug: string) {
   const result = await runSafeQuery(fallbackPosts, async () => {
-    return await supabase.from('posts').select('*').eq('post_slug', slug).single();
+    return await supabase.from('posts').select('id,title,title_ar,post_slug,content,content_ar,summary,image_url,category,tags,author,views,reading_time,featured,preview_on_home,language,seo_title,seo_description,og_image,canonical_url,gallery,created_at,updated_at').eq('post_slug', slug).single();
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   return normalizePost(data || fallbackPosts[0]);
@@ -375,7 +395,7 @@ export async function getPostBySlug(slug: string) {
 
 export async function getPostById(id: string) {
   const result = await runSafeQuery(fallbackPosts, async () => {
-    return await supabase.from('posts').select('*').eq('id', id).single();
+    return await supabase.from('posts').select('id,title,title_ar,post_slug,content,content_ar,summary,image_url,category,tags,author,views,reading_time,featured,preview_on_home,language,seo_title,seo_description,og_image,canonical_url,gallery,created_at,updated_at').eq('id', id).single();
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   return normalizePost(data || fallbackPosts[0]);
@@ -450,9 +470,12 @@ function normalizePost(p: any = {}) {
 
 // ─── News ────────────────────────────────────────────────────────────────────
 export async function getNews(opts: { limit?: number; offset?: number; category?: string } = {}) {
-  const { limit = 20, offset = 0, category } = opts;
+  const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
+  const limit = Math.min(50, Math.max(1, requestedLimit));
+  const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
+  const { category } = opts;
   const result = await runSafeQuery(fallbackNews, async () => {
-    let query = supabase.from('news').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+    let query = supabase.from('news').select('id,title,title_ar,news_slug,date_range,image_url,category,content,content_ar,html_content,author,featured,preview_on_home,created_at', { count: 'exact' }).order('created_at', { ascending: false });
     if (category) query = query.eq('category', category);
     query = query.range(offset, offset + limit - 1);
     return await query;
@@ -463,7 +486,7 @@ export async function getNews(opts: { limit?: number; offset?: number; category?
 
 export async function getNewsBySlug(slug: string) {
   const result = await runSafeQuery(fallbackNews, async () => {
-    return await supabase.from('news').select('*').eq('news_slug', slug).single();
+    return await supabase.from('news').select('id,title,title_ar,news_slug,date_range,image_url,category,content,content_ar,html_content,author,featured,preview_on_home,created_at').eq('news_slug', slug).single();
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   return normalizeNews(data || fallbackNews[0]);
@@ -471,7 +494,7 @@ export async function getNewsBySlug(slug: string) {
 
 export async function getNewsById(id: string) {
   const result = await runSafeQuery<any>(null, async () => {
-    return await supabase.from('news').select('*').eq('id', id).maybeSingle();
+    return await supabase.from('news').select('id,title,title_ar,news_slug,date_range,image_url,category,content,content_ar,html_content,author,featured,preview_on_home,created_at').eq('id', id).maybeSingle();
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   return data ? normalizeNews(data) : null;
@@ -500,13 +523,15 @@ function normalizeNews(n: any = {}) {
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 export async function getEvents(opts: { limit?: number; offset?: number } = {}) {
-  const { limit = 20, offset = 0 } = opts;
+  const requestedLimit = Number.isFinite(Number(opts.limit)) ? Number(opts.limit) : 20;
+  const limit = Math.min(50, Math.max(1, requestedLimit));
+  const offset = Math.max(0, Number.isFinite(Number(opts.offset)) ? Number(opts.offset) : 0);
   try {
     const result = await runSafeQuery(fallbackEvents, async () => {
       return await withTimeout(
         supabase
           .from('events')
-          .select('*', { count: 'exact' })
+          .select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at', { count: 'exact' })
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1)
       );
@@ -522,7 +547,7 @@ export async function getEvents(opts: { limit?: number; offset?: number } = {}) 
 export async function getEventById(id: string) {
   try {
     const result = await runSafeQuery<any>(null, async () => {
-      return await supabase.from('events').select('*').eq('id', id).maybeSingle();
+      return await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').eq('id', id).maybeSingle();
     });
     const data = Array.isArray(result.data) ? result.data[0] : result.data;
     return data ? normalizeEvent(data) : null;
@@ -534,7 +559,7 @@ export async function getEventById(id: string) {
 export async function getEventBySlug(slug: string) {
   try {
     const result = await runSafeQuery(fallbackEvents, async () => {
-      return await supabase.from('events').select('*').eq('event_name_slug', slug).single();
+      return await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').eq('event_name_slug', slug).single();
     });
     const data = Array.isArray(result.data) ? result.data[0] : result.data;
     if (data) return normalizeEvent(data);
@@ -543,7 +568,7 @@ export async function getEventBySlug(slug: string) {
   }
 
   try {
-    const { data: ci } = await supabase.from('events').select('*').ilike('event_name_slug', slug).limit(1);
+    const { data: ci } = await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').ilike('event_name_slug', slug).limit(1);
     if (ci?.[0]) return normalizeEvent(ci[0]);
   } catch {
     // ignore and use fallback
@@ -551,7 +576,7 @@ export async function getEventBySlug(slug: string) {
 
   try {
     const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const { data: rows } = await supabase.from('events').select('*');
+    const { data: rows } = await supabase.from('events').select('id,title,event_name_slug,title_ar,description,description_ar,date,start_date,end_date,location,type,image_url,gallery,tags,featured,seo_title,seo_description,canonical_url,source_url,created_at').ilike('title', `%${slug.replace(/[-_]/g, ' ')}%`).limit(1);
     const match = (rows || []).find((e: any) => {
       const stored = toSlug(e.event_name_slug || '');
       const fromTitle = toSlug(e.title || '');
@@ -671,7 +696,7 @@ export async function getWeaponCategories(): Promise<string[]> {
     .from('weapons')
     .select('category')
     .not('category', 'is', null)
-    .limit(5000);
+    .limit(500);
   if (error) throw error;
   const cats = new Set<string>();
   (data || []).forEach((w: any) => {
@@ -683,7 +708,7 @@ export async function getWeaponCategories(): Promise<string[]> {
 
 // ─── Sellers ─────────────────────────────────────────────────────────────────
 export async function getSellers() {
-  const { data, error } = await supabase.from('sellers').select('*').order('rank', { ascending: true });
+  const { data, error } = await supabase.from('sellers').select('id,name,seller_name_slug,description,images,prices,email,phone,whatsapp,discord,website,facebook,twitter,instagram,youtube,tiktok,telegram,logo_url,featured,promotion_text,average_rating,total_reviews,rank').order('rank', { ascending: true });
   if (error) throw error;
   return (data || []).map((s: any) => ({
     id: String(s.id),
@@ -770,7 +795,7 @@ export async function addSellerReview(review: {
 
 // ─── Tutorials ───────────────────────────────────────────────────────────────
 export async function getTutorials(category?: string) {
-  let query = supabase.from('tutorials').select('*').order('order_index', { ascending: true });
+  let query = supabase.from('tutorials').select('id,title,title_ar,description,description_ar,youtube_url,youtube_id,category,order_index').order('order_index', { ascending: true });
   if (category) query = query.eq('category', category);
   const { data, error } = await query;
   if (error) throw error;

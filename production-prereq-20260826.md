@@ -50,3 +50,12 @@
 - deployment Production للـ`main` أصبح READY، والرابط المباشر يعيد 401 المتوقع لمسار cron غير المصرح.
 - `crossfirewiki-git-main-mostafalol1233s-projects.vercel.app` و`crossfire.wiki` ما زالا يعيدان 405 من build أقدم، بينما deployment الجديد يسجل aliases الاسمية. فحص Vercel المباشر يحل alias إلى deployment أقدم.
 - محاولة فتح لوحة Vercel في المتصفح وصلت إلى شاشة تسجيل الدخول، ولا توجد جلسة متصفح مسجلة هنا؛ يلزم takeover يدوي إذا كان promotion أو إصلاح ربط النطاق سيُنفذ من اللوحة.
+
+
+## SEO وOpen Graph — 2026-08-26
+
+شخّص الفحص أن الموقع SPA؛ لذلك كانت الاستجابة الأولى للزاحف تعرض shell ووسوم الصفحة الرئيسية بدل metadata الصفحة المطلوبة. كما كان `api/prerender.ts` ينهار مع بعض تواريخ الأحداث البشرية بسبب `Date.toISOString()` على تاريخ غير صالح، ولم يكن يدعم المسارات العربية للأحداث والأخبار والمنشورات والصفحات المخصصة.
+
+أضيفت في commitّي `262ed1a` و`6f12077` قواعد bot prerender للصفحات العامة، metadata عربية وإنجليزية، canonical وhreflang، OG/Twitter كاملين، JSON-LD مهروبًا، صورة HTTPS بديلة، نص المحتوى المخزن بعد تنظيفه، و404 حقيقيًا للـslug غير الموجود. فحص Preview وProduction deployment المباشر نجح لصفحة الحدث الإنجليزية والعربية، والقوائم، و`/weapons`، مع صورة OG ومحتوى body قابل للقراءة؛ الـslug غير الموجود أعاد 404، وطلب المستخدم العادي بقي shell SPA.
+
+بعد دمج PR رقم 36، deployment Production الجديد `f55dc995` أصبح READY، لكن `crossfire.wiki` وaliases الافتراضية ما زالت تقدم deploymentًا أقدم؛ لذلك يظهر فيها عنوان الصفحة الرئيسية و`X-Robots-Tag: noindex` ولا تصلها إصلاحات SEO الجديدة. رابط deployment المباشر الجديد يقدم metadata الصحيحة. لا يمكن إصلاح promotion/ربط alias من الجلسة الحالية لأن لوحة Vercel تطلب تسجيل دخولًا يدويًا.

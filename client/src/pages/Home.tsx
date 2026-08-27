@@ -1,10 +1,10 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageSEO from "@/components/PageSEO";
 import { EventsRibbon } from "@/components/EventsRibbon";
 import { getEvents, getNews, getSiteSettings, getPortalImages } from "@/lib/supabaseApi";
-import { HighlightsSection } from "@/components/HighlightsSection";
-import { GMSection } from "@/components/GMSection";
+const HighlightsSection = lazy(() => import("@/components/HighlightsSection").then((module) => ({ default: module.HighlightsSection })));
+const GMSection = lazy(() => import("@/components/GMSection").then((module) => ({ default: module.GMSection })));
 import {
   Search, ArrowRight, Zap, Shield, Target, Users, Globe, ChevronRight,
   Calendar, Newspaper, MapPin, Star, BookOpen, MessageSquare, Clock,
@@ -35,42 +35,42 @@ const PORTALS = [
     label: "Weapons", labelKey: "weapons", descKey: "portalWeaponsDesc",
     settingsKey: "portal_img_weapons",
     href: "/weapons",
-    img: "/portal/weapons.jpg",
+    img: "/portal/weapons.webp",
     imgFit: "cover" as const, imgBg: "#0a0800", imgPos: "center center",
   },
   {
     label: "Maps", labelKey: "maps", descKey: "portalMapsDesc",
     settingsKey: "portal_img_maps",
     href: "/maps",
-    img: "/portal/maps.jpg",
+    img: "/portal/maps.webp",
     imgFit: "cover" as const, imgBg: "#0a0c10", imgPos: "center center",
   },
   {
     label: "Mercenaries", labelKey: "mercenaries", descKey: "portalMercenariesDesc",
     settingsKey: "portal_img_mercenaries",
     href: "/mercenaries",
-    img: "/portal/mercenaries.jpg",
+    img: "/portal/mercenaries.webp",
     imgFit: "cover" as const, imgBg: "#0a0a0a", imgPos: "center top",
   },
   {
     label: "Game Modes", labelKey: "modes", descKey: "portalModesDesc",
     settingsKey: "portal_img_modes",
     href: "/modes",
-    img: "/portal/modes.jpg",
+    img: "/portal/modes.webp",
     imgFit: "cover" as const, imgBg: "#0a0808", imgPos: "center center",
   },
   {
     label: "Ranks", labelKey: "ranks", descKey: "portalRanksDesc",
     settingsKey: "portal_img_ranks",
     href: "/ranks",
-    img: "/portal/ranks.jpg",
+    img: "/portal/ranks.webp",
     imgFit: "cover" as const, imgBg: "#0d0a14", imgPos: "center center",
   },
   {
     label: "Events", labelKey: "events", descKey: "portalEventsDesc",
     settingsKey: "portal_img_events",
     href: "/events",
-    img: "/portal/events.jpg",
+    img: "/portal/events.webp",
     imgFit: "cover" as const, imgBg: "#0a080a", imgPos: "center center",
   },
 ];
@@ -102,6 +102,8 @@ function PortalCard({ portal }: { portal: typeof PORTALS[0] }) {
           src={portal.img}
           alt={portal.label}
           width={400} height={300}
+          loading="lazy"
+          decoding="async"
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
@@ -244,7 +246,7 @@ function EventCard({ event, featured = false }: { event: any; featured?: boolean
       >
         {img && (
           <div style={{ height: featured ? 200 : 150, overflow: "hidden", position: "relative", background: "#050505" }}>
-            <img src={img} alt={event.title} width={600} height={200} style={{
+            <img src={img} alt={event.title} width={600} height={200} loading="lazy" decoding="async" style={{
               width: "100%", height: "100%", objectFit: "contain",
               transition: "transform 0.4s",
               transform: hovered ? "scale(1.04)" : "scale(1)",
@@ -307,7 +309,7 @@ function NewsListItem({ item }: { item: any }) {
       >
         {item.image || item.imageUrl ? (
           <div style={{ width: 60, height: 60, borderRadius: 4, overflow: "hidden", flexShrink: 0 }}>
-            <img src={item.image || item.imageUrl} alt={displayTitle} width={60} height={60} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={item.image || item.imageUrl} alt={displayTitle} width={60} height={60} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         ) : (
           <div style={{ width: 60, height: 60, borderRadius: 4, background: CARD2, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${BORDER}` }}>
@@ -419,7 +421,7 @@ export default function Home() {
 
   const { data: siteSettingsData } = useQuery({ queryKey: ["site-settings-home"], queryFn: getSiteSettings, staleTime: 2 * 60 * 1000 });
   const siteSettings = siteSettingsData as any;
-  const heroImage = siteSettings?.heroImage || "/cf-heroes-bg.png";
+  const heroImage = siteSettings?.heroImage || "/cf-heroes-bg.webp";
 
   const { data: portalImages = {} } = useQuery<Record<string, string>>({
     queryKey: ["portal-images"],
@@ -468,7 +470,7 @@ export default function Home() {
         {/* ── HERO ──────────────────────────────────────────────────────────── */}
         <div className="wiki-home-hero" style={{ position: "relative", overflow: "hidden", paddingBottom: 0 }}>
           {heroImage && (
-            <img src={heroImage} alt="CrossFire gameplay artwork used for the CrossFire Wiki header" style={{
+                  <img src={heroImage} alt="CrossFire gameplay artwork used for the CrossFire Wiki header" width={1920} height={900} fetchPriority="high" loading="eager" decoding="async" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.15,
             }} />
@@ -567,8 +569,7 @@ export default function Home() {
                         {/* Image */}
                         <div style={{ position: "relative", overflow: "hidden", minHeight: 240 }}>
                           {(featuredEvent.image || featuredEvent.imageUrl) ? (
-                            <img src={featuredEvent.image || featuredEvent.imageUrl} alt={featuredEvent.title}
-                              style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", minHeight: 240, background: "#0a0a0a" }} />
+                            <img src={featuredEvent.image || featuredEvent.imageUrl} alt={featuredEvent.title} width={900} height={560} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", minHeight: 240, background: "#0a0a0a" }} />
                           ) : (
                             <div style={{ width: "100%", minHeight: 240, background: CARD2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                               <Calendar size={40} color="rgba(255,255,255,0.1)" />
@@ -650,18 +651,18 @@ export default function Home() {
               <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${BORDER} 20%, ${BORDER} 80%, transparent)`, marginBottom: 48 }} />
 
               {/* HIGHLIGHTS */}
-              <section style={{ marginBottom: 48 }}>
+              <section className="cf-below-fold" style={{ marginBottom: 48 }}>
                 <SectionHeader eyebrow={t("archiveEyebrow")} title={t("monthlyHighlights")} />
-                <HighlightsSection hideHeader />
+                <Suspense fallback={<div style={{ minHeight: 260 }} aria-hidden="true" />}><HighlightsSection hideHeader /></Suspense>
               </section>
 
               {/* DIVIDER */}
               <div style={{ height: 1, background: `linear-gradient(to right, transparent, ${BORDER} 20%, ${BORDER} 80%, transparent)`, marginBottom: 48 }} />
 
               {/* GAME MASTERS */}
-              <section>
+              <section className="cf-below-fold">
                 <SectionHeader eyebrow={t("officialStaffEyebrow")} title={t("gameMasters")} />
-                <GMSection hideHeader />
+                <Suspense fallback={<div style={{ minHeight: 220 }} aria-hidden="true" />}><GMSection hideHeader /></Suspense>
               </section>
             </div>
 

@@ -57,6 +57,10 @@ function textFromContent(content: unknown): string {
     .trim();
 }
 
+function stripEmojis(value: string): string {
+  return value.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
 function providerMessage(status: number, body: string): string {
   try {
     const parsed = JSON.parse(body);
@@ -176,7 +180,7 @@ async function callOpenRouter(
   }
   const content = textFromContent(parsed?.choices?.[0]?.message?.content || parsed?.choices?.[0]?.text);
   if (!content) throw new Error(`${model}: provider returned an empty answer`);
-  return content;
+  return stripEmojis(content);
 }
 
 async function generateAnswer(
@@ -230,6 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 You are an expert on the CrossFire online FPS game. Help players with weapons, mercenaries, ranks, modes, maps, strategies, ZP/GP currencies, clans, and events.
 Use Markdown when helpful: bold key terms, concise bullet lists, and comparison tables. Be friendly, direct, and useful. Do not invent exact live prices, event dates, account rules, or official announcements. When current data is unavailable, say so clearly and give the safest general guidance.
 IMPORTANT: Respond in the SAME LANGUAGE the user writes in. Arabic users get clear natural Arabic replies; English users get English replies.
+Do not use emojis or decorative symbols unless the user explicitly asks for them.
 ${websiteData ? `\n=== LIVE DATA FROM CROSSFIRE WIKI ===\n${websiteData}\n=== END LIVE DATA ===\n` : ""}`,
     };
 

@@ -3393,3 +3393,70 @@ iframe {
     scroll-behavior: auto;
   }
 }
+
+
+/* Private competition attempt protection. This scope is intentionally limited
+   to the active quiz and never affects registration, results, or the rest of the site. */
+.competition-page--protected {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.competition-page--protected input,
+.competition-page--protected textarea,
+.competition-page--protected select {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
+
+.competition-page--protected .quiz-flow {
+  position: relative;
+}
+
+.competition-page--protected .quiz-flow::after {
+  content: "CrossFire Wiki · جلسة اختبار خاصة";
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 20;
+  pointer-events: none;
+  color: hsl(var(--foreground) / 0.045);
+  font-size: clamp(1.4rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+@media print {
+  body:has(.competition-page--protected) {
+    visibility: hidden !important;
+  }
+
+  body:has(.competition-page--protected) .competition-page--protected {
+    display: none !important;
+  }
+}
+
+
+.competition-page--window-blurred .quiz-flow {
+  filter: blur(18px);
+}
+
+.competition-page--window-blurred::before {
+  content: "أعد التركيز إلى نافذة الامتحان للمتابعة";
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 30;
+  width: min(90vw, 420px);
+  padding: 1rem 1.25rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  background: hsl(var(--background) / 0.96);
+  color: hsl(var(--foreground));
+  text-align: center;
+  font-weight: 700;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}

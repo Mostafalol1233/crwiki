@@ -166,6 +166,7 @@ export default function Competition() {
   const [proofType, setProofType] = useState("other");
   const [proofNotice, setProofNotice] = useState("");
   const [proofSubmitting, setProofSubmitting] = useState(false);
+  const [windowBlurred, setWindowBlurred] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +214,48 @@ export default function Competition() {
   const rules = config ? (isArabic ? config.rules_ar : config.rules_en) : null;
   const activeQuestion = questions[activeQuestionIndex] || null;
   const answeredCount = questions.filter((question) => hasAnswer(question, answers[question.id] || "")).length;
+  const examProtectionActive = Boolean(attemptId && submittedScore === null);
+
+  useEffect(() => {
+    if (!examProtectionActive) return;
+    const blockedShortcutKeys = new Set(["c", "x", "s", "p", "u"]);
+    const preventExamCopying = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const preventExamShortcuts = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      if (event.key === "PrintScreen" || ((event.ctrlKey || event.metaKey) && blockedShortcutKeys.has(key))) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const events: Array<[keyof DocumentEventMap, EventListener]> = [
+      ["contextmenu", preventExamCopying],
+      ["copy", preventExamCopying],
+      ["cut", preventExamCopying],
+      ["selectstart", preventExamCopying],
+      ["dragstart", preventExamCopying],
+      ["keydown", preventExamShortcuts as EventListener],
+    ];
+    events.forEach(([name, handler]) => document.addEventListener(name, handler, true));
+    return () => events.forEach(([name, handler]) => document.removeEventListener(name, handler, true));
+  }, [examProtectionActive]);
+
+  useEffect(() => {
+    if (!examProtectionActive) {
+      setWindowBlurred(false);
+      return;
+    }
+    const onBlur = () => setWindowBlurred(true);
+    const onFocus = () => setWindowBlurred(false);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [examProtectionActive]);
 
   const requirements = useMemo(() => isArabic ? [
     "إدخال رقم هاتف صالح مع موافقة واضحة على التواصل المتعلق بالمسابقة.",
@@ -364,7 +407,7 @@ export default function Competition() {
         schemaType="WebPage"
         schemaData={{ name: isArabic ? "مسابقة CrossFire Wiki" : "CrossFire Wiki Competition", description: isArabic ? "اختبار معرفة ثنائي اللغة عن CrossFire." : "A bilingual CrossFire knowledge quiz.", isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: "https://crossfire.wiki" } }}
       />
-      <main dir={direction} className="competition-page">
+      <main dir={direction} className={`competition-page ${examProtectionActive ? "competition-page--protected" : ""} ${windowBlurred ? "competition-page--window-blurred" : ""}`}>
         <section className="competition-hero">
           <div className="competition-container competition-hero-grid">
             <div className="competition-hero-copy">

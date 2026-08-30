@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
+import { randomUUID } from "crypto";
 import { verifyAdminRequest } from "../../server/adminAuth.js";
 import { verifyCompetitionAttemptToken } from "../../server/competitionAccess.js";
 
@@ -52,15 +52,6 @@ function runUpload(req: VercelRequest, res: VercelResponse): Promise<void> {
   });
 }
 
-function configureCloudinary() {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || "";
-  const apiKey = process.env.CLOUDINARY_API_KEY || "";
-  const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
-  if (!cloudName || !apiKey || !apiSecret) return false;
-
-  cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
-  return true;
-}
 
 async function authenticatedUserId(req: VercelRequest): Promise<string | null> {
   const value = req.headers.authorization;
@@ -80,24 +71,30 @@ function serviceHeaders() {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" };
 }
 
-function uploadBuffer(buffer: Buffer, originalName: string, mimetype: string, folder = "crossfire-wiki/media"): Promise<{ secure_url: string }> {
+async function uploadBuffer(buffer: Buffer, originalName: string, mimetype: string, folder = "uploads"): Promise<{ secure_url: string }> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) throw new Error("Supabase Storage is not configured");
+  const bucket = "media";
+  const extension = originalName.match(/\.[a-zA-Z0-9]+$/)?.[0].toLowerCase() || "";
   const baseName = originalName.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 80) || "upload";
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        public_id: `${baseName}-${Date.now()}`,
-        resource_type: mimetype === "image/gif" ? "image" : "auto",
-        overwrite: false,
-        use_filename: false,
-      },
-      (error, result) => {
-        if (error || !result?.secure_url) reject(error || new Error("Cloudinary returned no URL"));
-        else resolve({ secure_url: result.secure_url });
-      },
-    );
-    stream.end(buffer);
+  const objectPath = `${folder.replace(/^\/+|\/+$/g, "")}/${Date.now()}-${randomUUID()}-${baseName}${extension}`;
+  const objectUrl = `${SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/${encodeURIComponent(bucket)}/${objectPath.split("/").map(encodeURIComponent).join("/")}`;
+  const response = await fetch(objectUrl, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      "Content-Type": mimetype,
+      "x-upsert": "false",
+      "cache-control": "31536000",
+    },
+    body: new Uint8Array(buffer) as unknown as BodyInit,
+    signal: AbortSignal.timeout(15000),
   });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Supabase Storage upload failed (${response.status})${detail ? `: ${detail.slice(0, 180)}` : ""}`);
+  }
+  return { secure_url: `${SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/${encodeURIComponent(bucket)}/${objectPath.split("/").map(encodeURIComponent).join("/")}` };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -109,8 +106,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     && (Array.isArray(req.query.competition_test) ? req.query.competition_test[0] : req.query.competition_test) === "1";
   const ownerPreview = Boolean((isAdmin?.role === "super_admin" && process.env.VERCEL_ENV !== "production") || directPreviewTest);
   const participantUserId = isAdmin && !ownerPreview ? null : await authenticatedUserId(req);
-  if (!configureCloudinary()) {
-    return res.status(500).json({ error: "Cloudinary is not configured" });
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    return res.status(500).json({ error: "Supabase Storage is not configured" });
   }
 
   try {
@@ -136,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const attemptResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_attempts?${attemptQuery.toString()}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(9000) });
       const attempts = attemptResponse.ok ? await attemptResponse.json() : [];
       if (!Array.isArray(attempts) || !attempts[0]) return res.status(400).json({ error: "Submit the quiz before uploading proof" });
-      const result = await uploadBuffer(file.buffer, file.originalname, file.mimetype, "crossfire-wiki/competition-proofs");
+      const result = await uploadBuffer(file.buffer, file.originalname, file.mimetype, `competition-proofs/${attemptId}/${storedProofType}`);
       const proofResponse = await fetch(`${SUPABASE_URL}/rest/v1/competition_proofs`, { method: "POST", headers: serviceHeaders(), body: JSON.stringify({ attempt_id: attemptId, proof_type: storedProofType, file_url: result.secure_url, file_name: file.originalname.slice(0, 180), file_size: file.buffer.length, mime_type: file.mimetype, status: "pending", reviewer_note: proofNote }), signal: AbortSignal.timeout(9000) });
       if (!proofResponse.ok) return res.status(502).json({ error: "Proof was uploaded but could not be registered" });
       const rows = await proofResponse.json();

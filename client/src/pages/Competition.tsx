@@ -162,7 +162,7 @@ export default function Competition() {
   const [submittedScore, setSubmittedScore] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofFiles, setProofFiles] = useState<File[]>([]);
   const [proofType, setProofType] = useState("other");
   const [proofNotice, setProofNotice] = useState("");
   const [proofSubmitting, setProofSubmitting] = useState(false);
@@ -360,23 +360,27 @@ export default function Competition() {
 
   const submitProof = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!attemptId || (!accessToken && !adminToken && !attemptToken && !directPreviewMode) || (!proofUrl.trim() && !proofFile)) return;
-    if (proofFile && proofFile.size > 10 * 1024 * 1024) {
-      setProofNotice(isArabic ? "حجم الصورة يجب ألا يتجاوز 10 ميجابايت." : "The image must be 10 MB or smaller.");
+    if (!attemptId || (!accessToken && !adminToken && !attemptToken && !directPreviewMode) || (!proofUrl.trim() && proofFiles.length === 0)) return;
+    const oversized = proofFiles.find((file) => file.size > 10 * 1024 * 1024);
+    if (oversized) {
+      setProofNotice(isArabic ? `حجم الصورة ${oversized.name} أكبر من 10 ميجابايت.` : `${oversized.name} is larger than 10 MB.`);
       return;
     }
     setProofSubmitting(true);
     setProofNotice("");
     try {
-      let response: Response;
-      if (proofFile) {
-        const formData = new FormData();
-        formData.append("file", proofFile);
-        formData.append("attemptId", attemptId);
-        if (attemptToken) formData.append("attemptToken", attemptToken);
-        formData.append("proofType", proofType);
+      let response: Response | null = null;
+      if (proofFiles.length > 0) {
         const uploadToken = accessToken || adminToken;
-        response = await fetch(directPreviewMode ? "/api/images/upload?competition_test=1" : "/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
+        for (const proofFile of proofFiles) {
+          const formData = new FormData();
+          formData.append("file", proofFile);
+          formData.append("attemptId", attemptId);
+          if (attemptToken) formData.append("attemptToken", attemptToken);
+          formData.append("proofType", proofType);
+          response = await fetch(directPreviewMode ? "/api/images/upload?competition_test=1" : "/api/images/upload", { method: "POST", headers: uploadToken ? { Authorization: `Bearer ${uploadToken}` } : {}, body: formData });
+          if (!response.ok) break;
+        }
       } else {
         response = await fetch(competitionApiPath, {
           method: "POST",
@@ -384,10 +388,11 @@ export default function Competition() {
           body: JSON.stringify({ action: "submit_proof", attemptId, attemptToken, proofType, fileUrl: proofUrl.trim() }),
         });
       }
+      if (!response) throw new Error("Proof upload did not start");
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Proof submission failed");
       setProofUrl("");
-      setProofFile(null);
+      setProofFiles([]);
       setProofNotice(isArabic ? "تم إرسال الإثبات للمراجعة." : "The proof was submitted for review.");
     } catch (error) {
       setProofNotice(error instanceof Error ? error.message : (isArabic ? "تعذر إرسال الإثبات." : "Could not submit proof."));
@@ -452,7 +457,7 @@ export default function Competition() {
 
           <section className="competition-action-panel" aria-live="polite">
             <div className="competition-action-heading"><div><span className="competition-overline">{submittedScore !== null ? (isArabic ? "اكتمل الاختبار" : "Challenge complete") : attemptId ? (isArabic ? "وضع الاختبار" : "Challenge mode") : (isArabic ? "بوابة الدخول" : "Entry gate")}</span><h2>{submittedScore !== null ? (isArabic ? "نتيجتك الأولية" : "Your initial result") : attemptId ? (isArabic ? "أجب على مهل" : "Answer at your pace") : (isArabic ? "ابدأ من هنا" : "Start here")}</h2></div><LockKeyhole size={18} /></div>
-            {!showEntryForm ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "لا يمكن فتح بوابة المسابقة حاليًا" : "The competition gate is unavailable"}</strong><p>{isArabic ? "تعذر تحميل إعدادات المسابقة. حاول مرة أخرى لاحقًا." : "Competition settings could not be loaded. Please try again later."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFile={proofFile} setProofFile={setProofFile} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} previewMode={previewMode} canRegister={canRegister} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} accessMode={accessMode} setAccessMode={setAccessMode} accessRequested={accessRequested} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
+            {!showEntryForm ? <div className="competition-closed-box"><LockKeyhole size={18} /><div><strong>{isArabic ? "لا يمكن فتح بوابة المسابقة حاليًا" : "The competition gate is unavailable"}</strong><p>{isArabic ? "تعذر تحميل إعدادات المسابقة. حاول مرة أخرى لاحقًا." : "Competition settings could not be loaded. Please try again later."}</p></div></div> : submittedScore !== null ? <ResultPanel isArabic={isArabic} score={submittedScore} proofType={proofType} setProofType={setProofType} proofFiles={proofFiles} setProofFiles={setProofFiles} proofUrl={proofUrl} setProofUrl={setProofUrl} proofSubmitting={proofSubmitting} proofNotice={proofNotice} onSubmit={submitProof} /> : attemptId ? <QuizFlow questions={questions} answers={answers} activeQuestionIndex={activeQuestionIndex} reviewing={reviewing} submitting={submitting} isArabic={isArabic} notice={notice} onAnswer={(questionId, value) => setAnswers((current) => ({ ...current, [questionId]: value }))} onPrevious={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} onNext={() => setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1))} onJump={(index) => { setActiveQuestionIndex(index); setReviewing(false); }} onReview={() => setReviewing(true)} onBackToQuestions={() => setReviewing(false)} onSubmit={submitQuiz} /> : <RegistrationForm isArabic={isArabic} previewMode={previewMode} canRegister={canRegister} phone={phone} setPhone={setPhone} inviteCode={inviteCode} setInviteCode={setInviteCode} inviteRequired={config?.invite_required !== false && !directPreviewMode} consent={consent} setConsent={setConsent} accessMode={accessMode} setAccessMode={setAccessMode} accessRequested={accessRequested} submitting={submitting} notice={notice} onSubmit={submitRegistration} />}
             {notice && !attemptId && <p className="competition-inline-notice">{notice}</p>}
           </section>
         </section>
@@ -595,8 +600,8 @@ function AudioPlayer({ src, isArabic }: { src: string; isArabic: boolean }) {
   </div>;
 }
 
-function ResultPanel({ isArabic, score, proofType, setProofType, proofFile, setProofFile, proofUrl, setProofUrl, proofSubmitting, proofNotice, onSubmit }: { isArabic: boolean; score: number; proofType: string; setProofType: (value: string) => void; proofFile: File | null; setProofFile: (file: File | null) => void; proofUrl: string; setProofUrl: (value: string) => void; proofSubmitting: boolean; proofNotice: string; onSubmit: (event: React.FormEvent) => void }) {
-  return <div className="competition-result-panel"><div className="competition-result-score"><CheckCircle2 size={24} /><div><span>{isArabic ? "النقاط الموضوعية" : "Objective score"}</span><strong>{score}</strong></div></div><div className="competition-result-copy"><h3>{isArabic ? "أحسنت، انتهى الجزء الآلي" : "The automatic part is complete"}</h3><p>{isArabic ? "الأسئلة السيناريو والمقالية لا تُحسب تلقائيًا. يمكنك رفع إثبات الاشتراك في يوتيوب أو ديسكورد أو أي شرط آخر، ثم يراجع المشرف الدرجة النهائية وأي نقاط إضافية." : "Scenario and written questions are not auto-scored. You can upload YouTube, Discord, or other requirement proof, then the administrator reviews the final score and any bonus."}</p></div><form className="competition-proof-form" onSubmit={onSubmit}><label className="competition-field"><span>{isArabic ? "نوع الإثبات" : "Proof type"}</span><select value={proofType} onChange={(event) => setProofType(event.target.value)}><option value="youtube_subscription">{isArabic ? "اشتراك قناة يوتيوب" : "YouTube subscription"}</option><option value="discord_membership">{isArabic ? "عضوية ديسكورد" : "Discord membership"}</option><option value="game_subscription">{isArabic ? "اشتراك أو متابعة داخل اللعبة" : "Game subscription or follow"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option></select></label><label className="competition-field"><span>{isArabic ? "رفع صورة الإثبات" : "Proof image"}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFile(event.target.files?.[0] || null)} />{proofFile && <small>{proofFile.name} · {(proofFile.size / 1024 / 1024).toFixed(2)} MB</small>}</label><label className="competition-field"><span>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}</span><input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." inputMode="url" /></label><button className="competition-primary-button" type="submit" disabled={proofSubmitting || (!proofFile && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Send for review")}<Send size={16} /></button>{proofNotice && <p className="competition-form-notice">{proofNotice}</p>}</form></div>;
+function ResultPanel({ isArabic, score, proofType, setProofType, proofFiles, setProofFiles, proofUrl, setProofUrl, proofSubmitting, proofNotice, onSubmit }: { isArabic: boolean; score: number; proofType: string; setProofType: (value: string) => void; proofFiles: File[]; setProofFiles: React.Dispatch<React.SetStateAction<File[]>>; proofUrl: string; setProofUrl: (value: string) => void; proofSubmitting: boolean; proofNotice: string; onSubmit: (event: React.FormEvent) => void }) {
+  return <div className="competition-result-panel"><div className="competition-result-score"><CheckCircle2 size={24} /><div><span>{isArabic ? "النقاط الموضوعية" : "Objective score"}</span><strong>{score}</strong></div></div><div className="competition-result-copy"><h3>{isArabic ? "أحسنت، انتهى الجزء الآلي" : "The automatic part is complete"}</h3><p>{isArabic ? "الأسئلة السيناريو والمقالية لا تُحسب تلقائيًا. يمكنك رفع إثبات الاشتراك في يوتيوب أو ديسكورد أو أي شرط آخر، ثم يراجع المشرف الدرجة النهائية وأي نقاط إضافية." : "Scenario and written questions are not auto-scored. You can upload YouTube, Discord, or other requirement proof, then the administrator reviews the final score and any bonus."}</p></div><form className="competition-proof-form" onSubmit={onSubmit}><label className="competition-field"><span>{isArabic ? "نوع الإثبات" : "Proof type"}</span><select value={proofType} onChange={(event) => setProofType(event.target.value)}><option value="youtube_subscription">{isArabic ? "اشتراك قناة يوتيوب" : "YouTube subscription"}</option><option value="discord_membership">{isArabic ? "عضوية ديسكورد" : "Discord membership"}</option><option value="game_subscription">{isArabic ? "اشتراك أو متابعة داخل اللعبة" : "Game subscription or follow"}</option><option value="purchase_receipt">{isArabic ? "إيصال شراء" : "Purchase receipt"}</option><option value="other">{isArabic ? "إثبات آخر" : "Other proof"}</option></select></label><label className="competition-field"><span>{isArabic ? "رفع صور الإثبات" : "Proof images"}</span><input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setProofFiles((current) => [...current, ...Array.from(event.target.files || [])].slice(0, 10))} />{proofFiles.length > 0 && <div className="competition-proof-file-list">{proofFiles.map((file, index) => <small key={`${file.name}-${file.lastModified}-${index}`}>{file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB <button type="button" onClick={() => setProofFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}>{isArabic ? "حذف" : "Remove"}</button></small>)}</div>}</label><label className="competition-field"><span>{isArabic ? "أو رابط إثبات HTTPS" : "Or HTTPS proof link"}</span><input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="https://..." inputMode="url" /></label><button className="competition-primary-button" type="submit" disabled={proofSubmitting || (proofFiles.length === 0 && !proofUrl.trim())}>{proofSubmitting ? (isArabic ? "جارٍ الإرسال..." : "Sending...") : (isArabic ? "إرسال للمراجعة" : "Send for review")}<Send size={16} /></button>{proofNotice && <p className="competition-form-notice">{proofNotice}</p>}</form></div>;
 }
 
 function OrganizerCard({ organizer, isArabic }: { organizer: Organizer; isArabic: boolean }) {

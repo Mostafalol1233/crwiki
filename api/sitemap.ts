@@ -70,6 +70,7 @@ const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
 
 const COMPETITION_CORRECT_OPTION_OVERRIDES: Record<string, string> = {
   // The visible wording was corrected without changing the legacy DB option keys.
+  "180": "G3A3",
   "200": "Dragon Blade",
   "210": "Flashbang-Modern",
   "220": "Grenade-Gold",
@@ -478,7 +479,14 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
           if (!option || typeof option !== "object") return option;
           const name = lookupName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
           const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
-          return { ...option, label_en: displayName || option.label_en, display_label_en: displayName || option.display_label_en, image_url: imageByName.get(name) || (displayNames ? null : existingImage) };
+          return {
+            ...option,
+            ...(displayConfig ? { value: displayConfig.lookup } : {}),
+            label_en: displayName || option.label_en,
+            label_ar: displayName || option.label_ar,
+            display_label_en: displayName || option.display_label_en,
+            image_url: imageByName.get(name) || (displayNames ? null : existingImage),
+          };
         }),
       };
     });

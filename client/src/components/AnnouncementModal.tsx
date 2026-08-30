@@ -115,9 +115,10 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
         if (sellerSlugFromPath) {
           try {
-            const { supabaseShim } = await import('@/lib/supabaseShim');
-            const json = await supabaseShim(`/api/announcements/seller/${encodeURIComponent(sellerSlugFromPath)}`, 'GET');
-            if (!aborted && json && json.active) {
+            const response = await globalThis.fetch(`/api/sitemap?type=announcements&seller=${encodeURIComponent(sellerSlugFromPath)}`, { cache: 'no-store' });
+            const payload = await response.json().catch(() => ({}));
+            const json = payload?.announcement || null;
+            if (!aborted && response.ok && json && json.active) {
               hasActiveSellerAnnouncement = true;
               setData(json);
               setScope(`seller:${sellerSlugFromPath}`);
@@ -127,10 +128,11 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
         if (!hasActiveSellerAnnouncement) {
           try {
-            const { supabaseShim } = await import('@/lib/supabaseShim');
-            const json = await supabaseShim('/api/announcements/global', 'GET');
+            const response = await globalThis.fetch('/api/sitemap?type=announcements', { cache: 'no-store' });
+            const payload = await response.json().catch(() => ({}));
+            const json = payload?.announcement || null;
             const isHomeRoute = location === "/" || location === "/ar" || location === "/ar/";
-            if (!aborted && json && json.active && isHomeRoute) {
+            if (!aborted && response.ok && json && json.active && isHomeRoute) {
               setData(json);
               setScope("global");
             }

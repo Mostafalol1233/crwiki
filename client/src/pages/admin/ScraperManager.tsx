@@ -270,9 +270,11 @@ function slugify(s: string) {
 }
 
 async function serverFetch(endpoint: string, body: object): Promise<any> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') || '' : '';
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));

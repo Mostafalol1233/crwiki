@@ -684,6 +684,35 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
   return { status: 400, body: { error: "Unknown competition action" } };
 }
 
+async function readPublicAnnouncement(scope: string): Promise<any | null> {
+  if (!SUPABASE_URL) return null;
+  const headers = SERVICE_KEY ? serviceHeaders() : h();
+  const table = scope ? "posts" : "announcements";
+  const params = new URLSearchParams({ select: scope ? "id,title,content,summary,image_url,og_image,featured,preview_on_home,source_url,created_at,tags,category" : "id,title_en,title_ar,content_en,content_ar,type,target,display,active,dismissible,starts_at,ends_at,created_at", order: "created_at.desc", limit: "20" });
+  if (scope) {
+    params.set("category", "eq.__ANNOUNCEMENT__");
+    params.set("tags", `cs.{seller:${scope}}`);
+    params.set("featured", "eq.true");
+  } else {
+    params.set("target", "in.(all,global)");
+    params.set("active", "eq.true");
+  }
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return null;
+    const rows = await response.json();
+    const now = Date.now();
+    const row = (Array.isArray(rows) ? rows : []).find((item: any) => {
+      const starts = item.starts_at ? Date.parse(item.starts_at) : Number.NEGATIVE_INFINITY;
+      const ends = item.ends_at ? Date.parse(item.ends_at) : Number.POSITIVE_INFINITY;
+      return starts <= now && ends >= now;
+    });
+    if (!row) return null;
+    if (scope) return { id: row.id, contentHtml: row.content || "", contentHtmlEn: row.content || "", contentHtmlAr: row.summary || "", titleEn: row.title || "", titleAr: row.title || "", imageUrl: row.image_url || "", linkUrl: row.og_image || "", active: row.featured !== false, dismissible: row.preview_on_home !== false, direction: row.source_url || "auto", updatedAt: row.created_at };
+    return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: "", linkUrl: "", active: row.active !== false, dismissible: row.dismissible !== false, direction: "auto", updatedAt: row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner" };
+  } catch { return null; }
+}
+
 async function q(table: string, select: string, order: string, limit = 2000): Promise<any[]> {
   if (!SUPABASE_URL || !ANON_KEY) return [];
   try {
@@ -953,6 +982,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(payload);
   }
 
+  if (req.method === 'GET' && rawType === 'announcements') {
+    const rawSeller = Array.isArray(req.query.seller) ? req.query.seller[0] : req.query.seller;
+    const announcement = await readPublicAnnouncement(typeof rawSeller === 'string' ? rawSeller.trim().slice(0, 100) : "");
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+    return res.status(200).json({ announcement });
+  }
   if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts' && rawType !== 'events') {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(400).json({ error: 'Unsupported content type. Use weapons, posts, or events.' });

@@ -702,13 +702,20 @@ async function readPublicAnnouncement(scope: string): Promise<any | null> {
     if (!response.ok) return null;
     const rows = await response.json();
     const now = Date.now();
-    const row = (Array.isArray(rows) ? rows : []).find((item: any) => {
+    let row = (Array.isArray(rows) ? rows : []).find((item: any) => {
       const starts = item.starts_at ? Date.parse(item.starts_at) : Number.NEGATIVE_INFINITY;
       const ends = item.ends_at ? Date.parse(item.ends_at) : Number.POSITIVE_INFINITY;
       return starts <= now && ends >= now;
     });
+    if (!row && !scope) {
+      // Backward compatibility: older active global announcements were stored in posts.
+      const legacyParams = new URLSearchParams({ select: "id,title,content,summary,image_url,og_image,featured,preview_on_home,source_url,updated_at,tags,category", category: "eq.__ANNOUNCEMENT__", tags: "cs.{global}", featured: "eq.true", order: "updated_at.desc", limit: "20" });
+      const legacyResponse = await fetch(`${SUPABASE_URL}/rest/v1/posts?${legacyParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+      const legacyRows = legacyResponse.ok ? await legacyResponse.json() : [];
+      row = (Array.isArray(legacyRows) ? legacyRows : [])[0] || null;
+    }
     if (!row) return null;
-    if (scope) return { id: row.id, contentHtml: row.content || "", contentHtmlEn: row.content || "", contentHtmlAr: row.summary || "", titleEn: row.title || "", titleAr: row.title || "", imageUrl: row.image_url || "", linkUrl: row.og_image || "", active: row.featured !== false, dismissible: row.preview_on_home !== false, direction: row.source_url || "auto", updatedAt: row.created_at };
+    if (scope) return { id: row.id, contentHtml: row.content || "", contentHtmlEn: row.content || "", contentHtmlAr: row.summary || "", titleEn: row.title || "", titleAr: row.title || "", imageUrl: row.image_url || "", linkUrl: row.og_image || "", active: row.featured !== false, dismissible: row.preview_on_home !== false, direction: row.source_url || "auto", updatedAt: row.created_at || row.updated_at };
     return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: "", linkUrl: "", active: row.active !== false, dismissible: row.dismissible !== false, direction: "auto", updatedAt: row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner" };
   } catch { return null; }
 }

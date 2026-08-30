@@ -332,7 +332,7 @@ function AnnouncementList({
     setLoading(true); setAnnouncements([]); setProgress('Fetching CrossFire announcements...');
     try {
       const data = await serverFetch('/api/scrape/forum-list', { url: FORUM_URL });
-      const posts: Announcement[] = (data.posts || []);
+      const posts: Announcement[] = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
       if (posts.length === 0) {
         setProgress('No announcements found — forum structure may have changed.');
         toast.warning('No announcements parsed.');

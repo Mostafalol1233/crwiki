@@ -13,9 +13,25 @@ const emptyConfig: Config = { id: "default", title_en: "CrossFire Wiki Competiti
 const emptyQuestion: Omit<Question, "id"> = { kind: "multiple_choice", question_en: "", question_ar: "", options: ["", "", "", ""], correct_option: "", points: 1, sort_order: 0, status: "draft", audio_url: "", weapon_id: "", source_note: "" };
 const emptyPrize: Omit<Prize, "id"> = { category: "", title_en: "", title_ar: "", description_en: "", description_ar: "", availability_note_en: "", availability_note_ar: "", published: false, sort_order: 0 };
 
-type AdminResponse = { data?: unknown[]; issuedCode?: string };
+type AdminResponse = { data?: unknown[]; issuedCode?: string; count?: number };
 async function tableRequest(type: string, operation: string, extra: Record<string, unknown> = {}) {
   return adminFetch<AdminResponse>("/api/admin/rebuild", { method: "POST", body: JSON.stringify({ action: "admin-table", type, operation, ...extra }) });
+}
+
+async function listAllRows(type: string) {
+  const rows: unknown[] = [];
+  const pageSize = 100;
+  let page = 1;
+  let expectedCount = Number.POSITIVE_INFINITY;
+  while (page <= 100 && rows.length < expectedCount) {
+    const result = await tableRequest(type, "list", { page, pageSize });
+    const batch = Array.isArray(result.data) ? result.data : [];
+    rows.push(...batch);
+    expectedCount = Number.isFinite(Number(result.count)) ? Number(result.count) : expectedCount;
+    if (batch.length < pageSize || batch.length === 0) break;
+    page += 1;
+  }
+  return rows;
 }
 
 function asNumber(value: unknown) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : 0; }
@@ -43,16 +59,16 @@ export default function CompetitionManager() {
         tableRequest("competition_questions", "list", { pageSize: 100 }),
         tableRequest("competition_prizes", "list", { pageSize: 100 }),
         tableRequest("competition_invite_codes", "list", { pageSize: 100 }),
-        tableRequest("competition_attempts", "list", { pageSize: 100 }),
-        tableRequest("competition_proofs", "list", { pageSize: 100 }),
+        listAllRows("competition_attempts"),
+        listAllRows("competition_proofs"),
       ]);
       const configRow = Array.isArray(configResult.data) && configResult.data[0] ? configResult.data[0] as Config : null;
       if (configRow) setConfig({ ...emptyConfig, ...configRow });
       setQuestions((Array.isArray(questionResult.data) ? questionResult.data : []) as Question[]);
       setPrizes((Array.isArray(prizeResult.data) ? prizeResult.data : []) as Prize[]);
       setCodes((Array.isArray(codeResult.data) ? codeResult.data : []) as Code[]);
-      setAttempts((Array.isArray(attemptResult.data) ? attemptResult.data : []) as Attempt[]);
-      setProofs((Array.isArray(proofResult.data) ? proofResult.data : []) as Proof[]);
+      setAttempts((Array.isArray(attemptResult) ? attemptResult : []) as Attempt[]);
+      setProofs((Array.isArray(proofResult) ? proofResult : []) as Proof[]);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to load competition data"); }
     finally { setBusy(false); }
   }, []);
@@ -170,27 +186,59 @@ export default function CompetitionManager() {
 
     {tab === "prizes" && <div style={twoColumn}><form onSubmit={createPrize} style={panel}><h2 style={sectionTitle}>Add prize category</h2><div style={gridOne}><Field label="Category" value={prize.category} onChange={(value) => setPrize({ ...prize, category: value })} /><Field label="English title" value={prize.title_en} onChange={(value) => setPrize({ ...prize, title_en: value })} /><Field label="Arabic title" value={prize.title_ar} onChange={(value) => setPrize({ ...prize, title_ar: value })} dir="rtl" /><TextArea label="English description" value={prize.description_en} onChange={(value) => setPrize({ ...prize, description_en: value })} /><TextArea label="Arabic description" value={prize.description_ar} onChange={(value) => setPrize({ ...prize, description_ar: value })} dir="rtl" /><Field label="Availability note" value={prize.availability_note_en} onChange={(value) => setPrize({ ...prize, availability_note_en: value })} /><Field label="Arabic availability note" value={prize.availability_note_ar} onChange={(value) => setPrize({ ...prize, availability_note_ar: value })} dir="rtl" /><Field label="Order" type="number" value={String(prize.sort_order)} onChange={(value) => setPrize({ ...prize, sort_order: Number(value) })} /></div><Check label="Publish this category" value={prize.published} onChange={(value) => setPrize({ ...prize, published: value })} /><button style={primaryButton} disabled={busy}>Save prize category</button></form><ListPanel title={`Prize categories (${prizes.length})`}>{prizes.map((item) => <div key={item.id} style={listRow}><div><strong>{item.category}: {item.title_en || item.title_ar}</strong><div style={small}>{item.published ? "published" : "draft"}</div></div><button style={dangerButton} onClick={() => void deleteRow("competition_prizes", item.id)}>Delete</button></div>)}</ListPanel></div>}
 
-    {tab === "attempts" && <ListPanel title={`Participant requests and attempts (${attempts.length})`}>{attempts.length === 0 && <p style={muted}>No participant requests have been submitted.</p>}{attempts.map((item) => <AttemptRow key={item.id} attempt={item} busy={busy} onSave={updateAttempt} onGenerateCode={createParticipantCode} />)}</ListPanel>}
-    {tab === "proofs" && <ListPanel title={`Uploaded proofs (${proofs.length})`}>{proofs.length === 0 && <p style={muted}>No proof uploads have been submitted.</p>}{proofs.map((item) => <ProofRow key={item.id} proof={item} busy={busy} onSave={updateProof} />)}</ListPanel>}
+    {tab === "attempts" && <ListPanel title={`Participant requests and attempts (${attempts.length})`}>{attempts.length === 0 && <p style={muted}>No participant requests have been submitted.</p>}{attempts.map((item) => <AttemptRow key={item.id} attempt={item} questions={questions} proofs={proofs} busy={busy} onSave={updateAttempt} onGenerateCode={createParticipantCode} />)}</ListPanel>}
+    {tab === "proofs" && <ListPanel title={`Uploaded proofs (${proofs.length})`}>{proofs.length === 0 && <p style={muted}>No proof uploads have been submitted.</p>}{proofs.map((item) => <ProofRow key={item.id} proof={item} attempt={attempts.find((attempt) => attempt.id === item.attempt_id)} busy={busy} onSave={updateProof} />)}</ListPanel>}
   </section>;
 }
 
-function AttemptRow({ attempt, busy, onSave, onGenerateCode }: { attempt: Attempt; busy: boolean; onSave: (attempt: Attempt, patch: Partial<Attempt>) => Promise<void>; onGenerateCode: (attempt: Attempt) => Promise<{ code: string; whatsapp: string }> }) {
+function AttemptRow({ attempt, questions, proofs, busy, onSave, onGenerateCode }: { attempt: Attempt; questions: Question[]; proofs: Proof[]; busy: boolean; onSave: (attempt: Attempt, patch: Partial<Attempt>) => Promise<void>; onGenerateCode: (attempt: Attempt) => Promise<{ code: string; whatsapp: string }> }) {
   const [essay, setEssay] = useState(String(attempt.essay_score || 0));
   const [generatedCode, setGeneratedCode] = useState("");
   const [whatsappMessageUrl, setWhatsappMessageUrl] = useState("");
   const [bonus, setBonus] = useState(String(attempt.proof_bonus || 0));
   const [status, setStatus] = useState(attempt.status);
+  const [profileOpen, setProfileOpen] = useState(false);
   const link = whatsappUrl(attempt.phone);
   const isAccessRequest = Boolean(attempt.answers && attempt.answers.access_request === true);
-  return <div style={reviewRow}><div style={{ minWidth: 220 }}><strong>{attempt.phone || "No phone"}</strong><div style={small}>{isAccessRequest ? "Participation code request" : attempt.id} · {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : "not submitted"}</div>{link && <a href={link} target="_blank" rel="noreferrer" style={contactLink}>Open WhatsApp</a>}{isAccessRequest && <button style={{ ...secondaryButton, marginTop: 8 }} disabled={busy} onClick={() => void onGenerateCode(attempt).then((result) => { setGeneratedCode(result.code); setWhatsappMessageUrl(result.whatsapp); })}>Generate private code</button>}{generatedCode && <div style={{ ...small, color: "#fbbf24" }}>Code: {generatedCode}{whatsappMessageUrl && <a href={whatsappMessageUrl} target="_blank" rel="noreferrer" style={{ ...contactLink, marginLeft: 8 }}>WhatsApp message</a>}</div>}</div><div style={reviewGrid}><Field label="Objective" value={String(attempt.objective_score || 0)} onChange={() => undefined} /><Field label="Essay score" type="number" value={essay} onChange={setEssay} /><Field label="Proof bonus" type="number" value={bonus} onChange={setBonus} /><Select label="Status" value={status} options={["in_progress", "submitted", "reviewed", "withdrawn"]} onChange={setStatus} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(attempt, { essay_score: Number(essay), proof_bonus: Number(bonus), status })}>Save review</button></div>;
+  const participantProofs = proofs.filter((proof) => proof.attempt_id === attempt.id);
+  const answerEntries: Array<[string, unknown]> = Object.entries(attempt.answers || {}).filter(([key]) => key !== "access_request") as Array<[string, unknown]>;
+  const answerFor = (questionId: string) => {
+    const value = attempt.answers?.[questionId];
+    if (value === null || value === undefined || value === "") return "—";
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
+  };
+  return <div style={reviewRow}>
+    <div style={{ minWidth: 220, flex: 1 }}><strong>{attempt.phone || "No phone"}</strong><div style={small}>{isAccessRequest ? "Participation code request" : attempt.id} · {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : "not submitted"}</div>{link && <a href={link} target="_blank" rel="noreferrer" style={contactLink}>Open WhatsApp</a>}{isAccessRequest && <button style={{ ...secondaryButton, marginTop: 8 }} disabled={busy} onClick={() => void onGenerateCode(attempt).then((result) => { setGeneratedCode(result.code); setWhatsappMessageUrl(result.whatsapp); })}>Generate private code</button>}{generatedCode && <div style={{ ...small, color: "#fbbf24" }}>Code: {generatedCode}{whatsappMessageUrl && <a href={whatsappMessageUrl} target="_blank" rel="noreferrer" style={{ ...contactLink, marginLeft: 8 }}>WhatsApp message</a>}</div>}<button style={{ ...secondaryButton, marginTop: 8 }} onClick={() => setProfileOpen((value) => !value)}>{profileOpen ? "Close participant file" : `Open participant file (${answerEntries.length} answers, ${participantProofs.length} proofs)`}</button></div>
+    <div style={reviewGrid}><Field label="Objective" value={String(attempt.objective_score || 0)} onChange={() => undefined} disabled /><Field label="Essay and scenario score" type="number" value={essay} onChange={setEssay} /><Field label="Proof bonus" type="number" value={bonus} onChange={setBonus} /><Field label="Final score" value={String(attempt.final_score || 0)} onChange={() => undefined} disabled /><Select label="Status" value={status} options={["in_progress", "submitted", "reviewed", "withdrawn"]} onChange={setStatus} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(attempt, { essay_score: Number(essay), proof_bonus: Number(bonus), status })}>Save review</button>
+    {profileOpen && <ParticipantProfile attempt={attempt} questions={questions} proofs={participantProofs} answerFor={answerFor} />}
+  </div>;
 }
 
-function ProofRow({ proof, busy, onSave }: { proof: Proof; busy: boolean; onSave: (proof: Proof, patch: Partial<Proof>) => Promise<void> }) {
+function ParticipantProfile({ attempt, questions, proofs, answerFor }: { attempt: Attempt; questions: Question[]; proofs: Proof[]; answerFor: (questionId: string) => string }) {
+  const answerEntries: Array<[string, unknown]> = Object.entries(attempt.answers || {}).filter(([key]) => key !== "access_request") as Array<[string, unknown]>;
+  const knownQuestionIds = new Set(questions.map((question) => question.id));
+  const orphanAnswers: Array<[string, unknown]> = answerEntries.filter(([questionId]) => !knownQuestionIds.has(questionId));
+  return <div style={{ gridColumn: "1 / -1", background: "#09090b", border: "1px solid #3f3f46", borderRadius: 6, padding: 16, marginTop: 8 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div><h3 style={{ ...sectionTitle, marginBottom: 6 }}>Participant file</h3><p style={muted}>Private administrator view. Phone, answers, proofs, and scores are not exposed to public pages.</p></div>
+      <div style={{ color: "#e5e7eb", fontSize: 13, textAlign: "right" }}><div>Attempt: {attempt.id}</div><div>Created: {new Date(attempt.created_at).toLocaleString()}</div><div>Submitted: {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : "Not submitted"}</div></div>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, margin: "14px 0" }}>
+      <Summary label="Phone" value={attempt.phone || "—"} /><Summary label="User ID" value={attempt.user_id || "Anonymous"} /><Summary label="Objective score" value={String(attempt.objective_score || 0)} /><Summary label="Essay and scenario" value={String(attempt.essay_score || 0)} /><Summary label="Proof bonus" value={String(attempt.proof_bonus || 0)} /><Summary label="Final score" value={String(attempt.final_score || 0)} />
+    </div>
+    <div style={{ display: "grid", gap: 8 }}><h4 style={{ color: "#f8fafc", margin: "8px 0 0" }}>All submitted answers</h4>{questions.length === 0 ? <p style={muted}>No question bank was loaded.</p> : questions.map((question, index) => <div key={question.id} style={{ border: "1px solid #27272a", padding: 10, borderRadius: 4 }}><div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, color: "#aeb8c4", fontSize: 11 }}><span>Question {index + 1} · {question.kind}</span><span>{question.points || 0} points · {question.kind === "essay" || question.kind === "scenario" ? "Manual review" : "Auto-score"}</span></div><strong style={{ display: "block", color: "#f8fafc", margin: "6px 0" }}>{question.question_en || question.question_ar || "Untitled question"}</strong>{question.question_ar && <div dir="rtl" style={{ color: "#cbd5e1", marginBottom: 6 }}>{question.question_ar}</div>}<div style={{ color: answerFor(question.id) === "—" ? "#71717a" : "#fbbf24", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><span style={{ color: "#9ca3af" }}>Submitted answer: </span>{answerFor(question.id)}</div></div>)}{orphanAnswers.map((entry: [string, unknown]) => { const [questionId, value] = entry; return <div key={`orphan-${questionId}`} style={{ border: "1px solid #7f1d1d", padding: 10, borderRadius: 4 }}><div style={{ color: "#fca5a5", fontSize: 11 }}>Archived or unavailable question · {questionId}</div><div style={{ color: "#fbbf24", whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginTop: 6 }}>{typeof value === "object" ? JSON.stringify(value) : String(value)}</div></div>; })}</div>
+    <div style={{ display: "grid", gap: 8, marginTop: 16 }}><h4 style={{ color: "#f8fafc", margin: 0 }}>Participant proofs ({proofs.length})</h4>{proofs.length === 0 ? <p style={muted}>No proof submitted for this attempt.</p> : proofs.map((proof) => <div key={proof.id} style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10, border: "1px solid #27272a", padding: 10, borderRadius: 4 }}><div><strong style={{ color: "#e5e7eb" }}>{proof.proof_type}</strong><div style={small}>Status: {proof.status} · Bonus: {proof.bonus_points || 0} · {new Date(proof.created_at).toLocaleString()}</div>{proof.reviewer_note && <div style={{ color: "#9ca3af", fontSize: 12 }}>Note: {proof.reviewer_note}</div>}</div>{proof.file_url && <a href={proof.file_url} target="_blank" rel="noreferrer" style={contactLink}>Open proof {proof.file_name ? `(${proof.file_name})` : "file"}</a>}</div>)}</div>
+  </div>;
+}
+
+function Summary({ label, value }: { label: string; value: string }) { return <div style={{ border: "1px solid #27272a", padding: "9px 10px", borderRadius: 4 }}><div style={{ color: "#9ca3af", fontSize: 11 }}>{label}</div><strong style={{ display: "block", color: "#f8fafc", marginTop: 3, overflowWrap: "anywhere" }}>{value}</strong></div>; }
+
+function ProofRow({ proof, attempt, busy, onSave }: { proof: Proof; attempt?: Attempt; busy: boolean; onSave: (proof: Proof, patch: Partial<Proof>) => Promise<void> }) {
   const [status, setStatus] = useState(proof.status);
   const [bonus, setBonus] = useState(String(proof.bonus_points || 0));
   const [note, setNote] = useState(proof.reviewer_note || "");
-  return <div style={reviewRow}><div style={{ minWidth: 220 }}><strong>{proof.proof_type}</strong><div style={small}>Attempt: {proof.attempt_id}</div>{proof.file_url && <a href={proof.file_url} target="_blank" rel="noreferrer" style={contactLink}>Open proof file</a>}</div><div style={reviewGrid}><Select label="Status" value={status} options={["pending", "approved", "rejected"]} onChange={setStatus} /><Field label="Bonus points" type="number" value={bonus} onChange={setBonus} /><Field label="Reviewer note" value={note} onChange={setNote} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(proof, { status, bonus_points: Number(bonus), reviewer_note: note })}>Save proof review</button></div>;
+  return <div style={reviewRow}><div style={{ minWidth: 220 }}><strong>{proof.proof_type}</strong><div style={small}>Participant: {attempt?.phone || "Unknown"} · Attempt: {proof.attempt_id}</div>{proof.file_url && <a href={proof.file_url} target="_blank" rel="noreferrer" style={contactLink}>Open proof file</a>}</div><div style={reviewGrid}><Select label="Status" value={status} options={["pending", "approved", "rejected"]} onChange={setStatus} /><Field label="Bonus points" type="number" value={bonus} onChange={setBonus} /><Field label="Reviewer note" value={note} onChange={setNote} /></div><button style={secondaryButton} disabled={busy} onClick={() => void onSave(proof, { status, bonus_points: Number(bonus), reviewer_note: note })}>Save proof review</button></div>;
 }
 
 function Field({ label, value, onChange, type = "text", dir, disabled }: { label: string; value: string; onChange: (value: string) => void; type?: string; dir?: "rtl" | "ltr"; disabled?: boolean }) { return <label style={labelStyle}>{label}<input dir={dir} disabled={disabled} type={type} value={value} onChange={(event) => onChange(event.target.value)} style={input} /></label>; }

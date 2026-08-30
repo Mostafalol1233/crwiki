@@ -12,7 +12,7 @@ const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Conte
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
-const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string }> = {
+const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en?: string }> = {
   "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟" },
   "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟" },
   "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟" },
@@ -25,19 +25,27 @@ const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: stri
   "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟" },
   "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟" },
   "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟" },
-  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
-  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
-  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
-  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
-  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
-  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
-  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
-  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟" },
-  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟" },
-  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟" },
+  "130": { question_en: "What is the key difference between Infection and Elimination in Shadow Mode?", question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
+  "140": { question_en: "In Weapon Master TDM, what is the basic win condition for your team?", question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
+  "150": { question_en: "Zombie Mode 4 introduced new mechanics compared with earlier chapters. What is the main addition?", question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
+  "160": { question_en: "In traditional Team Deathmatch, what is the basic match win rule?", question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
+  "170": { question_en: "After a fast plant at A in Search & Destroy, where should you hold your crosshair for a post-plant defense?", question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
+  "180": { question_en: "Which image shows the G3A3 from the Battle Rifle family?", question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
+  "190": { question_en: "After zooming in on the details, which image shows the Barrett M82A1-Journey to the West variant?", question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
+  "200": { question_en: "Which image shows the standard Dragon Blade from the Dragon Blade family?", question_ar: "قدامك 4 صور من عائلة Dragon Blade.. كبّر الصور واختار النسخة الأساسية من السلاح، مش نسخة Journey to the West أو أي سكن تاني." },
+  "210": { question_en: "Which image shows the Flashbang-Modern variant?", question_ar: "قدامك 4 صور لقنابل Flashbang.. أنهي صورة هي نسخة Flashbang-Modern؟" },
+  "220": { question_en: "Which image shows the Grenade-Gold variant?", question_ar: "قدامك 4 صور لقنابل يدوية.. أنهي صورة هي نسخة Grenade-Gold؟" },
   "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟" },
   "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
   "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
+};
+
+const COMPETITION_OPTION_EN_OVERRIDES: Record<string, string[]> = {
+  "130": ["In Infection, a player who is killed by the Mercenaries changes into a Shadow", "Shadows have firearms in Infection", "Elimination has a time limit but Infection does not", "There are no footsteps in Infection"],
+  "140": ["The team reaches the required kill count across weapons and completes the weapon progression", "Only one player carries the team and records the highest DPM", "The match ends on time and the team with the higher total damage wins", "The team controls map points with specific weapons"],
+  "150": ["A Skill Tree lets players improve character abilities during the match", "Zombies can use firearms", "Only VIP characters can play", "Revive Tokens are removed completely"],
+  "160": ["The first team to reach the kill limit, or the team with more kills when time expires", "The team that holds sites A and B for the longest time", "The team that defuses C4 more than three times", "The team that collects the most badges during the round"],
+  "170": ["Hold off-angles to cover chokepoints without exposing yourself to retakers", "Stand directly over the C4 and crouch", "Keep running around the site to make noise", "Throw smoke randomly inside the site to block your own team's view"],
 };
 
 const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
@@ -60,15 +68,31 @@ const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
   "170": ["التثبيت على زوايا الـ Off-angle لتغطية الـ Chokepoints من غير ما تبان للـ Retakers", "الوقوف المباشر فوق الـ C4 وعمل Crouch", "الجري المستمر داخل الـ Site لعمل Noise", "الرمي العشوائي للـ Smoke داخل الـ Site لتغطية رؤية فريقك"],
 };
 
+const COMPETITION_CORRECT_OPTION_OVERRIDES: Record<string, string> = {
+  // The visible wording was corrected without changing the legacy DB option keys.
+  "200": "Dragon Blade",
+  "210": "Flashbang-Modern",
+  "220": "Grenade-Gold",
+};
+
 function applyCompetitionQuestionWording(questions: any[]): any[] {
   return questions.map((question) => {
     const key = String(question?.sort_order || "");
     const override = COMPETITION_QUESTION_WORDING_OVERRIDES[key];
     const labels = COMPETITION_OPTION_LABEL_OVERRIDES[key];
-    const nextOptions = labels && Array.isArray(question?.options)
-      ? question.options.map((option: any, index: number) => ({ ...option, label_ar: labels[index] || option.label_ar || option.label_en || option.value }))
+    const englishLabels = COMPETITION_OPTION_EN_OVERRIDES[key];
+    const nextOptions = (labels || englishLabels) && Array.isArray(question?.options)
+      ? question.options.map((option: any, index: number) => ({
+        ...option,
+        ...(labels ? { label_ar: labels[index] || option.label_ar || option.label_en || option.value } : {}),
+        ...(englishLabels ? { label_en: englishLabels[index] || option.label_en || option.value } : {}),
+      }))
       : question?.options;
-    return override || labels ? { ...question, ...(override || {}), ...(labels ? { options: nextOptions } : {}) } : question;
+    const nextQuestion = override || labels || englishLabels
+      ? { ...question, ...(override || {}), ...(labels || englishLabels ? { options: nextOptions } : {}) }
+      : question;
+    return nextQuestion;
+
   });
 }
 
@@ -598,15 +622,16 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     const attempts = await attemptResponse.json();
     const attempt = Array.isArray(attempts) ? attempts[0] : null;
     if (!attempt || attempt.status !== "in_progress") return { status: 400, body: { error: "This competition attempt is no longer active" } };
-    const questionResponse = await fetch(`${base}/competition_questions?select=id,correct_option,points,kind&status=eq.published`, { headers, signal: AbortSignal.timeout(9000) });
+    const questionResponse = await fetch(`${base}/competition_questions?select=id,correct_option,points,kind,sort_order&status=eq.published`, { headers, signal: AbortSignal.timeout(9000) });
     const questions = questionResponse.ok ? await questionResponse.json() : [];
     let objectiveScore = 0;
     for (const question of Array.isArray(questions) ? questions : []) {
       const submitted = typeof answers[question.id] === "string" ? answers[question.id] : "";
-      if (question.correct_option && submitted && submitted === question.correct_option) objectiveScore += Number(question.points || 0);
+      const correctOption = COMPETITION_CORRECT_OPTION_OVERRIDES[String(question?.sort_order || "")] || question.correct_option;
+      if (correctOption && submitted && submitted === correctOption) objectiveScore += Number(question.points || 0);
     }
     const updateParams = new URLSearchParams({ id: `eq.${attemptId}` });
-    if (!previewAllowed) updateParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) updateParams.set("user_id", `eq.${userId}`);
     const updateResponse = await fetch(`${base}/competition_attempts?${updateParams.toString()}`, {
       method: "PATCH", headers,
       body: JSON.stringify({ answers, objective_score: objectiveScore, final_score: objectiveScore, status: "submitted", submitted_at: new Date().toISOString() }),

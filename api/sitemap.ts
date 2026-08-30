@@ -25,19 +25,19 @@ const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: stri
   "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟" },
   "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟" },
   "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟" },
-  "130": { question_en: "What is the key difference between Infection and Elimination in Shadow Mode?", question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
-  "140": { question_en: "In Weapon Master TDM, what is the basic win condition for your team?", question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
-  "150": { question_en: "Zombie Mode 4 introduced new mechanics compared with earlier chapters. What is the main addition?", question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
-  "160": { question_en: "In traditional Team Deathmatch, what is the basic match win rule?", question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
-  "170": { question_en: "After a fast plant at A in Search & Destroy, where should you hold your crosshair for a post-plant defense?", question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
-  "180": { question_en: "Which image shows the G3A3 from the Battle Rifle family?", question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
-  "190": { question_en: "After zooming in on the details, which image shows the Barrett M82A1-Journey to the West variant?", question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
-  "200": { question_en: "Which image shows the standard Dragon Blade from the Dragon Blade family?", question_ar: "قدامك 4 صور من عائلة Dragon Blade.. كبّر الصور واختار النسخة الأساسية من السلاح، مش نسخة Journey to the West أو أي سكن تاني." },
-  "210": { question_en: "Which image shows the M4A1 among these assault rifles?", question_ar: "قدامك 4 صور لبنادق هجومية.. أنهي صورة هي لسلاح M4A1؟" },
-  "220": { question_en: "Which image shows the AWM among these sniper rifles?", question_ar: "قدامك 4 صور لبنادق قنص.. أنهي صورة هي لسلاح AWM؟" },
-  "230": { question_en: "Which image shows the MP5 among these submachine guns?", question_ar: "قدامك 4 صور لأسلحة رشاشة خفيفة.. أنهي صورة هي لسلاح MP5؟" },
-  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
-  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
+  "130": { question_en: "What is the key difference between Infection and Elimination in Shadow Mode?", question_ar: "إيه الفرق الأساسي بين Infection وElimination في Shadow Mode؟" },
+  "140": { question_en: "In Weapon Master TDM, what is the basic win condition for your team?", question_ar: "في Weapon Master بنظام الفرق، إيه اللي لازم فريقك يعمله عشان يكسب؟" },
+  "150": { question_en: "Zombie Mode 4 introduced new mechanics compared with earlier chapters. What is the main addition?", question_ar: "إيه أهم إضافة جديدة نزلت مع Zombie Mode 4 مقارنة بالأجزاء القديمة؟" },
+  "160": { question_en: "In traditional Team Deathmatch, what is the basic match win rule?", question_ar: "في Team Deathmatch العادي، الفريق بيكسب الماتش إزاي؟" },
+  "170": { question_en: "After a fast plant at A in Search & Destroy, where should you hold your crosshair for a post-plant defense?", question_ar: "بعد ما تزرع الـC4 بسرعة في موقع A، تمسك الـCrosshair فين عشان تدافع عن القنبلة؟" },
+  "180": { question_en: "Which image shows the G3A3 from the Battle Rifle family?", question_ar: "بص على الصور الأربع واختار الصورة اللي فيها سلاح G3A3." },
+  "190": { question_en: "After zooming in on the details, which image shows the Barrett M82A1-Journey to the West variant?", question_ar: "كبّر الصور وركّز في شكل السلاح والزخارف. أنهي صورة فيها Barrett M82A1 بنسخة Journey to the West؟" },
+  "200": { question_en: "Which image shows the M16A2 among these assault rifles?", question_ar: "الصور الأربع كلها لبنادق هجومية قريبة من بعض. كبّرها واختار الصورة اللي فيها M16A2." },
+  "210": { question_en: "Which image shows the G36C among these assault rifles?", question_ar: "الاختيارات كلها بنادق هجومية شكلها قريب. ركّز في جسم السلاح والمخزن واختار الصورة اللي فيها G36C." },
+  "220": { question_en: "Which image shows the AWM among these sniper rifles?", question_ar: "بص على صور القناصة الأربع واختار الصورة اللي فيها AWM." },
+  "230": { question_en: "Which image shows the MP5 among these submachine guns?", question_ar: "بص على صور الرشاشات الخفيفة الأربع واختار الصورة اللي فيها MP5." },
+  "240": { question_ar: "أنت في الجولة الحاسمة على ماب Black Widow، والخصم مثبت قناص قوي في الـMid. اشرح باختصار هتستخدم الدخان والفلاشات إزاي، وهتوزّع فريقك إزاي، عشان تجبر القناص يسيب مكانه وتدخلوا الموقع بأقل خسائر." },
+  "250": { question_ar: "في سطرين أو تلاتة، اشرح الفرق بين كلام الفريق وقت جمع المعلومات وكلامه وقت تنفيذ الهجوم السريع." },
 };
 
 const COMPETITION_OPTION_EN_OVERRIDES: Record<string, string[]> = {
@@ -71,8 +71,8 @@ const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
 const COMPETITION_CORRECT_OPTION_OVERRIDES: Record<string, string> = {
   // The visible wording was corrected without changing the legacy DB option keys.
   "180": "G3A3",
-  "200": "Dragon Blade",
-  "210": "M4A1",
+  "200": "M16A2",
+  "210": "G36C",
   "220": "AWM",
   "230": "MP5",
 };
@@ -433,11 +433,17 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
 }
 
 const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: string; lookup: string }>> = {
+  "200": [
+    { label: "M16A2", lookup: "M16A2" },
+    { label: "FAMAS", lookup: "FAMAS" },
+    { label: "FN FNC", lookup: "FN FNC" },
+    { label: "G36K", lookup: "G36K" },
+  ],
   "210": [
+    { label: "G36C", lookup: "G36C" },
     { label: "M4A1", lookup: "M4A1" },
     { label: "SCAR Light", lookup: "SCAR Light" },
     { label: "XM8", lookup: "XM8" },
-    { label: "G36K", lookup: "G36K" },
   ],
   "220": [
     { label: "AWM", lookup: "AWM" },

@@ -97,11 +97,12 @@ export default function ScrapingManager() {
     try {
       const headers: HeadersInit = getAdminHeaders();
 
-      const listResponse = await fetch("/api/scrape/forum-list", { headers, credentials: 'include' });
-      const posts = await listResponse.json();
+      const listResponse = await fetch("/api/scrape/forum-list", { method: "POST", headers, credentials: 'include', body: JSON.stringify({}) });
+      const listPayload = await listResponse.json().catch(() => ({}));
+      const posts = Array.isArray(listPayload) ? listPayload : (Array.isArray(listPayload?.posts) ? listPayload.posts : []);
       
-      if (!listResponse.ok || !Array.isArray(posts)) {
-        throw new Error(posts.error || "Failed to fetch forum list");
+      if (!listResponse.ok) {
+        throw new Error(listPayload?.error || "Failed to fetch forum list");
       }
 
       if (posts.length === 0) {
@@ -156,9 +157,10 @@ export default function ScrapingManager() {
     setIsScraping(true);
     try {
       const headers = getAdminHeaders();
-      const listResponse = await fetch("/api/scrape/forum-list", { headers, credentials: "include" });
-      const posts = await listResponse.json().catch(() => []);
-      if (!listResponse.ok || !Array.isArray(posts)) throw new Error(posts?.error || "Failed to fetch forum announcements");
+      const listResponse = await fetch("/api/scrape/forum-list", { method: "POST", headers, credentials: "include", body: JSON.stringify({}) });
+      const listPayload = await listResponse.json().catch(() => ({}));
+      const posts = Array.isArray(listPayload) ? listPayload : (Array.isArray(listPayload?.posts) ? listPayload.posts : []);
+      if (!listResponse.ok) throw new Error(listPayload?.error || "Failed to fetch forum announcements");
       const detailResponse = await fetch("/api/scrape/multiple-events", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },

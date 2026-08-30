@@ -33,9 +33,9 @@ const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: stri
   "180": { question_en: "Which image shows the G3A3 from the Battle Rifle family?", question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
   "190": { question_en: "After zooming in on the details, which image shows the Barrett M82A1-Journey to the West variant?", question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
   "200": { question_en: "Which image shows the standard Dragon Blade from the Dragon Blade family?", question_ar: "قدامك 4 صور من عائلة Dragon Blade.. كبّر الصور واختار النسخة الأساسية من السلاح، مش نسخة Journey to the West أو أي سكن تاني." },
-  "210": { question_en: "Which image shows the Flashbang-Modern variant?", question_ar: "قدامك 4 صور لقنابل Flashbang.. أنهي صورة هي نسخة Flashbang-Modern؟" },
-  "220": { question_en: "Which image shows the Grenade-Gold variant?", question_ar: "قدامك 4 صور لقنابل يدوية.. أنهي صورة هي نسخة Grenade-Gold؟" },
-  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟" },
+  "210": { question_en: "Which image shows the M4A1 among these assault rifles?", question_ar: "قدامك 4 صور لبنادق هجومية.. أنهي صورة هي لسلاح M4A1؟" },
+  "220": { question_en: "Which image shows the AWM among these sniper rifles?", question_ar: "قدامك 4 صور لبنادق قنص.. أنهي صورة هي لسلاح AWM؟" },
+  "230": { question_en: "Which image shows the MP5 among these submachine guns?", question_ar: "قدامك 4 صور لأسلحة رشاشة خفيفة.. أنهي صورة هي لسلاح MP5؟" },
   "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
   "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
 };
@@ -72,8 +72,9 @@ const COMPETITION_CORRECT_OPTION_OVERRIDES: Record<string, string> = {
   // The visible wording was corrected without changing the legacy DB option keys.
   "180": "G3A3",
   "200": "Dragon Blade",
-  "210": "Flashbang-Modern",
-  "220": "Grenade-Gold",
+  "210": "M4A1",
+  "220": "AWM",
+  "230": "MP5",
 };
 
 function applyCompetitionQuestionWording(questions: any[]): any[] {
@@ -82,6 +83,7 @@ function applyCompetitionQuestionWording(questions: any[]): any[] {
     const override = COMPETITION_QUESTION_WORDING_OVERRIDES[key];
     const labels = COMPETITION_OPTION_LABEL_OVERRIDES[key];
     const englishLabels = COMPETITION_OPTION_EN_OVERRIDES[key];
+    const weaponDisplayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[key];
     const nextOptions = (labels || englishLabels) && Array.isArray(question?.options)
       ? question.options.map((option: any, index: number) => ({
         ...option,
@@ -89,8 +91,8 @@ function applyCompetitionQuestionWording(questions: any[]): any[] {
         ...(englishLabels ? { label_en: englishLabels[index] || option.label_en || option.value } : {}),
       }))
       : question?.options;
-    const nextQuestion = override || labels || englishLabels
-      ? { ...question, ...(override || {}), ...(labels || englishLabels ? { options: nextOptions } : {}) }
+    const nextQuestion = override || labels || englishLabels || weaponDisplayNames
+      ? { ...question, ...(override || {}), ...(labels || englishLabels ? { options: nextOptions } : {}), ...(weaponDisplayNames ? { kind: "weapon" } : {}) }
       : question;
     return nextQuestion;
 
@@ -431,6 +433,24 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
 }
 
 const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: string; lookup: string }>> = {
+  "210": [
+    { label: "M4A1", lookup: "M4A1" },
+    { label: "SCAR Light", lookup: "SCAR Light" },
+    { label: "XM8", lookup: "XM8" },
+    { label: "G36K", lookup: "G36K" },
+  ],
+  "220": [
+    { label: "AWM", lookup: "AWM" },
+    { label: "Barrett M82A1", lookup: "Barrett M82A1" },
+    { label: "Dragunov", lookup: "Dragunov" },
+    { label: "CheyTac M200", lookup: "CheyTac M200" },
+  ],
+  "230": [
+    { label: "MP5", lookup: "MP5" },
+    { label: "P90", lookup: "P90" },
+    { label: "Uzi", lookup: "Uzi" },
+    { label: "MP7", lookup: "MP7" },
+  ],
   // The live catalogue names the base FAL entry "FN FAL"; keep the supplied
   // visible choice "FAL" while resolving its image from that verified record.
   "180": [
@@ -444,8 +464,8 @@ const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: str
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
   const names = new Set<string>();
   for (const question of questions) {
-    if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
     const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+    if (question?.kind !== "weapon" && !displayNames) continue;
     if (displayNames) displayNames.forEach(({ lookup }) => names.add(lookup));
     for (const option of question.options) {
       const name = typeof option === "string"
@@ -467,24 +487,30 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
       if (typeof row?.name === "string" && typeof row?.image_url === "string" && row.image_url) imageByName.set(row.name, row.image_url);
     }
     return questions.map((question) => {
-      if (question?.kind !== "weapon" || !Array.isArray(question.options)) return question;
-      const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+      const configuredNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+      if (question?.kind !== "weapon" && !configuredNames) return question;
+      const displayNames = configuredNames || [];
+      const sourceOptions = displayNames.length
+        ? displayNames.map(({ lookup }) => ({ value: lookup }))
+        : (Array.isArray(question.options) ? question.options : []);
       return {
         ...question,
-        options: question.options.map((option: any, index: number) => {
+        kind: "weapon",
+        options: sourceOptions.map((option: any, index: number) => {
           const displayConfig = displayNames?.[index];
+          const optionLabel = `Option ${String.fromCharCode(65 + index)}`;
           const displayName = displayConfig?.label;
           const lookupName = displayConfig?.lookup || displayName;
-          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(lookupName || option) || null };
+          if (typeof option === "string") return { value: option, label_en: optionLabel, label_ar: optionLabel, display_label_en: optionLabel, image_url: imageByName.get(lookupName || option) || null };
           if (!option || typeof option !== "object") return option;
           const name = lookupName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
           const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
           return {
             ...option,
             ...(displayConfig ? { value: displayConfig.lookup } : {}),
-            label_en: displayName || option.label_en,
-            label_ar: displayName || option.label_ar,
-            display_label_en: displayName || option.display_label_en,
+            label_en: displayConfig ? optionLabel : (displayName || option.label_en),
+            label_ar: displayConfig ? optionLabel : (displayName || option.label_ar),
+            display_label_en: displayConfig ? optionLabel : (displayName || option.display_label_en),
             image_url: imageByName.get(name) || (displayNames ? null : existingImage),
           };
         }),

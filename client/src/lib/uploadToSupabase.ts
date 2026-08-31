@@ -2,8 +2,8 @@
  * Unified media upload utility.
  *
  * Uploads are sent to the server-side media endpoint. The browser must never
- * receive a Supabase service-role key, and the server validates the signed
- * admin session before forwarding the file to Cloudinary.
+ * receive a Supabase service-role key; the server validates the request and
+ * forwards the file to Supabase Storage.
  */
 
 const API_BASE = String(import.meta.env.VITE_API_URL || "").replace(/\/$/, "");

@@ -12,7 +12,7 @@ const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Conte
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
-const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string }> = {
+const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en?: string }> = {
   "10": { question_ar: "اسمع المقطع الصوتي ده كويس.. المزيكا دي تابعة لأنهي مود في اللعبة؟" },
   "20": { question_ar: "اسمع الـ Round Intro دي كويس.. الدخلة دي بتسمعها في أنهي موقع/ماب؟" },
   "30": { question_ar: "اسمع صوت الدخلة ده.. تفتكر المزيكا دي خاصة بـ أنهي ماب أول ما الجولة تبدأ؟" },
@@ -25,19 +25,27 @@ const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: stri
   "100": { question_ar: "اسمع ثيم الـ Boss ده كويس.. هتسمع المزيكا دي في انهي ماب؟" },
   "110": { question_ar: "المزيكا المرعبة دي بتشتغل في أنهي بيئة وماب في الزومبي؟" },
   "120": { question_ar: "نغمة البيانو دي أول ما بتسمعها في الزومبي بتعرف إنك في ماب إيه؟" },
-  "130": { question_ar: "إيه الفرق الجوهري بين نظام الـ Infection ونظام الـ Elimination في الـ Shadow Mode؟" },
-  "140": { question_ar: "مود الـ Weapon Master لما بتلعبه بنظام الفرق (TDM)، إيه الشرط الأساسي عشان تفرقتك تكسب الجيم؟" },
-  "150": { question_ar: "طور الـ Zombie Mode 4 نزل بمكانيكيات جديدة تماماً عن الأجزاء القديمة.. إيه أبرز ميزة اتضافت فيه؟" },
-  "160": { question_ar: "في طور الـ Team Deathmatch (TDM) التقليدي، إيه القاعدة الأساسية لحساب الفوز في الماتش؟" },
-  "170": { question_ar: "في ماب Search & Destroy، لما بتعمل Fast Plant للقنبلة C4 في الموقع A، إيه أفضل توقيت ومكان لتثبيت الـ Crosshair وأنت بتلعب Post-Plant Retake defense؟" },
-  "180": { question_ar: "قدامك 4 صور لأسلحة من عائلة الـ Battle Rifles.. أنهي صورة فيهم هي لسلاح G3A3 بالظبط؟" },
-  "190": { question_ar: "ركز في التفاصيل والتطريز على جسم القناصة بعد التكبير.. أنهي صورة هي نسخة Barrett M82A1-Journey to the West؟" },
-  "200": { question_ar: "افتح الصور وكبّر النقوشات اللي على السلاح.. أنهي شكل بيمثل الـ Dragon Blade-Journey to the West؟" },
-  "210": { question_ar: "أنهي صورة بتعرض الـ Flashbang الخاصة بمكافآت جوائز الـ Rank Match (West)؟" },
-  "220": { question_ar: "أنهي قنبلة (Grenade) في الاختيارات هي النسخة الخاصة بـ Rank Match Event West؟" },
-  "230": { question_ar: "سيناريو تكتيكي: أنت تلعب In-Game Leader (IGL) وفريقك إمكانياته أقل من الفريق المنافس. الخصم بيلعب بتقسيمة ثابتة (3 في A و 2 في B) على خريطة Desert Eagle. اشرح خطتك في أول 30 ثانية من الجولة: إزاي هتاخد المعلومة (Info) وتعمل Fake أو Rotation هادي عشان تفتح سايد فاضي وتزرع الـ C4 من غير ما تخسر أفراد من فريقك؟" },
-  "240": { question_ar: "سيناريو تكتيكي: أنت بتلعب الجولة الحاسمة (Match Point) في ماب Black Widow كـ Terrorists (Black Ravens). الفريق المنافس بيلعب AWP تقيل جداً ومثبّت الزاوية في Mid. اشرح خطة استخدام الـ Utility (سماكات / فلاشات) والتنسيق بين 2 لاعبي B و3 لاعبي A عشان تجبر الـ Sniper إنه يغير مكانه وتفتحوا السايد من غير ما تدوا كِلات مجانية." },
-  "250": { question_ar: "في جملتين أو تلاتة بالكتير: اشرح إزاي أسلوب الـ Callouts وطريقة الكلام في الديسكورد/الصوت بتتحول من مرحلة الـ \"Gathering Info\" (هدوء وتحديد أماكن) لمرحلة الـ \"Execute/Rush\" (ضغط مساحات واستخدام اليوتيليتي)؟" },
+  "130": { question_en: "What is the key difference between Infection and Elimination in Shadow Mode?", question_ar: "إيه الفرق الأساسي بين Infection وElimination في Shadow Mode؟" },
+  "140": { question_en: "In Weapon Master TDM, what is the basic win condition for your team?", question_ar: "في Weapon Master بنظام الفرق، إيه اللي لازم فريقك يعمله عشان يكسب؟" },
+  "150": { question_en: "Zombie Mode 4 introduced new mechanics compared with earlier chapters. What is the main addition?", question_ar: "إيه أهم إضافة جديدة نزلت مع Zombie Mode 4 مقارنة بالأجزاء القديمة؟" },
+  "160": { question_en: "In traditional Team Deathmatch, what is the basic match win rule?", question_ar: "في Team Deathmatch العادي، الفريق بيكسب الماتش إزاي؟" },
+  "170": { question_en: "After a fast plant at A in Search & Destroy, where should you hold your crosshair for a post-plant defense?", question_ar: "بعد ما تزرع الـC4 بسرعة في موقع A، تمسك الـCrosshair فين عشان تدافع عن القنبلة؟" },
+  "180": { question_en: "Which image shows the G3A3 from the Battle Rifle family?", question_ar: "بص على الصور الأربع واختار الصورة اللي فيها سلاح G3A3." },
+  "190": { question_en: "After zooming in on the details, which image shows the Barrett M82A1-Journey to the West variant?", question_ar: "كبّر الصور وركّز في شكل السلاح والزخارف. أنهي صورة فيها Barrett M82A1 بنسخة Journey to the West؟" },
+  "200": { question_en: "Which image shows the M16A2 among these assault rifles?", question_ar: "الصور الأربع كلها لبنادق هجومية قريبة من بعض. كبّرها واختار الصورة اللي فيها M16A2." },
+  "210": { question_en: "Which image shows the G36C among these assault rifles?", question_ar: "الاختيارات كلها بنادق هجومية شكلها قريب. ركّز في جسم السلاح والمخزن واختار الصورة اللي فيها G36C." },
+  "220": { question_en: "Which image shows the AWM among these sniper rifles?", question_ar: "بص على صور القناصة الأربع واختار الصورة اللي فيها AWM." },
+  "230": { question_en: "Which image shows the MP5 among these submachine guns?", question_ar: "بص على صور الرشاشات الخفيفة الأربع واختار الصورة اللي فيها MP5." },
+  "240": { question_ar: "أنت في الجولة الحاسمة على ماب Black Widow، والخصم مثبت قناص قوي في الـMid. اشرح باختصار هتستخدم الدخان والفلاشات إزاي، وهتوزّع فريقك إزاي، عشان تجبر القناص يسيب مكانه وتدخلوا الموقع بأقل خسائر." },
+  "250": { question_ar: "في سطرين أو تلاتة، اشرح الفرق بين كلام الفريق وقت جمع المعلومات وكلامه وقت تنفيذ الهجوم السريع." },
+};
+
+const COMPETITION_OPTION_EN_OVERRIDES: Record<string, string[]> = {
+  "130": ["In Infection, a player who is killed by the Mercenaries changes into a Shadow", "Shadows have firearms in Infection", "Elimination has a time limit but Infection does not", "There are no footsteps in Infection"],
+  "140": ["The team reaches the required kill count across weapons and completes the weapon progression", "Only one player carries the team and records the highest DPM", "The match ends on time and the team with the higher total damage wins", "The team controls map points with specific weapons"],
+  "150": ["A Skill Tree lets players improve character abilities during the match", "Zombies can use firearms", "Only VIP characters can play", "Revive Tokens are removed completely"],
+  "160": ["The first team to reach the kill limit, or the team with more kills when time expires", "The team that holds sites A and B for the longest time", "The team that defuses C4 more than three times", "The team that collects the most badges during the round"],
+  "170": ["Hold off-angles to cover chokepoints without exposing yourself to retakers", "Stand directly over the C4 and crouch", "Keep running around the site to make noise", "Throw smoke randomly inside the site to block your own team's view"],
 };
 
 const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
@@ -60,15 +68,34 @@ const COMPETITION_OPTION_LABEL_OVERRIDES: Record<string, string[]> = {
   "170": ["التثبيت على زوايا الـ Off-angle لتغطية الـ Chokepoints من غير ما تبان للـ Retakers", "الوقوف المباشر فوق الـ C4 وعمل Crouch", "الجري المستمر داخل الـ Site لعمل Noise", "الرمي العشوائي للـ Smoke داخل الـ Site لتغطية رؤية فريقك"],
 };
 
+const COMPETITION_CORRECT_OPTION_OVERRIDES: Record<string, string> = {
+  // The visible wording was corrected without changing the legacy DB option keys.
+  "180": "G3A3",
+  "200": "M16A2",
+  "210": "G36C",
+  "220": "AWM",
+  "230": "MP5",
+};
+
 function applyCompetitionQuestionWording(questions: any[]): any[] {
   return questions.map((question) => {
     const key = String(question?.sort_order || "");
     const override = COMPETITION_QUESTION_WORDING_OVERRIDES[key];
     const labels = COMPETITION_OPTION_LABEL_OVERRIDES[key];
-    const nextOptions = labels && Array.isArray(question?.options)
-      ? question.options.map((option: any, index: number) => ({ ...option, label_ar: labels[index] || option.label_ar || option.label_en || option.value }))
+    const englishLabels = COMPETITION_OPTION_EN_OVERRIDES[key];
+    const weaponDisplayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[key];
+    const nextOptions = (labels || englishLabels) && Array.isArray(question?.options)
+      ? question.options.map((option: any, index: number) => ({
+        ...option,
+        ...(labels ? { label_ar: labels[index] || option.label_ar || option.label_en || option.value } : {}),
+        ...(englishLabels ? { label_en: englishLabels[index] || option.label_en || option.value } : {}),
+      }))
       : question?.options;
-    return override || labels ? { ...question, ...(override || {}), ...(labels ? { options: nextOptions } : {}) } : question;
+    const nextQuestion = override || labels || englishLabels || weaponDisplayNames
+      ? { ...question, ...(override || {}), ...(labels || englishLabels ? { options: nextOptions } : {}), ...(weaponDisplayNames ? { kind: "weapon" } : {}) }
+      : question;
+    return nextQuestion;
+
   });
 }
 
@@ -406,6 +433,30 @@ async function communityRequest(req: VercelRequest): Promise<{ status: number; b
 }
 
 const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: string; lookup: string }>> = {
+  "200": [
+    { label: "M16A2", lookup: "M16A2" },
+    { label: "FAMAS", lookup: "FAMAS" },
+    { label: "FN FNC", lookup: "FN FNC" },
+    { label: "G36K", lookup: "G36K" },
+  ],
+  "210": [
+    { label: "G36C", lookup: "G36C" },
+    { label: "M4A1", lookup: "M4A1" },
+    { label: "SCAR Light", lookup: "SCAR Light" },
+    { label: "XM8", lookup: "XM8" },
+  ],
+  "220": [
+    { label: "AWM", lookup: "AWM" },
+    { label: "Barrett M82A1", lookup: "Barrett M82A1" },
+    { label: "Dragunov", lookup: "Dragunov" },
+    { label: "CheyTac M200", lookup: "CheyTac M200" },
+  ],
+  "230": [
+    { label: "MP5", lookup: "MP5" },
+    { label: "P90", lookup: "P90" },
+    { label: "Uzi", lookup: "Uzi" },
+    { label: "MP7", lookup: "MP7" },
+  ],
   // The live catalogue names the base FAL entry "FN FAL"; keep the supplied
   // visible choice "FAL" while resolving its image from that verified record.
   "180": [
@@ -419,8 +470,8 @@ const COMPETITION_WEAPON_OPTION_DISPLAY_NAMES: Record<string, Array<{ label: str
 async function enrichWeaponOptionImages(questions: any[], headers: Record<string, string>): Promise<any[]> {
   const names = new Set<string>();
   for (const question of questions) {
-    if (question?.kind !== "weapon" || !Array.isArray(question.options)) continue;
     const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+    if (question?.kind !== "weapon" && !displayNames) continue;
     if (displayNames) displayNames.forEach(({ lookup }) => names.add(lookup));
     for (const option of question.options) {
       const name = typeof option === "string"
@@ -442,19 +493,32 @@ async function enrichWeaponOptionImages(questions: any[], headers: Record<string
       if (typeof row?.name === "string" && typeof row?.image_url === "string" && row.image_url) imageByName.set(row.name, row.image_url);
     }
     return questions.map((question) => {
-      if (question?.kind !== "weapon" || !Array.isArray(question.options)) return question;
-      const displayNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+      const configuredNames = COMPETITION_WEAPON_OPTION_DISPLAY_NAMES[String(question.sort_order || "")];
+      if (question?.kind !== "weapon" && !configuredNames) return question;
+      const displayNames = configuredNames || [];
+      const sourceOptions = displayNames.length
+        ? displayNames.map(({ lookup }) => ({ value: lookup }))
+        : (Array.isArray(question.options) ? question.options : []);
       return {
         ...question,
-        options: question.options.map((option: any, index: number) => {
+        kind: "weapon",
+        options: sourceOptions.map((option: any, index: number) => {
           const displayConfig = displayNames?.[index];
+          const optionLabel = `Option ${String.fromCharCode(65 + index)}`;
           const displayName = displayConfig?.label;
           const lookupName = displayConfig?.lookup || displayName;
-          if (typeof option === "string") return { value: option, label_en: displayName || option, image_url: imageByName.get(lookupName || option) || null };
+          if (typeof option === "string") return { value: option, label_en: optionLabel, label_ar: optionLabel, display_label_en: optionLabel, image_url: imageByName.get(lookupName || option) || null };
           if (!option || typeof option !== "object") return option;
           const name = lookupName || (typeof option.label_en === "string" ? option.label_en : typeof option.value === "string" ? option.value : "");
           const existingImage = typeof option.image_url === "string" && option.image_url ? option.image_url : null;
-          return { ...option, label_en: displayName || option.label_en, display_label_en: displayName || option.display_label_en, image_url: imageByName.get(name) || (displayNames ? null : existingImage) };
+          return {
+            ...option,
+            ...(displayConfig ? { value: displayConfig.lookup } : {}),
+            label_en: displayConfig ? optionLabel : (displayName || option.label_en),
+            label_ar: displayConfig ? optionLabel : (displayName || option.label_ar),
+            display_label_en: displayConfig ? optionLabel : (displayName || option.display_label_en),
+            image_url: imageByName.get(name) || (displayNames ? null : existingImage),
+          };
         }),
       };
     });
@@ -598,15 +662,16 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
     const attempts = await attemptResponse.json();
     const attempt = Array.isArray(attempts) ? attempts[0] : null;
     if (!attempt || attempt.status !== "in_progress") return { status: 400, body: { error: "This competition attempt is no longer active" } };
-    const questionResponse = await fetch(`${base}/competition_questions?select=id,correct_option,points,kind&status=eq.published`, { headers, signal: AbortSignal.timeout(9000) });
+    const questionResponse = await fetch(`${base}/competition_questions?select=id,correct_option,points,kind,sort_order&status=eq.published`, { headers, signal: AbortSignal.timeout(9000) });
     const questions = questionResponse.ok ? await questionResponse.json() : [];
     let objectiveScore = 0;
     for (const question of Array.isArray(questions) ? questions : []) {
       const submitted = typeof answers[question.id] === "string" ? answers[question.id] : "";
-      if (question.correct_option && submitted && submitted === question.correct_option) objectiveScore += Number(question.points || 0);
+      const correctOption = COMPETITION_CORRECT_OPTION_OVERRIDES[String(question?.sort_order || "")] || question.correct_option;
+      if (correctOption && submitted && submitted === correctOption) objectiveScore += Number(question.points || 0);
     }
     const updateParams = new URLSearchParams({ id: `eq.${attemptId}` });
-    if (!previewAllowed) updateParams.set("user_id", `eq.${userId}`);
+    if (!previewAllowed && userId) updateParams.set("user_id", `eq.${userId}`);
     const updateResponse = await fetch(`${base}/competition_attempts?${updateParams.toString()}`, {
       method: "PATCH", headers,
       body: JSON.stringify({ answers, objective_score: objectiveScore, final_score: objectiveScore, status: "submitted", submitted_at: new Date().toISOString() }),
@@ -617,6 +682,42 @@ async function competitionRequest(req: VercelRequest): Promise<{ status: number;
   }
 
   return { status: 400, body: { error: "Unknown competition action" } };
+}
+
+async function readPublicAnnouncement(scope: string): Promise<any | null> {
+  if (!SUPABASE_URL) return null;
+  const headers = SERVICE_KEY ? serviceHeaders() : h();
+  const table = scope ? "posts" : "announcements";
+  const params = new URLSearchParams({ select: scope ? "id,title,content,summary,image_url,og_image,featured,preview_on_home,source_url,created_at,tags,category" : "id,title_en,title_ar,content_en,content_ar,type,target,display,active,dismissible,starts_at,ends_at,created_at", order: "created_at.desc", limit: "20" });
+  if (scope) {
+    params.set("category", "eq.__ANNOUNCEMENT__");
+    params.set("tags", `cs.{seller:${scope}}`);
+    params.set("featured", "eq.true");
+  } else {
+    params.set("target", "in.(all,global)");
+    params.set("active", "eq.true");
+  }
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return null;
+    const rows = await response.json();
+    const now = Date.now();
+    let row = (Array.isArray(rows) ? rows : []).find((item: any) => {
+      const starts = item.starts_at ? Date.parse(item.starts_at) : Number.NEGATIVE_INFINITY;
+      const ends = item.ends_at ? Date.parse(item.ends_at) : Number.POSITIVE_INFINITY;
+      return starts <= now && ends >= now;
+    });
+    if (!row && !scope) {
+      // Backward compatibility: older active global announcements were stored in posts.
+      const legacyParams = new URLSearchParams({ select: "id,title,content,summary,image_url,og_image,featured,preview_on_home,source_url,updated_at,tags,category", category: "eq.__ANNOUNCEMENT__", tags: "cs.{global}", featured: "eq.true", order: "updated_at.desc", limit: "20" });
+      const legacyResponse = await fetch(`${SUPABASE_URL}/rest/v1/posts?${legacyParams.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+      const legacyRows = legacyResponse.ok ? await legacyResponse.json() : [];
+      row = (Array.isArray(legacyRows) ? legacyRows : [])[0] || null;
+    }
+    if (!row) return null;
+    if (scope) return { id: row.id, contentHtml: row.content || "", contentHtmlEn: row.content || "", contentHtmlAr: row.summary || "", titleEn: row.title || "", titleAr: row.title || "", imageUrl: row.image_url || "", linkUrl: row.og_image || "", active: row.featured !== false, dismissible: row.preview_on_home !== false, direction: row.source_url || "auto", updatedAt: row.created_at || row.updated_at };
+    return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: "", linkUrl: "", active: row.active !== false, dismissible: row.dismissible !== false, direction: "auto", updatedAt: row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner" };
+  } catch { return null; }
 }
 
 async function q(table: string, select: string, order: string, limit = 2000): Promise<any[]> {
@@ -888,6 +989,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(payload);
   }
 
+  if (req.method === 'GET' && rawType === 'announcements') {
+    const rawSeller = Array.isArray(req.query.seller) ? req.query.seller[0] : req.query.seller;
+    const announcement = await readPublicAnnouncement(typeof rawSeller === 'string' ? rawSeller.trim().slice(0, 100) : "");
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+    return res.status(200).json({ announcement });
+  }
   if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts' && rawType !== 'events') {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(400).json({ error: 'Unsupported content type. Use weapons, posts, or events.' });

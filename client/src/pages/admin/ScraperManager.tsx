@@ -270,9 +270,11 @@ function slugify(s: string) {
 }
 
 async function serverFetch(endpoint: string, body: object): Promise<any> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') || '' : '';
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -330,7 +332,7 @@ function AnnouncementList({
     setLoading(true); setAnnouncements([]); setProgress('Fetching CrossFire announcements...');
     try {
       const data = await serverFetch('/api/scrape/forum-list', { url: FORUM_URL });
-      const posts: Announcement[] = (data.posts || []);
+      const posts: Announcement[] = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
       if (posts.length === 0) {
         setProgress('No announcements found — forum structure may have changed.');
         toast.warning('No announcements parsed.');

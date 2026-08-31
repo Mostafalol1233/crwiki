@@ -44,8 +44,14 @@ export default function WikiRescraper() {
     if (!client) return;
     setLoading(true);
     const table = type === 'posts' ? 'posts' : type;
-    const { data } = await client.from(table).select('id, title, source_url, updated_at').not('source_url', 'is', null).neq('source_url', '').order('updated_at', { ascending: true });
-    setItems((data || []).map((r: any) => ({ id: String(r.id), title: String(r.title || ''), source_url: String(r.source_url || ''), updated_at: r.updated_at })));
+    const { data, error } = await client.from(table).select('id, title, source_url, updated_at').neq('source_url', '').order('updated_at', { ascending: true });
+    if (error) {
+      setItems([]);
+      toast.error(error.message || 'تعذر تحميل المصادر');
+      setLoading(false);
+      return;
+    }
+    setItems((data || []).filter((r: any) => typeof r?.source_url === 'string' && r.source_url.trim()).map((r: any) => ({ id: String(r.id), title: String(r.title || ''), source_url: String(r.source_url || ''), updated_at: r.updated_at })));
     setLoading(false);
   }, [client, type]);
 

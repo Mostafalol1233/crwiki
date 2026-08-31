@@ -1498,6 +1498,33 @@ img {
 }
 
 .competition-registration-form,
+.competition-proof-file-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.competition-proof-file-list small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  color: hsl(var(--muted-foreground));
+  overflow-wrap: anywhere;
+}
+
+.competition-proof-file-list button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 .competition-proof-form {
   display: grid;
   gap: 14px;

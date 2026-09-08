@@ -13,10 +13,12 @@ interface Highlight {
 }
 
 const STATIC_HIGHLIGHTS: Highlight[] = [
-  { id: "rifle-week-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/rifle-week-2026.jpg", title: "Rifle Week — August 24–30, 2026", sort_order: 1 },
-  { id: "fantastic-frenzy-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/fantastic-frenzy-august-2026.jpg", title: "Fantastic Frenzy Weekend — August 2026", sort_order: 2 },
-  { id: "mercenary-pass-61", month: "Aug", year: 2026, media_type: "image", url: "/highlights/mercenary-pass-season-61.jpg", title: "Mercenary Pass Season 61: High Ground — August 6–September 1, 2026", sort_order: 3 },
-  { id: "roadmap-august-2026", month: "Aug", year: 2026, media_type: "image", url: "/highlights/crossfire-roadmap-2026.jpg", title: "August 2026 Update: Scorpion Weapons, ZM4 Mount Kunlun & Tactical Retake", sort_order: 4 },
+  { id: "hidden-clues-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260904_cfwe_scavengerhunt_forum.jpg", title: "Hidden Clues Hunt — September 8–14, 2026", sort_order: 1 },
+  { id: "mercenary-pass-62", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260813_cfwe_bp_sep_main_forum.jpg", title: "Mercenary Pass Season 62: Fall Line", sort_order: 2 },
+  { id: "sentient-scholars-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260812_cfwe_qbz191s_endlessfury_forum.jpg", title: "Sentient Scholars — September 2 to October 6, 2026", sort_order: 3 },
+  { id: "voyage-orca-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_orca_crate_forum.jpg", title: "Voyage of the Orca — September 1–14, 2026", sort_order: 4 },
+  { id: "prime-surge-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_zppubonus_forum.jpg", title: "Prime Surge Bonus — September 1–30, 2026", sort_order: 5 },
+  { id: "graffiti-getaway-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260831_cfwe_weekendparty_forums.jpg", title: "Graffiti Getaway — September Weekends", sort_order: 6 },
 ];
 
 const MONTH_NUMBERS: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };

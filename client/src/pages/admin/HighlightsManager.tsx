@@ -20,10 +20,12 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 // Same static highlights shown on the homepage — used as fallback/seed
 const STATIC_HIGHLIGHTS: Omit<Highlight, 'id'>[] = [
-  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/rifle-week-2026.jpg', title: 'Rifle Week — August 24–30, 2026', sort_order: 1 },
-  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/fantastic-frenzy-august-2026.jpg', title: 'Fantastic Frenzy Weekend — August 2026', sort_order: 2 },
-  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/mercenary-pass-season-61.jpg', title: 'Mercenary Pass Season 61: High Ground — August 6–September 1, 2026', sort_order: 3 },
-  { month: 'Aug', year: 2026, media_type: 'image', url: '/highlights/crossfire-roadmap-2026.jpg', title: 'August 2026 Update: Scorpion Weapons, ZM4 Mount Kunlun & Tactical Retake', sort_order: 4 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260904_cfwe_scavengerhunt_forum.jpg', title: 'Hidden Clues Hunt — September 8–14, 2026', sort_order: 1 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260813_cfwe_bp_sep_main_forum.jpg', title: 'Mercenary Pass Season 62: Fall Line', sort_order: 2 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260812_cfwe_qbz191s_endlessfury_forum.jpg', title: 'Sentient Scholars — September 2 to October 6, 2026', sort_order: 3 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_orca_crate_forum.jpg', title: 'Voyage of the Orca — September 1–14, 2026', sort_order: 4 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_zppubonus_forum.jpg', title: 'Prime Surge Bonus — September 1–30, 2026', sort_order: 5 },
+  { month: 'Sep', year: 2026, media_type: 'image', url: 'https://z8games.akamaized.net/cfna/web/main/Forum/260831_cfwe_weekendparty_forums.jpg', title: 'Graffiti Getaway — September Weekends', sort_order: 6 },
 ];
 
 const S = {

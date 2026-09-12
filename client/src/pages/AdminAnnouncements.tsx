@@ -27,11 +27,14 @@ type Announcement = {
   contentHtml?: string;
   contentHtmlEn?: string;
   contentHtmlAr?: string;
+  titleEn?: string;
+  titleAr?: string;
   imageUrl?: string;
   linkUrl?: string;
   active?: boolean;
   dismissible?: boolean;
   direction?: 'auto' | 'ltr' | 'rtl';
+  theme?: 'royal-gold' | 'obsidian-crimson' | 'arctic-silver' | 'emerald-vault';
 };
 
 export default function AdminAnnouncements() {
@@ -46,6 +49,8 @@ export default function AdminAnnouncements() {
  
 
   // Global announcement state
+  const [gTitleEn, setGTitleEn] = useState("");
+  const [gTitleAr, setGTitleAr] = useState("");
   const [gContentHtmlEn, setGContentHtmlEn] = useState("");
   const [gContentHtmlAr, setGContentHtmlAr] = useState("");
   const [gImageUrl, setGImageUrl] = useState("");
@@ -53,6 +58,7 @@ export default function AdminAnnouncements() {
   const [gActive, setGActive] = useState(true);
   const [gDismissible, setGDismissible] = useState(true);
   const [gDirection, setGDirection] = useState<'auto'|'ltr'|'rtl'>("auto");
+  const [gTheme, setGTheme] = useState<'royal-gold'|'obsidian-crimson'|'arctic-silver'|'emerald-vault'>('royal-gold');
   const [loadingGlobal, setLoadingGlobal] = useState(false);
   const [globalList, setGlobalList] = useState<any[]>([]);
 
@@ -117,6 +123,8 @@ export default function AdminAnnouncements() {
         try {
           const json: Announcement & { dismissible?: boolean } = await supabaseShim('/api/announcements/global', 'GET');
           if (json) {
+            setGTitleEn(json.titleEn || "");
+            setGTitleAr(json.titleAr || "");
             setGContentHtmlEn(json.contentHtmlEn || json.contentHtml || "");
             setGContentHtmlAr(json.contentHtmlAr || "");
             setGImageUrl(json.imageUrl || "");
@@ -124,6 +132,7 @@ export default function AdminAnnouncements() {
             setGActive(Boolean(json.active ?? true));
             setGDismissible(Boolean(json.dismissible ?? true));
             setGDirection((json.direction as any) === 'rtl' ? 'rtl' : (json.direction as any) === 'ltr' ? 'ltr' : 'auto');
+            setGTheme((json.theme as any) || 'royal-gold');
           }
         } catch {}
       } finally { setLoadingGlobal(false); }
@@ -154,6 +163,8 @@ export default function AdminAnnouncements() {
       const primary = pickPrimaryContent(gContentHtmlEn, gContentHtmlAr);
       await announcementRequest("global", "create", {
         row: {
+          titleEn: gTitleEn,
+          titleAr: gTitleAr,
           contentHtml: primary,
           contentHtmlEn: gContentHtmlEn,
           contentHtmlAr: gContentHtmlAr,
@@ -162,6 +173,7 @@ export default function AdminAnnouncements() {
           active: gActive,
           dismissible: gDismissible,
           direction: gDirection,
+          theme: gTheme,
         },
       });
       toast({ title: "Created", description: "New global announcement added" });
@@ -349,11 +361,28 @@ export default function AdminAnnouncements() {
         <div className="p-5" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px" }}>
           <h3 className="font-black text-xs uppercase tracking-wider mb-4" style={{ color: "var(--foreground)" }}>Global Announcement</h3>
           <div className="grid gap-4">
+            <label className="text-sm font-medium">Title (English)</label>
+            <Input value={gTitleEn} onChange={(e)=>setGTitleEn(e.target.value)} placeholder="Hidden Clues Hunt Puzzle Solutions (Updated Daily)" />
+
+            <label className="text-sm font-medium">العنوان بالعربية</label>
+            <Input value={gTitleAr} onChange={(e)=>setGTitleAr(e.target.value)} placeholder="فك ألغاز فعالية Hidden Clues Hunt (يتحدث يوميًا)" dir="rtl" />
+
             <label className="text-sm font-medium">Image URL</label>
             <Input value={gImageUrl} onChange={(e)=>setGImageUrl(e.target.value)} placeholder="https://..." />
 
             <label className="text-sm font-medium">Link URL</label>
             <Input value={gLinkUrl} onChange={(e)=>setGLinkUrl(e.target.value)} placeholder="https://..." />
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Premium Theme</label>
+              <select value={gTheme} onChange={(e) => setGTheme(e.target.value as typeof gTheme)} className="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                <option value="royal-gold">Royal Gold — فاخر ذهبي</option>
+                <option value="obsidian-crimson">Obsidian Crimson — أسود وقرمزي</option>
+                <option value="arctic-silver">Arctic Silver — فضي جليدي</option>
+                <option value="emerald-vault">Emerald Vault — زمردي فاخر</option>
+              </select>
+              <p className="text-xs text-muted-foreground">يمكن تغيير الثيم لاحقًا بدون إعادة كتابة المحتوى.</p>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <Button type="button" size="sm" variant="outline" onClick={copyGlobalEnToAr}>Copy EN → AR</Button>

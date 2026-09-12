@@ -16,6 +16,9 @@ type Announcement = {
   contentHtml?: string;
   contentHtmlEn?: string;
   contentHtmlAr?: string;
+  titleEn?: string;
+  titleAr?: string;
+  theme?: 'royal-gold' | 'obsidian-crimson' | 'arctic-silver' | 'emerald-vault';
   imageUrl?: string;
   linkUrl?: string;
   active?: boolean;
@@ -226,7 +229,16 @@ export default function AnnouncementModal({ location }: { location: string }) {
   const finalAlign = finalDir === 'rtl' ? 'text-right' : 'text-left';
   const videoEmbedUrl = getYouTubeEmbedUrl(data.linkUrl);
   const isAudioLink = data.linkUrl ? /(\.mp3|\.ogg|\.wav|\.m4a)([?#]|$)/i.test(data.linkUrl) : false;
-  const announcementTitle = deriveAnnouncementTitle(String(primaryHtml || ""));
+  const announcementTitle = viewLang === "ar"
+    ? (data.titleAr || data.titleEn || deriveAnnouncementTitle(String(primaryHtml || "")))
+    : (data.titleEn || data.titleAr || deriveAnnouncementTitle(String(primaryHtml || "")));
+  const theme = data.theme || 'royal-gold';
+  const themeStyles = {
+    'royal-gold': { shell: 'border-amber-300/60 bg-[linear-gradient(135deg,#fffdf5_0%,#fff7d6_48%,#ffffff_100%)]', accent: 'bg-amber-950 text-amber-50', badge: 'text-amber-800 bg-amber-100 border-amber-200', overlay: 'bg-amber-950/70' },
+    'obsidian-crimson': { shell: 'border-red-900/60 bg-[linear-gradient(135deg,#170b0d_0%,#2a1117_52%,#0b0b0d_100%)] text-white', accent: 'bg-red-700 text-white', badge: 'text-red-200 bg-red-950/70 border-red-800', overlay: 'bg-black/80' },
+    'arctic-silver': { shell: 'border-sky-200 bg-[linear-gradient(135deg,#f8fdff_0%,#e9f5ff_50%,#ffffff_100%)]', accent: 'bg-sky-900 text-white', badge: 'text-sky-800 bg-sky-100 border-sky-200', overlay: 'bg-sky-950/70' },
+    'emerald-vault': { shell: 'border-emerald-300/60 bg-[linear-gradient(135deg,#f6fff9_0%,#dcfce7_48%,#ffffff_100%)]', accent: 'bg-emerald-900 text-white', badge: 'text-emerald-800 bg-emerald-100 border-emerald-200', overlay: 'bg-emerald-950/70' },
+  }[theme];
 
   return (
     <AnimatePresence>
@@ -240,7 +252,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
             className="fixed top-[96px] md:top-[118px] left-0 right-0 z-40 mx-auto max-w-6xl px-3 md:px-4"
             role="banner"
           >
-            <div className="relative w-full rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm shadow-xl overflow-hidden">
+            <div className={`relative w-full rounded-2xl border backdrop-blur-sm shadow-2xl overflow-hidden ${themeStyles.shell}`}>
               <div className="flex items-start gap-3 p-3 md:p-4">
                 {data.imageUrl && (
                   <img src={data.imageUrl} alt="Announcement" className="h-12 w-12 md:h-14 md:w-14 rounded-lg object-cover shrink-0 border" />
@@ -248,7 +260,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
                 <div className={`min-w-0 flex-1 ${finalAlign}`} dir={finalDir}>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500 mb-1">
                     <BellRing className="h-3.5 w-3.5" />
-                    <span>Announcement</span>
+                    <span className={`rounded-full border px-2 py-0.5 ${themeStyles.badge}`}>Announcement</span>
                   </div>
                   <p className="text-sm md:text-base font-semibold text-slate-900 line-clamp-2">{announcementTitle}</p>
                 </div>
@@ -273,7 +285,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   <button
                     type="button"
                     onClick={() => setDetailsOpen(true)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-slate-900 text-white hover:bg-slate-700 transition-colors"
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md shadow-sm hover:brightness-110 transition ${themeStyles.accent}`}
                   >
                     View
                   </button>
@@ -295,7 +307,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black/60 p-3 md:p-6 overflow-y-auto"
+                className={`fixed inset-0 z-50 p-3 md:p-6 overflow-y-auto ${themeStyles.overlay}`}
                 role="dialog"
                 aria-modal="true"
               >
@@ -304,10 +316,10 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 24, opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className="relative mx-auto w-full max-w-4xl rounded-2xl border bg-white text-slate-900 shadow-2xl overflow-hidden"
+                  className={`relative mx-auto w-full max-w-4xl rounded-3xl border bg-white text-slate-900 shadow-2xl overflow-hidden ${themeStyles.shell}`}
                   dir={finalDir}
                 >
-                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b bg-white/95 backdrop-blur p-3 md:p-4">
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-slate-200/70 bg-white/95 backdrop-blur p-3 md:p-4">
                     <h3 className={`text-base md:text-lg font-bold ${finalAlign}`}>{announcementTitle}</h3>
                     <button
                       className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 transition-colors"
@@ -318,17 +330,17 @@ export default function AnnouncementModal({ location }: { location: string }) {
                     </button>
                   </div>
 
-                  <div className="flex flex-col md:flex-row max-h-[80vh] overflow-y-auto">
+                  <div className="flex flex-col md:flex-row max-h-[80vh] overflow-y-auto overscroll-contain">
                     {data.imageUrl && (
                       <div className="md:w-2/5 h-52 sm:h-64 md:h-auto bg-slate-100">
                         <img src={data.imageUrl} alt="Announcement" className="w-full h-full object-cover" />
                       </div>
                     )}
 
-                    <div className={`flex-1 p-4 md:p-6 ${finalAlign}`}>
+                    <div className={`flex-1 p-4 md:p-6 ${finalAlign} min-w-0`}>
                       <RawHtmlPreview
                         html={String(primaryHtml || "")}
-                        className="announcement-modal-preview"
+                        className="announcement-modal-preview" isRTL={finalDir === 'rtl'}
                       />
 
                       <div className="flex flex-wrap gap-3 mt-4 items-center">
@@ -367,8 +379,29 @@ export default function AnnouncementModal({ location }: { location: string }) {
                     .announcement-modal-preview .raw-html-preview-container a {
                       color: #1d4ed8;
                     }
+                    .announcement-modal-preview .raw-html-preview-container {
+                      max-height: none;
+                      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+                      line-height: 1.85;
+                    }
+                    .announcement-modal-preview .raw-html-preview-container article {
+                      max-width: 100%;
+                    }
+                    .announcement-modal-preview .raw-html-preview-container h3 {
+                      margin-top: 1.75rem;
+                      margin-bottom: 0.65rem;
+                      padding-bottom: 0.35rem;
+                      border-bottom: 1px solid rgba(148,163,184,.35);
+                    }
                     .announcement-modal-preview .raw-html-preview-container img {
-                      border-radius: 0.75rem;
+                      width: 100%;
+                      max-height: 20rem;
+                      object-fit: cover;
+                      border-radius: 1rem;
+                      margin: 1rem auto 1.25rem;
+                    }
+                    .announcement-modal-preview .raw-html-preview-container p {
+                      margin: 0.8rem 0;
                     }
                   `}</style>
                 </motion.div>

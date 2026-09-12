@@ -56,11 +56,14 @@ function announcementFromRow(row: Record<string, any>, scope: "global" | "seller
     contentHtml: isPost ? String(row.content || "") : String(row.content_en || ""),
     contentHtmlEn: isPost ? String(row.content || "") : String(row.content_en || ""),
     contentHtmlAr: isPost ? String(row.summary || "") : String(row.content_ar || ""),
-    imageUrl: isPost ? String(row.image_url || "") : "",
-    linkUrl: isPost ? String(row.og_image || "") : "",
+    imageUrl: String(isPost ? row.image_url || "" : row.image_url || ""),
+    linkUrl: String(isPost ? row.og_image || "" : row.link_url || ""),
     active: isPost ? row.featured !== false : row.active !== false,
     dismissible: isPost ? row.preview_on_home !== false : row.dismissible !== false,
-    direction: isPost ? String(row.source_url || "auto") : "auto",
+    direction: isPost ? String(row.source_url || "auto") : String(row.direction || "auto"),
+    titleEn: isPost ? String(row.title || "") : String(row.title_en || ""),
+    titleAr: isPost ? String(row.title || "") : String(row.title_ar || ""),
+    theme: ['royal-gold', 'obsidian-crimson', 'arctic-silver', 'emerald-vault'].includes(String(row.theme)) ? String(row.theme) : 'royal-gold',
     sellerSlug: isPost ? String((Array.isArray(row.tags) ? row.tags : []).find((tag: unknown) => String(tag).startsWith("seller:")) || "").replace(/^seller:/, "") : "",
     updatedAt: row.updated_at || row.created_at || null,
   };
@@ -328,6 +331,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         display: "banner",
         active: body.active !== false,
         dismissible: body.dismissible !== false,
+        image_url: String(body.imageUrl || "").slice(0, 2000),
+        link_url: String(body.linkUrl || "").slice(0, 2000),
+        direction: ["auto", "ltr", "rtl"].includes(String(body.direction)) ? String(body.direction) : "auto",
+        theme: ["royal-gold", "obsidian-crimson", "arctic-silver", "emerald-vault"].includes(String(body.theme)) ? String(body.theme) : "royal-gold",
       };
       const createRes = await fetch(baseUrl, { method: "POST", headers, body: JSON.stringify(globalRow) });
       if (!createRes.ok) throw new Error(`Supabase global announcement create failed: ${await createRes.text()}`);

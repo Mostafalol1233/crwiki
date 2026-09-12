@@ -35,8 +35,19 @@ CREATE TABLE IF NOT EXISTS public.announcements (
   ends_at timestamptz,
   active boolean NOT NULL DEFAULT true,
   dismissible boolean NOT NULL DEFAULT true,
+  image_url text NOT NULL DEFAULT '',
+  link_url text NOT NULL DEFAULT '',
+  direction text NOT NULL DEFAULT 'auto',
+  theme text NOT NULL DEFAULT 'royal-gold',
+  updated_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT '';
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS link_url text NOT NULL DEFAULT '';
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS direction text NOT NULL DEFAULT 'auto';
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS theme text NOT NULL DEFAULT 'royal-gold';
+ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS public.likes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

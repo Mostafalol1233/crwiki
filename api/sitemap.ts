@@ -716,7 +716,7 @@ async function readPublicAnnouncement(scope: string): Promise<any | null> {
     }
     if (!row) return null;
     if (scope) return { id: row.id, contentHtml: row.content || "", contentHtmlEn: row.content || "", contentHtmlAr: row.summary || "", titleEn: row.title || "", titleAr: row.title || "", imageUrl: row.image_url || "", linkUrl: row.og_image || "", active: row.featured !== false, dismissible: row.preview_on_home !== false, direction: row.source_url || "auto", updatedAt: row.created_at || row.updated_at };
-    return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: "", linkUrl: "", active: row.active !== false, dismissible: row.dismissible !== false, direction: "auto", updatedAt: row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner" };
+    return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: row.image_url || "", linkUrl: row.link_url || "", active: row.active !== false, dismissible: row.dismissible !== false, direction: row.direction || "auto", updatedAt: row.updated_at || row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner", theme: row.theme || "royal-gold" };
   } catch { return null; }
 }
 

@@ -237,10 +237,10 @@ export default function AnnouncementModal({ location }: { location: string }) {
     : (data.titleEn || data.titleAr || deriveAnnouncementTitle(String(primaryHtml || "")));
   const theme = data.theme || 'royal-gold';
   const themeStyles = {
-    'royal-gold': { shell: 'border-amber-300/60 bg-[linear-gradient(135deg,#fffdf5_0%,#fff7d6_48%,#ffffff_100%)]', accent: 'bg-amber-950 text-amber-50', badge: 'text-amber-800 bg-amber-100 border-amber-200', overlay: 'bg-amber-950/70' },
-    'obsidian-crimson': { shell: 'border-red-900/60 bg-[linear-gradient(135deg,#170b0d_0%,#2a1117_52%,#0b0b0d_100%)] text-white', accent: 'bg-red-700 text-white', badge: 'text-red-200 bg-red-950/70 border-red-800', overlay: 'bg-black/80' },
-    'arctic-silver': { shell: 'border-sky-200 bg-[linear-gradient(135deg,#f8fdff_0%,#e9f5ff_50%,#ffffff_100%)]', accent: 'bg-sky-900 text-white', badge: 'text-sky-800 bg-sky-100 border-sky-200', overlay: 'bg-sky-950/70' },
-    'emerald-vault': { shell: 'border-emerald-300/60 bg-[linear-gradient(135deg,#f6fff9_0%,#dcfce7_48%,#ffffff_100%)]', accent: 'bg-emerald-900 text-white', badge: 'text-emerald-800 bg-emerald-100 border-emerald-200', overlay: 'bg-emerald-950/70' },
+    'royal-gold': { shell: 'border-amber-300/60 bg-[linear-gradient(135deg,#17130a_0%,#2a1d08_48%,#0b0b0d_100%)] text-white', accent: 'bg-amber-400 text-black', badge: 'text-amber-100 bg-amber-950/80 border-amber-400/60', overlay: 'bg-black/90', muted: 'text-amber-100/80', secondary: 'bg-white/10 text-white border-white/30 hover:bg-white/20' },
+    'obsidian-crimson': { shell: 'border-red-500/60 bg-[linear-gradient(135deg,#170b0d_0%,#2a1117_52%,#0b0b0d_100%)] text-white', accent: 'bg-red-600 text-white', badge: 'text-red-100 bg-red-950/80 border-red-500/60', overlay: 'bg-black/90', muted: 'text-red-100/80', secondary: 'bg-white/10 text-white border-white/30 hover:bg-white/20' },
+    'arctic-silver': { shell: 'border-sky-400/60 bg-[linear-gradient(135deg,#0b1b2a_0%,#12324a_50%,#080d14_100%)] text-white', accent: 'bg-sky-400 text-slate-950', badge: 'text-sky-100 bg-sky-950/80 border-sky-400/60', overlay: 'bg-black/90', muted: 'text-sky-100/80', secondary: 'bg-white/10 text-white border-white/30 hover:bg-white/20' },
+    'emerald-vault': { shell: 'border-emerald-400/60 bg-[linear-gradient(135deg,#071b14_0%,#0e3425_48%,#07100d_100%)] text-white', accent: 'bg-emerald-400 text-emerald-950', badge: 'text-emerald-100 bg-emerald-950/80 border-emerald-400/60', overlay: 'bg-black/90', muted: 'text-emerald-100/80', secondary: 'bg-white/10 text-white border-white/30 hover:bg-white/20' },
   }[theme];
 
   return (
@@ -261,18 +261,18 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   <img src={data.imageUrl} alt="Announcement" className="h-12 w-12 md:h-14 md:w-14 rounded-lg object-cover shrink-0 border" />
                 )}
                 <div className={`min-w-0 flex-1 ${finalAlign}`} dir={finalDir}>
-                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500 mb-1">
+                  <div className={`flex items-center gap-2 text-[11px] uppercase tracking-wide ${themeStyles.muted} mb-1`}>
                     <BellRing className="h-3.5 w-3.5" />
                     <span className={`rounded-full border px-2 py-0.5 ${themeStyles.badge}`}>Announcement</span>
                   </div>
-                  <p className="text-sm md:text-base font-semibold text-slate-900 line-clamp-2">{announcementTitle}</p>
+                  <p className="text-sm md:text-base font-semibold text-white line-clamp-2">{announcementTitle}</p>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => setViewLang("en")}
-                    className={`px-2 py-1 text-[11px] font-semibold rounded border transition-colors ${viewLang === "en" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"}`}
+                    className={`px-2 py-1 text-[11px] font-semibold rounded border transition-colors ${viewLang === "en" ? themeStyles.accent : themeStyles.secondary}`}
                     aria-label="Switch to English"
                   >
                     EN
@@ -280,7 +280,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   <button
                     type="button"
                     onClick={() => setViewLang("ar")}
-                    className={`px-2 py-1 text-[11px] font-semibold rounded border transition-colors ${viewLang === "ar" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"}`}
+                    className={`px-2 py-1 text-[11px] font-semibold rounded border transition-colors ${viewLang === "ar" ? themeStyles.accent : themeStyles.secondary}`}
                     aria-label="Switch to Arabic"
                   >
                     AR
@@ -293,7 +293,7 @@ export default function AnnouncementModal({ location }: { location: string }) {
                     View
                   </button>
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 transition-colors"
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${themeStyles.secondary}`}
                     onClick={onClose}
                     aria-label="Dismiss announcement"
                   >
@@ -319,13 +319,13 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 24, opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className={`relative mx-auto w-full max-w-4xl rounded-3xl border bg-white text-slate-900 shadow-2xl overflow-hidden ${themeStyles.shell}`}
+                  className={`relative mx-auto w-full max-w-4xl rounded-3xl border text-white shadow-2xl overflow-hidden ${themeStyles.shell}`}
                   dir={finalDir}
                 >
-                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-slate-200/70 bg-white/95 backdrop-blur p-3 md:p-4">
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-white/15 bg-black/45 backdrop-blur p-3 md:p-4">
                     <h3 className={`text-base md:text-lg font-bold ${finalAlign}`}>{announcementTitle}</h3>
                     <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 transition-colors"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${themeStyles.secondary}`}
                       onClick={() => setDetailsOpen(false)}
                       aria-label="Close details"
                     >
@@ -335,8 +335,8 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
                   <div className="flex flex-col md:flex-row max-h-[80vh] overflow-y-auto overscroll-contain">
                     {data.imageUrl && (
-                      <div className="md:w-2/5 h-52 sm:h-64 md:h-auto bg-slate-100">
-                        <img src={data.imageUrl} alt="Announcement" className="w-full h-full object-cover" />
+                      <div className="md:w-2/5 h-52 sm:h-64 md:h-auto bg-black/30 p-2 md:p-4">
+                        <img src={data.imageUrl} alt="Announcement" className="w-full h-full object-contain rounded-2xl" />
                       </div>
                     )}
 
@@ -377,10 +377,10 @@ export default function AnnouncementModal({ location }: { location: string }) {
                   </div>
                   <style>{`
                     .announcement-modal-preview .raw-html-preview-container {
-                      color: #0f172a;
+                      color: #f8fafc;
                     }
                     .announcement-modal-preview .raw-html-preview-container a {
-                      color: #1d4ed8;
+                      color: #fcd34d;
                     }
                     .announcement-modal-preview .raw-html-preview-container {
                       max-height: none;
@@ -394,17 +394,33 @@ export default function AnnouncementModal({ location }: { location: string }) {
                       margin-top: 1.75rem;
                       margin-bottom: 0.65rem;
                       padding-bottom: 0.35rem;
-                      border-bottom: 1px solid rgba(148,163,184,.35);
+                      color: #fde68a;
+                      border-bottom: 1px solid rgba(251,191,36,.45);
                     }
                     .announcement-modal-preview .raw-html-preview-container img {
                       width: 100%;
                       max-height: 20rem;
-                      object-fit: cover;
+                      object-fit: contain;
+                      background: rgba(0,0,0,.28);
                       border-radius: 1rem;
                       margin: 1rem auto 1.25rem;
                     }
                     .announcement-modal-preview .raw-html-preview-container p {
+                      color: #f8fafc;
                       margin: 0.8rem 0;
+                    }
+                    .announcement-modal-preview .raw-html-preview-container strong { color: #fcd34d; }
+                    .announcement-modal-preview .raw-html-preview-container aside {
+                      color: #fef3c7;
+                      background: rgba(0,0,0,.28);
+                      border: 1px solid rgba(251,191,36,.35);
+                      border-radius: .9rem;
+                      padding: .85rem 1rem;
+                    }
+                    .announcement-modal-preview .raw-html-preview-container figcaption {
+                      color: rgba(255,255,255,.75);
+                      font-size: .82rem;
+                      text-align: center;
                     }
                   `}</style>
                 </motion.div>

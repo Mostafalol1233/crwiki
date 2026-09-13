@@ -101,55 +101,58 @@ export default function AnnouncementModal({ location }: { location: string }) {
 
   useEffect(() => {
     let aborted = false;
-    (async () => {
-      setLoading(true);
-      setData(null);
-      try {
-        try {
-          const { getSiteSettings } = await import("@/lib/supabaseApi");
-          const sj = await getSiteSettings();
-          setEnabled(Boolean((sj as any)?.announcements_enabled ?? true));
-          setDisplayMs(Number((sj as any)?.announcements_display_ms ?? 0) || 0);
-          if (!Boolean((sj as any)?.announcements_enabled ?? true)) {
-            return;
-          }
-        } catch {}
-        let hasActiveSellerAnnouncement = false;
+    const isHomeRoute = location === "/" || location === "/ar" || location === "/ar/";
+    const cacheKey = `crossfire_announcement_cache_${sellerSlugFromPath ? `seller_${sellerSlugFromPath}` : "global"}`;
+    let hasCachedAnnouncement = false;
 
-        if (sellerSlugFromPath) {
-          try {
-            const response = await globalThis.fetch(`/api/sitemap?type=announcements&seller=${encodeURIComponent(sellerSlugFromPath)}`, { cache: 'no-store' });
-            const payload = await response.json().catch(() => ({}));
-            const json = payload?.announcement || null;
-            if (!aborted && response.ok && json && json.active) {
-              hasActiveSellerAnnouncement = true;
-              setData(json);
-              setScope(`seller:${sellerSlugFromPath}`);
-            }
-          } catch {}
-        }
-
-        if (!hasActiveSellerAnnouncement) {
-          try {
-            const response = await globalThis.fetch('/api/sitemap?type=announcements', { cache: 'no-store' });
-            const payload = await response.json().catch(() => ({}));
-            const json = payload?.announcement || null;
-            const isHomeRoute = location === "/" || location === "/ar" || location === "/ar/";
-            if (!aborted && response.ok && json && json.active && isHomeRoute) {
-              setData(json);
-              setScope("global");
-            }
-          } catch {}
-        }
-      } catch {
-        // ignore
-      } finally {
+    // Render the last known announcement immediately, then refresh it in the background.
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+      if (cached?.announcement?.active && (!cached.savedAt || Date.now() - cached.savedAt < 15 * 60 * 1000)) {
+        setData(cached.announcement);
+        setScope(sellerSlugFromPath ? `seller:${sellerSlugFromPath}` : "global");
+        hasCachedAnnouncement = true;
         setLoading(false);
       }
+    } catch {}
+
+    (async () => {
+      if (!hasCachedAnnouncement) setLoading(true);
+      try {
+        const settingsPromise = import("@/lib/supabaseApi").then(({ getSiteSettings }) => getSiteSettings()).catch(() => null);
+        const announcementUrl = sellerSlugFromPath
+          ? `/api/sitemap?type=announcements&seller=${encodeURIComponent(sellerSlugFromPath)}`
+          : "/api/sitemap?type=announcements";
+        const [settings, response] = await Promise.all([
+          settingsPromise,
+          globalThis.fetch(announcementUrl, { cache: "default" }),
+        ]);
+        const announcementsEnabled = Boolean((settings as any)?.announcements_enabled ?? true);
+        if (!aborted) {
+          setEnabled(announcementsEnabled);
+          setDisplayMs(Number((settings as any)?.announcements_display_ms ?? 0) || 0);
+        }
+        if (!announcementsEnabled) {
+          if (!aborted) { setData(null); setLoading(false); }
+          return;
+        }
+        const payload = await response.json().catch(() => ({}));
+        const json = payload?.announcement || null;
+        const shouldUse = Boolean(!aborted && response.ok && json?.active && (sellerSlugFromPath || isHomeRoute));
+        if (shouldUse) {
+          setData(json);
+          setScope(sellerSlugFromPath ? `seller:${sellerSlugFromPath}` : "global");
+          try { localStorage.setItem(cacheKey, JSON.stringify({ announcement: json, savedAt: Date.now() })); } catch {}
+        } else if (!hasCachedAnnouncement && !aborted) {
+          setData(null);
+        }
+      } catch {
+        // Keep the cached announcement visible if the background refresh fails.
+      } finally {
+        if (!aborted) setLoading(false);
+      }
     })();
-    return () => {
-      aborted = true;
-    };
+    return () => { aborted = true; };
   }, [sellerSlugFromPath, location]);
 
   useEffect(() => {

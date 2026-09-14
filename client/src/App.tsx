@@ -135,6 +135,7 @@ const GlobalContentHub   = lazy(() => import("@/pages/GlobalContentHub"));
 const CustomPagesIndex   = lazy(() => import("@/pages/CustomPagesIndex"));
 const CustomPageRoute    = lazy(() => import("@/pages/CustomPageRoute"));
 const Competition        = lazy(() => import("@/pages/Competition"));
+const Ribbons            = lazy(() => import("@/pages/Ribbons"));
 
 function PageSpinner() {
   return (
@@ -206,6 +207,7 @@ function Router() {
       <Route path="/modes"                     component={() => <L C={Modes} />} />
       <Route path="/maps"                      component={() => <L C={Maps} />} />
       <Route path="/ranks"                     component={() => <L C={Ranks} />} />
+      <Route path="/ribbons"                   component={() => <L C={Ribbons} />} />
       <Route path="/global-wiki"               component={() => <L C={GlobalWiki} />} />
       <Route path="/content-hub"              component={() => <L C={GlobalContentHub} />} />
       <Route path="/content-hub/:slug"        component={(p: any) => <L C={GlobalContentHub} params={p.params} />} />

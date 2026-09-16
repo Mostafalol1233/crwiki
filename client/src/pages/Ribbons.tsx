@@ -76,6 +76,11 @@ function sourceCategory(ribbon: Ribbon, arabic: boolean): string {
 // ─── النوع / الصعوبة بالعربي ───
 function difficultyKey(ribbon: Ribbon): string {
   const raw = `${text(ribbon.category, "")} ${text(ribbon.category_label_en, "")} ${text(ribbon.category_label_ar, "")}`.toLowerCase();
+  const paid = text((ribbon as AnyRecord).paid_requirement, "none").toLowerCase();
+  const itemBlob = `${text(ribbon.name_en || ribbon.name, "")} ${text((ribbon as AnyRecord).description_en || "", "")} ${raw}`.toLowerCase();
+  // أي حاجة بتتدفع بفلوس (ZP صريح، أو سلاح VIP، أو Black Market) = بفلوس، مش مجرد تجميع
+  if (paid === "explicit_zp_or_payment") return "zp";
+  if (itemBlob.includes("vip") || itemBlob.includes("black market") || itemBlob.includes("blackmarket")) return "zp";
   if (raw.includes("easy")) return "easy";
   if (raw.includes("time") || raw.includes("grind") || raw.includes("وقت") || raw.includes("تجميع")) return "grind";
   if (raw.includes("skill") || raw.includes("aim") || raw.includes("مهارة") || raw.includes("تصويب")) return "skill";
@@ -114,15 +119,28 @@ function difficultyLabel(ribbon: Ribbon, arabic: boolean): string {
 // ─── الحالة المبسطة: 4 حالات بس ───
 type AvailState = "active" | "limited" | "ended" | "pass";
 
+// ريبون مكتوب عليه سنة أو تاريخ محدد (نسخة سنة معينة / يوم معين) = نزل مرة واحدة ومش راجع.
+// زي ريبون كذبة إبريل (1 إبريل)، أو Summer Games 2012، أو Iron Man مارس 2011.
+function isDatedOneTime(ribbon: Ribbon): boolean {
+  const txt = `${text(ribbon.name_en || ribbon.name, "")} ${text((ribbon as AnyRecord).description_en || "", "")}`.toLowerCase();
+  if (/april\s*fool|april\s*1st|1st\s*(of\s*)?april/.test(txt)) return true;
+  if (/\b(19|20)\d{2}\b/.test(txt)) return true;
+  return false;
+}
+
 function availabilityState(ribbon: Ribbon): AvailState {
   const life = ribbon.event_lifecycle || {};
   const blob = `${text(life.ribbon_availability)} ${text(life.event_status)} ${text(life.recurrence_pattern)} ${text((ribbon as AnyRecord).category)}`.toLowerCase();
   if (blob.includes("permanently_ended") || blob.includes("discontinued") || blob.includes("one_time") || blob.includes("not_expected")) return "ended";
+  const isEvent = (life as AnyRecord).is_event === true;
+  // "not_an_event" فيها كلمة event كجزء من النفي — لازم نستبعدها عشان الشغال دلوقتي ميتحسبش ايفنت
+  const hasEventWord = blob.includes("event") && !blob.includes("not_an_event");
+  const eventish = isEvent || blob.includes("window_closed") || blob.includes("specific") || blob.includes("limited") || hasEventWord;
+  if (eventish && isDatedOneTime(ribbon)) return "ended";
   if (blob.includes("subscri") || blob.includes("premium") || blob.includes("premium") || text((ribbon as AnyRecord).paid_requirement) === "explicit_zp_or_payment" && blob.includes("pass")) return "pass";
-  if (blob.includes("window_closed") || blob.includes("event") || blob.includes("recurr") || blob.includes("annual") || blob.includes("seasonal") || blob.includes("rotating") || blob.includes("specific") || blob.includes("limited")) return "limited";
+  if (blob.includes("window_closed") || hasEventWord || blob.includes("recurr") || blob.includes("annual") || blob.includes("seasonal") || blob.includes("rotating") || blob.includes("specific") || blob.includes("limited")) return "limited";
   if (blob.includes("condition_based") || blob.includes("not_an_event")) return "active";
   // غير الايفنتات = شغال، والايفنتات = محدودة
-  const isEvent = (life as AnyRecord).is_event === true;
   return isEvent ? "limited" : "active";
 }
 
@@ -179,16 +197,33 @@ function isWeeklyEvent(ribbon: Ribbon): boolean {
   return weeklyWeapon(ribbon) !== null;
 }
 
+function sourceKey(ribbon: Ribbon): string {
+  return text(ribbon.source_category, "").trim().toLowerCase();
+}
+
+function isAprilFools(ribbon: Ribbon): boolean {
+  const txt = `${text(ribbon.name_en || ribbon.name, "")} ${text((ribbon as AnyRecord).description_en || "", "")}`.toLowerCase();
+  return /april\s*fool|april\s*1st|1st\s*(of\s*)?april/.test(txt) || text(ribbon.name_en || ribbon.name, "").toLowerCase().includes("ribbon ribbon");
+}
+
 // ─── الشرح بالعامية ───
 function arabicDescription(ribbon: Ribbon): string {
   const weekly = weeklyWeapon(ribbon);
   const eventName = text(ribbon.name_en || ribbon.name, "الايفنت");
+  if (isAprilFools(ribbon)) {
+    return "الريبون ده بتاع كذبة إبريل — نزل يوم 1 إبريل مرة واحدة كإيفنت هزار وخلص في نفس اليوم. مش راجع تاني، ولو مش واخده من وقتها خلاص.";
+  }
   if (weekly) {
     return `الريبون ده من ايفنتات الأسلحة الأسبوعية بتاعت ${eventName}. أول ما الايفنت بينزل في وقته بيطلب منك تعمل شوية مهام بـ ${weekly.weapon} جوه اللعبة. الايفنت بيقعد أسبوع واحد بس وبيخلص، فتابع الموقع هنا أول بأول عشان تعرف لحظة ما ينزل وتلحق تخلص مهامه قبل ما يقفل.`;
   }
   const raw = text(ribbon.description_ar || ribbon.description_en || ribbon.description, "");
-  if (!raw) return "لسه بنجهز شرح مفصل للريبون ده بالعامية.";
-  return toRibbonWords(raw);
+  const base = raw ? toRibbonWords(raw) : "لسه بنجهز شرح مفصل للريبون ده بالعامية.";
+  const notes: string[] = [];
+  if (availabilityState(ribbon) === "ended") notes.push("الريبون ده نزل مرة واحدة في وقته وخلص، ومش راجع تاني.");
+  else if (difficultyKey(ribbon) === "zp") notes.push("خلي بالك: ده محتاج فلوس (ZP) يعني شراء حقيقي، مش مجرد لعب وتجميع.");
+  else if (sourceKey(ribbon) === "years of service") notes.push("بيتحسب تلقائي من عمر شخصيتك ومش محتاج تعمل حاجة غير إنك تحافظ على حسابك.");
+  else if (sourceKey(ribbon) === "ribbons progress") notes.push("بيتفتح لوحده أول ما توصل للعدد المطلوب من الريبونات، فابدأ بالسهلين.");
+  return notes.length ? `${base} (${notes.join(" ")})` : base;
 }
 
 function englishDescription(ribbon: Ribbon): string {
@@ -198,6 +233,73 @@ function englishDescription(ribbon: Ribbon): string {
     return `${eventName} is a weekly weapon event ribbon. When the event goes live for its week, you complete missions with ${weekly.weaponEn}. It lasts one week only, so follow this site to catch it the moment it drops.`;
   }
   return text(ribbon.description_en || ribbon.description, "No description is available for this ribbon yet.");
+}
+
+function categorySteps(ribbon: Ribbon): string[] {
+  switch (sourceKey(ribbon)) {
+    case "years of service":
+      return [
+        "الريبون ده بيتحسب من عمر شخصيتك — مفيش طريقة تستعجله، كل اللي عليك تفضل محافظ على نفس الحساب والشخصية.",
+        "عشان تعرف فاضل قد إيه: افتح البروفايل بتاعك وشوف تاريخ إنشاء الشخصية واحسب المدة.",
+        "أول ما تعدي المدة المطلوبة الريبون بيتسجل لوحده من غير ما تقدم على حاجة.",
+      ];
+    case "ribbons progress":
+      return [
+        "الريبون ده عداد: كل ما تجمع ريبونات أكتر هو بيتفتح لوحده أول ما توصل للرقم المطلوب.",
+        "أسرع بداية: ريبون إنشاء الشخصية + توثيق الإيميل + ريبون القنابل الأساسية — كلها سهلة وبتزود العداد بسرعة.",
+        "تابع عدد ريبوناتك من صفحة الريبونات في البروفايل بتاعك.",
+      ];
+    case "game stats":
+      return [
+        "العداد ده بيزيد مع لعبك الطبيعي — العب ماتشات كاملة ومتخرجش في النص عشان تتحسب لك.",
+        "لو الشرط كِلات أو هيدشوت: العب أطوار فيها أكشن كتير وركز تصويبك على الراس.",
+        "لو الشرط K/D (زي أعلى من 2.0): العب بحذر ومتموتش كتير — وخلي بالك لو نزلت تحت الرقم الريبون بيتشال لحد ما ترجعه تاني.",
+      ];
+    case "mode stats":
+      return [
+        "ادخل الطور المطلوب بالاسم من قايمة الأطوار جوه اللعبة — الماتشات العادية مش بتتحسب.",
+        "العداد بيجمع مع كل ماتش: اكسب أو نفذ المطلوب (قتل بوس، جمع عملات، هروب، سرقة...) حسب شرط الريبون المكتوب فوق.",
+        "الأطوار دي محتاجة وقت ولعب — قسمها على كذا يوم بدل ما تزنق نفسك في يوم واحد.",
+      ];
+    case "clan":
+      return [
+        "الأول لازم تبقى عضو في كلان — من غير كلان ماتشات الكلان مش هتتفتح لك أصلاً.",
+        "العب ماتشات كلان رسمية وحقق شرط الماتش الواحد (النجاة عدد جولات أو عدد كِلات معين) في 250 ماتش مختلف.",
+        "نسق مع الكلان بتاعك عشان تدخلوا ماتشات مع بعض بانتظام وتخلصوا العدد أسرع.",
+      ];
+    case "inventory":
+      return [
+        "المطلوب هنا امتلاك — يعني السلاح أو الشخصية لازم يبقوا عندك بشكل دائم (permanent)، والمؤقت مش بيتحسب.",
+        "أسلحة الـ VIP والصناديق المميزة بتتشري بـ ZP يعني بفلوس حقيقية — إنما في حاجات تانية بتتجاب بـ GP من اللعب العادي.",
+        "قبل ما تشتري أي حاجة اتأكد إنها دائمة وإنها من النوع المطلوب بالظبط (اللون أو اسم المجموعة).",
+      ];
+    case "status":
+      return [
+        "دي حالة حساب مش لعب: توثيق إيميل، أو اشتراك Premium، أو سجل نضيف من غير باند.",
+        "لو توثيق إيميل: ادخل My Account ودوس Verify Email واضغط لينك التحقق اللي هيوصلك قبل ما ينتهي.",
+        "لو Premium: لازم تشتري Premium Pass بتاع الموسم الحالي — الـ Free Pass لوحده مش كفاية.",
+      ];
+    case "annual events":
+      return [
+        "الايفنتات السنوية بتيجي في معادها كل سنة (عيد الحب، الكريسماس، الهالووين، شهر مارس) — بس كل سنة بينزل ريبون جديد باسمها.",
+        "ريبون السنة اللي فاتت مش بيرجع — تابع الموقع قبل المعاد عشان تلحق ريبون السنة دي.",
+        "أول ما الايفنت ينزل خلص كل مهامه قبل ما يخلص وقته.",
+      ];
+    case "special events":
+      return [
+        "الايفنتات المحدودة بتنزل مرة واحدة أو كل فترة من غير معاد ثابت.",
+        "لو الريبون مكتوب عليه سنة أو تاريخ معين يبقى بتاع النسخة دي ومش راجع — متضيعش وقتك تدور عليه.",
+        "لو من غير تاريخ تابع الموقع أول بأول عشان تلحقه لحظة ما يرجع.",
+      ];
+    case "cream of the crop":
+      return [
+        "ده تكريم من الإدارة للأعضاء النشطين والمساعدين في المجتمع — مفيش زر تدوسه أو مهمة تخلصها.",
+        "ساعد اللاعبين الجداد وشارك في المنتدى والفعاليات بشكل محترم ومستمر.",
+        "الاختيار بيتم من فريق اللعبة نفسه للحسابات المميزة بسلوكها.",
+      ];
+    default:
+      return [];
+  }
 }
 
 function arabicSteps(ribbon: Ribbon): string[] {
@@ -211,10 +313,18 @@ function arabicSteps(ribbon: Ribbon): string[] {
       `بعد ما تخلص كل المهام افتح صفحة الريبونات في البروفايل بتاعك واتأكد إن الريبون اتسجل عندك.`,
     ];
   }
+  if (availabilityState(ribbon) === "ended") {
+    return [
+      "الريبون ده نزل مرة واحدة في وقته وخلص — زي ريبون كذبة إبريل اللي نزل يوم 1 إبريل بس، أو ريبونات السنين اللي عدت.",
+      "لو مش واخده من وقتها مش هتعرف تجيبه دلوقتي بأي طريقة.",
+      "ركز مجهودك على الريبونات الشغالة دلوقتي والايفنتات اللي جاية بدل ما تدور على ده.",
+    ];
+  }
+  const extra = categorySteps(ribbon);
   const rows = list((ribbon as AnyRecord).how_to_get_ar);
-  if (rows.length) return rows.map(toRibbonWords);
+  if (rows.length) return [...extra, ...rows.map(toRibbonWords)];
   const en = list((ribbon as AnyRecord).how_to_get_en);
-  if (en.length) return en.map(toRibbonWords);
+  if (en.length) return [...extra, ...en.map(toRibbonWords)];
   // خطوات عامة حسب النوع
   const k = difficultyKey(ribbon);
   if (k === "easy") return ["اعمل الشرط المكتوب فوق — بيخلص بسرعة ومش محتاج وقت.", "افتح صفحة الريبونات في البروفايل بتاعك واتأكد إن الريبون اتسجل."];
@@ -227,6 +337,9 @@ function arabicSteps(ribbon: Ribbon): string[] {
 }
 
 function englishSteps(ribbon: Ribbon): string[] {
+  if (isAprilFools(ribbon) || availabilityState(ribbon) === "ended") {
+    return ["This ribbon was a one-time release and is no longer obtainable.", "Focus on currently available ribbons and upcoming events instead."];
+  }
   const rows = list((ribbon as AnyRecord).how_to_get_en);
   if (rows.length) return rows;
   return ["Complete the requirement above.", "Open the Ribbons page on your profile and confirm it is recorded."];
@@ -240,7 +353,8 @@ function arabicTip(ribbon: Ribbon): string {
   if (k === "easy") return "يخلص بسرعة ومش محتاج مجهود.";
   if (k === "grind") return "محتاج وقت ولعب — قسمه على كذا يوم بدل ما تزنق نفسك.";
   if (k === "skill") return "محتاج مهارة وتصويب — العب على الهادي وحافظ على مستواك.";
-  if (k === "zp") return "محتاج فلوس — اتأكد إنك تشتري من مكان مضمون.";
+  if (k === "zp") return "محتاج فلوس — سلاح الـ VIP والصناديق المميزة بتتدفع ZP، اتأكد إنك تشتري من مكان مضمون.";
+  if (availabilityState(ribbon) === "pass") return "محتاج اشتراك شغال — لو الاشتراك خلص الريبون ممكن يروح.";
   if (availabilityState(ribbon) === "ended") return "انتهى ومش راجع — متضيعش وقتك تدور عليه.";
   if (availabilityState(ribbon) === "limited") return "ايفنت محدود — تابع الموقع عشان تلحقه أول ما ينزل.";
   return "اعمله على مهلك وتابع تقدمك من البروفايل.";

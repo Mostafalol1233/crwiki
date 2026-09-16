@@ -78,9 +78,9 @@ function difficultyKey(ribbon: Ribbon): string {
   const raw = `${text(ribbon.category, "")} ${text(ribbon.category_label_en, "")} ${text(ribbon.category_label_ar, "")}`.toLowerCase();
   const paid = text((ribbon as AnyRecord).paid_requirement, "none").toLowerCase();
   const itemBlob = `${text(ribbon.name_en || ribbon.name, "")} ${text((ribbon as AnyRecord).description_en || "", "")} ${raw}`.toLowerCase();
-  // أي حاجة بتتدفع بفلوس (ZP صريح، أو سلاح VIP، أو Black Market) = بفلوس، مش مجرد تجميع
+  // أي حاجة بتتدفع بفلوس (ZP صريح، أو سلاح VIP، أو شخصية SPOP، أو Black Market) = بفلوس، مش مجرد تجميع
   if (paid === "explicit_zp_or_payment") return "zp";
-  if (itemBlob.includes("vip") || itemBlob.includes("black market") || itemBlob.includes("blackmarket")) return "zp";
+  if (itemBlob.includes("vip") || itemBlob.includes("spop") || itemBlob.includes("black market") || itemBlob.includes("blackmarket")) return "zp";
   if (raw.includes("easy")) return "easy";
   if (raw.includes("time") || raw.includes("grind") || raw.includes("وقت") || raw.includes("تجميع")) return "grind";
   if (raw.includes("skill") || raw.includes("aim") || raw.includes("مهارة") || raw.includes("تصويب")) return "skill";
@@ -206,6 +206,125 @@ function isAprilFools(ribbon: Ribbon): boolean {
   return /april\s*fool|april\s*1st|1st\s*(of\s*)?april/.test(txt) || text(ribbon.name_en || ribbon.name, "").toLowerCase().includes("ribbon ribbon");
 }
 
+// ─── ريبونات شغالة دلوقتي — شرح مؤكد بالتفصيل ───
+// دي ريبونات متأكدين إنها شغالة وتتجاب حالياً، فكل واحد ليه شرح وخطوات مخصوصة.
+const WORKING_NOW_DETAILS: Record<string, { ar: string; steps_ar: string[]; en: string }> = {
+  ribbon_0046: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تقتل 1000 بوس زومبي في Zombie Mode 1 على مستوى Normal أو أعلى. تقدمك (قتلت كام من 1000) بيظهر جوه اللعبة نفسها.",
+    steps_ar: [
+      "الريبون ده شغال دلوقتي — ادخل Zombie Mode 1 والعب على Normal أو أعلى.",
+      "كل بوس تقتله بيتحسب — محتاج 1000 بوس فالموضوع محتاج وقت ولعب.",
+      "العب مع تيم عشان تخلصوا البوس أسرع، وتقدمك بيظهر في اللعبة نفسها.",
+      "أول ما توصل 1000 افتح صفحة الريبونات في البروفايل واتأكد إنه اتسجل.",
+    ],
+    en: "This ribbon is currently obtainable. Kill 1,000 Zombie Mode 1 bosses on Normal or higher. Your progress is shown in-game.",
+  },
+  ribbon_0047: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تشتري أكتر من 1000 Revive Token من الـ Item Shop — وخلي بالك التوكنز اللي جاية من الايفنتات والهدايا مش بتتحسب. تقدمك (اشتريت كام) بيظهر جوه اللعبة.",
+    steps_ar: [
+      "الريبون ده شغال دلوقتي — افتح Item Shop ودور على Revive Token.",
+      "اشتري أكتر من 1000 توكن من المتجر نفسه — توكنز الايفنتات والهدايا مش بتتحسب.",
+      "التوكن بيستخدم للإحياء في Challenge وDefense وTrial، بس الشرط هو الشراء مش الاستخدام.",
+      "تقدمك بيظهر في اللعبة — أول ما تعدي 1000 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Purchase over 1,000 Revive Tokens from the Item Shop (event/gift tokens do not count). Your progress is shown in-game.",
+  },
+  ribbon_0036: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تكمل 100 ماتش Hero Mode X ويكون فريق الـ mutants هو اللي كسب — والمهم إن اللي بيتحسب آخر 30 يوم بس، أي ماتش أقدم بيقع من الحسبة. تقدمك (X من 100) بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — العب Hero Mode X وخلي فريق الـ mutants هو اللي يكسب.",
+      "المهم: آخر 30 يوم بس اللي بيتحسبوا — أي ماتش أقدم من كده بيقع من الحسبة.",
+      "محتاج 100 ماتش — العب بانتظام كل يوم عشان تخلص قبل ما الأيام القديمة تقع.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Complete 100 Hero Mode X games with a mutants-side win — only the last 30 days count. Your progress is shown in-game.",
+  },
+  ribbon_0049: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تكمل 100 ماتش Hero Mode X ويكون فريق الجنود (soldiers) هو اللي كسب — والمهم إن اللي بيتحسب آخر 30 يوم بس. تقدمك (X من 100) بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — العب Hero Mode X وخلي فريق الجنود هو اللي يكسب.",
+      "المهم: آخر 30 يوم بس اللي بيتحسبوا — أي ماتش أقدم من كده بيقع.",
+      "محتاج 100 ماتش — العب بانتظام كل يوم عشان الأيام القديمة متقعش منك.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Complete 100 Hero Mode X games with a soldiers-side win — only the last 30 days count. Your progress is shown in-game.",
+  },
+  ribbon_0108: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تدافع بنجاح 200 مرة في ZM2 على مستوى Normal أو Hard. تقدمك (X من 200) بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — العب ZM2 على Normal أو Hard.",
+      "المطلوب تدافع بنجاح 200 مرة — يعني تصمد للآخر.",
+      "العب مع تيم متفاهم عشان الدفاع ينجح أكتر.",
+      "تقدمك بيظهر في اللعبة — كمل لحد 200 واتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Defend successfully 200 times in ZM2 on Normal or Hard. Your progress is shown in-game.",
+  },
+  ribbon_0058: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تقتل بوس الـ War Monger في Zombie Mode عدد 100 مرة على مستوى Normal. تقدمك (X من 100) بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — اقتل بوس الـ War Monger في Zombie Mode على Normal.",
+      "محتاج 100 مرة — كل قتلة محسوبة.",
+      "احفظ مكان البوس وحركاته عشان تخلصه بسرعة كل مرة.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Kill the War Monger Zombie Mode boss 100 times on Normal. Your progress is shown in-game.",
+  },
+  rb0184_cfwe_zmhm3000: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تقتل 3000 بوس زومبي على مستوى Hard أو أعلى — ده أطول واحد فيهم ومحتاج وقت ولعب. تقدمك بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — اقتل بوسات الزومبي على Hard أو أعلى.",
+      "محتاج 3000 بوس — قسمه على أسابيع ومتستعجلش.",
+      "العب أصعب مستوى تقدر تكسب فيه بثبات عشان كل بوس يتحسب.",
+      "تقدمك بيظهر في اللعبة — تابع الرقم لحد 3000 واتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Kill 3,000 Zombie Mode bosses on Hard or higher. Your progress is shown in-game.",
+  },
+  rb0166_guessme3: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تخلص 100 مهمة Undercover Mode خلال 3 شهور — والـ 3 شهور window يعني القديم بيقع. تقدمك بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — خلص 100 مهمة Undercover Mode خلال 3 شهور.",
+      "المهم: الـ 3 شهور window — المهم القديم بيقع من الحسبة.",
+      "معدل مريح: مهمة أو اتنين في اليوم تخلصهم مرتاح.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Complete 100 Undercover Mode missions within 3 months. Your progress is shown in-game.",
+  },
+  rb0173_arcademode: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تخلص 100 ماتش Arcade خلال 3 شهور — وشرط مهم: كل ماتش لازم يبقى 5 جولات على الأقل، الأقل من كده مش بيتحسب. تقدمك بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — خلص 100 ماتش Arcade خلال 3 شهور.",
+      "شرط مهم: كل ماتش لازم يبقى 5 جولات على الأقل — الأقل من كده مش بيتحسب.",
+      "اتفق مع اللي بتلعب معاهم تكملوا الجولات للآخر.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Complete 100 Arcade matches (5+ rounds each) within 3 months. Your progress is shown in-game.",
+  },
+  rb0183_skyblock: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تكسب المركز الأول 100 مرة في Crystal Tower Mode — لازم مركز أول مش أي مركز. تقدمك بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — اكسب المركز الأول 100 مرة في Crystal Tower Mode.",
+      "لازم مركز أول مش أي مركز — العب بتركيز على النقط.",
+      "احفظ الماب وأسرع الطرق عشان تنافس على الأول.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 100 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Win 1st place 100 times in Crystal Tower Mode. Your progress is shown in-game.",
+  },
+  rb0152_mazemode: {
+    ar: "الريبون ده شغال دلوقتي وتقدر تجيبه. بتاخده لما تنجو 2000 مرة في Maze Mode — النجاة يعني تخلص المتاهة عايش. تقدمك بيظهر جوه اللعبة.",
+    steps_ar: [
+      "شغال دلوقتي — انجُ 2000 مرة في Maze Mode.",
+      "النجاة يعني تخلص المتاهة عايش — خدها بالهدوء واحفظ الطرق.",
+      "العدد كبير فقسمه على كذا أسبوع.",
+      "تقدمك بيظهر في اللعبة — أول ما توصل 2000 اتأكد من صفحة الريبونات.",
+    ],
+    en: "This ribbon is currently obtainable. Survive 2,000 times in Maze Mode. Your progress is shown in-game.",
+  },
+};
+
+function workingNow(ribbon: Ribbon) {
+  return WORKING_NOW_DETAILS[text(ribbon.ribbon_id, "")];
+}
+
 // ─── الشرح بالعامية ───
 function arabicDescription(ribbon: Ribbon): string {
   const weekly = weeklyWeapon(ribbon);
@@ -213,6 +332,8 @@ function arabicDescription(ribbon: Ribbon): string {
   if (isAprilFools(ribbon)) {
     return "الريبون ده بتاع كذبة إبريل — نزل يوم 1 إبريل مرة واحدة كإيفنت هزار وخلص في نفس اليوم. مش راجع تاني، ولو مش واخده من وقتها خلاص.";
   }
+  const wn = workingNow(ribbon);
+  if (wn) return wn.ar;
   if (weekly) {
     return `الريبون ده من ايفنتات الأسلحة الأسبوعية بتاعت ${eventName}. أول ما الايفنت بينزل في وقته بيطلب منك تعمل شوية مهام بـ ${weekly.weapon} جوه اللعبة. الايفنت بيقعد أسبوع واحد بس وبيخلص، فتابع الموقع هنا أول بأول عشان تعرف لحظة ما ينزل وتلحق تخلص مهامه قبل ما يقفل.`;
   }
@@ -229,6 +350,8 @@ function arabicDescription(ribbon: Ribbon): string {
 function englishDescription(ribbon: Ribbon): string {
   const weekly = weeklyWeapon(ribbon);
   const eventName = text(ribbon.name_en || ribbon.name, "this event");
+  const wnEn = workingNow(ribbon);
+  if (wnEn) return wnEn.en;
   if (weekly) {
     return `${eventName} is a weekly weapon event ribbon. When the event goes live for its week, you complete missions with ${weekly.weaponEn}. It lasts one week only, so follow this site to catch it the moment it drops.`;
   }
@@ -320,6 +443,8 @@ function arabicSteps(ribbon: Ribbon): string[] {
       "ركز مجهودك على الريبونات الشغالة دلوقتي والايفنتات اللي جاية بدل ما تدور على ده.",
     ];
   }
+  const wnSteps = workingNow(ribbon);
+  if (wnSteps) return wnSteps.steps_ar;
   const extra = categorySteps(ribbon);
   const rows = list((ribbon as AnyRecord).how_to_get_ar);
   if (rows.length) return [...extra, ...rows.map(toRibbonWords)];

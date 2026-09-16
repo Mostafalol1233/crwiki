@@ -248,14 +248,14 @@ function arabicTip(ribbon: Ribbon): string {
 
 function searchBlob(ribbon: Ribbon) { return JSON.stringify(ribbon).toLowerCase(); }
 
-function RibbonImage({ ribbon }: { ribbon: Ribbon }) {
+function RibbonImage({ ribbon, arabic = true }: { ribbon: Ribbon; arabic?: boolean }) {
   const src = String(ribbon.image_url || "");
   const [failed, setFailed] = useState(!src);
   return (
     <div className="relative flex h-36 items-center justify-center overflow-hidden" style={{ background: "#050505" }}>
       {!failed ? (
         <img src={src} alt={`${ribbon.name_en || ribbon.name || "Ribbon"} ribbon`} loading="lazy" decoding="async" className="h-full w-full object-contain p-4" onError={() => setFailed(true)} />
-      ) : <div className="flex flex-col items-center gap-2 text-slate-600"><ImageIcon aria-hidden="true" className="h-10 w-10" /><span className="text-xs">الصورة مش متاحة</span></div>}
+      ) : <div className="flex flex-col items-center gap-2 text-slate-600"><ImageIcon aria-hidden="true" className="h-10 w-10" /><span className="text-xs">{arabic ? "الصورة مش متاحة" : "Image unavailable"}</span></div>}
     </div>
   );
 }
@@ -270,11 +270,11 @@ function StateBadge({ children, tone = "neutral" }: { children: React.ReactNode;
 }
 
 function RibbonCard({ ribbon, arabic, onOpen }: { ribbon: Ribbon; arabic: boolean; onOpen: () => void }) {
-  const name = text(ribbon.name_en || ribbon.name, "ريبون من غير اسم");
+  const name = text(ribbon.name_en || ribbon.name, arabic ? "ريبون من غير اسم" : "Unnamed ribbon");
   const description = arabic ? arabicDescription(ribbon) : englishDescription(ribbon);
   const needsBuy = (ribbon as AnyRecord).paid_requirement && (ribbon as AnyRecord).paid_requirement !== "none";
   return <article className="group overflow-hidden transition" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-    <RibbonImage ribbon={ribbon} />
+    <RibbonImage ribbon={ribbon} arabic={arabic} />
     <div className="space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -309,14 +309,14 @@ function DetailSection({ title, children, arabic = false }: { title: string; chi
 }
 
 function RibbonDetails({ ribbon, arabic }: { ribbon: Ribbon; arabic: boolean }) {
-  const name = text(ribbon.name_en || ribbon.name, "ريبون من غير اسم");
+  const name = text(ribbon.name_en || ribbon.name, arabic ? "ريبون من غير اسم" : "Unnamed ribbon");
   const description = arabic ? arabicDescription(ribbon) : englishDescription(ribbon);
   const steps = arabic ? arabicSteps(ribbon) : englishSteps(ribbon);
   const requiredItems = list((ribbon as AnyRecord).required_items).length ? ((ribbon as AnyRecord).required_items as AnyRecord[]) : [];
   const needsBuy = (ribbon as AnyRecord).paid_requirement && (ribbon as AnyRecord).paid_requirement !== "none";
   return <div className="space-y-6 text-white">
     <div className="grid gap-5 md:grid-cols-[220px_1fr]">
-      <div className="overflow-hidden" style={{ border: `1px solid ${BORDER}` }}><RibbonImage ribbon={ribbon} /></div>
+      <div className="overflow-hidden" style={{ border: `1px solid ${BORDER}` }}><RibbonImage ribbon={ribbon} arabic={arabic} /></div>
       <div className="space-y-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em]" style={{ color: GOLD }}>{sourceCategory(ribbon, arabic)}</p>
@@ -361,7 +361,7 @@ function RibbonDetails({ ribbon, arabic }: { ribbon: Ribbon; arabic: boolean }) 
                       {arabic ? toRibbonWords(text(item.item_note_ar || item.availability_note_ar || item.item_note_en)) : text(item.item_note_en || item.availability_note_en)}
                     </p>
                   )}
-                  {item.image_url && <img src={item.image_url} alt={text(item.item_name_en, "Required item")} loading="lazy" className="mt-3 h-24 w-full object-contain" />}
+                  {(item.image_url || ribbon.image_url) && <img src={item.image_url || ribbon.image_url} alt={text(arabic ? (item.item_name_ar || item.item_name_en) : (item.item_name_en || item.item_name_ar), "Required item")} loading="lazy" className="mt-3 h-24 w-full object-contain" />}
                 </div>
               ))}
             </div>
@@ -426,7 +426,7 @@ export default function Ribbons() {
           <div className="mt-5 max-w-4xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">{arabic ? "أرشيف تقدم اللعبة" : "CrossFire progression archive"}</p>
             <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">{arabic ? "الريبونات" : "Ribbons"}</h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300" dir="rtl">
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300" dir={arabic ? "rtl" : "ltr"}>
               {arabic
                 ? "كل ريبونات CrossFire مشروحة بالعامية: الريبون ده بتاع إيه وازاي تجيبه خطوة بخطوة — سواء كان سهل دلوقتي، أو محتاج وقت ولعب، أو من الايفنتات المحدودة والايفنتات السنوية."
                 : "Every CrossFire ribbon explained simply: what it is and how to get it step by step."}

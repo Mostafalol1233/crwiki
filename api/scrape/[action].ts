@@ -583,6 +583,122 @@ async function scrapeForumThread(url: string) {
   };
 }
 
+// ── auto-publisher: forum events → translated event+news rows ─────────────────
+// Egyptian Arabic (simple, calm, NOT Fusha) + simple clear English.
+// Reuses scrapeForumList (RSS) + scrapeForumThread from this file.
+async function translateEventText(threadTitle: string, threadText: string): Promise<{ title_ar: string; description_ar: string; title_en: string; description_en: string } | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || "";
+  if (!apiKey) return null;
+  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "openai/gpt-oss-20b:free";
+  const system = "You are the translator for CrossFire Wiki. You rewrite official CrossFire event announcements for players. RULES (follow strictly): \"description_ar\" MUST be in Egyptian Arabic, calm and friendly, simple words the average player understands. NEVER use formal Fusha. Explain: what the event is, what the player should do step by step, and when it ends if a date is mentioned. \"title_ar\" is a short Egyptian Arabic event title. \"description_en\" is the SAME explanation in simple, clear, easy English (short sentences, no complex words). \"title_en\" is a short simple English title. Keep each description 2-4 short sentences (max ~500 characters). Reply with ONLY a JSON object, no code fences, no extra text: {\"title_ar\": \"...\", \"description_ar\": \"...\", \"title_en\": \"...\", \"description_en\": \"...\"}";
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json", "HTTP-Referer": "https://crossfirewiki.com", "X-Title": "CrossFire Wiki Auto-Publisher" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: "Event title: " + threadTitle + "\n\nOfficial text:\n" + String(threadText || "").slice(0, 4000) },
+        ],
+        max_tokens: 1200,
+        temperature: 0.4,
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    let content: string = data?.choices?.[0]?.message?.content || "";
+    content = content.replace(/```json|```/gi, "").trim();
+    const start = content.indexOf("{");
+    const end = content.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    const parsed = JSON.parse(content.slice(start, end + 1));
+    if (!parsed.description_ar && !parsed.description_en) return null;
+    return {
+      title_ar: String(parsed.title_ar || threadTitle).slice(0, 160),
+      description_ar: String(parsed.description_ar || "").slice(0, 2000),
+      title_en: String(parsed.title_en || threadTitle).slice(0, 160),
+      description_en: String(parsed.description_en || "").slice(0, 2000),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function runEventsAutoPublisher(query: Record<string, unknown>) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+  if (!supabaseUrl || !serviceKey) throw new Error("Supabase is not configured for auto-publish");
+  const dry = String(Array.isArray(query.dry) ? query.dry[0] : query.dry || "") === "1";
+  const limit = Math.min(8, Math.max(1, Number(Array.isArray(query.limit) ? query.limit[0] : query.limit) || 3));
+  const headers = { apikey: serviceKey, Authorization: "Bearer " + serviceKey, "Content-Type": "application/json", Prefer: "return=minimal" };
+  const summary: Record<string, unknown> = { checked: 0, alreadyPublished: 0, published: [] as string[], skipped: 0, failed: [] as Array<{ title: string; error: string }>, dry };
+  const slugify = (v: string) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "event";
+
+  const { posts } = await scrapeForumList();
+  summary.checked = posts.length;
+
+  let processed = 0;
+  for (const post of posts) {
+    const idMatch = String(post.url || "").match(/\/discussion\/(\d+)/);
+    const discussionId = idMatch ? idMatch[1] : "";
+    if (!discussionId) continue;
+    let exists = false;
+    try {
+      const r = await fetch(supabaseUrl + "/rest/v1/events?source_url=like.*discussion%2F" + discussionId + "*&select=id&limit=1", { headers, signal: AbortSignal.timeout(10000) });
+      const rows = r.ok ? await r.json().catch(() => []) : [];
+      exists = Array.isArray(rows) && rows.length > 0;
+    } catch { exists = false; }
+    if (exists) {
+      summary.alreadyPublished = Number(summary.alreadyPublished) + 1;
+      continue;
+    }
+    if (processed >= limit) {
+      summary.skipped = Number(summary.skipped) + 1;
+      continue;
+    }
+    processed++;
+    try {
+      const thread = await scrapeForumThread(post.url);
+      const first = Array.isArray(thread.events) && thread.events[0] ? thread.events[0] : null;
+      const sourceText = (first?.descriptionText || post.title || "").toString();
+      const tr = await translateEventText(post.title, sourceText);
+      if (!tr) throw new Error("Translation failed");
+      const slug = slugify(tr.title_en || post.title) + "-cf" + discussionId;
+      const dateISO = (first?.startDate as string) || post.dateISO || new Date().toISOString();
+      const eventRow = {
+        title: tr.title_en || post.title,
+        title_ar: tr.title_ar,
+        event_name_slug: slug,
+        description: tr.description_en,
+        description_ar: tr.description_ar,
+        date: dateISO,
+        start_date: dateISO,
+        end_date: (first?.endDate as string) || dateISO,
+        image_url: (first?.image as string) || post.image || "",
+        type: "community",
+        source_url: post.url,
+      };
+      if (!dry) {
+        const ins = await fetch(supabaseUrl + "/rest/v1/events", { method: "POST", headers, body: JSON.stringify(eventRow), signal: AbortSignal.timeout(15000) });
+        if (!ins.ok) throw new Error("Event insert failed: " + await ins.text());
+        try {
+          await fetch(supabaseUrl + "/rest/v1/news", {
+            method: "POST", headers, signal: AbortSignal.timeout(15000),
+            body: JSON.stringify({ title: eventRow.title, news_slug: slug + "-" + Date.now(), content: eventRow.description, html_content: eventRow.description, image_url: eventRow.image_url, category: "events", author: "CrossFire Wiki", source_url: post.url, featured: false, preview_on_home: true }),
+          });
+        } catch { /* news mirror is best-effort */ }
+      }
+      (summary.published as string[]).push(post.title);
+    } catch (e: unknown) {
+      (summary.failed as Array<{ title: string; error: string }>).push({ title: post.title, error: e instanceof Error ? e.message : "Publish failed" });
+    }
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  return summary;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
   const action = readAction(req);
@@ -595,6 +711,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (error) {
       console.error("[scrape/automation]", error instanceof Error ? error.message : error);
       return addCorsHeaders(res).status(500).json({ error: error instanceof Error ? error.message : "Automation failed" });
+    }
+  }
+  const isPublishEventsRequest = action === "publish-events";
+  if (isPublishEventsRequest && req.method === "GET") {
+    if (!cronAuthorized(req)) return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+    try {
+      const result = await runEventsAutoPublisher(req.query as Record<string, unknown>);
+      return addCorsHeaders(res).status(200).json(result);
+    } catch (error) {
+      console.error("[scrape/publish-events]", error instanceof Error ? error.message : error);
+      return addCorsHeaders(res).status(500).json({ error: error instanceof Error ? error.message : "Auto-publish failed" });
     }
   }
   if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });

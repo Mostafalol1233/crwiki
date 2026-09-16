@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare, Sparkles } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { useLanguage } from "./LanguageProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -235,6 +236,9 @@ export function Header() {
             </div>
           </form>
 
+          {/* Announcements bell */}
+          <NotificationBell />
+
           {/* Language */}
           <button onClick={toggleLanguage} title={language === "en" ? "العربية" : "English"} aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"} style={{
             width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
@@ -323,13 +327,16 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile hamburger */}
-        <button className="site-menu-button md:hidden ml-auto" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} style={{
-          width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
-          background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, color: "rgba(255,255,255,0.7)", cursor: "pointer",
-        }}>
-          {mobileOpen ? <X size={16} /> : <Menu size={16} />}
-        </button>
+        {/* Mobile bell + hamburger */}
+        <div className="md:hidden ml-auto" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <NotificationBell />
+          <button className="site-menu-button" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} style={{
+            width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, color: "rgba(255,255,255,0.7)", cursor: "pointer",
+          }}>
+            {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}

@@ -720,6 +720,31 @@ async function readPublicAnnouncement(scope: string): Promise<any | null> {
   } catch { return null; }
 }
 
+function mapPublicAnnouncementRow(row: any) {
+  return { id: row.id, contentHtml: row.content_en || "", contentHtmlEn: row.content_en || "", contentHtmlAr: row.content_ar || "", titleEn: row.title_en || "", titleAr: row.title_ar || "", imageUrl: row.image_url || "", linkUrl: row.link_url || "", active: row.active !== false, dismissible: row.dismissible !== false, direction: row.direction || "auto", updatedAt: row.updated_at || row.created_at, createdAt: row.created_at, startsAt: row.starts_at, endsAt: row.ends_at, type: row.type || "info", display: row.display || "banner", theme: row.theme || "royal-gold" };
+}
+
+async function readPublicAnnouncementList(limit = 50): Promise<any[]> {
+  if (!SUPABASE_URL) return [];
+  const headers = SERVICE_KEY ? serviceHeaders() : h();
+  const params = new URLSearchParams({ select: "id,title_en,title_ar,content_en,content_ar,image_url,link_url,type,target,display,active,dismissible,direction,theme,starts_at,ends_at,created_at,updated_at", order: "created_at.desc", limit: String(Math.min(100, Math.max(1, limit))) });
+  params.set("target", "in.(all,global)");
+  params.set("active", "eq.true");
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/announcements?${params.toString()}`, { headers, signal: AbortSignal.timeout(9000) });
+    if (!response.ok) return [];
+    const rows = await response.json();
+    const now = Date.now();
+    return (Array.isArray(rows) ? rows : [])
+      .filter((item: any) => {
+        const starts = item.starts_at ? Date.parse(item.starts_at) : Number.NEGATIVE_INFINITY;
+        const ends = item.ends_at ? Date.parse(item.ends_at) : Number.POSITIVE_INFINITY;
+        return starts <= now && ends >= now;
+      })
+      .map(mapPublicAnnouncementRow);
+  } catch { return []; }
+}
+
 async function q(table: string, select: string, order: string, limit = 2000): Promise<any[]> {
   if (!SUPABASE_URL || !ANON_KEY) return [];
   try {
@@ -995,6 +1020,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
     return res.status(200).json({ announcement });
+  }
+  if (req.method === 'GET' && rawType === 'announcements-list') {
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const announcements = await readPublicAnnouncementList(Number(rawLimit) || 50);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+    return res.status(200).json({ announcements });
   }
   if (req.method === 'GET' && typeof rawType === 'string' && rawType !== 'weapons' && rawType !== 'posts' && rawType !== 'events') {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

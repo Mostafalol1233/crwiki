@@ -60,6 +60,12 @@ class ChunkErrorBoundary extends React.Component<
         }}>
           <div style={{ fontSize: 16, fontWeight: 600 }}>Updating to the latest version…</div>
           <div style={{ fontSize: 13, color: "#71717a" }}>The page will reload automatically.</div>
+          <button
+            onClick={() => { try { window.location.reload(); } catch { } }}
+            style={{ marginTop: 4, padding: "8px 22px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fafafa", fontSize: 13, cursor: "pointer" }}
+          >
+            Reload now
+          </button>
         </div>
       );
     }
@@ -290,9 +296,11 @@ function DeferredAnnouncement({ location }: { location: string }) {
   const mounted = useIdleMount(900);
   if (!mounted) return null;
   return (
-    <Suspense fallback={null}>
-      <AnnouncementModal location={location} />
-    </Suspense>
+    <ChunkErrorBoundary>
+      <Suspense fallback={null}>
+        <AnnouncementModal location={location} />
+      </Suspense>
+    </ChunkErrorBoundary>
   );
 }
 
@@ -306,9 +314,11 @@ function DeferredTargetCursor() {
 
   if (!mounted || !finePointer) return null;
   return (
-    <Suspense fallback={null}>
-      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
-    </Suspense>
+    <ChunkErrorBoundary>
+      <Suspense fallback={null}>
+        <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+      </Suspense>
+    </ChunkErrorBoundary>
   );
 }
 
@@ -605,6 +615,21 @@ class ErrorBoundary extends React.Component<
   }
   componentDidCatch(error: any, info: any) {
     try { console.error("[App ErrorBoundary]", error, info); } catch { }
+    // Belt & suspenders: any chunk-load error that reaches this generic
+    // boundary (e.g. a stale hashed JS file after a new deployment) triggers
+    // one automatic reload instead of stranding the user on an error screen.
+    try {
+      const msg = String(error?.message || error || "");
+      const isChunkError =
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Loading chunk") ||
+        msg.includes("Importing a module script failed") ||
+        msg.includes("error loading dynamically imported module");
+      if (isChunkError && !sessionStorage.getItem("__cf_chunk_reload")) {
+        sessionStorage.setItem("__cf_chunk_reload", "1");
+        window.location.reload();
+      }
+    } catch { }
   }
   render() {
     if (this.state?.hasError) {
@@ -612,6 +637,24 @@ class ErrorBoundary extends React.Component<
         (this.state?.error && (this.state.error.message || String(this.state.error))) ||
         "Unknown error";
       const stack = this.state?.error?.stack ? String(this.state.error.stack) : "";
+      const isChunkError =
+        message.includes("Failed to fetch dynamically imported module") ||
+        message.includes("Loading chunk") ||
+        message.includes("Importing a module script failed") ||
+        message.includes("error loading dynamically imported module");
+      if (isChunkError) {
+        // Stale JS chunk after a new deployment — the auto-reload above already
+        // fired; this screen is the fallback if the browser served cached HTML.
+        return (
+          <div className="min-h-screen w-full flex items-center justify-center" style={{ background: "#0a0a0a" }}>
+            <div className="max-w-md w-full p-6 text-center">
+              <h2 className="text-xl font-semibold mb-2 text-white">A new version is available</h2>
+              <p className="text-sm mb-5" style={{ color: "rgba(255,255,255,0.55)" }}>Please reload to get the latest update.</p>
+              <button className="min-h-9 px-6 py-2 rounded-md font-bold" style={{ background: "#f5a623", color: "#000" }} onClick={() => { try { window.location.reload(); } catch { } }}>Reload now</button>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="min-h-screen w-full flex items-center justify-center">
           <div className="max-w-lg w-full p-6 border rounded-md">

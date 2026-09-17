@@ -84,6 +84,7 @@ export function Header() {
         { path: "/weapons", label: t("navWeapons") },
         { path: "/mercenaries", label: t("navMercenaries") },
         { path: "/ranks", label: t("navRankings") },
+        { path: "/ribbons", label: t("navRibbons") },
         { path: "/download", label: t("navDownload") },
       ],
     },

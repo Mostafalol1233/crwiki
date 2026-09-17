@@ -2,10 +2,12 @@ import dotenv from "dotenv";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 dotenv.config();
 
-const DEFAULT_AI_MODEL = "minimax/minimax-m3:free";
+const DEFAULT_AI_MODEL = "nex-agi/nex-n2.5-pro:free";
 const FALLBACK_AI_MODELS = [
-  "google/gemma-4-26b-a4b-it:free",
+  "nex-agi/nex-n2.5-mini:free",
+  "dots-studio/dots-3-note-preview:free",
   "z-ai/glm-5.2:free",
+  "google/gemma-4-31b-it:free",
 ] as const;
 
 const aiRate = new Map<string, { count: number; startedAt: number }>();

@@ -164,7 +164,7 @@ export default function NotificationBell() {
         <Bell size={15} strokeWidth={1.8} />
         {unread > 0 && (
           <span style={{
-            position: "absolute", top: -6, insetInlineEnd: -6, minWidth: 17, height: 17,
+            position: "absolute", top: -6, right: -6, left: "auto", minWidth: 17, height: 17,
             padding: "0 4px", borderRadius: 9, background: GOLD, color: "#000",
             fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "Inter, system-ui, sans-serif",
@@ -176,7 +176,7 @@ export default function NotificationBell() {
 
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 8px)", insetInlineEnd: 0, width: 350, maxWidth: "86vw",
+          position: "absolute", top: "calc(100% + 8px)", right: 0, left: "auto", width: 350, maxWidth: "86vw",
           background: "#111", border: `1px solid ${BORDER}`, borderRadius: 10, overflow: "hidden",
           boxShadow: "0 16px 48px rgba(0,0,0,0.65)", zIndex: 80,
         }} dir={arabic ? "rtl" : "ltr"}>

@@ -138,7 +138,7 @@ const SECTIONS: HardcodedSection[] = [
     color: '#38bdf8',
     entries: [
       { label: 'CF player stats API', value: '/rest/userprofile.json?usn=', file: 'api/player/lookup.ts', description: 'Uses undici to bypass Akamai. Base domain is the CF regional endpoint.', isUrl: false },
-      { label: 'OpenRouter model', value: 'openai/gpt-oss-20b:free', file: 'api/ai/chat.ts (or similar)', description: 'Only this model works reliably; nemotron/deepseek/gemma hit guardrail or rate-limit errors.' },
+      { label: 'OpenRouter model', value: 'nex-agi/nex-n2.5-pro:free', file: 'api/ai/chat.ts + shared/aiModels.ts', description: 'Verified working 2026-09-17. Free models rotate: minimax/gpt-oss-20b are dead (404), glm/gemma throttle (429). Chain falls back to nex-mini, dots-3, glm, gemma-31b.' },
       { label: 'Supabase project URL', value: 'VITE_SUPABASE_URL (env var)', file: 'client/src/lib/supabaseAdmin.ts', description: 'Stored as env var — NOT hardcoded, listed here for completeness.' },
     ],
   },

@@ -589,7 +589,7 @@ async function scrapeForumThread(url: string) {
 async function translateEventText(threadTitle: string, threadText: string): Promise<{ title_ar: string; description_ar: string; title_en: string; description_en: string } | null> {
   const apiKey = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || "";
   if (!apiKey) return null;
-  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "openai/gpt-oss-20b:free";
+  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || "nex-agi/nex-n2.5-pro:free";
   const system = "You are the translator for CrossFire Wiki. You rewrite official CrossFire event announcements for players. RULES (follow strictly): \"description_ar\" MUST be in Egyptian Arabic, calm and friendly, simple words the average player understands. NEVER use formal Fusha. Explain: what the event is, what the player should do step by step, and when it ends if a date is mentioned. \"title_ar\" is a short Egyptian Arabic event title. \"description_en\" is the SAME explanation in simple, clear, easy English (short sentences, no complex words). \"title_en\" is a short simple English title. Keep each description 2-4 short sentences (max ~500 characters). Reply with ONLY a JSON object, no code fences, no extra text: {\"title_ar\": \"...\", \"description_ar\": \"...\", \"title_en\": \"...\", \"description_en\": \"...\"}";
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -601,7 +601,7 @@ async function translateEventText(threadTitle: string, threadText: string): Prom
           { role: "system", content: system },
           { role: "user", content: "Event title: " + threadTitle + "\n\nOfficial text:\n" + String(threadText || "").slice(0, 4000) },
         ],
-        max_tokens: 1200,
+        max_tokens: 2000,
         temperature: 0.4,
       }),
       signal: AbortSignal.timeout(45000),

@@ -78,9 +78,11 @@ function difficultyKey(ribbon: Ribbon): string {
   const raw = `${text(ribbon.category, "")} ${text(ribbon.category_label_en, "")} ${text(ribbon.category_label_ar, "")}`.toLowerCase();
   const paid = text((ribbon as AnyRecord).paid_requirement, "none").toLowerCase();
   const itemBlob = `${text(ribbon.name_en || ribbon.name, "")} ${text((ribbon as AnyRecord).description_en || "", "")} ${raw}`.toLowerCase();
-  // أي حاجة بتتدفع بفلوس (ZP صريح، أو سلاح VIP، أو شخصية SPOP، أو Black Market) = بفلوس، مش مجرد تجميع
+  // أي حاجة بتتدفع بفلوس (ZP صريح، أو سلاح VIP، أو شخصية SPOP) = بفلوس، مش مجرد تجميع.
+  // ملاحظة: Black Market لوحده مش دليل دفع (في صناديق مجانية)، فبيتحسب بفلوس بس لو المصدر قايل إن الدفع مطلوب.
   if (paid === "explicit_zp_or_payment") return "zp";
-  if (itemBlob.includes("vip") || itemBlob.includes("spop") || itemBlob.includes("black market") || itemBlob.includes("blackmarket")) return "zp";
+  if (itemBlob.includes("vip") || itemBlob.includes("spop")) return "zp";
+  if ((itemBlob.includes("black market") || itemBlob.includes("blackmarket")) && paid !== "none") return "zp";
   if (raw.includes("easy")) return "easy";
   if (raw.includes("time") || raw.includes("grind") || raw.includes("وقت") || raw.includes("تجميع")) return "grind";
   if (raw.includes("skill") || raw.includes("aim") || raw.includes("مهارة") || raw.includes("تصويب")) return "skill";
@@ -485,6 +487,38 @@ function arabicTip(ribbon: Ribbon): string {
   return "اعمله على مهلك وتابع تقدمك من البروفايل.";
 }
 
+// ─── أسماء الآيتمات بالعربي (مع إبقاء الاسم الإنجليزي الأصلي) ───
+const ITEM_AR: Record<string, string> = {
+  "VIP weapon or VIP character": "سلاح VIP أو شخصية VIP",
+  "Weapon collections": "مجموعات أسلحة (Weapon Collections)",
+  "Permanent crate guns": "أسلحة صناديق دائمة",
+  "Permanent weapons": "أسلحة دائمة",
+  "Permanent pink weapons": "أسلحة وردية دائمة",
+  "HellFire / Flame / Flameforged / Magma / Phoenix / Volcano weapons": "أسلحة نارية (HellFire / Flame / Magma / Phoenix / Volcano)",
+  "Toy Soldier collection weapons": "أسلحة مجموعة Toy Soldier",
+  "Thompson": "تومسون (Thompson)",
+  "Winchester": "وينشستر (Winchester)",
+  "Winchester Scope": "سكوب الوينشستر (Winchester Scope)",
+  "Permanent Shotguns": "شوتجن دائم",
+  "Navy SEALs": "النيفي سيلز (Navy SEALs)",
+  "M14 EBR": "ام 14 (M14 EBR)",
+  "MK.23 Socom": "مسدس MK.23 Socom",
+  "MK.23": "مسدس MK.23",
+  "SPOP": "شخصية SPOP",
+  "Grenade": "قنبلة عادية (Grenade)",
+  "Flashbang": "قنبلة فلاش (Flashbang)",
+  "Smoke Grenade": "قنبلة دخانية (Smoke Grenade)",
+  "Permanent Halloween weapon": "سلاح هالووين دائم",
+  "Permanent Christmas weapon": "سلاح كريسماس دائم",
+  "Revive Token": "توكن الإحياء (Revive Token)",
+};
+
+function itemName(item: AnyRecord, arabic: boolean): string {
+  const en = text(item.item_name_en, arabic ? "آيتم" : "Item");
+  if (!arabic) return en;
+  return ITEM_AR[en] || text(item.item_name_ar, en);
+}
+
 function searchBlob(ribbon: Ribbon) { return JSON.stringify(ribbon).toLowerCase(); }
 
 function RibbonImage({ ribbon, arabic = true }: { ribbon: Ribbon; arabic?: boolean }) {
@@ -594,13 +628,13 @@ function RibbonDetails({ ribbon, arabic }: { ribbon: Ribbon; arabic: boolean }) 
             <div className="grid gap-3 sm:grid-cols-2">
               {requiredItems.map((item: AnyRecord, index: number) => (
                 <div key={index} className="p-3" style={{ border: `1px solid ${BORDER}`, background: "rgba(255,255,255,0.03)" }}>
-                  <p className="font-bold text-white">{text(arabic ? (item.item_name_ar || item.item_name_en) : (item.item_name_en || item.item_name_ar), arabic ? "آيتم" : "Item")}</p>
+                  <p className="font-bold text-white">{itemName(item, arabic)}</p>
                   {(item.item_note_ar || item.item_note_en || item.availability_note_ar || item.availability_note_en) && (
                     <p className="mt-2 text-sm leading-6 text-slate-300" dir={arabic ? "rtl" : "ltr"}>
                       {arabic ? toRibbonWords(text(item.item_note_ar || item.availability_note_ar || item.item_note_en)) : text(item.item_note_en || item.availability_note_en)}
                     </p>
                   )}
-                  {(item.image_url || ribbon.image_url) && <img src={item.image_url || ribbon.image_url} alt={text(arabic ? (item.item_name_ar || item.item_name_en) : (item.item_name_en || item.item_name_ar), "Required item")} loading="lazy" className="mt-3 h-24 w-full object-contain" />}
+                  {(item.image_url || ribbon.image_url) && <img src={item.image_url || ribbon.image_url} alt={itemName(item, false)} loading="lazy" className="mt-3 h-24 w-full object-contain" />}
                 </div>
               ))}
             </div>

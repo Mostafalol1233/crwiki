@@ -66,60 +66,15 @@ function getMercVoiceLines(merc: Mercenary): string[] {
 
 // VIP character ability data (frontend-side, shown in modal)
 const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: string }> = {
-  wolf: {
-    ability: "Shadow Step",
-    abilityAr: "خطوة الظل",
-    descAr: "ضابط قوات خاصة بريطانية ومتخصص في العمليات السرية. قدرته الخارقة في التسلل بتخليه يتحرك بدون ما يعمل أي صوت — يظهر ويختفي زي الوهم. لو حسيت إن في حاجة بتتحرك في الضلمة.. على الأغلب هو.",
-  },
   vipers: {
     ability: "Cobra Rush",
     abilityAr: "هجمة الكوبرا",
     descAr: "فريق نسائي نخبة من الكوماندو الأمريكي. بيشتغلوا كفريق واحد وسرعتهم في التغلغل مش ليها مثيل — لو شفتيهم، الوقت بيبقى فات. هجمتهم مفاجئة وسريعة زي الكوبرا بالظبط.",
   },
-  viper: {
-    ability: "Cobra Rush",
-    abilityAr: "هجمة الكوبرا",
-    descAr: "فريق نسائي نخبة من الكوماندو الأمريكي. بيشتغلوا كفريق واحد وسرعتهم في التغلغل مش ليها مثيل — خطوة واحدة غلط وخلصت.",
-  },
-  sisterhood: {
-    ability: "Iron Bond",
-    abilityAr: "رابطة الحديد",
-    descAr: "مجموعة محاربات متخصصات في الحرب الإلكترونية والتكتيك الميداني. قوتهم في التعاون — لما بيكونوا مع بعض، بيبقوا أقوى من أي فريق تاني. الرابط بينهم أقوى من الحديد نفسه.",
-  },
-  "black mamba": {
-    ability: "Lethal Precision",
-    abilityAr: "دقة قاتلة",
-    descAr: "قناص محترف مشهور بدقة تصويبه الخارقة. بيقدر يصيب أهداف على مسافات بعيدة جداً من غير ما يُحس بيه حد — طلقة واحدة، نتيجة واحدة. مفيش مكان تهرب فيه لما بيحدد هدفه.",
-  },
-  "arch honorary": {
-    ability: "Battle Hardened",
-    abilityAr: "مُصلَّب بالمعارك",
-    descAr: "محارب محترف عنده خبرة واسعة في ميادين الحرب من حول العالم. جسمه اتعوّد على الضرب — بيتحمل أكتر من أي جندي عادي. المعارك اللي اتعوم فيها خلّته الأصعب في الميدان.",
-  },
-  desperado: {
-    ability: "Wild Card",
-    abilityAr: "الورقة المجهولة",
-    descAr: "محارب شرير خبير في القتال الميداني — مش بيتبع قواعد ومش بيتوقع أحد حركته. هجماته مفاجئة ومحسوبش على أي حسابات. لو فكرت إنك عرفت خطته، معناه إنه غيّرها.",
-  },
-  ronin: {
-    ability: "Blade Mastery",
-    abilityAr: "إتقان السيف",
-    descAr: "سامورائي ياباني قديم انقطع صلته بسيده. متخصص في القتال بالسلاح الأبيض والسكين — سريع وميت في نفس الوقت. السيف في إيده مش بس سلاح، ده جزء منه.",
-  },
   dean: {
     ability: "Tactical Intel",
     abilityAr: "الذكاء التكتيكي",
     descAr: "عميل SIA نخبة مدرب على أعلى مستوى. متخصص في جمع المعلومات الاستخباراتية والتخطيط للعمليات السرية — دايماً خطوة قدام الخصم. مش بيتحرك غير لما بيبقى عنده الصورة كاملة.",
-  },
-  thoth: {
-    ability: "Ancient Wisdom",
-    abilityAr: "حكمة الأجداد",
-    descAr: "مقاتل مصري مستلهم من الإله ثوت. عنده معرفة واسعة بالأسلحة القديمة والحديثة — هجماته محسوبة وذكية زي الألغاز المعمارية. حكمة آلاف السنين في جسم مقاتل واحد.",
-  },
-  sfg: {
-    ability: "Coordinated Strike",
-    abilityAr: "الضربة المنسقة",
-    descAr: "مجموعة القوات الخاصة — فريق منسق بيشتغل كوحدة واحدة. قوتهم في التناسق الكامل وتنفيذ الخطط الهجومية بدقة جراحية. لما بيهاجموا، المكان بيخلص في ثواني.",
   },
   ghost: {
     ability: "Phantom Step",
@@ -131,20 +86,10 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     abilityAr: "النشر الفوري",
     descAr: "مقاتلة متخصصة في العمليات الميدانية وجمع المعلومات السريعة. خفيفة الحركة وذكية في التعامل مع المواقف الصعبة. بتوصل للهدف قبل ما أي حد يحس بيها.",
   },
-  valoria: {
-    ability: "Command Presence",
-    abilityAr: "حضور القيادة",
-    descAr: "ضابطة نخبة من وحدات التدخل السريع. معروفة بقدرتها الاستثنائية على قيادة الفريق تحت أشد ظروف الضغط. لما بتتكلم، الكل بيسمع ومفيش حد بيتأخر.",
-  },
   arabella: {
     ability: "Shadow Infiltrate",
     abilityAr: "التسلل الخفي",
     descAr: "عميلة مزدوجة خبيرة في الاستخبارات والتجسس. بتستخدم ذكاءها الحاد قبل القوة في كل مهمة — الأخطر مش دايماً الأعلى صوتاً. ادخلت ألف مكان وطلعت من غير ما حد يحس.",
-  },
-  "subject alpha": {
-    ability: "Enhanced Reflexes",
-    abilityAr: "ردود أفعال محسّنة",
-    descAr: "جندي تجريبي خضع لتحسينات بيولوجية متقدمة. قدراته الجسدية فوق الطبيعية بتخليه تهديد من مستوى آخر — مش إنسان عادي. التجارب اللي اتعمل عليها خلّته أسرع وأقوى من أي جندي تاني.",
   },
   crusherz: {
     ability: "Brute Force",
@@ -207,58 +152,93 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     abilityAr: "شحنة الجحيم",
     descAr: "بليز هو مقاتل النيران والتدمير — كل حاجة بيلمسها بتتحول لنار. متخصص في تطهير المواقع بالنيران والتغطية الكثيفة. دخل معركة واحدة معاه وهتعرف ليه اسمه بليز.",
   },
+  verdandi: {
+    ability: "Scorched Earth",
+    abilityAr: "الأرض المحروقة",
+    descAr: "في الزومبي بتشغل رشاشين وبتضرب طلقة متفجرة بعد عدد معين من الذخيرة، مع هيل وتقليل ضرر وذخيرة لا نهائية للفريق. ومعاها لكمة Smash السريعة و200% EXP. شخصية VIP رسمية في الغرب.",
+  },
+  melody: {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "محبوبة فريق Heart Shot — مرحة وبتضحك بس غدارتها قاتلة: لو غفلت عنها ثانية بتديك ضربة قلبية قبل ما تفهم حاجة. شخصية VIP رسمية في نسخة الغرب.",
+  },
+  paola: {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "مرتزقة خطيرة كسبت سمعتها في الشوارع وطلعت الرتب بدراعها. شخصية VIP رسمية في نسخة الغرب.",
+  },
+  roxy: {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "مجموعة مرتزقة أنيقة بالتاتو — مش بس شكل، ثقتهم بنفسهم بتسيطر على الميدان وبتوتر اللي قدامهم. شخصية VIP رسمية في نسخة الغرب.",
+  },
+  aceson: {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "مرتزق متنكر في صورة لاعب esports محترف — البطولات غطاء وهو بيدير العمليات بدقة تكتيكية في المنافسة والمعركة. شخصية VIP رسمية في نسخة الغرب.",
+  },
+  trinity: {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "عضوة مجموعة Trinity النخبة — شخصية VIP رسمية في نسخة الغرب من اللعبة.",
+  },
+  "trinity-veteran": {
+    ability: "VIP Character",
+    abilityAr: "شخصية VIP",
+    descAr: "نسخة المحاربة القديمة من مجموعة Trinity — خبرة ميدانية أعلى وشخصية VIP رسمية في نسخة الغرب.",
+  },
   titan: {
     ability: "Unstoppable Force",
     abilityAr: "القوة التي لا تُوقف",
     descAr: "تيتان هو الأضخم والأثقل والأقوى في قوات النخبة — مش بيتوقف ومش بيحس بالخوف. بيمشي في وسط النار وبيحمي الفريق ويكسر الدفاعات. ما في حاجة بتوقفه لما بيقرر يتقدم.",
   },
   // ─── West VIP Characters (real skills from CrossFire) ─────────────────────
-  "the fates": {
+  viper: {
     ability: "Furious Kick",
     abilityAr: "الركلة الغاضبة",
-    descAr: "أول شخصيات VIP في كروس فاير — 3 أخوات (هجوم ودفاع وطور الزومبي). ركلتها الغاضبة بزر E بتطير اللي قدامها، ومعاها سكاكين رمي وسرعة حركة أعلى في الزومبي والميوتنت، ده غير 200% EXP ليها.",
+    descAr: "أول شخصيات VIP في كروس فاير — 3 أخوات (هجوم ودفاع وطور الزومبي). ركلتها الغاضبة بزر E بتطير اللي قدامها، ومعاها سكاكين رمي وسرعة حركة أعلى في الزومبي والميوتنت، ده غير 200% EXP ليها. (الاسم الأصلي: The Fates)",
   },
   switcher: {
     ability: "Throwing Knife",
     abilityAr: "السكاكين الطائرة",
     descAr: "متخصصة السكاكين — بترمي 3 سكاكين في 3 اتجاهات مرة واحدة في الزومبي والميوتنت. ده غير تقليل ضرر الوقوع والمناعة ضد قنابل الفريق. في الغرب بتتجاب بحوالي 80,000 ZP.",
   },
-  nymphs: {
+  florence: {
     ability: "Dual Daphne Saber",
     abilityAr: "سيفا دافني",
-    descAr: "ساحرة السيوف المزدوجة — بتطلع سيفين في الزومبي وموجاتها الصوتية بتعدي من الزومبي والبوس. ومهارة Bless بتعمل هيل لنفسها وذخيرة لا نهائية للفريق 10 ثواني.",
+    descAr: "ساحرة السيوف المزدوجة — بتطلع سيفين في الزومبي وموجاتها الصوتية بتعدي من الزومبي والبوس. ومهارة Bless بتعمل هيل لنفسها وذخيرة لا نهائية للفريق 10 ثواني. (الاسم الأصلي: Nymphs)",
   },
-  ultimatum: {
+  dahlia: {
     ability: "Dash",
     abilityAr: "الاندفاع",
-    descAr: "بتندفع لقدام 3 مرات ورا بعض بزر E في الزومبي — هروب أو هجوم مفاجئ. ومعاها هجوم الورود اللي بترميه على الأعداء، وتقليل ضرر الوقوع ومناعة قنابل الفريق.",
+    descAr: "بتندفع لقدام 3 مرات ورا بعض بزر E في الزومبي — هروب أو هجوم مفاجئ. ومعاها هجوم الورود اللي بترميه على الأعداء، وتقليل ضرر الوقوع ومناعة قنابل الفريق. (الاسم الأصلي: Ultimatum)",
   },
-  desperado: {
+  annie: {
     ability: "Hunter's Mark",
     abilityAr: "علامة الصياد",
-    descAr: "صيادة الميوتانت — اللي تقتله بيتعلم عليه بعلامة حمرا باينة من ورا الحيطة وبياخد ضرر زيادة 10%. ومعاها Energy Blast في الزومبي وسكاكين رمي.",
+    descAr: "صيادة الميوتانت — اللي تقتله بيتعلم عليه بعلامة حمرا باينة من ورا الحيطة وبياخد ضرر زيادة 10%. ومعاها Energy Blast في الزومبي وسكاكين رمي. (الاسم الأصلي: Desperado)",
   },
-  roxana: {
+  seraphina: {
     ability: "Angelic / Demonic Awakening",
     abilityAr: "استيقاظ الملاك والشيطان",
-    descAr: "شخصية Infinity — بتتحول بين هيئة الملاك (هيل 50 لكل الفريق) وهيئة الشيطان (انفجار شامل بيدمر كل حاجة وفرصة قتل فوري). ومعاها Bless و300% EXP. من أقوى شخصيات الزومبي.",
+    descAr: "شخصية Infinity — بتتحول بين هيئة الملاك (هيل 50 لكل الفريق) وهيئة الشيطان (انفجار شامل بيدمر كل حاجة وفرصة قتل فوري). ومعاها Bless و300% EXP. من أقوى شخصيات الزومبي. (الاسم الأصلي: Roxana)",
   },
-  gunslinger: {
+  jessie: {
     ability: "Wild Shot Awakening",
     abilityAr: "الطلقة البرية",
-    descAr: "راعية البقر — في الزومبي بتلف مسدساتها وتضرب وهي بتتحرك وبترمي قنابل متفجرة، مع هيل وذخيرة لا نهائية للفريق. وفي البحث والتدمير بتزرع C4-Dynamite أسرع وبتعرف توقيت انفجاره بالظبط.",
+    descAr: "راعية البقر — في الزومبي بتلف مسدساتها وتضرب وهي بتتحرك وبترمي قنابل متفجرة، مع هيل وذخيرة لا نهائية للفريق. وفي البحث والتدمير بتزرع C4-Dynamite أسرع وبتعرف توقيت انفجاره بالظبط. (الاسم الأصلي: Gunslinger)",
   },
   "esports yun": {
     ability: "Furious Kick",
     abilityAr: "الركلة الغاضبة",
     descAr: "شخصية بطولات الرياضات الإلكترونية — ركلتها الغاضبة بزر E، ومعاها درع القنابل اللي بيقلل تأثير صوت الانفجار واهتزاز الأرض. ثابتة وسريعة في كل الأطوار.",
   },
-  "wu mengmeng": {
+  miranda: {
     ability: "Extended Combo Time",
     abilityAr: "تمديد الكومبو",
-    descAr: "بتديك وقت أطول للكومبو — عداد القتل المتتالي مبيخلصش بسرعة وبتشوفه بنجمة تحت الشاشة. ومعاها الركلة الغاضبة. ممتازة للي بيجمع كيلات ورا بعض.",
+    descAr: "بتديك وقت أطول للكومبو — عداد القتل المتتالي مبيخلصش بسرعة وبتشوفه بنجمة تحت الشاشة. ومعاها الركلة الغاضبة. ممتازة للي بيجمع كيلات ورا بعض. (الاسم الأصلي: Wu Mengmeng)",
   },
-  "nymphs-gungirl": {
+  valoria: {
     ability: "Explosion of Bless",
     abilityAr: "انفجار البركة",
     descAr: "نسخة المدافع الرشاشة — انفجار شامل حواليها بزر E مع هيل وذخيرة لا نهائية وسرعة للفريق كله 10 ثواني. ومعاها الركلة الغاضبة.",
@@ -268,10 +248,10 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     abilityAr: "تمديد الكومبو",
     descAr: "كومبو ممتد + كل 100 ضرر بتاخد بونص EXP بقد kill. ومعاها انفجار البركة في الزومبي، وFlash Guard ضد العمى، وتقليل ضرر الوقوع، ومناعة قنابل الفريق — باكدج متكاملة.",
   },
-  wolf: {
+  lexy: {
     ability: "Ally Sight",
     abilityAr: "رؤية الحلفاء",
-    descAr: "بتشوف زمايلك من ورا الحيطة لحد 50 متر في البحث والتدمير — مفيش حد بيضيع منك. ومعاها Energy Blast في الزومبي واحتفالات النصر بزر N.",
+    descAr: "بتشوف زمايلك من ورا الحيطة لحد 50 متر في البحث والتدمير — مفيش حد بيضيع منك. ومعاها Energy Blast في الزومبي واحتفالات النصر بزر N. (الاسم الأصلي: WoLF)",
   },
   "girl crush": {
     ability: "Random Ability",
@@ -283,31 +263,104 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     abilityAr: "سيف الموجة",
     descAr: "سيف الموجة الصدمية — لما يتشحن بترمي كرة نار بتنفجر 5 مرات في الزومبي. ومعاها الركلة والسكاكين، وبتوزع Mileage Points عليك وعلى اللي في الأوضة.",
   },
-  "serpent exorcist": {
+  corinne: {
     ability: "Nano Sixth Sense",
     abilityAr: "الحاسة السادسة",
-    descAr: "طاردة الأرواح — بتحس بالميوتنت لحد 20 متر وبتسمع صوت إنذار لو متنكر قريب منك. وكل ما تضربهم قوتك النارية بتزيد لحد 10%. ومعاها تعويذة بتشل الميوتانت نص ثانية و300% EXP في الميوتنت.",
+    descAr: "طاردة الأرواح — بتحس بالميوتنت لحد 20 متر وبتسمع صوت إنذار لو متنكر قريب منك. وكل ما تضربهم قوتك النارية بتزيد لحد 10%. ومعاها تعويذة بتشل الميوتانت نص ثانية و300% EXP في الميوتنت. (الاسم الأصلي: Serpent Exorcist)",
   },
-  "jon-future": {
+  "jtf-expert": {
     ability: "Explosive Expert",
     abilityAr: "خبيرة المتفجرات",
-    descAr: "نسخة المستقبل — بتزرع C4-Beacon بدل العادية وبتفك أسرع، وبتعرف توقيت الانفجار بالظبط. ومعاها درع كمي بيظهر وهي بتفك وسرعة أعلى وهي شايلة الـ C4.",
+    descAr: "نسخة المستقبل — بتزرع C4-Beacon بدل العادية وبتفك أسرع، وبتعرف توقيت الانفجار بالظبط. ومعاها درع كمي بيظهر وهي بتفك وسرعة أعلى وهي شايلة الـ C4. (الاسم الأصلي: JON-Future)",
   },
-  hawks: {
+  sparrow: {
     ability: "Headshot Hunter",
     abilityAr: "صياد الهيدشوت",
-    descAr: "في الزومبي كل ثانية بتاخد فرصة هيدشوت — أي رصاصة بتتحسب هيدشوت بضرر 100، مع ذخيرة لا نهائية وسرعة للفريق. ومعاها Sniper Master: طلقة زيادة للمسدسات وطلقتين للقناصات.",
+    descAr: "في الزومبي كل ثانية بتاخد فرصة هيدشوت — أي رصاصة بتتحسب هيدشوت بضرر 100، مع ذخيرة لا نهائية وسرعة للفريق. ومعاها Sniper Master: طلقة زيادة للمسدسات وطلقتين للقناصات. (الاسم الأصلي: Hawks)",
   },
-  urd: {
+  "urðr": {
     ability: "Nano Camouflage",
     abilityAr: "التمويه النانوي",
-    descAr: "شخصية Infinity — بتتخفى 10 ثواني في الميوتنت (Ctrl+F) وبتسترجع ذخيرة أو هيل كل ثانية. ومعاها علامة الصياد وسيف الطاقة اللي بيطلع موجة ضررها 1000 في الزومبي. و300% EXP.",
+    descAr: "شخصية Infinity — بتتخفى 10 ثواني في الميوتنت (Ctrl+F) وبتسترجع ذخيرة أو هيل كل ثانية. ومعاها علامة الصياد وسيف الطاقة اللي بيطلع موجة ضررها 1000 في الزومبي. و300% EXP. (الاسم الأصلي: Urd)",
   },
   alexandrina: {
     ability: "Raging Bullet",
     abilityAr: "الرصاصة الهائجة",
     descAr: "شخصية Infinity — في الزومبي بتمسك Barrett وحش وبتضرب 3 رصاصات مدمرة مع منطقة نار تحتها، وهيل وتقليل ضرر وذخيرة لا نهائية للفريق. وفي البحث والتدمير C4-Music Box أسرع. و300% EXP.",
   },
+};
+
+// ─── West roster + skill previews ───────────────────────────────────────────
+// WEST_ONLY: official CrossFire West characters (default filter). Anything not
+// listed here still shows when the West filter is turned off.
+const WEST_ONLY: Record<string, boolean> = {
+  dean: true, holly: true, magnolia: true, vipers: true, crusherz: true,
+  gigi: true, valoria: true, arabella: true, trixy: true, ghost: true,
+  viper: true, switcher: true, florence: true, dahlia: true, annie: true,
+  seraphina: true, jessie: true, "esports yun": true, miranda: true,
+  sicarios: true, lexy: true, "girl crush": true, ronin: true, corinne: true,
+  sparrow: true, "jtf-expert": true, "urðr": true, melody: true, paola: true,
+  roxy: true, aceson: true, trinity: true, "trinity-veteran": true, verdandi: true,
+};
+
+function isWestChar(name: string): boolean {
+  return !!WEST_ONLY[String(name || "").toLowerCase().trim()];
+}
+
+// Arabic skill names for the modal skill cards
+const SKILL_AR: Record<string, string> = {
+  "Furious Kick": "الركلة الغاضبة", "Throwing Knife": "السكاكين الطائرة",
+  "Energy Blast": "انفجار الطاقة", "Explosion of Bless": "انفجار البركة",
+  "Bless": "البركة", "Ally Sight": "رؤية الحلفاء", "Quick Escape": "الهروب السريع",
+  "Upward Kick": "الركلة العلوية", "Smash": "اللكمة السريعة", "Dash": "الاندفاع",
+  "Hunter's Mark": "علامة الصياد", "Nano Camouflage": "التمويه النانوي",
+  "Wild Shot": "الطلقة البرية", "Dual Daphne Saber": "سيفا دافني",
+  "Shockwave Sword": "سيف الموجة", "Sealing Talisman": "التعويذة الخاتمة",
+  "Energy Absorb": "امتصاص الطاقة", "Nano Sixth Sense": "الحاسة السادسة",
+  "Headshot Hunter": "صياد الهيدشوت", "Sniper Master": "سيد القناصات",
+  "Extended Combo Time": "تمديد الكومبو", "Grenade Shield": "درع القنابل",
+  "Flash Guard": "الحماية من العمى", "Quick Planting": "زرع وفك سريع",
+  "C4 Timer": "مؤقت C4", "Explosive Expert": "خبير المتفجرات",
+  "Danger Express": "سرعة الـ C4", "Emotion": "التعبيرات",
+  "Shapeshifter": "التحول", "Hidden Weapon": "السلاح الخفي",
+  "Flower Attack": "هجوم الورود", "Mileage": "نقاط Mileage",
+  "Damage EXP Bonus": "بونص EXP للضرر", "Awakening": "الاستيقاظ",
+  "Random Ability": "قدرة عشوائية",
+};
+
+// Verified wiki preview images for signature skills (others show text only)
+const SKILL_ICONS: Record<string, string> = {
+  "Furious Kick": "https://static.wikia.nocookie.net/crossfirefps/images/0/03/Furious_Kick_Female.png/revision/latest?cb=20180419093230",
+  "Dash": "https://static.wikia.nocookie.net/crossfirefps/images/5/55/Dash.png/revision/latest?cb=20190119050458",
+  "Hunter's Mark": "https://static.wikia.nocookie.net/crossfirefps/images/4/40/HunterMarkedEffect.png/revision/latest?cb=20190224135704",
+  "Shockwave Sword": "https://static.wikia.nocookie.net/crossfirefps/images/a/a2/Shockwave_Sword.png/revision/latest?cb=20211114114335",
+  "Mileage": "https://static.wikia.nocookie.net/crossfirefps/images/c/cc/Mileage.png/revision/latest?cb=20170407143103",
+};
+
+// Signature skills per West character (modal cards)
+const VIP_SKILLS: Record<string, string[]> = {
+  viper: ["Furious Kick", "Throwing Knife"],
+  jessie: ["Wild Shot", "Explosive Expert", "Quick Planting"],
+  annie: ["Hunter's Mark", "Throwing Knife", "Energy Blast"],
+  lexy: ["Ally Sight", "Energy Blast"],
+  magnolia: ["Energy Blast", "Quick Escape", "Upward Kick"],
+  holly: ["Energy Blast", "Grenade Shield", "Furious Kick"],
+  trixy: ["Shapeshifter", "Furious Kick", "Throwing Knife"],
+  florence: ["Dual Daphne Saber", "Bless", "Furious Kick"],
+  dahlia: ["Dash", "Flower Attack", "Throwing Knife"],
+  ronin: ["Shockwave Sword", "Furious Kick", "Throwing Knife"],
+  miranda: ["Extended Combo Time", "Furious Kick"],
+  corinne: ["Nano Sixth Sense", "Energy Absorb", "Sealing Talisman"],
+  sparrow: ["Headshot Hunter", "Sniper Master", "Furious Kick"],
+  "jtf-expert": ["Explosive Expert", "C4 Timer", "Danger Express"],
+  valoria: ["Explosion of Bless", "Furious Kick"],
+  "urðr": ["Nano Camouflage", "Hunter's Mark", "Hidden Weapon"],
+  seraphina: ["Awakening", "Bless"],
+  switcher: ["Furious Kick", "Throwing Knife"],
+  "esports yun": ["Furious Kick", "Grenade Shield"],
+  "girl crush": ["Random Ability", "Furious Kick", "Throwing Knife"],
+  sicarios: ["Extended Combo Time", "Explosion of Bless", "Damage EXP Bonus"],
+  verdandi: ["Awakening", "Smash"],
 };
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -339,6 +392,7 @@ export default function Mercenaries() {
   const { t } = useLanguage();
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
   const [layoutStyle, setLayoutStyle] = useState<"strip" | "grid">("grid");
+  const [westOnly, setWestOnly] = useState(true);
   const [expandedMercId, setExpandedMercId] = useState<string | null>(null);
   const [selectedMerc, setSelectedMerc] = useState<Mercenary | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -355,6 +409,9 @@ export default function Mercenaries() {
     ...m,
     voiceLines: getMercVoiceLines(m),
   }));
+
+  // West-only is the default view; turn it off to see every version
+  const visibleMercs = westOnly ? mercenaries.filter((m) => isWestChar(m.name)) : mercenaries;
 
   const playRandomSound = (mercId: string, voiceLines?: string[]) => {
     if (!voiceLines || voiceLines.length === 0) return;
@@ -443,7 +500,7 @@ export default function Mercenaries() {
                 {t("mercenaries") || "Mercenaries"}
               </h1>
               <p className="text-sm mt-1.5" style={{ color: "#666" }}>
-                {mercenaries.length} operatives — {layoutStyle === "grid" ? "click any card to view details" : "hover to preview, click to expand"}
+                {visibleMercs.length} / {mercenaries.length} operatives — {layoutStyle === "grid" ? "click any card to view details" : "hover to preview, click to expand"}
               </p>
             </div>
 
@@ -468,6 +525,24 @@ export default function Mercenaries() {
                 </button>
               </div>
               <button
+                title="Show West characters only"
+                onClick={() => setWestOnly((v) => !v)}
+                className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all"
+                style={{ background: westOnly ? "#f5a623" : "var(--card)", color: westOnly ? "#000" : "#666", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                {westOnly ? "West Only ✓" : "All Versions"}
+              </button>
+              {!westOnly && (
+                <button
+                  title="Reset to West only"
+                  onClick={() => setWestOnly(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all"
+                  style={{ background: "var(--card)", color: "#f5a623", border: "1px solid rgba(245,166,35,0.35)" }}
+                >
+                  Reset: West
+                </button>
+              )}
+              <button
                 title="Stop all audio (Esc / Space)"
                 onClick={stopAllAudio}
                 className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all"
@@ -484,7 +559,7 @@ export default function Mercenaries() {
               className="flex overflow-x-auto w-full cf-merc-strip"
               style={{ height: "480px", background: "hsl(var(--background))", border: "1px solid rgba(245,166,35,0.12)", borderRadius: "4px" }}
             >
-              {mercenaries.map((merc) => {
+              {visibleMercs.map((merc) => {
                 const voiceLines = merc.voiceLines || [];
                 const roleStyle = getRoleStyle(merc.role || "");
                 const isExpanded = expandedMercId === merc.id;
@@ -546,7 +621,7 @@ export default function Mercenaries() {
           ) : (
             /* ── GRID LAYOUT ── */
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {mercenaries.map((merc) => {
+              {visibleMercs.map((merc) => {
                 const voiceLines = merc.voiceLines || [];
                 const roleStyle = getRoleStyle(merc.role || "");
                 return (
@@ -648,6 +723,32 @@ export default function Mercenaries() {
                 ) : selectedMerc.description ? (
                   <p className="text-sm leading-relaxed mb-4" style={{ color: "#888" }}>{selectedMerc.description}</p>
                 ) : null;
+              })()}
+
+              {(() => {
+                const key = selectedMerc.name.toLowerCase().trim();
+                const skills = VIP_SKILLS[key] || [];
+                if (!skills.length) return null;
+                return (
+                  <div className="mb-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#f5a623" }}>Signature Skills · المهارات</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {skills.map((sk) => (
+                        <div key={sk} className="flex items-center gap-3 p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 3 }}>
+                          {SKILL_ICONS[sk] ? (
+                            <img src={SKILL_ICONS[sk]} alt={sk} loading="lazy" className="h-11 w-11 object-contain flex-shrink-0" style={{ background: "#000", borderRadius: 2 }} />
+                          ) : (
+                            <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: "#f5a623" }} />
+                          )}
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-bold" style={{ color: "#fff", fontFamily: "'Noto Sans Arabic', sans-serif" }}>{SKILL_AR[sk] || sk}</div>
+                            <div className="text-[10px]" style={{ color: "#666" }}>{sk}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
               })()}
 
               {/* Voice lines list */}

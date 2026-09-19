@@ -10,6 +10,7 @@ interface PageSEOProps {
   image?: string;
   schemaType?: string;
   schemaData?: Record<string, any>;
+  breadcrumbs?: Array<{ name: string; url: string }>;
   noindex?: boolean;
 }
 
@@ -25,6 +26,7 @@ export function PageSEO({
   image,
   schemaType,
   schemaData,
+  breadcrumbs,
   noindex = false,
 }: PageSEOProps) {
   const envBase = (import.meta as any).env?.VITE_PUBLIC_BASE_URL || '';
@@ -47,10 +49,11 @@ export function PageSEO({
       twitterImage={image}
       ogTitle={title}
       ogDescription={description}
-      ogType={schemaType ? "article" : "website"}
+      ogType={schemaType && ["Article", "NewsArticle", "BlogPosting"].includes(schemaType) ? "article" : "website"}
       ogUrl={canonicalUrl}
       schemaType={schemaType}
       schemaData={schemaData}
+      breadcrumbs={breadcrumbs}
       noindex={noindex}
     />
   );

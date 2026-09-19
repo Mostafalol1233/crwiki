@@ -515,10 +515,22 @@ export default function Mercenaries() {
   return (
     <>
       <PageSEO
-        title="CrossFire Mercenaries — Characters, Roles & Voice Lines | CrossFire Wiki"
-        description="Browse all CrossFire mercenaries with roles, abilities, voice lines and detailed profiles. Discover Wolf, Sisterhood, Black Mamba, Desperado and more."
+        title="CrossFire Mercenaries — Characters, Roles, Abilities & Voice Lines | CrossFire Wiki"
+        description="Browse all 65 CrossFire mercenaries and VIP characters with roles, abilities and voice lines. Listen to character voices, explore skills like Furious Kick, Energy Blast, Hunter's Mark and more. West characters shown by default."
+        keywords={["CrossFire mercenaries", "CrossFire characters", "CrossFire voice lines", "CrossFire VIP characters", "CrossFire character voices", "CrossFire wiki"]}
         image="https://z8games.akamaized.net/cfna/templates/assets/images/feature-cf-left.jpg"
         canonicalPath="/mercenaries"
+        schemaType="CollectionPage"
+        schemaData={{
+          "@type": "CollectionPage",
+          name: "CrossFire Mercenaries",
+          description: "All CrossFire mercenaries and VIP characters with roles, abilities and voice lines.",
+          isPartOf: { "@id": "https://crossfire.wiki/#website" },
+        }}
+        breadcrumbs={[
+          { name: "Home", url: "https://crossfire.wiki/" },
+          { name: "Mercenaries", url: "https://crossfire.wiki/mercenaries" },
+        ]}
       />
 
       <div className="min-h-screen" style={{ background: "var(--background)" }}>

@@ -61,7 +61,7 @@ const adminClient = () => supabase;
 async function fetchHighlights(): Promise<Highlight[]> {
   const response = await adminFetch<{ data?: any[] }>(ADMIN_TABLE_ENDPOINT, {
     method: 'POST',
-    body: JSON.stringify({ operation: 'list', page: 1, pageSize: 100 }),
+    body: JSON.stringify({ action: 'admin-table', type: 'highlights', operation: 'list', page: 1, pageSize: 100 }),
   });
   return (response.data || []).map((h: any) => ({
     ...h,
@@ -77,6 +77,8 @@ async function upsertHighlight(h: Partial<Highlight>): Promise<void> {
   await adminFetch(ADMIN_TABLE_ENDPOINT, {
     method: 'POST',
     body: JSON.stringify({
+      action: 'admin-table',
+      type: 'highlights',
       operation: id ? 'update' : 'create',
       ...(id ? { id } : {}),
       row: { ...h, ...(id ? {} : { sort_order: h.sort_order || Date.now() }) },
@@ -87,14 +89,14 @@ async function upsertHighlight(h: Partial<Highlight>): Promise<void> {
 async function deleteHighlight(id: string): Promise<void> {
   await adminFetch(ADMIN_TABLE_ENDPOINT, {
     method: 'POST',
-    body: JSON.stringify({ operation: 'delete', id }),
+    body: JSON.stringify({ action: 'admin-table', type: 'highlights', operation: 'delete', id }),
   });
 }
 
 async function importStatic(): Promise<void> {
   await Promise.all(STATIC_HIGHLIGHTS.map((row) => adminFetch(ADMIN_TABLE_ENDPOINT, {
     method: 'POST',
-    body: JSON.stringify({ operation: 'create', row }),
+    body: JSON.stringify({ action: 'admin-table', type: 'highlights', operation: 'create', row }),
   })));
 }
 

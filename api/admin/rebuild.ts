@@ -461,6 +461,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           tickets: "created_at.desc",
           ticket_messages: "created_at.asc",
           comments: "created_at.desc",
+          newsletter_subscribers: "created_at.desc",
           seller_reviews: "created_at.desc",
           maps: "name.asc",
           site_settings: "id.asc",

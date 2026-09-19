@@ -126,7 +126,9 @@ export async function getWeapons(opts: {
             const wantedQuery = String(q || '').trim().toLocaleLowerCase();
             const wantedLetter = String(letter || '').trim().toLocaleLowerCase();
             const wantedCategory = String(category || '').trim().toLocaleLowerCase();
-            return (!wantedQuery || name.includes(wantedQuery))
+            const queryTokens = wantedQuery ? wantedQuery.split(/\s+/).filter(Boolean) : [];
+            const matchesQuery = !wantedQuery || queryTokens.some(t => name.includes(t));
+            return matchesQuery
               && (!wantedLetter || name.startsWith(wantedLetter))
               && (!wantedCategory || String(w.category || '').trim().toLocaleLowerCase() === wantedCategory);
           })
@@ -169,7 +171,15 @@ export async function getWeapons(opts: {
     const result = await runSafeQuery(fallbackWeapons, async () => {
       let query = supabase.from('weapons').select('id,name,image_url,background_url,category,description,stats,acquisition_methods,acquisition_summary_ar,acquisition_summary_en,release_date,is_permanent,verification_status,source_url,source_type,last_verified_at,created_at', { count: 'exact' });
 
-      if (q) query = query.ilike('name', `%${q}%`);
+      if (q) {
+        const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+        if (tokens.length > 1) {
+          const orFilter = tokens.map(t => `name.ilike.%${t}%`).join(',');
+          query = query.or(orFilter);
+        } else {
+          query = query.ilike('name', `%${q}%`);
+        }
+      }
       if (letter) query = query.ilike('name', `${letter}%`);
       if (category) query = query.eq('category', category);
 
@@ -182,8 +192,9 @@ export async function getWeapons(opts: {
     return { items: await Promise.all(data.map(normalizeWeaponAsync)), total: result.count || data.length || 0, page, pageSize: effectivePageSize };
   } catch {
     const start = offset;
+    const qTokens = q ? String(q).toLowerCase().split(/\s+/).filter(Boolean) : [];
     const items = fallbackWeapons
-      .filter((weapon: any) => !q || String(weapon.name).toLowerCase().includes(q.toLowerCase()))
+      .filter((weapon: any) => !q || qTokens.some(t => String(weapon.name).toLowerCase().includes(t)))
       .filter((weapon: any) => !letter || String(weapon.name).toLowerCase().startsWith(letter.toLowerCase()))
       .filter((weapon: any) => !category || weapon.category === category)
       .slice(start, start + effectivePageSize)

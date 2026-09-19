@@ -138,7 +138,10 @@ function availabilityState(ribbon: Ribbon): AvailState {
   // "not_an_event" فيها كلمة event كجزء من النفي — لازم نستبعدها عشان الشغال دلوقتي ميتحسبش ايفنت
   const hasEventWord = blob.includes("event") && !blob.includes("not_an_event");
   const eventish = isEvent || blob.includes("window_closed") || blob.includes("specific") || blob.includes("limited") || hasEventWord;
-  if (eventish && isDatedOneTime(ribbon)) return "ended";
+  // العيلة المتكررة (Back to School رجع 2026 بعد 2014!) بتفضل محدودة حتى لو مكتوب عليها سنة قديمة.
+  // اللي بيخلص نهائي بس: نسخة سنة واحدة مؤكدة (one-time) أو ميزة موقوفة.
+  const isRecurringFamily = blob.includes("recurring");
+  if (eventish && isDatedOneTime(ribbon) && !isRecurringFamily) return "ended";
   if (blob.includes("subscri") || blob.includes("premium") || blob.includes("premium") || text((ribbon as AnyRecord).paid_requirement) === "explicit_zp_or_payment" && blob.includes("pass")) return "pass";
   if (blob.includes("window_closed") || hasEventWord || blob.includes("recurr") || blob.includes("annual") || blob.includes("seasonal") || blob.includes("rotating") || blob.includes("specific") || blob.includes("limited")) return "limited";
   if (blob.includes("condition_based") || blob.includes("not_an_event")) return "active";
@@ -413,7 +416,7 @@ function categorySteps(ribbon: Ribbon): string[] {
     case "special events":
       return [
         "الايفنتات المحدودة بتنزل مرة واحدة أو كل فترة من غير معاد ثابت.",
-        "لو الريبون مكتوب عليه سنة أو تاريخ معين يبقى بتاع النسخة دي ومش راجع — متضيعش وقتك تدور عليه.",
+        "لو الريبون مكتوب عليه سنة قديمة أوي، غالباً مش راجع بنفس الاسم — بس عيلة الايفنت نفسها (زي الكريسماس) بترجع كل سنة بريبون جديد، فتابع الموقع.",
         "لو من غير تاريخ تابع الموقع أول بأول عشان تلحقه لحظة ما يرجع.",
       ];
     case "cream of the crop":
@@ -517,6 +520,13 @@ function itemName(item: AnyRecord, arabic: boolean): string {
   const en = text(item.item_name_en, arabic ? "آيتم" : "Item");
   if (!arabic) return en;
   return ITEM_AR[en] || text(item.item_name_ar, en);
+}
+
+// صور الويكي بتدعم تصغير حقيقي من نفس الرابط (scale-to-width-down) — srcset حقيقي مش منظر
+function wikiaSrcSet(url: string): string | undefined {
+  const m = String(url || "").match(/^(https:\/\/static\.wikia\.nocookie\.net\/.*\/revision\/)latest(\?.*)?$/);
+  if (!m) return undefined;
+  return `${m[1]}latest/scale-to-width-down/300${m[2] || ""} 300w, ${m[1]}latest/scale-to-width-down/600${m[2] || ""} 600w`;
 }
 
 function searchBlob(ribbon: Ribbon) { return JSON.stringify(ribbon).toLowerCase(); }
@@ -634,7 +644,7 @@ function RibbonDetails({ ribbon, arabic }: { ribbon: Ribbon; arabic: boolean }) 
                       {arabic ? toRibbonWords(text(item.item_note_ar || item.availability_note_ar || item.item_note_en)) : text(item.item_note_en || item.availability_note_en)}
                     </p>
                   )}
-                  {(item.image_url || ribbon.image_url) && <img src={item.image_url || ribbon.image_url} alt={itemName(item, false)} loading="lazy" className="mt-3 h-24 w-full object-contain" />}
+                  {(item.image_url || ribbon.image_url) && <img src={item.image_url || ribbon.image_url} srcSet={wikiaSrcSet(String(item.image_url || ribbon.image_url))} sizes="200px" alt={itemName(item, false)} loading="lazy" decoding="async" className="mt-3 h-24 w-full object-contain" />}
                 </div>
               ))}
             </div>

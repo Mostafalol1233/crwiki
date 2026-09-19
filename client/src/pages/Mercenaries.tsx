@@ -303,6 +303,13 @@ const WEST_ONLY: Record<string, boolean> = {
   roxy: true, aceson: true, trinity: true, "trinity-veteran": true, verdandi: true,
 };
 
+// صور الويكي بتدعم تصغير حقيقي من نفس الرابط (scale-to-width-down) — srcset حقيقي مش منظر
+function wikiaThumbSrcSet(url: string): string | undefined {
+  const m = String(url || "").match(/^(https:\/\/static\.wikia\.nocookie\.net\/.*\/revision\/)latest(\?.*)?$/);
+  if (!m) return undefined;
+  return `${m[1]}latest/scale-to-width-down/150${m[2] || ""} 150w, ${m[1]}latest/scale-to-width-down/300${m[2] || ""} 300w`;
+}
+
 function isWestChar(name: string): boolean {
   return !!WEST_ONLY[String(name || "").toLowerCase().trim()];
 }
@@ -736,7 +743,7 @@ export default function Mercenaries() {
                       {skills.map((sk) => (
                         <div key={sk} className="flex items-center gap-3 p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 3 }}>
                           {SKILL_ICONS[sk] ? (
-                            <img src={SKILL_ICONS[sk]} alt={sk} loading="lazy" className="h-11 w-11 object-contain flex-shrink-0" style={{ background: "#000", borderRadius: 2 }} />
+                            <img src={SKILL_ICONS[sk]} srcSet={wikiaThumbSrcSet(SKILL_ICONS[sk])} sizes="44px" alt={sk} loading="lazy" decoding="async" className="h-11 w-11 object-contain flex-shrink-0" style={{ background: "#000", borderRadius: 2 }} />
                           ) : (
                             <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: "#f5a623" }} />
                           )}

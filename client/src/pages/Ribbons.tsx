@@ -139,8 +139,10 @@ function availabilityState(ribbon: Ribbon): AvailState {
   const hasEventWord = blob.includes("event") && !blob.includes("not_an_event");
   const eventish = isEvent || blob.includes("window_closed") || blob.includes("specific") || blob.includes("limited") || hasEventWord;
   // العيلة المتكررة (Back to School رجع 2026 بعد 2014!) بتفضل محدودة حتى لو مكتوب عليها سنة قديمة.
-  // اللي بيخلص نهائي بس: نسخة سنة واحدة مؤكدة (one-time) أو ميزة موقوفة.
+  // بس ريبونات الذكرى السنوية (8th Anniversary) نسخة سنة واحدة ومش بترجع حتى لو العيلة متكررة — كل سنة ليها ريبون جديد.
   const isRecurringFamily = blob.includes("recurring");
+  const isAnniversary = /anniversary/i.test(text(ribbon.name_en || ribbon.name, ""));
+  if (isAnniversary && eventish) return "ended";
   if (eventish && isDatedOneTime(ribbon) && !isRecurringFamily) return "ended";
   if (blob.includes("subscri") || blob.includes("premium") || blob.includes("premium") || text((ribbon as AnyRecord).paid_requirement) === "explicit_zp_or_payment" && blob.includes("pass")) return "pass";
   if (blob.includes("window_closed") || hasEventWord || blob.includes("recurr") || blob.includes("annual") || blob.includes("seasonal") || blob.includes("rotating") || blob.includes("specific") || blob.includes("limited")) return "limited";

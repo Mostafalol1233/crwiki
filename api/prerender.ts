@@ -389,6 +389,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     "/modes":       { title: "CrossFire Game Modes — Team Match, Mutation, Ghost & More | CrossFire Wiki", description: "Every CrossFire game mode explained: rules, strategies, and tips for Team Match, Mutation Mode, Ghost Mode and more." },
     "/ranks":       { title: "CrossFire Rank System — All 104 Tiers & EXP Required | CrossFire Wiki",    description: "Full CrossFire ranking system from Private to National Soldier. EXP requirements, badges and promotion tips." },
     "/mercenaries": { title: "CrossFire Mercenaries — Characters, Stats & Abilities | CrossFire Wiki",   description: "Every CrossFire mercenary with abilities, teams, and how to get them." },
+    "/ribbons":     { title: "CrossFire Ribbons — Requirements, Availability & Event History | CrossFire Wiki", description: "All 147 CrossFire ribbons with requirements, availability and event history. Easy, grind, skill, paid and limited ribbons explained." },
     "/maps":        { title: "CrossFire Maps — Black Widow, Egypt, Cabin & More | CrossFire Wiki",       description: "All CrossFire maps with layout overviews, strategies and callouts." },
     "/news":        { title: "CrossFire News — Updates, Patches & Announcements | CrossFire Wiki",       description: "Latest CrossFire West news, patch notes, updates and game announcements." },
     "/posts":       { title: "CrossFire Guides and Posts | Builds, Explanations & Reference | CrossFire Wiki", description: "Detailed CrossFire guides, mechanics explanations, strategies and verified community reference posts." },
@@ -405,6 +406,9 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     "/download":     { title: "Download CrossFire | Official Installation and Support Links", description: "Find official CrossFire download, installation and support resources." },
     "/about":        { title: "About CrossFire Wiki | Independent CrossFire Reference", description: "Learn about CrossFire Wiki, its sources, editorial approach and community reference goals." },
     "/contact":      { title: "Contact CrossFire Wiki | Support and Feedback", description: "Contact CrossFire Wiki for corrections, source suggestions and site feedback." },
+    "/support":     { title: "CrossFire Support | Help, Tickets & FAQ | CrossFire Wiki", description: "Get help with CrossFire Wiki, submit tickets and find answers." },
+    "/privacy":     { title: "Privacy Policy — CrossFire Wiki", description: "How CrossFire Wiki handles data, cookies and privacy. Independent fan project." },
+    "/terms":       { title: "Terms of Service — CrossFire Wiki", description: "Terms of service for CrossFire Wiki. Independent community reference." },
     "/faq":         { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
   };
   const sectionMetaAr: Record<string, { title: string; description: string }> = {
@@ -418,7 +422,11 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     "/posts": { title: "مقالات وأدلة CrossFire | الشروحات والاستراتيجيات", description: "مقالات وأدلة CrossFire المفصلة لشرح الأسلحة والأنظمة والاستراتيجيات والمعلومات الموثقة." },
     "/tutorials": { title: "أدلة CrossFire التعليمية | شرح المبتدئين وأنظمة اللعبة", description: "أدلة تعليمية عملية عن CrossFire والتثبيت والحركة والأسلحة وأنظمة اللعب." },
     "/videos": { title: "فيديوهات CrossFire | شروحات وأسلوب اللعب", description: "فيديوهات وشروحات CrossFire عن الأسلحة والأوضاع وأسلوب اللعب والمحتوى المفيد." },
+    "/ribbons": { title: "ريبونات CrossFire | الشروط والتوفر وتاريخ الايفنتات", description: "كل ريبونات CrossFire الـ 147 مع الشروط والتوفر وتاريخ الايفنتات. شرح بالعامية والإنجليزية." },
     "/content-hub": { title: "مركز محتوى CrossFire | الأدلة والأخبار والمرجع", description: "تصفح أدلة CrossFire والأخبار والفيديوهات والأحداث وصفحات المرجع في مكان واحد." },
+    "/support": { title: "الدعم الفني | CrossFire Wiki", description: "احصل على مساعدة في CrossFire Wiki وأرسل تذاكر الدعم." },
+    "/privacy": { title: "سياسة الخصوصية | CrossFire Wiki", description: "كيف يتعامل CrossFire Wiki مع البيانات والخصوصية." },
+    "/terms": { title: "شروط الخدمة | CrossFire Wiki", description: "شروط استخدام CrossFire Wiki." },
     "/faq": { title: "الأسئلة الشائعة عن CrossFire | إجابات واضحة", description: "إجابات واضحة عن تثبيت CrossFire والأسلحة والرتب والأحداث والحسابات وأسلوب اللعب." },
   };
   const sp = sectionMeta[routePath];

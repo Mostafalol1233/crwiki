@@ -1,30 +1,65 @@
+# CrossFire Wiki — robots.txt
+# https://crossfire.wiki
+
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin/
-Disallow: /admin/login
 Disallow: /api/
+Disallow: /search
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /chat
+Disallow: /ai
+Disallow: /my-tickets
 
-# Image crawlers — allow all image paths
-User-agent: Googlebot-Image
-Allow: /
+# Explicitly allow all important page paths
+Allow: /weapons
+Allow: /modes
+Allow: /ranks
+Allow: /mercenaries
+Allow: /ribbons
+Allow: /tutorials
+Allow: /news
+Allow: /events
+Allow: /posts
+Allow: /sellers
+Allow: /article/
+Allow: /news/
+Allow: /events/
+Allow: /tutorials/
+Allow: /category/
+Allow: /competition
+Allow: /ar/competition
 
+# Explicitly allow crawlable image assets
+Allow: /logo-new.png
+Allow: /crossfire-logo.png
+Allow: /feature-crossfire.jpg
+Allow: /favicon*.png
+
+# Google crawlers
 User-agent: Googlebot
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-News
+Allow: /
+Allow: /news/
+Allow: /events/
+
+# Bing
 User-agent: Bingbot
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-User-agent: Slurp
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
+# Social media crawlers (for rich previews)
 User-agent: facebookexternalhit
 Allow: /
 
@@ -37,5 +72,11 @@ Allow: /
 User-agent: WhatsApp
 Allow: /
 
-# Dynamic sitemap generated from the current published database content.
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+# Dynamic sitemap generated from the current database content
 Sitemap: https://crossfire.wiki/sitemap.xml

@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { Lock, RefreshCcw, ShieldCheck, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Orb from "@/components/Orb";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -132,6 +133,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative z-10 px-4" style={{ background: "var(--background)" }}>
+      <SEOHead title="Admin Login" noindex />
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 20%, rgba(245,166,35,0.04) 0%, transparent 70%)" }} />
       <Orb hoverIntensity={0.5} rotateOnHover={true} hue={220}>
       <div className="w-full max-w-md relative" style={{ background: "var(--card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "4px", overflow: "hidden" }}>

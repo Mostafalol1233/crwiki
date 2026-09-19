@@ -1114,6 +1114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/modes`,      priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/ranks`,      priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/mercenaries`,priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
+    { loc: `${BASE}/ribbons`,    priority: "0.9", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/maps`,       priority: "0.8", changefreq: "weekly",  lastmod: latestContentDate },
     { loc: `${BASE}/news`,       priority: "0.85",changefreq: "daily",   lastmod: latestContentDate },
     { loc: `${BASE}/posts`,      priority: "0.75",changefreq: "daily",   lastmod: latestContentDate },

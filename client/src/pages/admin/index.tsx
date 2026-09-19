@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import { isAdminAuthenticated } from '@/lib/supabaseAdmin';
+import { SEOHead } from '@/components/SEOHead';
 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Analytics = lazy(() => import('./Analytics'));
@@ -93,6 +94,7 @@ export default function AdminPanel() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#09090b', fontFamily: 'Inter, sans-serif', color: '#fafafa' }}>
+      <SEOHead title="Admin Dashboard" noindex />
       <AdminSidebar />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>

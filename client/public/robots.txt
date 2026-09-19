@@ -6,12 +6,20 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /api/
+Disallow: /search
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /chat
+Disallow: /ai
+Disallow: /my-tickets
 
 # Explicitly allow all important page paths
 Allow: /weapons
 Allow: /modes
 Allow: /ranks
 Allow: /mercenaries
+Allow: /ribbons
 Allow: /tutorials
 Allow: /news
 Allow: /events

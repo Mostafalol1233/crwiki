@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { getFaqCategories } from "@/lib/supabaseApi";
 import {
   ChevronDown, ChevronUp, Search, HelpCircle, Megaphone,
@@ -628,6 +628,33 @@ export default function FAQ() {
 
   const totalArticles = faqData.reduce((sum, cat) => sum + cat.articles.length, 0);
 
+  // FAQPage structured data from the same Q&As rendered on screen (current language)
+  const faqSchema = useMemo(() => {
+    const strip = (s: string) =>
+      String(s || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 600);
+    const entities: any[] = [];
+    for (const cat of faqData) {
+      for (const a of cat.articles || []) {
+        const q = isAr ? a.titleAr || a.title : a.title;
+        const ans = isAr ? a.bodyAr || a.body : a.body;
+        if (!q || !ans) continue;
+        entities.push({
+          "@type": "Question",
+          name: strip(q).slice(0, 200),
+          acceptedAnswer: { "@type": "Answer", text: strip(ans) },
+        });
+        if (entities.length >= 40) break;
+      }
+      if (entities.length >= 40) break;
+    }
+    return { "@type": "FAQPage", mainEntity: entities };
+  }, [faqData, isAr]);
+
   return (
     <>
       <PageSEO
@@ -638,6 +665,8 @@ export default function FAQ() {
             : "Answers to the most common questions about CrossFire — gameplay, accounts, technical support, and more."
         }
         canonicalPath="/faq"
+        schemaType="FAQPage"
+        schemaData={faqSchema}
       />
 
       <div className="min-h-screen" style={{ background: "var(--background)" }}>

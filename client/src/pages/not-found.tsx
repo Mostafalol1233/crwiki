@@ -1,10 +1,23 @@
 import { useLanguage } from "@/components/LanguageProvider";
-import { Link } from "wouter";
-import { Home, AlertTriangle } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Home, AlertTriangle, Search } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
+import { useState } from "react";
+
+const POPULAR_LINKS = [
+  { href: "/weapons", en: "Weapons", ar: "الأسلحة" },
+  { href: "/mercenaries", en: "Mercenaries", ar: "الشخصيات" },
+  { href: "/ribbons", en: "Ribbons", ar: "الريبونات" },
+  { href: "/events", en: "Events", ar: "الفعاليات" },
+  { href: "/ranks", en: "Ranks", ar: "الرتب" },
+  { href: "/modes", en: "Modes", ar: "الأطوار" },
+];
 
 export default function NotFound() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [, setLocation] = useLocation();
+  const [q, setQ] = useState("");
+  const arabic = language === "ar";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--background)" }}>
@@ -29,6 +42,37 @@ export default function NotFound() {
           <Home className="h-3.5 w-3.5" />
           {t("backToHome")}
         </Link>
+        <form
+          className="mt-6 mx-auto flex max-w-xs items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (q.trim()) setLocation(`/search?q=${encodeURIComponent(q.trim())}`);
+          }}
+        >
+          <div className="relative flex-1">
+            <Search className="h-3.5 w-3.5 absolute start-3 top-1/2 -translate-y-1/2" style={{ color: "#666" }} />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={arabic ? "دوّر في الموقع…" : "Search the wiki…"}
+              aria-label={arabic ? "بحث" : "Search"}
+              className="w-full h-10 ps-9 pe-3 text-sm text-white outline-none"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px" }}
+            />
+          </div>
+        </form>
+        <div className="mt-5 flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+          {POPULAR_LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="px-3 py-1.5 text-[11px] font-bold transition-all hover:brightness-125"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "2px", color: "rgba(255,255,255,0.7)", textDecoration: "none" }}
+            >
+              {arabic ? l.ar : l.en}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

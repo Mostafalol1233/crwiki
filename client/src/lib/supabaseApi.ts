@@ -879,7 +879,7 @@ export async function addSellerReview(review: {
 
 // ─── Tutorials ───────────────────────────────────────────────────────────────
 export async function getTutorials(category?: string) {
-  let query = supabase.from('tutorials').select('id,title,title_ar,description,description_ar,youtube_url,youtube_id,category,order_index').order('order_index', { ascending: true });
+  let query = supabase.from('tutorials').select('id,title,title_ar,description,content,content_ar,youtube_url,youtube_id,category,order_index').order('order_index', { ascending: true });
   if (category) query = query.eq('category', category);
   const { data, error } = await query;
   if (error) throw error;
@@ -887,8 +887,8 @@ export async function getTutorials(category?: string) {
     id: String(t.id),
     title: t.title || '',
     titleAr: t.title_ar || '',
-    description: t.description || '',
-    descriptionAr: t.description_ar || '',
+    description: t.description || t.content || '',
+    descriptionAr: t.content_ar || '',
     youtubeUrl: t.youtube_url,
     youtubeId: t.youtube_id,
     category: t.category || 'tutorial',

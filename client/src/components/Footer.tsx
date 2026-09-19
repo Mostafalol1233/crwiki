@@ -66,7 +66,7 @@ function FooterLink({ label, path }: { label: string; path: string }) {
 }
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState<"idle" | "ok" | "err">("idle");
 
@@ -355,6 +355,8 @@ export function Footer() {
             {[
               { href: "/privacy", label: t("footerPrivacy") },
               { href: "/terms", label: t("footerTerms") },
+              { href: "/editorial-policy", label: language === "ar" ? "سياسة التحرير" : "Editorial Policy" },
+              { href: "/sources", label: language === "ar" ? "المصادر" : "Sources" },
               { href: "/about", label: t("about") },
             ].map(({ href, label }) => (
               <Link key={href} href={href}>

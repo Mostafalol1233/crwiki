@@ -106,6 +106,8 @@ const Sellers        = lazy(() => import("@/pages/Sellers"));
 const Services       = lazy(() => import("@/pages/Services"));
 const Support        = lazy(() => import("@/pages/Support"));
 const FAQ            = lazy(() => import("@/pages/FAQ"));
+const EditorialPolicy = lazy(() => import("@/pages/EditorialPolicy"));
+const Sources        = lazy(() => import("@/pages/Sources"));
 const MyTickets      = lazy(() => import("@/pages/MyTickets"));
 const Tutorials      = lazy(() => import("@/pages/Tutorials"));
 const TutorialDetail = lazy(() => import("@/pages/TutorialDetail"));
@@ -232,6 +234,8 @@ function Router() {
       <Route path="/download"                  component={() => <L C={Download} />} />
       <Route path="/terms"                     component={() => <L C={Terms} />} />
       <Route path="/privacy"                   component={() => <L C={Privacy} />} />
+      <Route path="/editorial-policy"          component={() => <L C={EditorialPolicy} />} />
+      <Route path="/sources"                   component={() => <L C={Sources} />} />
 
       {/* Media */}
       <Route path="/videos"                    component={() => <L C={Videos} />} />

@@ -1150,6 +1150,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/forum`,      priority: "0.6", changefreq: "daily"   },
     { loc: `${BASE}/about`,      priority: "0.5", changefreq: "monthly" },
     { loc: `${BASE}/contact`,    priority: "0.5", changefreq: "monthly" },
+    { loc: `${BASE}/editorial-policy`, priority: "0.3", changefreq: "monthly" },
+    { loc: `${BASE}/sources`,    priority: "0.3", changefreq: "monthly" },
     { loc: `${BASE}/support`,    priority: "0.5", changefreq: "monthly" },
     { loc: `${BASE}/privacy`,    priority: "0.3", changefreq: "monthly" },
     { loc: `${BASE}/terms`,      priority: "0.3", changefreq: "monthly" },

@@ -68,13 +68,30 @@ function FooterLink({ label, path }: { label: string; path: string }) {
 export function Footer() {
   const { t, language } = useLanguage();
   const [email, setEmail] = useState("");
-  const [subStatus, setSubStatus] = useState<"idle" | "ok" | "err">("idle");
+  const [subStatus, setSubStatus] = useState<"idle" | "ok" | "err" | "loading">("idle");
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !email.includes("@")) { setSubStatus("err"); return; }
-    setSubStatus("ok");
-    setEmail("");
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes("@")) { setSubStatus("err"); return; }
+    setSubStatus("loading");
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from("newsletter_subscribers").insert({ email: trimmed });
+      if (error) {
+        if (String(error.message || "").toLowerCase().includes("duplicate") || String(error.code) === "23505") {
+          setSubStatus("ok");
+          setEmail("");
+        } else {
+          setSubStatus("err");
+        }
+      } else {
+        setSubStatus("ok");
+        setEmail("");
+      }
+    } catch {
+      setSubStatus("err");
+    }
     setTimeout(() => setSubStatus("idle"), 4000);
   };
 
@@ -175,6 +192,7 @@ export function Footer() {
             />
             <button
               type="submit"
+              disabled={subStatus === "loading"}
               style={{
                 padding: "10px 18px",
                 fontFamily: "'Cinzel', serif",
@@ -184,23 +202,29 @@ export function Footer() {
                 background: "transparent",
                 border: GOLD_BORDER,
                 color: GOLD,
-                cursor: "pointer",
+                cursor: subStatus === "loading" ? "wait" : "pointer",
                 whiteSpace: "nowrap",
                 transition: "background 0.2s",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
+                opacity: subStatus === "loading" ? 0.6 : 1,
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(154,124,63,0.08)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
-              {t("footerSubscribe")} <ArrowRight size={12} strokeWidth={1.5} />
+              {subStatus === "loading" ? (language === "ar" ? "جارٍ..." : "Sending...") : <>{t("footerSubscribe")} <ArrowRight size={12} strokeWidth={1.5} /></>}
             </button>
           </form>
 
           {subStatus === "ok" && (
             <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.88rem", color: GOLD }}>
               {t("footerSubscribed")}
+            </span>
+          )}
+          {subStatus === "err" && (
+            <span style={{ fontFamily: "'EB Garamond', serif", fontStyle: "italic", fontSize: "0.88rem", color: "#f87171" }}>
+              {language === "ar" ? "البريد غير صحيح أو مسجل مسبقًا" : "Invalid or already subscribed"}
             </span>
           )}
         </div>

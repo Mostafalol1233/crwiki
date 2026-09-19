@@ -379,6 +379,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       custom_pages: "custom_pages",
       faq_categories: "faq_categories",
       faq_articles: "faq_articles",
+      newsletter_subscribers: "newsletter_subscribers",
     };
     const resource = String(type || "");
     const table = tableByResource[resource];

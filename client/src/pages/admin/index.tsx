@@ -27,6 +27,7 @@ const SellerReviews = lazy(() => import('./SellerReviews'));
 const MediaManager = lazy(() => import('./MediaManager'));
 const UsersManager = lazy(() => import('./UsersManager'));
 const TicketsManager = lazy(() => import('./TicketsManager'));
+const NewsletterManager = lazy(() => import('./NewsletterManager'));
 const BulkSEO = lazy(() => import('./BulkSEO'));
 const CustomPages = lazy(() => import('./CustomPages'));
 const FAQManager = lazy(() => import('./FAQManager'));
@@ -72,6 +73,7 @@ function SectionContent({ section }: { section: string }) {
     case 'media': return <MediaManager />;
     case 'users': return <UsersManager />;
     case 'tickets': return <TicketsManager />;
+    case 'newsletter': return <NewsletterManager />;
     case 'bulk-seo': return <BulkSEO />;
     case 'custom-pages': return <CustomPages />;
     case 'faq': return <FAQManager />;

@@ -740,7 +740,7 @@ export default function Mercenaries() {
           onClick={() => setSelectedMerc(null)}
         >
           <div
-            className="relative max-w-md w-full overflow-hidden"
+            className="relative max-w-md w-full overflow-hidden max-h-[90vh] overflow-y-auto"
             style={{ background: "hsl(var(--card))", border: "1px solid rgba(245,166,35,0.25)", borderRadius: "4px", boxShadow: "0 24px 80px rgba(0,0,0,0.8)" }}
             onClick={(e) => e.stopPropagation()}
           >

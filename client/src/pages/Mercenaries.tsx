@@ -290,7 +290,32 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
   },
 };
 
-// ─── West roster + skill previews ───────────────────────────────────────────
+const VIP_SKILLS: Record<string, string[]> = {
+  viper: ["Furious Kick", "Throwing Knife"],
+  jessie: ["Wild Shot", "Explosive Expert", "Quick Planting"],
+  annie: ["Hunter's Mark", "Throwing Knife", "Energy Blast"],
+  lexy: ["Ally Sight", "Energy Blast"],
+  magnolia: ["Energy Blast", "Quick Escape", "Upward Kick"],
+  holly: ["Energy Blast", "Grenade Shield", "Furious Kick"],
+  trixy: ["Shapeshifter", "Furious Kick", "Throwing Knife"],
+  florence: ["Dual Daphne Saber", "Bless", "Furious Kick"],
+  dahlia: ["Dash", "Flower Attack", "Throwing Knife"],
+  ronin: ["Shockwave Sword", "Furious Kick", "Throwing Knife"],
+  miranda: ["Extended Combo Time", "Furious Kick"],
+  corinne: ["Nano Sixth Sense", "Energy Absorb", "Sealing Talisman"],
+  sparrow: ["Headshot Hunter", "Sniper Master", "Furious Kick"],
+  "jtf-expert": ["Explosive Expert", "C4 Timer", "Danger Express"],
+  valoria: ["Explosion of Bless", "Furious Kick"],
+  "urðr": ["Nano Camouflage", "Hunter's Mark", "Hidden Weapon"],
+  seraphina: ["Awakening", "Bless"],
+  switcher: ["Furious Kick", "Throwing Knife"],
+  "esports yun": ["Furious Kick", "Grenade Shield"],
+  "girl crush": ["Random Ability", "Furious Kick", "Throwing Knife"],
+  sicarios: ["Extended Combo Time", "Explosion of Bless", "Damage EXP Bonus"],
+  verdandi: ["Awakening", "Smash"],
+};
+
+// ── West roster + skill previews ───────────────────────────────────────────
 // WEST_ONLY: official CrossFire West characters (default filter). Anything not
 // listed here still shows when the West filter is turned off.
 const WEST_ONLY: Record<string, boolean> = {
@@ -302,13 +327,6 @@ const WEST_ONLY: Record<string, boolean> = {
   sparrow: true, "jtf-expert": true, "urðr": true, melody: true, paola: true,
   roxy: true, aceson: true, trinity: true, "trinity-veteran": true, verdandi: true,
 };
-
-// صور الويكي بتدعم تصغير حقيقي من نفس الرابط (scale-to-width-down) — srcset حقيقي مش منظر
-function wikiaThumbSrcSet(url: string): string | undefined {
-  const m = String(url || "").match(/^(https:\/\/static\.wikia\.nocookie\.net\/.*\/revision\/)latest(\?.*)?$/);
-  if (!m) return undefined;
-  return `${m[1]}latest/scale-to-width-down/150${m[2] || ""} 150w, ${m[1]}latest/scale-to-width-down/300${m[2] || ""} 300w`;
-}
 
 function isWestChar(name: string): boolean {
   return !!WEST_ONLY[String(name || "").toLowerCase().trim()];
@@ -343,32 +361,47 @@ const SKILL_ICONS: Record<string, string> = {
   "Shockwave Sword": "https://static.wikia.nocookie.net/crossfirefps/images/a/a2/Shockwave_Sword.png/revision/latest?cb=20211114114335",
   "Mileage": "https://static.wikia.nocookie.net/crossfirefps/images/c/cc/Mileage.png/revision/latest?cb=20170407143103",
 };
+  // ── VIP upgrade slots (3 + 1 purchasable) ─────────────────────────────────
+  const BASE_VIP_SLOTS = [
+    {
+      title: "Slots 1–3 — Built-in",
+      titleAr: "السلوتات 1–3 — الأساسية",
+      color: "#f5a623",
+      items: [
+        "Throwing Knife (press 2) — سكاكين رمي قابلة للتبديل (E للتعطيل). مقفولة في Ghost بالجانب الأزرق وبعض أوضاع FFA الخاصة. في ZM/HMX تتحول لـ 5 سكاكين اتجاهات.",
+        "Flash Guard / Grenade Shield / Reduced Fall Damage / Immunity to teammate grenades — حماية تختارها حسب أسلوبك (تتغير من Inventory).",
+        "200% EXP للمالك + 30% EXP للفريق + 20% GP للفريق (مع فروق بسيطة) — شغال في كل الأطوار.",
+      ],
+    },
+    {
+      title: "Slot 4 — Expansion (Purchasable)",
+      titleAr: "السلوت الرابع — نابضات التوسعة (شراء)",
+      color: "#c084fc",
+      items: [
+        "مقفول افتراضياً — تشتريه من المتجر (Item Shop) مرة واحدة للأبد للشخصية دي.",
+        "لما تفتحه، تختار واحدة رابعة: Decrease Fall Damage، أو مهارة HMX (مثل Hunter's Mark / Nano Camouflage)، أو مهارة ZM (مثل Awakening / Explosion of Bless) — حسب الشخصية.",
+        "تقدر تغيّر الاختيار أي وقت من Storage → Character → Upgrade.",
+      ],
+    },
+    {
+      title: "By Mode",
+      titleAr: "حسب الطور",
+      color: "#60a5fa",
+      items: [
+        "ZM (Zombie Mode): المهارة الرئيسية (Awakening / Explosion of Bless / Dash…) + الهيل والذخيرة اللانهائية شغالة هنا.",
+        "HMX (Mutation بأنواعه): المهارات المعلمة Mutation-only (Hunter's Mark، Nano Camouflage، Shapeshifter…) شغالة هنا بس.",
+        "PvP العادي: Furious Kick، Throwing Knife، وبونص الـ EXP/GP شغالين — مهارات الزومبي/الميوتنت مقفولة.",
+      ],
+    },
+  ];
 
-// Signature skills per West character (modal cards)
-const VIP_SKILLS: Record<string, string[]> = {
-  viper: ["Furious Kick", "Throwing Knife"],
-  jessie: ["Wild Shot", "Explosive Expert", "Quick Planting"],
-  annie: ["Hunter's Mark", "Throwing Knife", "Energy Blast"],
-  lexy: ["Ally Sight", "Energy Blast"],
-  magnolia: ["Energy Blast", "Quick Escape", "Upward Kick"],
-  holly: ["Energy Blast", "Grenade Shield", "Furious Kick"],
-  trixy: ["Shapeshifter", "Furious Kick", "Throwing Knife"],
-  florence: ["Dual Daphne Saber", "Bless", "Furious Kick"],
-  dahlia: ["Dash", "Flower Attack", "Throwing Knife"],
-  ronin: ["Shockwave Sword", "Furious Kick", "Throwing Knife"],
-  miranda: ["Extended Combo Time", "Furious Kick"],
-  corinne: ["Nano Sixth Sense", "Energy Absorb", "Sealing Talisman"],
-  sparrow: ["Headshot Hunter", "Sniper Master", "Furious Kick"],
-  "jtf-expert": ["Explosive Expert", "C4 Timer", "Danger Express"],
-  valoria: ["Explosion of Bless", "Furious Kick"],
-  "urðr": ["Nano Camouflage", "Hunter's Mark", "Hidden Weapon"],
-  seraphina: ["Awakening", "Bless"],
-  switcher: ["Furious Kick", "Throwing Knife"],
-  "esports yun": ["Furious Kick", "Grenade Shield"],
-  "girl crush": ["Random Ability", "Furious Kick", "Throwing Knife"],
-  sicarios: ["Extended Combo Time", "Explosion of Bless", "Damage EXP Bonus"],
-  verdandi: ["Awakening", "Smash"],
-};
+
+// Helper for wiki image srcSet (real resize via same URL)
+function wikiaThumbSrcSet(url: string): string | undefined {
+  const m = String(url || "").match(/^(https:\/\/static\.wikia\.nocookie\.net\/.*\/revision\/)latest(\?.*)?$/);
+  if (!m) return undefined;
+  return m[1] + "latest/scale-to-width-down/150" + (m[2] || "") + " 150w, " + m[1] + "latest/scale-to-width-down/300" + (m[2] || "") + " 300w";
+}
 
 const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   assault: { bg: "rgba(239,68,68,0.15)", color: "#f87171" },
@@ -405,6 +438,7 @@ export default function Mercenaries() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const lastSoundRef = useRef<{ [key: string]: string | null }>({});
   const [stopFlash, setStopFlash] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const { data: rawMercenaries = [], isLoading } = useQuery<Mercenary[]>({
     queryKey: ["/api/mercenaries"],
@@ -643,8 +677,9 @@ export default function Mercenaries() {
                         src={resolveMercImage(merc)}
                         alt={merc.name}
                         width={240} height={320}
+                        onClick={(e) => { e.stopPropagation(); setLightboxImage(resolveMercImage(merc)); }}
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = mercenaryImageByName["wolf"]; }}
-                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
                       />
                     </div>
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 25%, transparent 65%)" }} />
@@ -707,7 +742,7 @@ export default function Mercenaries() {
               Close
             </button>
             <div className="relative h-72 overflow-hidden">
-              <img src={resolveMercImage(selectedMerc)} alt={selectedMerc.name} className="w-full h-full object-cover object-top" />
+              <img src={resolveMercImage(selectedMerc)} alt={selectedMerc.name} className="w-full h-full object-cover object-top cursor-zoom-in" onClick={() => setLightboxImage(resolveMercImage(selectedMerc))} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #0d0d0d 0%, transparent 60%)" }} />
             </div>
             <div className="px-6 pb-6">
@@ -743,7 +778,7 @@ export default function Mercenaries() {
                       {skills.map((sk) => (
                         <div key={sk} className="flex items-center gap-3 p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 3 }}>
                           {SKILL_ICONS[sk] ? (
-                            <img src={SKILL_ICONS[sk]} srcSet={wikiaThumbSrcSet(SKILL_ICONS[sk])} sizes="44px" alt={sk} loading="lazy" decoding="async" className="h-11 w-11 object-contain flex-shrink-0" style={{ background: "#000", borderRadius: 2 }} />
+                            <img src={SKILL_ICONS[sk]} srcSet={wikiaThumbSrcSet(SKILL_ICONS[sk])} sizes="44px" alt={sk} loading="lazy" decoding="async" onClick={() => setLightboxImage(SKILL_ICONS[sk].replace("scale-to-width-down/150", "scale-to-width-down/600").replace("scale-to-width-down/300", "scale-to-width-down/600"))} className="h-11 w-11 object-contain flex-shrink-0 cursor-zoom-in" style={{ background: "#000", borderRadius: 2 }} />
                           ) : (
                             <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: "#f5a623" }} />
                           )}
@@ -758,6 +793,29 @@ export default function Mercenaries() {
                 );
               })()}
 
+              {/* ── VIP upgrade slots ── */}
+              <div className="mb-4">
+                <div className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#f5a623" }}>Upgrade Slots · السلوتات</div>
+                <div className="space-y-2">
+                  {BASE_VIP_SLOTS.map((slot) => (
+                    <div key={slot.title} className="p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 3, borderLeft: `3px solid ${slot.color}` }}>
+                      <div className="flex items-baseline gap-2 mb-1.5">
+                        <span className="text-[11px] font-black" style={{ color: slot.color }}>{slot.title}</span>
+                        <span className="text-[11px] font-bold" style={{ color: slot.color, opacity: 0.85, fontFamily: "'Noto Sans Arabic', sans-serif" }}>{slot.titleAr}</span>
+                      </div>
+                      <ul className="space-y-1">
+                        {slot.items.map((it, i) => (
+                          <li key={i} className="text-[11px] leading-relaxed flex gap-1.5" style={{ color: "#888" }}>
+                            <span style={{ color: slot.color, flexShrink: 0 }}>•</span>
+                            <span>{it}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Voice lines list */}
               {(() => {
                 const vl = selectedMerc.voiceLines || [];
@@ -771,7 +829,7 @@ export default function Mercenaries() {
                       {playingMercId === selectedMerc.id ? (
                         <><VolumeX className="h-4 w-4" /> Playing Voice Line...</>
                       ) : (
-                        <><Volume2 className="h-4 w-4" /> Play Random Voice Line ({vl.length})</>
+                        <><Volume2 className="h-4 w-4" /> {vl.length === 1 ? "Play Voice" : `Play Random Voice Line (${vl.length})`}</>
                       )}
                     </button>
                     {vl.length > 1 && (
@@ -804,6 +862,31 @@ export default function Mercenaries() {
               })()}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Image Lightbox ── */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(6px)" }}
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full"
+            style={{ background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+          <img
+            src={lightboxImage}
+            alt="Preview"
+            className="max-w-[92vw] max-h-[88vh] object-contain"
+            style={{ borderRadius: 4, boxShadow: "0 24px 80px rgba(0,0,0,0.9)" }}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </>

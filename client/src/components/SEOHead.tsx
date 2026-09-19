@@ -253,9 +253,20 @@ export function SEOHead({
       canonical.setAttribute("data-seo", "true");
       document.head.appendChild(canonical);
 
-      // hreflang alternates
+      // hreflang alternates — auto-generate en/ar if not provided
+      const baseOrigin = (() => { try { return new URL(finalCanonical).origin; } catch { return "https://crossfire.wiki"; } })();
+      const canonicalPath = (() => { try { return new URL(finalCanonical).pathname || "/"; } catch { return "/"; } })();
+      const strippedPath = canonicalPath === "/ar" || canonicalPath.startsWith("/ar/") ? canonicalPath.replace(/^\/ar(\/|$)/, "/").replace(/^\/\//, "/") || "/" : canonicalPath;
+      const enUrl = `${baseOrigin}${strippedPath}`;
+      const arUrl = `${baseOrigin}/ar${strippedPath === "/" ? "" : strippedPath}`;
+      const hasEn = (hreflangAlternates || []).some((a) => a.lang === "en");
+      const hasAr = (hreflangAlternates || []).some((a) => a.lang === "ar");
+      const autoAlternates: Array<{ lang: string; url: string }> = [];
+      if (!hasEn) autoAlternates.push({ lang: "en", url: enUrl });
+      if (!hasAr) autoAlternates.push({ lang: "ar", url: arUrl });
       const alternates: Array<{ lang: string; url: string }> = [
-        { lang: "x-default", url: finalCanonical },
+        { lang: "x-default", url: enUrl },
+        ...autoAlternates,
         ...(hreflangAlternates || []),
       ];
       alternates.forEach(({ lang, url }) => {

@@ -952,12 +952,14 @@ interface UrlEntry {
   lastmod?: string;
   changefreq?: string;
   priority?: string;
+  alternates?: { lang: string; url: string }[];
   images?: { url: string; title?: string; caption?: string }[];
   videos?: { thumbnail: string; title: string; description?: string; contentLoc?: string; playerLoc?: string; publicationDate?: string }[];
 }
 
-function entry({ loc, lastmod, changefreq, priority, images, videos }: UrlEntry) {
+function entry({ loc, lastmod, changefreq, priority, alternates, images, videos }: UrlEntry) {
   let xml = `  <url>\n    <loc>${xe(loc)}</loc>\n`;
+  if (alternates) for (const alt of alternates) xml += `    <xhtml:link rel="alternate" hreflang="${alt.lang}" href="${xe(alt.url)}" />\n`;
   if (lastmod)    xml += `    <lastmod>${lastmod}</lastmod>\n`;
   if (changefreq) xml += `    <changefreq>${changefreq}</changefreq>\n`;
   if (priority)   xml += `    <priority>${priority}</priority>\n`;
@@ -980,6 +982,19 @@ function entry({ loc, lastmod, changefreq, priority, images, videos }: UrlEntry)
   }
   xml += `  </url>\n`;
   return xml;
+}
+
+
+function alternatesFor(loc: string) {
+  const base = "https://crossfire.wiki";
+  const path = loc.startsWith(base) ? loc.slice(base.length) || "/" : loc;
+  const en = `${base}${path}`;
+  const ar = path === "/" ? `${base}/ar` : `${base}/ar${path}`;
+  return [
+    { lang: "en", url: en },
+    { lang: "ar", url: ar },
+    { lang: "x-default", url: en },
+  ];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -1139,14 +1154,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { loc: `${BASE}/privacy`,    priority: "0.3", changefreq: "monthly" },
     { loc: `${BASE}/terms`,      priority: "0.3", changefreq: "monthly" },
   ];
-  for (const s of statics) xml += entry(s);
+  for (const s of statics) xml += entry({ ...s, alternates: (s as any).alternates || alternatesFor(s.loc) });
   xml += "\n";
 
   xml += "  <!-- Regional wiki landing pages -->\n";
   for (const region of REGIONS) {
-    xml += entry({ loc: `${BASE}/${region.slug}`, priority: "0.9", changefreq: "weekly", lastmod: latestContentDate });
+    xml += entry({ loc: `${BASE}/${region.slug}`, alternates: alternatesFor(`${BASE}/${region.slug}`), priority: "0.9", changefreq: "weekly", lastmod: latestContentDate });
     for (const weapon of WEAPONS) {
-      xml += entry({ loc: `${BASE}/${region.slug}/weapons/${weapon.slug}`, priority: "0.8", changefreq: "weekly", lastmod: latestContentDate });
+      xml += entry({ loc: `${BASE}/${region.slug}/weapons/${weapon.slug}`, alternates: alternatesFor(`${BASE}/${region.slug}/weapons/${weapon.slug}`), priority: "0.8", changefreq: "weekly", lastmod: latestContentDate });
     }
   }
   xml += "\n";
@@ -1159,6 +1174,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = ev.image_url;
     xml += entry({
       loc:        `${BASE}/events/${slug}`,
+      alternates: alternatesFor(`${BASE}/events/${slug}`),
       lastmod:    dateAtOrBefore(ev.updated_at || ev.date, today) || today,
       changefreq: "weekly",
       priority:   "0.85",
@@ -1175,6 +1191,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = n.image_url;
     xml += entry({
       loc:        `${BASE}/news/${slug}`,
+      alternates: alternatesFor(`${BASE}/news/${slug}`),
       lastmod:    dateAtOrBefore(n.updated_at || n.created_at, today) || today,
       changefreq: "weekly",
       priority:   "0.75",
@@ -1191,6 +1208,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = p.image_url;
     xml += entry({
       loc:        `${BASE}/posts/${slug}`,
+      alternates: alternatesFor(`${BASE}/posts/${slug}`),
       lastmod:    dateAtOrBefore(p.updated_at || p.created_at, today) || today,
       changefreq: "weekly",
       priority:   "0.65",
@@ -1207,6 +1225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const img = t.image_url;
     xml += entry({
       loc:        `${BASE}/tutorials/${slug}`,
+      alternates: alternatesFor(`${BASE}/tutorials/${slug}`),
       lastmod:    dateAtOrBefore(t.updated_at || t.created_at, today) || today,
       changefreq: "monthly",
       priority:   "0.65",
@@ -1231,6 +1250,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!slug) continue;
     xml += entry({
       loc: `${BASE}/pages/${slug}`,
+      alternates: alternatesFor(`${BASE}/pages/${slug}`),
       lastmod: dateAtOrBefore(page.updated_at, today) || today,
       changefreq: "weekly",
       priority: "0.65",
@@ -1238,30 +1258,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   xml += "\n";
 
-  // ── Weapons (image sitemap) ───────────────────────────────────────────
+  // ── Weapons (image sitemap) ── single canonical with all images
   xml += "  <!-- Weapons -->\n";
-  for (const w of weapons) {
-    if (!w.name) continue;
-    const slug = w.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const img = w.image_url;
-    xml += entry({
-      loc:        `${BASE}/weapons`,
-      images:     img ? [{ url: img, title: `${w.name} — CrossFire Weapon`, caption: `CrossFire weapon: ${w.name}` }] : [],
-    });
-  }
+  xml += entry({
+    loc: `${BASE}/weapons`,
+    alternates: [{ lang: "en", url: `${BASE}/weapons` }, { lang: "ar", url: `${BASE}/ar/weapons` }, { lang: "x-default", url: `${BASE}/weapons` }],
+    images: weapons.filter((w: any) => w.name && w.image_url).map((w: any) => ({ url: w.image_url, title: `${w.name} — CrossFire Weapon`, caption: `CrossFire weapon: ${w.name}` })),
+  });
   xml += "\n";
 
   // ── Mercenaries (image sitemap) ───────────────────────────────────────
   xml += "  <!-- Mercenaries -->\n";
-  for (const m of mercs) {
-    if (!m.name) continue;
-    const img = m.image_url;
-    if (!img) continue;
-    xml += entry({
-      loc:    `${BASE}/mercenaries`,
-      images: [{ url: img, title: `${m.name} — CrossFire Mercenary`, caption: `CrossFire mercenary: ${m.name}` }],
-    });
-  }
+  xml += entry({
+    loc: `${BASE}/mercenaries`,
+    alternates: [{ lang: "en", url: `${BASE}/mercenaries` }, { lang: "ar", url: `${BASE}/ar/mercenaries` }, { lang: "x-default", url: `${BASE}/mercenaries` }],
+    images: mercs.filter((m: any) => m.name && m.image_url).map((m: any) => ({ url: m.image_url, title: `${m.name} — CrossFire Mercenary`, caption: `CrossFire mercenary: ${m.name}` })),
+  });
 
   xml += "\n</urlset>";
 

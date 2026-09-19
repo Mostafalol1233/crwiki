@@ -1269,6 +1269,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
   xml += "\n";
 
+  // ── Weapon detail pages ──
+  xml += "  <!-- Weapon detail pages -->\n";
+  for (const w of weapons) {
+    if (!w.name) continue;
+    const slug = String(w.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (!slug) continue;
+    xml += entry({
+      loc: `${BASE}/weapons/${slug}`,
+      alternates: alternatesFor(`${BASE}/weapons/${slug}`),
+      lastmod: dateAtOrBefore((w as any).updated_at || (w as any).created_at, today) || latestContentDate,
+      changefreq: "weekly",
+      priority: "0.6",
+      images: w.image_url ? [{ url: w.image_url, title: w.name, caption: `CrossFire weapon: ${w.name}` }] : [],
+    });
+  }
+  xml += "\n";
+
   // ── Mercenaries (image sitemap) ───────────────────────────────────────
   xml += "  <!-- Mercenaries -->\n";
   xml += entry({

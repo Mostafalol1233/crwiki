@@ -143,13 +143,15 @@ export async function getWeapons(opts: {
           category: w.category || 'Uncategorized',
           description: w.description || '',
           stats: w.stats || {},
-          acquisition_type: w.acquisition_type || w.acquisitionType || '',
-          acquisition_method: w.acquisition_method || w.acquisitionMethod || '',
-          acquisition_verified: w.acquisition_verified ?? w.acquisitionVerified ?? false,
-          acquisition: w.acquisition || '',
-          shop_type: w.shop_type || w.shopType || '',
-          currency: w.currency || '',
+          acquisition_methods: w.acquisition_methods || w.acquisitionMethods || [],
+          acquisition_summary_ar: w.acquisition_summary_ar || w.acquisitionSummaryAr || '',
+          acquisition_summary_en: w.acquisition_summary_en || w.acquisitionSummaryEn || '',
+          release_date: w.release_date || w.releaseDate || '',
+          is_permanent: w.is_permanent ?? w.isPermanent ?? true,
+          verification_status: w.verification_status || w.verificationStatus || '',
           source_url: w.source_url || w.sourceUrl || '',
+          source_type: w.source_type || w.sourceType || '',
+          last_verified_at: w.last_verified_at || w.lastVerifiedAt || '',
           created_at: w.created_at || '',
         }))),
         total: apiReturnedMoreThanOnePage
@@ -165,7 +167,7 @@ export async function getWeapons(opts: {
 
   try {
     const result = await runSafeQuery(fallbackWeapons, async () => {
-      let query = supabase.from('weapons').select('id,name,image_url,background_url,category,description,stats,acquisition_type,acquisition_method,source_url,created_at', { count: 'exact' });
+      let query = supabase.from('weapons').select('id,name,image_url,background_url,category,description,stats,acquisition_methods,acquisition_summary_ar,acquisition_summary_en,release_date,is_permanent,verification_status,source_url,source_type,last_verified_at,created_at', { count: 'exact' });
 
       if (q) query = query.ilike('name', `%${q}%`);
       if (letter) query = query.ilike('name', `${letter}%`);
@@ -218,6 +220,28 @@ function normalizeWeapon(w: any = {}, providedEnrichment?: WeaponDescriptionReco
   const rawCategory = String(w.category || '').trim();
   const isGenericCategory = !rawCategory || /^(imported|uncategorized|standard)$/i.test(rawCategory);
   const resolvedCategory = isGenericCategory ? String(enrichment?.category || rawCategory || 'Uncategorized') : rawCategory;
+  // New structured acquisition methods (JSONB)
+  const rawAcquisitionMethods = Array.isArray(w.acquisition_methods) ? w.acquisition_methods : (Array.isArray(stats.acquisition_methods) ? stats.acquisition_methods : []);
+  const acquisitionMethods = rawAcquisitionMethods.filter((m: any) => m && typeof m === 'object').map((m: any) => ({
+    type: String(m.type || 'other'),
+    title: String(m.title || ''),
+    titleAr: String(m.titleAr || m.title_ar || ''),
+    description: String(m.description || ''),
+    descriptionAr: String(m.descriptionAr || m.description_ar || ''),
+    currency: String(m.currency || ''),
+    price: m.price != null ? String(m.price) : '',
+    permanent: m.permanent !== false,
+    region: String(m.region || 'West'),
+    version: String(m.version || ''),
+    status: String(m.status || 'unknown'),
+    source: String(m.source || ''),
+    sourceUrl: String(m.sourceUrl || m.source_url || ''),
+    sourceKind: String(m.sourceKind || m.source_kind || 'unknown'),
+    verified: Boolean(m.verified),
+    startDate: String(m.startDate || m.start_date || ''),
+    endDate: String(m.endDate || m.end_date || ''),
+    notes: String(m.notes || ''),
+  }));
 
   return {
     id: String(w.id || ''),
@@ -243,6 +267,12 @@ function normalizeWeapon(w: any = {}, providedEnrichment?: WeaponDescriptionReco
     sourceKind: enrichment?.sourceKind || 'unverified',
     matchMode: enrichment?.matchMode || 'not-found',
     stats,
+    acquisitionMethods,
+    releaseDate: String(w.release_date || w.releaseDate || ''),
+    isPermanent: w.is_permanent !== false,
+    verificationStatus: String(w.verification_status || w.verificationStatus || (acquisitionMethods.length ? 'unknown' : 'unknown')),
+    sourceType: String(w.source_type || w.sourceType || ''),
+    lastVerifiedAt: String(w.last_verified_at || w.lastVerifiedAt || ''),
     acquisitionType: String(w.acquisition_type || w.acquisitionType || ''),
     acquisitionMethod: String(w.acquisition_method || w.acquisitionMethod || ''),
     acquisition: String(w.acquisition || ''),

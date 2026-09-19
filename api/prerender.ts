@@ -357,6 +357,52 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     };
   }
 
+  // ── /weapons/:slug ──
+  const weaponDetailMatch = routePath.match(/^\/weapons\/([a-z0-9-]+)$/);
+  if (weaponDetailMatch) {
+    const slug = weaponDetailMatch[1];
+    let weaponName = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    let weaponRow: any = null;
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+      const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+      if (supabaseUrl && anonKey) {
+        const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
+        const like = encodeURIComponent(`%${weaponName}%`);
+        // Try exact slug match via ilike on name (best effort for prerender)
+        const resp = await fetch(`${supabaseUrl}/rest/v1/weapons?select=name,image_url&name=ilike.${like}&limit=1`, { headers, signal: AbortSignal.timeout(5000) });
+        if (resp.ok) {
+          const rows: any[] = await resp.json().catch(() => []);
+          if (rows[0]?.name) { weaponName = rows[0].name; weaponRow = rows[0]; }
+        }
+      }
+    } catch {}
+    const title = `${weaponName} — How to Get It, Stats & Variants | CrossFire Wiki`;
+    const description = `Learn how to get ${weaponName} in CrossFire — acquisition methods, price, events, crates and regional availability.`;
+    return {
+      title,
+      description: description.substring(0, 160),
+      image: weaponRow?.image_url || DEFAULT_IMG,
+      url: `${BASE}${prefix}${routePath}`,
+      type: "website",
+      imageType: imageType(weaponRow?.image_url || DEFAULT_IMG),
+      alternates: [
+        { lang: "en", url: `${BASE}/weapons/${slug}` },
+        { lang: "ar", url: `${BASE}/ar/weapons/${slug}` },
+        { lang: "x-default", url: `${BASE}/weapons/${slug}` },
+      ],
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: title,
+        description,
+        url: `${BASE}${prefix}${routePath}`,
+        isPartOf: { "@type": "WebSite", name: "CrossFire Wiki", url: BASE },
+        inLanguage: prefix === "/ar" ? "ar" : "en",
+      },
+    };
+  }
+
   // ── /:region and /:region/weapons/:slug ───────────────────────────
   const regionMatch = routePath.match(/^\/([a-z0-9-]+)(?:\/weapons\/([a-z0-9-]+))?$/);
   if (regionMatch) {

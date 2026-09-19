@@ -135,6 +135,7 @@ const BulkSEO            = lazy(() => import("@/pages/BulkSEO"));
 const SearchPage         = lazy(() => import("@/pages/Search"));
 const Mercenaries        = lazy(() => import("@/pages/Mercenaries"));
 const Weapons            = lazy(() => import("@/pages/Weapons"));
+const WeaponDetail       = lazy(() => import("@/pages/WeaponDetail"));
 const Modes              = lazy(() => import("@/pages/Modes"));
 const Maps               = lazy(() => import("@/pages/Maps"));
 const Ranks              = lazy(() => import("@/pages/Ranks"));
@@ -212,6 +213,7 @@ function Router() {
       <Route path="/mercenaries"               component={() => <L C={Mercenaries} />} />
       <Route path="/grave-games"               component={() => <L C={GraveGames} />} />
       <Route path="/weapons"                   component={() => <L C={Weapons} />} />
+      <Route path="/weapons/:slug"             component={() => <L C={WeaponDetail} />} />
       <Route path="/modes"                     component={() => <L C={Modes} />} />
       <Route path="/maps"                      component={() => <L C={Maps} />} />
       <Route path="/ranks"                     component={() => <L C={Ranks} />} />

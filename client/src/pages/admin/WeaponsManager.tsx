@@ -14,11 +14,20 @@ interface Weapon {
   background_url: string;
   description: string;
   stats: Record<string, any>;
+  acquisition_methods?: any[];
+  acquisition_summary_ar?: string;
+  acquisition_summary_en?: string;
+  release_date?: string;
+  is_permanent?: boolean;
+  verification_status?: string;
+  source_url?: string;
+  source_type?: string;
+  last_verified_at?: string;
   created_at: string;
 }
 
 const CATEGORIES = ['Assault Rifle', 'Assault Rifles', 'Sniper Rifle', 'Sniper Rifles', 'SMG', 'Machine Gun', 'Machine Guns', 'Shotgun', 'Shotguns', 'Pistol', 'Pistols', 'Rifle', 'Rifles', 'Melee', 'Grenade'];
-const EMPTY: Partial<Weapon> = { name: '', category: 'Assault Rifles', image_url: '', background_url: '', description: '', stats: {} };
+const EMPTY: Partial<Weapon> = { name: '', category: 'Assault Rifles', image_url: '', background_url: '', description: '', stats: {}, acquisition_methods: [], release_date: '', is_permanent: true, verification_status: 'unknown', source_url: '', source_type: '' };
 const PAGE_SIZE = 50;
 const col = createColumnHelper<Weapon>();
 
@@ -137,26 +146,96 @@ export default function WeaponsManager() {
           </div>
           <div><label style={lbl}>Description (English)</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
           <div><label style={lbl}>الوصف بالعربية</label><textarea dir="rtl" value={stats.description_ar || ''} onChange={(e) => editStats({ description_ar: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.8, textAlign: 'right' }} /></div>
+          <div><label style={lbl}>Description (English)</label><textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} /></div>
+          <div><label style={lbl}>الوصف بالعربية</label><textarea dir="rtl" value={stats.description_ar || ''} onChange={(e) => editStats({ description_ar: e.target.value })} rows={3} style={{ ...inp, resize: 'vertical', lineHeight: 1.8, textAlign: 'right' }} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div><label style={lbl}>Release date</label><input type="date" value={editing.release_date || ''} onChange={(e) => setEditing({ ...editing, release_date: e.target.value })} style={inp} /></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 22 }}><input id="is-permanent" type="checkbox" checked={editing.is_permanent !== false} onChange={(e) => setEditing({ ...editing, is_permanent: e.target.checked })} /><label htmlFor="is-permanent" style={{ ...lbl, margin: 0 }}>Permanent (not temporary)</label></div>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={lbl}>Acquisition method</label>
-              <select value={stats.acquisition_kind || ''} onChange={(e) => editStats({ acquisition_kind: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                <option value="">Unverified</option>
-                <option value="gp_shop">GP Shop</option>
-                <option value="zp_shop">ZP Shop</option>
-                <option value="mileage_shop">Mileage Shop</option>
-                <option value="black_market">Black Market</option>
-                <option value="event">Event / Pass / Reward</option>
-                <option value="vvip">VIP / VVIP</option>
+              <label style={lbl}>Verification status</label>
+              <select value={editing.verification_status || 'unknown'} onChange={(e) => setEditing({ ...editing, verification_status: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
+                <option value="unknown">Unknown</option>
+                <option value="verified">Verified</option>
+                <option value="needs_review">Needs review</option>
+                <option value="conflicting">Conflicting</option>
               </select>
             </div>
-            <div>
-              <label style={lbl}>Arabic acquisition label</label>
-              <input dir="rtl" type="text" value={stats.acquisition_label_ar || ''} onChange={(e) => editStats({ acquisition_label_ar: e.target.value })} placeholder="مثال: متجر GP" style={{ ...inp, textAlign: 'right' }} />
-            </div>
+            <div><label style={lbl}>Source URL</label><input type="text" value={editing.source_url || ''} onChange={(e) => setEditing({ ...editing, source_url: e.target.value })} placeholder="https://..." style={inp} /></div>
           </div>
-          <div><label style={lbl}>شرح الاقتناء بالعربية</label><textarea dir="rtl" value={stats.acquisition_details_ar || ''} onChange={(e) => editStats({ acquisition_details_ar: e.target.value })} rows={2} placeholder="مثال: يُشترى من متجر GP." style={{ ...inp, resize: 'vertical', lineHeight: 1.8, textAlign: 'right' }} /></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input id="acquisition-verified" type="checkbox" checked={Boolean(stats.acquisition_verified)} onChange={(e) => editStats({ acquisition_verified: e.target.checked })} /><label htmlFor="acquisition-verified" style={{ ...lbl, margin: 0 }}>Acquisition method verified by an editor</label></div>
+          <div style={{ border: '1px solid #27272a', borderRadius: 6, padding: 12, background: '#18181b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <label style={{ ...lbl, margin: 0 }}>Acquisition methods (structured) — Egyptian Arabic will be generated</label>
+              <button type="button" onClick={() => {
+                const cur = Array.isArray(editing.acquisition_methods) ? editing.acquisition_methods : [];
+                setEditing({ ...editing, acquisition_methods: [...cur, { type: 'direct_purchase', title: '', currency: 'ZP', price: '', permanent: true, region: 'West', status: 'available', verified: false }] });
+              }} style={{ padding: '4px 10px', background: '#27272a', border: '1px solid #3f3f46', borderRadius: 4, color: '#fafafa', cursor: 'pointer', fontSize: 12 }}>+ Add method</button>
+            </div>
+            {(Array.isArray(editing.acquisition_methods) ? editing.acquisition_methods : []).map((m: any, idx: number) => (
+              <div key={idx} style={{ border: '1px solid #3f3f46', borderRadius: 4, padding: 10, marginBottom: 8, background: '#27272a' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <select value={m.type || 'other'} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], type: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} style={{ ...inp, cursor: 'pointer' }}>
+                    <option value="direct_purchase">Direct purchase</option>
+                    <option value="crate">Crate / Box</option>
+                    <option value="event">Event</option>
+                    <option value="zp">ZP Shop</option>
+                    <option value="gp">GP Shop</option>
+                    <option value="bundle">Bundle</option>
+                    <option value="battle_pass">Battle Pass</option>
+                    <option value="exchange">Exchange</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select value={m.status || 'unknown'} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], status: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} style={{ ...inp, cursor: 'pointer' }}>
+                    <option value="available">Available now</option>
+                    <option value="limited">Limited-time</option>
+                    <option value="historical">Historical</option>
+                    <option value="unavailable">Unavailable</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <input type="text" value={m.title || ''} onChange={(e) => {
+                  const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], title: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                }} placeholder="Title (e.g. Black Market Crate 2024)" style={{ ...inp, marginBottom: 6 }} />
+                <input dir="rtl" type="text" value={m.titleAr || m.title_ar || ''} onChange={(e) => {
+                  const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], titleAr: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                }} placeholder="العنوان بالعربية" style={{ ...inp, marginBottom: 6, textAlign: 'right' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 6 }}>
+                  <input type="text" value={m.currency || ''} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], currency: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} placeholder="Currency (ZP/GP)" style={inp} />
+                  <input type="text" value={m.price || ''} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], price: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} placeholder="Price" style={inp} />
+                  <input type="text" value={m.region || ''} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], region: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} placeholder="Region (West/China...)" style={inp} />
+                </div>
+                <textarea dir="rtl" value={m.descriptionAr || m.description_ar || ''} onChange={(e) => {
+                  const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], descriptionAr: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                }} rows={2} placeholder="الشرح بالعامية المصرية — سيتم توليده تلقائياً إذا تركته فارغاً" style={{ ...inp, resize: 'vertical', textAlign: 'right', marginBottom: 6 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#a1a1aa' }}><input type="checkbox" checked={m.permanent !== false} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], permanent: e.target.checked }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} /> Permanent</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#a1a1aa' }}><input type="checkbox" checked={Boolean(m.verified)} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], verified: e.target.checked }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} /> Verified</label>
+                  <input type="text" value={m.sourceUrl || m.source_url || ''} onChange={(e) => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur[idx] = { ...cur[idx], sourceUrl: e.target.value }; setEditing({ ...editing, acquisition_methods: cur });
+                  }} placeholder="Source URL" style={{ ...inp, flex: 1 }} />
+                  <button type="button" onClick={() => {
+                    const cur = [...(editing.acquisition_methods as any[])]; cur.splice(idx, 1); setEditing({ ...editing, acquisition_methods: cur });
+                  }} style={{ padding: '4px 8px', background: '#7f1d1d', border: 'none', borderRadius: 4, color: '#fecaca', cursor: 'pointer' }}>Remove</button>
+                </div>
+              </div>
+            ))}
+            {(!editing.acquisition_methods || editing.acquisition_methods.length === 0) && <p style={{ color: '#71717a', fontSize: 12, margin: 0 }}>No structured methods yet — add one or leave empty for "unknown". The page will show "مفيش طريقة مؤكدة حاليًا" until verified.</p>}
+          </div>
           <div><label style={lbl}>Weapon image</label><ImageUpload label="" value={editing.image_url || ''} onChange={(url) => setEditing({ ...editing, image_url: url, background_url: '' })} /><p style={{ color: '#71717a', fontSize: 12, marginTop: 6 }}>Only use an image showing this weapon alone. Card backgrounds are controlled by the catalogue.</p></div>
           <button type="button" onClick={save} disabled={saving} style={{ padding: 10, background: '#b9c1cb', border: 'none', borderRadius: 4, color: '#09090b', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
             {saving ? 'Saving...' : editing.id ? 'Update' : 'Create'}

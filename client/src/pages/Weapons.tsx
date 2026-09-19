@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface Weapon {
   id: string;
@@ -36,6 +37,33 @@ interface Weapon {
   acquisitionType?: string;
   acquisitionMethod?: string;
   acquisitionVerified?: boolean;
+  acquisitionMethods?: Array<{
+    type: string;
+    title: string;
+    titleAr?: string;
+    description: string;
+    descriptionAr?: string;
+    currency?: string;
+    price?: string;
+    permanent?: boolean;
+    region?: string;
+    version?: string;
+    status?: string;
+    source?: string;
+    sourceUrl?: string;
+    sourceKind?: string;
+    verified?: boolean;
+    startDate?: string;
+    endDate?: string;
+    notes?: string;
+  }>;
+  releaseDate?: string;
+  isPermanent?: boolean;
+  verificationStatus?: string;
+  sourceType?: string;
+  lastVerifiedAt?: string;
+  acquisitionSummaryAr?: string;
+  acquisitionSummaryEn?: string;
 }
 
 type AcquisitionKey = "all" | "gp" | "zp" | "mp" | "black-market" | "event" | "unverified";
@@ -218,6 +246,84 @@ function getAcquisition(weapon: Weapon) {
     verified: Boolean(weapon.acquisitionVerified),
     raw: raw.trim(),
   };
+}
+
+function getAcquisitionMethods(weapon: Weapon) {
+  if (Array.isArray(weapon.acquisitionMethods) && weapon.acquisitionMethods.length > 0) {
+    return weapon.acquisitionMethods;
+  }
+  // Fallback: convert legacy single method into array for display
+  if (weapon.acquisitionKind && weapon.acquisitionKind !== 'unverified') {
+    return [{
+      type: weapon.acquisitionKind || 'other',
+      title: weapon.acquisitionLabelEn || weapon.acquisitionKind,
+      titleAr: weapon.acquisitionLabelAr || weapon.acquisitionKind,
+      description: weapon.acquisitionDetailsEn || '',
+      descriptionAr: weapon.acquisitionDetailsAr || '',
+      currency: '',
+      price: '',
+      permanent: weapon.isPermanent !== false,
+      region: 'West',
+      version: '',
+      status: weapon.verificationStatus === 'verified' ? 'available' : 'unknown',
+      source: weapon.sourceKind || '',
+      sourceUrl: weapon.sourceUrl || '',
+      verified: Boolean(weapon.acquisitionVerified),
+      startDate: weapon.releaseDate || '',
+      endDate: '',
+      notes: '',
+    }];
+  }
+  return [];
+}
+
+function getWeaponAvailabilityStatus(weapon: Weapon, arabic: boolean) {
+  const methods = getAcquisitionMethods(weapon);
+  if (methods.length === 0) {
+    return { label: arabic ? 'مفيش طريقة مؤكدة حاليًا' : 'No verified method', color: '#6b7280', status: 'unknown' as const };
+  }
+  const hasAvailable = methods.some(m => m.status === 'available');
+  const hasLimited = methods.some(m => m.status === 'limited');
+  const hasHistorical = methods.every(m => m.status === 'historical' || m.status === 'unavailable');
+  if (hasAvailable) return { label: arabic ? 'متاح حاليًا' : 'Available now', color: '#22c55e', status: 'available' as const };
+  if (hasLimited) return { label: arabic ? 'متاح لفترة محدودة' : 'Limited-time', color: '#eab308', status: 'limited' as const };
+  if (hasHistorical) return { label: arabic ? 'مش متاح حاليًا' : 'Not available now', color: '#ef4444', status: 'unavailable' as const };
+  return { label: arabic ? 'مفيش طريقة مؤكدة حاليًا' : 'No verified method', color: '#6b7280', status: 'unknown' as const };
+}
+
+function generateEgyptianAcquisitionText(method: NonNullable<Weapon['acquisitionMethods']>[number], arabic: boolean) {
+  if (!arabic) {
+    // Simple English fallback
+    if (method.status === 'historical' || method.status === 'unavailable') {
+      return `${method.title || method.type} was available${method.region ? ` in ${method.region}` : ''} but is not available now. Check again if the event returns.`;
+    }
+    return method.description || `${method.title || method.type} in ${method.region || 'CrossFire West'}${method.price ? ` for ${method.price} ${method.currency || ''}` : ''}.`;
+  }
+  const regionNote = method.region && method.region !== 'West' ? ` في ${method.region}` : method.region === 'West' ? ' في CrossFire West' : '';
+  const priceNote = method.price ? ` مقابل ${method.price} ${method.currency || ''}`.trim() : '';
+  const permNote = method.permanent === false ? ' (مؤقت)' : method.permanent ? ' (دائم)' : '';
+  const typeMap: Record<string, string> = {
+    direct_purchase: `تقدر تشتريه مباشرة من الـ Shop${priceNote}${regionNote}${permNote}`,
+    zp: `تقدر تجيبه من الـ Shop مقابل ${method.price || ''} ZP${regionNote}${permNote}`,
+    gp: `تقدر تجيبه من متجر الـ GP${priceNote}${regionNote}${permNote}`,
+    crate: `بيطلع من ${method.title || 'الكريت/الصندوق'}${regionNote}. ${method.price ? `تكلفته ${method.price} ${method.currency || ''}.` : ''} ${method.permanent === false ? 'المكافأة مؤقتة.' : ''} ${method.status === 'historical' ? 'الكريت ده مش متاح حاليًا.' : ''}`,
+    box: `بيطلع من ${method.title || 'الصندوق'}${regionNote}.`,
+    event: `كان بيتاخد كمكافأة من ${method.title || 'الـ Event'}${regionNote}. ${method.status === 'historical' || method.status === 'unavailable' ? 'الـ Event انتهى حاليًا، فمش هتقدر تجيبه بالطريقة دي دلوقتي، إلا لو رجع تاني.' : `تقدر تجيبه حاليًا من ${method.title || 'الـ Event'}.`}`,
+    mission: `كل اللي عليك إنك تخلص الـ Mission: ${method.title || ''}${regionNote}.`,
+    login_reward: `هتلاقيه كمكافأة تسجيل دخول${method.title ? ` — ${method.title}` : ''}${regionNote}.`,
+    exchange: `تقدر تبدله من نظام الـ Exchange${method.title ? ` — ${method.title}` : ''}${priceNote}${regionNote}.`,
+    lucky_draw: `بيطلع من الـ Lucky Draw${method.title ? ` — ${method.title}` : ''}${regionNote}.`,
+    bundle: `كان جزء من ${method.title || 'الـ Bundle'}${regionNote}. ${method.status === 'historical' ? 'الـ Bundle مش متاح حاليًا.' : ''}`,
+    battle_pass: `كان متاح في الـ Battle Pass${method.title ? ` — ${method.title}` : ''}${regionNote}.`,
+    ranking_reward: `مكافأة رانك — ${method.title || ''}${regionNote}.`,
+    tournament_reward: `مكافأة بطولة — ${method.title || ''}${regionNote}.`,
+    coupon: `بـ Coupon/Ticket — ${method.title || ''}${regionNote}.`,
+    crafting: `عن طريق الـ Crafting${method.title ? ` — ${method.title}` : ''}${regionNote}.`,
+    upgrade: `عن طريق التطوير${method.title ? ` — ${method.title}` : ''}${regionNote}.`,
+  };
+  if (method.descriptionAr && method.descriptionAr.length > 10) return method.descriptionAr;
+  if (typeMap[method.type]) return typeMap[method.type];
+  return method.descriptionAr || method.description || `تقدر تجيب السلاح ده عن طريق ${method.title || method.type}${regionNote}${priceNote}${permNote}.`;
 }
 
 function normalizeWeapon(weapon: Partial<Weapon> & Record<string, any>): Weapon {
@@ -465,24 +571,73 @@ export default function Weapons() {
                       <div className="relative h-36 sm:h-40 overflow-hidden" style={{ background: WEAPON_IMAGE_SURFACE }}>
                         <div className="absolute inset-0 opacity-35" style={{ background: "linear-gradient(135deg, transparent 0 45%, rgba(255,255,255,.12) 46%, transparent 47%)" }} />
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-3 transition-transform duration-300 group-hover:scale-105" />
-                        <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{acquisition.key === "unverified" ? (arabic ? "غير متحقق" : "Unverified") : (arabic ? meta.ar : meta.en)}</span>
+                        <span className="absolute z-20 top-2 right-2 px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold" style={{ background: "rgba(5,8,12,.82)", color: getWeaponAvailabilityStatus(weapon, arabic).color, border: `1px solid ${getWeaponAvailabilityStatus(weapon, arabic).color}40` }}>{getWeaponAvailabilityStatus(weapon, arabic).label}</span>
                       </div>
                       <div className="p-3 min-h-[91px]" style={{ background: "#0b0d10" }}>
                         <div className="flex items-center gap-2 mb-2"><WeaponGlyph category={weapon.category} color={color} size={18} /><span className="text-[9px] uppercase tracking-wider font-bold" style={{ color }}>{categoryLabel(weapon.category, arabic)}</span></div>
                         <h3 className="font-black text-[12px] uppercase leading-tight line-clamp-2">{title}</h3>
+                        <Link href={`/weapons/${weapon.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`} onClick={(e) => e.stopPropagation()} className="inline-block mt-2 text-[10px] underline" style={{ color: NEUTRAL_UI }}>{arabic ? 'عرض التفاصيل' : 'View details'}</Link>
                       </div>
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-xl p-0 overflow-hidden" style={{ background: "#11161d", border: "1px solid rgba(174,184,196,.28)", color: "#e8edf3" }}>
+                  <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto" style={{ background: "#11161d", border: "1px solid rgba(174,184,196,.28)", color: "#e8edf3" }}>
                     <div className="h-px" style={{ background: "#7e8998" }} />
                     <DialogHeader className="px-6 pt-5"><DialogTitle className="text-xl font-black uppercase">{title}</DialogTitle></DialogHeader>
-                    <div className="px-6 pb-6 space-y-5 mt-3">
+                    <div className="px-6 pb-6 space-y-6 mt-3">
+                      {/* Header */}
                       <div className="relative h-52 overflow-hidden flex items-center justify-center" style={{ background: WEAPON_IMAGE_SURFACE }}>
                         <WeaponImage weapon={weapon} alt={weapon.name} className="h-full w-full p-7" />
                       </div>
-                      <div className="flex flex-wrap items-center gap-2"><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{categoryLabel(weapon.category, arabic)}</span><span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{arabic ? meta.ar : meta.en}</span></div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: NEUTRAL_UI, border: "1px solid rgba(174,184,196,.28)" }}>{categoryLabel(weapon.category, arabic)}</span>
+                        <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(174,184,196,.08)", color: getWeaponAvailabilityStatus(weapon, arabic).color, border: `1px solid ${getWeaponAvailabilityStatus(weapon, arabic).color}40` }}>{getWeaponAvailabilityStatus(weapon, arabic).label}</span>
+                        {weapon.isPermanent === false && <span className="px-2 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(239,68,68,.1)", color: "#f87171", border: "1px solid rgba(239,68,68,.3)" }}>{arabic ? 'مؤقت' : 'Temporary'}</span>}
+                        {weapon.isPermanent !== false && weapon.acquisitionMethods && weapon.acquisitionMethods.length > 0 && <span className="px-2 py-1 text-[10px] uppercase tracking-wider font-bold" style={{ background: "rgba(34,197,94,.1)", color: "#4ade80", border: "1px solid rgba(34,197,94,.3)" }}>{arabic ? 'دائم' : 'Permanent'}</span>}
+                      </div>
+                      {/* Quick facts */}
+                      <div className="grid grid-cols-2 gap-3 text-xs p-3 border" style={{ borderColor: "rgba(174,184,196,.15)", background: "rgba(174,184,196,.03)" }}>
+                        <div><span style={{ color: NEUTRAL_UI }}>{arabic ? 'النوع' : 'Type'}: </span><span style={{ color: "#e8edf3" }}>{categoryLabel(weapon.category, arabic)}</span></div>
+                        <div><span style={{ color: NEUTRAL_UI }}>{arabic ? 'الحالة' : 'Status'}: </span><span style={{ color: getWeaponAvailabilityStatus(weapon, arabic).color }}>{getWeaponAvailabilityStatus(weapon, arabic).label}</span></div>
+                        {weapon.releaseDate && <div><span style={{ color: NEUTRAL_UI }}>{arabic ? 'تاريخ الإصدار' : 'Release'}: </span><span style={{ color: "#e8edf3" }}>{weapon.releaseDate}</span></div>}
+                        <div><span style={{ color: NEUTRAL_UI }}>{arabic ? 'المنطقة' : 'Region'}: </span><span style={{ color: "#e8edf3" }}>{(weapon.acquisitionMethods && weapon.acquisitionMethods[0]?.region) || 'West'}</span></div>
+                      </div>
                       <div><p className="text-[10px] uppercase tracking-[.22em] mb-2" style={{ color: NEUTRAL_UI }}>{arabic ? "الوصف" : "Description"}</p><p className="text-sm leading-7" style={{ color: "#b7c0cb" }}>{arabic ? (weapon.descriptionAr || "لا يتوفر وصف عربي موثق لهذا السلاح حتى الآن.") : (weapon.description || "No sourced description is available for this weapon yet.")}</p></div>
-                      <div className="p-3 border" style={{ borderColor: "rgba(174,184,196,.2)", background: "rgba(174,184,196,.04)" }}><p className="text-[10px] uppercase tracking-[.2em] mb-1" style={{ color: NEUTRAL_UI }}>{arabic ? "طريقة الاقتناء" : "Acquisition method"}</p><p className="text-xs leading-6" style={{ color: "#b7c0cb" }}>{acquisitionDisplay(weapon, acquisition.key, arabic)}</p></div>
+                      {/* How to get it */}
+                      <div>
+                        <h3 className="text-sm font-black uppercase tracking-wider mb-3" style={{ color: "#f5a623" }}>{arabic ? 'أجيبه إزاي؟' : 'How to get it?'}</h3>
+                        {(() => {
+                          const methods = getAcquisitionMethods(weapon);
+                          if (methods.length === 0) {
+                            return <p className="text-sm leading-7 p-3 border" style={{ color: "#b7c0cb", borderColor: "rgba(174,184,196,.15)", background: "rgba(174,184,196,.03)" }}>{arabic ? 'مفيش طريقة مؤكدة حاليًا للحصول على السلاح ده. تابع الإعلانات الرسمية — لو نزل بطريقة جديدة هنحدث الصفحة.' : 'No verified acquisition method is currently documented. Check official announcements — we update when a new method appears.'}</p>;
+                          }
+                          const current = methods.filter(m => m.status === 'available' || m.status === 'limited');
+                          const historical = methods.filter(m => m.status === 'historical' || m.status === 'unavailable');
+                          const unknown = methods.filter(m => !['available','limited','historical','unavailable'].includes(m.status));
+                          const renderCard = (m: NonNullable<Weapon['acquisitionMethods']>[number], idx: number) => (
+                            <div key={idx} className="p-3 border space-y-2" style={{ borderColor: m.verified ? "rgba(34,197,94,.25)" : "rgba(174,184,196,.15)", background: m.verified ? "rgba(34,197,94,.05)" : "rgba(174,184,196,.03)" }}>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider" style={{ background: m.status === 'available' ? "rgba(34,197,94,.15)" : m.status === 'limited' ? "rgba(234,179,8,.15)" : m.status === 'historical' ? "rgba(239,68,68,.12)" : "rgba(174,184,196,.1)", color: m.status === 'available' ? "#4ade80" : m.status === 'limited' ? "#facc15" : m.status === 'historical' ? "#f87171" : NEUTRAL_UI, border: "1px solid currentColor" }}>{m.status === 'available' ? (arabic ? 'متاح حاليًا' : 'Available now') : m.status === 'limited' ? (arabic ? 'محدود' : 'Limited') : m.status === 'historical' ? (arabic ? 'قديم' : 'Historical') : (arabic ? 'غير معروف' : 'Unknown')}</span>
+                                <span className="text-xs font-bold" style={{ color: "#e8edf3" }}>{arabic ? (m.titleAr || m.title || m.type) : (m.title || m.type)}</span>
+                                {m.region && <span className="text-[10px] px-1.5 py-0.5" style={{ background: "rgba(255,255,255,.06)", color: "#9ca3af", border: "1px solid rgba(255,255,255,.08)" }}>{m.region}</span>}
+                                {m.currency && m.price && <span className="text-[10px] font-bold" style={{ color: "#f5a623" }}>{m.price} {m.currency}</span>}
+                                {m.permanent === false && <span className="text-[10px]" style={{ color: "#f87171" }}>{arabic ? 'مؤقت' : 'Temporary'}</span>}
+                                {m.verified && <span className="text-[10px]" style={{ color: "#4ade80" }}>✓ {arabic ? 'موثق' : 'Verified'}</span>}
+                              </div>
+                              <p className="text-xs leading-6" style={{ color: "#b7c0cb" }}>{generateEgyptianAcquisitionText(m, arabic)}</p>
+                              {m.sourceUrl && <a href={m.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] underline" style={{ color: NEUTRAL_UI }}>{arabic ? 'المصدر' : 'Source'}<ExternalLink className="h-3 w-3" /></a>}
+                              {m.notes && <p className="text-[11px] italic" style={{ color: "#9ca3af" }}>{m.notes}</p>}
+                            </div>
+                          );
+                          return (
+                            <div className="space-y-4">
+                              {current.length > 0 && <div><p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#4ade80" }}>{arabic ? 'طرق الحصول عليه حاليًا' : 'Available now'}</p><div className="space-y-3">{current.map(renderCard)}</div></div>}
+                              {historical.length > 0 && <div><p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#f87171" }}>{arabic ? 'طرق قديمة' : 'Historical methods'}</p><div className="space-y-3">{historical.map(renderCard)}</div></div>}
+                              {unknown.length > 0 && <div><p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: NEUTRAL_UI }}>{arabic ? 'طرق أخرى' : 'Other methods'}</p><div className="space-y-3">{unknown.map(renderCard)}</div></div>}
+                              {methods.length > 0 && <p className="text-[11px] leading-5 p-2 border" style={{ color: "#9ca3af", borderColor: "rgba(174,184,196,.12)", background: "rgba(174,184,196,.02)" }}>{arabic ? 'لو الطريقة الأصلية مش متاحة حاليًا، تابع الإعلانات الرسمية — السلاح ممكن يرجع بطريقة تانية.' : 'If the original method is unavailable, watch official announcements — the weapon may return via another method.'}</p>}
+                            </div>
+                          );
+                        })()}
+                      </div>
                       {weapon.sourceUrl && <a href={weapon.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs" style={{ color: NEUTRAL_UI }}>{arabic ? "فتح المصدر" : "Open source"}<ExternalLink className="h-3.5 w-3.5" /></a>}
                     </div>
                   </DialogContent>

@@ -1014,6 +1014,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const rawType = Array.isArray(req.query.type) ? req.query.type[0] : req.query.type;
+  const rawFormat = Array.isArray(req.query.format) ? req.query.format[0] : req.query.format;
+  // LLM-friendly markdown index (served at /api/content via rewrite, no extra function).
+  if (req.method === 'GET' && rawFormat === 'markdown') {
+    const mdSections: Array<{ title: string; links: Array<[string, string]> }> = [
+      { title: "Core wiki", links: [["Weapons", "/weapons"], ["Mercenaries", "/mercenaries"], ["Game modes", "/modes"], ["Maps", "/maps"], ["Ranks", "/ranks"], ["Ribbons", "/ribbons"], ["Global wiki", "/global-wiki"], ["Content hub", "/content-hub"]] },
+      { title: "News & events", links: [["News", "/news"], ["Events", "/events"], ["Blog posts", "/posts"], ["Tutorials", "/tutorials"], ["Videos", "/videos"], ["Competition", "/competition"]] },
+      { title: "Community & support", links: [["Forum", "/forum"], ["FAQ", "/faq"], ["Support", "/support"], ["Sellers", "/sellers"], ["About", "/about"], ["Download", "/download"], ["Contact", "/contact"]] },
+    ];
+    const lines = ["# CrossFire Wiki", "", `> Independent CrossFire reference in English and Arabic. Base: ${BASE}`, ""];
+    for (const section of mdSections) {
+      lines.push(`## ${section.title}`, "");
+      for (const [label, path] of section.links) lines.push(`- [${label}](${BASE}${path})`);
+      lines.push("");
+    }
+    lines.push("## Notes", "", "- Arabic routes use `/ar/*`, e.g. https://crossfire.wiki/ar/weapons.", "- Full URL list: https://crossfire.wiki/sitemap.xml", "- Contact: contact@crossfire.wiki", "");
+    res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    return res.status(200).send(lines.join("\n"));
+  }
+
   if (req.method === 'POST' && rawType === 'competition') {
     const result = await competitionRequest(req);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

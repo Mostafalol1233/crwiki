@@ -12,7 +12,6 @@
     "api/prerender.ts":           { "maxDuration": 30 },
     "api/send-email.ts":          { "maxDuration": 20 },
     "api/sitemap.ts":             { "maxDuration": 20 },
-    "api/content.ts":             { "maxDuration": 10 },
     "api/admin/scraper.ts":       { "maxDuration": 60 }
   },
 
@@ -45,6 +44,7 @@
   ],
 
   "rewrites": [
+    { "source": "/api/content", "destination": "/api/sitemap?format=markdown" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
 
     { "source": "/events", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fevents" },

@@ -6,7 +6,10 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /api/
+# /search is UI-only (sitelinks SearchAction target). Crawling it adds no value.
 Disallow: /search
+Allow: /llms.txt
+Allow: /api/content
 Disallow: /login
 Disallow: /register
 Disallow: /profile
@@ -77,6 +80,51 @@ Allow: /
 
 User-agent: Discordbot
 Allow: /
+
+# AI / LLM crawlers — same rules as browsers: public content only
+User-agent: GPTBot
+Allow: /weapons
+Allow: /modes
+Allow: /maps
+Allow: /ranks
+Allow: /mercenaries
+Allow: /news/
+Allow: /events/
+Allow: /llms.txt
+Allow: /api/content
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /login
+Disallow: /ai
+Disallow: /chat
+
+User-agent: ClaudeBot
+Allow: /weapons
+Allow: /modes
+Allow: /maps
+Allow: /ranks
+Allow: /mercenaries
+Allow: /news/
+Allow: /events/
+Allow: /llms.txt
+Allow: /api/content
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /login
+Disallow: /ai
+Disallow: /chat
+
+User-agent: PerplexityBot
+Allow: /llms.txt
+Allow: /api/content
+Disallow: /admin/
+Disallow: /api/admin/
+
+User-agent: CCBot
+Allow: /llms.txt
+Allow: /api/content
+Disallow: /admin/
+Disallow: /api/admin/
 
 # Dynamic sitemap generated from the current database content
 Sitemap: https://crossfire.wiki/sitemap.xml

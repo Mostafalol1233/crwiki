@@ -37,12 +37,12 @@ Preferred communication style: Simple, everyday language.
 ## Backend Architecture
 
 **Technology Stack:**
-- Node.js with Express
-- MongoDB with Mongoose ODM
-- JWT for authentication
-- Multer for file uploads
+- Node.js with Express (`backend/server.js` media service) + Vercel serverless (`api/*`) + Vite dev middleware (`vite.config.ts`)
+- Supabase Postgres (primary) with RLS; Mongoose/Drizzle in `shared/` kept as legacy reference
+- HMAC-signed admin tokens (`server/adminAuth.ts`, 7d TTL) + Supabase Auth for users
+- Multer for file uploads (media service only)
 - Rate limiting for API protection
-- WebSocket support for real-time features
+- WebSocket support for real-time features (legacy)
 
 **API Design:**
 - RESTful endpoints with consistent patterns
@@ -57,7 +57,7 @@ Preferred communication style: Simple, everyday language.
 - Seller images are stored as direct Cloudinary `secure_url` values in the database
 - Required Cloudinary env vars: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - Admin can migrate existing seller images to Cloudinary via the "Migrate to Cloudinary" button in the admin sellers panel
-- Dotenv loads from `backend-deploy-full/.env` using explicit path (not relying on working directory)
+- Env loads from process environment / `.env` at repo root (server-only secrets never prefixed with `VITE_`)
 
 **Data Models:**
 - Users (authentication with email/phone verification)
@@ -79,10 +79,10 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Authorization
 
 **Strategy:**
-- JWT token-based authentication
+- HMAC-signed admin tokens + Supabase Auth (users); legacy JWT references removed
 - Multiple user roles with granular permissions
 - Admin password environment variable for quick super_admin access
-- Middleware-based route protection
+- Middleware-based route protection + per-endpoint permission checks (`posts:manage`, `content:manage`)
 - Optional scraper API key for automated content ingestion
 
 **Roles:**
@@ -97,14 +97,14 @@ Preferred communication style: Simple, everyday language.
 ## Data Storage
 
 **Primary Database:**
-- MongoDB Atlas (cloud-hosted)
-- Connection string via MONGODB_URI environment variable
-- Mongoose schemas with validation
-- Indexes on frequently queried fields (username, email, post_slug)
+- Supabase Postgres (cloud-hosted, RLS)
+- Connection via `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` (server only) / publishable key (browser)
+- Canonical schema in `supabase-schema.sql`; indexes on slug/username/email
+- Legacy MongoDB/Mongoose (`MONGODB_URI`, `shared/mongodb-schema.ts`) kept for reference only
 
 **File Storage:**
-- Image uploads to Catbox.moe CDN via API
-- Static assets served from `/assets/*` route
+- Image uploads to Cloudinary (primary, `secure_url` in DB) + Catbox.moe CDN fallback
+- Static assets served from `/assets/*` route (immutable cache)
 - Audio files (MP3) for mercenary voice lines
 - Fallback to GitHub raw URLs for images
 

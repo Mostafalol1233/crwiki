@@ -8,9 +8,10 @@
 - ✅ Updated contact email from contact@bimora.blog to contact@crossfire.wiki
 
 ## Pending Tasks
-- [ ] Verify all API endpoints work with new domain
-- [ ] Test build and deployment
+- [ ] Verify all API endpoints work with new domain (`/api/health`, `/api/weapons`, `/api/auth`, `/api/posts`, `/api/events`, `/api/news`, `/api/modes`, `/api/ranks`, `/api/mercenaries`)
+- [ ] Test build and deployment (`npm run check`, `npm run build`)
 - [ ] Verify site works on new domain after old domain deletion
+- [ ] Full-site audit fixes 2026-10-02: GEO llms.txt, SEO prerender allowlist, theme/a11y unify, security CORS/RLS hardening (in progress)
 
 ## Build Status
 - ✅ Build completed successfully (1m 37s)

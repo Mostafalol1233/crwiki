@@ -12,6 +12,7 @@
     "api/prerender.ts":           { "maxDuration": 30 },
     "api/send-email.ts":          { "maxDuration": 20 },
     "api/sitemap.ts":             { "maxDuration": 20 },
+    "api/content.ts":             { "maxDuration": 10 },
     "api/admin/scraper.ts":       { "maxDuration": 60 }
   },
 
@@ -29,11 +30,11 @@
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/api/content",
       "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        { "key": "Access-Control-Allow-Origin",  "value": "https://crossfire.wiki" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
     }
   ],
@@ -44,7 +45,6 @@
   ],
 
   "rewrites": [
-    { "source": "/api/content", "destination": "/api/sitemap" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
 
     { "source": "/events", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fevents" },
@@ -77,6 +77,10 @@
       "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }],
       "destination": "/api/prerender?path=%2Fcompetition"
     },
+    { "source": "/:section(about|contact|download|sellers|ribbons)", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=/:section" },
+    { "source": "/ar/:section(about|contact|download|sellers|ribbons)", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Far%2F:section" },
+    { "source": "/weapons/:slug", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fweapons%2F:slug" },
+    { "source": "/ar/weapons/:slug", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Far%2Fweapons%2F:slug" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

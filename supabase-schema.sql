@@ -339,6 +339,49 @@ CREATE TABLE IF NOT EXISTS comment_likes (
   UNIQUE(comment_id, user_identifier)
 );
 
+-- ─── Forum (promoted from supabase/migrations/COMPLETE_SETUP.sql) ─────────────
+CREATE TABLE IF NOT EXISTS forum_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  name_ar TEXT,
+  description TEXT,
+  description_ar TEXT,
+  icon TEXT DEFAULT '💬',
+  color TEXT DEFAULT '#d4a017',
+  thread_count INTEGER DEFAULT 0,
+  post_count INTEGER DEFAULT 0,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS forum_threads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES forum_categories(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  body TEXT,
+  author_id TEXT,
+  author_name TEXT DEFAULT 'Anonymous',
+  author_avatar TEXT,
+  is_pinned BOOLEAN DEFAULT false,
+  is_locked BOOLEAN DEFAULT false,
+  view_count INTEGER DEFAULT 0,
+  reply_count INTEGER DEFAULT 0,
+  last_reply_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS forum_threads_category_idx ON forum_threads(category_id);
+CREATE TABLE IF NOT EXISTS forum_posts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  thread_id UUID REFERENCES forum_threads(id) ON DELETE CASCADE,
+  body TEXT,
+  author_id TEXT,
+  author_name TEXT DEFAULT 'Anonymous',
+  author_avatar TEXT,
+  is_op BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS forum_posts_thread_idx ON forum_posts(thread_id);
+
 -- ─── Row Level Security (RLS) ─────────────────────────────────────────────────
 -- Enable RLS on all tables
 ALTER TABLE weapons ENABLE ROW LEVEL SECURITY;
@@ -363,6 +406,9 @@ ALTER TABLE site_highlights ENABLE ROW LEVEL SECURITY;
 ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE video_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE forum_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE forum_threads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE forum_posts ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for content tables
 CREATE POLICY "Public read weapons" ON weapons FOR SELECT USING (true);
@@ -382,6 +428,8 @@ CREATE POLICY "Public read site_settings" ON site_settings FOR SELECT USING (tru
 CREATE POLICY "Public read approved comments" ON comments FOR SELECT USING (approved = true);
 
 -- Public insert for user actions
+-- NOTE: open INSERT is intentional for anon flows; abuse is throttled at the
+-- API layer (rate-limit + validation). Do not expose service-role to browsers.
 CREATE POLICY "Anyone can submit ticket" ON tickets FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can subscribe newsletter" ON newsletter_subscribers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can add comment" ON comments FOR INSERT WITH CHECK (true);
@@ -397,4 +445,7 @@ CREATE POLICY "Anyone can add video like" ON video_likes FOR INSERT WITH CHECK (
 CREATE POLICY "Anyone can remove video like" ON video_likes FOR DELETE USING (true);
 CREATE POLICY "Public read comment_likes" ON comment_likes FOR SELECT USING (true);
 CREATE POLICY "Anyone can add comment like" ON comment_likes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public read forum_categories" ON forum_categories FOR SELECT USING (true);
+CREATE POLICY "Public read forum_threads" ON forum_threads FOR SELECT USING (true);
+CREATE POLICY "Public read forum_posts" ON forum_posts FOR SELECT USING (true);
 CREATE POLICY "Anyone can remove comment like" ON comment_likes FOR DELETE USING (true);

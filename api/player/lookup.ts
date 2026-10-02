@@ -1,15 +1,24 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const CORS = new Map([
-  ["Access-Control-Allow-Origin", "*"],
-  ["Access-Control-Allow-Methods", "GET, OPTIONS"],
-  ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
-]);
+const ALLOWED_ORIGINS = [
+  "https://crossfire.wiki",
+  "https://www.crossfire.wiki",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean),
+];
 
-function addCorsHeaders(res: VercelResponse) {
-  for (const [key, value] of CORS) {
-    res.setHeader(key, value);
-  }
+function resolveOrigin(req: VercelRequest): string {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "https://crossfire.wiki";
+}
+
+function addCorsHeaders(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", resolveOrigin(req));
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return res;
 }
 
@@ -134,13 +143,13 @@ export function parseFirecrawlMarkdown(md: string, regionLabel: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method === "OPTIONS") return addCorsHeaders(req, res).status(204).end();
 
   try {
     const rawProfileUrl = String(req.query.profileUrl || "").trim();
 
     if (!rawProfileUrl) {
-      return addCorsHeaders(res).status(400).json({
+      return addCorsHeaders(req, res).status(400).json({
         error: "A profile URL is required. Paste your z8games.com/profile/… link.",
       });
     }
@@ -151,7 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const fcKey = process.env.FIRECRAWL_API_KEY || "";
     if (!fcKey) {
-      return addCorsHeaders(res).status(503).json({
+      return addCorsHeaders(req, res).status(503).json({
         error: "Scraping service not configured.",
       });
     }
@@ -178,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (!fcRes.ok) {
-      return addCorsHeaders(res).status(502).json({
+      return addCorsHeaders(req, res).status(502).json({
         error: "Could not scrape the profile page. Make sure the URL is a valid z8games.com profile link.",
       });
     }
@@ -188,16 +197,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const profile = parseFirecrawlMarkdown(md, regionLabel);
 
     if (!profile) {
-      return addCorsHeaders(res).status(404).json({
+      return addCorsHeaders(req, res).status(404).json({
         error: "Profile data not found on that page. Make sure your profile is set to public on z8games.com.",
         notFound: true,
       });
     }
 
-    return addCorsHeaders(res).status(200).json({ success: true, profile });
+    return addCorsHeaders(req, res).status(200).json({ success: true, profile });
   } catch (err: any) {
     const isTimeout = err?.name === "TimeoutError" || err?.message?.includes("timeout");
-    return addCorsHeaders(res).status(isTimeout ? 504 : 500).json({
+    return addCorsHeaders(req, res).status(isTimeout ? 504 : 500).json({
       error: isTimeout ? "Scraping timed out — try again shortly." : "Failed to fetch profile.",
     });
   }

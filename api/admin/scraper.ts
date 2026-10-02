@@ -11,16 +11,25 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyAdminRequest } from "../../server/adminAuth.js";
 import { assertApprovedSourceUrl } from "../../server/urlSafety.js";
 
-const CORS = new Map([
-  ["Access-Control-Allow-Origin", "*"],
-  ["Access-Control-Allow-Methods", "POST, OPTIONS"],
-  ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
-]);
+const ALLOWED_ORIGINS = [
+  "https://crossfire.wiki",
+  "https://www.crossfire.wiki",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean),
+];
 
-function addCorsHeaders(res: VercelResponse) {
-  for (const [key, value] of CORS) {
-    res.setHeader(key, value);
-  }
+function resolveOrigin(req: VercelRequest): string {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "https://crossfire.wiki";
+}
+
+function addCorsHeaders(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", resolveOrigin(req));
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return res;
 }
 
@@ -88,10 +97,10 @@ async function scrapeDirect(url: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
-  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
+  if (req.method === "OPTIONS") return addCorsHeaders(req, res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(req, res).status(405).json({ error: "POST only" });
   const admin = verifyAdminRequest(req.headers as Record<string, unknown>);
-  if (!admin) return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+  if (!admin) return addCorsHeaders(req, res).status(401).json({ error: "Unauthorized" });
 
   try {
     const { url, type, preview } = req.body || {};
@@ -102,18 +111,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       events: ["events:manage", "content:manage"],
     };
     const permitted = admin.role === "super_admin" || permissionByType[contentType].some(permission => admin.permissions?.[permission] === true);
-    if (!permitted) return addCorsHeaders(res).status(403).json({ error: "Missing content management permission" });
+    if (!permitted) return addCorsHeaders(req, res).status(403).json({ error: "Missing content management permission" });
 
     let approvedUrl: string;
     try { approvedUrl = await assertApprovedSourceUrl(url); }
-    catch (error) { return addCorsHeaders(res).status(400).json({ error: error instanceof Error ? error.message : "Invalid source URL" }); }
+    catch (error) { return addCorsHeaders(req, res).status(400).json({ error: error instanceof Error ? error.message : "Invalid source URL" }); }
 
     const SUPABASE_URL = process.env.SUPABASE_URL || "";
     const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY || "";
     const FC_KEY       = process.env.FIRECRAWL_API_KEY || "";
 
     if (!preview && (!SUPABASE_URL || !SERVICE_KEY))
-      return addCorsHeaders(res).status(500).json({ error: "Supabase not configured" });
+      return addCorsHeaders(req, res).status(500).json({ error: "Supabase not configured" });
 
     // Scrape — Firecrawl first (renders JS), direct fetch as fallback
     let scraped: { title: string; content: string; summary: string; image: string };
@@ -127,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (preview) {
       const plain = scraped.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      return addCorsHeaders(res).status(200).json({
+      return addCorsHeaders(req, res).status(200).json({
         success: true,
         preview: true,
         scraped: { title: scraped.title, content: scraped.content, summary: scraped.summary, image: scraped.image, contentLength: plain.length },
@@ -182,12 +191,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const plain = scraped.content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-    return addCorsHeaders(res).status(200).json({
+    return addCorsHeaders(req, res).status(200).json({
       success: true,
       scraped: { title: scraped.title, image: scraped.image, contentLength: plain.length },
     });
   } catch (err: any) {
     console.error("[admin/scraper]", err.message);
-    return addCorsHeaders(res).status(500).json({ error: err.message || "Scrape failed" });
+    return addCorsHeaders(req, res).status(500).json({ error: err.message || "Scrape failed" });
   }
 }

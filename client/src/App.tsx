@@ -434,8 +434,9 @@ function Layout() {
       <div
         className="flex flex-col min-h-screen"
       >
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-md focus:bg-[#d4a017] focus:text-black focus:font-semibold">Skip to content</a>
         <Header />
-        <main className="flex-1">
+        <main id="main-content" className="flex-1" tabIndex={-1} aria-label="Main content">
           <DeferredAnnouncement location={location} />
           <Router />
         </main>

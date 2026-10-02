@@ -12,12 +12,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("theme");
-    // This is a dark wiki — migrate any stale "light" preference to dark
-    if (saved === "light") {
-      localStorage.removeItem("theme");
-      return "dark";
-    }
-    return (saved as Theme) || "dark";
+    if (saved === "light" || saved === "dark") return saved;
+    return "dark";
   });
 
   useEffect(() => {

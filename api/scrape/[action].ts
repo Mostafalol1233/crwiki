@@ -10,8 +10,21 @@ const CORS = new Map([
   ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
 ]);
 
-function addCorsHeaders(res: VercelResponse) {
-  for (const [key, value] of CORS) res.setHeader(key, value);
+const ALLOWED_ORIGINS = [
+  "https://crossfire.wiki",
+  "https://www.crossfire.wiki",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean),
+];
+
+function resolveOrigin(req: VercelRequest): string {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "https://crossfire.wiki";
+}
+function addCorsHeaders(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", resolveOrigin(req)); res.setHeader("Vary", "Origin"); for (const [key, value] of CORS) { if (key !== "Access-Control-Allow-Origin") res.setHeader(key, value); }
   return res;
 }
 
@@ -628,7 +641,7 @@ async function translateEventText(threadTitle: string, threadText: string): Prom
 
 async function runEventsAutoPublisher(query: Record<string, unknown>) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || "";
   if (!supabaseUrl || !serviceKey) throw new Error("Supabase is not configured for auto-publish");
   const dry = String(Array.isArray(query.dry) ? query.dry[0] : query.dry || "") === "1";
   const limit = Math.min(8, Math.max(1, Number(Array.isArray(query.limit) ? query.limit[0] : query.limit) || 3));
@@ -700,33 +713,33 @@ async function runEventsAutoPublisher(query: Record<string, unknown>) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
+  if (req.method === "OPTIONS") return addCorsHeaders(req, res).status(204).end();
   const action = readAction(req);
   const isAutomationRequest = action === "automation";
   if (isAutomationRequest && req.method === "GET") {
-    if (!cronAuthorized(req)) return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+    if (!cronAuthorized(req)) return addCorsHeaders(req, res).status(401).json({ error: "Unauthorized" });
     try {
       const result = await runFandomAutomation();
-      return addCorsHeaders(res).status(200).json(result);
+      return addCorsHeaders(req, res).status(200).json(result);
     } catch (error) {
       console.error("[scrape/automation]", error instanceof Error ? error.message : error);
-      return addCorsHeaders(res).status(500).json({ error: error instanceof Error ? error.message : "Automation failed" });
+      return addCorsHeaders(req, res).status(500).json({ error: error instanceof Error ? error.message : "Automation failed" });
     }
   }
   const isPublishEventsRequest = action === "publish-events";
   if (isPublishEventsRequest && req.method === "GET") {
-    if (!cronAuthorized(req)) return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+    if (!cronAuthorized(req)) return addCorsHeaders(req, res).status(401).json({ error: "Unauthorized" });
     try {
       const result = await runEventsAutoPublisher(req.query as Record<string, unknown>);
-      return addCorsHeaders(res).status(200).json(result);
+      return addCorsHeaders(req, res).status(200).json(result);
     } catch (error) {
       console.error("[scrape/publish-events]", error instanceof Error ? error.message : error);
-      return addCorsHeaders(res).status(500).json({ error: error instanceof Error ? error.message : "Auto-publish failed" });
+      return addCorsHeaders(req, res).status(500).json({ error: error instanceof Error ? error.message : "Auto-publish failed" });
     }
   }
-  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "POST only" });
+  if (req.method !== "POST") return addCorsHeaders(req, res).status(405).json({ error: "POST only" });
   if (!verifyAdminRequest(req.headers as Record<string, unknown>)) {
-    return addCorsHeaders(res).status(401).json({ error: "Unauthorized" });
+    return addCorsHeaders(req, res).status(401).json({ error: "Unauthorized" });
   }
 
   try {
@@ -734,10 +747,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === "fandom-page" || action === "custom-url") {
       const approvedUrl = await assertApprovedSourceUrl(req.body?.url);
       if (action === "fandom-page" && !isFandomUrl(approvedUrl)) {
-        return addCorsHeaders(res).status(400).json({ error: "Fandom page action requires a Fandom URL" });
+        return addCorsHeaders(req, res).status(400).json({ error: "Fandom page action requires a Fandom URL" });
       }
       const scraped = await scrapeDeepUrl(approvedUrl, firecrawlKey);
-      return addCorsHeaders(res).status(200).json({
+      return addCorsHeaders(req, res).status(200).json({
         ...scraped,
         contentLength: scraped.contentLength,
         mediaCounts: {
@@ -750,46 +763,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (action === "fandom-discover") {
       const approvedUrl = await assertApprovedSourceUrl(req.body?.url);
-      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(res).status(400).json({ error: "Fandom discovery requires a Fandom URL" });
+      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(req, res).status(400).json({ error: "Fandom discovery requires a Fandom URL" });
       const category = typeof req.body?.category === "string" ? req.body.category.trim().slice(0, 120) : "";
-      if (!category) return addCorsHeaders(res).status(400).json({ error: "A Fandom category is required" });
+      if (!category) return addCorsHeaders(req, res).status(400).json({ error: "A Fandom category is required" });
       const result = await discoverFandomPages(approvedUrl, Math.min(100, Math.max(1, Number(req.body?.limit) || 25)), category);
-      return addCorsHeaders(res).status(200).json(result);
+      return addCorsHeaders(req, res).status(200).json(result);
     }
     if (action === "fandom-crawl-start") {
       const approvedUrl = await assertApprovedSourceUrl(req.body?.url);
-      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(res).status(400).json({ error: "Fandom crawl requires a Fandom URL" });
+      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(req, res).status(400).json({ error: "Fandom crawl requires a Fandom URL" });
       const result = await startFandomCrawl(approvedUrl, firecrawlKey, { limit: req.body?.limit, depth: req.body?.depth, includePaths: req.body?.includePaths });
-      return addCorsHeaders(res).status(202).json({ success: true, ...result, note: "Crawl results must be reviewed before importing as draft content" });
+      return addCorsHeaders(req, res).status(202).json({ success: true, ...result, note: "Crawl results must be reviewed before importing as draft content" });
     }
     if (action === "fandom-crawl-status") {
       const crawlId = typeof req.body?.id === "string" ? req.body.id.trim() : "";
-      return addCorsHeaders(res).status(200).json(await getFandomCrawlStatus(crawlId, firecrawlKey));
+      return addCorsHeaders(req, res).status(200).json(await getFandomCrawlStatus(crawlId, firecrawlKey));
     }
     if (action === "fandom-draft-save") {
       const approvedUrl = await assertApprovedSourceUrl(req.body?.url);
-      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(res).status(400).json({ error: "Draft saving requires a Fandom URL" });
+      if (!isFandomUrl(approvedUrl)) return addCorsHeaders(req, res).status(400).json({ error: "Draft saving requires a Fandom URL" });
       const result = await saveFandomPageDraft(approvedUrl);
-      return addCorsHeaders(res).status(result.status === "published-exists" ? 409 : 201).json(result);
+      return addCorsHeaders(req, res).status(result.status === "published-exists" ? 409 : 201).json(result);
     }
     if (action === "automation") {
       const result = await runFandomAutomation();
-      return addCorsHeaders(res).status(200).json(result);
+      return addCorsHeaders(req, res).status(200).json(result);
     }
     if (action === "forum-list") {
       const { posts } = await scrapeForumList();
-      return addCorsHeaders(res).status(200).json(posts);
+      return addCorsHeaders(req, res).status(200).json(posts);
     }
     if (action === "single-url") {
-      return addCorsHeaders(res).status(200).json(await scrapeSingleUrl(await assertApprovedSourceUrl(req.body?.url)));
+      return addCorsHeaders(req, res).status(200).json(await scrapeSingleUrl(await assertApprovedSourceUrl(req.body?.url)));
     }
     if (action === "forum-thread") {
-      return addCorsHeaders(res).status(200).json(await scrapeForumThread(await assertApprovedSourceUrl(req.body?.url)));
+      return addCorsHeaders(req, res).status(200).json(await scrapeForumThread(await assertApprovedSourceUrl(req.body?.url)));
     }
     if (action === "multiple-events") {
       const rawUrls = Array.isArray(req.body?.urls) ? req.body.urls : [];
       if (rawUrls.length === 0 || rawUrls.length > 25) {
-        return addCorsHeaders(res).status(400).json({ error: "Provide between 1 and 25 event URLs" });
+        return addCorsHeaders(req, res).status(400).json({ error: "Provide between 1 and 25 event URLs" });
       }
       const events: unknown[] = [];
       for (const rawUrl of rawUrls) {
@@ -810,18 +823,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.warn("[scrape/multiple-events] skipped source", error instanceof Error ? error.message : error);
         }
       }
-      return addCorsHeaders(res).status(200).json(events);
+      return addCorsHeaders(req, res).status(200).json(events);
     }
     if (action === "validate-content") {
       const html = typeof req.body?.html === "string" ? req.body.html : "";
-      if (html.length > 500_000) return addCorsHeaders(res).status(413).json({ error: "Content is too large" });
+      if (html.length > 500_000) return addCorsHeaders(req, res).status(413).json({ error: "Content is too large" });
       const colors = [...new Set([...html.matchAll(/(?:color\s*:\s*|color\s*=\s*[\"'])(#[0-9a-f]{3,8}|[a-z]+)\b/gi)].map(match => match[1].toLowerCase()))];
       const tagCounts: Record<string, number> = {};
       for (const match of html.matchAll(/<([a-z0-9-]+)\b/gi)) tagCounts[match[1].toLowerCase()] = (tagCounts[match[1].toLowerCase()] || 0) + 1;
-      return addCorsHeaders(res).status(200).json({ valid: true, colors, tagCounts, length: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length });
+      return addCorsHeaders(req, res).status(200).json({ valid: true, colors, tagCounts, length: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length });
     }
-    return addCorsHeaders(res).status(404).json({ error: "Unsupported scrape action" });
+    return addCorsHeaders(req, res).status(404).json({ error: "Unsupported scrape action" });
   } catch (error: any) {
-    return addCorsHeaders(res).status(500).json({ error: error?.message || "Scrape failed" });
+    return addCorsHeaders(req, res).status(500).json({ error: error?.message || "Scrape failed" });
   }
 }

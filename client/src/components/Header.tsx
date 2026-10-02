@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare, Sparkles } from "lucide-react";
+import { Globe, Menu, X, Search, ChevronDown, User, LogOut, Ticket, MessageSquare, Sparkles, Sun, Moon } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { useLanguage } from "./LanguageProvider";
+import { useTheme } from "./ThemeProvider";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { pagePath } from "@/lib/routePaths";
@@ -16,6 +17,7 @@ const BORDER = "rgba(255,255,255,0.08)";
 
 export function Header() {
   const { language, toggleLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
@@ -129,7 +131,7 @@ export function Header() {
     const active = isActive(item.dropdown);
     return (
       <div className="relative group h-full flex items-center">
-        <button style={{
+        <button aria-haspopup="true" style={{
           display: "flex", alignItems: "center", gap: 4, height: "100%", padding: "0 14px",
           background: "none", border: "none", cursor: "pointer",
           fontSize: 13, fontWeight: 500, fontFamily: "Inter, system-ui, sans-serif",
@@ -139,12 +141,15 @@ export function Header() {
         }}
           onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "#fff"; }}
           onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; }}
+          onFocus={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+          onBlur={e => { if (!active) (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.7)"; }}
+          onKeyDown={e => { if (e.key === "Escape") (e.currentTarget as HTMLElement).blur(); }}
         >
           {item.label}
-          <ChevronDown size={11} strokeWidth={2} style={{ opacity: 0.5, transition: "transform 0.2s" }} className="group-hover:rotate-180" />
+          <ChevronDown size={11} strokeWidth={2} style={{ opacity: 0.5, transition: "transform 0.2s" }} className="group-hover:rotate-180 group-focus-within:rotate-180" />
         </button>
 
-        <div className="absolute top-full left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50 pt-1"
+        <div className="absolute top-full left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible focus-within:opacity-100 focus-within:visible transition-all duration-150 z-50 pt-1"
           style={{ minWidth: 180 }}>
           <div style={{
             background: "#111", border: `1px solid ${BORDER}`,
@@ -203,11 +208,11 @@ export function Header() {
               display: "flex", alignItems: "center", gap: 6,
               height: 32, padding: "0 12px",
               background: location === "/ai"
-                ? "linear-gradient(135deg, #f5a623 0%, #d4870a 100%)"
-                : "linear-gradient(135deg, rgba(245,166,35,0.15) 0%, rgba(212,135,10,0.08) 100%)",
-              border: `1px solid ${location === "/ai" ? "#f5a623" : "rgba(245,166,35,0.35)"}`,
+                ? "linear-gradient(135deg, #d4a017 0%, #d4870a 100%)"
+                : "linear-gradient(135deg, rgba(212,160,23,0.15) 0%, rgba(212,135,10,0.08) 100%)",
+              border: `1px solid ${location === "/ai" ? "#d4a017" : "rgba(212,160,23,0.35)"}`,
               borderRadius: 6,
-              color: location === "/ai" ? "#000" : "#f5a623",
+              color: location === "/ai" ? "#000" : "#d4a017",
               fontSize: 12, fontWeight: 700,
               cursor: "pointer",
               transition: "all 0.15s",
@@ -239,6 +244,17 @@ export function Header() {
 
           {/* Announcements bell */}
           <NotificationBell />
+
+          {/* Theme */}
+          <button onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} style={{
+            width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "none", border: `1px solid ${BORDER}`, borderRadius: 6,
+            color: "rgba(255,255,255,0.5)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)"; (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}>
+            {theme === "dark" ? <Sun size={14} strokeWidth={1.5} /> : <Moon size={14} strokeWidth={1.5} />}
+          </button>
 
           {/* Language */}
           <button onClick={toggleLanguage} title={language === "en" ? "العربية" : "English"} aria-label={language === "en" ? "Switch to Arabic" : "Switch to English"} style={{
@@ -350,14 +366,14 @@ export function Header() {
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 14px", borderRadius: 8,
                 background: location === "/ai"
-                  ? "linear-gradient(135deg, #f5a623 0%, #d4870a 100%)"
-                  : "linear-gradient(135deg, rgba(245,166,35,0.12) 0%, rgba(212,135,10,0.06) 100%)",
-                border: `1px solid ${location === "/ai" ? "#f5a623" : "rgba(245,166,35,0.3)"}`,
-                boxShadow: "0 0 12px rgba(245,166,35,0.08)",
+                  ? "linear-gradient(135deg, #d4a017 0%, #d4870a 100%)"
+                  : "linear-gradient(135deg, rgba(212,160,23,0.12) 0%, rgba(212,135,10,0.06) 100%)",
+                border: `1px solid ${location === "/ai" ? "#d4a017" : "rgba(212,160,23,0.3)"}`,
+                boxShadow: "0 0 12px rgba(212,160,23,0.08)",
               }}>
-                <Sparkles size={14} style={{ color: location === "/ai" ? "#000" : "#f5a623", flexShrink: 0 }} />
+                <Sparkles size={14} style={{ color: location === "/ai" ? "#000" : "#d4a017", flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: location === "/ai" ? "#000" : "#f5a623", letterSpacing: "0.05em" }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: location === "/ai" ? "#000" : "#d4a017", letterSpacing: "0.05em" }}>
                     {language === "ar" ? "مساعد الذكاء الاصطناعي" : "CrossFire AI Assistant"}
                   </div>
                   <div style={{ fontSize: 10, color: location === "/ai" ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.35)", marginTop: 1 }}>

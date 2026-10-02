@@ -5,6 +5,9 @@
  * client bundle. The compatibility client below sends admin CRUD through the
  * server-side endpoint, which verifies the signed admin token before using the
  * service role.
+ *
+ * SECURITY NOTE: admin token lives in localStorage (XSS surface). Future
+ * hardening: move to httpOnly SameSite=strict cookie set by /api/admin/login.
  */
 
 import { supabase } from "./supabase";

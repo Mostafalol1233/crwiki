@@ -1,19 +1,28 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const CORS = new Map([
-  ["Access-Control-Allow-Origin", "*"],
-  ["Access-Control-Allow-Methods", "POST, OPTIONS"],
-  ["Access-Control-Allow-Headers", "Content-Type, Authorization"],
-]);
+const ALLOWED_ORIGINS = [
+  "https://crossfire.wiki",
+  "https://www.crossfire.wiki",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean),
+];
+
+function resolveOrigin(req: VercelRequest): string {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "https://crossfire.wiki";
+}
 
 const registrationAttempts = new Map<string, { count: number; startedAt: number }>();
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT = 5;
 
-function addCorsHeaders(res: VercelResponse) {
-  for (const [key, value] of CORS) {
-    res.setHeader(key, value);
-  }
+function addCorsHeaders(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", resolveOrigin(req));
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return res;
 }
 
@@ -42,13 +51,13 @@ function validEmail(value: unknown) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "OPTIONS") return addCorsHeaders(res).status(204).end();
-  if (req.method !== "POST") return addCorsHeaders(res).status(405).json({ error: "Method not allowed" });
+  if (req.method === "OPTIONS") return addCorsHeaders(req, res).status(204).end();
+  if (req.method !== "POST") return addCorsHeaders(req, res).status(405).json({ error: "Method not allowed" });
 
   const key = rateKey(req);
   if (isRateLimited(key)) {
     res.setHeader("Retry-After", "3600");
-    return addCorsHeaders(res).status(429).json({ error: "Too many registration attempts. Try again later." });
+    return addCorsHeaders(req, res).status(429).json({ error: "Too many registration attempts. Try again later." });
   }
 
   try {
@@ -56,12 +65,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const email = validEmail(rawEmail);
     const username = typeof rawUsername === "string" ? rawUsername.trim().split(" ").filter(Boolean).join(" ") : "";
     if (!email || typeof password !== "string" || password.length < 8 || password.length > 128 || username.length < 3 || username.length > 40)
-      return addCorsHeaders(res).status(400).json({ error: "Enter a valid email, username, and password of 8 to 128 characters" });
+      return addCorsHeaders(req, res).status(400).json({ error: "Enter a valid email, username, and password of 8 to 128 characters" });
 
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_URL || !SERVICE_KEY)
-      return addCorsHeaders(res).status(500).json({ error: "Server misconfigured" });
+      return addCorsHeaders(req, res).status(500).json({ error: "Server misconfigured" });
 
     const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
       method: "POST",
@@ -80,11 +89,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const createData = await createRes.json() as any;
     if (!createRes.ok) {
-      return addCorsHeaders(res).status(createRes.status === 422 ? 409 : 400).json({ error: "Registration could not be completed" });
+      return addCorsHeaders(req, res).status(createRes.status === 422 ? 409 : 400).json({ error: "Registration could not be completed" });
     }
 
-    return addCorsHeaders(res).status(200).json({ success: true, user: { id: createData.id, email: createData.email } });
+    return addCorsHeaders(req, res).status(200).json({ success: true, user: { id: createData.id, email: createData.email } });
   } catch (err: any) {
-    return addCorsHeaders(res).status(500).json({ error: err.message || "Registration failed" });
+    return addCorsHeaders(req, res).status(500).json({ error: err.message || "Registration failed" });
   }
 }

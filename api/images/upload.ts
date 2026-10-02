@@ -11,7 +11,7 @@ export const config = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 const ALLOWED_MIME = new Set([
   "image/jpeg",
   "image/png",
@@ -36,8 +36,23 @@ type UploadMiddleware = (
 
 const uploadMiddleware = upload as unknown as UploadMiddleware;
 
-function cors(res: VercelResponse) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+const ALLOWED_ORIGINS = [
+  "https://crossfire.wiki",
+  "https://www.crossfire.wiki",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean),
+];
+
+function resolveOrigin(req: VercelRequest): string {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) return origin;
+  return "https://crossfire.wiki";
+}
+
+function cors(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", resolveOrigin(req));
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return res;
@@ -98,7 +113,7 @@ async function uploadBuffer(buffer: Buffer, originalName: string, mimetype: stri
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  cors(res);
+  cors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const isAdmin = verifyAdminRequest(req.headers as Record<string, unknown>);

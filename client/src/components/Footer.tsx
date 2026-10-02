@@ -5,8 +5,8 @@ import { SiDiscord, SiFacebook, SiInstagram, SiTwitch, SiWhatsapp, SiX, SiYoutub
 import { useLanguage } from "./LanguageProvider";
 import { SITE_CONFIG } from "@/lib/siteConfig";
 
-const GOLD = "#9a7c3f";
-const GOLD_BORDER = "1px solid rgba(154,124,63,0.3)";
+const GOLD = "#d4a017";
+const GOLD_BORDER = "1px solid rgba(212,160,23,0.3)";
 const socials = [
   { href: SITE_CONFIG.socials.whatsapp,  icon: SiWhatsapp,  title: "WhatsApp Channel", color: "#25d366" },
   { href: SITE_CONFIG.socials.facebook,  icon: SiFacebook,  title: "Facebook",          color: "#1877f2" },
@@ -30,7 +30,7 @@ function SectionTitle({ label }: { label: string }) {
         paddingBottom: "8px",
         borderBottom: GOLD_BORDER,
         paddingLeft: "8px",
-        borderLeft: `2px solid rgba(154,124,63,0.5)`,
+        borderLeft: `2px solid rgba(212,160,23,0.5)`,
       }}
     >
       {label}

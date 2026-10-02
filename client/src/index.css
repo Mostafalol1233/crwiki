@@ -197,7 +197,7 @@
   --secondary-foreground: 0 0% 88%;
 
   --muted: 0 0% 12%;
-  --muted-foreground: 0 0% 55%;
+  --muted-foreground: 0 0% 68%;
 
   --accent: 0 0% 13%;
   --accent-foreground: 0 0% 90%;
@@ -1019,10 +1019,14 @@ img {
   overflow: hidden;
 }
 
-/* ── Touch-friendly tap targets ─────────────────────────────────── */
+/* ── Touch-friendly tap targets (WCAG 2.5.8: 44px minimum) ─────── */
 @media (max-width: 640px) {
   button, a {
-    min-height: 36px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  nav button, nav a {
+    min-height: 44px;
   }
 }
 

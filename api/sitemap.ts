@@ -1,3 +1,11 @@
+/**
+ * Sitemap + competition/admin multiplexer (legacy layout).
+ * Sections:
+ *  1. Sitemap XML (public GET, DB-driven, image/news/video extensions)
+ *  2. Competition attempt tokens + community actions (POST, admin-gated where needed)
+ * TODO: split (2) into api/competition/* and api/community/* to reduce maintenance risk.
+ * See api/content.ts for the LLM-friendly markdown index.
+ */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
 import { REGIONS, WEAPONS } from "../shared/crossfire-regions.js";
@@ -9,7 +17,7 @@ const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SU
 const BASE         = "https://crossfire.wiki";
 
 const h = () => ({ apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, "Content-Type": "application/json" });
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY || "";
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 const serviceHeaders = () => ({ apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" });
 
 const COMPETITION_QUESTION_WORDING_OVERRIDES: Record<string, { question_ar: string; question_en?: string }> = {

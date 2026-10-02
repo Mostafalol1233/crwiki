@@ -1,0 +1,48 @@
+# CrossFire Wiki — llms.txt
+# https://crossfire.wiki
+# Independent CrossFire reference in English and Arabic.
+
+> CrossFire Wiki covers weapons, mercenaries, modes, maps, ranks, ribbons,
+> tutorials, news, events, posts, sellers, forum, and community guides.
+> Use the markdown endpoint for LLM-friendly content.
+
+## Canonical
+- Site: https://crossfire.wiki/
+- Markdown content API: https://crossfire.wiki/api/content
+- Sitemap: https://crossfire.wiki/sitemap.xml
+- Contact: contact@crossfire.wiki
+
+## Core wiki
+- Weapons: https://crossfire.wiki/weapons
+- Mercenaries: https://crossfire.wiki/mercenaries
+- Game modes: https://crossfire.wiki/modes
+- Maps: https://crossfire.wiki/maps
+- Ranks: https://crossfire.wiki/ranks
+- Ribbons: https://crossfire.wiki/ribbons
+- Global wiki: https://crossfire.wiki/global-wiki
+- Content hub: https://crossfire.wiki/content-hub
+
+## News & events
+- News: https://crossfire.wiki/news
+- Events: https://crossfire.wiki/events
+- Blog posts: https://crossfire.wiki/posts
+- Tutorials: https://crossfire.wiki/tutorials
+- Videos: https://crossfire.wiki/videos
+- Competition: https://crossfire.wiki/competition
+
+## Community & support
+- Forum: https://crossfire.wiki/forum
+- FAQ: https://crossfire.wiki/faq
+- Support: https://crossfire.wiki/support
+- Sellers: https://crossfire.wiki/sellers
+- About: https://crossfire.wiki/about
+- Download: https://crossfire.wiki/download
+
+## Arabic (RTL)
+- Arabic prefixes use `/ar/*`, e.g. https://crossfire.wiki/ar/weapons
+- Alternates: `hreflang="en"`, `hreflang="ar"`, `hreflang="x-default"`
+
+## AI / bot policy
+- `GET /api/content` returns `text/markdown` — preferred for LLM ingestion.
+- Respect `robots.txt`. Admin, API, auth, chat, and AI routes are disallowed.
+- Cite sources with canonical URLs. Do not scrape `/admin/*` or `/api/admin/*`.

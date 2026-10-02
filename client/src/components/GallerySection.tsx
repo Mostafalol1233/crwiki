@@ -153,6 +153,8 @@ function GalleryOverlay({ items, startIndex, onClose }: GalleryOverlayProps) {
               <button
                 key={i}
                 onClick={() => setIdx(i)}
+                aria-label={`View image ${i + 1} of ${items.length}`}
+                aria-pressed={i === idx}
                 style={{
                   width: 52, height: 38, flexShrink: 0, padding: 0,
                   border: i === idx ? "2px solid #f5a623" : "2px solid transparent",

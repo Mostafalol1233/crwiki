@@ -54,8 +54,9 @@ const CATEGORY_FALLBACKS: Record<string, string> = {
 };
 
 function getPostImage(post: PostItem): string {
-  const category = String(post.category || "").toLowerCase();
-  return String(post.image || post.imageUrl || post.ogImage || CATEGORY_FALLBACKS[category] || "/feature-crossfire.jpg");
+  // Never borrow an unrelated category image: it makes an image-less post look
+  // like it belongs to another article. Admins can add the correct image later.
+  return String(post.image || post.imageUrl || post.ogImage || "");
 }
 
 export default function Posts() {
@@ -150,12 +151,13 @@ export default function Posts() {
 
                     <div className="flex flex-col md:flex-row">
                       <div className="md:w-[55%] relative overflow-hidden" style={{ background: "hsl(var(--muted))", minHeight: "260px" }}>
-                        <ContentImage
-                          src={getPostImage(featuredPost)}
-                          alt={displayTitle(featuredPost)}
-                          className="w-full h-full object-contain p-4 transition-opacity duration-500 group-hover:opacity-90"
-                          style={{ minHeight: "260px", objectFit: "contain" }}
-                        />
+                        {getPostImage(featuredPost) ? (
+                          <ContentImage src={getPostImage(featuredPost)} alt={displayTitle(featuredPost)} className="w-full h-full object-contain p-4 transition-opacity duration-500 group-hover:opacity-90" style={{ minHeight: "260px", objectFit: "contain" }} />
+                        ) : (
+                          <div className="w-full h-full min-h-[260px] flex items-center justify-center px-8 text-center" style={{ color: "#777", background: "linear-gradient(135deg, rgba(245,166,35,0.08), transparent)" }}>
+                            <span className="text-xs font-bold uppercase tracking-[0.18em]">{isArabic ? "الصورة لم تُرفع بعد" : "Image not uploaded yet"}</span>
+                          </div>
+                        )}
                         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, transparent, var(--card))" }} />
                         {featuredPost.featured && (
                           <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-[8px] font-black uppercase tracking-widest" style={{ background: "#f5a623", color: "#000" }}>
@@ -209,13 +211,13 @@ export default function Posts() {
                       >
                         {/* Image */}
                         <div className="relative overflow-hidden aspect-[16/9]" style={{ background: "hsl(var(--muted))" }}>
-                          <ContentImage
-                            src={getPostImage(post)}
-                            alt={displayTitle(post)}
-                            loading="lazy"
-                            className="w-full h-full object-contain p-2 transition-opacity duration-500 group-hover:opacity-90"
-                            style={{ objectFit: "contain" }}
-                            />
+                          {getPostImage(post) ? (
+                            <ContentImage src={getPostImage(post)} alt={displayTitle(post)} loading="lazy" className="w-full h-full object-contain p-2 transition-opacity duration-500 group-hover:opacity-90" style={{ objectFit: "contain" }} />
+                          ) : (
+                            <div className="w-full h-full min-h-[150px] flex items-center justify-center px-5 text-center" style={{ color: "#777", background: "linear-gradient(135deg, rgba(245,166,35,0.06), transparent)" }}>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.15em]">{isArabic ? "الصورة لم تُرفع بعد" : "Image not uploaded yet"}</span>
+                            </div>
+                          )}
                           <div
                             className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{ background: `linear-gradient(to right, ${getCatColor(post.category)}, transparent)` }}

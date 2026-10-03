@@ -110,17 +110,24 @@ export default function PostsManager() {
         }
       };
 
-      // Try full save; if a column is missing, strip it and retry
-      let err = await doSave(payload);
-      if (err?.code === '42703') {
-        // Strip unknown columns one by one based on error message
-        const badCol = err.message?.match(/column "([^"]+)"/)?.[1];
-        if (badCol && badCol in payload) {
-          const stripped = { ...payload };
-          delete stripped[badCol];
-          err = await doSave(stripped);
-          if (!err) toast.warning(`Column "${badCol}" missing — run the SQL setup from Dashboard to enable all features.`);
-        }
+      // Production projects may have an older posts schema. Remove only the
+      // unsupported field reported by PostgREST, then retry with the rest of
+      // the post intact instead of failing the whole save.
+      let savePayload = { ...payload };
+      let err = await doSave(savePayload);
+      const omittedColumns: string[] = [];
+      for (let attempt = 0; err && attempt < 16; attempt += 1) {
+        const message = String(err.message || '');
+        const badCol = message.match(/the '([^']+)' column/i)?.[1]
+          || message.match(/column "([^"]+)"/i)?.[1]
+          || message.match(/column '([^']+)'/i)?.[1];
+        if (!badCol || !(badCol in savePayload)) break;
+        delete savePayload[badCol];
+        omittedColumns.push(badCol);
+        err = await doSave(savePayload);
+      }
+      if (!err && omittedColumns.length) {
+        toast.warning(`Saved without unsupported fields: ${omittedColumns.join(', ')}`);
       }
       if (err) throw err;
       toast.success(editing.id ? 'Post updated' : 'Post created');

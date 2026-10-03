@@ -1,218 +1,337 @@
 [
  {
-  "file": "/quiz-voices/voice-01.wav",
+  "file": "/quiz-voices/voice-01.mp3",
   "merged": [
+   "INF_RANK_WIN1_BL_C#63",
    "BOMB_PLANT_BL_A_1_C#19",
-   "FIREINTHEHOLE_GRENADE_GR_C#43",
-   "FOUND_A_BOMB_GR_1_C#53"
+   "FIREINTHEHOLE_FLASHBANG_GR_C#37",
+   "FOUND_A_BOMB_GR_1_C#53",
+   "BOMB_PLANT_BL_B_1_C#23"
   ],
-  "duration": 6.21
+  "duration": 10.71
  },
  {
-  "file": "/quiz-voices/voice-02.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_1_C#4260",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#4269",
-   "DIE_HIGHDAMAGE_BL_C#8907"
-  ],
-  "duration": 4.71
- },
- {
-  "file": "/quiz-voices/voice-03.wav",
-  "merged": [
-   "BOMB_PLANT_BL_A_2_C#8623",
-   "FIREINTHEHOLE_SMOKE_GR_C#8651",
-   "HEADSHOT_BL_C#3241"
-  ],
-  "duration": 5.11
- },
- {
-  "file": "/quiz-voices/voice-04.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_2_C#2666",
-   "FIREINTHEHOLE_GRENADE_BL_C#2677",
-   "FOUND_B_BOMB_GR_1_C#2687"
-  ],
-  "duration": 5.3
- },
- {
-  "file": "/quiz-voices/voice-05.wav",
-  "merged": [
-   "BOMB_PLANT_GR_C#602",
-   "FIREINTHEHOLE_FLASHBANG_GR_C#7051",
-   "DIE_LOWDAMAGE_GR_C#8911"
-  ],
-  "duration": 4.59
- },
- {
-  "file": "/quiz-voices/voice-06.wav",
+  "file": "/quiz-voices/voice-02.mp3",
   "merged": [
    "INF_RANK_WIN1_GR_C#8945",
-   "FIREINTHEHOLE_SMOKE_BL_C#1303",
-   "HEADSHOT_GR_C#3243"
+   "BOMB_PLANT_BL_A_2_C#4258",
+   "FIREINTHEHOLE_SMOKE_BL_C#4277",
+   "FOUND_B_BOMB_GR_1_C#4283"
   ],
-  "duration": 6.49
+  "duration": 8.86
  },
  {
-  "file": "/quiz-voices/voice-07.wav",
+  "file": "/quiz-voices/voice-03.mp3",
   "merged": [
-   "INF_RANK_WIN2_BL_C#4511",
-   "FIREINTHEHOLE_GRENADE_GR_C#5524",
-   "ESCAPE_SUCCESS_C#8913"
+   "INF_RANK_WIN1_SP_C#8947",
+   "BOMB_PLANT_BL_B_1_C#8625",
+   "FIREINTHEHOLE_SMOKE_GR_C#8651",
+   "DIE_HIGHDAMAGE_BL_C#8907",
+   "BOMB_PLANT_GR_C#9482"
   ],
-  "duration": 3.94
+  "duration": 10.87
  },
  {
-  "file": "/quiz-voices/voice-08.wav",
+  "file": "/quiz-voices/voice-04.mp3",
   "merged": [
-   "INF_RANK_WIN3_BL_C#75",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#9968",
-   "GRENADEKILL_SP_C#3239"
-  ],
-  "duration": 4.67
- },
- {
-  "file": "/quiz-voices/voice-09.wav",
-  "merged": [
-   "BOMB_PLANT_BL_A_1_C#4038",
-   "FIREINTHEHOLE_GRENADE_GR_C#4058",
-   "FOUND_A_BOMB_GR_1_C#4064"
-  ],
-  "duration": 5.22
- },
- {
-  "file": "/quiz-voices/voice-10.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_1_C#8348",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#8360",
-   "DIE_HIGHDAMAGE_BL_C#8907"
-  ],
-  "duration": 4.53
- },
- {
-  "file": "/quiz-voices/voice-11.wav",
-  "merged": [
-   "BOMB_PLANT_BL_A_2_C#2374",
-   "FIREINTHEHOLE_SMOKE_GR_C#2411",
-   "HEADSHOT_BL_C#3241"
-  ],
-  "duration": 4.14
- },
- {
-  "file": "/quiz-voices/voice-12.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_2_C#6762",
-   "FIREINTHEHOLE_GRENADE_BL_C#6778",
-   "FOUND_B_BOMB_GR_1_C#6792"
-  ],
-  "duration": 4.12
- },
- {
-  "file": "/quiz-voices/voice-13.wav",
-  "merged": [
-   "BOMB_PLANT_GR_C#5786",
-   "FIREINTHEHOLE_FLASHBANG_GR_C#1016",
+   "INF_RANK_WIN2_BL_C#69",
+   "BOMB_PLANT_BL_B_2_C#2666",
+   "FIREINTHEHOLE_GRENADE_BL_C#2677",
    "DIE_LOWDAMAGE_GR_C#8911"
   ],
-  "duration": 4.76
+  "duration": 7.68
  },
  {
-  "file": "/quiz-voices/voice-14.wav",
+  "file": "/quiz-voices/voice-05.mp3",
+  "merged": [
+   "INF_RANK_WIN2_GR_C#8951",
+   "BOMB_PLANT_GR_C#602",
+   "FIREINTHEHOLE_GRENADE_GR_C#7057",
+   "HEADSHOT_BL_C#3241",
+   "BOMB_PLANT_BL_A_2_C#7035"
+  ],
+  "duration": 8.65
+ },
+ {
+  "file": "/quiz-voices/voice-06.mp3",
+  "merged": [
+   "INF_RANK_WIN2_SP_C#8953",
+   "BOMB_PLANT_BL_A_1_C#1275",
+   "FIREINTHEHOLE_FLASHBANG_BL_C#1291",
+   "ESCAPE_SUCCESS_C#8913"
+  ],
+  "duration": 7.95
+ },
+ {
+  "file": "/quiz-voices/voice-07.mp3",
+  "merged": [
+   "INF_RANK_WIN3_BL_C#75",
+   "BOMB_PLANT_BL_A_2_C#5502",
+   "FIREINTHEHOLE_FLASHBANG_GR_C#5518",
+   "FOUND_A_BOMB_GR_1_C#5534",
+   "BOMB_PLANT_BL_B_2_C#5506"
+  ],
+  "duration": 9.05
+ },
+ {
+  "file": "/quiz-voices/voice-08.mp3",
+  "merged": [
+   "INF_RANK_WIN3_GR_C#8957",
+   "BOMB_PLANT_BL_B_1_C#9958",
+   "FIREINTHEHOLE_SMOKE_BL_C#9976",
+   "FOUND_B_BOMB_GR_1_C#9982"
+  ],
+  "duration": 8.02
+ },
+ {
+  "file": "/quiz-voices/voice-09.mp3",
+  "merged": [
+   "INF_RANK_WIN3_SP_C#8959",
+   "BOMB_PLANT_BL_B_2_C#4044",
+   "FIREINTHEHOLE_SMOKE_GR_C#4062",
+   "DIE_HIGHDAMAGE_BL_C#8907",
+   "BOMB_PLANT_BL_A_1_C#4038"
+  ],
+  "duration": 12.51
+ },
+ {
+  "file": "/quiz-voices/voice-10.mp3",
+  "merged": [
+   "BOMB_PLANT_GR_C#8906",
+   "FIREINTHEHOLE_GRENADE_BL_C#8366",
+   "DIE_LOWDAMAGE_GR_C#8911"
+  ],
+  "duration": 4.92
+ },
+ {
+  "file": "/quiz-voices/voice-11.mp3",
   "merged": [
    "INF_RANK_WIN1_GR_C#65",
-   "FIREINTHEHOLE_SMOKE_BL_C#5201",
-   "HEADSHOT_GR_C#3243"
+   "BOMB_PLANT_BL_A_1_C#2372",
+   "FIREINTHEHOLE_GRENADE_GR_C#2405",
+   "HEADSHOT_BL_C#3241",
+   "BOMB_PLANT_BL_B_1_C#2376"
   ],
-  "duration": 4.32
+  "duration": 9.12
  },
  {
-  "file": "/quiz-voices/voice-15.wav",
+  "file": "/quiz-voices/voice-12.mp3",
   "merged": [
-   "INF_RANK_WIN2_BL_C#8949",
-   "FIREINTHEHOLE_GRENADE_GR_C#9701",
+   "INF_RANK_WIN1_SP_C#8947",
+   "BOMB_PLANT_BL_A_2_C#6758",
+   "FIREINTHEHOLE_FLASHBANG_BL_C#6772",
    "ESCAPE_SUCCESS_C#8913"
   ],
-  "duration": 6.05
+  "duration": 7.44
  },
  {
-  "file": "/quiz-voices/voice-16.wav",
+  "file": "/quiz-voices/voice-13.mp3",
+  "merged": [
+   "INF_RANK_WIN2_BL_C#8949",
+   "BOMB_PLANT_BL_B_1_C#1002",
+   "FIREINTHEHOLE_FLASHBANG_GR_C#1016",
+   "FOUND_A_BOMB_GR_1_C#1032",
+   "BOMB_PLANT_GR_C#5786"
+  ],
+  "duration": 11.26
+ },
+ {
+  "file": "/quiz-voices/voice-14.mp3",
+  "merged": [
+   "INF_RANK_WIN2_GR_C#4513",
+   "BOMB_PLANT_BL_B_2_C#5185",
+   "FIREINTHEHOLE_SMOKE_BL_C#5201",
+   "FOUND_B_BOMB_GR_1_C#5207"
+  ],
+  "duration": 5.97
+ },
+ {
+  "file": "/quiz-voices/voice-15.mp3",
+  "merged": [
+   "INF_RANK_WIN2_SP_C#8953",
+   "BOMB_PLANT_GR_C#4897",
+   "FIREINTHEHOLE_SMOKE_GR_C#9707",
+   "DIE_HIGHDAMAGE_BL_C#8907",
+   "BOMB_PLANT_BL_A_2_C#9679"
+  ],
+  "duration": 7.93
+ },
+ {
+  "file": "/quiz-voices/voice-16.mp3",
   "merged": [
    "INF_RANK_WIN3_BL_C#75",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#3777",
-   "GRENADEKILL_SP_C#3239"
-  ],
-  "duration": 4.54
- },
- {
-  "file": "/quiz-voices/voice-17.wav",
-  "merged": [
-   "BOMB_PLANT_BL_A_1_C#8067",
-   "FIREINTHEHOLE_GRENADE_GR_C#8091",
-   "FOUND_A_BOMB_GR_1_C#8101"
-  ],
-  "duration": 6.01
- },
- {
-  "file": "/quiz-voices/voice-18.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_1_C#2175",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#2185",
-   "DIE_HIGHDAMAGE_BL_C#8907"
-  ],
-  "duration": 4.72
- },
- {
-  "file": "/quiz-voices/voice-19.wav",
-  "merged": [
-   "BOMB_PLANT_BL_A_2_C#6481",
-   "FIREINTHEHOLE_SMOKE_GR_C#6509",
-   "HEADSHOT_BL_C#3241"
-  ],
-  "duration": 4.51
- },
- {
-  "file": "/quiz-voices/voice-20.wav",
-  "merged": [
-   "BOMB_PLANT_BL_B_2_C#803",
-   "FIREINTHEHOLE_GRENADE_BL_C#815",
-   "FOUND_B_BOMB_GR_1_C#825"
-  ],
-  "duration": 4.22
- },
- {
-  "file": "/quiz-voices/voice-21.wav",
-  "merged": [
-   "BOMB_PLANT_GR_C#9482",
-   "FIREINTHEHOLE_FLASHBANG_GR_C#4916",
+   "BOMB_PLANT_BL_A_1_C#3761",
+   "FIREINTHEHOLE_GRENADE_BL_C#3783",
    "DIE_LOWDAMAGE_GR_C#8911"
   ],
-  "duration": 4.42
+  "duration": 7.49
  },
  {
-  "file": "/quiz-voices/voice-22.wav",
+  "file": "/quiz-voices/voice-17.mp3",
   "merged": [
-   "INF_RANK_WIN1_GR_C#4509",
-   "FIREINTHEHOLE_SMOKE_BL_C#9497",
-   "HEADSHOT_GR_C#3243"
+   "INF_RANK_WIN3_GR_C#8957",
+   "BOMB_PLANT_BL_A_2_C#8069",
+   "FIREINTHEHOLE_GRENADE_GR_C#8091",
+   "HEADSHOT_BL_C#3241",
+   "BOMB_PLANT_BL_B_2_C#8073"
   ],
-  "duration": 3.81
+  "duration": 10.1
  },
  {
-  "file": "/quiz-voices/voice-23.wav",
+  "file": "/quiz-voices/voice-18.mp3",
   "merged": [
-   "INF_RANK_WIN2_BL_C#8949",
-   "FIREINTHEHOLE_GRENADE_GR_C#3506",
+   "INF_RANK_WIN3_SP_C#8959",
+   "BOMB_PLANT_BL_B_1_C#2175",
+   "FIREINTHEHOLE_FLASHBANG_BL_C#2185",
    "ESCAPE_SUCCESS_C#8913"
   ],
-  "duration": 6.51
+  "duration": 10.56
  },
  {
-  "file": "/quiz-voices/voice-24.wav",
+  "file": "/quiz-voices/voice-19.mp3",
   "merged": [
-   "INF_RANK_WIN3_BL_C#4515",
-   "FIREINTHEHOLE_FLASHBANG_BL_C#7878",
-   "GRENADEKILL_SP_C#3239"
+   "INF_RANK_WIN1_BL_C#63",
+   "BOMB_PLANT_BL_B_2_C#6485",
+   "FIREINTHEHOLE_FLASHBANG_GR_C#6497",
+   "FOUND_A_BOMB_GR_1_C#6513",
+   "BOMB_PLANT_BL_A_1_C#6479"
   ],
-  "duration": 3.9
+  "duration": 8.69
+ },
+ {
+  "file": "/quiz-voices/voice-20.mp3",
+  "merged": [
+   "INF_RANK_WIN1_GR_C#8945",
+   "BOMB_PLANT_GR_C#4897",
+   "FIREINTHEHOLE_SMOKE_BL_C#819",
+   "FOUND_B_BOMB_GR_1_C#825"
+  ],
+  "duration": 8.02
+ },
+ {
+  "file": "/quiz-voices/voice-21.mp3",
+  "merged": [
+   "INF_RANK_WIN1_SP_C#8947",
+   "BOMB_PLANT_BL_A_1_C#4889",
+   "FIREINTHEHOLE_SMOKE_GR_C#4928",
+   "DIE_HIGHDAMAGE_BL_C#8907",
+   "BOMB_PLANT_BL_B_1_C#4893"
+  ],
+  "duration": 9.82
+ },
+ {
+  "file": "/quiz-voices/voice-22.mp3",
+  "merged": [
+   "INF_RANK_WIN2_BL_C#69",
+   "BOMB_PLANT_BL_A_2_C#9476",
+   "FIREINTHEHOLE_GRENADE_BL_C#9493",
+   "DIE_LOWDAMAGE_GR_C#8911"
+  ],
+  "duration": 7.58
+ },
+ {
+  "file": "/quiz-voices/voice-23.mp3",
+  "merged": [
+   "INF_RANK_WIN2_GR_C#8951",
+   "BOMB_PLANT_BL_B_1_C#3486",
+   "FIREINTHEHOLE_GRENADE_GR_C#3506",
+   "HEADSHOT_BL_C#3241",
+   "BOMB_PLANT_GR_C#602"
+  ],
+  "duration": 10.19
+ },
+ {
+  "file": "/quiz-voices/voice-24.mp3",
+  "merged": [
+   "INF_RANK_WIN2_SP_C#8953",
+   "BOMB_PLANT_BL_B_2_C#7870",
+   "FIREINTHEHOLE_FLASHBANG_BL_C#7878",
+   "ESCAPE_SUCCESS_C#8913"
+  ],
+  "duration": 6.28
+ },
+ {
+  "file": "/quiz-voices/voice-25.mp3",
+  "merged": [
+   "INF_RANK_WIN3_BL_C#75",
+   "BOMB_PLANT_GR_C#2380",
+   "FIREINTHEHOLE_FLASHBANG_GR_C#1986",
+   "FOUND_A_BOMB_GR_1_C#1996",
+   "BOMB_PLANT_BL_A_2_C#1972"
+  ],
+  "duration": 10.53
+ },
+ {
+  "file": "/quiz-voices/voice-26.mp3",
+  "merged": [
+   "INF_RANK_WIN3_GR_C#8957",
+   "BOMB_PLANT_BL_A_1_C#6278",
+   "FIREINTHEHOLE_SMOKE_BL_C#6300",
+   "FOUND_B_BOMB_GR_1_C#6306"
+  ],
+  "duration": 8.96
+ },
+ {
+  "file": "/quiz-voices/voice-27.mp3",
+  "merged": [
+   "INF_RANK_WIN3_SP_C#8959",
+   "BOMB_PLANT_BL_A_2_C#596",
+   "FIREINTHEHOLE_SMOKE_GR_C#619",
+   "DIE_HIGHDAMAGE_BL_C#8907",
+   "BOMB_PLANT_BL_B_2_C#600"
+  ],
+  "duration": 10.71
+ },
+ {
+  "file": "/quiz-voices/voice-28.mp3",
+  "merged": [
+   "INF_RANK_WIN1_BL_C#63",
+   "BOMB_PLANT_BL_B_1_C#4690",
+   "FIREINTHEHOLE_GRENADE_BL_C#4704",
+   "DIE_LOWDAMAGE_GR_C#8911"
+  ],
+  "duration": 7.45
+ },
+ {
+  "file": "/quiz-voices/voice-29.mp3",
+  "merged": [
+   "INF_RANK_WIN1_GR_C#8945",
+   "BOMB_PLANT_BL_B_2_C#9202",
+   "FIREINTHEHOLE_GRENADE_GR_C#9220",
+   "HEADSHOT_BL_C#3241",
+   "BOMB_PLANT_BL_A_1_C#9196"
+  ],
+  "duration": 10.49
+ },
+ {
+  "file": "/quiz-voices/voice-30.mp3",
+  "merged": [
+   "INF_RANK_WIN1_SP_C#8947",
+   "BOMB_PLANT_GR_C#9482",
+   "FIREINTHEHOLE_FLASHBANG_BL_C#3215",
+   "ESCAPE_SUCCESS_C#8913"
+  ],
+  "duration": 8.14
+ },
+ {
+  "file": "/quiz-voices/voice-31.mp3",
+  "merged": [
+   "INF_RANK_WIN2_BL_C#69",
+   "BOMB_PLANT_BL_A_1_C#7587",
+   "FIREINTHEHOLE_FLASHBANG_GR_C#7605",
+   "FOUND_A_BOMB_GR_1_C#7621",
+   "BOMB_PLANT_BL_B_1_C#7591"
+  ],
+  "duration": 10.48
+ },
+ {
+  "file": "/quiz-voices/voice-32.mp3",
+  "merged": [
+   "INF_RANK_WIN2_GR_C#8951",
+   "BOMB_PLANT_BL_A_2_C#1771",
+   "FIREINTHEHOLE_SMOKE_BL_C#1791",
+   "FOUND_B_BOMB_GR_1_C#1797"
+  ],
+  "duration": 8.95
  }
 ]

@@ -458,6 +458,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     "/privacy":     { title: "Privacy Policy — CrossFire Wiki", description: "How CrossFire Wiki handles data, cookies and privacy. Independent fan project." },
     "/terms":       { title: "Terms of Service — CrossFire Wiki", description: "Terms of service for CrossFire Wiki. Independent community reference." },
     "/faq":         { title: "CrossFire FAQ — Answers to Common Questions | CrossFire Wiki", description: "Find clear answers about CrossFire installation, modes, weapons, ranks, events, accounts and gameplay systems." },
+    "/voice-detective": { title: "Voice Detective — Guess the Character Voices | CrossFire Wiki", description: "Listen to real voice clips from the CrossFire West game files and guess which character they belong to. Community contest." },
   };
   const sectionMetaAr: Record<string, { title: string; description: string }> = {
     "/events": { title: "أحداث CrossFire | التقويم والمواعيد والمكافآت", description: "أحداث CrossFire والبطولات والتحديثات المؤقتة مع المواعيد والمكافآت والمعلومات الموثقة." },

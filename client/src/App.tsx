@@ -125,6 +125,7 @@ const Login          = lazy(() => import("@/pages/Login"));
 const Register       = lazy(() => import("@/pages/Register"));
 const Chat           = lazy(() => import("@/pages/Chat"));
 const AIAssistant    = lazy(() => import("@/pages/AIAssistant"));
+const VoiceDetective = lazy(() => import("@/pages/VoiceDetective"));
 const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
 // Admin & heavy wiki pages
 const Admin              = lazy(() => import("@/pages/admin/index"));
@@ -261,6 +262,7 @@ function Router() {
       {/* Community */}
       <Route path="/chat"                      component={() => <L C={Chat} />} />
       <Route path="/ai"                        component={() => <L C={AIAssistant} />} />
+      <Route path="/voice-detective"           component={() => <L C={VoiceDetective} />} />
 
       {/* Regional wiki fallbacks must follow every fixed public route. */}
       <Route path="/:region/weapons/:slug"    component={(p: any) => <L C={GlobalWiki} params={p.params} />} />

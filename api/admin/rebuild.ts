@@ -391,6 +391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       newsletter_subscribers: "newsletter_subscribers",
       forum_threads: "forum_threads",
       forum_posts: "forum_posts",
+      voice_guesses: "voice_guesses",
     };
     const resource = String(type || "");
     const table = tableByResource[resource];
@@ -405,6 +406,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       faq_articles: "content",
       forum_threads: "content",
       forum_posts: "content",
+      voice_guesses: "content",
       site_settings: "settings",
     };
     const permissionResource = permissionAliases[resource] || resource;

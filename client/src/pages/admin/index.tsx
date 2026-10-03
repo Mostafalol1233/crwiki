@@ -29,6 +29,7 @@ const UsersManager = lazy(() => import('./UsersManager'));
 const TicketsManager = lazy(() => import('./TicketsManager'));
 const NewsletterManager = lazy(() => import('./NewsletterManager'));
 const BulkSEO = lazy(() => import('./BulkSEO'));
+const VoiceGuessesManager = lazy(() => import('./VoiceGuessesManager'));
 const CustomPages = lazy(() => import('./CustomPages'));
 const FAQManager = lazy(() => import('./FAQManager'));
 const SiteSettings = lazy(() => import('./SiteSettings'));
@@ -60,6 +61,7 @@ function SectionContent({ section }: { section: string }) {
     case 'tutorials': return <TutorialsManager />;
     case 'announcements': return <AnnouncementsManager />;
     case 'competition': return <CompetitionManager />;
+    case 'voice-guesses': return <VoiceGuessesManager />;
     case 'weapons': return <WeaponsManager />;
     case 'modes': return <ModesManager />;
     case 'maps': return <MapsManager />;

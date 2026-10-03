@@ -6,7 +6,7 @@ import {
   BookOpen, Megaphone, Swords, RefreshCw, Store, Star, BriefcaseBusiness,
   Image, Users, Ticket, Search, FileCode, HelpCircle, Settings,
   ChevronLeft, ChevronRight, Crosshair, Map, Shield, User2,
-  Zap, Film, LayoutGrid, Code2, Mail,
+  Zap, Film, LayoutGrid, Code2, Mail, Mic,
 } from 'lucide-react';
 
 interface NavItem {
@@ -35,6 +35,7 @@ const NAV: NavSection[] = [
       { label: 'Posts', path: '/admin/posts', icon: <FileText size={16} /> },
       { label: 'Events', path: '/admin/events', icon: <Calendar size={16} /> },
       { label: 'Competition', path: '/admin/competition', icon: <Trophy size={16} /> },
+      { label: 'Voice Guesses', path: '/admin/voice-guesses', icon: <Mic size={16} /> },
       { label: 'News', path: '/admin/news', icon: <Newspaper size={16} /> },
       { label: 'Tutorials', path: '/admin/tutorials', icon: <BookOpen size={16} /> },
       { label: 'Announcements', path: '/admin/announcements', icon: <Megaphone size={16} /> },

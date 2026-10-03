@@ -54,6 +54,14 @@ const LOCAL_VOICE_LINES: Record<string, string[]> = {
   arabella: ["/merc-voices/arabella.mp3", "/merc-voices/gigi.mp3"],
   "subject alpha": ["/merc-voices/subject-alpha.mp3"],
   ghost: ["/merc-voices/ghost.mp3"],
+  dracona: [
+    "/merc-voices/dracona-bomb-plant-a1.wav",
+    "/merc-voices/dracona-bomb-plant-b1.wav",
+    "/merc-voices/dracona-fire-grenade.wav",
+    "/merc-voices/dracona-fire-flash.wav",
+    "/merc-voices/dracona-fire-smoke.wav",
+    "/merc-voices/dracona-found-bomb.wav",
+  ],
 };
 
 function getMercVoiceLines(merc: Mercenary): string[] {
@@ -278,7 +286,7 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     abilityAr: "صياد الهيدشوت",
     descAr: "في الزومبي كل ثانية بتاخد فرصة هيدشوت — أي رصاصة بتتحسب هيدشوت بضرر 100، مع ذخيرة لا نهائية وسرعة للفريق. ومعاها Sniper Master: طلقة زيادة للمسدسات وطلقتين للقناصات. (الاسم الأصلي: Hawks)",
   },
-  "urðr": {
+  "urdr": {
     ability: "Nano Camouflage",
     abilityAr: "التمويه النانوي",
     descAr: "شخصية Infinity — بتتخفى 10 ثواني في الميوتنت (Ctrl+F) وبتسترجع ذخيرة أو هيل كل ثانية. ومعاها علامة الصياد وسيف الطاقة اللي بيطلع موجة ضررها 1000 في الزومبي. و300% EXP. (الاسم الأصلي: Urd)",
@@ -287,6 +295,67 @@ const VIP_DATA: Record<string, { ability: string; abilityAr: string; descAr: str
     ability: "Raging Bullet",
     abilityAr: "الرصاصة الهائجة",
     descAr: "شخصية Infinity — في الزومبي بتمسك Barrett وحش وبتضرب 3 رصاصات مدمرة مع منطقة نار تحتها، وهيل وتقليل ضرر وذخيرة لا نهائية للفريق. وفي البحث والتدمير C4-Music Box أسرع. و300% EXP.",
+  },
+  holly: {
+    ability: "Energy Blast",
+    abilityAr: "انفجار الطاقة",
+    descAr: "مسعفة الدعم الأولى — Energy Blast في الزومبي بيمسح اللي حواليها، ومعاها درع القنابل اللي بيحميها من العمى والاهتزاز، والركلة الغاضبة للطوارئ. اللي بيلعب معاها بيحس بالأمان.",
+  },
+  magnolia: {
+    ability: "Quick Escape",
+    abilityAr: "الهروب السريع",
+    descAr: "مهاجمة من الدرجة الأولى — Quick Escape بيخليها تفلت من أي زنقة في الزومبي، وUpward Kick بيطير اللي يقرب منها، ومعاها Energy Blast. هجوم ودفاع في نفس الوقت.",
+  },
+  trixy: {
+    ability: "Shapeshifter",
+    abilityAr: "التحول",
+    descAr: "المتنكرة — بتغير شكلها وتفاجئ اللي قدامها، ومعاها الركلة الغاضبة والسكاكين الطائرة. محدش بيعرف هي فين ولا هتطلع منين. شخصية للناس اللي بتحب تلعب بمخ.",
+  },
+  ronin: {
+    ability: "Shockwave Sword",
+    abilityAr: "سيف الموجة الصدمية",
+    descAr: "الساموراي الكلاسيك — سيفه بيطلع موجة صدمة بتعدي في اللي قدامها، ومعاه الركلة الغاضبة والسكاكين. من أقدم شخصيات اللعبة ولسه شكله مرعب في الميدان.",
+  },
+  // ─── Classic West roster (no VIP skills — original GP characters) ──────────
+  wolf: {
+    ability: "Classic Soldier",
+    abilityAr: "جندي كلاسيك",
+    descAr: "ازيك يا صاحبي! وولف من أقدم جنود كروس فاير — شخصية كلاسيك ببلاش من غير مهارات VIP. للناس اللي بتحب اللعب النضيف القديم من غير إضافات.",
+  },
+  sisterhood: {
+    ability: "Classic Squad",
+    abilityAr: "فرقة كلاسيك",
+    descAr: "فرقة الأخوات — فريق نسائي كلاسيك من أوائل شخصيات اللعبة. مفيش مهارات خارقة، بس الشكل والستايل بتاعهم مميز. وليهم صوتهم الخاص في اللعبة.",
+  },
+  "black mamba": {
+    ability: "Classic Operative",
+    abilityAr: "عميلة كلاسيك",
+    descAr: "الأفعى السودا — عميلة كلاسيكية بصوتها المميز الخاص بيها في اللعبة. من شخصيات البلاك ماركت القديمة اللي ليها جمهور كبير لحد النهاردة.",
+  },
+  desperado: {
+    ability: "Classic Outlaw",
+    abilityAr: "خارج كلاسيك عن القانون",
+    descAr: "الديسبرادو الأصلي — النسخة الكلاسيك اللي اتعملت منها شخصية Annie بعد كده. راعي بقر بشخصية قوية وصوت مميز، من أساسيات اللعبة.",
+  },
+  "arch honorary": {
+    ability: "Honorary Title",
+    abilityAr: "لقب شرفي",
+    descAr: "شخصية شرفية بتتاخد تكريم للاعبين القدامى — شكلها فخم ومميز في الميدان. من الشخصيات اللي بتقول للي شايفها إن صاحبها مخضرم.",
+  },
+  thoth: {
+    ability: "Classic Guardian",
+    abilityAr: "حارس كلاسيك",
+    descAr: "تحوت بالستايل الفرعوني — شخصية كلاسيك بطابع مصري قديم مميز. شكلها لوحده بيخوف في الميدان.",
+  },
+  sfg: {
+    ability: "Classic Forces",
+    abilityAr: "قوات كلاسيك",
+    descAr: "من قوات النخبة الكلاسيكية — شخصية عسكرية تقليدية من أوائل اللعبة. بسيطة ومباشرة من غير مهارات زيادة.",
+  },
+  dracona: {
+    ability: "Dragon Horns",
+    abilityAr: "قرون التنين",
+    descAr: "ازيكو يا شباب! دراكونا (اسمها في الغرب، والأصل Dragon Woman) — بنت التنين بقرونها المميزة ولبسها الأحمر والأزرق. بتعرف تعمل رقصة الـ dab بزرار N، وصوتها الحقيقي من ملفات اللعبة نفسها موجود هنا — اسمع بنفسك!",
   },
 };
 
@@ -306,7 +375,7 @@ const VIP_SKILLS: Record<string, string[]> = {
   sparrow: ["Headshot Hunter", "Sniper Master", "Furious Kick"],
   "jtf-expert": ["Explosive Expert", "C4 Timer", "Danger Express"],
   valoria: ["Explosion of Bless", "Furious Kick"],
-  "urðr": ["Nano Camouflage", "Hunter's Mark", "Hidden Weapon"],
+  "urdr": ["Nano Camouflage", "Hunter's Mark", "Hidden Weapon"],
   seraphina: ["Awakening", "Bless"],
   switcher: ["Furious Kick", "Throwing Knife"],
   "esports yun": ["Furious Kick", "Grenade Shield"],
@@ -324,8 +393,10 @@ const WEST_ONLY: Record<string, boolean> = {
   viper: true, switcher: true, florence: true, dahlia: true, annie: true,
   seraphina: true, jessie: true, "esports yun": true, miranda: true,
   sicarios: true, lexy: true, "girl crush": true, ronin: true, corinne: true,
-  sparrow: true, "jtf-expert": true, "urðr": true, melody: true, paola: true,
+  sparrow: true, "jtf-expert": true, "urdr": true, melody: true, paola: true,
   roxy: true, aceson: true, trinity: true, "trinity-veteran": true, verdandi: true,
+  wolf: true, sisterhood: true, "black mamba": true, desperado: true,
+  "arch honorary": true, thoth: true, sfg: true, dracona: true,
 };
 
 function isWestChar(name: string): boolean {
@@ -429,7 +500,7 @@ function resolveMercImage(merc: Mercenary) {
 }
 
 export default function Mercenaries() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [playingMercId, setPlayingMercId] = useState<string | null>(null);
   const [layoutStyle, setLayoutStyle] = useState<"strip" | "grid">("grid");
   const [westOnly, setWestOnly] = useState(true);
@@ -605,6 +676,22 @@ export default function Mercenaries() {
               </button>
             </div>
           </div>
+
+          {/* ── Voice Detective promo ── */}
+          <a href="/voice-detective" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "14px 18px", borderRadius: 12, textDecoration: "none", background: "linear-gradient(135deg, rgba(212,160,23,0.14), rgba(212,160,23,0.04))", border: "1px solid rgba(212,160,23,0.35)" }}>
+            <span style={{ fontSize: 26 }}>🎤</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "#fafafa" }}>
+                {language === "ar" ? "محقق الأصوات: ساعدنا نتعرف على أصوات الشخصيات!" : "Voice Detective: help us identify character voices!"}
+              </span>
+              <span style={{ display: "block", fontSize: 12, color: "#a1a1aa", marginTop: 2 }}>
+                {language === "ar" ? "اسمع مقاطع حقيقية من ملفات اللعبة وخمن بتاعة أنهي شخصية — زي مسابقة" : "Listen to real clips from the game files and guess who they belong to — like a contest"}
+              </span>
+            </span>
+            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, background: "#d4a017", color: "#000", borderRadius: 8, padding: "9px 16px" }}>
+              {language === "ar" ? "العب ▶" : "Play ▶"}
+            </span>
+          </a>
 
           {/* ── STRIP LAYOUT ── */}
           {layoutStyle === "strip" ? (

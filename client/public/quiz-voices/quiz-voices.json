@@ -1,0 +1,290 @@
+[
+ {
+  "file": "/quiz-voices/voice-01.wav",
+  "bank_index": 4258,
+  "line": "BOMB_PLANT_BL_A_2_C",
+  "duration": 1.86
+ },
+ {
+  "file": "/quiz-voices/voice-02.wav",
+  "bank_index": 8625,
+  "line": "BOMB_PLANT_BL_B_1_C",
+  "duration": 2.23
+ },
+ {
+  "file": "/quiz-voices/voice-03.wav",
+  "bank_index": 7049,
+  "line": "FIREINTHEHOLE_FLASHBANG_BL_C",
+  "duration": 1.12
+ },
+ {
+  "file": "/quiz-voices/voice-04.wav",
+  "bank_index": 1293,
+  "line": "FIREINTHEHOLE_FLASHBANG_GR_C",
+  "duration": 0.8
+ },
+ {
+  "file": "/quiz-voices/voice-05.wav",
+  "bank_index": 9972,
+  "line": "FIREINTHEHOLE_GRENADE_BL_C",
+  "duration": 1.04
+ },
+ {
+  "file": "/quiz-voices/voice-06.wav",
+  "bank_index": 4058,
+  "line": "FIREINTHEHOLE_GRENADE_GR_C",
+  "duration": 0.97
+ },
+ {
+  "file": "/quiz-voices/voice-07.wav",
+  "bank_index": 2409,
+  "line": "FIREINTHEHOLE_SMOKE_BL_C",
+  "duration": 1.26
+ },
+ {
+  "file": "/quiz-voices/voice-08.wav",
+  "bank_index": 6786,
+  "line": "FIREINTHEHOLE_SMOKE_GR_C",
+  "duration": 0.93
+ },
+ {
+  "file": "/quiz-voices/voice-09.wav",
+  "bank_index": 5205,
+  "line": "FOUND_A_BOMB_GR_1_C",
+  "duration": 1.12
+ },
+ {
+  "file": "/quiz-voices/voice-10.wav",
+  "bank_index": 9713,
+  "line": "FOUND_B_BOMB_GR_1_C",
+  "duration": 1.23
+ },
+ {
+  "file": "/quiz-voices/voice-11.wav",
+  "bank_index": 8137,
+  "line": "RADIOMESSAGE_BL_C_2_1_C",
+  "duration": 0.86
+ },
+ {
+  "file": "/quiz-voices/voice-12.wav",
+  "bank_index": 2225,
+  "line": "RADIOMESSAGE_BL_C_3_1_C",
+  "duration": 1.41
+ },
+ {
+  "file": "/quiz-voices/voice-13.wav",
+  "bank_index": 855,
+  "line": "RADIOMESSAGE_BL_C_5_1_C",
+  "duration": 0.89
+ },
+ {
+  "file": "/quiz-voices/voice-14.wav",
+  "bank_index": 4976,
+  "line": "RADIOMESSAGE_BL_X_1_1_C",
+  "duration": 1.54
+ },
+ {
+  "file": "/quiz-voices/voice-15.wav",
+  "bank_index": 3564,
+  "line": "RADIOMESSAGE_BL_X_1_3_C",
+  "duration": 1.22
+ },
+ {
+  "file": "/quiz-voices/voice-16.wav",
+  "bank_index": 7930,
+  "line": "RADIOMESSAGE_BL_X_2_1_C",
+  "duration": 0.64
+ },
+ {
+  "file": "/quiz-voices/voice-17.wav",
+  "bank_index": 6348,
+  "line": "RADIOMESSAGE_BL_X_2_3_C",
+  "duration": 1.79
+ },
+ {
+  "file": "/quiz-voices/voice-18.wav",
+  "bank_index": 667,
+  "line": "RADIOMESSAGE_BL_X_3_1_C",
+  "duration": 0.87
+ },
+ {
+  "file": "/quiz-voices/voice-19.wav",
+  "bank_index": 9290,
+  "line": "RADIOMESSAGE_BL_X_4_1_C",
+  "duration": 0.97
+ },
+ {
+  "file": "/quiz-voices/voice-20.wav",
+  "bank_index": 3299,
+  "line": "RADIOMESSAGE_BL_X_4_2_C",
+  "duration": 1.37
+ },
+ {
+  "file": "/quiz-voices/voice-21.wav",
+  "bank_index": 137,
+  "line": "RADIOMESSAGE_BL_X_5_2_C",
+  "duration": 1.91
+ },
+ {
+  "file": "/quiz-voices/voice-22.wav",
+  "bank_index": 6103,
+  "line": "RADIOMESSAGE_BL_Z_1_1_C",
+  "duration": 0.88
+ },
+ {
+  "file": "/quiz-voices/voice-23.wav",
+  "bank_index": 4573,
+  "line": "RADIOMESSAGE_BL_Z_1_3_C",
+  "duration": 0.63
+ },
+ {
+  "file": "/quiz-voices/voice-24.wav",
+  "bank_index": 9025,
+  "line": "RADIOMESSAGE_BL_Z_2_1_C",
+  "duration": 0.68
+ },
+ {
+  "file": "/quiz-voices/voice-25.wav",
+  "bank_index": 2666,
+  "line": "BOMB_PLANT_BL_B_2_C",
+  "duration": 1.89
+ },
+ {
+  "file": "/quiz-voices/voice-26.wav",
+  "bank_index": 6499,
+  "line": "FIREINTHEHOLE_FLASHBANG_SP_C",
+  "duration": 0.84
+ },
+ {
+  "file": "/quiz-voices/voice-27.wav",
+  "bank_index": 6511,
+  "line": "FIREINTHEHOLE_SMOKE_SP_C",
+  "duration": 1.39
+ },
+ {
+  "file": "/quiz-voices/voice-28.wav",
+  "bank_index": 9531,
+  "line": "RADIOMESSAGE_BL_C_4_1_C",
+  "duration": 2.07
+ },
+ {
+  "file": "/quiz-voices/voice-29.wav",
+  "bank_index": 4754,
+  "line": "RADIOMESSAGE_BL_X_2_2_C",
+  "duration": 1.19
+ },
+ {
+  "file": "/quiz-voices/voice-30.wav",
+  "bank_index": 415,
+  "line": "RADIOMESSAGE_BL_X_5_1_C",
+  "duration": 1.01
+ },
+ {
+  "file": "/quiz-voices/voice-31.wav",
+  "bank_index": 5870,
+  "line": "RADIOMESSAGE_BL_Z_1_2_C",
+  "duration": 0.81
+ },
+ {
+  "file": "/quiz-voices/voice-32.wav",
+  "bank_index": 1387,
+  "line": "RADIOMESSAGE_BL_Z_2_3_C",
+  "duration": 1.29
+ },
+ {
+  "file": "/quiz-voices/voice-33.wav",
+  "bank_index": 6872,
+  "line": "RADIOMESSAGE_BL_Z_3_2_C",
+  "duration": 0.88
+ },
+ {
+  "file": "/quiz-voices/voice-34.wav",
+  "bank_index": 2273,
+  "line": "RADIOMESSAGE_BL_Z_4_2_C",
+  "duration": 0.71
+ },
+ {
+  "file": "/quiz-voices/voice-35.wav",
+  "bank_index": 7970,
+  "line": "RADIOMESSAGE_BL_Z_5_2_C",
+  "duration": 0.76
+ },
+ {
+  "file": "/quiz-voices/voice-36.wav",
+  "bank_index": 3331,
+  "line": "RADIOMESSAGE_GR_C_2_1_C",
+  "duration": 0.5
+ },
+ {
+  "file": "/quiz-voices/voice-37.wav",
+  "bank_index": 9049,
+  "line": "RADIOMESSAGE_GR_C_4_1_C",
+  "duration": 1.09
+ },
+ {
+  "file": "/quiz-voices/voice-38.wav",
+  "bank_index": 4379,
+  "line": "RADIOMESSAGE_GR_X_1_1_C",
+  "duration": 0.86
+ },
+ {
+  "file": "/quiz-voices/voice-39.wav",
+  "bank_index": 10076,
+  "line": "RADIOMESSAGE_GR_X_1_3_C",
+  "duration": 0.77
+ },
+ {
+  "file": "/quiz-voices/voice-40.wav",
+  "bank_index": 5305,
+  "line": "RADIOMESSAGE_GR_X_2_2_C",
+  "duration": 1.35
+ },
+ {
+  "file": "/quiz-voices/voice-41.wav",
+  "bank_index": 927,
+  "line": "RADIOMESSAGE_GR_X_3_1_C",
+  "duration": 0.67
+ },
+ {
+  "file": "/quiz-voices/voice-42.wav",
+  "bank_index": 6412,
+  "line": "RADIOMESSAGE_GR_X_4_1_C",
+  "duration": 0.79
+ },
+ {
+  "file": "/quiz-voices/voice-43.wav",
+  "bank_index": 1907,
+  "line": "RADIOMESSAGE_GR_X_5_1_C",
+  "duration": 1.55
+ },
+ {
+  "file": "/quiz-voices/voice-44.wav",
+  "bank_index": 7468,
+  "line": "RADIOMESSAGE_GR_Z_1_1_C",
+  "duration": 0.7
+ },
+ {
+  "file": "/quiz-voices/voice-45.wav",
+  "bank_index": 2813,
+  "line": "RADIOMESSAGE_GR_Z_1_3_C",
+  "duration": 0.79
+ },
+ {
+  "file": "/quiz-voices/voice-46.wav",
+  "bank_index": 8510,
+  "line": "RADIOMESSAGE_GR_Z_2_2_C",
+  "duration": 1.01
+ },
+ {
+  "file": "/quiz-voices/voice-47.wav",
+  "bank_index": 3931,
+  "line": "RADIOMESSAGE_GR_Z_3_1_C",
+  "duration": 1.02
+ },
+ {
+  "file": "/quiz-voices/voice-48.wav",
+  "bank_index": 9629,
+  "line": "RADIOMESSAGE_GR_Z_4_1_C",
+  "duration": 1.42
+ }
+]

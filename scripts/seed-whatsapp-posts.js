@@ -9,6 +9,18 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 }
 
 const channelBase = 'https://whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o';
+
+function restoreWhatsAppDecoration(html) {
+  const source = String(html || '');
+  if (!source || source.includes('wa-decorated')) return source;
+  const icons = ['📌', '⚔️', '👁️', '🎮', '✨', '💬'];
+  let index = 0;
+  const decorated = source.replace(/<h([23])([^>]*)>/gi, (_match, level, attrs) => {
+    const icon = icons[index++ % icons.length];
+    return `<h${level}${attrs} class="wa-decorated">${icon} `;
+  });
+  return `<div class="wa-decorated">${decorated}</div>`;
+}
 const rows = [
   {
     slug: 'crossfire-west-october-2026-update-leaks', date: '2026-09-20T17:07:00Z', category: 'updates', featured: true,
@@ -104,7 +116,7 @@ async function upsertPost(post) {
   const sourceUrl = post.sourceId ? `${channelBase}/${post.sourceId}` : channelBase;
   const payload = {
     title: post.title, title_ar: post.titleAr, post_slug: post.slug,
-    content: post.en, content_ar: post.ar, summary: post.summary, summary_ar: post.summaryAr,
+    content: post.en, content_ar: restoreWhatsAppDecoration(post.ar), summary: post.summary, summary_ar: post.summaryAr,
     image_url: '', og_image: '', gallery: [], category: post.category,
     tags: ['CrossFire West', post.category, 'WhatsApp Channel'], author: 'CrossFire Wiki',
     featured: post.featured, preview_on_home: true, language: 'en', template: 'wiki', full_layout: true,

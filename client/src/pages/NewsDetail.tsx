@@ -330,6 +330,12 @@ export default function NewsDetail() {
               />
               <style>{`
                 .news-rich-content img { max-width: 100%; height: auto; object-fit: contain; margin: 1.5rem auto; display: block; }
+                .news-rich-content .skin-profile { margin: 2.5rem 0; padding: 1.25rem; border: 1px solid rgba(212,160,23,.28); border-radius: 1rem; background: linear-gradient(135deg, rgba(212,160,23,.08), rgba(0,0,0,.16)); overflow: hidden; }
+                .news-rich-content .skin-profile h2 { margin-top: 0; padding-top: 0; color: #f5d06f; }
+                .news-rich-content .skin-profile figure { margin: 1rem auto 1.25rem; text-align: center; }
+                .news-rich-content .skin-profile figure img { width: min(100%, 520px); max-height: 620px; min-height: 180px; object-fit: contain; margin: 0 auto .75rem; border-radius: .75rem; background: rgba(0,0,0,.35); }
+                .news-rich-content .skin-profile figcaption { color: #d4a017; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+                .news-rich-content .skin-profile p:last-child { margin-bottom: 0; }
                 .news-rich-content table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
                 .news-rich-content .post-color-orange { color: #ff9900 !important; }
                 .news-rich-content .post-color-yellow { color: #f5d020 !important; }

@@ -74,6 +74,22 @@ function classifyEvent(ev: any): "active" | "upcoming" | "past" {
   return "active";                                     // in progress
 }
 
+function eventRecency(ev: any): number {
+  const candidate = ev.end_date || ev.start_date || ev.date || "";
+  const parsed = new Date(candidate);
+  if (!isNaN(parsed.getTime())) return parsed.getTime();
+  const range = parseDateRange(String(candidate));
+  return range.end?.getTime() || range.start?.getTime() || new Date(ev.created_at || 0).getTime() || 0;
+}
+
+function sortEventsForDisplay(items: any[]): any[] {
+  const priority = { active: 0, upcoming: 1, past: 2 } as const;
+  return [...items].sort((a, b) => {
+    const byStatus = priority[classifyEvent(a)] - priority[classifyEvent(b)];
+    return byStatus || eventRecency(b) - eventRecency(a);
+  });
+}
+
 function getStatusStyle(status: string, isAr = false) {
   if (status === "active") return { bg: "rgba(52,211,153,0.12)", color: "#34d399", border: "rgba(52,211,153,0.25)", label: isAr ? "نشط" : "Active" };
   if (status === "upcoming") return { bg: "rgba(245,166,35,0.12)", color: GOLD, border: "rgba(245,166,35,0.25)", label: isAr ? "قادم" : "Upcoming" };
@@ -336,7 +352,7 @@ export default function EventsList() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const events = data?.items || [];
+  const events = sortEventsForDisplay(data?.items || []);
   const total = data?.total || 0;
   const hasMore = page * limit < total;
 

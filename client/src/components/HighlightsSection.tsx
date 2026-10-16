@@ -13,12 +13,9 @@ interface Highlight {
 }
 
 const STATIC_HIGHLIGHTS: Highlight[] = [
-  { id: "hidden-clues-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260904_cfwe_scavengerhunt_forum.jpg", title: "Hidden Clues Hunt — September 8–14, 2026", sort_order: 1 },
-  { id: "mercenary-pass-62", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260813_cfwe_bp_sep_main_forum.jpg", title: "Mercenary Pass Season 62: Fall Line", sort_order: 2 },
-  { id: "sentient-scholars-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260812_cfwe_qbz191s_endlessfury_forum.jpg", title: "Sentient Scholars — September 2 to October 6, 2026", sort_order: 3 },
-  { id: "voyage-orca-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_orca_crate_forum.jpg", title: "Voyage of the Orca — September 1–14, 2026", sort_order: 4 },
-  { id: "prime-surge-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260826_cfwe_zppubonus_forum.jpg", title: "Prime Surge Bonus — September 1–30, 2026", sort_order: 5 },
-  { id: "graffiti-getaway-sep-2026", month: "Sep", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260831_cfwe_weekendparty_forums.jpg", title: "Graffiti Getaway — September Weekends", sort_order: 6 },
+  { id: "shadow-mode-week-oct-2026", month: "Oct", year: 2026, media_type: "image", url: "https://qywburkldwdkegztsgjj.supabase.co/storage/v1/object/public/media/october-15/shadow-mode-week-3442c390-a31e-46d8-872b-4eca5f2b6de5.jpg", title: "Shadow Mode Week — October 12–18, 2026", sort_order: 1 },
+  { id: "haunting-beasts-oct-2026", month: "Oct", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260925_cfwe_weekendparty_forums.jpg", title: "Haunting Beasts Weekend — October 2026", sort_order: 2 },
+  { id: "frights-delights-oct-2026", month: "Oct", year: 2026, media_type: "image", url: "https://z8games.akamaized.net/cfna/web/main/Forum/260929_cfwe_zppubonus_forums.jpg", title: "Frights & Delights Bonus — October 2026", sort_order: 3 },
 ];
 
 const MONTH_NUMBERS: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };

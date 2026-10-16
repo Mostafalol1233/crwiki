@@ -224,6 +224,23 @@ function formatEventDate(value: unknown, language: "en" | "ar") {
   return String(value).trim().replace(/\s+/g, " ");
 }
 
+function classifyHomeEvent(event: any): "active" | "upcoming" | "past" {
+  const now = Date.now();
+  const start = event.start_date ? new Date(event.start_date).getTime() : NaN;
+  const end = event.end_date ? new Date(event.end_date).getTime() : NaN;
+  if (Number.isFinite(end) && end < now) return "past";
+  if (Number.isFinite(start) && start > now) return "upcoming";
+  const text = String(event.date || "").toLowerCase();
+  if (/\b(september|august|july|june|may|april|march|february|january)\b/.test(text) && !/october|november|december/.test(text)) return "past";
+  return "active";
+}
+
+function homeEventTime(event: any): number {
+  const value = event.end_date || event.start_date || event.created_at || event.date || "";
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) ? parsed.getTime() : 0;
+}
+
 function EventCard({ event, featured = false }: { event: any; featured?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const { t, language } = useLanguage();
@@ -435,10 +452,15 @@ export default function Home() {
   });
   const allEvents = eventsData?.items || [];
   const displayEvents = useMemo(() =>
-    allEvents.filter((e: any) => !e.rawHtmlContent && String(e.title || "").trim()).slice(0, 8),
+    allEvents.filter((e: any) => !e.rawHtmlContent && String(e.title || "").trim())
+      .sort((a: any, b: any) => {
+        const rank = { active: 0, upcoming: 1, past: 2 } as const;
+        return rank[classifyHomeEvent(a)] - rank[classifyHomeEvent(b)] || homeEventTime(b) - homeEventTime(a);
+      })
+      .slice(0, 8),
     [allEvents]
   );
-  const ribbonEvents = allEvents.filter((e: any) => !e.rawHtmlContent).slice(0, 10);
+  const ribbonEvents = displayEvents.filter((e: any) => classifyHomeEvent(e) !== "past").slice(0, 10);
 
   const { data: latestNewsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/news", { limit: 8, home: true }],

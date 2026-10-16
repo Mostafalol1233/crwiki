@@ -6203,8 +6203,8 @@
       "name_ar": "Shadow Mode Week",
       "source_category": "Annual Events",
       "description": "You've completed all tasks at the Shadow Mode Week event.",
-      "description_en": "You've completed all tasks at the Shadow Mode Week event.",
-      "description_ar": "كمّلت كل مهام إيفنت Shadow Mode Week.",
+      "description_en": "Complete all required Shadow Mode Week tasks during the official event window from October 12 through October 18, 2026.",
+      "description_ar": "لازم تكمّل كل مهام أسبوع طور الظلال خلال فترة الإيفنت الرسمية من 12 لحد 18 أكتوبر 2026.",
       "image_url": "https://z8games.akamaized.net/cfna/web/ribbons/rb0188_ShadowMode.jpg",
       "source_url": "https://crossfire.z8games.com/profile/27979692/ribbons",
       "source_ownership_count": "784",
@@ -6217,21 +6217,23 @@
       "difficulty_note_en": "The page ties the ribbon to a named event or limited-time activity.",
       "difficulty_note_ar": "الشارة مرتبطة بحدث محدد أو نشاط محدود الوقت.",
       "how_to_get_en": [
-        "Meet the exact condition listed on the profile page: You've completed all tasks at the Shadow Mode Week event.",
-        "Open the profile's Ribbons page and confirm that the ribbon has been awarded.",
-        "The profile page does not specify the missing details; verify the current in-game or event rules before relying on this instruction."
+        "Enter Shadow Mode during the official event window: October 12–18, 2026.",
+        "Complete the daily or listed event tasks and finish matches so progress is recorded.",
+        "Check the official CrossFire West event tracker for the exact task counter and reward delivery.",
+        "The ribbon is tied to this event window; it is not an account lock or progress state."
       ],
       "how_to_get_ar": [
-        "لازم تعمل الشرط ده زي ما مكتوب في صفحة البروفايل: كمّلت كل مهام إيفنت Shadow Mode Week.",
-        "بعد ما تخلص الشرط، افتح صفحة Ribbons في بروفايلك واتأكد إن الشارة ظهرت.",
-        "لو الشرط قديم أو التفاصيل مش موجودة في الصفحة، راجع قواعد الإيفنت أو اللعبة الحالية قبل ما تعتمد عليه."
+        "ادخل طور Shadow Mode خلال فترة الإيفنت الرسمية من 12 لحد 18 أكتوبر 2026.",
+        "كمّل المهام اليومية أو المهام المكتوبة في صفحة الإيفنت، وخلّص الماتشات عشان التقدم يتحسب.",
+        "راجع متعقب أحداث CrossFire West الرسمي عشان تعرف عداد المهام وميعاد نزول المكافأة.",
+        "الريبون مرتبط بفترة الإيفنت دي، ومش معناه إن حسابك مقفول أو إن عندك حالة فتح وقفل."
       ],
       "exactness": "partial_from_page",
       "source_limitations_en": [
-        "The profile description does not provide all event, shop, or item-set details."
+        "The announcement does not expose the complete task list outside the event tracker; verify the live counter in-game."
       ],
       "source_limitations_ar": [
-        "وصف الصفحة مش موضح كل تفاصيل الحدث أو المتجر أو مجموعة العناصر."
+        "صفحة الإعلان لا تعرض قائمة المهام التفصيلية كاملة خارج متعقب الإيفنت؛ راجع العداد الرسمي أثناء اللعب."
       ],
       "ownership_count_display": "784",
       "ribbon_link": "https://crossfire.z8games.com/profile/27979692/ribbons",
@@ -6239,8 +6241,8 @@
       "research_sources": [
         "https://crossfire.z8games.com/profile/27979692/ribbons"
       ],
-      "research_basis_ar": "وصف بروفايل CrossFire/Z8Games الرسمي، مع فصل حالة انتهاء الريبون نفسها عن احتمال تكرار عيلة الإيفنت.",
-      "research_basis_en": "Official CrossFire/Z8Games profile description, with lifecycle classification separated into ribbon-window status and event-family recurrence.",
+      "research_basis_ar": "الإيفنت الرسمي الحالي محدد من 12 إلى 18 أكتوبر 2026؛ الشروط العملية مرتبطة بمهام الإيفنت ومتتبعه الرسمي.",
+      "research_basis_en": "The current official event window is October 12–18, 2026; practical requirements are tied to the event tasks and official tracker.",
       "research": {
         "item_references_verified": false,
         "research_quality": "official_sources_only_in_output"
@@ -6251,26 +6253,26 @@
       "item_requirement_note_en": "The published requirement does not name a specific item; no extra weapon or character is added without a source.",
       "event_lifecycle": {
         "is_event": true,
-        "ribbon_availability": "specific_ribbon_window_closed",
-        "event_status": "recurring_event_family",
+        "ribbon_availability": "specific_ribbon_window_active",
+        "event_status": "active_limited_event",
         "recurrence_pattern": "rotating_thematic_week",
-        "first_known_date": null,
-        "last_known_date": null,
+        "first_known_date": "2026-10-12",
+        "last_known_date": "2026-10-18",
         "usual_return_window": null,
-        "next_expected_window": "May recur, but no fixed next date is published",
-        "confidence": "medium",
+        "next_expected_window": "May return in a future Shadow Mode event; no date is confirmed.",
+        "confidence": "high",
         "evidence_basis": [
           "Official profile description",
           "Official source URLs already present in the dataset"
         ],
         "official_date_research": {
-          "checked_at": "2026-09-14",
-          "current_events_page": "no_active_events",
+          "checked_at": "2026-10-16",
+          "current_events_page": "official listing confirmed October 12–18, 2026",
           "current_events_page_url": "https://crossfire.z8games.com/events.html",
-          "latest_exact_date_range": null,
+          "latest_exact_date_range": "October 12–18, 2026",
           "next_official_date_found": false,
-          "date_status": "not_found_in_accessible_official_archive",
-          "note": "No exact Shadow Mode Week date range was found in the accessible official events page or announcement archive snapshot."
+          "date_status": "official_current_event_window",
+          "note": "The official event listing confirms the current Shadow Mode Week window; a future return date is not published."
         },
         "release_history": {
           "known_releases": [],

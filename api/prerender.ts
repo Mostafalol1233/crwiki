@@ -9,8 +9,21 @@ import { getRegionBySlug, getWeaponBySlug } from "../shared/crossfire-regions.js
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const ANON_KEY     = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 const BASE         = "https://crossfire.wiki";
-const DEFAULT_IMG  = `${BASE}/feature-crossfire.jpg`;
+const DEFAULT_IMG  = `${BASE}/seo/crossfire-wiki-social.jpg`;
 const LOGO         = `${BASE}/logo-new.png`;
+const SECTION_IMAGES: Record<string, string> = {
+  "/events": `${BASE}/portal/events.webp`,
+  "/weapons": `${BASE}/portal/weapons.webp`,
+  "/modes": `${BASE}/portal/modes.webp`,
+  "/maps": `${BASE}/portal/maps.webp`,
+  "/ranks": `${BASE}/portal/ranks.webp`,
+  "/mercenaries": `${BASE}/portal/mercenaries.webp`,
+  "/news": DEFAULT_IMG,
+  "/posts": DEFAULT_IMG,
+  "/tutorials": DEFAULT_IMG,
+  "/videos": DEFAULT_IMG,
+  "/content-hub": DEFAULT_IMG,
+};
 
 interface PageMeta {
   title: string;
@@ -335,7 +348,7 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     return {
       title,
       description,
-      image: `${BASE}/feature-crossfire.jpg`,
+      image: DEFAULT_IMG,
       url,
       type: "website",
       robots: active ? undefined : "noindex, follow",
@@ -487,11 +500,22 @@ async function resolveMeta(path: string): Promise<PageMeta> {
     return {
       title: localized.title,
       description: localized.description,
-      image: DEFAULT_IMG,
-      imageType: imageType(DEFAULT_IMG),
+      image: SECTION_IMAGES[routePath] || DEFAULT_IMG,
+      imageType: imageType(SECTION_IMAGES[routePath] || DEFAULT_IMG),
       url: sectionUrl,
       type: "website",
       alternates: routePath === "/competition" ? undefined : [{ lang: "en", url: `${BASE}${routePath}` }, { lang: "ar", url: `${BASE}/ar${routePath}` }, { lang: "x-default", url: `${BASE}${routePath}` }],
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "@id": `${sectionUrl}#webpage`,
+        name: localized.title,
+        description: localized.description,
+        url: sectionUrl,
+        inLanguage: isArabic ? "ar" : "en",
+        isPartOf: { "@type": "WebSite", "@id": `${BASE}/#website`, name: "CrossFire Wiki", url: BASE },
+        primaryImageOfPage: { "@type": "ImageObject", url: SECTION_IMAGES[routePath] || DEFAULT_IMG, width: 1200, height: 630 },
+      },
     };
   }
 
@@ -539,6 +563,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <meta name="robots" content="${e(robots)}">
 <meta name="googlebot" content="${e(robots)}">
 <meta name="bingbot" content="${e(robots)}">
+<meta name="author" content="CrossFire Wiki Editorial Team">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 ${meta.keywords ? `<meta name="keywords" content="${e(meta.keywords)}">` : ""}
 ${meta.datePublished ? `<meta name="article:published_time" content="${e(meta.datePublished)}">` : ""}
 ${meta.dateModified ? `<meta name="article:modified_time" content="${e(meta.dateModified)}">` : ""}

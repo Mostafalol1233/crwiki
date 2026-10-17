@@ -1,11 +1,11 @@
 {
   "name": "CrossFire Wiki",
-  "short_name": "CF Wiki",
+  "short_name": "CrossFire Wiki",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1f2937",
-  "description": "CrossFire Wiki — weapons, modes, ranks, and community guides.",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "description": "Independent CrossFire reference for weapons, maps, modes, ranks, events, ribbons, and guides.",
   "icons": [
     { "src": "/favicon-16x16.png", "sizes": "16x16", "type": "image/png" },
     { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },

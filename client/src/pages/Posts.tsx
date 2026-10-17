@@ -47,8 +47,8 @@ const CATEGORY_FALLBACKS: Record<string, string> = {
   modes: "/portal/modes.jpg",
   mercenaries: "/portal/mercenaries.jpg",
   ranks: "/portal/ranks.jpg",
-  news: "/feature-crossfire.jpg",
-  updates: "/feature-crossfire.jpg",
+  news: "/seo/crossfire-wiki-social.jpg",
+  updates: "/seo/crossfire-wiki-social.jpg",
   guides: "/portal/maps.jpg",
   tutorials: "/portal/modes.jpg",
 };

@@ -169,7 +169,7 @@ export default function GlobalContentHub({ params }: GlobalContentHubProps) {
             </div>
             <div className="order-1 min-h-[260px] bg-[#0b1119] lg:order-2 lg:min-h-0">
               <div className="relative h-full min-h-[300px]">
-                <SafeImage src="/feature-crossfire.jpg" alt="CrossFire character archive" className="p-3 sm:p-8 lg:p-10" />
+                <SafeImage src="/seo/crossfire-wiki-social.jpg" alt="CrossFire character archive" className="p-3 sm:p-8 lg:p-10" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#101722] via-transparent to-transparent lg:bg-gradient-to-l lg:from-[#101722] lg:via-transparent lg:to-transparent" />
                 <div className="absolute bottom-5 right-5 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 backdrop-blur">{isArabic ? "مركز المعرفة" : "Knowledge centre"}</div>
               </div>

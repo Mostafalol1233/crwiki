@@ -40,6 +40,7 @@ Allow: /ar/competition
 Allow: /logo-new.png
 Allow: /crossfire-logo.png
 Allow: /feature-crossfire.jpg
+Allow: /seo/crossfire-wiki-social.jpg
 Allow: /favicon*.png
 
 # Google crawlers
@@ -88,6 +89,11 @@ Allow: /modes
 Allow: /maps
 Allow: /ranks
 Allow: /mercenaries
+Allow: /ribbons
+Allow: /posts/
+Allow: /tutorials/
+Allow: /videos/
+Allow: /content-hub
 Allow: /news/
 Allow: /events/
 Allow: /llms.txt
@@ -104,6 +110,11 @@ Allow: /modes
 Allow: /maps
 Allow: /ranks
 Allow: /mercenaries
+Allow: /ribbons
+Allow: /posts/
+Allow: /tutorials/
+Allow: /videos/
+Allow: /content-hub
 Allow: /news/
 Allow: /events/
 Allow: /llms.txt
@@ -115,12 +126,36 @@ Disallow: /ai
 Disallow: /chat
 
 User-agent: PerplexityBot
+Allow: /weapons
+Allow: /modes
+Allow: /maps
+Allow: /ranks
+Allow: /mercenaries
+Allow: /ribbons
+Allow: /posts/
+Allow: /tutorials/
+Allow: /videos/
+Allow: /content-hub
+Allow: /news/
+Allow: /events/
 Allow: /llms.txt
 Allow: /api/content
 Disallow: /admin/
 Disallow: /api/admin/
 
 User-agent: CCBot
+Allow: /weapons
+Allow: /modes
+Allow: /maps
+Allow: /ranks
+Allow: /mercenaries
+Allow: /ribbons
+Allow: /posts/
+Allow: /tutorials/
+Allow: /videos/
+Allow: /content-hub
+Allow: /news/
+Allow: /events/
 Allow: /llms.txt
 Allow: /api/content
 Disallow: /admin/

@@ -482,9 +482,9 @@ export default function Home() {
   return (
     <>
       <PageSEO
-        title="CrossFire Wiki — Weapons, Ranks, Events, Maps & Guides"
+        title="CrossFire Wiki | Weapons, Maps, Ranks, Events & Guides"
         description="An independent CrossFire reference covering weapons, characters, game modes, ranks, maps, events, and tutorials in English and Arabic."
-        image="https://crossfire.wiki/feature-crossfire.jpg"
+        image="https://crossfire.wiki/seo/crossfire-wiki-social.jpg"
         canonicalPath="/"
       />
       <div className="wiki-home-shell" style={{ background: BG, minHeight: "100vh", color: "#fff" }}>

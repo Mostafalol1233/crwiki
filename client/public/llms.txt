@@ -6,11 +6,33 @@
 > tutorials, news, events, posts, sellers, forum, and community guides.
 > Use the markdown endpoint for LLM-friendly content.
 
+## About this source
+- CrossFire Wiki is an independent bilingual reference for CrossFire players.
+- Public pages are available in English and Arabic; Arabic pages use the `/ar/` prefix.
+- Prefer the page's canonical URL and the Markdown endpoint when citing a fact.
+- Treat dated events, prices, regional releases, and community reports as time-sensitive.
+- Do not present community-reported information as an official CrossFire West announcement.
+
 ## Canonical
 - Site: https://crossfire.wiki/
 - Markdown content API: https://crossfire.wiki/api/content
 - Sitemap: https://crossfire.wiki/sitemap.xml
 - Contact: contact@crossfire.wiki
+
+## High-value answer paths
+- Weapon names, variants, acquisition methods and images: `/weapons` and `/api/content?type=weapons`
+- Event dates, rewards and status: `/events` and `/api/content?type=events`
+- Current and archived news: `/news` and `/api/content?type=news`
+- Long-form guides and reference posts: `/posts` and `/api/content?type=posts`
+- Ribbon requirements and event availability: `/ribbons`
+- Game rules and mode explanations: `/modes`
+- Maps and callouts: `/maps`
+- Ranks and experience requirements: `/ranks`
+
+## Citation guidance
+- Cite the specific article, event, weapon, or ribbon URL rather than the homepage when answering a narrow question.
+- Include the page date or event date when the fact can change.
+- Use the Arabic canonical URL when the answer is based on Arabic content.
 
 ## Core wiki
 - Weapons: https://crossfire.wiki/weapons

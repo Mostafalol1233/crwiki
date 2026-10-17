@@ -124,9 +124,13 @@ export function SEOHead({
   const normalizeTitle = (s?: string) =>
     s ? s.replace(/\s*-\s*/g, " | ").replace(/\s*—\s*/g, " | ") : s;
 
-  const defaultTitle = "CrossFire Wiki | Weapons, Maps, Ranks, Events & Guides";
+  const defaultTitle = isArabicPage
+    ? "ويكي CrossFire | الأسلحة والخرائط والرتب والأحداث والأدلة"
+    : "CrossFire Wiki | Weapons, Maps, Ranks, Events & Guides";
   const defaultDescription =
-    "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides in English and Arabic.";
+    isArabicPage
+      ? "مرجع مستقل للعبة CrossFire يضم الأسلحة والشخصيات والأوضاع والرتب والخرائط والأحداث والأدلة بالعربية والإنجليزية."
+      : "An independent CrossFire reference covering weapons, characters, modes, ranks, maps, events, tutorials, and community guides in English and Arabic.";
 
   const finalTitle = normalizeTitle(title) || normalizeTitle(siteSeo?.seoTitle) || defaultTitle;
   const finalDescription = description || siteSeo?.seoDescription || defaultDescription;
@@ -134,6 +138,7 @@ export function SEOHead({
   const finalOgDescription = ogDescription || finalDescription;
 
   const defaultSeoLogo = `${baseUrl}/logo-new.png`;
+  const defaultSocialImage = `${baseUrl}/seo/crossfire-wiki-social.jpg`;
   const resolveAbsolute = (img?: string) => {
     const src = img || '';
     if (!src) return defaultSeoLogo;
@@ -147,7 +152,7 @@ export function SEOHead({
     }
   };
 
-  const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage);
+  const finalOgImage = resolveAbsolute(ogImage || siteSeo?.seoOgImage || defaultSocialImage);
   const finalTwitterImage = resolveAbsolute(twitterImage || finalOgImage);
   const robotsValue = noindex ? "noindex, follow" : robots || siteSeo?.robots || "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1";
 
@@ -163,6 +168,11 @@ export function SEOHead({
     })();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = isArabicPage ? "ar" : "en";
+    document.documentElement.dir = isArabicPage ? "rtl" : "ltr";
+  }, [isArabicPage]);
 
   useEffect(() => {
     // ── Title ──────────────────────────────────────────────────────────────────
@@ -199,6 +209,8 @@ export function SEOHead({
           { name: "robots", content: robotsValue },
           { name: "googlebot", content: robotsValue },
           { name: "bingbot", content: robotsValue },
+          { name: "author", content: "CrossFire Wiki Editorial Team" },
+          { name: "referrer", content: "strict-origin-when-cross-origin" },
           // Open Graph
           { property: "og:site_name", content: "CrossFire Wiki" },
           { property: "og:locale", content: isArabicPage ? "ar_AR" : "en_US" },
@@ -222,7 +234,6 @@ export function SEOHead({
           { name: "twitter:image", content: finalTwitterImage },
           { name: "twitter:image:alt", content: altText },
           // WhatsApp / Telegram rich previews
-          { property: "og:image:secure_url", content: finalOgImage },
         ]
       : [];
 
@@ -340,6 +351,20 @@ export function SEOHead({
     (extraSchemas || []).forEach((schema) => {
       injectSchema({ "@context": "https://schema.org", ...schema });
     });
+
+    if (!onlySchema && !schemaType) {
+      injectSchema({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${finalCanonical}#webpage`,
+        name: finalTitle,
+        description: finalDescription,
+        url: finalCanonical,
+        inLanguage: isArabicPage ? "ar" : "en",
+        isPartOf: { "@type": "WebSite", "@id": `${baseUrl}/#website`, name: "CrossFire Wiki", url: baseUrl },
+        primaryImageOfPage: { "@type": "ImageObject", url: finalOgImage, width: ogImageWidth, height: ogImageHeight },
+      });
+    }
 
     // ── Cleanup ───────────────────────────────────────────────────────────────
     return () => {

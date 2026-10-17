@@ -612,7 +612,7 @@ export default function Weapons() {
                           }
                           const current = methods.filter(m => m.status === 'available' || m.status === 'limited');
                           const historical = methods.filter(m => m.status === 'historical' || m.status === 'unavailable');
-                          const unknown = methods.filter(m => !['available','limited','historical','unavailable'].includes(m.status));
+                          const unknown = methods.filter(m => !['available','limited','historical','unavailable'].includes(String(m.status || '')));
                           const renderCard = (m: NonNullable<Weapon['acquisitionMethods']>[number], idx: number) => (
                             <div key={idx} className="p-3 border space-y-2" style={{ borderColor: m.verified ? "rgba(34,197,94,.25)" : "rgba(174,184,196,.15)", background: m.verified ? "rgba(34,197,94,.05)" : "rgba(174,184,196,.03)" }}>
                               <div className="flex flex-wrap items-center gap-2">

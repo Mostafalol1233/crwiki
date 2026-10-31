@@ -254,8 +254,8 @@ export default function NewsDetail() {
           }
         ] : undefined}
       />
-      <div className="min-h-screen">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-8 md:py-12">
+      <div className="min-h-screen news-detail-page">
+        <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-8 md:py-12">
           {!(newsItem as any).fullLayout && <Breadcrumbs items={newsBreadcrumbs} />}
           <div className="flex items-center gap-2 mb-6 mt-2 no-print flex-wrap">
             <Link href={localizedNewsPath}>
@@ -274,36 +274,38 @@ export default function NewsDetail() {
             </button>
           </div>
 
-          <div className={`${(newsItem as any).fullLayout ? "" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
-            <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
+          <div className={`${(newsItem as any).fullLayout ? "" : "news-article-shell wiki-content-card rounded-2xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+            <article dir={isRTL ? "rtl" : undefined} className={`news-article ${isRTL ? "text-right" : ""}`}>
               {!(newsItem as any).fullLayout && (
-                <header className="mb-12">
-                  <div className="flex flex-wrap items-center gap-4 mb-6">
-                    <Badge className="bg-primary hover:bg-primary/80 rounded-none uppercase font-black italic px-4 py-1">
+                <header className="news-article-header mb-12">
+                  <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <Badge className="news-category-badge rounded-full uppercase font-bold px-3 py-1">
                       {language === "ar" ? (newsItem.categoryAr || newsItem.category_ar || newsItem.category) : newsItem.category}
                     </Badge>
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       <Target className="h-4 w-4" />
                       <span>{monthYearText}</span>
                     </div>
                   </div>
 
                   <h1
-                    className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}
+                    className={`news-article-title text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}
                   >
                     {selectedTitle}
                   </h1>
 
-                  <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground mb-12">
-                    <span>{language === "ar" ? "بواسطة" : "By"} {newsItem.author || "CrossFire Wiki Editorial Team"}</span>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground mb-10">
+                    <span>{language === "ar" ? "بواسطة" : "By"} <strong className="text-foreground font-medium">{newsItem.author || "CrossFire Wiki Editorial Team"}</strong></span>
+                    <span className="news-meta-divider" aria-hidden="true" />
+                    <span>{Math.max(1, Math.ceil(wordCount / 220))} {language === "ar" ? "دقائق للقراءة" : "min read"}</span>
                   </div>
 
                   {newsItem.image && (
-                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl mb-12">
+                    <div className="news-hero-image relative w-full aspect-[16/8] rounded-xl overflow-hidden mb-12">
                       <ContentImage
                         src={newsItem.image}
                         alt={selectedTitle}
-                        className="w-full h-full object-contain p-4 cursor-zoom-in"
+                        className="w-full h-full object-cover cursor-zoom-in"
                         onLoad={() => setImgLoaded(true)}
                         onClick={() => setViewer({ open: true, src: newsItem.image, alt: selectedTitle })}
                       />
@@ -313,7 +315,7 @@ export default function NewsDetail() {
               )}
 
               <div
-                className={`prose prose-xl dark:prose-invert max-w-none mb-16 news-rich-content ${isRTL ? "text-right" : ""}`}
+                className={`prose prose-lg dark:prose-invert max-w-[760px] mx-auto mb-16 news-rich-content ${isRTL ? "text-right" : ""}`}
                 dir={isRTL ? "rtl" : undefined}
                 ref={contentRef}
                 dangerouslySetInnerHTML={{

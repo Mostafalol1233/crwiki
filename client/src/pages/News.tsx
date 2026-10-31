@@ -24,12 +24,7 @@ function normalizeAuthor(a?: string) {
 }
 
 function getCatStyle(cat: string) {
-  const c = String(cat || "").toLowerCase();
-  if (c.includes("event"))    return { bg: "rgba(245,166,35,0.1)",  color: GOLD };
-  if (c.includes("tutorial")) return { bg: "rgba(99,102,241,0.1)",  color: "#818cf8" };
-  if (c.includes("update"))   return { bg: "rgba(52,211,153,0.1)",  color: "#34d399" };
-  if (c.includes("news"))     return { bg: "rgba(248,113,113,0.1)", color: "#f87171" };
-  return { bg: "rgba(156,163,175,0.1)", color: "#9ca3af" };
+  return { bg: "rgba(245,166,35,0.08)", color: "var(--muted-foreground)" };
 }
 
 // ─── Featured Article ─────────────────────────────────────────────────────────
@@ -51,8 +46,8 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat, isArab
               <ContentImage
                 src={item.image || item.imageUrl}
                 alt={title}
-                className="transition-opacity duration-500 group-hover:opacity-90"
-                style={{ width: "100%", height: "100%", objectFit: "contain", padding: 16, minHeight: 280 }}
+                className="transition-transform duration-500 group-hover:scale-[1.02]"
+                style={{ width: "100%", height: "100%", objectFit: "cover", minHeight: 280 }}
               />
             ) : (
               <div style={{ width: "100%", minHeight: 280, background: "#0d1117", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -74,10 +69,10 @@ function FeaturedArticle({ item, href, title, excerpt, date, author, cat, isArab
                 {cat || (isArabic ? "مقال" : "Article")}
               </span>
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--foreground)", margin: "0 0 10px", lineHeight: 1.25 }}>
+            <h2 style={{ fontSize: 24, fontWeight: 750, letterSpacing: "-0.025em", color: "var(--foreground)", margin: "0 0 12px", lineHeight: 1.2 }}>
               {title}
             </h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 16px", lineHeight: 1.65, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            <p             style={{ fontSize: 14, color: "var(--muted-foreground)", margin: "0 0 18px", lineHeight: 1.7, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
               {excerpt || (isArabic ? "اقرأ المقال الكامل لمعرفة التفاصيل." : "Read the full article for details.")}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
@@ -111,8 +106,8 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }
         <div style={{ position: "relative", overflow: "hidden", paddingTop: "55%" }}>
           {item.image || item.imageUrl ? (
             <ContentImage src={item.image || item.imageUrl} alt={title} loading="lazy"
-              className="transition-opacity duration-500 group-hover:opacity-90"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 8 }}
+              className="transition-transform duration-500 group-hover:scale-[1.03]"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "#0d1117", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -139,7 +134,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }
           </div>
 
           <h3 className="group-hover:text-[#f5a623] transition-colors" style={{
-            fontWeight: 800, fontSize: 13, textTransform: "uppercase", letterSpacing: "-0.01em",
+            fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em",
             color: "var(--foreground)", margin: "0 0 6px", lineHeight: 1.35,
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
           }}>
@@ -152,7 +147,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }
             </p>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 8, borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
             <User size={10} color="#444" />
             <span style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               {normalizeAuthor(author)}
@@ -160,7 +155,7 @@ function ArticleCard({ item, href, title, excerpt, date, cat, author, isArabic }
           </div>
         </div>
         <style>{`
-          .art-card:hover{border-color:rgba(245,166,35,0.2)!important;transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+          .art-card:hover{border-color:rgba(245,166,35,0.28)!important;transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,0.22);}
           .group:hover .art-overlay{opacity:1!important;}
         `}</style>
       </div>
@@ -455,7 +450,7 @@ export default function News() {
 
                     {/* Grid */}
                     {restItems.length > 0 && (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="art-grid">
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }} className="art-grid">
                         {restItems.map((item) => (
                           <ArticleCard
                             key={item.id}

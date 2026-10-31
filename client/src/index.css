@@ -152,6 +152,107 @@
   box-shadow: var(--shadow-xl);
 }
 
+.news-article-shell {
+  background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 28%) !important;
+}
+
+.news-category-badge {
+  color: hsl(var(--primary-foreground)) !important;
+  background: hsl(var(--primary)) !important;
+  letter-spacing: .06em;
+}
+
+.news-meta-divider {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  opacity: .8;
+}
+
+.news-rich-content {
+  color: hsl(var(--foreground) / .86);
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  line-height: 1.85;
+}
+
+.news-rich-content h2,
+.news-rich-content h3,
+.news-rich-content h4 {
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  letter-spacing: -.02em;
+  line-height: 1.25;
+}
+
+.news-rich-content a {
+  color: hsl(var(--primary));
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.news-rich-content blockquote {
+  border-inline-start-color: hsl(var(--primary) / .65);
+  background: hsl(var(--primary) / .05);
+  border-radius: 0 .5rem .5rem 0;
+  padding: .8rem 1.2rem;
+}
+
+.article-rich-content {
+  max-width: 760px !important;
+  margin-inline: auto;
+  color: hsl(var(--foreground) / .86);
+  font-family: var(--font-serif);
+  font-size: 1.18rem;
+  line-height: 1.85;
+}
+
+.article-rich-content h2,
+.article-rich-content h3,
+.article-rich-content h4 {
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-style: normal !important;
+  text-transform: none !important;
+  letter-spacing: -.02em !important;
+  line-height: 1.25;
+}
+
+.article-rich-content a {
+  color: hsl(var(--primary));
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.article-rich-content blockquote {
+  border-inline-start-color: hsl(var(--primary) / .65);
+  background: hsl(var(--primary) / .05);
+  border-radius: 0 .5rem .5rem 0;
+  padding: .8rem 1.2rem;
+}
+
+@media (max-width: 700px) {
+  .news-article-shell {
+    padding: 1.25rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .news-article-title {
+    font-size: 2.25rem !important;
+  }
+
+  .news-rich-content {
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+
+  .article-rich-content {
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+}
+
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);

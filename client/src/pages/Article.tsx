@@ -280,7 +280,7 @@ export default function Article() {
             </button>
           </div>
 
-          <div className={`${finalArticle.fullLayout ? "grid grid-cols-1 lg:grid-cols-12 gap-12" : "wiki-content-card rounded-3xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
+          <div className={`${finalArticle.fullLayout ? "grid grid-cols-1 lg:grid-cols-12 gap-12" : "news-article-shell wiki-content-card rounded-2xl overflow-hidden p-6 md:p-12 lg:p-16"}`}>
             <div className={`${finalArticle.fullLayout ? "lg:col-span-9" : ""}`}>
               <article dir={isRTL ? "rtl" : undefined} className={isRTL ? "text-right" : undefined}>
                 {!finalArticle.fullLayout && (
@@ -301,7 +301,7 @@ export default function Article() {
                         ))}
                       </div>
 
-                      <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}>
+                      <h1 className={`news-article-title text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}>
                         {localizedTitle}
                       </h1>
 
@@ -328,11 +328,11 @@ export default function Article() {
                       </div>
 
                       {finalArticle?.image && (
-                        <div className="relative w-full aspect-video rounded-none border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
+                        <div className="news-hero-image relative w-full aspect-[16/8] rounded-xl overflow-hidden border border-border/50 mb-12 shadow-2xl bg-muted/10 group">
                           <ContentImage
                             src={finalArticle.image}
                             alt={localizedTitle || "Article"}
-                            className="object-contain w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
+                            className="object-cover w-full h-full transform transition-all duration-700 cursor-zoom-in group-hover:scale-[1.01]"
                             onLoad={() => setImgLoaded(true)}
                             onClick={() => setViewer({ open: true, src: finalArticle.image, alt: localizedTitle || "Article" })}
                           />

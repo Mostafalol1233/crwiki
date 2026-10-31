@@ -1,53 +1,10 @@
 import { useLocation } from 'wouter';
 import { LogOut } from 'lucide-react';
-import { decodeAdminToken } from '@/lib/supabaseAdmin';
-
-const BREADCRUMBS: Record<string, string[]> = {
-  '/admin': ['Dashboard'],
-  '/admin/analytics': ['Analytics'],
-  '/admin/posts': ['Content', 'Posts'],
-  '/admin/posts/new': ['Content', 'Posts', 'New Post'],
-  '/admin/events': ['Content', 'Events'],
-  '/admin/events/new': ['Content', 'Events', 'New Event'],
-  '/admin/news': ['Content', 'News'],
-  '/admin/news/new': ['Content', 'News', 'New Article'],
-  '/admin/tutorials': ['Content', 'Tutorials'],
-  '/admin/announcements': ['Content', 'Announcements'],
-  '/admin/weapons': ['Game', 'Weapons'],
-  '/admin/modes': ['Game', 'Modes'],
-  '/admin/maps': ['Game', 'Maps'],
-  '/admin/ranks': ['Game', 'Ranks'],
-  '/admin/mercenaries': ['Game', 'Mercenaries'],
-  '/admin/scraper': ['Game', 'Scraper'],
-  '/admin/wiki-rescraper': ['Game', 'Wiki Rescraper'],
-  '/admin/sellers': ['Commerce', 'Sellers'],
-  '/admin/seller-reviews': ['Commerce', 'Seller Reviews'],
-  '/admin/media': ['Media'],
-  '/admin/users': ['System', 'Users'],
-  '/admin/tickets': ['System', 'Tickets'],
-  '/admin/bulk-seo': ['System', 'Bulk SEO'],
-  '/admin/custom-pages': ['System', 'Custom Pages'],
-  '/admin/faq': ['System', 'FAQ'],
-  '/admin/site-settings': ['System', 'Site Settings'],
-};
-
-function getBreadcrumb(location: string): string[] {
-  if (BREADCRUMBS[location]) return BREADCRUMBS[location];
-  const base = Object.keys(BREADCRUMBS)
-    .filter((k) => location.startsWith(k) && k !== '/admin')
-    .sort((a, b) => b.length - a.length)[0];
-  if (base) {
-    const sub = location.replace(base, '').replace(/^\//, '');
-    if (sub) return [...(BREADCRUMBS[base] || []), sub.charAt(0).toUpperCase() + sub.slice(1)];
-    return BREADCRUMBS[base] || ['Admin'];
-  }
-  return ['Admin'];
-}
+import { getAdminBreadcrumb } from '@/pages/admin/adminRoutes';
 
 export default function AdminTopbar() {
   const [location, navigate] = useLocation();
-  const crumbs = getBreadcrumb(location);
-  const token = decodeAdminToken();
+  const crumbs = getAdminBreadcrumb(location);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');

@@ -5,6 +5,7 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import { isAdminAuthenticated } from '@/lib/supabaseAdmin';
 import { SEOHead } from '@/components/SEOHead';
+import { getAdminSection } from './adminRoutes';
 
 const Dashboard = lazy(() => import('./Dashboard'));
 const Analytics = lazy(() => import('./Analytics'));
@@ -43,12 +44,6 @@ function Loading() {
       Loading...
     </div>
   );
-}
-
-function getSection(location: string) {
-  if (location === '/admin' || location === '/admin/') return 'dashboard';
-  const seg = location.replace('/admin/', '').split('/')[0];
-  return seg || 'dashboard';
 }
 
 function SectionContent({ section }: { section: string }) {
@@ -94,7 +89,7 @@ export default function AdminPanel() {
     return <Redirect to="/admin/login" />;
   }
 
-  const section = getSection(location);
+  const section = getAdminSection(location);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#09090b', fontFamily: 'Inter, sans-serif', color: '#fafafa' }}>

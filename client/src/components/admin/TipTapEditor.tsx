@@ -179,6 +179,52 @@ export default function TipTapEditor({
     lastPropContent.current = next;
   }, [content, editor, sourceMode, sourceHtml]);
 
+  useEffect(() => {
+    if (!editor) return;
+    const root = editor.view.dom;
+    const addCopyButtons = () => {
+      root.querySelectorAll('pre').forEach((pre) => {
+        if (pre.querySelector('[data-code-copy]')) return;
+        pre.style.position = 'relative';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.codeCopy = 'true';
+        button.title = 'Copy code';
+        button.setAttribute('aria-label', 'Copy code');
+        button.innerHTML = '<span aria-hidden="true">Copy</span>';
+        Object.assign(button.style, {
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          padding: '4px 8px',
+          border: '1px solid #52525b',
+          borderRadius: '4px',
+          background: '#27272a',
+          color: '#d4a017',
+          cursor: 'pointer',
+          fontSize: '11px',
+          zIndex: '1',
+        });
+        button.addEventListener('mousedown', (event) => event.preventDefault());
+        button.addEventListener('click', async () => {
+          const code = pre.querySelector('code')?.textContent || '';
+          try {
+            await navigator.clipboard.writeText(code);
+            button.innerHTML = '<span aria-hidden="true">Copied</span>';
+            window.setTimeout(() => { button.innerHTML = '<span aria-hidden="true">Copy</span>'; }, 1500);
+          } catch {
+            toast.error('Could not copy code');
+          }
+        });
+        pre.appendChild(button);
+      });
+    };
+    addCopyButtons();
+    const observer = new MutationObserver(addCopyButtons);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [editor, toast]);
+
   const setSource = useCallback((value: string) => {
     setSourceHtml(value);
     onChange(value);

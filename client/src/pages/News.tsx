@@ -3,7 +3,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { Globe, ImageIcon, Flame, Clock, User, Search, X, ChevronRight, Tag, TrendingUp, BookOpen, Calendar, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState, useEffect } from "react";
-import { getNews, getPosts, getEvents } from "@/lib/supabaseApi";
+import { getNews, getPosts, getEvents, getPostBySlug } from "@/lib/supabaseApi";
 import PageSEO from "@/components/PageSEO";
 import ContentImage from "@/components/ContentImage";
 import { routerPath } from "@/lib/routePaths";
@@ -202,6 +202,12 @@ export default function News() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: reportPost } = useQuery({
+    queryKey: ["/api/posts/report-hackers-harassment-crossfire-guide"],
+    queryFn: () => getPostBySlug("report-hackers-harassment-crossfire-guide"),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const { data: eventsData } = useQuery<{ items: any[]; total: number }>({
     queryKey: ["/api/events", { limit: 20 }],
     queryFn: () => getEvents({ limit: 8 }),
@@ -232,7 +238,12 @@ export default function News() {
   // Build combined news feed — always include events as news if available
   const allItems = useMemo(() => {
     const newsWithType = allLoadedNews.map((item) => ({ ...item, _type: "news" }));
-    const postsWithType = allLoadedPosts.map((p) => ({
+    const posts = reportPost && reportPost.post_slug
+      ? [...allLoadedPosts, reportPost].filter((post, index, list) =>
+        list.findIndex((candidate) => String(candidate.id) === String(post.id)) === index
+      )
+      : allLoadedPosts;
+    const postsWithType = posts.map((p) => ({
       id: p.id, title: p.title, titleAr: p.titleAr, dateRange: p.date || "Recent",
       image: p.image || p.image_url, imageUrl: p.image_url, category: p.category || "Article",
       content: p.content, contentAr: p.contentAr, summary: p.summary, summaryAr: p.summaryAr, author: p.author, featured: p.featured,
@@ -258,7 +269,7 @@ export default function News() {
       const db = new Date((b as any).createdAt || 0).getTime();
       return db - da;
     });
-  }, [allLoadedNews, allLoadedPosts, eventsData?.items]);
+  }, [allLoadedNews, allLoadedPosts, eventsData?.items, reportPost]);
 
   const filtered = useMemo(() => {
     return allItems.filter((item) => {

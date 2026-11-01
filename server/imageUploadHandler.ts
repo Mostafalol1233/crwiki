@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import multer from "multer";
 import { randomUUID } from "crypto";
-import { verifyAdminRequest } from "../../server/adminAuth.js";
-import { verifyCompetitionAttemptToken } from "../../server/competitionAccess.js";
+import { verifyAdminRequest } from "./adminAuth.js";
+import { verifyCompetitionAttemptToken } from "./competitionAccess.js";
 
 export const config = {
   api: { bodyParser: false },

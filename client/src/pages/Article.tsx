@@ -106,6 +106,46 @@ export default function Article() {
 
   useZoomableImages(contentRef, (src, alt) => setViewer({ open: true, src, alt }));
 
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    root.querySelectorAll("pre").forEach((pre) => {
+      if (pre.querySelector("[data-article-code-copy]")) return;
+      pre.style.position = "relative";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.articleCodeCopy = "true";
+      button.textContent = language === "ar" ? "نسخ" : "Copy";
+      button.setAttribute("aria-label", language === "ar" ? "نسخ الكود" : "Copy code");
+      Object.assign(button.style, {
+        position: "absolute",
+        top: "10px",
+        right: "10px",
+        padding: "5px 9px",
+        border: "1px solid rgba(255,255,255,0.2)",
+        borderRadius: "5px",
+        background: "rgba(10,10,10,0.8)",
+        color: "#f5a623",
+        cursor: "pointer",
+        fontSize: "11px",
+        zIndex: "1",
+      });
+      button.addEventListener("click", async () => {
+        const code = pre.querySelector("code")?.textContent || "";
+        try {
+          await navigator.clipboard.writeText(code);
+          button.textContent = language === "ar" ? "تم النسخ" : "Copied";
+          window.setTimeout(() => {
+            button.textContent = language === "ar" ? "نسخ" : "Copy";
+          }, 1500);
+        } catch {
+          button.textContent = language === "ar" ? "فشل النسخ" : "Copy failed";
+        }
+      });
+      pre.appendChild(button);
+    });
+  }, [localizedContent, activeTab, language]);
+
   const isAdmin = useMemo(() => typeof window !== "undefined" && !!localStorage.getItem("adminToken"), []);
 
   const breadcrumbs = useMemo(() => [

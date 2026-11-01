@@ -56,6 +56,12 @@ function hasAnyPermission(admin: NonNullable<ReturnType<typeof verifyAdminReques
   return admin.role === "super_admin" || permissions.some(permission => admin.permissions?.[permission] === true);
 }
 
+function missingColumnFromSupabase(message: string): string {
+  return message.match(/the ['"]([^'"]+)['"] column/i)?.[1]
+    || message.match(/column ['"]([^'"]+)['"]/i)?.[1]
+    || "";
+}
+
 const ANNOUNCEMENT_POST_CATEGORY = "__ANNOUNCEMENT__";
 
 function announcementFromRow(row: Record<string, any>, scope: "global" | "seller") {
@@ -599,8 +605,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           writeParams.set("on_conflict", req.body.onConflict);
         }
         const writeUrl = writeParams.toString() ? `${baseUrl}?${writeParams.toString()}` : baseUrl;
-        const createRes = await fetch(writeUrl, { method: "POST", headers: writeHeaders, body: JSON.stringify(safeRow) });
-        if (!createRes.ok) throw new Error(`Supabase ${table} create failed: ${await createRes.text()}`);
+        let createRes: Response | null = null;
+        let lastError = "";
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          createRes = await fetch(writeUrl, { method: "POST", headers: writeHeaders, body: JSON.stringify(safeRow) });
+          if (createRes.ok) break;
+          lastError = await createRes.text();
+          const missingColumn = missingColumnFromSupabase(lastError);
+          if (!missingColumn || !(missingColumn in safeRow)) break;
+          delete safeRow[missingColumn];
+        }
+        if (!createRes?.ok) {
+          const missingTable = /relation .* does not exist|could not find the table/i.test(lastError);
+          throw new Error(missingTable
+            ? `Supabase table "${table}" is missing. Run the database setup SQL from the admin dashboard.`
+            : `Supabase ${table} create failed: ${lastError}`);
+        }
         return addCorsHeaders(req, res).status(200).json({ data: await createRes.json(), ...(issuedCode ? { issuedCode } : {}) });
       }
 

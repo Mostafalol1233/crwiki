@@ -101,11 +101,23 @@ ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS slug        TEXT DEFAULT '';
 ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS seo_title   TEXT DEFAULT '';
 ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS seo_description TEXT DEFAULT '';
 
--- Fix integer overflow: sort_order / order_index can receive large values
-ALTER TABLE site_highlights ALTER COLUMN sort_order TYPE BIGINT;
-ALTER TABLE events          ALTER COLUMN sort_order TYPE BIGINT;
-ALTER TABLE mercenaries     ALTER COLUMN order_index TYPE BIGINT;
-ALTER TABLE tutorials       ALTER COLUMN order_index TYPE BIGINT;
+-- Fix integer overflow when the tables already exist. The guards keep this
+-- migration runnable on a fresh database where these tables are created below.
+DO $$
+BEGIN
+  IF to_regclass('public.site_highlights') IS NOT NULL THEN
+    ALTER TABLE site_highlights ALTER COLUMN sort_order TYPE BIGINT;
+  END IF;
+  IF to_regclass('public.events') IS NOT NULL THEN
+    ALTER TABLE events ALTER COLUMN sort_order TYPE BIGINT;
+  END IF;
+  IF to_regclass('public.mercenaries') IS NOT NULL THEN
+    ALTER TABLE mercenaries ALTER COLUMN order_index TYPE BIGINT;
+  END IF;
+  IF to_regclass('public.tutorials') IS NOT NULL THEN
+    ALTER TABLE tutorials ALTER COLUMN order_index TYPE BIGINT;
+  END IF;
+END $$;
 
 -- 2. CREATE MISSING TABLES
 
@@ -120,7 +132,7 @@ CREATE TABLE IF NOT EXISTS site_highlights (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL, month INTEGER, year INTEGER,
   media_type TEXT DEFAULT 'image', url TEXT,
-  sort_order INTEGER DEFAULT 0, created_at TIMESTAMPTZ DEFAULT now()
+  sort_order BIGINT DEFAULT 0, created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS announcements (
@@ -149,7 +161,7 @@ CREATE TABLE IF NOT EXISTS tutorials (
   content TEXT, content_ar TEXT, image_url TEXT,
   difficulty TEXT DEFAULT 'beginner', video_url TEXT,
   youtube_url TEXT, youtube_id TEXT, category TEXT DEFAULT 'tutorial',
-  order_index INTEGER DEFAULT 0, seo_title TEXT, seo_description TEXT,
+  order_index BIGINT DEFAULT 0, seo_title TEXT, seo_description TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

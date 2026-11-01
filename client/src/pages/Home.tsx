@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageSEO from "@/components/PageSEO";
 import { EventsRibbon } from "@/components/EventsRibbon";
-import { getEvents, getNews, getSiteSettings, getPortalImages } from "@/lib/supabaseApi";
+import { getEvents, getNews, getPostBySlug, getSiteSettings, getPortalImages } from "@/lib/supabaseApi";
 const HighlightsSection = lazy(() => import("@/components/HighlightsSection").then((module) => ({ default: module.HighlightsSection })));
 const GMSection = lazy(() => import("@/components/GMSection").then((module) => ({ default: module.GMSection })));
 import {
@@ -469,7 +469,23 @@ export default function Home() {
   });
   const latestNews = latestNewsData?.items || [];
 
-  const newsItems = latestNews.length > 0 ? latestNews : displayEvents.slice(3).map((e: any) => ({
+  const { data: reportPost } = useQuery({
+    queryKey: ["/api/posts/report-hackers-harassment-crossfire-guide"],
+    queryFn: () => getPostBySlug("report-hackers-harassment-crossfire-guide"),
+    staleTime: 10 * 60 * 1000,
+  });
+  const mergedNews = reportPost?.post_slug
+    ? [...latestNews, {
+      ...reportPost,
+      news_slug: null,
+      post_slug: reportPost.post_slug,
+      summary: reportPost.summary || reportPost.content,
+    }].filter((item, index, list) =>
+      list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index
+    )
+    : latestNews;
+
+  const newsItems = mergedNews.length > 0 ? mergedNews : displayEvents.slice(3).map((e: any) => ({
     ...e, category: e.type || "Event", news_slug: null, post_slug: null,
     summary: e.description, image: e.image || e.imageUrl,
   }));

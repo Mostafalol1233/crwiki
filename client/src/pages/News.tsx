@@ -238,7 +238,7 @@ export default function News() {
   // Build combined news feed — always include events as news if available
   const allItems = useMemo(() => {
     const newsWithType = allLoadedNews.map((item) => ({ ...item, _type: "news" }));
-    const posts = reportPost && reportPost.post_slug
+    const posts = reportPost?.post_slug === "report-hackers-harassment-crossfire-guide"
       ? [...allLoadedPosts, reportPost].filter((post, index, list) =>
         list.findIndex((candidate) => String(candidate.id) === String(post.id)) === index
       )

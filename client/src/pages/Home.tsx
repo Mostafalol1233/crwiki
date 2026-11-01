@@ -474,7 +474,7 @@ export default function Home() {
     queryFn: () => getPostBySlug("report-hackers-harassment-crossfire-guide"),
     staleTime: 10 * 60 * 1000,
   });
-  const mergedNews = reportPost?.post_slug
+  const mergedNews = reportPost?.post_slug === "report-hackers-harassment-crossfire-guide"
     ? [...latestNews, {
       ...reportPost,
       news_slug: null,

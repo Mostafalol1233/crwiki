@@ -1,4 +1,5 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/client",
@@ -47,12 +48,6 @@
     { "source": "/api/content", "destination": "/api/sitemap?format=markdown" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
 
-    { "source": "/events", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fevents" },
-    { "source": "/news", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fnews" },
-    { "source": "/posts", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fposts" },
-    { "source": "/pages", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fpages" },
-    { "source": "/tutorials", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Ftutorials" },
-    { "source": "/videos", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fvideos" },
     { "source": "/:section(events|news|posts|pages|tutorials|videos|weapons|modes|maps|ranks|mercenaries|content-hub|faq)", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=/:section" },
     { "source": "/ar/:section(events|news|posts|pages|tutorials|videos|weapons|modes|maps|ranks|mercenaries|content-hub|faq)", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Far%2F:section" },
     { "source": "/events/:slug", "has": [{ "type": "header", "key": "user-agent", "value": ".*([Bb][Oo][Tt]|[Cc][Rr][Aa][Ww][Ll][Ee][Rr]|[Ss][Pp][Ii][Dd][Ee][Rr]).*" }], "destination": "/api/prerender?path=%2Fevents%2F:slug" },

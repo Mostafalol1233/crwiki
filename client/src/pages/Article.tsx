@@ -301,7 +301,7 @@ export default function Article() {
                         ))}
                       </div>
 
-                      <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}>
+                      <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}>
                         {localizedTitle}
                       </h1>
 
@@ -502,16 +502,19 @@ export default function Article() {
                   </div>
                 )}
               <style>{`
+                .article-rich-content { color: var(--foreground); font-size: 1.05rem; line-height: 1.9; }
+                .article-rich-content h2, .article-rich-content h3 { text-transform: none; font-style: normal; letter-spacing: -0.02em; color: var(--foreground); }
+                .article-rich-content h2 { font-size: clamp(1.45rem, 2.2vw, 2rem); margin: 2.8rem 0 1rem; padding-bottom: .65rem; border-bottom: 1px solid rgba(148,163,184,.22); }
+                .article-rich-content h3 { font-size: 1.2rem; margin: 2rem 0 .65rem; }
+                .article-rich-content p { max-width: 78ch; }
                 .article-rich-content img { max-width: 100%; height: auto; object-fit: contain; margin: 1.5rem auto; }
+                .article-rich-content figure.article-figure { margin: 2.5rem auto; padding: .75rem; max-width: 920px; border: 1px solid rgba(148,163,184,.22); background: rgba(148,163,184,.05); }
+                .article-rich-content figure.article-figure img { width: 100%; max-height: 520px; margin: 0 auto .75rem; object-fit: contain; }
+                .article-rich-content figure.article-figure figcaption { color: var(--muted-foreground); font-size: .82rem; line-height: 1.6; text-align: center; }
+                .article-rich-content .article-callout { margin: 2rem 0; padding: 1rem 1.2rem; border-inline-start: 3px solid rgba(212,160,23,.7); background: rgba(148,163,184,.07); color: var(--foreground); }
+                .article-rich-content .article-source-note { padding-top: 1rem; border-top: 1px solid rgba(148,163,184,.18); color: var(--muted-foreground); font-size: .9rem; }
                 .article-rich-content table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
-                .article-rich-content .post-color-orange { color: #ff9900 !important; }
-                .article-rich-content .post-color-yellow { color: #f5d020 !important; }
-                .article-rich-content .post-color-green { color: #4ade80 !important; }
-                .article-rich-content .post-color-blue { color: #60a5fa !important; }
-                .article-rich-content .post-color-red { color: #f87171 !important; }
-                .article-rich-content .post-color-purple { color: #c084fc !important; }
-                .article-rich-content .post-color-white { color: #f4f4f5 !important; }
-                .article-rich-content .post-color-cyan { color: #22d3ee !important; }
+                .article-rich-content .post-color-orange, .article-rich-content .post-color-yellow, .article-rich-content .post-color-green, .article-rich-content .post-color-blue, .article-rich-content .post-color-red, .article-rich-content .post-color-purple, .article-rich-content .post-color-white, .article-rich-content .post-color-cyan { color: inherit !important; }
                 .article-rich-content strong, .article-rich-content b { color: inherit; }
               `}</style>
               </article>

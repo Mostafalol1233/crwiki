@@ -289,7 +289,7 @@ export default function NewsDetail() {
                   </div>
 
                   <h1
-                    className={`text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-none mb-8 ${isRTL ? "text-right" : ""}`}
+                    className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] mb-8 ${isRTL ? "text-right" : ""}`}
                   >
                     {selectedTitle}
                   </h1>
@@ -329,7 +329,17 @@ export default function NewsDetail() {
                 }}
               />
               <style>{`
+                .news-rich-content { color: var(--foreground); font-size: 1.05rem; line-height: 1.9; }
+                .news-rich-content h2, .news-rich-content h3 { text-transform: none; font-style: normal; letter-spacing: -0.02em; color: var(--foreground); }
+                .news-rich-content h2 { font-size: clamp(1.45rem, 2.2vw, 2rem); margin: 2.8rem 0 1rem; padding-bottom: .65rem; border-bottom: 1px solid rgba(148,163,184,.22); }
+                .news-rich-content h3 { font-size: 1.2rem; margin: 2rem 0 .65rem; }
+                .news-rich-content p { max-width: 78ch; }
                 .news-rich-content img { max-width: 100%; height: auto; object-fit: contain; margin: 1.5rem auto; display: block; }
+                .news-rich-content figure.article-figure { margin: 2.5rem auto; padding: .75rem; max-width: 920px; border: 1px solid rgba(148,163,184,.22); background: rgba(148,163,184,.05); }
+                .news-rich-content figure.article-figure img { width: 100%; max-height: 520px; margin: 0 auto .75rem; object-fit: contain; }
+                .news-rich-content figure.article-figure figcaption { color: var(--muted-foreground); font-size: .82rem; line-height: 1.6; text-align: center; }
+                .news-rich-content .article-callout { margin: 2rem 0; padding: 1rem 1.2rem; border-inline-start: 3px solid rgba(212,160,23,.7); background: rgba(148,163,184,.07); color: var(--foreground); }
+                .news-rich-content .article-source-note { padding-top: 1rem; border-top: 1px solid rgba(148,163,184,.18); color: var(--muted-foreground); font-size: .9rem; }
                 .news-rich-content .skin-profile { margin: 2.5rem 0; padding: 1.25rem; border: 1px solid rgba(212,160,23,.28); border-radius: 1rem; background: linear-gradient(135deg, rgba(212,160,23,.08), rgba(0,0,0,.16)); overflow: hidden; }
                 .news-rich-content .skin-profile h2 { margin-top: 0; padding-top: 0; color: #f5d06f; }
                 .news-rich-content .skin-profile figure { margin: 1rem auto 1.25rem; text-align: center; }

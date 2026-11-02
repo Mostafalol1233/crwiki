@@ -549,15 +549,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let issuedCode: string | undefined;
         const aliases: Record<string, string> = {
           image: "image_url", imageUrl: "image_url", titleAr: "title_ar", descriptionAr: "description_ar",
-          dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
+          contentAr: "content_ar", rawHtmlContent: "raw_html_content", dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
           previewOnHome: "preview_on_home", seoTitle: "seo_title", seoDescription: "seo_description",
-          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url",
+          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url", focusKeyword: "focus_keyword",
           youtubeUrl: "youtube_url", youtubeId: "youtube_id", order: "order_index",
-          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug",
+          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug", fullLayout: "full_layout",
         };
         for (const [from, to] of Object.entries(aliases)) {
           if (safeRow[to] === undefined && safeRow[from] !== undefined) safeRow[to] = safeRow[from];
           if (from !== to) delete safeRow[from];
+        }
+        if (table === "news") {
+          const allowedNewsColumns = new Set([
+            "title", "title_ar", "news_slug", "content", "content_ar", "html_content", "raw_html_content",
+            "image_url", "images", "category", "source_url", "breaking", "featured", "preview_on_home", "author",
+            "date_range", "seo_title", "seo_description", "seo_keywords", "canonical_url", "created_at", "updated_at",
+          ]);
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowedNewsColumns.has(key)));
         }
         if (table === "admin_users") {
           const password = typeof safeRow.password === "string" ? safeRow.password : "";
@@ -630,15 +638,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let safeRow: Record<string, unknown> = { ...(row as Record<string, unknown>) };
         const aliases: Record<string, string> = {
           image: "image_url", imageUrl: "image_url", titleAr: "title_ar", descriptionAr: "description_ar",
-          dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
+          contentAr: "content_ar", rawHtmlContent: "raw_html_content", dateRange: "date_range", htmlContent: "html_content", readingTime: "reading_time",
           previewOnHome: "preview_on_home", seoTitle: "seo_title", seoDescription: "seo_description",
-          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url",
+          seoKeywords: "seo_keywords", canonicalUrl: "canonical_url", sourceUrl: "source_url", focusKeyword: "focus_keyword",
           youtubeUrl: "youtube_url", youtubeId: "youtube_id", order: "order_index",
-          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug",
+          promotionText: "promotion_text", sellerNameSlug: "seller_name_slug", fullLayout: "full_layout",
         };
         for (const [from, to] of Object.entries(aliases)) {
           if (safeRow[to] === undefined && safeRow[from] !== undefined) safeRow[to] = safeRow[from];
           if (from !== to) delete safeRow[from];
+        }
+        if (table === "news") {
+          const allowedNewsColumns = new Set([
+            "title", "title_ar", "news_slug", "content", "content_ar", "html_content", "raw_html_content",
+            "image_url", "images", "category", "source_url", "breaking", "featured", "preview_on_home", "author",
+            "date_range", "seo_title", "seo_description", "seo_keywords", "canonical_url", "updated_at",
+          ]);
+          safeRow = Object.fromEntries(Object.entries(safeRow).filter(([key]) => allowedNewsColumns.has(key)));
         }
         if (table === "admin_users") {
           delete safeRow.password_hash;

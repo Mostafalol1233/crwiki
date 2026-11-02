@@ -332,6 +332,9 @@ export default function NewsDetail() {
               />
               <style>{`
                 .news-rich-content { color: var(--foreground); font-size: 1.05rem; line-height: 1.9; }
+                .news-rich-content [style*="color"] { color: var(--foreground) !important; }
+                .news-rich-content [style*="background"] { background: var(--card) !important; }
+                .news-rich-content [style*="background-color"] { background-color: var(--card) !important; }
                 .news-rich-content h2, .news-rich-content h3 { text-transform: none; font-style: normal; letter-spacing: -0.02em; color: var(--foreground); }
                 .news-rich-content h2 { font-size: clamp(1.45rem, 2.2vw, 2rem); margin: 2.8rem 0 1rem; padding-bottom: .65rem; border-bottom: 1px solid rgba(148,163,184,.22); }
                 .news-rich-content h3 { font-size: 1.2rem; margin: 2rem 0 .65rem; }

@@ -470,7 +470,7 @@ export default function Article() {
                         )}
                         <div
                           ref={contentRef}
-                          className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""} article-rich-content`}
+                          className={`prose prose-slate dark:prose-invert max-w-none prose-headings:font-black prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50 ${isRTL ? "rtl" : ""} article-rich-content`}
                           dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(language === "ar" ? ((finalArticle.wikiTabs as WikiTab[])[activeTab]?.contentAr || (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content_ar || (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") : (finalArticle.wikiTabs as WikiTab[])[activeTab]?.content || "") }}
                         />
                       </div>
@@ -481,7 +481,7 @@ export default function Article() {
                   <div
                     ref={contentRef}
                     className={`prose prose-slate dark:prose-invert max-w-none 
-                      prose-headings:font-black prose-headings:uppercase prose-headings:italic prose-headings:tracking-tighter
+                      prose-headings:font-black
                       prose-p:text-lg prose-p:leading-relaxed prose-p:font-medium
                       prose-a:text-primary prose-a:no-underline hover:prose-a:underline
                       prose-img:rounded-none prose-img:shadow-xl prose-img:border prose-img:border-border/50
@@ -543,6 +543,9 @@ export default function Article() {
                 )}
               <style>{`
                 .article-rich-content { color: var(--foreground); font-size: 1.05rem; line-height: 1.9; }
+                .article-rich-content [style*="color"] { color: var(--foreground) !important; }
+                .article-rich-content [style*="background"] { background: var(--card) !important; }
+                .article-rich-content [style*="background-color"] { background-color: var(--card) !important; }
                 .article-rich-content h2, .article-rich-content h3 { text-transform: none; font-style: normal; letter-spacing: -0.02em; color: var(--foreground); }
                 .article-rich-content h2 { font-size: clamp(1.45rem, 2.2vw, 2rem); margin: 2.8rem 0 1rem; padding-bottom: .65rem; border-bottom: 1px solid rgba(148,163,184,.22); }
                 .article-rich-content h3 { font-size: 1.2rem; margin: 2rem 0 .65rem; }
